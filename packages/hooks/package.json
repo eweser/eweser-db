@@ -1,0 +1,56 @@
+{
+  "name": "@eweser/hooks",
+  "version": "0.0.0",
+  "description": "eweser-db react hooks",
+  "keywords": [
+    "user-owned",
+    "crdt",
+    "matrix",
+    "local-first"
+  ],
+  "author": "jacobcoro",
+  "type": "module",
+  "homepage": "https://github.com/jacobcoro/eweserdb",
+  "license": "MIT",
+  "directories": {
+    "src": "src"
+  },
+  "files": [
+    "/dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jacobcoro/eweserdb.git"
+  },
+  "main": "./dist/eweser-hooks.umd.js",
+  "module": "./dist/eweser-hooks.es.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/eweser-hooks.es.js",
+      "require": "./dist/eweser-hooks.umd.js"
+    }
+  },
+  "scripts": {
+    "test": "vitest run",
+    "build": "tsc && vite build",
+    "dev": "tsc --watch & vite build --watch"
+  },
+  "bugs": {
+    "url": "https://github.com/jacobcoro/eweserdb/issues"
+  },
+  "dependencies": {
+    "@eweser/db": "^0.0.0",
+    "@syncedstore/react": "^0.4.1"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "cypress": "^10.8.0",
+    "vite-plugin-dts": "^1.5.0"
+  }
+}

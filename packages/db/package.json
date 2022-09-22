@@ -1,0 +1,57 @@
+{
+  "name": "@eweser/db",
+  "version": "0.0.0",
+  "description": "eweser-db core database",
+  "keywords": [
+    "user-owned",
+    "crdt",
+    "matrix",
+    "local-first"
+  ],
+  "author": "jacobcoro",
+  "type": "module",
+  "homepage": "https://github.com/jacobcoro/eweserdb",
+  "license": "MIT",
+  "directories": {
+    "src": "src"
+  },
+  "files": [
+    "/dist",
+    "/types"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jacobcoro/eweserdb.git"
+  },
+  "source": "src/index.ts",
+  "types": "types/index.d.ts",
+  "main": "./dist/db.umd.cjs",
+  "module": "./dist/db.js",
+  "exports": {
+    ".": {
+      "import": "./dist/db.js",
+      "require": "./dist/db.umd.cjs"
+    }
+  },
+  "scripts": {
+    "test": "vitest run",
+    "build": "tsc && vite build",
+    "dev": "tsc --watch && vite build --watch"
+  },
+  "bugs": {
+    "url": "https://github.com/jacobcoro/eweserdb/issues"
+  },
+  "dependencies": {
+    "@syncedstore/core": "^0.4.1",
+    "matrix-crdt": "^0.2.0",
+    "matrix-js-sdk": "^19.5.0",
+    "yjs": "^13.5.41"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "cypress": "^10.8.0",
+    "vite-plugin-dts": "^1.5.0"
+  }
+}

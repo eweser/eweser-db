@@ -1,0 +1,47 @@
+{
+  "name": "@eweser/example",
+  "version": "0.0.0",
+  "description": "eweser-db example mini app",
+  "keywords": [
+    "user-owned",
+    "crdt",
+    "matrix",
+    "local-first"
+  ],
+  "author": "jacobcoro",
+  "type": "module",
+  "homepage": "https://github.com/jacobcoro/eweserdb",
+  "license": "MIT",
+  "directories": {
+    "src": "src"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jacobcoro/eweserdb.git"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest"
+  },
+  "bugs": {
+    "url": "https://github.com/jacobcoro/eweserdb/issues"
+  },
+  "dependencies": {
+    "@eweser/db": "*",
+    "@eweser/hooks": "*",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.3.0"
+  },
+  "devDependencies": {
+    "buffer": "^6.0.3",
+    "cypress": "^10.8.0",
+    "events": "^3.3.0",
+    "vite-plugin-dts": "^1.5.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
