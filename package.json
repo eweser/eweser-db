@@ -6,14 +6,13 @@
     "e2e/example"
   ],
   "scripts": {
-    "release": "lerna publish --registry=https://npm.pkg.github.com/ --force-publish",
-    "prepublishOnly": "npm run test && npm run build && cp README.md packages/db/README.md && cp README.md packages/hooks/README.md",
+    "release": "lerna publish --registry=https://npm.pkg.github.com/",
     "test": "lerna run test",
+    "test:e2e": "cypress run",
     "build": "lerna run build --concurrency 1",
     "deploy": "lerna publish",
     "dev": "lerna run dev",
-    "dev-e2e": "cypress open",
-    "e2e": "cypress run"
+    "dev-e2e": "cypress open"
   },
   "devDependencies": {
     "@esbuild-plugins/node-globals-polyfill": "^0.1.1",
