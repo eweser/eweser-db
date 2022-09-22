@@ -6,8 +6,8 @@
     "e2e/example"
   ],
   "scripts": {
-    "release": "lerna publish --registry=https://npm.pkg.github.com/",
-    "prepublishOnly": "npm run test && npm run build && cp README.md packages/database/README.md",
+    "release": "lerna publish --registry=https://npm.pkg.github.com/ --force-publish",
+    "prepublishOnly": "npm run test && npm run build && cp README.md packages/db/README.md && cp README.md packages/hooks/README.md",
     "test": "lerna run test",
     "build": "lerna run build --concurrency 1",
     "deploy": "lerna publish",
