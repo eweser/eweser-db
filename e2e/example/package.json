@@ -1,6 +1,7 @@
 {
   "name": "@eweser/example",
   "version": "0.0.0",
+  "private": true,
   "description": "eweser-db example mini app",
   "keywords": [
     "user-owned",
@@ -40,8 +41,5 @@
     "cypress": "^10.8.0",
     "events": "^3.3.0",
     "vite-plugin-dts": "^1.5.0"
-  },
-  "publishConfig": {
-    "access": "public"
   }
 }
