@@ -1,6 +1,6 @@
 {
   "name": "@eweser/db",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "eweser-db core database",
   "keywords": [
     "user-owned",
@@ -54,5 +54,5 @@
     "cypress": "^10.8.0",
     "vite-plugin-dts": "^1.5.0"
   },
-  "gitHead": "1eca9c43c96efc826e0052db89a74ffc68938c12"
+  "gitHead": "10ee7f04f7fd53c87f28e941f8bfaf8159424858"
 }
