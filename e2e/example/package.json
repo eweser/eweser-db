@@ -1,6 +1,6 @@
 {
   "name": "@eweser/example",
-  "version": "0.0.4",
+  "version": "0.1.0",
   "private": true,
   "description": "eweser-db example mini app",
   "keywords": [
@@ -31,16 +31,16 @@
     "url": "https://github.com/jacobcoro/eweserdb/issues"
   },
   "dependencies": {
-    "@syncedstore/react": "^0.4.1",
+    "@eweser/db": "^0.1.0",
+    "@eweser/hooks": "^0.1.0",
     "@syncedstore/core": "^0.4.1",
+    "@syncedstore/react": "^0.4.1",
     "matrix-crdt": "^0.2.0",
     "matrix-js-sdk": "^19.5.0",
-    "y-indexeddb": "^9.0.9",
-    "@eweser/db": "*",
-    "@eweser/hooks": "*",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.3.0"
+    "react-router-dom": "^6.3.0",
+    "y-indexeddb": "^9.0.9"
   },
   "devDependencies": {
     "buffer": "^6.0.3",

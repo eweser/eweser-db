@@ -1,6 +1,6 @@
 {
   "name": "@eweser/hooks",
-  "version": "0.0.4",
+  "version": "0.1.0",
   "description": "eweser-db react hooks",
   "keywords": [
     "user-owned",
@@ -40,11 +40,10 @@
   "bugs": {
     "url": "https://github.com/jacobcoro/eweserdb/issues"
   },
-  "dependencies": {},
   "peerDependencies": {
-    "@syncedstore/react": "^0.4.1",
     "@eweser/db": "*",
     "@syncedstore/core": "^0.4.1",
+    "@syncedstore/react": "^0.4.1",
     "react": "^18.0.0"
   },
   "publishConfig": {
