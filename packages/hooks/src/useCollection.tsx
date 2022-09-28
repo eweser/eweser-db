@@ -77,16 +77,20 @@ function useCollection<T = any>(db: IDatabase, collectionData: CollectionData) {
 
   /** if not provided an id, uses the length of the collection's documents */
   const createNewDocument = useCallback(
-    function <DocBase>(docBase: DocBase, id?: string) {
+    function <DocBase>(docBase: DocBase, id?: string | number) {
       if (!store) throw new Error('Store not ready');
       const newId = id ?? Object.keys(store.documents).length.toString();
-      return newDocument(docBase, newId, buildRef(collectionData.collectionKey, roomAlias, newId));
+      return newDocument(
+        docBase,
+        newId.toString(),
+        buildRef(collectionData.collectionKey, roomAlias, newId)
+      );
     },
     [store]
   );
 
   useEffect(() => {
-    if (connectStatus === 'initial')
+    if (connectStatus === 'initial' && db.userId)
       connectOrCreateRoom({
         ...collectionData,
         roomAlias,
@@ -95,7 +99,7 @@ function useCollection<T = any>(db: IDatabase, collectionData: CollectionData) {
         setConnectStatus,
         setStore,
       });
-  }, [roomAlias, db, registryStore, setConnectStatus]);
+  }, [roomAlias, db, registryStore, setConnectStatus, db.userId]);
 
   return { connectStatus, store, newDocument: createNewDocument };
 }

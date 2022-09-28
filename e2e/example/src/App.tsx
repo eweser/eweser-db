@@ -1,6 +1,6 @@
-import { useContext, useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useState } from 'react';
 
-import { CollectionKey, newDocument, NoteBase } from '@eweser/db';
+import { CollectionKey, NoteBase } from '@eweser/db';
 import type { Documents, Note } from '@eweser/db';
 import { DatabaseContext, CollectionProvider, CollectionContext } from '@eweser/hooks';
 
@@ -37,13 +37,26 @@ const App = () => {
 const NotesInternal = () => {
   const { store, newDocument } = useContext(CollectionContext);
   const notes: Documents<Note> = store.documents;
-  const noteKeys = Object.keys(notes);
-  const [selectedNote, setSelectedNote] = useState(noteKeys[0]);
+  const [selectedNote, setSelectedNote] = useState(Object.keys(notes)[0]);
+
+  const deleteNote = useCallback(
+    (docId: string) => {
+      const oneMonth = 1000 * 60 * 60 * 24 * 30;
+      notes[docId]._deleted = true;
+      notes[docId]._ttl = new Date().getTime() + oneMonth;
+    },
+    [notes]
+  );
+  const createNote = useCallback(() => {
+    notes[Object.keys(notes).length] = newDocument<NoteBase>({ text: 'New Note Body' });
+  }, [notes]);
+
   useEffect(() => {
-    if (noteKeys.length === 0) {
+    if (Object.keys(notes).length === 0) {
       notes[0] = newDocument({ text: 'Write a new note' });
     }
   }, []);
+
   return (
     <div>
       <div>
@@ -56,10 +69,19 @@ const NotesInternal = () => {
         ></textarea>
       </div>
       <h1>Notes</h1>
+      <button onClick={() => createNote()}>+</button>
       <div style={styles.flexWrap}>
-        {noteKeys.map((docId) => (
-          <NoteCard note={notes[docId]} key={docId} setSelectedNote={setSelectedNote} />
-        ))}
+        {Object.keys(notes).map((docId) => {
+          if (!notes[docId]._deleted)
+            return (
+              <NoteCard
+                key={docId}
+                note={notes[docId]}
+                setSelectedNote={setSelectedNote}
+                deleteNote={deleteNote}
+              />
+            );
+        })}
       </div>
     </div>
   );
@@ -68,12 +90,17 @@ const NotesInternal = () => {
 const NoteCard = ({
   note,
   setSelectedNote,
+  deleteNote,
 }: {
   note: Note;
   setSelectedNote: (id: string) => void;
+  deleteNote: (id: string) => void;
 }) => {
   return (
     <div onClick={() => setSelectedNote(note._id)} style={styles.card}>
+      <button onClick={() => deleteNote(note._id)} style={styles.deleteButton}>
+        X
+      </button>
       {note.text}
     </div>
   );

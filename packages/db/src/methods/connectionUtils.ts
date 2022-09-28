@@ -29,12 +29,12 @@ export const getUndecoratedRoomAlias = (fullAlias: string, userId: string) => {
 
 /** @example ('@username:matrix.org')=> '#eduvault_registry_username:matrix.org' */
 export const buildRegistryRoomAlias = (userId: string) => {
-  return buildRoomAlias('eduvault_registry___', userId);
+  return buildRoomAlias('eduvault_registry_', userId);
 };
 
 /** @example ('@username:matrix.org')=> '#eduvault_space_username:matrix.org' */
 export const buildSpaceRoomAlias = (userId: string) => {
-  return buildRoomAlias('eduvault_space___', userId);
+  return buildRoomAlias('eduvault_space_', userId);
 };
 
 /** @example ('roomName', '@username:matrix.org')=> '#roomName_username:matrix.org' */
@@ -189,8 +189,8 @@ export const newMatrixProvider = ({
     undefined,
     {
       translator: { updatesAsRegularMessages: true },
-      reader: { snapshotInterval: 100 },
-      writer: { flushInterval: 5000 },
+      // reader: { snapshotInterval: 100 },
+      // writer: { flushInterval: 5000 },
     }
   );
   // console.log({ newMatrixProvider });

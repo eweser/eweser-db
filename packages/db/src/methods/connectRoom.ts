@@ -5,7 +5,7 @@ import { initialRegistryStore } from '../collections';
 import { CollectionKey, ConnectStatus } from '../types';
 import type { IDatabase, Documents, RegistryData, Room } from '../types';
 // import * as Y from 'yjs';
-import { IndexeddbPersistence } from 'y-indexeddb';
+// import { IndexeddbPersistence } from 'y-indexeddb';
 
 type RegistryStore = {
   documents: Documents<RegistryData>;
@@ -65,9 +65,9 @@ export function connectRoom<T extends IDatabase>(
       room.matrixProvider?.dispose();
       room.matrixProvider = null;
 
-      new IndexeddbPersistence('my-document-id', room.doc);
+      // new IndexeddbPersistence('my-document-id', room.doc);
       room.matrixProvider = newMatrixProvider({
-        doc: room.doc,
+        doc,
         matrixClient: this.matrixClient,
         roomAlias,
       });
@@ -75,12 +75,12 @@ export function connectRoom<T extends IDatabase>(
       // room.matrixProvider.onReceivedEvents((events) => {
       //   console.log('onReceivedEvents', events);
       // });
-      room.matrixProvider.onCanWriteChanged((canWrite) => {
-        // console.log('canWrite', canWrite);
-        room.connectStatus = 'ok';
-        if (callback) callback('ok');
-        return resolve(true);
-      });
+      // room.matrixProvider.onCanWriteChanged((canWrite) => {
+      //   // console.log('canWrite', canWrite);
+      //   room.connectStatus = 'ok';
+      //   if (callback) callback('ok');
+      //   return resolve(true);
+      // });
       // connect or fail callbacks:
       // room.matrixProvider.matrixReader?.onEvents((e) => {
       //   console.log('onEvents', e);
