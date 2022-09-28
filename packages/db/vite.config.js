@@ -4,14 +4,14 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   build: {
     lib: {
-      name: 'db',
+      name: 'eweser-db',
       entry: resolve(__dirname, 'src/index.ts'),
     },
     rollupOptions: {
       // TODO: add matrix-crdt and sdk?
       // make sure to externalize deps that shouldn't be bundled
       // into your library
-      external: ['matrix-js-sdk'],
+      external: ['yjs', '@syncedstore/core', 'matrix-crdt', 'matrix-js-sdk', 'y-indexeddb'],
     },
   },
   test: {

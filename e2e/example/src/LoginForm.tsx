@@ -1,20 +1,24 @@
 import { LoginData, ConnectStatus } from '@eweser/db';
+import { useState } from 'react';
+import { DEV_PASSWORD, DEV_USERNAME, MATRIX_SERVER } from 'config';
+import { styles } from 'styles';
+
+const initialLoginData: LoginData = {
+  baseUrl: MATRIX_SERVER,
+  userId: DEV_USERNAME, // these will be empty in prod. This speeds up dev time
+  password: DEV_PASSWORD,
+};
 
 export interface Props {
-  handleLogin: () => void;
+  handleLogin: (loginData: LoginData) => void;
   loginStatus: ConnectStatus;
-  loginData: LoginData;
-  setLoginData: (loginData: LoginData) => void;
 }
 
 type FormField = keyof LoginData;
 
-const LoginForm = ({
-  handleLogin,
-  loginStatus,
-  loginData,
-  setLoginData,
-}: Props) => {
+const LoginForm = ({ handleLogin, loginStatus }: Props) => {
+  const [loginData, setLoginData] = useState(initialLoginData);
+
   const handleChange = (field: FormField, value: string) => {
     const loginDataChange = {
       ...loginData,
@@ -22,13 +26,11 @@ const LoginForm = ({
     };
     setLoginData(loginDataChange);
   };
+  const login = () => handleLogin(loginData);
 
   return (
     <div>
-      <form
-        onSubmit={(e) => e.preventDefault()}
-        style={{ display: 'flex', flexDirection: 'column', width: '400px' }}
-      >
+      <form onSubmit={(e) => e.preventDefault()} style={styles.login}>
         <label htmlFor="server-input">Homeserver:</label>
         <input
           id="server-input"
@@ -58,13 +60,12 @@ const LoginForm = ({
           <p>Login failed</p>
         )}
 
-        <button disabled={loginStatus === 'loading'} onClick={handleLogin}>
+        <button disabled={loginStatus === 'loading'} onClick={login}>
           Login
         </button>
         <p>
           {`* Sign up at `}
-          <a href="https://app.element.io/">element.io</a> with the username and
-          password option
+          <a href="https://app.element.io/">element.io</a> with the username and password option
         </p>
       </form>
     </div>

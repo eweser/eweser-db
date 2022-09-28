@@ -3,8 +3,8 @@ import type { MatrixProvider } from 'matrix-crdt';
 import type { ICreateClientOpts } from 'matrix-js-sdk';
 import type { Note } from './collections/notes';
 import type { FlashCard } from './collections/flashcards';
-import * as Y from 'yjs';
-import { DocumentBase } from './collections/documentBase';
+// import * as Y from 'yjs';
+import type { DocumentBase } from './collections/documentBase';
 
 export enum CollectionKey {
   notes = 'notes',
@@ -27,7 +27,7 @@ export interface Room<T> {
   name?: string;
   created?: Date;
   // roomId: string;
-  doc?: Y.Doc;
+  doc?: any; // Y.Doc;
   store: { documents: Documents<T> }; // the synced store.
 }
 
@@ -64,46 +64,43 @@ export interface Collections {
   [CollectionKey.registry]: Collection<RegistryData>;
 }
 
+export type CreateAndConnectRoom = (
+  params: {
+    collectionKey: CollectionKey;
+    aliasKey: string;
+    name?: string;
+    topic?: string;
+    registryStore?: { documents: Documents<RegistryData> };
+  },
+  callback?: (status: ConnectStatus) => void
+) => Promise<boolean>;
+
+export type ConnectRoom = (
+  roomAlias: string,
+  collectionKey: CollectionKey,
+  registryStore?: { documents: Documents<RegistryData> },
+  callback?: (status: ConnectStatus) => void
+) => Promise<boolean>;
+
+export type Login = (
+  loginData: LoginData,
+  callback?: (status: ConnectStatus) => void
+) => Promise<boolean>;
+
 export interface IDatabase {
   matrixClient: MatrixClient | null;
   loggedIn: boolean;
-  loginStatus: ConnectStatus;
-  updateLoginStatus: (status: ConnectStatus) => void;
-  onLoginStatusUpdate: OnLoginStatusUpdate | null;
-  onRoomConnectStatusUpdate: null | OnRoomConnectStatusUpdate;
+  userId: string;
+  /** homeserver */
   baseUrl: string;
+
   collectionKeys: CollectionKey[];
   collections: Collections;
-  connectRoom: <T>(
-    roomAlias: string,
-    collectionKey: CollectionKey,
-    registryStore?:
-      | {
-          documents: Documents<RegistryData>;
-        }
-      | undefined
-  ) => Promise<boolean>;
-  createAndConnectRoom: ({
-    collectionKey,
-    alias,
-    name,
-    topic,
-    registryStore,
-  }: {
-    collectionKey: CollectionKey;
-    alias: string;
-    name?: string | undefined;
-    topic?: string | undefined;
-    registryStore?:
-      | {
-          documents: Documents<RegistryData>;
-        }
-      | undefined;
-  }) => Promise<string | false>;
-  login: (
-    loginData: LoginData,
-    callback?: (() => void) | undefined
-  ) => Promise<void>;
+  connectRoom: ConnectRoom;
+
+  createAndConnectRoom: CreateAndConnectRoom;
+  login: Login;
+
   getCollectionRegistry: (collectionKey: CollectionKey) => {
     [roomAlias: string]: RoomMetaData;
   };

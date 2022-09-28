@@ -1,29 +1,26 @@
-import type { MatrixClient } from 'matrix-js-sdk';
-
 import { collectionKeys, collections, initialRegistry } from './collections';
 import { connectRoom } from './methods/connectRoom';
 import { createAndConnectRoom } from './methods/createAndConnectRoom';
 import { login } from './methods/login';
-import { updateLoginStatus } from './methods/updateLoginStatus';
-import { buildRoomAlias } from './utils';
+import { buildRoomAlias } from './methods/connectionUtils';
 
-import type {
+import type { CollectionKey, IDatabase } from './types';
+
+export type { Note, NoteBase, FlashCard, FlashcardBase } from './collections';
+export type {
+  Collection,
+  Collections,
   ConnectStatus,
-  OnLoginStatusUpdate,
-  OnRoomConnectStatusUpdate,
   LoginData,
   Room,
   Documents,
-  CollectionKey,
   IDatabase,
 } from './types';
-
-import type { Note } from './collections';
-import type { Collections } from './types';
-
+export type { DocumentBase } from './collections/documentBase';
 export { CollectionKey } from './types'; // enum exported not as a type
+
 export { buildRoomAlias };
-export type { Collections, Note, ConnectStatus, LoginData, Room, Documents };
+export { newDocument, buildRef } from './utils';
 
 function getCollectionRegistry(this: IDatabase, collectionKey: CollectionKey) {
   return this.collections.registry['0'].store.documents['0'][collectionKey];
@@ -34,21 +31,13 @@ function getRegistryStore(this: IDatabase) {
 }
 
 export class Database implements IDatabase {
-  matrixClient: MatrixClient | null = null;
-  // todo: callbacks on initialization status change.
-
+  matrixClient = null;
   loggedIn = false;
-  loginStatus: ConnectStatus = 'initial';
-
-  updateLoginStatus = updateLoginStatus;
-  onLoginStatusUpdate: null | OnLoginStatusUpdate = null;
-  onRoomConnectStatusUpdate: null | OnRoomConnectStatusUpdate = null;
-
-  /** homeserver */
-  baseUrl: string = 'https://matrix.org';
+  userId = '';
+  baseUrl = 'https://matrix.org';
 
   collectionKeys = collectionKeys;
-  collections: Collections = {
+  collections = {
     registry: initialRegistry,
     ...collections,
   };
@@ -63,5 +52,3 @@ export class Database implements IDatabase {
     // todo: if registry is in localStorage, load up each room's store.
   }
 }
-
-export default Database;

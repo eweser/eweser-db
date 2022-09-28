@@ -9,7 +9,8 @@
     "release": "lerna publish --registry=https://npm.pkg.github.com/",
     "test": "lerna run test",
     "test:e2e": "cypress run",
-    "build": "lerna run build --concurrency 1",
+    "clean": "lerna run clean",
+    "build": "lerna run build --include-dependencies ",
     "deploy": "lerna publish",
     "dev": "lerna run dev",
     "dev-e2e": "cypress open"

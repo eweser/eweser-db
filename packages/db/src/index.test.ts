@@ -1,4 +1,4 @@
-import Database from '.';
+import { Database } from '.';
 import { it, expect } from 'vitest';
 
 const collectionKeys = ['notes', 'flashcards'];
@@ -11,6 +11,6 @@ it('Database initializes', () => {
   expect(Object.keys(DB.collections)).toEqual(['registry', ...collectionKeys]);
   expect(DB.baseUrl).toBe(defaultHomeServer);
   expect(DB.loggedIn).toBe(false);
-  expect(DB.loginStatus).toBe('initial');
+  expect(DB.userId).toBe('');
   expect(DB.matrixClient).toBe(null);
 });

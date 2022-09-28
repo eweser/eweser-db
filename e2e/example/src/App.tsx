@@ -1,37 +1,80 @@
-import { useState } from 'react';
-import { LoginData, ConnectStatus } from '@eweser/db';
-import { useEweserDB } from '@eweser/hooks';
+import { useContext, useEffect, useState } from 'react';
+
+import { CollectionKey, newDocument, NoteBase } from '@eweser/db';
+import type { Documents, Note } from '@eweser/db';
+import { DatabaseContext, CollectionProvider, CollectionContext } from '@eweser/hooks';
 
 import LoginForm from 'LoginForm';
 
-import { DEV_PASSWORD, DEV_USERNAME, MATRIX_SERVER } from 'config';
+import { styles } from 'styles';
+
+const defaultNotesRoomAliasKey = 'notes--default';
+const defaultCollectionData = {
+  collectionKey: CollectionKey.notes,
+  aliasKey: defaultNotesRoomAliasKey,
+  name: 'Default Notes Collection',
+};
 
 const App = () => {
-  const db = useEweserDB();
-  const initialLoginData: LoginData = {
-    baseUrl: MATRIX_SERVER,
-    userId: DEV_USERNAME, // these will be empty in prod. This speeds up dev time
-    password: DEV_PASSWORD,
-  };
-  const [loginData, setLoginData] = useState(initialLoginData);
-  const [loginStatus, setLoginStatus] = useState<ConnectStatus>('initial');
-  const handleLogin = () => {
-    // login(loginData, onSetLoginStatus as any);
-  };
+  const { db, loginStatus, login } = useContext(DatabaseContext);
+  if (loginStatus === 'initial')
+    return (
+      <>
+        <h1>Login</h1>
+        <LoginForm handleLogin={login} loginStatus={loginStatus} />
+      </>
+    );
+  else if (loginStatus === 'loading' || !db) return <div>Logging in...</div>;
+  else
+    return (
+      /** Don't call `CollectionProvider` until the login is loaded */
+      <CollectionProvider db={db} {...defaultCollectionData}>
+        <NotesInternal />
+      </CollectionProvider>
+    );
+};
 
+const NotesInternal = () => {
+  const { store, newDocument } = useContext(CollectionContext);
+  const notes: Documents<Note> = store.documents;
+  const noteKeys = Object.keys(notes);
+  const [selectedNote, setSelectedNote] = useState(noteKeys[0]);
+  useEffect(() => {
+    if (noteKeys.length === 0) {
+      notes[0] = newDocument({ text: 'Write a new note' });
+    }
+  }, []);
   return (
     <div>
-      <h1>Login</h1>
-      {loginStatus !== 'ok' ? (
-        <LoginForm
-          handleLogin={handleLogin}
-          loginStatus={loginStatus}
-          loginData={loginData}
-          setLoginData={setLoginData}
-        />
-      ) : (
-        <p>Logged in</p>
-      )}
+      <div>
+        <h1>Edit</h1>
+        <textarea
+          style={styles.editor}
+          name="main-card-editor"
+          value={notes[selectedNote].text}
+          onChange={(e) => (notes[selectedNote].text = e.target.value)}
+        ></textarea>
+      </div>
+      <h1>Notes</h1>
+      <div style={styles.flexWrap}>
+        {noteKeys.map((docId) => (
+          <NoteCard note={notes[docId]} key={docId} setSelectedNote={setSelectedNote} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const NoteCard = ({
+  note,
+  setSelectedNote,
+}: {
+  note: Note;
+  setSelectedNote: (id: string) => void;
+}) => {
+  return (
+    <div onClick={() => setSelectedNote(note._id)} style={styles.card}>
+      {note.text}
     </div>
   );
 };

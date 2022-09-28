@@ -13,16 +13,25 @@ export default defineConfig({
   build: {
     lib: {
       entry: path.resolve(__dirname, 'src/index.ts'),
-      name: 'hooks',
+      name: 'eweser-hooks',
       formats: ['es', 'umd'],
       fileName: (format) => `eweser-hooks.${format}.js`,
     },
     rollupOptions: {
-      external: ['react', 'react-dom', '@eweser/db'],
+      external: [
+        'react',
+        'react-dom',
+        '@eweser/db',
+        '@syncedstore/react',
+        '@syncedstore/core',
+        'yjs',
+      ],
       output: {
         globals: {
           react: 'React',
           'react-dom': 'ReactDOM',
+          '@eweser/db': 'eweser-db',
+          '@syncedstore/react': 'syncedstore-react',
         },
       },
     },

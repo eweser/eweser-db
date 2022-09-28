@@ -6,5 +6,9 @@ describe('Index Page', () => {
 
     cy.contains('Login');
     cy.get('button').click();
+    cy.contains('Logging in...');
+    cy.contains('Connecting collection...');
+    cy.contains('Edit');
+    cy.contains('Notes');
   });
 });

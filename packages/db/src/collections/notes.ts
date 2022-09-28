@@ -1,5 +1,7 @@
 import type { DocumentBase } from './documentBase';
 
-export type Note = DocumentBase<{
+export type NoteBase = {
   text: string;
-}>;
+};
+
+export type Note = DocumentBase<NoteBase>;
