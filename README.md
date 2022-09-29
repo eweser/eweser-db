@@ -191,6 +191,7 @@ End to end tests are more practical for this project because so much of the func
 - [ ] File storage - add storage account links in the document to the files.
 - [ ] Offline mode.
 - [ ] E2E encryption
+- [ ] Sharing, and public collections
 - [ ] Per-App Access control. Instead of signing in the matrix client as the user, we could instead sign in with a Matrix account provided by the app owner, and then have the use invite that account into each room, specifying read-only or write permissions.
 - [ ] Stress testing. warnings about room or document size limits
 - [ ] Tests. Always more tests.
