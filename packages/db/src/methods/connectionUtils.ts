@@ -27,14 +27,14 @@ export const getUndecoratedRoomAlias = (fullAlias: string, userId: string) => {
   return fullAlias.split(userId)[0];
 };
 
-/** @example ('@username:matrix.org')=> '#eduvault_registry_username:matrix.org' */
+/** @example ('@username:matrix.org')=> '#eweser-db_registry_username:matrix.org' */
 export const buildRegistryRoomAlias = (userId: string) => {
-  return buildRoomAlias('eduvault_registry_', userId);
+  return buildRoomAlias('eweser-db_registry_', userId);
 };
 
-/** @example ('@username:matrix.org')=> '#eduvault_space_username:matrix.org' */
+/** @example ('@username:matrix.org')=> '#eweser-db_space_username:matrix.org' */
 export const buildSpaceRoomAlias = (userId: string) => {
-  return buildRoomAlias('eduvault_space_', userId);
+  return buildRoomAlias('eweser-db_space_', userId);
 };
 
 /** @example ('roomName', '@username:matrix.org')=> '#roomName_username:matrix.org' */
@@ -73,8 +73,8 @@ export const getOrCreateSpace = async (matrixClient: MatrixClient, userId: strin
       const createSpaceRoomRes = await createRoom(
         matrixClient,
         spaceRoomAliasTruncated,
-        'EduVault Space',
-        'The parent space for all EduVault rooms',
+        'My Database',
+        'The parent space for all eweser-db rooms',
         false,
         true
       );

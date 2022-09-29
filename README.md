@@ -11,14 +11,14 @@ Built using [matrix-crdt](https://github.com/YousefED/Matrix-CRDT)
 features:
 
 - user owned
-- interoperable
-- local-first
-- full end to end encryption (coming soon)
+- interoperable between apps
 - real-time sync between devices
 - real-time collaboration
 - no backend code
 - strongly typed schemas
 - extensible
+- local-first (coming soon)
+- full end to end encryption (coming soon)
 
 # Motivation
 
@@ -57,46 +57,46 @@ documents can be linked by reference using the document's `_ref` property. The r
 
 # Rooms
 
-To get it working with Matrix-CRDT, EweserDB adds a middle layer between collections and documents called a `room`. Rooms are a group of documents. They correspond to a Matrix room on their Matrix account that is created for each EweserDB `room`. Rooms in EweserDB are private (invite-only) and fully end to end encrypted by default.
+Each `room` corresponds to a Matrix chat room that will be created on the user's Matrix account inside a space called "My Database". Rooms in EweserDB are private (invite-only) and (coming soon) will be fully end to end encrypted by default.
 
 The `registry` is a special collection that stores the addresses(`roomAlias`s) to all of the user's other rooms.
 
 # ACL - Access Control, Privacy and Sharing
 
-Building on top of Matrix allows for advanced ACL features right out of the box. All ACL happens on the `room` level. Users can decide which apps or other users have read or write access to which rooms.
+Building on top of Matrix allows for advanced ACL features right out of the box. All ACL happens on the `room` level. Users can decide which apps or other users have read or write access to which rooms simply by using Matrix's built in privacy control features and by inviting or kicking out other users in the room.
 
 # User owned
 
-Matrix currently is a 'federated' system, working towards 100% user-owned and decentralized. When a user signs up to the DB they must provide a Matrix `homeserver` url. The user's data lives on the home server so you might think that means that the server owns the data and this is no different than facebook servers owning/controlling the data.
+Matrix currently is a 'federated' system, working towards 100% user-owned and decentralized. When a user signs up to the DB they must provide a Matrix `homeserver` url. The user's data lives on the home server so at first glance it appears that the server owns the data and this is no different than facebook servers owning/controlling the data.
 
 The first big difference is that users can sign up using a self-hosted homeserver or a homeserver of their choice that they trust more.
 
-Another key distinction is that with end to end encryption enabled(coming soon), the homeserver cannot read any of the data.
+Another key distinction is that with end to end encryption enabled (coming soon), the homeserver cannot read any of the data.
 
-A third distinction is because of Matrix's federated model, users could have a second homeserver that connects to each of their rooms, and their data would be stored on both, decreasing centralized control.
+Thirdly, because of Matrix's federated model, users could have a second homeserver that connects to each of their rooms, and their data would be stored on both, decreasing centralized control.
 
 EweserDB also plans to increase user ownership by making backing up and restoring the user's data easy and automatic. Backups could be through a traditional provider like dropbox or web3 options like IPFS (through [pinata](https://pinata.cloud)) or Ethereum (through [swarm](https://ethersphere.github.io/swarm-home)).
 
 # Limitations
 
 - [Matrix events size limit](https://github.com/YousefED/Matrix-CRDT/issues/11)
-- connecting to rooms can be slow depending on the homeserver, especially the `getRoomIdForAlias` call
+- connecting to rooms can be slow depending on the homeserver, especially the `getRoomIdForAlias` call when the homeserver has many rooms it needs to search through.
 
 # To Do
 
 - [ ] Helper functions like getRegistry, getRoom, getRef
-- [ ] Move Database to standalone repo and publish as a library
+- [ ] Cross-collection refs, document linking and lookup
+- [ ] "Joins" or aggregation searches across collections. e.g. select all documents in the `notes` collection that have a ref to a document in the `flashcards` collection.
+- [ ] Backups - add storage account (dropbox, pinata, etc)
+- [ ] File storage - add storage account links in the document to the files.
 - [ ] Offline mode.
-- [ ] Add encryption
-- [ ] Tests
+- [ ] E2@ encryption
 - [ ] Stress testing. warnings about room or document size limits
-- [ ] Backups
-- [ ] File storage
+- [ ] Tests. Always more tests.
 
 flesh out example:
 
-- [ ] make a note editor and get the edit function up
+- [x] make a note editor with basic CRUD
 - [ ] design a UI for grouping collections(rooms) of notes
-- [ ] make a create collection function
 - [ ] make flashcard app.
-- [ ] connect data from 2 apps with refs.
+- [ ] connect data from 2 apps with refs. e.g. in a note, click 'turn into flashcard' and it creates a flashcard in the flashcard app and links to it in the note.

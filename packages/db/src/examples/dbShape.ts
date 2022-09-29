@@ -10,7 +10,7 @@ export const exampleDb: { collections: Collections } = {
         collectionKey: CollectionKey.registry,
         matrixProvider: null,
         // note that roomAlias is the undecorated alias. if the final will be # `#<alias>_<username>:matrix.org' just <alias>
-        roomAlias: 'eduvault_registry_<username>',
+        roomAlias: 'eweser-db_registry_<username>',
         connectStatus: 'ok',
         store: {
           documents: {

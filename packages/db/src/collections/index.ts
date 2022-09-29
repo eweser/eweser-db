@@ -30,7 +30,7 @@ export const initialRegistry: Collection<RegistryData> = {
     connectStatus: 'initial',
     collectionKey: CollectionKey.registry,
     matrixProvider: null,
-    roomAlias: '#eduvault_registry_<username>:matrix.org', // to be replaced on login with real username
+    roomAlias: '#eweser-db_registry_<username>:matrix.org', // to be replaced on login with real username
     store: initialRegistryStore,
   },
 };
