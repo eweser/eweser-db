@@ -77,6 +77,26 @@ Thirdly, because of Matrix's federated model, users could have a second homeserv
 
 EweserDB also plans to increase user ownership by making backing up and restoring the user's data easy and automatic. Backups could be through a traditional provider like dropbox or web3 options like IPFS (through [pinata](https://pinata.cloud)) or Ethereum (through [swarm](https://ethersphere.github.io/swarm-home)).
 
+# Extending the Database and Collections
+
+Say you'd like to add a new collection or document type, like `TodoItem`, or `BlogPost` etc. Either you'd like it to be only accessible by your app, or to other apps that use eweser-db as well.
+
+To make the collection usable by other apps, submit a pull request to add the collection types. Follow the examples in the `db/src/collections` folder.
+
+To only use a document in your app, fork the project and do the same thing, or extend locally and use some `//@ts-ignore`s for the type errors you will encounter.
+
+# App development strategy, user consent
+
+As it is designed now, when the user signs in, for the duration of the session it gives read/write access to the full user-owned database. Users should be made aware of this fact. People are already comfortable with an app managing it's own data, but it is another level of trust required in the app to also let it manage data used by other apps. Users need to know the level of trust they are putting in each app when they sign ing.
+
+Because user-owned data flips the current data storage paradigm on its head, app developers might be wondering how to share public data between users. For example, a user might mark a certain collection of notes as public and apps could aggregate them and let other users search and discover those.
+
+One solution would be to add a matrix account of the app as an observer to the rooms(collections) the user has marked as public, update a traditional database as the updates happen. But this might not scale very well if the app needs to listen to thousands/millions of collections.
+
+Another option would be to simply use a traditional database for public collections, but then that would break interoperability between apps.
+
+This is an area that needs further consideration. Community input is appreciated.
+
 # Limitations
 
 - [Matrix events size limit](https://github.com/YousefED/Matrix-CRDT/issues/11)
@@ -90,7 +110,8 @@ EweserDB also plans to increase user ownership by making backing up and restorin
 - [ ] Backups - add storage account (dropbox, pinata, etc)
 - [ ] File storage - add storage account links in the document to the files.
 - [ ] Offline mode.
-- [ ] E2@ encryption
+- [ ] E2E encryption
+- [ ] Per-App Access control. Instead of signing in the matrix client as the user, we could instead sign in with a Matrix account provided by the app owner, and then have the use invite that account into each room, specifying read-only or write permissions.
 - [ ] Stress testing. warnings about room or document size limits
 - [ ] Tests. Always more tests.
 
