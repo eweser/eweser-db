@@ -1,7 +1,7 @@
 import { useCallback, useContext, useEffect, useState } from 'react';
 
-import { CollectionKey, NoteBase } from '@eweser/db';
-import type { Documents, Note } from '@eweser/db';
+import { CollectionKey } from '@eweser/db';
+import type { Documents, Note, NoteBase } from '@eweser/db';
 import { DatabaseContext, CollectionProvider, CollectionContext } from '@eweser/hooks';
 
 import LoginForm from 'LoginForm';
