@@ -41,6 +41,10 @@ const NotesInternal = () => {
 
   const deleteNote = useCallback(
     (docId: string) => {
+      // You can also simply do
+      // delete notes[docId];
+
+      // But this will delete the document from the database after 30 days
       const oneMonth = 1000 * 60 * 60 * 24 * 30;
       notes[docId]._deleted = true;
       notes[docId]._ttl = new Date().getTime() + oneMonth;
@@ -64,12 +68,17 @@ const NotesInternal = () => {
         <textarea
           style={styles.editor}
           name="main-card-editor"
-          value={notes[selectedNote].text}
-          onChange={(e) => (notes[selectedNote].text = e.target.value)}
+          value={
+            notes[selectedNote] && !notes[selectedNote]._deleted ? notes[selectedNote].text : ''
+          }
+          onChange={(e) => {
+            if (!notes[selectedNote] || notes[selectedNote]._deleted) return;
+            notes[selectedNote].text = e.target.value;
+          }}
         ></textarea>
       </div>
       <h1>Notes</h1>
-      <button onClick={() => createNote()}>+</button>
+      <button onClick={() => createNote()}>New note</button>
       <div style={styles.flexWrap}>
         {Object.keys(notes).map((docId) => {
           if (!notes[docId]._deleted)
