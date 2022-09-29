@@ -3,9 +3,11 @@ import { createMatrixClient, getOrCreateRegistry } from './connectionUtils';
 
 import type { LoginData, IDatabase } from '../types';
 
-/** Connects to Matrix client and loads registry
+/**
  *
- * login grabs the rooms from the registry, and saves each room's metadata - room alias, room id into the db object. Should also save in localhost so that we can skip this step on next load.
+ * Connects to Matrix client and loads registry
+ *
+ * Saves loginData to localStorage on success
  */
 export async function login(
   this: IDatabase,

@@ -130,6 +130,7 @@ export const getOrCreateRegistry = async (_db: IDatabase) => {
   }
 };
 
+/** logs into matrix. if successful sets login data into localStorage */
 export async function createMatrixClient(data: LoginData) {
   // console.log({ data });
   const { password, accessToken, baseUrl, userId } = data;
