@@ -9,6 +9,7 @@
 `EweserDB` empowers developers to quickly create a cloud-synced, local-first, user-owned database, like a decentralized firebase.
 
 Built using [matrix-crdt](https://github.com/YousefED/Matrix-CRDT)
+Demo [link](https://eweser-db-demo.netlify.app/)
 
 features:
 
@@ -118,7 +119,7 @@ The `registry` is a special collection that stores the addresses(`roomAlias`s) t
 
 ## ACL - Access Control, Privacy and Sharing
 
-Building on top of Matrix allows for advanced ACL features right out of the box. All ACL happens on the `room` level. Users can decide which apps or other users have read or write access to which rooms simply by using Matrix's built in privacy control features and by inviting or kicking out other users in the room.
+Building on top of Matrix allows for advanced ACL features right out of the box. All ACL happens on the `room` level. Users can decide which apps or other users have read or write access to which rooms simply by using Matrix's built in privacy control features and by inviting or kicking out other users in the room. The exact mechanics for how to achieve this are still being worked out. See "App development strategy, user consent" below.
 
 ## User owned
 
@@ -165,6 +166,7 @@ This is an area that needs further consideration. Community input is appreciated
   - a new e2e test to the `e2e` package.
   - a new example app to the `example` package.
   - a new feature to the `db` or `hooks` package.
+  - something from the to do list below.
 
 ### Set up local dev
 
