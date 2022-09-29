@@ -2,6 +2,8 @@
 
 🐑🐑🐑EweserDB, the user-owned database🐑🐑🐑
 
+<a href="https://matrix.to/#/#eweser-db:matrix.org"><img alt="Matrix" src="https://img.shields.io/badge/Chat on matrix%20-%23000.svg?&style=for-the-badge&logo=matrix&logoColor=white"/></a>
+
 # A User owned database
 
 `EweserDB` empowers developers to quickly create a cloud-synced, local-first, user-owned database, like a decentralized firebase.
