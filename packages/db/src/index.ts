@@ -5,7 +5,6 @@ import { login } from './methods/login';
 
 import type { CollectionKey, Collections, IDatabase } from './types';
 import type { MatrixClient } from 'matrix-js-sdk';
-import { getRoomAliasKey } from './methods/connectionUtils';
 
 export type { Note, NoteBase, FlashCard, FlashcardBase } from './collections';
 export type {
@@ -20,8 +19,12 @@ export type {
 export type { DocumentBase } from './collections/documentBase';
 export { CollectionKey } from './types'; // enum exported not as a type
 
-export { buildRoomAlias, truncateRoomAlias } from './methods/connectionUtils';
-export { newDocument, buildRef } from './utils';
+export {
+  buildRoomAlias,
+  truncateRoomAlias,
+  getUndecoratedRoomAlias,
+} from './methods/connectionUtils';
+export { newDocument, buildRef, aliasKeyValidation } from './utils';
 
 function getCollectionRegistry(this: IDatabase, collectionKey: CollectionKey) {
   return this.collections.registry['0'].store.documents['0'][collectionKey];
@@ -48,7 +51,6 @@ export class Database implements IDatabase {
 
   getCollectionRegistry = getCollectionRegistry;
   getRegistryStore = getRegistryStore;
-  getRoomAliasKey = getRoomAliasKey;
   constructor() {
     // todo: if registry is in localStorage, load up each room's store.
   }

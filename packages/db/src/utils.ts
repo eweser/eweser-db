@@ -19,3 +19,14 @@ export const newDocument = <T>(doc: T, id: string, ref: string): DocumentBase<T>
     ...doc,
   };
 };
+
+export const aliasKeyValidation = (aliasKey: string) => {
+  if (aliasKey.length < 3) throw new Error('aliasKey must be at least 3 characters long');
+  if (aliasKey.length > 52) throw new Error('aliasKey must be less than 52 characters long');
+  if (aliasKey.includes('.')) throw new Error('aliasKey cannot contain a period');
+  if (aliasKey.includes('@')) throw new Error('aliasKey cannot contain a @');
+  if (aliasKey.includes(':')) throw new Error('aliasKey cannot contain a :');
+  if (aliasKey.includes('/')) throw new Error('aliasKey cannot contain a /');
+  if (aliasKey.includes('#')) throw new Error('aliasKey cannot contain a #');
+  if (aliasKey.includes('~')) throw new Error('aliasKey cannot contain a #');
+};
