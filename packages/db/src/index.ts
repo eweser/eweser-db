@@ -2,7 +2,6 @@ import { collectionKeys, collections, initialRegistry } from './collections';
 import { connectRoom } from './methods/connectRoom';
 import { createAndConnectRoom } from './methods/createAndConnectRoom';
 import { login } from './methods/login';
-import { buildRoomAlias } from './methods/connectionUtils';
 
 import type { CollectionKey, Collections, IDatabase } from './types';
 import type { MatrixClient } from 'matrix-js-sdk';
@@ -20,7 +19,7 @@ export type {
 export type { DocumentBase } from './collections/documentBase';
 export { CollectionKey } from './types'; // enum exported not as a type
 
-export { buildRoomAlias };
+export { buildRoomAlias, truncateRoomAlias } from './methods/connectionUtils';
 export { newDocument, buildRef } from './utils';
 
 function getCollectionRegistry(this: IDatabase, collectionKey: CollectionKey) {
