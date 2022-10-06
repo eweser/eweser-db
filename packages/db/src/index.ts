@@ -4,7 +4,8 @@ import { createAndConnectRoom } from './methods/createAndConnectRoom';
 import { login } from './methods/login';
 import { buildRoomAlias } from './methods/connectionUtils';
 
-import type { CollectionKey, IDatabase } from './types';
+import type { CollectionKey, Collections, IDatabase } from './types';
+import type { MatrixClient } from 'matrix-js-sdk';
 
 export type { Note, NoteBase, FlashCard, FlashcardBase } from './collections';
 export type {
@@ -31,13 +32,12 @@ function getRegistryStore(this: IDatabase) {
 }
 
 export class Database implements IDatabase {
-  matrixClient = null;
-  loggedIn = false;
+  matrixClient: MatrixClient | null = null;
   userId = '';
   baseUrl = 'https://matrix.org';
 
   collectionKeys = collectionKeys;
-  collections = {
+  collections: Collections = {
     registry: initialRegistry,
     ...collections,
   };

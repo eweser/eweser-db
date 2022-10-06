@@ -89,7 +89,6 @@ export type Login = (
 
 export interface IDatabase {
   matrixClient: MatrixClient | null;
-  loggedIn: boolean;
   userId: string;
   /** homeserver */
   baseUrl: string;

@@ -10,7 +10,6 @@ it('Database initializes', () => {
   expect(DB.collectionKeys).toEqual(collectionKeys);
   expect(Object.keys(DB.collections)).toEqual(['registry', ...collectionKeys]);
   expect(DB.baseUrl).toBe(defaultHomeServer);
-  expect(DB.loggedIn).toBe(false);
   expect(DB.userId).toBe('');
   expect(DB.matrixClient).toBe(null);
 });
