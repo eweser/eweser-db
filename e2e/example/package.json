@@ -1,6 +1,6 @@
 {
   "name": "@eweser/example",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "private": true,
   "description": "eweser-db example mini app",
   "keywords": [
@@ -31,8 +31,8 @@
     "url": "https://github.com/jacobcoro/eweserdb/issues"
   },
   "dependencies": {
-    "@eweser/db": "^0.1.11",
-    "@eweser/hooks": "^0.1.11",
+    "@eweser/db": "^0.1.12",
+    "@eweser/hooks": "^0.1.12",
     "@syncedstore/core": "^0.4.1",
     "@syncedstore/react": "^0.4.1",
     "matrix-crdt": "^0.2.0",
