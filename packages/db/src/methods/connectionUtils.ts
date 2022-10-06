@@ -20,19 +20,13 @@ export enum Visibility {
 /** @example ('#roomName_username:matrix.org')=> 'roomName_username' */
 export const truncateRoomAlias = (fullAlias: string) => {
   const truncated = fullAlias.split('#')[1].split(':')[0];
-  console.log({ fullAlias, truncated });
   return truncated;
 };
 
-export function getRoomAliasKey(this: IDatabase, roomAlias: string) {
-  const key = getUndecoratedRoomAlias(truncateRoomAlias(roomAlias), this.userId);
-  console.log({ key, roomAlias });
-  return key;
-}
-
-/** @example ('roomName_username:matrix.org')=> 'roomName' */
-export const getUndecoratedRoomAlias = (fullAlias: string, userId: string) => {
-  return fullAlias.split(userId)[0];
+/** @example ('#roomName_@username:matrix.org')=> 'roomName' */
+export const getUndecoratedRoomAlias = (fullAlias: string) => {
+  // all usernames are decorated with '@' in matrix. and we add a '_' to the end of the room name in `buildRoomAlias`
+  return fullAlias.split('~@')[0].split('#')[1];
 };
 
 /** @example ('@username:matrix.org')=> '#eweser-db_registry_username:matrix.org' */
@@ -47,8 +41,11 @@ export const buildSpaceRoomAlias = (userId: string) => {
 
 /** @example ('roomName', '@username:matrix.org')=> '#roomName_username:matrix.org' */
 export const buildRoomAlias = (alias: string, userId: string) => {
-  const res = `#${alias}_${userId}`;
-  console.log({ res, alias, userId });
+  // already been added
+  if (alias.includes('~@')) {
+    return alias;
+  }
+  const res = `#${alias}~${userId}`;
   return res;
 };
 
