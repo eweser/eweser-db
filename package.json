@@ -6,11 +6,11 @@
     "e2e/example"
   ],
   "scripts": {
-    "release": "lerna publish --registry=https://npm.pkg.github.com/  --force-publish=*",
+    "release": "lerna run clean && lerna run build --scope=@eweser/db && lerna run build --scope=@eweser/hooks && lerna publish --registry=https://npm.pkg.github.com/  --force-publish=*",
     "test": "lerna run test",
     "test:e2e": "cypress run",
     "clean": "lerna run clean",
-    "build": "lerna run build --include-dependencies ",
+    "build": "lerna run build --include-dependencies",
     "dev": "lerna run dev",
     "dev-e2e": "cypress open",
     "ci-build": "npm install lerna && lerna bootstrap && npm run build"
