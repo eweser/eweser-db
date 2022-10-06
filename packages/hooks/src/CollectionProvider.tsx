@@ -65,7 +65,7 @@ export const CollectionProvider: FC<CollectionProviderProps> = ({
 
   if (connectStatus === 'failed')
     return FailComponent ? <FailComponent /> : <div>Failed to connect</div>;
-  else if (!store)
+  else if (connectStatus !== 'ok' || !store)
     return LoadingComponent ? <LoadingComponent /> : <div>Connecting collection...</div>;
   else
     return (

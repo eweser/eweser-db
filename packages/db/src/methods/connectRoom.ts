@@ -53,21 +53,30 @@ export function connectRoom<T extends IDatabase>(
       if (!room) throw new Error('room not found');
 
       if (!this.matrixClient) throw new Error("can't connect without matrixClient");
-      const store = syncedStore({ documents: {} });
-      const doc = getYjsValue(store);
-      room.doc = doc;
-      room.store = store;
+      // if (room.doc && room.store && room.matrixProvider?.canWrite) {
+      //   room.connectStatus = 'ok';
+      //   if (callback) callback('ok');
+      //   resolve(true);
+      // }
 
-      if (room.matrixProvider?.canWrite) resolve(true);
+      if (!room.doc) {
+        const store = syncedStore({ documents: {} });
+        const doc = getYjsValue(store);
+        room.doc = doc;
+        room.store = store;
+      } else {
+        const store = syncedStore({ documents: {} }, room.doc);
+        room.store = store;
+      }
 
       room.connectStatus = 'loading';
       if (callback) callback('loading');
-      room.matrixProvider?.dispose();
-      room.matrixProvider = null;
+      // room.matrixProvider?.dispose();
+      // room.matrixProvider = null;
 
       // new IndexeddbPersistence('my-document-id', room.doc);
       room.matrixProvider = newMatrixProvider({
-        doc,
+        doc: room.doc,
         matrixClient: this.matrixClient,
         roomAlias,
       });

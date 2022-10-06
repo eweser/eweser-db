@@ -37,9 +37,6 @@ const connectOrCreateRoom = async ({
   setConnectStatus: (status: ConnectStatus) => void;
   setStore: (store: any) => void;
 }) => {
-  if (aliasKey.includes(db.userId)) {
-    console.log({ aliasKey });
-  }
   const notesRegistry = registryStore?.documents[0]?.notes ?? {};
   const registryKeys = Object.keys(notesRegistry);
   // lookup notes rooms in registry
@@ -77,8 +74,7 @@ function useCollection<T = any>(db: IDatabase, collectionData: CollectionData) {
   const registryStore = useSyncedStore(db.getRegistryStore());
   const [connectStatus, setConnectStatus] = useState<ConnectStatus>('initial');
   const [store, setStore] = useState<{ documents: Documents<T> } | null>(null);
-  useEffect(() => {}, []);
-
+  const [previousAlias, setPreviousAlias] = useState<string | null>(null);
   // const clearCollection = useCallback(async () => {
   //   if (!store) return;
   //   Object.keys(store.documents).forEach((doc) => {
@@ -119,7 +115,9 @@ function useCollection<T = any>(db: IDatabase, collectionData: CollectionData) {
   );
 
   useEffect(() => {
-    if (connectStatus === 'initial' && db.userId)
+    if (!db.userId) return;
+    if (connectStatus === 'initial' || (previousAlias && previousAlias !== roomAlias)) {
+      setConnectStatus('loading');
       connectOrCreateRoom({
         ...collectionData,
         roomAlias,
@@ -128,7 +126,9 @@ function useCollection<T = any>(db: IDatabase, collectionData: CollectionData) {
         setConnectStatus,
         setStore,
       });
-  }, [roomAlias, db, registryStore, setConnectStatus, db.userId]);
+      setPreviousAlias(roomAlias);
+    }
+  }, [roomAlias, db, registryStore, setConnectStatus, db.userId, previousAlias]);
 
   return { connectStatus, store, newDocument: createNewDocument };
 }
