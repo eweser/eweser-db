@@ -14,6 +14,8 @@ export const newDocument = <T>(doc: T, id: string, ref: string): DocumentBase<T>
     _id: id,
     _ref: ref,
     _updated: now,
+    _deleted: false,
+    _ttl: undefined,
     ...doc,
   };
 };

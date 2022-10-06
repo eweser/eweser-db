@@ -5,6 +5,7 @@ import { login } from './methods/login';
 
 import type { CollectionKey, Collections, IDatabase } from './types';
 import type { MatrixClient } from 'matrix-js-sdk';
+import { getRoomAliasKey } from './methods/connectionUtils';
 
 export type { Note, NoteBase, FlashCard, FlashcardBase } from './collections';
 export type {
@@ -47,6 +48,7 @@ export class Database implements IDatabase {
 
   getCollectionRegistry = getCollectionRegistry;
   getRegistryStore = getRegistryStore;
+  getRoomAliasKey = getRoomAliasKey;
   constructor() {
     // todo: if registry is in localStorage, load up each room's store.
   }

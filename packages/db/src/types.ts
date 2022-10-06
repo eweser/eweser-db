@@ -106,4 +106,5 @@ export interface IDatabase {
   getRegistryStore: () => {
     documents: Documents<RegistryData>;
   };
+  getRoomAliasKey: (roomAlias: string) => string;
 }

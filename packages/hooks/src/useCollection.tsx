@@ -37,6 +37,9 @@ const connectOrCreateRoom = async ({
   setConnectStatus: (status: ConnectStatus) => void;
   setStore: (store: any) => void;
 }) => {
+  if (aliasKey.includes(db.userId)) {
+    console.log({ aliasKey });
+  }
   const notesRegistry = registryStore?.documents[0]?.notes ?? {};
   const registryKeys = Object.keys(notesRegistry);
   // lookup notes rooms in registry
@@ -74,6 +77,32 @@ function useCollection<T = any>(db: IDatabase, collectionData: CollectionData) {
   const registryStore = useSyncedStore(db.getRegistryStore());
   const [connectStatus, setConnectStatus] = useState<ConnectStatus>('initial');
   const [store, setStore] = useState<{ documents: Documents<T> } | null>(null);
+  useEffect(() => {}, []);
+
+  // const clearCollection = useCallback(async () => {
+  //   if (!store) return;
+  //   Object.keys(store.documents).forEach((doc) => {
+  //     delete store.documents[doc];
+  //   });
+  // }, [store]);
+  // useEffect(() => {
+  //   if (connectStatus === 'ok') {
+  //     clearCollection();
+  //   }
+  // }, [store]);
+
+  // const clearRegistry = useCallback(async () => {
+  //   if (!registryStore) return;
+  //   Object.keys(registryStore.documents).forEach((doc) => {
+  //     delete registryStore.documents[doc];
+  //   });
+  // }, [registryStore]);
+
+  // useEffect(() => {
+  //   if (connectStatus === 'ok') {
+  //     clearRegistry();
+  //   }
+  // }, [registryStore]);
 
   /** if not provided an id, uses the length of the collection's documents */
   const createNewDocument = useCallback(

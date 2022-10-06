@@ -7,7 +7,7 @@ const useLogin = (db: IDatabase) => {
 
   const login = async (loginData: LoginData) => {
     try {
-      db.login(loginData, (val) => setLoginStatus(val));
+      await db.login(loginData, (val) => setLoginStatus(val));
     } catch (error) {
       console.error(error);
       setLoginStatus('failed');

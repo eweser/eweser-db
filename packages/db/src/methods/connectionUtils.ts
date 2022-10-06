@@ -19,29 +19,36 @@ export enum Visibility {
 }
 /** @example ('#roomName_username:matrix.org')=> 'roomName_username' */
 export const truncateRoomAlias = (fullAlias: string) => {
-  return fullAlias.split('#')[1].split(':')[0];
+  const truncated = fullAlias.split('#')[1].split(':')[0];
+  console.log({ fullAlias, truncated });
+  return truncated;
 };
 
-/** @example ('#roomName_username:matrix.org')=> 'roomName' */
+export function getRoomAliasKey(this: IDatabase, roomAlias: string) {
+  const key = getUndecoratedRoomAlias(truncateRoomAlias(roomAlias), this.userId);
+  console.log({ key, roomAlias });
+  return key;
+}
+
+/** @example ('roomName_username:matrix.org')=> 'roomName' */
 export const getUndecoratedRoomAlias = (fullAlias: string, userId: string) => {
   return fullAlias.split(userId)[0];
 };
 
 /** @example ('@username:matrix.org')=> '#eweser-db_registry_username:matrix.org' */
 export const buildRegistryRoomAlias = (userId: string) => {
-  return buildRoomAlias('eweser-db_registry_', userId);
+  return buildRoomAlias('eweser-db_registry_&', userId);
 };
 
 /** @example ('@username:matrix.org')=> '#eweser-db_space_username:matrix.org' */
 export const buildSpaceRoomAlias = (userId: string) => {
-  return buildRoomAlias('eweser-db_space_', userId);
+  return buildRoomAlias('eweser-db_space_&', userId);
 };
 
 /** @example ('roomName', '@username:matrix.org')=> '#roomName_username:matrix.org' */
 export const buildRoomAlias = (alias: string, userId: string) => {
-  // console.log({ alias, userId });
   const res = `#${alias}_${userId}`;
-  // console.log({ res });
+  console.log({ res, alias, userId });
   return res;
 };
 
