@@ -1,6 +1,6 @@
 {
   "name": "@eweser/example",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "private": true,
   "description": "eweser-db example mini app",
   "keywords": [
@@ -31,7 +31,7 @@
     "url": "https://github.com/jacobcoro/eweserdb/issues"
   },
   "dependencies": {
-    "@eweser/db": "^0.1.3",
+    "@eweser/db": "^0.1.4",
     "@eweser/hooks": "^0.1.3",
     "@syncedstore/core": "^0.4.1",
     "@syncedstore/react": "^0.4.1",
