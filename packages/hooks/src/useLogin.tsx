@@ -6,7 +6,12 @@ const useLogin = (db: IDatabase) => {
   const [loginStatus, setLoginStatus] = useState<ConnectStatus>('initial');
 
   const login = async (loginData: LoginData) => {
-    db.login(loginData, (val) => setLoginStatus(val));
+    try {
+      db.login(loginData, (val) => setLoginStatus(val));
+    } catch (error) {
+      console.error(error);
+      setLoginStatus('failed');
+    }
   };
   return { loginStatus, login };
 };
