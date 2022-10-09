@@ -6,7 +6,7 @@
     "e2e/example"
   ],
   "scripts": {
-    "release": "lerna run clean && lerna run build --scope=@eweser/db && lerna run build --scope=@eweser/hooks && lerna publish --registry=https://npm.pkg.github.com/  --force-publish=*",
+    "release": "lerna run clean && lerna run build --scope=@eweser/db && lerna run build --scope=@eweser/hooks && lerna publish --force-publish=* --no-private",
     "test": "lerna run test",
     "test:e2e": "cypress run",
     "clean": "lerna run clean",
