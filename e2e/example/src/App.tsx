@@ -8,7 +8,7 @@ import LoginForm from 'LoginForm';
 
 import { styles } from 'styles';
 
-const defaultNotesRoomAliasKey = 'notes--default';
+const defaultNotesRoomAliasKey = 'notes-default';
 const defaultCollectionData = {
   collectionKey: CollectionKey.notes,
   aliasKey: defaultNotesRoomAliasKey,
