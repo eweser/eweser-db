@@ -160,7 +160,9 @@ export async function createMatrixClient(data: LoginData) {
     const loginSaveData: LoginData = {
       baseUrl,
       userId,
-      accessToken: loginRes.access_token,
+      password,
+      // TODO: reimplement this. For some reason matrix server is not accepting the token.
+      // accessToken: loginRes.access_token,
       deviceId: loginRes.device_id,
     };
     localStorage.setItem('loginData', JSON.stringify(loginSaveData));
