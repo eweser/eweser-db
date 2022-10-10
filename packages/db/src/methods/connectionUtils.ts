@@ -196,8 +196,8 @@ export const newMatrixProvider = ({
     undefined,
     {
       translator: { updatesAsRegularMessages: true },
-      // reader: { snapshotInterval: 100 },
-      // writer: { flushInterval: 5000 },
+      reader: { snapshotInterval: 1000 },
+      writer: { flushInterval: 5000 },
     }
   );
   // console.log({ newMatrixProvider });

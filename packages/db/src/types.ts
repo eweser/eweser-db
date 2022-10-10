@@ -5,7 +5,7 @@ import type { Note } from './collections/notes';
 import type { FlashCard } from './collections/flashcards';
 // import * as Y from 'yjs';
 import type { DocumentBase } from './collections/documentBase';
-
+export type { Document } from './collections';
 export enum CollectionKey {
   notes = 'notes',
   flashcards = 'flashcards',

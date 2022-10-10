@@ -1,6 +1,6 @@
 import { createContext, FC, ReactNode } from 'react';
 
-import { CollectionKey, DocumentBase } from '@eweser/db';
+import { CollectionKey, DocumentBase, Document } from '@eweser/db';
 import type { IDatabase } from '@eweser/db/types/types';
 import useCollection from './useCollection';
 import { useSyncedStore } from '@syncedstore/react';
@@ -22,12 +22,16 @@ interface CollectionContext {
   store: {
     documents: any;
   };
+  /** if not provided an id, uses the length of the collection's documents */
   newDocument: <T>(doc: T, id?: string | undefined) => DocumentBase<T>;
+  /** only updates the document to the db, and updates the document's `_updated` field if changes are detected */
+  updateDocument: <T = Document>(fields: Partial<T>, docId: string) => void;
 }
 
 const initialCollection: CollectionContext = {
   store: { documents: {} },
   newDocument: (() => {}) as any,
+  updateDocument: (() => {}) as any,
 };
 
 export const CollectionContext = createContext<CollectionContext>(initialCollection);
@@ -36,11 +40,11 @@ export const CollectionContext = createContext<CollectionContext>(initialCollect
 const WithSyncedStore = ({
   children,
   store,
-  newDocument,
+  ...props
 }: CollectionContext & { children: ReactNode }) => {
   const syncedStore = useSyncedStore(store);
   return (
-    <CollectionContext.Provider value={{ store: syncedStore, newDocument }}>
+    <CollectionContext.Provider value={{ store: syncedStore, ...props }}>
       {children}
     </CollectionContext.Provider>
   );
@@ -57,7 +61,7 @@ export const CollectionProvider: FC<CollectionProviderProps> = ({
   FailComponent,
   LoadingComponent,
 }) => {
-  const { store, connectStatus, newDocument } = useCollection(db, {
+  const { store, connectStatus, newDocument, updateDocument } = useCollection(db, {
     collectionKey,
     name,
     aliasKey,
@@ -69,7 +73,7 @@ export const CollectionProvider: FC<CollectionProviderProps> = ({
     return LoadingComponent ? <LoadingComponent /> : <div>Connecting collection...</div>;
   else
     return (
-      <WithSyncedStore store={store} newDocument={newDocument}>
+      <WithSyncedStore store={store} newDocument={newDocument} updateDocument={updateDocument}>
         {children}
       </WithSyncedStore>
     );

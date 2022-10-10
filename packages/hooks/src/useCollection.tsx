@@ -1,4 +1,4 @@
-import { buildRef, buildRoomAlias, newDocument } from '@eweser/db';
+import { buildRef, buildRoomAlias, Document, newDocument } from '@eweser/db';
 import { useSyncedStore } from '@syncedstore/react';
 
 import { useCallback, useEffect, useState } from 'react';
@@ -114,6 +114,26 @@ function useCollection<T = any>(db: IDatabase, collectionData: CollectionData) {
     [store]
   );
 
+  const updateDocument = useCallback(
+    function <T = Document>(fields: Partial<T>, docId: string) {
+      if (!store) throw new Error('Store not ready');
+      const doc = store.documents[docId] as any;
+      if (!doc || doc._deleted) return;
+      let difference = false;
+      Object.keys(fields).forEach((key) => {
+        const retypeKey = key as keyof T;
+        if (doc[key] && doc[key] !== fields[retypeKey]) {
+          console.log('updating', key, doc[key], fields[retypeKey]);
+          difference = true;
+          doc[key] = fields[retypeKey];
+        }
+      });
+
+      if (difference) store.documents[docId]._updated = new Date().getTime();
+    },
+    [store?.documents]
+  );
+
   useEffect(() => {
     if (!db.userId) return;
     if (connectStatus === 'initial' || (previousAlias && previousAlias !== roomAlias)) {
@@ -130,7 +150,7 @@ function useCollection<T = any>(db: IDatabase, collectionData: CollectionData) {
     }
   }, [roomAlias, db, registryStore, setConnectStatus, db.userId, previousAlias]);
 
-  return { connectStatus, store, newDocument: createNewDocument };
+  return { connectStatus, store, newDocument: createNewDocument, updateDocument };
 }
 
 export default useCollection;

@@ -15,6 +15,7 @@ export type {
   Room,
   Documents,
   IDatabase,
+  Document,
 } from './types';
 export type { DocumentBase } from './collections/documentBase';
 export { CollectionKey } from './types'; // enum exported not as a type
