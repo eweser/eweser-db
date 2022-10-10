@@ -31,12 +31,12 @@ export const getUndecoratedRoomAlias = (fullAlias: string) => {
 
 /** @example ('@username:matrix.org')=> '#eweser-db_registry_username:matrix.org' */
 export const buildRegistryRoomAlias = (userId: string) => {
-  return buildRoomAlias('eweser-db_registry_&', userId);
+  return buildRoomAlias('eweser-db_registry_____', userId);
 };
 
 /** @example ('@username:matrix.org')=> '#eweser-db_space_username:matrix.org' */
 export const buildSpaceRoomAlias = (userId: string) => {
-  return buildRoomAlias('eweser-db_space_&', userId);
+  return buildRoomAlias('eweser-db_space______', userId);
 };
 
 /** @example ('roomName', '@username:matrix.org')=> '#roomName_username:matrix.org' */
