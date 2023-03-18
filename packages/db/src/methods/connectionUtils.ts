@@ -196,8 +196,12 @@ export const newMatrixProvider = ({
     undefined,
     {
       translator: { updatesAsRegularMessages: true },
-      reader: { snapshotInterval: 1000 },
-      writer: { flushInterval: 5000 },
+      reader: {
+        //  snapshotInterval: 1000
+      },
+      writer: {
+        //  flushInterval: 5000
+      },
     }
   );
   // console.log({ newMatrixProvider });
@@ -224,6 +228,7 @@ export const createRoom = async (
       },
     });
   newRoom = await matrixClient.createRoom({
+    // see the example in MatrixProvider source. options might not be correct
     room_alias_name: alias,
     name,
     topic,
