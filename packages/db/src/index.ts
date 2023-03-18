@@ -35,10 +35,13 @@ function getRegistryStore(this: IDatabase) {
   return this.collections.registry['0'].store;
 }
 
+export interface DatabaseOptions {
+  baseUrl?: string;
+}
 export class Database implements IDatabase {
   matrixClient: MatrixClient | null = null;
   userId = '';
-  baseUrl = 'https://matrix.org';
+  baseUrl: string;
 
   collectionKeys = collectionKeys;
   collections: Collections = {
@@ -52,7 +55,9 @@ export class Database implements IDatabase {
 
   getCollectionRegistry = getCollectionRegistry;
   getRegistryStore = getRegistryStore;
-  constructor() {
+  constructor(options?: DatabaseOptions) {
+    this.baseUrl = options?.baseUrl ?? 'https://matrix.org';
+
     // todo: if registry is in localStorage, load up each room's store.
   }
 }

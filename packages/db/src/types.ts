@@ -3,7 +3,7 @@ import type { MatrixProvider } from 'matrix-crdt';
 import type { ICreateClientOpts } from 'matrix-js-sdk';
 import type { Note } from './collections/notes';
 import type { FlashCard } from './collections/flashcards';
-// import * as Y from 'yjs';
+import type { default as Y } from 'yjs';
 import type { DocumentBase } from './collections/documentBase';
 export type { Document } from './collections';
 export enum CollectionKey {
@@ -27,7 +27,7 @@ export interface Room<T> {
   name?: string;
   created?: Date;
   // roomId: string;
-  doc?: any; // Y.Doc;
+  doc?: Y.Doc; // Y.Doc;
   store: { documents: Documents<T> }; // the synced store.
 }
 
