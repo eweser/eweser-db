@@ -4,7 +4,7 @@ import { newEmptyRoom, newMatrixProvider } from './connectionUtils';
 import { initialRegistryStore } from '../collections';
 import { CollectionKey, ConnectStatus } from '../types';
 import type { IDatabase, Documents, RegistryData, Room } from '../types';
-// import * as Y from 'yjs';
+import type { default as Y } from 'yjs';
 // import { IndexeddbPersistence } from 'y-indexeddb';
 
 type RegistryStore = {
@@ -61,7 +61,7 @@ export function connectRoom<T extends IDatabase>(
 
       if (!room.doc) {
         const store = syncedStore({ documents: {} });
-        const doc = getYjsValue(store);
+        const doc = getYjsValue(store) as Y.Doc;
         room.doc = doc;
         room.store = store;
       } else {
