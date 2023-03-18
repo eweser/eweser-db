@@ -795,7 +795,7 @@ database:
     password: benchmarkpw
     database: benchmarkdb
     host: db
-    port: 5433
+    port: 5432
     cp_min: 5
     cp_max: 10
 #
