@@ -1,8 +1,8 @@
 import * as cp from 'child_process';
+import { HOMESERVER_NAME } from '.';
 
 export const MATRIX_HOME_URL = new URL('http://localhost:8888/_matrix/static/');
 
-export const HOMESERVER_NAME = 'localhost:8888';
 export const matrixTestConfig = {
   baseUrl: 'http://' + HOMESERVER_NAME,
   // idBaseUrl: "https://vector.im",
@@ -35,8 +35,8 @@ async function waitForMatrixStart() {
 export async function ensureMatrixIsRunning() {
   if (!(await hasMatrixStarted())) {
     console.log('Starting matrix using docker-compose');
-    const ret = cp.execSync('docker compose up -d', {
-      cwd: '../../../test-server',
+    const ret = cp.execSync('docker-compose up -d', {
+      cwd: '../../test-server',
     });
     console.log(ret.toString('utf-8'));
   }
