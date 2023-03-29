@@ -3,7 +3,7 @@ import type { MatrixClient } from 'matrix-js-sdk';
 import { MatrixProvider } from 'matrix-crdt';
 // import * as Y from 'yjs';
 import type { Room, LoginData, IDatabase } from '../types';
-import { CollectionKey } from '../types';
+import type { CollectionKey } from '../types';
 
 type MatrixLoginRes = {
   access_token: string;
@@ -55,7 +55,7 @@ export const checkForExistingRoomAlias = async (matrixClient: MatrixClient, alia
     // console.time('getRoomIdForAlias');
     existingRoom = await matrixClient.getRoomIdForAlias(alias);
   } catch (error) {
-    // console.log('room not found from alias');
+    console.log('room not found from alias: ' + alias, error);
   }
   // console.timeEnd('getRoomIdForAlias');
   // console.log({ existingRoom });
@@ -68,7 +68,7 @@ export const getOrCreateSpace = async (matrixClient: MatrixClient, userId: strin
   const spaceRoomAlias = buildSpaceRoomAlias(userId);
   const spaceRoomAliasTruncated = truncateRoomAlias(spaceRoomAlias);
   const spaceExists = await checkForExistingRoomAlias(matrixClient, spaceRoomAlias);
-
+  console.log({ spaceExists });
   if (spaceExists) {
     return spaceRoomAlias;
   } else {
@@ -82,14 +82,25 @@ export const getOrCreateSpace = async (matrixClient: MatrixClient, userId: strin
         false,
         true
       );
-      // console.log({ createSpaceRoomRes });
+      console.log({ createSpaceRoomRes });
       return spaceRoomAlias;
     } catch (error: any) {
-      if (error.message.includes('M_ROOM_IN_USE')) {
+      console.log(error.message, 'error creating space room');
+      if (
+        error.message.includes('M_ROOM_IN_USE') ||
+        error.message.includes('Room alias already taken')
+      ) {
         console.log('room already exists');
+        //check if joined
+        const joined = await matrixClient.getJoinedRooms();
+        console.log({ joined });
+
         await matrixClient.joinRoom(spaceRoomAliasTruncated);
+
+        return spaceRoomAlias;
+      } else {
+        throw new Error(error);
       }
-      throw new Error(error);
     }
   }
 };
@@ -101,11 +112,11 @@ export const getOrCreateRegistry = async (_db: IDatabase) => {
   // console.log({ userId });
   if (!userId) throw new Error('userId not found');
   const space = await getOrCreateSpace(matrixClient, userId);
-  // console.log({ space });
+  console.log({ space });
   const registryRoomAlias = buildRegistryRoomAlias(userId);
   const registryRoomAliasTruncated = truncateRoomAlias(registryRoomAlias);
   const registryExists = await checkForExistingRoomAlias(matrixClient, registryRoomAlias);
-
+  console.log({ registryExists });
   if (registryExists) {
     return registryRoomAlias;
   } else {
