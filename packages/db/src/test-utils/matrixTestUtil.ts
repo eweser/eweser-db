@@ -1,17 +1,10 @@
 import * as http from 'http';
 import * as https from 'https';
-import Matrix, { createClient, MatrixClient, MemoryStore } from 'matrix-js-sdk';
+import { createClient, MatrixClient, MemoryStore } from 'matrix-js-sdk';
 import { uuid } from 'vscode-lib';
 import { createMatrixRoom } from './matrixRoomManagement';
 import { matrixTestConfig } from './matrixTestUtilServer';
 
-const request = require('request');
-
-export function initMatrixSDK() {
-  // make sure the matrix sdk initializes request properly
-  Matrix.request(request);
-}
-initMatrixSDK();
 http.globalAgent.maxSockets = 2000;
 https.globalAgent.maxSockets = 2000;
 
@@ -57,7 +50,6 @@ export const loginMatrixUser = async (
       // userId: user_id,
       // deviceId: device_id,
     });
-    let request = Matrix.getRequest();
   }
   const loginResult = await matrixClient.loginWithPassword(username, password);
   // console.log(result);
@@ -86,7 +78,6 @@ export async function createMatrixUser(username: string, password: string) {
     // userId: user_id,
     // deviceId: device_id,
   });
-  let request = Matrix.getRequest();
   let sessionId = '';
   // first get a session_id. this is returned in a 401 response :/
   try {

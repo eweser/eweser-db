@@ -25,7 +25,7 @@ export const truncateRoomAlias = (fullAlias: string) => {
 
 /** @example ('#roomName_@username:matrix.org')=> 'roomName' */
 export const getUndecoratedRoomAlias = (fullAlias: string) => {
-  // all usernames are decorated with '@' in matrix. and we add a '_' to the end of the room name in `buildRoomAlias`
+  // all usernames are decorated with '@' in matrix. and we add a '~' to the end of the room name in `buildRoomAlias`
   return fullAlias.split('~@')[0].split('#')[1];
 };
 
@@ -49,7 +49,7 @@ export const buildRoomAlias = (alias: string, userId: string) => {
   return res;
 };
 
-export const checkForExistingRoomAlias = async (matrixClient: MatrixClient, alias: string) => {
+export const getRoomId = async (matrixClient: MatrixClient, alias: string) => {
   let existingRoom: { room_id: string } | null = null;
   try {
     // console.time('getRoomIdForAlias');
@@ -60,16 +60,37 @@ export const checkForExistingRoomAlias = async (matrixClient: MatrixClient, alia
   // console.timeEnd('getRoomIdForAlias');
   // console.log({ existingRoom });
   if (existingRoom?.room_id) {
-    return true;
+    return existingRoom.room_id;
   } else return false;
+};
+
+const joinRoomIfNotJoined = async (matrixClient: MatrixClient, roomId: string) => {
+  const joinedRooms = matrixClient.getRooms();
+  const room = joinedRooms.find((room) => room.roomId === roomId);
+  try {
+    if (!room) {
+      await matrixClient.joinRoom(roomId);
+    }
+  } catch (error: any) {
+    if (error.data?.errcode === 'M_LIMIT_EXCEEDED' && error.data.retry_after_ms) {
+      setTimeout(async () => {
+        console.log('retrying join room, ', error.data.retry_after_ms);
+        await matrixClient.joinRoom(roomId);
+      }, error.data.retry_after_ms);
+    } else {
+      console.log('error joining room');
+      console.error(error);
+    }
+  }
 };
 
 export const getOrCreateSpace = async (matrixClient: MatrixClient, userId: string) => {
   const spaceRoomAlias = buildSpaceRoomAlias(userId);
   const spaceRoomAliasTruncated = truncateRoomAlias(spaceRoomAlias);
-  const spaceExists = await checkForExistingRoomAlias(matrixClient, spaceRoomAlias);
-  console.log({ spaceExists });
-  if (spaceExists) {
+  const roomId = await getRoomId(matrixClient, spaceRoomAlias);
+  // if space exists
+  if (typeof roomId == 'string') {
+    await joinRoomIfNotJoined(matrixClient, roomId);
     return spaceRoomAlias;
   } else {
     try {
@@ -90,13 +111,10 @@ export const getOrCreateSpace = async (matrixClient: MatrixClient, userId: strin
         error.message.includes('M_ROOM_IN_USE') ||
         error.message.includes('Room alias already taken')
       ) {
-        console.log('room already exists');
-        //check if joined
-        const joined = await matrixClient.getJoinedRooms();
-        console.log({ joined });
+        console.log('space room already exists');
+        const roomId = await getRoomId(matrixClient, spaceRoomAlias);
 
-        await matrixClient.joinRoom(spaceRoomAliasTruncated);
-
+        if (typeof roomId === 'string') await joinRoomIfNotJoined(matrixClient, roomId);
         return spaceRoomAlias;
       } else {
         throw new Error(error);
@@ -112,12 +130,12 @@ export const getOrCreateRegistry = async (_db: IDatabase) => {
   // console.log({ userId });
   if (!userId) throw new Error('userId not found');
   const space = await getOrCreateSpace(matrixClient, userId);
-  console.log({ space });
   const registryRoomAlias = buildRegistryRoomAlias(userId);
   const registryRoomAliasTruncated = truncateRoomAlias(registryRoomAlias);
-  const registryExists = await checkForExistingRoomAlias(matrixClient, registryRoomAlias);
-  console.log({ registryExists });
-  if (registryExists) {
+  const roomId = await getRoomId(matrixClient, registryRoomAlias);
+  // if registry exists
+  if (typeof roomId === 'string') {
+    await joinRoomIfNotJoined(matrixClient, roomId);
     return registryRoomAlias;
   } else {
     try {
@@ -132,15 +150,18 @@ export const getOrCreateRegistry = async (_db: IDatabase) => {
       _db.collections.registry[0].roomAlias = registryRoomAlias;
       return registryRoomAlias;
     } catch (error: any) {
-      if (error.message.includes('M_ROOM_IN_USE')) {
-        console.log('registry already exists');
-        await matrixClient.joinRoom(registryRoomAliasTruncated);
+      if (
+        error.message.includes('M_ROOM_IN_USE') ||
+        error.message.includes('Room alias already taken')
+      ) {
+        console.log('registry room already exists');
         _db.collections.registry[0].roomAlias = registryRoomAlias;
+        const roomId = await getRoomId(matrixClient, registryRoomAlias);
+        if (typeof roomId === 'string') await joinRoomIfNotJoined(matrixClient, roomId);
         return registryRoomAlias;
+      } else {
+        throw new Error(error);
       }
-      // still a problem that it wasn't caught before this
-
-      throw new Error(error);
     }
   }
 };
