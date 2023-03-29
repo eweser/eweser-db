@@ -4,6 +4,16 @@ import { createMatrixClient, getOrCreateRegistry } from './connectionUtils';
 import type { LoginData, IDatabase } from '../types';
 
 /**
+ *  Connects to Matrix client without loading registry
+ *  Saves loginData to localStorage on success
+ */
+export async function loginToMatrix(_db: IDatabase, loginData: LoginData) {
+  _db.matrixClient = await createMatrixClient(loginData);
+  _db.userId = _db.matrixClient.getUserId() ?? '';
+  return _db.matrixClient;
+}
+
+/**
  *
  * Connects to Matrix client and loads registry
  *
@@ -15,8 +25,7 @@ export async function login(
   callback?: (status: ConnectStatus) => void
 ) {
   if (callback) callback('loading');
-  this.matrixClient = await createMatrixClient(loginData);
-  this.userId = this.matrixClient.getUserId() ?? '';
+  await loginToMatrix(this, loginData);
   const registryRoomAlias = await getOrCreateRegistry(this);
   if (!registryRoomAlias) throw new Error('could not get registry room alias');
   try {
