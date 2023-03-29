@@ -43,9 +43,8 @@
     "url": "https://github.com/jacobcoro/eweserdb/issues"
   },
   "peerDependencies": {
-    "@syncedstore/core": "^0.4.1",
     "matrix-crdt": "^0.2.0",
-    "matrix-js-sdk": "^19.5.0",
+    "matrix-js-sdk": "^24.0.0",
     "y-indexeddb": "^9.0.9"
   },
   "publishConfig": {
