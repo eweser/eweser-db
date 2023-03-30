@@ -1,17 +1,29 @@
 import { describe, it, expect, beforeAll, afterEach, vitest } from 'vitest';
 import { Doc } from 'yjs';
 
-import { buildRoomAlias, Database, FlashCard } from '..';
-import { CollectionKey, Room } from '../types';
+import type { FlashCard } from '..';
+import { buildRoomAlias, Database } from '..';
+import type { IDatabase, Room } from '../types';
+import { CollectionKey } from '../types';
 import { dummyUserName, dummyUserPass, HOMESERVER_NAME } from '../test-utils';
 import { createMatrixUser } from '../test-utils/matrixTestUtil';
-import { ensureMatrixIsRunning, matrixTestConfig } from '../test-utils/matrixTestUtilServer';
-import { changeStatus, connectMatrixProvider } from './connectRoom';
+import {
+  ensureMatrixIsRunning,
+  matrixTestConfig,
+} from '../test-utils/matrixTestUtilServer';
 import { loginToMatrix } from './login';
-import { newEmptyRoom } from './connectionUtils';
+import {
+  changeStatus,
+  connectMatrixProvider,
+  newEmptyRoom,
+} from '../connectionUtils';
 
 const { baseUrl } = matrixTestConfig;
-const userLoginInfo = { userId: dummyUserName, password: dummyUserPass, baseUrl };
+const userLoginInfo = {
+  userId: dummyUserName,
+  password: dummyUserPass,
+  baseUrl,
+};
 const userIdWithServer = `@${dummyUserName}:${HOMESERVER_NAME}`;
 
 beforeAll(async () => {
@@ -35,20 +47,23 @@ describe('changeStatus', () => {
 
 describe('connectMatrixProvider', () => {
   it('Can connect to matrix provider', async () => {
-    const DB = new Database({ baseUrl });
+    const DB = new Database({ baseUrl }) as IDatabase;
     const doc = new Doc();
     await loginToMatrix(DB, userLoginInfo);
     const roomAlias = buildRoomAlias('test-room', DB.userId);
-    DB.collections[CollectionKey.flashcards][roomAlias] = newEmptyRoom<FlashCard>(
-      CollectionKey.flashcards,
-      roomAlias
-    );
+    DB.collections[CollectionKey.flashcards][roomAlias] =
+      newEmptyRoom<FlashCard>(CollectionKey.flashcards, roomAlias);
     const room = DB.collections[CollectionKey.flashcards][roomAlias];
     room.doc = doc;
 
     const onStatusChange = vitest.fn();
 
-    await connectMatrixProvider(DB, roomAlias, CollectionKey.flashcards, onStatusChange);
+    await connectMatrixProvider(
+      DB,
+      roomAlias,
+      CollectionKey.flashcards,
+      onStatusChange
+    );
     expect(onStatusChange).toHaveBeenCalledWith('loading');
     expect(onStatusChange).toHaveBeenCalledWith('ok');
 

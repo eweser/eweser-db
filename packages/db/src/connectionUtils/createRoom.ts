@@ -1,5 +1,6 @@
-import sdk from 'matrix-js-sdk';
+import type sdk from 'matrix-js-sdk';
 import type { MatrixClient } from 'matrix-js-sdk';
+import { registerRoomToSpace } from './registerRoomToSpace';
 
 export enum Visibility {
   Public = 'public',

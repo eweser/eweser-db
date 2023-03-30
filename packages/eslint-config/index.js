@@ -16,5 +16,8 @@ module.exports = {
         singleQuote: true,
       },
     ],
+    'linebreak-style': 'off', // ignore overly strict linebreak style rule
+    'prefer-const': 'warn', // Warn about using const instead of let. Helps to avoid accidental reassignment
+    'no-console': 'warn',
   },
 };

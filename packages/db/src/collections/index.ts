@@ -1,7 +1,7 @@
 import type { Collection, RegistryData } from '../types';
 import { CollectionKey } from '../types';
-import { FlashCard } from './flashcards';
-import { Note } from './notes';
+import type { FlashCard } from './flashcards';
+import type { Note } from './notes';
 export * from './notes';
 export * from './flashcards';
 

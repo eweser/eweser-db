@@ -20,6 +20,7 @@ async function hasMatrixStarted() {
 }
 
 async function waitForMatrixStart() {
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     console.log('Waiting for Matrix to start...');
     if (await hasMatrixStarted()) {

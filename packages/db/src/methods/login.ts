@@ -1,7 +1,7 @@
-import { CollectionKey, ConnectStatus } from '../types';
-import { createMatrixClient, getOrCreateRegistry } from './connectionUtils';
+import { CollectionKey } from '../types';
+import { createMatrixClient, getOrCreateRegistry } from '../connectionUtils';
 
-import type { LoginData, IDatabase } from '../types';
+import type { LoginData, IDatabase, ConnectStatus } from '../types';
 
 /**
  *  Connects to Matrix client without loading registry
@@ -9,7 +9,7 @@ import type { LoginData, IDatabase } from '../types';
  */
 export async function loginToMatrix(_db: IDatabase, loginData: LoginData) {
   _db.matrixClient = await createMatrixClient(loginData);
-  _db.userId = _db.matrixClient.getUserId() ?? '';
+  _db.userId = _db.matrixClient?.getUserId() ?? '';
   return _db.matrixClient;
 }
 
@@ -29,7 +29,11 @@ export async function login(
   const registryRoomAlias = await getOrCreateRegistry(this);
   if (!registryRoomAlias) throw new Error('could not get registry room alias');
   try {
-    const connectRes = await this.connectRoom(registryRoomAlias, CollectionKey.registry, undefined);
+    const connectRes = await this.connectRoom(
+      registryRoomAlias,
+      CollectionKey.registry,
+      undefined
+    );
     if (callback) callback(connectRes ? 'ok' : 'failed');
     return connectRes;
   } catch (error) {

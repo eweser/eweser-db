@@ -1,6 +1,9 @@
 import { Database } from '.';
 import { it, expect } from 'vitest';
-import { ensureMatrixIsRunning, matrixTestConfig } from './test-utils/matrixTestUtilServer';
+import {
+  ensureMatrixIsRunning,
+  matrixTestConfig,
+} from './test-utils/matrixTestUtilServer';
 import { createMatrixUser } from './test-utils/matrixTestUtil';
 import { dummyUserName, dummyUserPass, HOMESERVER_NAME } from './test-utils';
 

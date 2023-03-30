@@ -1,9 +1,13 @@
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 
 import { Database } from '..';
+import type { IDatabase } from '..';
 import { dummyUserName, dummyUserPass, HOMESERVER_NAME } from '../test-utils';
 import { createMatrixUser } from '../test-utils/matrixTestUtil';
-import { ensureMatrixIsRunning, matrixTestConfig } from '../test-utils/matrixTestUtilServer';
+import {
+  ensureMatrixIsRunning,
+  matrixTestConfig,
+} from '../test-utils/matrixTestUtilServer';
 import { loginToMatrix } from './login';
 
 const { baseUrl } = matrixTestConfig;
@@ -17,7 +21,7 @@ describe('connectRoom', () => {
     localStorage.clear();
   });
   it('Can log in to matrix client. Sets login info in localStorage', async () => {
-    const DB = new Database({ baseUrl });
+    const DB = new Database({ baseUrl }) as IDatabase;
 
     await loginToMatrix(DB, {
       userId: dummyUserName,

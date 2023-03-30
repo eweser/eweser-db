@@ -16,7 +16,12 @@ export interface Documents<T> {
   /** document ID can be string number starting at zero, based on order of creation */
   [documentId: string]: DocumentBase<T>;
 }
-export type ConnectStatus = 'initial' | 'loading' | 'failed' | 'ok' | 'disconnected';
+export type ConnectStatus =
+  | 'initial'
+  | 'loading'
+  | 'failed'
+  | 'ok'
+  | 'disconnected';
 
 /** corresponds to a 'room' in Matrix */
 export interface Room<T> {

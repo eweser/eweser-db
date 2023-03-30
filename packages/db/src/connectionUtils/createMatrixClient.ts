@@ -1,5 +1,5 @@
 import sdk from 'matrix-js-sdk';
-import type { LoginData } from '../../types';
+import type { LoginData } from '../types';
 
 type MatrixLoginRes = {
   access_token: string;

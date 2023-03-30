@@ -1,6 +1,7 @@
 import * as http from 'http';
 import * as https from 'https';
-import { createClient, MatrixClient, MemoryStore } from 'matrix-js-sdk';
+import type { MatrixClient } from 'matrix-js-sdk';
+import { createClient, MemoryStore } from 'matrix-js-sdk';
 import { uuid } from 'vscode-lib';
 import { createMatrixRoom } from './matrixRoomManagement';
 import { matrixTestConfig } from './matrixTestUtilServer';
@@ -22,7 +23,9 @@ export async function createRandomMatrixClient() {
   };
 }
 
-export async function createRandomMatrixClientAndRoom(access: 'public-read-write' | 'public-read') {
+export async function createRandomMatrixClientAndRoom(
+  access: 'public-read-write' | 'public-read'
+) {
   const { client, username } = await createRandomMatrixClient();
   const roomName = '@' + username + '/test';
   const result = await createMatrixRoom(client, roomName, access);
@@ -54,7 +57,7 @@ export const loginMatrixUser = async (
   const loginResult = await matrixClient.loginWithPassword(username, password);
   // console.log(result);
   // result.access_token
-  let matrixClientLoggedIn = createClient({
+  const matrixClientLoggedIn = createClient({
     baseUrl: matrixTestConfig.baseUrl,
     accessToken: loginResult.access_token,
     store: new MemoryStore() as any,
@@ -81,7 +84,12 @@ export async function createMatrixUser(username: string, password: string) {
   let sessionId = '';
   // first get a session_id. this is returned in a 401 response :/
   try {
-    const result = await matrixClient.register(username, password, null, undefined as any);
+    const result = await matrixClient.register(
+      username,
+      password,
+      null,
+      undefined as any
+    );
   } catch (e: any) {
     if (e.data.errcode === 'M_USER_IN_USE') {
       return loginMatrixUser(username, password, matrixClient);

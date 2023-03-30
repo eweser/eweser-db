@@ -5,7 +5,7 @@
 export async function createMatrixRoom(
   matrixClient: any,
   roomName: string,
-  access: "public-read-write" | "public-read"
+  access: 'public-read-write' | 'public-read'
 ) {
   try {
     const initial_state = [];
@@ -13,28 +13,28 @@ export async function createMatrixRoom(
     // guests should not be able to actually join the room,
     // because we don't want guests to be able to write
     initial_state.push({
-      type: "m.room.guest_access",
-      state_key: "",
+      type: 'm.room.guest_access',
+      state_key: '',
       content: {
-        guest_access: "forbidden",
+        guest_access: 'forbidden',
       },
     });
 
     // if there is no public write access, make sure to set
     // join_rule to invite
     initial_state.push({
-      type: "m.room.join_rules",
+      type: 'm.room.join_rules',
       content: {
-        join_rule: access === "public-read-write" ? "public" : "invite",
+        join_rule: access === 'public-read-write' ? 'public' : 'invite',
       },
     });
 
     // The history of a (publicly accessible) room should be readable by everyone,
     // so that all users can get all yjs updates
     initial_state.push({
-      type: "m.room.history_visibility",
+      type: 'm.room.history_visibility',
       content: {
-        history_visibility: "world_readable",
+        history_visibility: 'world_readable',
       },
     });
 
@@ -49,25 +49,25 @@ export async function createMatrixRoom(
 
     const ret = await matrixClient.createRoom({
       room_alias_name: roomName,
-      visibility: "public", // Whether this room is visible to the /publicRooms API or not." One of: ["private", "public"]
+      visibility: 'public', // Whether this room is visible to the /publicRooms API or not." One of: ["private", "public"]
       name: roomName,
-      topic: "",
+      topic: '',
       initial_state,
     });
 
     // TODO: add room to space
 
-    return { status: "ok" as "ok", roomId: ret.room_id };
+    return { status: 'ok' as const, roomId: ret.room_id };
   } catch (e: any) {
-    if (e.errcode === "M_ROOM_IN_USE") {
-      return "already-exists" as "already-exists";
+    if (e.errcode === 'M_ROOM_IN_USE') {
+      return 'already-exists' as const;
     }
-    if (e.name === "ConnectionError") {
-      return "offline";
+    if (e.name === 'ConnectionError') {
+      return 'offline';
     }
 
     return {
-      status: "error" as "error",
+      status: 'error' as const,
       error: e,
     };
     // offline error?
@@ -78,20 +78,20 @@ export async function getMatrixRoomAccess(matrixClient: any, roomId: string) {
   let result: any;
 
   try {
-    result = await matrixClient.getStateEvent(roomId, "m.room.join_rules");
+    result = await matrixClient.getStateEvent(roomId, 'm.room.join_rules');
   } catch (e) {
     return {
-      status: "error" as "error",
+      status: 'error' as const,
       error: e,
     };
   }
 
-  if (result.join_rule === "public") {
-    return "public-read-write";
-  } else if (result.join_rule === "invite") {
-    return "public-read";
+  if (result.join_rule === 'public') {
+    return 'public-read-write';
+  } else if (result.join_rule === 'invite') {
+    return 'public-read';
   } else {
-    throw new Error("unsupported join_rule");
+    throw new Error('unsupported join_rule');
   }
 }
 
@@ -102,26 +102,26 @@ export async function getMatrixRoomAccess(matrixClient: any, roomId: string) {
 export async function updateMatrixRoomAccess(
   matrixClient: any,
   roomId: string,
-  access: "public-read-write" | "public-read"
+  access: 'public-read-write' | 'public-read'
 ) {
   try {
     await matrixClient.sendStateEvent(
       roomId,
-      "m.room.join_rules",
-      { join_rule: access === "public-read-write" ? "public" : "invite" },
-      ""
+      'm.room.join_rules',
+      { join_rule: access === 'public-read-write' ? 'public' : 'invite' },
+      ''
     );
 
     // TODO: add room to space
 
-    return { status: "ok" as "ok", roomId };
+    return { status: 'ok' as const, roomId };
   } catch (e: any) {
-    if (e.name === "ConnectionError") {
-      return "offline";
+    if (e.name === 'ConnectionError') {
+      return 'offline';
     }
 
     return {
-      status: "error" as "error",
+      status: 'error' as const,
       error: e,
     };
   }

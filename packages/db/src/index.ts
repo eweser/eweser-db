@@ -24,7 +24,7 @@ export {
   buildRoomAlias,
   truncateRoomAlias,
   getUndecoratedRoomAlias,
-} from './methods/connectionUtils';
+} from './connectionUtils';
 export { newDocument, buildRef, aliasKeyValidation } from './utils';
 
 function getCollectionRegistry(this: IDatabase, collectionKey: CollectionKey) {

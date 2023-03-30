@@ -2,10 +2,21 @@ import sdk from 'matrix-js-sdk';
 import type { MatrixClient } from 'matrix-js-sdk';
 import { MatrixProvider } from 'matrix-crdt';
 import { Doc } from 'yjs';
-import type { Room, LoginData, IDatabase } from '../../types';
-import { CollectionKey } from '../../types';
+import type { Room, LoginData, IDatabase } from '../types';
+import { CollectionKey } from '../types';
+import {
+  buildSpaceRoomAlias,
+  truncateRoomAlias,
+  buildRegistryRoomAlias,
+} from './aliasHelpers';
+import { createRoom } from './createRoom';
+import { getRoomId } from './getRoomId';
+import { joinRoomIfNotJoined } from './joinRoomIfNotJoined';
 
-export const getOrCreateSpace = async (matrixClient: MatrixClient, userId: string) => {
+export const getOrCreateSpace = async (
+  matrixClient: MatrixClient,
+  userId: string
+) => {
   const spaceRoomAlias = buildSpaceRoomAlias(userId);
   const spaceRoomAliasTruncated = truncateRoomAlias(spaceRoomAlias);
   const roomId = await getRoomId(matrixClient, spaceRoomAlias);
@@ -35,7 +46,8 @@ export const getOrCreateSpace = async (matrixClient: MatrixClient, userId: strin
         console.log('space room already exists');
         const roomId = await getRoomId(matrixClient, spaceRoomAlias);
 
-        if (typeof roomId === 'string') await joinRoomIfNotJoined(matrixClient, roomId);
+        if (typeof roomId === 'string')
+          await joinRoomIfNotJoined(matrixClient, roomId);
         return spaceRoomAlias;
       } else {
         throw new Error(error);
@@ -78,7 +90,8 @@ export const getOrCreateRegistry = async (_db: IDatabase) => {
         console.log('registry room already exists');
         _db.collections.registry[0].roomAlias = registryRoomAlias;
         const roomId = await getRoomId(matrixClient, registryRoomAlias);
-        if (typeof roomId === 'string') await joinRoomIfNotJoined(matrixClient, roomId);
+        if (typeof roomId === 'string')
+          await joinRoomIfNotJoined(matrixClient, roomId);
         return registryRoomAlias;
       } else {
         throw new Error(error);

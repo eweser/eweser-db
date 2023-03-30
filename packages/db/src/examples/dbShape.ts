@@ -1,4 +1,5 @@
-import { CollectionKey, Collections } from '../types';
+import type { Collections } from '../types';
+import { CollectionKey } from '../types';
 import { buildRef } from '../utils';
 
 //** to conceptualize DB shape. Note that */

@@ -1,11 +1,11 @@
-import { createClient, MemoryStore } from "matrix-js-sdk";
+import { createClient, MemoryStore } from 'matrix-js-sdk';
 
 export async function createMatrixGuestClient(config: { baseUrl: string }) {
   const tmpClient = await createClient(config);
   const { user_id, device_id, access_token } = await tmpClient.registerGuest(
     {}
   );
-  let matrixClient = createClient({
+  const matrixClient = createClient({
     baseUrl: config.baseUrl,
     accessToken: access_token,
     userId: user_id,
