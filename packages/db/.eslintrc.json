@@ -3,11 +3,7 @@
     "browser": true,
     "es2021": true
   },
-  "extends": [
-    "@eweser/eslint-config",
-    "plugin:@typescript-eslint/recommended",
-    "plugin:prettier/recommended"
-  ],
+  "extends": ["@eweser/eslint-config", "plugin:@typescript-eslint/recommended"],
   "overrides": [],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
@@ -15,8 +11,8 @@
     "sourceType": "module",
     "project": "./packages/db/tsconfig.json"
   },
-  "plugins": ["@typescript-eslint", "prettier"],
+  "plugins": ["@typescript-eslint"],
   "rules": {
-    "react/react-in-jsx-scope": 0
+    "@typescript-eslint/no-explicit-any": "off"
   }
 }

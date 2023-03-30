@@ -1,9 +1,5 @@
 import sdk from 'matrix-js-sdk';
-import type { MatrixClient } from 'matrix-js-sdk';
-import { MatrixProvider } from 'matrix-crdt';
-import { Doc } from 'yjs';
-import type { Room, LoginData, IDatabase } from '../../types';
-import { CollectionKey } from '../../types';
+import type { LoginData } from '../../types';
 
 type MatrixLoginRes = {
   access_token: string;
@@ -31,10 +27,13 @@ export async function createMatrixClient(data: LoginData) {
   if (accessToken) {
     await matrixClient.loginWithToken(accessToken);
   } else {
-    const loginRes: MatrixLoginRes = await matrixClient.login('m.login.password', {
-      user: userId,
-      password,
-    });
+    const loginRes: MatrixLoginRes = await matrixClient.login(
+      'm.login.password',
+      {
+        user: userId,
+        password,
+      }
+    );
     // console.log({ loginRes });
     const loginSaveData: LoginData = {
       baseUrl,

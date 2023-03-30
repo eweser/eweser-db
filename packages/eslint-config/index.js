@@ -5,7 +5,7 @@ module.exports = {
     es6: true,
     node: true,
   },
-  extends: ['eslint:recommended'],
+  extends: ['eslint:recommended', 'plugin:prettier/recommended'],
   rules: {
     'prettier/prettier': [
       'warn',
@@ -14,7 +14,6 @@ module.exports = {
         tabWidth: 2,
         semi: true,
         singleQuote: true,
-        printWidth: 100,
       },
     ],
   },
