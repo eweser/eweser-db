@@ -24,16 +24,16 @@ export const newDocument = <T>(
   };
 };
 
-export const aliasKeyValidation = (aliasKey: string) => {
-  if (aliasKey.length < 3)
-    throw new Error('aliasKey must be at least 3 characters long');
-  if (aliasKey.length > 52)
-    throw new Error('aliasKey must be less than 52 characters long');
-  if (aliasKey.includes('.'))
-    throw new Error('aliasKey cannot contain a period');
-  if (aliasKey.includes('@')) throw new Error('aliasKey cannot contain a @');
-  if (aliasKey.includes(':')) throw new Error('aliasKey cannot contain a :');
-  if (aliasKey.includes('/')) throw new Error('aliasKey cannot contain a /');
-  if (aliasKey.includes('#')) throw new Error('aliasKey cannot contain a #');
-  if (aliasKey.includes('~')) throw new Error('aliasKey cannot contain a #');
+export const aliasNameValidation = (aliasName: string) => {
+  if (aliasName.length < 3)
+    throw new Error('aliasName must be at least 3 characters long');
+  if (aliasName.length > 52)
+    throw new Error('aliasName must be less than 52 characters long');
+  if (aliasName.includes('.'))
+    throw new Error('aliasName cannot contain a period');
+  if (aliasName.includes('@')) throw new Error('aliasName cannot contain a @');
+  if (aliasName.includes(':')) throw new Error('aliasName cannot contain a :');
+  if (aliasName.includes('/')) throw new Error('aliasName cannot contain a /');
+  if (aliasName.includes('#')) throw new Error('aliasName cannot contain a #');
+  if (aliasName.includes('~')) throw new Error('aliasName cannot contain a #');
 };

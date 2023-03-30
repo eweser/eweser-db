@@ -21,3 +21,6 @@ export const userIdWithServer = `@${dummyUserName}:${HOMESERVER_NAME}`;
 
 export const spaceAlias = `#eweser-db_space______~${userIdWithServer}`;
 export const registryAlias = `#eweser-db_registry_____~${userIdWithServer}`;
+
+export const testRoomAliasKey = 'test-room';
+export const testRoomAlias = `#${testRoomAliasKey}~${userIdWithServer}`;

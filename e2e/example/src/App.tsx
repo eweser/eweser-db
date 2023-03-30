@@ -1,7 +1,11 @@
 import { useCallback, useContext, useEffect, useState } from 'react';
 
 import { CollectionKey } from '@eweser/db';
-import { DatabaseContext, CollectionProvider, CollectionContext } from '@eweser/hooks';
+import {
+  DatabaseContext,
+  CollectionProvider,
+  CollectionContext,
+} from '@eweser/hooks';
 import type { Documents, Note, NoteBase } from '@eweser/db';
 
 import LoginForm from 'LoginForm';
@@ -11,7 +15,7 @@ import { styles } from 'styles';
 const defaultNotesRoomAliasKey = 'notes-default';
 const defaultCollectionData = {
   collectionKey: CollectionKey.notes,
-  aliasKey: defaultNotesRoomAliasKey,
+  aliasName: defaultNotesRoomAliasKey,
   name: 'Default Notes Collection',
 };
 
@@ -52,7 +56,9 @@ const NotesInternal = () => {
     [notes]
   );
   const createNote = useCallback(() => {
-    notes[Object.keys(notes).length] = newDocument<NoteBase>({ text: 'New Note Body' });
+    notes[Object.keys(notes).length] = newDocument<NoteBase>({
+      text: 'New Note Body',
+    });
   }, [notes]);
 
   useEffect(() => {
@@ -69,7 +75,9 @@ const NotesInternal = () => {
           style={styles.editor}
           name="main-card-editor"
           value={
-            notes[selectedNote] && !notes[selectedNote]._deleted ? notes[selectedNote].text : ''
+            notes[selectedNote] && !notes[selectedNote]._deleted
+              ? notes[selectedNote].text
+              : ''
           }
           onChange={(e) => {
             if (!notes[selectedNote] || notes[selectedNote]._deleted) return;

@@ -7,7 +7,7 @@ import { useSyncedStore } from '@syncedstore/react';
 // import * as Y from 'yjs';
 type CollectionData = {
   collectionKey: CollectionKey;
-  aliasKey: string;
+  aliasName: string;
   name?: string;
 };
 
@@ -34,7 +34,8 @@ const initialCollection: CollectionContext = {
   updateDocument: (() => {}) as any,
 };
 
-export const CollectionContext = createContext<CollectionContext>(initialCollection);
+export const CollectionContext =
+  createContext<CollectionContext>(initialCollection);
 
 /** Don't call `useSyncedStore` until the store is ready */
 const WithSyncedStore = ({
@@ -56,24 +57,35 @@ export const CollectionProvider: FC<CollectionProviderProps> = ({
   children,
   collectionKey,
   name,
-  aliasKey,
+  aliasName,
   db,
   FailComponent,
   LoadingComponent,
 }) => {
-  const { store, connectStatus, newDocument, updateDocument } = useCollection(db, {
-    collectionKey,
-    name,
-    aliasKey,
-  });
+  const { store, connectStatus, newDocument, updateDocument } = useCollection(
+    db,
+    {
+      collectionKey,
+      name,
+      aliasName,
+    }
+  );
 
   if (connectStatus === 'failed')
     return FailComponent ? <FailComponent /> : <div>Failed to connect</div>;
   else if (connectStatus !== 'ok' || !store)
-    return LoadingComponent ? <LoadingComponent /> : <div>Connecting collection...</div>;
+    return LoadingComponent ? (
+      <LoadingComponent />
+    ) : (
+      <div>Connecting collection...</div>
+    );
   else
     return (
-      <WithSyncedStore store={store} newDocument={newDocument} updateDocument={updateDocument}>
+      <WithSyncedStore
+        store={store}
+        newDocument={newDocument}
+        updateDocument={updateDocument}
+      >
         {children}
       </WithSyncedStore>
     );

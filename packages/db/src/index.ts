@@ -25,7 +25,7 @@ export {
   truncateRoomAlias,
   getUndecoratedRoomAlias,
 } from './connectionUtils';
-export { newDocument, buildRef, aliasKeyValidation } from './utils';
+export { newDocument, buildRef, aliasNameValidation } from './utils';
 
 function getCollectionRegistry(this: IDatabase, collectionKey: CollectionKey) {
   return this.collections.registry['0'].store.documents['0'][collectionKey];

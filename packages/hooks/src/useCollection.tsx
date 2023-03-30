@@ -12,7 +12,7 @@ import type {
 
 type CollectionData = {
   collectionKey: CollectionKey;
-  aliasKey: string;
+  aliasName: string;
   name?: string;
 };
 
@@ -22,7 +22,7 @@ const connectOrCreateRoom = async ({
   db,
   collectionKey,
   name,
-  aliasKey,
+  aliasName,
   setConnectStatus,
   setStore,
 }: {
@@ -32,7 +32,7 @@ const connectOrCreateRoom = async ({
   roomAlias: string;
   db: IDatabase;
   collectionKey: CollectionKey;
-  aliasKey: string;
+  aliasName: string;
   name?: string;
   setConnectStatus: (status: ConnectStatus) => void;
   setStore: (store: any) => void;
@@ -41,7 +41,8 @@ const connectOrCreateRoom = async ({
   const registryKeys = Object.keys(notesRegistry);
   // lookup notes rooms in registry
   const callback = (status: ConnectStatus) => {
-    if (status === 'ok') setStore(db.collections[collectionKey][roomAlias]?.store);
+    if (status === 'ok')
+      setStore(db.collections[collectionKey][roomAlias]?.store);
     setConnectStatus(status);
   };
   try {
@@ -50,7 +51,7 @@ const connectOrCreateRoom = async ({
       await db.createAndConnectRoom(
         {
           collectionKey,
-          aliasKey,
+          aliasName,
           name,
           registryStore,
         },
@@ -70,7 +71,7 @@ const connectOrCreateRoom = async ({
  * @param collectionName roomAliasKey (not full room alias, just the unique part)
  */
 function useCollection<T = any>(db: IDatabase, collectionData: CollectionData) {
-  const roomAlias = buildRoomAlias(collectionData.aliasKey, db.userId);
+  const roomAlias = buildRoomAlias(collectionData.aliasName, db.userId);
   const registryStore = useSyncedStore(db.getRegistryStore());
   const [connectStatus, setConnectStatus] = useState<ConnectStatus>('initial');
   const [store, setStore] = useState<{ documents: Documents<T> } | null>(null);
@@ -136,7 +137,10 @@ function useCollection<T = any>(db: IDatabase, collectionData: CollectionData) {
 
   useEffect(() => {
     if (!db.userId) return;
-    if (connectStatus === 'initial' || (previousAlias && previousAlias !== roomAlias)) {
+    if (
+      connectStatus === 'initial' ||
+      (previousAlias && previousAlias !== roomAlias)
+    ) {
       setConnectStatus('loading');
       connectOrCreateRoom({
         ...collectionData,
@@ -148,9 +152,21 @@ function useCollection<T = any>(db: IDatabase, collectionData: CollectionData) {
       });
       setPreviousAlias(roomAlias);
     }
-  }, [roomAlias, db, registryStore, setConnectStatus, db.userId, previousAlias]);
+  }, [
+    roomAlias,
+    db,
+    registryStore,
+    setConnectStatus,
+    db.userId,
+    previousAlias,
+  ]);
 
-  return { connectStatus, store, newDocument: createNewDocument, updateDocument };
+  return {
+    connectStatus,
+    store,
+    newDocument: createNewDocument,
+    updateDocument,
+  };
 }
 
 export default useCollection;

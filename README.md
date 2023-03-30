@@ -72,7 +72,11 @@ import { DatabaseProvider } from '@eweser/hooks';
 ```
 
 ```jsx
-import { DatabaseContext, CollectionProvider, CollectionContext } from '@eweser/hooks';
+import {
+  DatabaseContext,
+  CollectionProvider,
+  CollectionContext,
+} from '@eweser/hooks';
 
 const App = () => {
   const { db, loginStatus, login } = useContext(DatabaseContext);
@@ -82,7 +86,7 @@ const App = () => {
       <CollectionProvider
         db={db}
         name="Notes Collection 1"
-        aliasKey="default-notes-collection"
+        aliasName="default-notes-collection"
         collectionKey="notes"
       >
         <Internal />

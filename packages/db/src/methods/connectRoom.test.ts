@@ -9,6 +9,7 @@ import {
   baseUrl,
   dummyUserName,
   dummyUserPass,
+  testRoomAliasKey,
   userLoginInfo,
 } from '../test-utils';
 import { createMatrixUser } from '../test-utils/matrixTestUtil';
@@ -16,6 +17,7 @@ import { loginToMatrix } from './login';
 import {
   changeStatus,
   connectMatrixProvider,
+  createRoom,
   newEmptyRoom,
 } from '../connectionUtils';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
@@ -38,6 +40,10 @@ describe('changeStatus', () => {
     expect(onStatusChange).toHaveBeenCalledWith('loading');
   });
 });
+
+const createTestRoomIfNotCreated = async (matrixClient: MatrixClient) => {
+  createRoom(matrixClient, testRoomAliasKey, 'test room', 'test topic');
+};
 
 describe('connectMatrixProvider', () => {
   it('Can connect to matrix provider', async () => {

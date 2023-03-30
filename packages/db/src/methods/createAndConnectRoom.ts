@@ -17,14 +17,14 @@ export async function createAndConnectRoom(
   this: IDatabase,
   {
     collectionKey,
-    aliasKey,
+    aliasName,
     name,
     topic,
     registryStore,
   }: {
     collectionKey: CollectionKey;
     /** undecorated alias */
-    aliasKey: string;
+    aliasName: string;
     name?: string;
     topic?: string;
     registryStore?: {
@@ -39,7 +39,7 @@ export async function createAndConnectRoom(
     const userId = this.matrixClient.getUserId();
 
     if (!userId) throw new Error('userId not found');
-    const newRoomAlias = buildRoomAlias(aliasKey, userId);
+    const newRoomAlias = buildRoomAlias(aliasName, userId);
     const newRoomAliasTruncated = truncateRoomAlias(newRoomAlias);
     try {
       const createRoomResult = await createRoom(

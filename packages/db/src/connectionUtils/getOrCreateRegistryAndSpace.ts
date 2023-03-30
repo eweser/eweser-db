@@ -1,8 +1,5 @@
-import sdk from 'matrix-js-sdk';
 import type { MatrixClient } from 'matrix-js-sdk';
-import { MatrixProvider } from 'matrix-crdt';
-import { Doc } from 'yjs';
-import type { Room, LoginData, IDatabase } from '../types';
+import type { IDatabase } from '../types';
 import { CollectionKey } from '../types';
 import {
   buildSpaceRoomAlias,

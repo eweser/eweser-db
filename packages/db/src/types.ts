@@ -74,7 +74,7 @@ export interface Collections {
 export type CreateAndConnectRoom = (
   params: {
     collectionKey: CollectionKey;
-    aliasKey: string;
+    aliasName: string;
     name?: string;
     topic?: string;
     registryStore?: { documents: Documents<RegistryData> };
