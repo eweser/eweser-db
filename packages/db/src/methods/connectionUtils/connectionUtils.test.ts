@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 
-import { Database } from '..';
-import { dummyUserName, dummyUserPass, HOMESERVER_NAME } from '../test-utils';
-import { createMatrixUser } from '../test-utils/matrixTestUtil';
-import { ensureMatrixIsRunning, matrixTestConfig } from '../test-utils/matrixTestUtilServer';
-import { createMatrixClient, getOrCreateRegistry, getOrCreateSpace } from './connectionUtils';
-import { loginToMatrix } from './login';
+import { Database } from '../..';
+import { dummyUserName, dummyUserPass, HOMESERVER_NAME } from '../../test-utils';
+import { createMatrixUser } from '../../test-utils/matrixTestUtil';
+import { ensureMatrixIsRunning, matrixTestConfig } from '../../test-utils/matrixTestUtilServer';
+import { createMatrixClient, getOrCreateRegistry, getOrCreateSpace } from '.';
+import { loginToMatrix } from '../login';
 
 const { baseUrl } = matrixTestConfig;
 const userLoginInfo = { userId: dummyUserName, password: dummyUserPass, baseUrl };
@@ -17,11 +17,11 @@ beforeAll(async () => {
   await ensureMatrixIsRunning();
   await createMatrixUser(dummyUserName, dummyUserPass);
 }, 60000);
+afterEach(() => {
+  localStorage.clear();
+});
 
 describe('createMatrixClient', () => {
-  afterEach(() => {
-    localStorage.clear();
-  });
   it('Can log in to matrix client. Sets login info in localStorage', async () => {
     const signedInClient = await createMatrixClient(userLoginInfo);
 

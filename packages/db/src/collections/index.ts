@@ -10,8 +10,8 @@ export const collectionKeys = [CollectionKey.notes, CollectionKey.flashcards];
 export type Document = Note | FlashCard;
 
 export const collections = {
-  notes: {},
-  flashcards: {},
+  [CollectionKey.notes]: {},
+  [CollectionKey.flashcards]: {},
 };
 
 export const initialRegistryStore = {
@@ -21,9 +21,9 @@ export const initialRegistryStore = {
       _id: '0',
       _created: 0,
       _updated: 0,
-      notes: {},
-      flashcards: {},
-      registry: {},
+      [CollectionKey.notes]: {},
+      [CollectionKey.flashcards]: {},
+      [CollectionKey.registry]: {},
     },
   },
 };

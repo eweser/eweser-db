@@ -1,20 +1,17 @@
-import { syncedStore, getYjsValue } from '@syncedstore/core';
-
-import { newEmptyRoom, newMatrixProvider } from './connectionUtils';
+import { getRoomId, newEmptyRoom, newMatrixProvider } from './connectionUtils';
 import { initialRegistryStore } from '../collections';
 import { CollectionKey, ConnectStatus } from '../types';
 import type { IDatabase, Documents, RegistryData, Room } from '../types';
-import type { default as Y } from 'yjs';
+import { Doc } from 'yjs';
 // import { IndexeddbPersistence } from 'y-indexeddb';
 
-type RegistryStore = {
-  documents: Documents<RegistryData>;
-};
-
-async function setRoomNameAndId(_db: IDatabase, room: Room<any>, registryStore: RegistryStore) {
-  const roomId = await _db.matrixClient?.getRoomIdForAlias(room.roomAlias);
-  if (roomId?.room_id && _db.matrixClient) {
-    const roomRes = await _db.matrixClient?.getRoomSummary(roomId?.room_id);
+async function setRoomNameAndId(_db: IDatabase, room: Room<any>, registryDoc: Doc) {
+  if (!_db.matrixClient) throw new Error('matrixClient not found');
+  const roomId = await _db.matrixClient.getRoomIdForAlias(room.roomAlias);
+  if (!roomId?.room_id) throw new Error('could not get room id');
+  room.roomId = roomId.room_id;
+  if (roomId?.room_id) {
+    const roomRes = await _db.matrixClient.getRoomSummary(roomId?.room_id);
     // console.log({ roomRes });
 
     if (roomRes && roomRes.name) {
@@ -24,11 +21,85 @@ async function setRoomNameAndId(_db: IDatabase, room: Room<any>, registryStore: 
         registryStore.documents[0].notes[room.roomAlias].roomName = room.name;
       }
     } else {
-      const room2Res = await _db.matrixClient?.getRooms();
+      // const room2Res = await _db.matrixClient.getRooms();
       // console.log({ room2Res });
     }
   }
+  // TODO: replace with Y.Doc setter
   registryStore.documents[0].notes[room.roomAlias].roomName = room.name;
+}
+
+export function changeStatus(
+  room: Room<any>,
+  status: ConnectStatus,
+  onStatusChange?: (status: ConnectStatus) => void
+) {
+  room.connectStatus = status;
+  if (onStatusChange) onStatusChange(status);
+}
+
+/** make sure to query the current collection to ensure the passed room's id and alias are correct. Make sure to initialize the Doc before calling  */
+export function connectMatrixProvider(
+  _db: IDatabase,
+  /** full alias including host name :matrix.org */
+  roomAlias: string,
+  collectionKey: CollectionKey,
+  onStatusChange?: (status: ConnectStatus) => void
+) {
+  // This is a Promise because we need to wait for onDocumentAvailable to resolve
+  return new Promise((resolve, reject) => {
+    try {
+      if (!_db.matrixClient) throw new Error("can't connect without matrixClient");
+
+      const room = _db.collections[collectionKey][roomAlias];
+      console.log('connectMatrixProvider', { roomAlias, room, collections: _db.collections });
+      if (!room?.doc) throw new Error('room.doc not found');
+      const doc = room.doc;
+
+      // quit early if already connected
+      if (doc.isLoaded && room.matrixProvider?.canWrite) {
+        console.log(
+          'matrix provider already connected, ',
+          doc.isLoaded,
+          room.matrixProvider?.canWrite
+        );
+        changeStatus(room, 'ok', onStatusChange);
+        return resolve(true);
+      }
+
+      changeStatus(room, 'loading', onStatusChange);
+      // room.matrixProvider?.dispose();
+      // room.matrixProvider = null;
+
+      room.matrixProvider = newMatrixProvider(
+        _db.matrixClient,
+        doc,
+        room.roomId ? { type: 'id', id: room.roomId } : { type: 'alias', alias: roomAlias }
+      );
+
+      room.matrixProvider.onDocumentAvailable((e) => {
+        console.log('onDocumentAvailable', e);
+        changeStatus(room, 'ok', onStatusChange);
+        return resolve(true);
+      });
+
+      room.matrixProvider.initialize();
+
+      room.matrixProvider.onDocumentUnavailable((e) => {
+        console.log('onDocumentUnavailable');
+        changeStatus(room, 'disconnected', onStatusChange);
+        // reject('onDocumentUnavailable');
+      });
+    } catch (error: any) {
+      console.log('connectRoom error', error);
+      console.error(error);
+      const room = _db.collections[collectionKey][roomAlias];
+      if (room) {
+        changeStatus(room, 'failed', onStatusChange);
+      }
+      return reject(error.message);
+    }
+  });
 }
 
 /** make sure to query the current collection to make sure the passed room's id and alias are correct.  */
@@ -40,7 +111,10 @@ export function connectRoom<T extends IDatabase>(
   registryStore?: RegistryStore,
   callback?: (status: ConnectStatus) => void
 ) {
+  // This is a Promise because we need to wait for onDocumentAvailable to resolve
   return new Promise<boolean>((resolve, reject) => {
+    // We need to figure out how to listen to whether the Y.Doc has synced with the matrix room and pulled the state, and only resolve then.
+
     try {
       const registryConnect = collectionKey === CollectionKey.registry;
       /** the internal room alias of the registry is always 0, so that you don't need to always `buildRoomAlias` to find it */
@@ -53,6 +127,7 @@ export function connectRoom<T extends IDatabase>(
       if (!room) throw new Error('room not found');
 
       if (!this.matrixClient) throw new Error("can't connect without matrixClient");
+      // quit early if already connected
       // if (room.doc && room.store && room.matrixProvider?.canWrite) {
       //   room.connectStatus = 'ok';
       //   if (callback) callback('ok');
@@ -60,13 +135,8 @@ export function connectRoom<T extends IDatabase>(
       // }
 
       if (!room.doc) {
-        const store = syncedStore({ documents: {} });
-        const doc = getYjsValue(store) as Y.Doc;
-        room.doc = doc;
-        room.store = store;
-      } else {
-        const store = syncedStore({ documents: {} }, room.doc);
-        room.store = store;
+        room.doc = new Doc();
+        // TODO: how to sync the doc?
       }
 
       room.connectStatus = 'loading';
@@ -81,19 +151,6 @@ export function connectRoom<T extends IDatabase>(
         roomAlias,
       });
 
-      // room.matrixProvider.onReceivedEvents((events) => {
-      //   console.log('onReceivedEvents', events);
-      // });
-      // room.matrixProvider.onCanWriteChanged((canWrite) => {
-      //   // console.log('canWrite', canWrite);
-      //   room.connectStatus = 'ok';
-      //   if (callback) callback('ok');
-      //   return resolve(true);
-      // });
-      // connect or fail callbacks:
-      // room.matrixProvider.matrixReader?.onEvents((e) => {
-      //   console.log('onEvents', e);
-      // });
       room.matrixProvider.onDocumentAvailable((e) => {
         // console.log('onDocumentAvailable', e);
 

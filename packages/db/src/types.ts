@@ -16,19 +16,21 @@ export interface Documents<T> {
   /** document ID can be string number starting at zero, based on order of creation */
   [documentId: string]: DocumentBase<T>;
 }
-export type ConnectStatus = 'initial' | 'loading' | 'failed' | 'ok';
+export type ConnectStatus = 'initial' | 'loading' | 'failed' | 'ok' | 'disconnected';
 
 /** corresponds to a 'room' in Matrix */
 export interface Room<T> {
   connectStatus: ConnectStatus;
   collectionKey: CollectionKey;
   matrixProvider: MatrixProvider | null;
+  /** full alias e.g. '#eweser-db_registry_username:matrix.org' */
   roomAlias: string;
+  /** matrix roomID  */
+  roomId?: string;
   name?: string;
   created?: Date;
   // roomId: string;
   doc?: Y.Doc; // Y.Doc;
-  store: { documents: Documents<T> }; // the synced store.
 }
 
 export type Collection<T> = {
