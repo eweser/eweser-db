@@ -1,12 +1,5 @@
 import * as cp from 'child_process';
-import { HOMESERVER_NAME } from '.';
-
-export const MATRIX_HOME_URL = new URL('http://localhost:8888/_matrix/static/');
-
-export const matrixTestConfig = {
-  baseUrl: 'http://' + HOMESERVER_NAME,
-  // idBaseUrl: "https://vector.im",
-};
+import { MATRIX_HOME_URL } from '.';
 
 async function hasMatrixStarted() {
   try {

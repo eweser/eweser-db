@@ -1,21 +1,14 @@
-import * as http from 'http';
-import * as https from 'https';
 import type { MatrixClient } from 'matrix-js-sdk';
 import { createClient, MemoryStore } from 'matrix-js-sdk';
 import { uuid } from 'vscode-lib';
+import { dummyUserPass, matrixTestConfig } from './';
 import { createMatrixRoom } from './matrixRoomManagement';
-import { matrixTestConfig } from './matrixTestUtilServer';
-
-http.globalAgent.maxSockets = 2000;
-https.globalAgent.maxSockets = 2000;
-
-const TEST_PASSWORD = 'testpass';
 
 export async function createRandomMatrixClient() {
   const testId = uuid.generateUuid();
   const username = 'testuser_' + testId;
 
-  const client = await createMatrixUser(username, TEST_PASSWORD);
+  const client = await createMatrixUser(username, dummyUserPass);
 
   return {
     username,
@@ -91,7 +84,7 @@ export async function createMatrixUser(username: string, password: string) {
       undefined as any
     );
   } catch (e: any) {
-    if (e.data.errcode === 'M_USER_IN_USE') {
+    if (e.data?.errcode === 'M_USER_IN_USE') {
       return loginMatrixUser(username, password, matrixClient);
     }
     sessionId = e.data.session;

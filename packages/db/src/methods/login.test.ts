@@ -2,15 +2,15 @@ import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 
 import { Database } from '..';
 import type { IDatabase } from '..';
-import { dummyUserName, dummyUserPass, HOMESERVER_NAME } from '../test-utils';
-import { createMatrixUser } from '../test-utils/matrixTestUtil';
 import {
-  ensureMatrixIsRunning,
-  matrixTestConfig,
-} from '../test-utils/matrixTestUtilServer';
+  baseUrl,
+  dummyUserName,
+  dummyUserPass,
+  HOMESERVER_NAME,
+} from '../test-utils';
+import { createMatrixUser } from '../test-utils/matrixTestUtil';
+import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
 import { loginToMatrix } from './login';
-
-const { baseUrl } = matrixTestConfig;
 
 describe('connectRoom', () => {
   beforeAll(async () => {

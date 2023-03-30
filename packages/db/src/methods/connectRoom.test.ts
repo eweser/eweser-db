@@ -5,26 +5,20 @@ import type { FlashCard } from '..';
 import { buildRoomAlias, Database } from '..';
 import type { IDatabase, Room } from '../types';
 import { CollectionKey } from '../types';
-import { dummyUserName, dummyUserPass, HOMESERVER_NAME } from '../test-utils';
-import { createMatrixUser } from '../test-utils/matrixTestUtil';
 import {
-  ensureMatrixIsRunning,
-  matrixTestConfig,
-} from '../test-utils/matrixTestUtilServer';
+  baseUrl,
+  dummyUserName,
+  dummyUserPass,
+  userLoginInfo,
+} from '../test-utils';
+import { createMatrixUser } from '../test-utils/matrixTestUtil';
 import { loginToMatrix } from './login';
 import {
   changeStatus,
   connectMatrixProvider,
   newEmptyRoom,
 } from '../connectionUtils';
-
-const { baseUrl } = matrixTestConfig;
-const userLoginInfo = {
-  userId: dummyUserName,
-  password: dummyUserPass,
-  baseUrl,
-};
-const userIdWithServer = `@${dummyUserName}:${HOMESERVER_NAME}`;
+import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
 
 beforeAll(async () => {
   await ensureMatrixIsRunning();
