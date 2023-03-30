@@ -1,6 +1,6 @@
 {
   "name": "@eweser/db",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "eweser-db core database",
   "keywords": [
     "user-owned",
@@ -51,8 +51,8 @@
     "access": "public"
   },
   "devDependencies": {
-    "@eweser/eslint-config": "*",
-    "@eweser/prettier-config": "*",
+    "@eweser/eslint-config": "^1.0.1",
+    "@eweser/prettier-config": "^1.0.1",
     "@matrix-org/olm": "^3.2.14",
     "cypress": "^10.8.0",
     "vite-plugin-dts": "^1.5.0"
