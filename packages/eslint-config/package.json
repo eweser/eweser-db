@@ -1,0 +1,32 @@
+{
+  "name": "@eweser/eslint-config",
+  "version": "0.1.20",
+  "description": "> TODO: description",
+  "author": "jacobcoro <xiaokourou@gmail.com>",
+  "homepage": "https://github.com/eweser/eweser-db#readme",
+  "license": "ISC",
+  "main": "lib/eslint-config.js",
+  "directories": {
+    "lib": "lib",
+    "test": "__tests__"
+  },
+  "files": [
+    "lib"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eweser/eweser-db.git"
+  },
+  "scripts": {
+    "test": "node ./__tests__/@eweser/eslint-config.test.js"
+  },
+  "bugs": {
+    "url": "https://github.com/eweser/eweser-db/issues"
+  },
+  "devDependencies": {
+    "eslint": "^8.37.0"
+  }
+}

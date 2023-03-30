@@ -11,7 +11,7 @@ export default defineConfig({
       // TODO: add matrix-crdt and sdk?
       // make sure to externalize deps that shouldn't be bundled
       // into your library
-      external: ['yjs', '@syncedstore/core', 'matrix-crdt', 'matrix-js-sdk', 'y-indexeddb'],
+      external: ['yjs', 'matrix-crdt', 'matrix-js-sdk', 'y-indexeddb', 'lodash'],
     },
   },
   test: {
