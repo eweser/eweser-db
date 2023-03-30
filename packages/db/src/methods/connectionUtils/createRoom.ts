@@ -16,8 +16,8 @@ export const createRoom = async (
   alias?: string,
   name?: string,
   topic?: string,
-  encrypt: boolean = false,
-  spaceRoom: boolean = false
+  encrypt = false,
+  spaceRoom = false
 ) => {
   let newRoom: { room_id: string } | null = null;
   const initialState: sdk.ICreateRoomStateEvent[] = [];
