@@ -3,7 +3,7 @@ import type { IDatabase } from '../types';
 import { CollectionKey } from '../types';
 import {
   buildSpaceRoomAlias,
-  truncateRoomAlias,
+  getAliasNameFromAlias,
   buildRegistryRoomAlias,
 } from './aliasHelpers';
 import { createRoom } from './createRoom';
@@ -15,7 +15,7 @@ export const getOrCreateSpace = async (
   userId: string
 ) => {
   const spaceRoomAlias = buildSpaceRoomAlias(userId);
-  const spaceRoomAliasTruncated = truncateRoomAlias(spaceRoomAlias);
+  const spaceRoomAliasTruncated = getAliasNameFromAlias(spaceRoomAlias);
   const roomId = await getRoomId(matrixClient, spaceRoomAlias);
   // if space exists
   if (typeof roomId == 'string') {
@@ -61,7 +61,7 @@ export const getOrCreateRegistry = async (_db: IDatabase) => {
   if (!userId) throw new Error('userId not found');
   const space = await getOrCreateSpace(matrixClient, userId);
   const registryRoomAlias = buildRegistryRoomAlias(userId);
-  const registryRoomAliasTruncated = truncateRoomAlias(registryRoomAlias);
+  const registryRoomAliasTruncated = getAliasNameFromAlias(registryRoomAlias);
   const roomId = await getRoomId(matrixClient, registryRoomAlias);
   // if registry exists
   if (typeof roomId === 'string') {
