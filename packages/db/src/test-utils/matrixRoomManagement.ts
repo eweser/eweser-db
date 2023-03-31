@@ -1,10 +1,37 @@
+import type { MatrixClient } from 'matrix-js-sdk';
+import { testRoomAliasName } from '.';
+
+export const createTestRoomIfNotCreated = async (
+  matrixClient: MatrixClient
+) => {
+  try {
+    return await createMatrixRoom(
+      matrixClient,
+      testRoomAliasName,
+      'public-read-write'
+    );
+  } catch (error) {
+    if (error.data?.errcode === 'M_ROOM_IN_USE') {
+      const rooms = matrixClient.getRooms();
+      console.log({ rooms });
+      const testRoomId = await matrixClient.getRoomIdForAlias(
+        testRoomAliasName
+      );
+      await matrixClient.joinRoom(testRoomId.room_id);
+      console.log('test room already created');
+    } else {
+      throw new Error(error);
+    }
+  }
+};
+
 /**
  * Helper function to create a Matrix room suitable for use with MatrixProvider.
  * Access can currently be set to "public-read-write" | "public-read"
  */
 export async function createMatrixRoom(
-  matrixClient: any,
-  roomName: string,
+  matrixClient: MatrixClient,
+  aliasName: string,
   access: 'public-read-write' | 'public-read'
 ) {
   try {
@@ -48,9 +75,9 @@ export async function createMatrixRoom(
     // });
 
     const ret = await matrixClient.createRoom({
-      room_alias_name: roomName,
-      visibility: 'public', // Whether this room is visible to the /publicRooms API or not." One of: ["private", "public"]
-      name: roomName,
+      room_alias_name: aliasName,
+      visibility: 'public' as any, // Whether this room is visible to the /publicRooms API or not." One of: ["private", "public"]
+      name: aliasName,
       topic: '',
       initial_state,
     });

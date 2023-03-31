@@ -1,4 +1,4 @@
-import { CollectionKey, ConnectStatus, IDatabase } from '../types';
+import type { CollectionKey, ConnectStatus, IDatabase } from '../types';
 import { changeStatus } from './changeStatus';
 import { newMatrixProvider } from './newMatrixProvider';
 
@@ -59,7 +59,7 @@ export function connectMatrixProvider(
       room.matrixProvider.onDocumentUnavailable((e) => {
         console.log('onDocumentUnavailable');
         changeStatus(room, 'disconnected', onStatusChange);
-        // reject('onDocumentUnavailable');
+        reject('onDocumentUnavailable');
       });
     } catch (error: any) {
       console.log('connectRoom error', error);
