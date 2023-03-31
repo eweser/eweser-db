@@ -17,11 +17,7 @@ export function connectMatrixProvider(
         throw new Error("can't connect without matrixClient");
 
       const room = _db.collections[collectionKey][roomAlias];
-      console.log('connectMatrixProvider', {
-        roomAlias,
-        room,
-        collections: _db.collections,
-      });
+
       if (!room?.doc) throw new Error('room.doc not found');
       const doc = room.doc;
 

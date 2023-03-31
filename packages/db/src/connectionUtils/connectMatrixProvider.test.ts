@@ -2,26 +2,19 @@ import { describe, it, expect, beforeAll, afterEach, vitest } from 'vitest';
 import { Doc } from 'yjs';
 
 import type { FlashCard } from '..';
-import { buildRoomAlias, Database } from '..';
-import type { IDatabase, Room } from '../types';
+import { Database } from '..';
+import type { IDatabase } from '../types';
 import { CollectionKey } from '../types';
 import {
   baseUrl,
   dummyUserName,
   dummyUserPass,
   testRoomAlias,
-  testRoomAliasSeed,
   userLoginInfo,
 } from '../test-utils';
 import { createMatrixUser } from '../test-utils/matrixTestUtil';
 import { loginToMatrix } from '../methods/login';
-import {
-  changeStatus,
-  connectMatrixProvider,
-  createRoom,
-  getRoomId,
-  newEmptyRoom,
-} from '.';
+import { connectMatrixProvider, newEmptyRoom } from '.';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
 import { createTestRoomIfNotCreated } from '../test-utils/matrixRoomManagement';
 import { wait } from '../utils';
