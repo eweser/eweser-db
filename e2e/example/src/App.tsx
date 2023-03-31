@@ -12,10 +12,10 @@ import LoginForm from 'LoginForm';
 
 import { styles } from 'styles';
 
-const defaultNotesRoomAliasKey = 'notes-default';
+const defaultNotesRoomAliasName = 'notes-default';
 const defaultCollectionData = {
   collectionKey: CollectionKey.notes,
-  aliasName: defaultNotesRoomAliasKey,
+  aliasName: defaultNotesRoomAliasName,
   name: 'Default Notes Collection',
 };
 

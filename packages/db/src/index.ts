@@ -21,9 +21,9 @@ export type { DocumentBase } from './collections/documentBase';
 export { CollectionKey } from './types'; // enum exported not as a type
 
 export {
-  buildRoomAlias,
-  truncateRoomAlias,
-  getUndecoratedRoomAlias,
+  buildAliasFromSeed as buildRoomAlias,
+  getAliasNameFromAlias as truncateRoomAlias,
+  getAliasSeedFromAlias as getUndecoratedRoomAlias,
 } from './connectionUtils';
 export { newDocument, buildRef, aliasNameValidation } from './utils';
 

@@ -68,7 +68,7 @@ const connectOrCreateRoom = async ({
 
 /**
  *
- * @param collectionName roomAliasKey (not full room alias, just the unique part)
+ * @param collectionName roomAliasName (not full room alias, just the unique part)
  */
 function useCollection<T = any>(db: IDatabase, collectionData: CollectionData) {
   const roomAlias = buildRoomAlias(collectionData.aliasName, db.userId);

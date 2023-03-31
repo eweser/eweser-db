@@ -1,5 +1,12 @@
 import * as http from 'http';
 import * as https from 'https';
+import {
+  buildAliasFromSeed,
+  buildRegistryRoomAlias,
+  buildSpaceRoomAlias,
+  getAliasNameFromAlias,
+} from '../connectionUtils';
+import { CollectionKey } from '../types';
 http.globalAgent.maxSockets = 2000;
 https.globalAgent.maxSockets = 2000;
 
@@ -19,8 +26,15 @@ export const userLoginInfo = {
 };
 export const userIdWithServer = `@${dummyUserName}:${HOMESERVER_NAME}`;
 
-export const spaceAlias = `#eweser-db_space______~${userIdWithServer}`;
-export const registryAlias = `#eweser-db_registry_____~${userIdWithServer}`;
+export const spaceAlias = buildSpaceRoomAlias(userIdWithServer);
+export const registryAlias = buildRegistryRoomAlias(userIdWithServer);
 
-export const testRoomAliasKey = 'test-room';
-export const testRoomAlias = `#${testRoomAliasKey}~${userIdWithServer}`;
+export const testRoomAliasSeed = 'test_room';
+
+export const testRoomAlias = buildAliasFromSeed(
+  testRoomAliasSeed,
+  CollectionKey.flashcards,
+  userIdWithServer
+);
+
+export const testRoomAliasName = getAliasNameFromAlias(testRoomAlias);

@@ -1,7 +1,7 @@
 import {
-  buildRoomAlias,
+  buildAliasFromSeed,
   createRoom,
-  truncateRoomAlias,
+  getAliasNameFromAlias,
 } from '../connectionUtils';
 
 import type {
@@ -39,8 +39,8 @@ export async function createAndConnectRoom(
     const userId = this.matrixClient.getUserId();
 
     if (!userId) throw new Error('userId not found');
-    const newRoomAlias = buildRoomAlias(aliasName, userId);
-    const newRoomAliasTruncated = truncateRoomAlias(newRoomAlias);
+    const newRoomAlias = buildAliasFromSeed(aliasName, collectionKey, userId);
+    const newRoomAliasTruncated = getAliasNameFromAlias(newRoomAlias);
     try {
       const createRoomResult = await createRoom(
         this.matrixClient,
