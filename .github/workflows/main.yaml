@@ -1,0 +1,51 @@
+name: build
+
+on: ['push', 'pull_request']
+
+jobs:
+  build:
+    name: Unit-integration tests
+    runs-on: ubuntu-latest
+    environment: preview
+
+    strategy:
+      matrix:
+        node-version: [18.14.0]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Set correct access for docker containers (server/test/data)
+        run: chmod -R a+rw test-server/data
+
+      - name: Build the docker-compose stack
+        run: docker-compose -f test-server/docker-compose.yml up -d
+
+      - name: Check running containers
+        run: docker ps -a
+
+      - name: Check docker logs
+        run: docker logs synapse
+
+      - name: Install Dependencies
+        run: npm run install-lerna
+
+      - name: Bootstrap packages
+        run: npm run bootstrap
+
+      - name: Wait for Matrix
+        run: npx wait-on http://localhost:8888/_matrix/static/
+
+      - name: Build packages
+        run: npm run build
+        env:
+          CI: true
+
+      - name: Run tests
+        run: npx lerna run test --scope packages/db
