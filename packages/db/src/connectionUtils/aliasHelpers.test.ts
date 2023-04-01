@@ -20,14 +20,14 @@ describe('aliasHelpers', () => {
 
     expect(actual).toEqual(expected);
   });
-  it('doesnt allow aliasSeed to be longer than 24 characters', () => {
+  it('doesnt allow aliasSeed to be longer than 52 characters', () => {
     expect(() =>
       buildAliasFromSeed(
-        'roomName123456789012345678901234',
+        'roomName123456789012345678901234123456789012345678901234123456789012345678901234',
         CollectionKey.flashcards,
         '@username:matrix.org'
       )
-    ).toThrowError('aliasSeed must be less than 24 characters');
+    ).toThrowError('aliasSeed must be less than 52 characters');
   });
   it('doesnt allow aliasSeed to contain ~', () => {
     expect(() =>
@@ -36,7 +36,7 @@ describe('aliasHelpers', () => {
         CollectionKey.flashcards,
         '@username:matrix.org'
       )
-    ).toThrowError('aliasSeed cannot contain ~, @, or :');
+    ).toThrowError('aliasSeed cannot contain a ~');
 
     expect(() =>
       buildAliasFromSeed(
@@ -44,14 +44,14 @@ describe('aliasHelpers', () => {
         CollectionKey.flashcards,
         '@username:matrix.org'
       )
-    ).toThrowError('aliasSeed cannot contain ~, @, or :');
+    ).toThrowError('aliasSeed cannot contain a @');
     expect(() =>
       buildAliasFromSeed(
         'roo:mName',
         CollectionKey.flashcards,
         '@username:matrix.org'
       )
-    ).toThrowError('aliasSeed cannot contain ~, @, or :');
+    ).toThrowError('aliasSeed cannot contain a :');
   });
 
   it('getAliasNameFromAlias', () => {

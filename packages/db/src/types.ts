@@ -3,7 +3,7 @@ import type { MatrixProvider } from 'matrix-crdt';
 import type { ICreateClientOpts } from 'matrix-js-sdk';
 import type { Note } from './collections/notes';
 import type { FlashCard } from './collections/flashcards';
-import type { default as Y } from 'yjs';
+import type { TypedDoc, TypedMap } from 'yjs-types';
 import type { DocumentBase } from './collections/documentBase';
 export type { Document } from './collections';
 export enum CollectionKey {
@@ -16,6 +16,9 @@ export interface Documents<T> {
   /** document ID can be string number starting at zero, based on order of creation */
   [documentId: string]: DocumentBase<T>;
 }
+
+export type YDoc<T> = TypedDoc<{ documents: TypedMap<Documents<T>> }>;
+
 export type ConnectStatus =
   | 'initial'
   | 'loading'
@@ -35,7 +38,7 @@ export interface Room<T> {
   name?: string;
   created?: Date;
   // roomId: string;
-  doc?: Y.Doc; // Y.Doc;
+  ydoc?: YDoc<T>;
 }
 
 export type Collection<T> = {
@@ -94,6 +97,8 @@ export type Login = (
   callback?: (status: ConnectStatus) => void
 ) => Promise<boolean>;
 
+export type ConnectRegistry = () => Promise<void>;
+
 export interface IDatabase {
   matrixClient: MatrixClient | null;
   userId: string;
@@ -102,6 +107,8 @@ export interface IDatabase {
 
   collectionKeys: CollectionKey[];
   collections: Collections;
+
+  connectRegistry: ConnectRegistry;
   connectRoom: ConnectRoom;
 
   createAndConnectRoom: CreateAndConnectRoom;

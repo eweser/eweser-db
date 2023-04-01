@@ -7,25 +7,28 @@
 
 import { CollectionKey } from '../types';
 
+export const aliasSeedValidation = (aliasSeed: string) => {
+  if (aliasSeed.length < 3)
+    throw new Error('aliasSeed must be at least 3 characters long');
+  if (aliasSeed.length > 52)
+    throw new Error('aliasSeed must be less than 52 characters long');
+  if (aliasSeed.includes('.'))
+    throw new Error('aliasSeed cannot contain a period');
+  if (aliasSeed.includes('@')) throw new Error('aliasSeed cannot contain a @');
+  if (aliasSeed.includes(':')) throw new Error('aliasSeed cannot contain a :');
+  if (aliasSeed.includes('/')) throw new Error('aliasSeed cannot contain a /');
+  if (aliasSeed.includes('#')) throw new Error('aliasSeed cannot contain a #');
+  if (aliasSeed.includes('~')) throw new Error('aliasSeed cannot contain a ~');
+};
+
 /** @example ('roomName', 'flashcards', '@username:matrix.org')=> '#roomName~flashcards~@username:matrix.org' */
 export const buildAliasFromSeed = (
   aliasSeed: string,
   collectionKey: CollectionKey,
   userId: string
 ) => {
-  if (aliasSeed.length > 24) {
-    throw new Error('aliasSeed must be less than 24 characters');
-  }
-  // already been added
-  if (
-    aliasSeed.includes('~') ||
-    aliasSeed.includes('@') ||
-    aliasSeed.includes(':')
-  ) {
-    throw new Error('aliasSeed cannot contain ~, @, or :');
-  }
-  const res = `#${aliasSeed}~${collectionKey}~${userId}`;
-  return res;
+  aliasSeedValidation(aliasSeed);
+  return `#${aliasSeed}~${collectionKey}~${userId}`;
 };
 
 /** @example ('#roomName~flashcards~@username:matrix.org')=> 'roomName~flashcards~@username' */

@@ -1,4 +1,5 @@
 import { collectionKeys, collections, initialRegistry } from './collections';
+import { connectRegistry } from './methods/connectRegistry';
 import { connectRoom } from './methods/connectRoom';
 import { createAndConnectRoom } from './methods/createAndConnectRoom';
 import { login } from './methods/login';
@@ -48,7 +49,7 @@ export class Database implements IDatabase {
     registry: initialRegistry,
     ...collections,
   };
-
+  connectRegistry = connectRegistry;
   connectRoom = connectRoom;
   createAndConnectRoom = createAndConnectRoom;
   login = login;
