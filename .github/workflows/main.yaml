@@ -39,7 +39,7 @@ jobs:
         run: npm install
 
       - name: Build packages
-        run: npx lerna run build --scope packages/db
+        run: npx lerna run build --scope @eweser/db
         env:
           CI: true
 
@@ -47,4 +47,4 @@ jobs:
         run: npx wait-on http://localhost:8888/_matrix/static/
 
       - name: Run tests
-        run: npx lerna run test --scope packages/db
+        run: npx lerna run test --scope @eweser/db
