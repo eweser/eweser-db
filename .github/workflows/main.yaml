@@ -34,10 +34,7 @@ jobs:
         run: docker logs synapse
 
       - name: Install Dependencies
-        run: npm run install-lerna
-
-      - name: Bootstrap packages
-        run: npm run bootstrap
+        run: npm install
 
       - name: Wait for Matrix
         run: npx wait-on http://localhost:8888/_matrix/static/
