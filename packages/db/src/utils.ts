@@ -7,23 +7,23 @@ export const wait = (ms: number) =>
 /**
  *
  * @param collection e.g. `CollectionKey.flashcards` "flashcards"
- * @param roomAlias  e.g. `'#roomName~flashcards~@username:matrix.org'`
+ * @param roomAliasSeed  e.g. just `roomName` if the full alias is '#roomName~flashcards~@username:matrix.org'`
  * @param documentID any number/string what doesn't include `.`
  * @returns `${collection}.${roomAlias}.${documentID}` e.g. `flashcards.#roomName~flashcards~@username:matrix.org.0`
  */
 export const buildRef = ({
   collection,
-  roomAlias,
+  roomAliasSeed,
   documentID,
 }: {
   collection: CollectionKey;
-  roomAlias: string | 0;
+  roomAliasSeed: string;
   documentID: string | number;
 }) => {
-  if (documentID.toString().includes('.')) {
+  if (documentID.toString().includes('.') || roomAliasSeed.includes('.')) {
     throw new Error('documentID cannot include .');
   }
-  return `${collection}.${roomAlias}.${documentID}`;
+  return `${collection}.${roomAliasSeed}.${documentID}`;
 };
 
 export const newDocument = <T>(_ref: string, doc: T): DocumentBase<T> => {
