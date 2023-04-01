@@ -42,8 +42,7 @@ export interface Room<T> {
 }
 
 export type Collection<T> = {
-  // todo: methods to create and delete rooms
-  [roomAlias: string]: Room<T>;
+  [roomAliasSeed: string]: Room<T>;
 };
 
 export interface RoomMetaData {
@@ -53,7 +52,13 @@ export interface RoomMetaData {
 }
 
 export type RegistryData = {
-  [key in CollectionKey]: { [roomAlias: string]: RoomMetaData };
+  [key in Exclude<CollectionKey, CollectionKey.registry>]: {
+    [roomAlias: string]: RoomMetaData;
+  };
+};
+
+export type RegistryCollection = {
+  [0]: Room<RegistryData>;
 };
 
 export type OnRoomConnectStatusUpdate = (
@@ -71,7 +76,7 @@ export interface LoginData extends ICreateClientOpts {
 export interface Collections {
   [CollectionKey.notes]: Collection<Note>;
   [CollectionKey.flashcards]: Collection<FlashCard>;
-  [CollectionKey.registry]: Collection<RegistryData>;
+  [CollectionKey.registry]: RegistryCollection;
 }
 
 export type CreateAndConnectRoom = (
@@ -117,7 +122,5 @@ export interface IDatabase {
   getCollectionRegistry: (collectionKey: CollectionKey) => {
     [roomAlias: string]: RoomMetaData;
   };
-  getRegistryStore: () => {
-    documents: Documents<RegistryData>;
-  };
+  getRegistry: () => DocumentBase<RegistryData>;
 }
