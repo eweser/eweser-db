@@ -1,4 +1,3 @@
-import { CollectionKey } from '../types';
 import { createMatrixClient, getOrCreateRegistry } from '../connectionUtils';
 
 import type { LoginData, IDatabase, ConnectStatus } from '../types';

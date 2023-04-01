@@ -31,6 +31,7 @@ export * from './utils';
 
 export interface DatabaseOptions {
   baseUrl?: string;
+  debug?: boolean;
 }
 
 export class Database implements IDatabase {
@@ -57,6 +58,14 @@ export class Database implements IDatabase {
 
   constructor(options?: DatabaseOptions) {
     this.baseUrl = options?.baseUrl || 'https://matrix.org';
+    if (options?.debug) {
+      this.on((event) => {
+        if (options.debug === true) {
+          // eslint-disable-next-line no-console
+          console.log(event);
+        }
+      });
+    }
 
     // todo: if registry is in localStorage, load up each room's store.
   }
