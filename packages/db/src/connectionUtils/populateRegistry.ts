@@ -71,12 +71,6 @@ export const waitForRegistryPopulated = async (
       if (checkRegistryPopulated(_db)) {
         resolve(true);
       } else {
-        console.log({
-          tries,
-          maxWaitMs,
-          tryInterval,
-          trymax: tries > maxWaitMs / tryInterval,
-        });
         if (tries > maxWaitMs / tryInterval) {
           reject(new Error('timed out waiting for registry to populate'));
         }
