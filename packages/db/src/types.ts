@@ -106,7 +106,7 @@ export type Login = (
   callback?: (status: ConnectStatus) => void
 ) => Promise<boolean>;
 
-export type ConnectRegistry = () => Promise<void>;
+export type ConnectRegistry = () => Promise<TypedMap<Documents<RegistryData>>>;
 
 export type DBEvent = {
   event: string;
@@ -138,7 +138,16 @@ export interface IDatabase {
   on: (listener: DBEventEmitter) => void;
   emit: (event: DBEvent) => void;
 
+  /** initializes the registry's ydoc and matrix provider */
   connectRegistry: ConnectRegistry;
+  /**
+   * Note that the room must have been created already and the roomAlias must be in the registry
+   * 1. Joins the Matrix room if not in it
+   * 2. Creates a Y.Doc, syncs with localStorage (indexeddb) and saves it to the room object
+   * 3. Creates a matrixCRDT provider and saves it to the room object
+   * 4. Save the room's metadata to the registry (if not already there)
+   *  Provides status updates using the DB.emit() method
+   */
   connectRoom: ConnectRoom;
   createAndConnectRoom: CreateAndConnectRoom;
   login: Login;

@@ -1,5 +1,5 @@
 import { describe, it, expect, vitest } from 'vitest';
-import type { IDatabase } from '..';
+import { IDatabase, getRegistry, newDocument } from '..';
 import { CollectionKey, Database, buildAliasFromSeed } from '..';
 import {
   createRoom,
@@ -20,8 +20,19 @@ describe('connectRoom', () => {
     const registryRoomAlias = await getOrCreateRegistry(DB);
     if (!registryRoomAlias)
       throw new Error('could not get registry room alias');
+    DB.on((event) => console.log(event));
 
     await DB.connectRegistry();
+    // const registry = getRegistry(DB);
+
+    // registry.set(
+    //   '0',
+    //   newDocument('registry.0.0', {
+    //     flashcards: {},
+    //     profiles: {},
+    //     notes: {},
+    //   })
+    // );
     const seed = 'test' + (Math.random() * 10000).toFixed();
     const roomAlias = buildAliasFromSeed(
       seed,
@@ -36,7 +47,7 @@ describe('connectRoom', () => {
     });
 
     updateRegistryEntry(DB, {
-      collection: CollectionKey.flashcards,
+      collectionKey: CollectionKey.flashcards,
       roomAliasSeed: seed,
       roomId: room.room_id,
     });

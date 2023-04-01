@@ -6,13 +6,13 @@ import { getAliasSeedFromAlias } from './aliasHelpers';
 export const updateRegistryEntry = (
   _db: IDatabase,
   {
-    collection,
+    collectionKey,
     roomAliasSeed,
     roomId,
     roomAlias,
     roomName,
   }: {
-    collection: CollectionKey;
+    collectionKey: CollectionKey;
     roomAliasSeed?: string;
     roomId?: string;
     roomAlias?: string;
@@ -31,7 +31,7 @@ export const updateRegistryEntry = (
   if (!seed) throw new Error('could not get seed from alias');
   const alias =
     !roomAlias && roomAliasSeed
-      ? buildAliasFromSeed(roomAliasSeed, collection, _db.userId)
+      ? buildAliasFromSeed(roomAliasSeed, collectionKey, _db.userId)
       : roomAlias;
   if (!alias) throw new Error('could not get alias from seed');
 
@@ -42,18 +42,18 @@ export const updateRegistryEntry = (
 
   const updatedRegistry = {
     ...registryDoc,
-    [collection]: {
-      ...registryDoc[collection],
+    [collectionKey]: {
+      ...registryDoc[collectionKey],
       [seed]: {
-        ...registryDoc[collection][seed],
+        ...registryDoc[collectionKey][seed],
         roomAlias: alias,
       },
     },
   };
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  if (roomId) updatedRegistry[collection][seed]!.roomId = roomId;
+  if (roomId) updatedRegistry[collectionKey][seed]!.roomId = roomId;
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  if (roomName) updatedRegistry[collection][seed]!.roomName = roomName;
+  if (roomName) updatedRegistry[collectionKey][seed]!.roomName = roomName;
 
   registry.set('0', updatedRegistry);
   return updatedRegistry;

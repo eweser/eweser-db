@@ -2,34 +2,31 @@ import {
   buildAliasFromSeed,
   createRoom,
   getAliasNameFromAlias,
+  getRoomId,
+  joinRoomIfNotJoined,
 } from '../connectionUtils';
+import { waitForRegistryPopulated } from '../connectionUtils/populateRegistry';
+import { updateRegistryEntry } from '../connectionUtils/saveRoomToRegistry';
 
-import type {
-  Documents,
-  RegistryData,
-  IDatabase,
-  CollectionKey,
-  ConnectStatus,
-} from '../types';
+import type { IDatabase, CollectionKey, ConnectStatus } from '../types';
 
-/** pass in undecorated alias. if the final will be # `#<alias>_<username>:matrix.org' just pass <alias> */
+/**
+ *
+ *
+ */
 export async function createAndConnectRoom(
   this: IDatabase,
   {
     collectionKey,
-    aliasName,
+    aliasSeed,
     name,
     topic,
-    registryStore,
   }: {
     collectionKey: CollectionKey;
     /** undecorated alias */
-    aliasName: string;
+    aliasSeed: string;
     name?: string;
     topic?: string;
-    registryStore?: {
-      documents: Documents<RegistryData>;
-    };
   },
   callback?: (status: ConnectStatus) => void
 ) {
@@ -39,29 +36,42 @@ export async function createAndConnectRoom(
     const userId = this.matrixClient.getUserId();
 
     if (!userId) throw new Error('userId not found');
-    const newRoomAlias = buildAliasFromSeed(aliasName, collectionKey, userId);
-    const newRoomAliasTruncated = getAliasNameFromAlias(newRoomAlias);
+
+    await waitForRegistryPopulated(this);
+
+    const roomAlias = buildAliasFromSeed(aliasSeed, collectionKey, userId);
+    const roomAliasName = getAliasNameFromAlias(roomAlias);
     try {
-      const createRoomResult = await createRoom(
-        this.matrixClient,
-        newRoomAliasTruncated,
+      const createRoomResult = await createRoom(this.matrixClient, {
+        roomAliasName,
         name,
-        topic
-      );
+        topic,
+      });
+      // save to registry.
+      updateRegistryEntry(this, {
+        collectionKey,
+        roomName: name,
+        roomAlias,
+        roomId: createRoomResult.room_id,
+      });
       // console.log({ createRoomResult });
     } catch (error: any) {
       if (JSON.stringify(error).includes('M_ROOM_IN_USE')) {
         console.log('room already exists');
-        await this.matrixClient.joinRoom(newRoomAlias);
+        const roomId = await getRoomId(this.matrixClient, roomAlias);
+        if (typeof roomId === 'string') {
+          await joinRoomIfNotJoined(this.matrixClient, roomId);
+          updateRegistryEntry(this, {
+            collectionKey,
+            roomName: name,
+            roomAlias,
+            roomId,
+          });
+        }
       } else throw error;
     }
 
-    return await this.connectRoom(
-      newRoomAlias,
-      collectionKey,
-      registryStore,
-      callback
-    );
+    return await this.connectRoom(aliasSeed, collectionKey);
   } catch (error) {
     if (callback) callback('failed');
     console.error(error);

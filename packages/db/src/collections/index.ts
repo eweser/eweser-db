@@ -3,10 +3,10 @@ import { CollectionKey } from '../types';
 import type { FlashCard } from './flashcards';
 import type { Note } from './notes';
 import type { Profile } from './profile';
-export type * from './notes';
-export type * from './flashcards';
-export type * from './profile';
-export type * from './documentBase';
+export * from './notes';
+export * from './flashcards';
+export * from './profile';
+export * from './documentBase';
 
 /** We don't include registry because we use this after login to get all non-registry collections. */
 export const collectionKeys = [

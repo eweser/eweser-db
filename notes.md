@@ -4,6 +4,6 @@
 
 ## TODO:
 
-make a logger method, like DB.logger() that can set log levels. when you initialize the database you can set the log level. Add a linter rule to make sure you don't use console.log
+when you initialize the database you can set the log level with {debug}, or you can just use the .on and subscribe to the events you want to log
 
 add linter rule for no type import without type keyword

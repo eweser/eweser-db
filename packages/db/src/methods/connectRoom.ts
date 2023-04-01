@@ -101,7 +101,7 @@ export async function connectRoom<T = any>(
 
   const roomName = matrixRoom.name;
   updateRegistryEntry(this, {
-    collection: collectionKey,
+    collectionKey,
     roomAliasSeed,
     roomId,
     roomAlias,

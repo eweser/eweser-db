@@ -1,7 +1,8 @@
 import { connectMatrixProvider, getOrCreateRegistry } from '../connectionUtils';
-import type { ConnectStatus, IDatabase, RegistryData } from '../types';
+import type { IDatabase, RegistryData } from '../types';
 import { initializeDocAndLocalProvider } from '../connectionUtils/initializeDoc';
 import { populateRegistry } from '../connectionUtils/populateRegistry';
+import { getRegistry } from '../utils';
 
 /** initializes the registry's ydoc and matrix provider */
 export async function connectRegistry(this: IDatabase) {
@@ -24,4 +25,5 @@ export async function connectRegistry(this: IDatabase) {
     await populateRegistry(this);
   }
   if (!connected) throw new Error('could not connect to registry');
+  return getRegistry(this);
 }

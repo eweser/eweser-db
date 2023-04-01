@@ -30,11 +30,7 @@ export async function login(
   const registryRoomAlias = await getOrCreateRegistry(this);
   if (!registryRoomAlias) throw new Error('could not get registry room alias');
   try {
-    const connectRes = await this.connectRoom(
-      registryRoomAlias,
-      CollectionKey.registry,
-      undefined
-    );
+    const connectRes = await this.connectRegistry();
     if (callback) callback(connectRes ? 'ok' : 'failed');
     return connectRes;
   } catch (error) {
