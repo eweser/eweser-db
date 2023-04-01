@@ -1,5 +1,10 @@
 import type { DocumentBase } from './collections/documentBase';
-import type { CollectionKey } from './types';
+import type {
+  CollectionKey,
+  IDatabase,
+  NonRegistryCollectionKey,
+  Room,
+} from './types';
 
 export const wait = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -41,3 +46,22 @@ export const newDocument = <T>(_ref: string, doc: T): DocumentBase<T> => {
     ...doc,
   };
 };
+
+export function getRoomDocuments<T>(room: Room<T>) {
+  if (!room.ydoc) throw new Error('room.ydoc not found');
+  return room.ydoc.getMap('documents');
+}
+
+export function getCollectionRegistry(
+  _db: IDatabase,
+  collectionKey: NonRegistryCollectionKey
+) {
+  const registry = getRegistry(_db);
+  return registry[collectionKey];
+}
+
+export function getRegistry(_db: IDatabase) {
+  const registry = getRoomDocuments(_db.collections.registry[0]).get('0');
+  if (!registry) throw new Error('registry not found');
+  return registry;
+}

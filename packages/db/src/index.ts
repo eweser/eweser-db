@@ -4,12 +4,7 @@ import { connectRoom } from './methods/connectRoom';
 import { createAndConnectRoom } from './methods/createAndConnectRoom';
 import { login } from './methods/login';
 
-import type {
-  Collections,
-  IDatabase,
-  NonRegistryCollectionKey,
-  Room,
-} from './types';
+import type { Collections, IDatabase } from './types';
 import type { MatrixClient } from 'matrix-js-sdk';
 
 export type { Note, NoteBase, FlashCard, FlashcardBase } from './collections';
@@ -31,26 +26,7 @@ export {
   getAliasNameFromAlias as truncateRoomAlias,
   getAliasSeedFromAlias as getUndecoratedRoomAlias,
 } from './connectionUtils';
-export { newDocument, buildRef } from './utils';
-
-function getRoomDocuments<T>(room: Room<T>) {
-  if (!room.ydoc) throw new Error('room.ydoc not found');
-  return room.ydoc.getMap('documents');
-}
-
-function getCollectionRegistry(
-  this: IDatabase,
-  collectionKey: NonRegistryCollectionKey
-) {
-  const registry = this.getRegistry();
-  return registry[collectionKey];
-}
-
-function getRegistry(this: IDatabase) {
-  const registry = getRoomDocuments(this.collections.registry[0]).get('0');
-  if (!registry) throw new Error('registry not found');
-  return registry;
-}
+export * from './utils';
 
 export interface DatabaseOptions {
   baseUrl?: string;
@@ -65,13 +41,13 @@ export class Database implements IDatabase {
     registry: initialRegistry,
     ...collections,
   };
+
+  // methods
   connectRegistry = connectRegistry;
   connectRoom = connectRoom as any;
   createAndConnectRoom = createAndConnectRoom;
   login = login;
 
-  getCollectionRegistry = getCollectionRegistry;
-  getRegistry = getRegistry;
   constructor(options?: DatabaseOptions) {
     this.baseUrl = options?.baseUrl ?? 'https://matrix.org';
 

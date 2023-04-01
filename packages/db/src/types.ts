@@ -116,14 +116,9 @@ export interface IDatabase {
   collectionKeys: CollectionKey[];
   collections: Collections;
 
+  // methods
   connectRegistry: ConnectRegistry;
   connectRoom: ConnectRoom;
-
   createAndConnectRoom: CreateAndConnectRoom;
   login: Login;
-
-  getCollectionRegistry: (collectionKey: NonRegistryCollectionKey) => {
-    [roomAlias: string]: RoomMetaData;
-  };
-  getRegistry: () => DocumentBase<RegistryData>;
 }
