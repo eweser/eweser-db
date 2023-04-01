@@ -9,5 +9,20 @@ describe('on', () => {
     DB.emit({ event: 'test', type: 'login' });
     expect(listener).toBeCalledTimes(1);
     expect(listener).toBeCalledWith({ event: 'test', type: 'login' });
+
+    // can add another listener, can add data
+    const listener2 = vitest.fn();
+    DB.on(listener2);
+    DB.emit({ event: 'test2', type: 'login', data: { id: '123' } });
+    expect(listener).toBeCalledTimes(2);
+
+    expect(listener2).toBeCalledTimes(1);
+    expect(listener2).toBeCalledWith({
+      event: 'test2',
+      type: 'login',
+      data: {
+        id: '123',
+      },
+    });
   });
 });
