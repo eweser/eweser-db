@@ -30,24 +30,22 @@ afterEach(() => {
 describe('connectMatrixProvider', () => {
   it('Can connect to matrix provider', async () => {
     const DB = new Database({ baseUrl }) as IDatabase;
-    const doc = new Doc();
+    const doc = new Doc() as any;
     await loginToMatrix(DB, userLoginInfo);
     if (!DB.matrixClient) throw 'matrixClient not found';
-    const createdTestRoom = await createTestRoomIfNotCreated(DB.matrixClient);
-    console.log({ createdTestRoom });
-    DB.collections[CollectionKey.flashcards][testRoomAlias] =
-      newEmptyRoom<FlashCard>(CollectionKey.flashcards, testRoomAlias);
-    const room = DB.collections[CollectionKey.flashcards][testRoomAlias];
-    room.doc = doc;
+    await createTestRoomIfNotCreated(DB.matrixClient);
+
+    const room = newEmptyRoom<FlashCard>(
+      CollectionKey.flashcards,
+      testRoomAlias
+    );
+    room.ydoc = doc;
+
+    DB.collections[CollectionKey.flashcards][testRoomAlias] = room;
 
     const onStatusChange = vitest.fn();
 
-    await connectMatrixProvider(
-      DB,
-      testRoomAlias,
-      CollectionKey.flashcards,
-      onStatusChange
-    );
+    await connectMatrixProvider(DB, room, onStatusChange);
 
     expect(room.matrixProvider).toBeDefined();
 

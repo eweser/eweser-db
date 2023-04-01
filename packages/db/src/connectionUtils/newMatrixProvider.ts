@@ -1,9 +1,7 @@
-import sdk from 'matrix-js-sdk';
 import type { MatrixClient } from 'matrix-js-sdk';
 import { MatrixProvider } from 'matrix-crdt';
 import type { Doc } from 'yjs';
-import type { Room, LoginData, IDatabase } from '../types';
-import { CollectionKey } from '../types';
+import type { YDoc } from '../types';
 
 export type NewMatrixProviderOptions =
   | {
@@ -15,7 +13,7 @@ export type NewMatrixProviderOptions =
 /** passing the id will connect faster */
 export const newMatrixProvider = (
   matrixClient: MatrixClient,
-  doc: Doc,
+  doc: YDoc<any>,
   room:
     | {
         type: 'id';
@@ -30,7 +28,7 @@ export const newMatrixProvider = (
   // yjs and Matrix. It creates a new MatrixProvider and
   // registers it to the `doc`.
   const newMatrixProvider = new MatrixProvider(
-    doc,
+    doc as Doc,
     matrixClient,
     room.type === 'id'
       ? { type: 'id', id: room.id }

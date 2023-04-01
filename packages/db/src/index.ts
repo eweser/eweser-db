@@ -4,7 +4,12 @@ import { connectRoom } from './methods/connectRoom';
 import { createAndConnectRoom } from './methods/createAndConnectRoom';
 import { login } from './methods/login';
 
-import type { CollectionKey, Collections, IDatabase } from './types';
+import type {
+  Collections,
+  IDatabase,
+  NonRegistryCollectionKey,
+  Room,
+} from './types';
 import type { MatrixClient } from 'matrix-js-sdk';
 
 export type { Note, NoteBase, FlashCard, FlashcardBase } from './collections';
@@ -26,14 +31,25 @@ export {
   getAliasNameFromAlias as truncateRoomAlias,
   getAliasSeedFromAlias as getUndecoratedRoomAlias,
 } from './connectionUtils';
-export { newDocument, buildRef, aliasNameValidation } from './utils';
+export { newDocument, buildRef } from './utils';
 
-function getCollectionRegistry(this: IDatabase, collectionKey: CollectionKey) {
-  return this.collections.registry['0'].store.documents['0'][collectionKey];
+function getRoomDocuments<T>(room: Room<T>) {
+  if (!room.ydoc) throw new Error('room.ydoc not found');
+  return room.ydoc.getMap('documents');
 }
 
-function getRegistryStore(this: IDatabase) {
-  return this.collections.registry['0'].store;
+function getCollectionRegistry(
+  this: IDatabase,
+  collectionKey: NonRegistryCollectionKey
+) {
+  const registry = this.getRegistry();
+  return registry[collectionKey];
+}
+
+function getRegistry(this: IDatabase) {
+  const registry = getRoomDocuments(this.collections.registry[0]).get('0');
+  if (!registry) throw new Error('registry not found');
+  return registry;
 }
 
 export interface DatabaseOptions {
@@ -50,12 +66,12 @@ export class Database implements IDatabase {
     ...collections,
   };
   connectRegistry = connectRegistry;
-  connectRoom = connectRoom;
+  connectRoom = connectRoom as any;
   createAndConnectRoom = createAndConnectRoom;
   login = login;
 
   getCollectionRegistry = getCollectionRegistry;
-  getRegistryStore = getRegistryStore;
+  getRegistry = getRegistry;
   constructor(options?: DatabaseOptions) {
     this.baseUrl = options?.baseUrl ?? 'https://matrix.org';
 

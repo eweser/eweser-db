@@ -1,4 +1,4 @@
-import type { CollectionKey, ConnectStatus, IDatabase } from '../types';
+import type { ConnectStatus, IDatabase, Room } from '../types';
 import { changeStatus } from './changeStatus';
 import { newMatrixProvider } from './newMatrixProvider';
 
@@ -6,8 +6,7 @@ import { newMatrixProvider } from './newMatrixProvider';
 export function connectMatrixProvider(
   _db: IDatabase,
   /** full alias including host name :matrix.org */
-  roomAlias: string,
-  collectionKey: CollectionKey,
+  room: Room<any>,
   onStatusChange?: (status: ConnectStatus) => void
 ) {
   // This is a Promise because we need to wait for onDocumentAvailable to resolve
@@ -16,10 +15,8 @@ export function connectMatrixProvider(
       if (!_db.matrixClient)
         throw new Error("can't connect without matrixClient");
 
-      const room = _db.collections[collectionKey][roomAlias];
-
-      if (!room?.doc) throw new Error('room.doc not found');
-      const doc = room.doc;
+      if (!room?.ydoc) throw new Error('room.ydoc not found');
+      const doc = room.ydoc;
 
       // quit early if already connected
       if (doc.isLoaded && room.matrixProvider?.canWrite) {
@@ -41,7 +38,7 @@ export function connectMatrixProvider(
         doc,
         room.roomId
           ? { type: 'id', id: room.roomId }
-          : { type: 'alias', alias: roomAlias }
+          : { type: 'alias', alias: room.roomAlias }
       );
 
       room.matrixProvider.onDocumentAvailable((e) => {
@@ -60,7 +57,7 @@ export function connectMatrixProvider(
     } catch (error: any) {
       console.log('connectRoom error', error);
       console.error(error);
-      const room = _db.collections[collectionKey][roomAlias];
+
       if (room) {
         changeStatus(room, 'failed', onStatusChange);
       }

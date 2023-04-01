@@ -1,32 +1,33 @@
 import { describe, it, expect } from 'vitest';
 import { initializeDocAndLocalProvider } from './initializeDoc';
-import 'fake-indexeddb/auto';
+
 import { buildRef, newDocument } from '../utils';
 import { CollectionKey } from '../types';
-import { testRoomAlias } from '../test-utils';
+import { testRoomAliasSeed } from '../test-utils';
 type TestDocument = {
   testDocKey: string;
 };
 
 describe('initializeDoc', () => {
   it('Can initialize a yjs doc', async () => {
-    const { doc, localProvider } = await initializeDocAndLocalProvider('test');
-    expect(doc?.store).toBeDefined();
+    const { ydoc, localProvider } = await initializeDocAndLocalProvider('test');
+    expect(ydoc?.store).toBeDefined();
     expect(localProvider?.name).toBe('test');
   });
   it('can set data to the doc', async () => {
-    const { doc } = await initializeDocAndLocalProvider<TestDocument>('test');
-    const roomAlias = testRoomAlias;
+    const { ydoc } = await initializeDocAndLocalProvider<TestDocument>('test');
     const ref = buildRef({
       collection: CollectionKey.notes,
-      roomAlias,
+      roomAliasSeed: testRoomAliasSeed,
       documentID: 'testDocumentId',
     });
     const testDocument = newDocument<TestDocument>(ref, {
       testDocKey: 'testDocValue',
     });
-    const ymap = doc.getMap('documents');
+    const ymap = ydoc.getMap('documents');
     ymap.set('testDocumentId', testDocument);
-    expect(ymap.get('testDocumentId')).toEqual(testDocument);
+
+    const gotten = ymap.get('testDocumentId')?.testDocKey;
+    expect(gotten).toEqual('testDocValue');
   });
 });

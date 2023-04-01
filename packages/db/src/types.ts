@@ -11,7 +11,10 @@ export enum CollectionKey {
   flashcards = 'flashcards',
   registry = 'registry',
 }
-
+export type NonRegistryCollectionKey = Exclude<
+  CollectionKey,
+  CollectionKey.registry
+>;
 export interface Documents<T> {
   /** document ID can be string number starting at zero, based on order of creation */
   [documentId: string]: DocumentBase<T>;
@@ -52,7 +55,7 @@ export interface RoomMetaData {
 }
 
 export type RegistryData = {
-  [key in Exclude<CollectionKey, CollectionKey.registry>]: {
+  [key in NonRegistryCollectionKey]: {
     [roomAlias: string]: RoomMetaData;
   };
 };
@@ -119,7 +122,7 @@ export interface IDatabase {
   createAndConnectRoom: CreateAndConnectRoom;
   login: Login;
 
-  getCollectionRegistry: (collectionKey: CollectionKey) => {
+  getCollectionRegistry: (collectionKey: NonRegistryCollectionKey) => {
     [roomAlias: string]: RoomMetaData;
   };
   getRegistry: () => DocumentBase<RegistryData>;
