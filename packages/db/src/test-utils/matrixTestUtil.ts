@@ -20,6 +20,7 @@ export async function createRandomMatrixClientAndRoom(
   access: 'public-read-write' | 'public-read'
 ) {
   const { client, username } = await createRandomMatrixClient();
+  if (!client) throw new Error('client not found');
   const roomName = '@' + username + '/test';
   const result = await createMatrixRoom(client, roomName, access);
 
