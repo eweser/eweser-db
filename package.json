@@ -16,7 +16,7 @@
     "ci-build": "npm install lerna && lerna bootstrap && npm run build",
     "start-test-server": "cd test-server; docker-compose up -d",
     "install-lerna": "npm install --no-package-lock",
-    "postinstall": "npm run bootstrap"
+    "postinstall": "npx lerna bootstrap"
   },
   "devDependencies": {
     "@esbuild-plugins/node-globals-polyfill": "^0.1.1",
