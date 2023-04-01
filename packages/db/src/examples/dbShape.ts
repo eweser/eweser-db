@@ -1,8 +1,19 @@
-import type { FlashCard, Note } from '../collections';
+import type { FlashCard, Note, Profile } from '../collections';
 import { DocumentBase } from '../collections/documentBase';
 import type { Collections, Documents, RegistryData } from '../types';
 import { CollectionKey } from '../types';
 import { buildRef } from '../utils';
+const profileYDoc: { documents: Documents<Profile> } = {
+  documents: {
+    ['0']: {
+      firstName: 'Eweser',
+      _ref: 'flashcards.typescript_study_cards.0',
+      _id: '0',
+      _created: 1653135317729,
+      _updated: 1653135317729,
+    },
+  },
+};
 
 const myStudyNotesYDoc: { documents: Documents<Note> } = {
   documents: {
@@ -87,6 +98,11 @@ const registryYDoc: { documents: { '0': DocumentBase<RegistryData> } } = {
           // might not always have roomId
         },
       },
+      profiles: {
+        public: {
+          roomAlias: '#public~profiles~@username:matrix.org',
+        },
+      },
       _ref: 'registry.0.0',
       _id: '0',
       _created: 0,
@@ -129,10 +145,21 @@ export const exampleDb: { collections: Collections } = {
         ydoc: chineseFlashcardsYDoc as any,
       },
     },
+    profiles: {
+      ['public']: {
+        collectionKey: CollectionKey.profiles,
+        matrixProvider: null,
+        roomAlias: '#public~profiles~@username:matrix.org',
+        name: 'Public Profile',
+        connectStatus: 'ok',
+        created: new Date(),
+        ydoc: profileYDoc as any,
+      },
+    },
     registry: {
       // other rooms are indexed by their room alias seed. registry is just a single room so its index is 0.
       ['0']: {
-        collectionKey: CollectionKey.registry,
+        collectionKey: 'registry',
         matrixProvider: null,
         roomAlias: '#eweser-db~registry~@username:matrix.org',
         connectStatus: 'ok',

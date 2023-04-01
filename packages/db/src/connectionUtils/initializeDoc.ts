@@ -3,7 +3,7 @@ import { Doc } from 'yjs';
 
 import type { YDoc } from '../types';
 
-export const initializeDocAndLocalProvider = async <T>(
+export const initializeDocAndLocalProvider = async <T = any>(
   roomAliasSeed: string
 ): Promise<{ ydoc: YDoc<T>; localProvider: IndexeddbPersistence }> => {
   const ydoc = new Doc() as YDoc<T>;

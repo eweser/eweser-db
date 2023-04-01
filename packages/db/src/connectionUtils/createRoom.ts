@@ -16,9 +16,11 @@ export interface CreateRoomOptions {
 }
 
 export const createRoom = async (
-  matrixClient: MatrixClient,
+  matrixClient: MatrixClient | null,
   options: CreateRoomOptions
 ) => {
+  if (!matrixClient) throw new Error('client not found');
+
   const { roomAliasName, name, topic, encrypt, spaceRoom } = options;
 
   let newRoom: { room_id: string } | null = null;

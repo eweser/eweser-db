@@ -9,7 +9,7 @@ import {
   matrixTestConfig,
 } from './test-utils';
 
-const collectionKeys = ['notes', 'flashcards'];
+const collectionKeys = ['notes', 'flashcards', 'profiles'];
 const defaultHomeServer = 'https://matrix.org';
 
 it('Database initializes', () => {

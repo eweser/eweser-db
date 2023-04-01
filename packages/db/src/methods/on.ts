@@ -6,6 +6,7 @@ export function on(this: IDatabase, listener: DBEventEmitter) {
 
 export function emit(this: IDatabase, event: DBEvent) {
   for (const listener of this.listeners) {
+    if (!event.level) event.level = 'info';
     listener(event);
   }
 }

@@ -6,10 +6,11 @@ import type { LoginData, IDatabase, ConnectStatus } from '../types';
 /**
  *  Connects to Matrix client without loading registry
  *  Saves loginData to localStorage on success
+ *  Saves userId to db
  */
 export async function loginToMatrix(_db: IDatabase, loginData: LoginData) {
   _db.matrixClient = await createMatrixClient(loginData);
-  _db.userId = _db.matrixClient?.getUserId() ?? '';
+  _db.userId = _db.matrixClient?.getUserId() || '';
   return _db.matrixClient;
 }
 

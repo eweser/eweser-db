@@ -23,9 +23,9 @@ export type { DocumentBase } from './collections/documentBase';
 export { CollectionKey } from './types'; // enum exported not as a type
 
 export {
-  buildAliasFromSeed as buildRoomAlias,
-  getAliasNameFromAlias as truncateRoomAlias,
-  getAliasSeedFromAlias as getUndecoratedRoomAlias,
+  buildAliasFromSeed,
+  getAliasNameFromAlias,
+  getAliasSeedFromAlias,
 } from './connectionUtils';
 export * from './utils';
 
@@ -52,11 +52,11 @@ export class Database implements IDatabase {
 
   connectRegistry = connectRegistry;
   connectRoom = connectRoom as any;
-  createAndConnectRoom = createAndConnectRoom;
-  login = login;
+  createAndConnectRoom = createAndConnectRoom as any;
+  login = login as any;
 
   constructor(options?: DatabaseOptions) {
-    this.baseUrl = options?.baseUrl ?? 'https://matrix.org';
+    this.baseUrl = options?.baseUrl || 'https://matrix.org';
 
     // todo: if registry is in localStorage, load up each room's store.
   }

@@ -33,18 +33,15 @@ describe('getOrCreateRegistry', () => {
     const DB = new Database({ baseUrl }) as IDatabase;
     await loginToMatrix(DB, userLoginInfo);
     const registryAliasReturned = await getOrCreateRegistry(DB);
-    expect(registryAliasReturned).toEqual(registryAlias);
+    expect(registryAliasReturned.registryRoomAlias).toEqual(registryAlias);
   });
 });
 
 describe('getOrCreateSpace', () => {
   it('Can get or create a matrix space which is a room that owns other rooms', async () => {
-    const matrixClient = await createMatrixClient(userLoginInfo);
-
-    const spaceAliasReturned = await getOrCreateSpace(
-      matrixClient,
-      userIdWithServer
-    );
+    const DB = new Database({ baseUrl }) as IDatabase;
+    await loginToMatrix(DB, userLoginInfo);
+    const spaceAliasReturned = await getOrCreateSpace(DB);
     expect(spaceAliasReturned).toEqual(spaceAlias);
   });
 });

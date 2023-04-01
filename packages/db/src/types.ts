@@ -1,23 +1,25 @@
 import type { MatrixClient } from 'matrix-js-sdk';
 import type { MatrixProvider } from 'matrix-crdt';
 import type { ICreateClientOpts } from 'matrix-js-sdk';
-import type { Note } from './collections/notes';
-import type { FlashCard } from './collections/flashcards';
+import type {
+  Document,
+  DocumentBase,
+  Note,
+  FlashCard,
+  Profile,
+} from './collections';
 import type { TypedDoc, TypedMap } from 'yjs-types';
-import type { DocumentBase } from './collections/documentBase';
-export type { Document } from './collections';
+export type { Document, DocumentBase, Note, FlashCard, Profile };
+
 export enum CollectionKey {
   notes = 'notes',
   flashcards = 'flashcards',
-  registry = 'registry',
+  profiles = 'profiles',
 }
-export type NonRegistryCollectionKey = Exclude<
-  CollectionKey,
-  CollectionKey.registry
->;
+
 export interface Documents<T> {
   /** document ID can be string number starting at zero, based on order of creation */
-  [documentId: string]: DocumentBase<T>;
+  [documentId: string]: DocumentBase<T> | undefined;
 }
 
 export type YDoc<T> = TypedDoc<{ documents: TypedMap<Documents<T>> }>;
@@ -32,7 +34,7 @@ export type ConnectStatus =
 /** corresponds to a 'room' in Matrix */
 export interface Room<T> {
   connectStatus: ConnectStatus;
-  collectionKey: CollectionKey;
+  collectionKey: CollectionKey | 'registry';
   matrixProvider: MatrixProvider | null;
   /** full alias e.g. '#eweser-db_registry_username:matrix.org' */
   roomAlias: string;
@@ -55,8 +57,8 @@ export interface RoomMetaData {
 }
 
 export type RegistryData = {
-  [key in NonRegistryCollectionKey]: {
-    [roomAlias: string]: RoomMetaData;
+  [key in CollectionKey]: {
+    [roomAlias: string]: RoomMetaData | undefined;
   };
 };
 
@@ -79,7 +81,8 @@ export interface LoginData extends ICreateClientOpts {
 export interface Collections {
   [CollectionKey.notes]: Collection<Note>;
   [CollectionKey.flashcards]: Collection<FlashCard>;
-  [CollectionKey.registry]: RegistryCollection;
+  [CollectionKey.profiles]: Collection<Profile>;
+  registry: RegistryCollection;
 }
 
 export type CreateAndConnectRoom = (
@@ -93,12 +96,10 @@ export type CreateAndConnectRoom = (
   callback?: (status: ConnectStatus) => void
 ) => Promise<boolean>;
 
-export type ConnectRoom = (
-  roomAlias: string,
-  collectionKey: CollectionKey,
-  registryStore?: { documents: Documents<RegistryData> },
-  callback?: (status: ConnectStatus) => void
-) => Promise<boolean>;
+export type ConnectRoom<T = any> = (
+  roomAliasSeed: string,
+  collectionKey: CollectionKey
+) => Promise<Room<T>>;
 
 export type Login = (
   loginData: LoginData,
@@ -107,32 +108,17 @@ export type Login = (
 
 export type ConnectRegistry = () => Promise<void>;
 
-export type EventType = 'login' | 'roomConnect';
-export type DBEvent =
-  | {
-      /** the name of the event */
-      event: string;
-      type: EventType;
-      message?: string;
-      data?: {
-        collectionKey?: CollectionKey;
-        roomId?: string;
-        roomAlias?: string;
-        id: string;
-      };
-    }
-  | {
-      event: string;
-      type: 'log';
-      level: 'info' | 'warn' | 'error';
-      message?: string;
-      data?: {
-        collectionKey?: CollectionKey;
-        roomId?: string;
-        roomAlias?: string;
-        id: string;
-      };
-    };
+export type DBEvent = {
+  event: string;
+  level?: 'info' | 'warn' | 'error';
+  message?: string;
+  data?: {
+    collectionKey?: CollectionKey;
+    roomId?: string;
+    roomAlias?: string;
+    id?: string;
+  };
+};
 
 export type DBEventEmitter = (event: DBEvent) => void;
 

@@ -1,9 +1,11 @@
+import type { TypedMap } from 'yjs-types';
 import type { DocumentBase } from './collections/documentBase';
 import type {
-  CollectionKey,
   IDatabase,
-  NonRegistryCollectionKey,
+  CollectionKey,
   Room,
+  Documents,
+  RegistryData,
 } from './types';
 
 export const wait = (ms: number) =>
@@ -47,21 +49,30 @@ export const newDocument = <T>(_ref: string, doc: T): DocumentBase<T> => {
   };
 };
 
-export function getRoomDocuments<T>(room: Room<T>) {
+export function getRoomDocumentsYMap<T>(room: Room<T>): TypedMap<Documents<T>> {
   if (!room.ydoc) throw new Error('room.ydoc not found');
-  return room.ydoc.getMap('documents');
+  const registryMap = room.ydoc.getMap('documents');
+  return registryMap;
 }
 
+/** this in an uneditable version. use getRegistry() then .get('0') for the registry document  */
 export function getCollectionRegistry(
   _db: IDatabase,
-  collectionKey: NonRegistryCollectionKey
+  collectionKey: CollectionKey
 ) {
   const registry = getRegistry(_db);
-  return registry[collectionKey];
+  const registryDocument = registry.get('0');
+  if (!registryDocument) throw new Error('registryDocument not found');
+  const collectionRegistry = registryDocument[collectionKey];
+  if (!collectionRegistry) throw new Error('collectionRegistry not found');
+  return collectionRegistry;
 }
 
-export function getRegistry(_db: IDatabase) {
-  const registry = getRoomDocuments(_db.collections.registry[0]).get('0');
+/** returns an editable YMap of the registry */
+export function getRegistry(_db: IDatabase): TypedMap<Documents<RegistryData>> {
+  const registry = getRoomDocumentsYMap<RegistryData>(
+    _db.collections.registry[0]
+  );
   if (!registry) throw new Error('registry not found');
   return registry;
 }
