@@ -3,6 +3,7 @@ import { connectRegistry } from './methods/connectRegistry';
 import { connectRoom } from './methods/connectRoom';
 import { createAndConnectRoom } from './methods/createAndConnectRoom';
 import { login } from './methods/login';
+import { emit, on } from './methods/on';
 
 import type { Collections, IDatabase } from './types';
 import type { MatrixClient } from 'matrix-js-sdk';
@@ -31,6 +32,7 @@ export * from './utils';
 export interface DatabaseOptions {
   baseUrl?: string;
 }
+
 export class Database implements IDatabase {
   matrixClient: MatrixClient | null = null;
   userId = '';
@@ -42,7 +44,12 @@ export class Database implements IDatabase {
     ...collections,
   };
 
+  listeners = [];
+
   // methods
+  on = on;
+  emit = emit;
+
   connectRegistry = connectRegistry;
   connectRoom = connectRoom as any;
   createAndConnectRoom = createAndConnectRoom;

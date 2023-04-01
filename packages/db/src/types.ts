@@ -107,6 +107,35 @@ export type Login = (
 
 export type ConnectRegistry = () => Promise<void>;
 
+export type EventType = 'login' | 'roomConnect';
+export type DBEvent =
+  | {
+      /** the name of the event */
+      event: string;
+      type: EventType;
+      message?: string;
+      data?: {
+        collectionKey?: CollectionKey;
+        roomId?: string;
+        roomAlias?: string;
+        id: string;
+      };
+    }
+  | {
+      event: string;
+      type: 'log';
+      level: 'info' | 'warn' | 'error';
+      message?: string;
+      data?: {
+        collectionKey?: CollectionKey;
+        roomId?: string;
+        roomAlias?: string;
+        id: string;
+      };
+    };
+
+export type DBEventEmitter = (event: DBEvent) => void;
+
 export interface IDatabase {
   matrixClient: MatrixClient | null;
   userId: string;
@@ -116,7 +145,13 @@ export interface IDatabase {
   collectionKeys: CollectionKey[];
   collections: Collections;
 
+  listeners: DBEventEmitter[];
+
   // methods
+  /** add a listener to the database */
+  on: (listener: DBEventEmitter) => void;
+  emit: (event: DBEvent) => void;
+
   connectRegistry: ConnectRegistry;
   connectRoom: ConnectRoom;
   createAndConnectRoom: CreateAndConnectRoom;
