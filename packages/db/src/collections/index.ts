@@ -1,4 +1,4 @@
-import type { Collection, RegistryData } from '../types';
+import type { RegistryCollection } from '../types';
 import { CollectionKey } from '../types';
 import type { FlashCard } from './flashcards';
 import type { Note } from './notes';
@@ -14,26 +14,11 @@ export const collections = {
   [CollectionKey.flashcards]: {},
 };
 
-export const initialRegistryStore = {
-  documents: {
-    '0': {
-      _ref: 'registry.0.0',
-      _id: '0',
-      _created: 0,
-      _updated: 0,
-      [CollectionKey.notes]: {},
-      [CollectionKey.flashcards]: {},
-      [CollectionKey.registry]: {},
-    },
-  },
-};
-
-export const initialRegistry: Collection<RegistryData> = {
-  '0': {
+export const initialRegistry: RegistryCollection = {
+  [0]: {
     connectStatus: 'initial',
     collectionKey: CollectionKey.registry,
     matrixProvider: null,
-    roomAlias: '#eweser-db_registry_<username>:matrix.org', // to be replaced on login with real username
-    store: initialRegistryStore,
+    roomAlias: '', // to be replaced on login with real username
   },
 };
