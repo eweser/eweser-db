@@ -23,14 +23,12 @@ export const getOrCreateSpace = async (
   } else {
     try {
       console.log('creating space room');
-      const createSpaceRoomRes = await createRoom(
-        matrixClient,
-        spaceRoomAliasName,
-        'My Database',
-        'The parent space for all eweser-db rooms',
-        false,
-        true
-      );
+      const createSpaceRoomRes = await createRoom(matrixClient, {
+        roomAliasName: spaceRoomAliasName,
+        name: 'My Database',
+        topic: 'The parent space for all eweser-db rooms',
+        spaceRoom: true,
+      });
       console.log({ createSpaceRoomRes });
       return spaceRoomAlias;
     } catch (error: any) {
@@ -75,12 +73,13 @@ export const getOrCreateRegistry = async (_db: IDatabase) => {
   } else {
     try {
       console.log('creating registry room');
-      const createRegistryRes = await createRoom(
-        matrixClient,
-        registryRoomAliasName,
-        'Database Registry',
-        'Where the database stores links to all your other rooms -- DO NOT DELETE'
-      );
+      const createRegistryRes = await createRoom(matrixClient, {
+        roomAliasName: registryRoomAliasName,
+        name: 'Database Registry',
+        topic:
+          'Where the database stores links to all your other rooms -- DO NOT DELETE',
+      });
+
       registryRoom.roomId = createRegistryRes.room_id;
       return registryRoomAlias;
     } catch (error: any) {

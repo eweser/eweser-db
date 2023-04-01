@@ -99,7 +99,23 @@ export async function createMatrixUser(username: string, password: string) {
   const result = await matrixClient.register(username, password, sessionId, {
     type: 'm.login.dummy',
   });
-  //   console.log(result);
 
   // login
+  const loginResult = await matrixClient.loginWithPassword(username, password);
+  // console.log(result);
+  // result.access_token
+  const matrixClientLoggedIn = createClient({
+    baseUrl: matrixTestConfig.baseUrl,
+    accessToken: loginResult.access_token,
+    store: new MemoryStore() as any,
+    userId: loginResult.user_id,
+    deviceId: loginResult.device_id,
+  });
+
+  await matrixClientLoggedIn.initCrypto();
+  (matrixClientLoggedIn as any).canSupportVoip = false;
+  (matrixClientLoggedIn as any).clientOpts = {
+    lazyLoadMembers: true,
+  };
+  return matrixClientLoggedIn;
 }

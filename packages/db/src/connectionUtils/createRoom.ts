@@ -7,15 +7,20 @@ export enum Visibility {
   Private = 'private',
 }
 
+export interface CreateRoomOptions {
+  roomAliasName: string;
+  name?: string;
+  topic?: string;
+  encrypt?: boolean;
+  spaceRoom?: boolean;
+}
+
 export const createRoom = async (
   matrixClient: MatrixClient,
-  /** note this is the truncated version, including the username but without '#' and ':matrix.org */
-  roomAliasName: string,
-  name?: string,
-  topic?: string,
-  encrypt = false,
-  spaceRoom = false
+  options: CreateRoomOptions
 ) => {
+  const { roomAliasName, name, topic, encrypt, spaceRoom } = options;
+
   let newRoom: { room_id: string } | null = null;
   const initialState: sdk.ICreateRoomStateEvent[] = [];
   if (encrypt) {
