@@ -38,13 +38,13 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Wait for Matrix
-        run: npx wait-on http://localhost:8888/_matrix/static/
-
       - name: Build packages
-        run: npm run build
+        run: npx lerna run build --scope packages/db
         env:
           CI: true
+
+      - name: Wait for Matrix
+        run: npx wait-on http://localhost:8888/_matrix/static/
 
       - name: Run tests
         run: npx lerna run test --scope packages/db
