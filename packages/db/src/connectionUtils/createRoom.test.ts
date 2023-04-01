@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterEach, vitest } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createRandomMatrixClient } from '../test-utils/matrixTestUtil';
 import { createRoom } from './createRoom';
 
