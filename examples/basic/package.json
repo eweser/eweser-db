@@ -1,8 +1,8 @@
 {
-  "name": "@eweser/example",
+  "name": "@eweser/example-basic",
   "version": "1.0.1",
   "private": true,
-  "description": "eweser-db example mini app",
+  "description": "eweser-db example mini app using the ydoc directly to make CRUD updates",
   "keywords": [
     "user-owned",
     "crdt",
