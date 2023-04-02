@@ -11,7 +11,6 @@ import { buildAliasFromSeed, getCollectionRegistry } from '..';
 import { initializeDocAndLocalProvider } from '../connectionUtils/initializeDoc';
 import { waitForRegistryPopulated } from '../connectionUtils/populateRegistry';
 import { updateRegistryEntry } from '../connectionUtils/saveRoomToRegistry';
-// import { IndexeddbPersistence } from 'y-indexeddb';
 
 const checkIfRoomIsInRegistry = async (
   _db: IDatabase,
@@ -63,7 +62,7 @@ export async function connectRoom<T = any>(
     this.userId
   );
   const roomAliasName = getAliasNameFromAlias(roomAlias);
-  const connectRoomLogger = (message: string, data?: any) =>
+  const logger = (message: string, data?: any) =>
     this.emit({
       event: 'DB.connectRoom',
       data: {
@@ -73,7 +72,7 @@ export async function connectRoom<T = any>(
       },
       message,
     });
-  connectRoomLogger('starting connectRoom');
+  logger('starting connectRoom');
 
   const room =
     this.collections[collectionKey][roomAliasName] ||
@@ -81,7 +80,7 @@ export async function connectRoom<T = any>(
   this.collections[collectionKey][roomAliasSeed] = room;
 
   if (room.matrixProvider?.canWrite && !!room.ydoc?.store) {
-    connectRoomLogger('room is already connected', {
+    logger('room is already connected', {
       canWrite: room.matrixProvider?.canWrite,
       ydocStore: room.ydoc?.store,
     });
@@ -95,15 +94,15 @@ export async function connectRoom<T = any>(
     throw new Error('could not get room id. Room has not been created yet');
   }
   const matrixRoom = await joinRoomIfNotJoined(this.matrixClient, roomId);
-  connectRoomLogger('room joined', matrixRoom);
+  logger('room joined', matrixRoom);
 
   const { ydoc } = await initializeDocAndLocalProvider(roomAliasSeed);
   if (!ydoc) throw new Error('ydoc not found');
   room.ydoc = ydoc;
-  connectRoomLogger('ydoc created', ydoc);
+  logger('ydoc created', ydoc);
 
   await connectMatrixProvider(this, room);
-  connectRoomLogger('matrix provider connected');
+  logger('matrix provider connected');
 
   const roomName = matrixRoom.name;
   updateRegistryEntry(this, {
@@ -114,7 +113,7 @@ export async function connectRoom<T = any>(
     roomName,
   });
   room.name = roomName;
-  connectRoomLogger('room connected successfully');
+  logger('room connected successfully');
 
   return room;
 }

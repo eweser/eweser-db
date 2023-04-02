@@ -9,6 +9,12 @@ import { getRegistry } from '../utils';
 
 /** initializes the registry's ydoc and matrix provider */
 export async function connectRegistry(this: IDatabase) {
+  const logger = (message: string, data?: any) =>
+    this.emit({
+      event: 'DB.connectRegistry',
+      message,
+      data: { raw: data },
+    });
   const { wasNew } = await getOrCreateRegistryRoom(this);
 
   if (!this.userId) throw new Error('userId not found');
@@ -16,7 +22,7 @@ export async function connectRegistry(this: IDatabase) {
   const { ydoc } = await initializeDocAndLocalProvider<RegistryData>(
     'registry'
   );
-
+  logger('ydoc initialized', ydoc);
   this.collections.registry[0].ydoc = ydoc;
 
   const connected = await connectMatrixProvider(
@@ -28,5 +34,7 @@ export async function connectRegistry(this: IDatabase) {
     await populateRegistry(this);
   }
   if (!connected) throw new Error('could not connect to registry');
+
+  logger('registry connected', getRegistry(this));
   return getRegistry(this);
 }

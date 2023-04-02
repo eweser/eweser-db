@@ -1,4 +1,3 @@
-import type { MatrixClient } from 'matrix-js-sdk';
 import type { IDatabase } from '../types';
 import {
   buildSpaceRoomAlias,
@@ -10,9 +9,9 @@ import { getRoomId } from './getRoomId';
 import { joinRoomIfNotJoined } from './joinRoomIfNotJoined';
 
 export const getOrCreateSpace = async (_db: IDatabase) => {
-  const createSpaceLogger = (message: string) =>
+  const logger = (message: string) =>
     _db.emit({ event: 'getOrCreateSpace', message });
-  createSpaceLogger('starting getOrCreateSpace');
+  logger('starting getOrCreateSpace');
   const matrixClient = _db.matrixClient;
   if (!matrixClient) throw new Error('client not found');
 
@@ -28,7 +27,7 @@ export const getOrCreateSpace = async (_db: IDatabase) => {
     return spaceRoomAlias;
   } else {
     try {
-      createSpaceLogger('creating space room');
+      logger('creating space room');
       const createSpaceRoomRes = await createRoom(matrixClient, {
         roomAliasName: spaceRoomAliasName,
         name: 'My Database',
@@ -37,20 +36,20 @@ export const getOrCreateSpace = async (_db: IDatabase) => {
       });
       if (!createSpaceRoomRes.room_id)
         throw new Error('failed to create space');
-      createSpaceLogger('created space room');
+      logger('created space room');
       return spaceRoomAlias;
     } catch (error: any) {
       if (
         error.message.includes('M_ROOM_IN_USE') ||
         error.message.includes('Room alias already taken')
       ) {
-        createSpaceLogger('space room already exists');
+        logger('space room already exists');
         const roomId = await getRoomId(matrixClient, spaceRoomAlias);
 
         if (typeof roomId === 'string')
           await joinRoomIfNotJoined(matrixClient, roomId);
 
-        createSpaceLogger('joined space room');
+        logger('joined space room');
         return spaceRoomAlias;
       } else {
         throw new Error(error);
@@ -63,10 +62,10 @@ export const getOrCreateSpace = async (_db: IDatabase) => {
 export const getOrCreateRegistryRoom = async (
   _db: IDatabase
 ): Promise<{ registryRoomAlias: string; wasNew: boolean }> => {
-  const createRegistryLogger = (message: string) =>
-    _db.emit({ event: 'getOrCreateRegistry', message });
-  createRegistryLogger('starting getOrCreateRegistry');
-
+  const logger = (message: string, data?: any) =>
+    _db.emit({ event: 'getOrCreateRegistry', message, data: { raw: data } });
+  logger('starting getOrCreateRegistry');
+  let wasNew = false;
   const registryRoom = _db.collections.registry[0];
   const matrixClient = _db.matrixClient;
   if (!matrixClient) throw new Error('client not found');
@@ -75,24 +74,24 @@ export const getOrCreateRegistryRoom = async (
   if (!userId) throw new Error('userId not found');
 
   await getOrCreateSpace(_db);
-  createRegistryLogger('got space');
+  logger('got space');
 
   const registryRoomAlias = buildRegistryRoomAlias(userId);
   const registryRoomAliasName = getAliasNameFromAlias(registryRoomAlias);
   registryRoom.roomAlias = registryRoomAlias;
 
   const roomId = await getRoomId(matrixClient, registryRoomAlias);
-  createRegistryLogger('got registry roomId');
+  logger('got registry roomId', roomId);
 
   // if registry exists
   if (typeof roomId === 'string') {
     await joinRoomIfNotJoined(matrixClient, roomId);
     registryRoom.roomId = roomId;
-    createRegistryLogger('joined registry room');
-    return { registryRoomAlias, wasNew: false };
+    logger('joined registry room', { wasNew });
+    return { registryRoomAlias, wasNew };
   } else {
     try {
-      createRegistryLogger('creating registry room');
+      logger('creating registry room');
       const createRegistryRes = await createRoom(matrixClient, {
         roomAliasName: registryRoomAliasName,
         name: 'Database Registry',
@@ -101,14 +100,19 @@ export const getOrCreateRegistryRoom = async (
       });
 
       registryRoom.roomId = createRegistryRes.room_id;
-
-      return { registryRoomAlias, wasNew: true };
+      wasNew = true;
+      logger('created registry room', {
+        wasNew,
+        createRegistryRes,
+        registryRoomAlias,
+      });
+      return { registryRoomAlias, wasNew };
     } catch (error: any) {
       if (
         error.message.includes('M_ROOM_IN_USE') ||
         error.message.includes('Room alias already taken')
       ) {
-        createRegistryLogger('registry room already exists');
+        logger('registry room already exists', error);
         const registryRoom = _db.collections.registry[0];
         registryRoom.roomAlias = registryRoomAlias;
         const roomId = await getRoomId(matrixClient, registryRoomAlias);
@@ -116,7 +120,12 @@ export const getOrCreateRegistryRoom = async (
           registryRoom.roomId = roomId;
           await joinRoomIfNotJoined(matrixClient, roomId);
         }
-        return { registryRoomAlias, wasNew: false };
+        logger('joined existing registry room', {
+          wasNew,
+          registryRoom,
+          roomId,
+        });
+        return { registryRoomAlias, wasNew };
       } else {
         throw new Error(error);
       }

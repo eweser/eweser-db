@@ -3,7 +3,7 @@ import {
   getOrCreateRegistryRoom,
 } from '../connectionUtils';
 
-import type { LoginData, IDatabase, ConnectStatus } from '../types';
+import type { LoginData, IDatabase } from '../types';
 
 /**
  *  Connects to Matrix client without loading registry
@@ -22,21 +22,28 @@ export async function loginToMatrix(_db: IDatabase, loginData: LoginData) {
  *
  * Saves loginData to localStorage on success
  */
-export async function login(
-  this: IDatabase,
-  loginData: LoginData,
-  callback?: (status: ConnectStatus) => void
-) {
-  if (callback) callback('loading');
+export async function login(this: IDatabase, loginData: LoginData) {
+  const logger = (message: string, data?: any) =>
+    this.emit({
+      event: 'DB.login',
+      message,
+      data: { raw: data },
+    });
+  logger('starting login', loginData);
   await loginToMatrix(this, loginData);
   const registryRoomAlias = await getOrCreateRegistryRoom(this);
   if (!registryRoomAlias) throw new Error('could not get registry room alias');
   try {
     const connectRes = await this.connectRegistry();
-    if (callback) callback(connectRes ? 'ok' : 'failed');
+    logger('finished login', { connectRes });
     return connectRes;
   } catch (error) {
-    if (callback) callback('failed');
+    this.emit({
+      event: 'DB.login',
+      message: 'error connecting registry',
+      data: { raw: error },
+      level: 'error',
+    });
     return false;
   }
 }

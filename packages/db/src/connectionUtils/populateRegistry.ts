@@ -10,9 +10,9 @@ export const publicProfileRoomAliasSeed = 'public';
 
 /** customSeed is used for testing to get it to create a new room */
 export const populateRegistry = async (_db: IDatabase, customSeed?: string) => {
-  const populateRegistryLogger = (message: string) =>
+  const logger = (message: string) =>
     _db.emit({ event: 'populateRegistry', message });
-  populateRegistryLogger('starting populateRegistry');
+  logger('starting populateRegistry');
 
   const profileRoomAlias = buildAliasFromSeed(
     customSeed ?? publicProfileRoomAliasSeed,
@@ -25,7 +25,7 @@ export const populateRegistry = async (_db: IDatabase, customSeed?: string) => {
     topic: 'Your public profile',
   });
   if (!profileRoom.room_id) throw new Error('failed to create profile room');
-  populateRegistryLogger('created profile room');
+  logger('created profile room');
 
   const registryDocument = newDocument<RegistryData>(registryRef, {
     profiles: {
@@ -39,7 +39,7 @@ export const populateRegistry = async (_db: IDatabase, customSeed?: string) => {
   });
   const registry = getRegistry(_db);
   registry.set('0', registryDocument);
-  populateRegistryLogger('populated registry');
+  logger('populated registry');
 };
 
 export const checkRegistryPopulated = (_db: IDatabase) => {
