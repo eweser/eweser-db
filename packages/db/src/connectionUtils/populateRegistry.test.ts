@@ -2,7 +2,7 @@ import { describe, it, expect, vitest, beforeAll, afterEach } from 'vitest';
 import { Database, getRegistry, wait } from '..';
 import {
   checkRegistryPopulated,
-  logger,
+  populateRegistry,
   waitForRegistryPopulated,
 } from './populateRegistry';
 import type { IDatabase } from '../types';
@@ -43,7 +43,7 @@ describe('populateRegistry', () => {
 
     const eventListener = vitest.fn();
     DB.on(eventListener);
-    await logger(DB, 'test' + (Math.random() * 10000).toFixed());
+    await populateRegistry(DB, 'test' + (Math.random() * 10000).toFixed());
     expect(eventListener).toHaveBeenCalled();
     const calls = eventListener.mock.calls;
     const callMessages = calls.map((call) => call[0].message);
