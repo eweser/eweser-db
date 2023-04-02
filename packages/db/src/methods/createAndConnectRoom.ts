@@ -8,14 +8,14 @@ import {
 import { waitForRegistryPopulated } from '../connectionUtils/populateRegistry';
 import { updateRegistryEntry } from '../connectionUtils/saveRoomToRegistry';
 
-import type { IDatabase, CollectionKey } from '../types';
+import type { IDatabase, CollectionKey, CollectionType } from '../types';
 import { getRegistry } from '../utils';
 
 /**
  *
  *
  */
-export async function createAndConnectRoom<T>(
+export async function createAndConnectRoom<T extends CollectionType>(
   this: IDatabase,
   {
     collectionKey,

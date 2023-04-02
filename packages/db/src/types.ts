@@ -9,10 +9,8 @@ import type {
   Profile,
 } from './collections';
 import type { TypedDoc, TypedMap } from 'yjs-types';
-import type { connectRoom } from './methods/connectRoom';
-import type { login } from './methods/login';
-import type { connectRegistry } from './methods/connectRegistry';
-import type { createAndConnectRoom } from './methods/createAndConnectRoom';
+
+export type { login as DBLogin } from './methods/login';
 
 export type { Document, DocumentBase, Note, FlashCard, Profile };
 
@@ -21,13 +19,16 @@ export enum CollectionKey {
   flashcards = 'flashcards',
   profiles = 'profiles',
 }
+export type CollectionType = Note | FlashCard | Profile | RegistryData;
 
-export interface Documents<T> {
+export interface Documents<T extends CollectionType> {
   /** document ID can be string number starting at zero, based on order of creation */
   [documentId: string]: DocumentBase<T> | undefined;
 }
 
-export type YDoc<T> = TypedDoc<{ documents: TypedMap<Documents<T>> }>;
+export type YDoc<T extends CollectionType> = TypedDoc<{
+  documents: TypedMap<Documents<T>>;
+}>;
 
 export type ConnectStatus =
   | 'initial'
@@ -37,7 +38,7 @@ export type ConnectStatus =
   | 'disconnected';
 
 /** corresponds to a 'room' in Matrix */
-export interface Room<T> {
+export interface Room<T extends CollectionType> {
   connectStatus: ConnectStatus;
   collectionKey: CollectionKey | 'registry';
   matrixProvider: MatrixProvider | null;
@@ -51,7 +52,7 @@ export interface Room<T> {
   ydoc?: YDoc<T>;
 }
 
-export type Collection<T> = {
+export type Collection<T extends CollectionType> = {
   [roomAliasSeed: string]: Room<T>;
 };
 
@@ -89,11 +90,6 @@ export interface Collections {
   [CollectionKey.profiles]: Collection<Profile>;
   registry: RegistryCollection;
 }
-
-export type CreateAndConnectRoom = typeof createAndConnectRoom;
-export type ConnectRoom = typeof connectRoom;
-export type Login = typeof login;
-export type ConnectRegistry = typeof connectRegistry;
 
 export type LoginStatus =
   | 'initial'
@@ -137,7 +133,7 @@ export interface IDatabase {
   emit: (event: DBEvent) => void;
 
   /** initializes the registry's ydoc and matrix provider */
-  connectRegistry: ConnectRegistry;
+  connectRegistry(this: IDatabase): Promise<TypedMap<Documents<RegistryData>>>;
   /**
    * Note that the room must have been created already and the roomAlias must be in the registry
    * 1. Joins the Matrix room if not in it
@@ -146,7 +142,21 @@ export interface IDatabase {
    * 4. Save the room's metadata to the registry (if not already there)
    *  Provides status updates using the DB.emit() method
    */
-  connectRoom: ConnectRoom;
-  createAndConnectRoom: CreateAndConnectRoom;
-  login: Login;
+  connectRoom<T extends CollectionType>(
+    this: IDatabase,
+    roomAliasSeed: string,
+    collectionKey: CollectionKey
+  ): Promise<Room<T>>;
+
+  createAndConnectRoom<T extends CollectionType>(options: {
+    collectionKey: CollectionKey;
+    aliasSeed: string;
+    name?: string;
+    topic?: string;
+  }): Promise<Room<T> | null>;
+
+  login(
+    this: IDatabase,
+    loginData: LoginData
+  ): Promise<TypedMap<Documents<RegistryData>> | null>;
 }

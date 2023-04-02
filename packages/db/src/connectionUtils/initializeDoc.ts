@@ -1,9 +1,9 @@
 import { IndexeddbPersistence } from 'y-indexeddb';
 import { Doc } from 'yjs';
 
-import type { YDoc } from '../types';
+import type { CollectionType, YDoc } from '../types';
 
-export const initializeDocAndLocalProvider = async <T = any>(
+export const initializeDocAndLocalProvider = async <T extends CollectionType>(
   roomAliasSeed: string
 ): Promise<{ ydoc: YDoc<T>; localProvider: IndexeddbPersistence }> => {
   const ydoc = new Doc() as YDoc<T>;

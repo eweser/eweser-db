@@ -5,7 +5,7 @@ import {
   joinRoomIfNotJoined,
   newEmptyRoom,
 } from '../connectionUtils';
-import type { CollectionKey } from '../types';
+import type { CollectionKey, CollectionType, Room } from '../types';
 import type { IDatabase } from '../types';
 import { buildAliasFromSeed, getCollectionRegistry } from '..';
 import { initializeDocAndLocalProvider } from '../connectionUtils/initializeDoc';
@@ -49,11 +49,12 @@ const checkIfRoomIsInRegistry = async (
  * 5. saves teh room to the DB.collections, indexed by the roomAliasSeed, including the name of the collection
  *  Provides status updates using the DB.emit() method
  */
-export async function connectRoom<T = any>(
+
+export async function connectRoom<T extends CollectionType>(
   this: IDatabase,
   roomAliasSeed: string,
   collectionKey: CollectionKey
-) {
+): Promise<Room<T>> {
   if (!roomAliasSeed) throw new Error('roomAliasSeed not provided');
 
   const roomAlias = buildAliasFromSeed(
@@ -84,7 +85,7 @@ export async function connectRoom<T = any>(
       canWrite: room.matrixProvider?.canWrite,
       ydocStore: room.ydoc?.store,
     });
-    return room;
+    return room as Room<T>;
   }
 
   await checkIfRoomIsInRegistry(this, roomAliasSeed, collectionKey);
@@ -96,7 +97,7 @@ export async function connectRoom<T = any>(
   const matrixRoom = await joinRoomIfNotJoined(this.matrixClient, roomId);
   logger('room joined', matrixRoom);
 
-  const { ydoc } = await initializeDocAndLocalProvider(roomAliasSeed);
+  const { ydoc } = await initializeDocAndLocalProvider<any>(roomAliasSeed);
   if (!ydoc) throw new Error('ydoc not found');
   room.ydoc = ydoc;
   logger('ydoc created', ydoc);
@@ -115,5 +116,5 @@ export async function connectRoom<T = any>(
   room.name = roomName;
   logger('room connected successfully');
 
-  return room;
+  return room as Room<T>;
 }

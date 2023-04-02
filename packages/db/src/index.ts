@@ -53,9 +53,9 @@ export class Database implements IDatabase {
   emit = emit;
 
   connectRegistry = connectRegistry;
-  connectRoom = connectRoom as any;
-  createAndConnectRoom = createAndConnectRoom as any;
-  login = login as any;
+  connectRoom = connectRoom;
+  createAndConnectRoom = createAndConnectRoom;
+  login = login;
 
   constructor(options?: DatabaseOptions) {
     this.baseUrl = options?.baseUrl || 'https://matrix.org';

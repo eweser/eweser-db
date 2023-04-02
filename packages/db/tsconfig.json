@@ -21,5 +21,11 @@
     "outDir": "dist",
     "useUnknownInCatchVariables": false
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": [
+    "**/*.test.ts",
+    "src/setupTests.ts",
+    "src/test-utils",
+    "src/examples"
+  ]
 }

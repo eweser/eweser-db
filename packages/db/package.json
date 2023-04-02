@@ -35,9 +35,9 @@
   },
   "scripts": {
     "test": "vitest run",
-    "build": "tsc && vite build",
+    "build": "rm -rf dist; rm -rf types; tsc && vite build",
     "dev": "tsc --watch && vite build --watch",
-    "clean": "rm -rf dist",
+    "clean": "rm -rf dist; rm -rf types",
     "type-check": "tsc --noEmit",
     "lint": "eslint --ext .ts,.tsx,.js,.jsx ."
   },
