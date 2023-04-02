@@ -8,8 +8,23 @@ import {
   getOrCreateRegistry,
 } from '../connectionUtils';
 import { loginToMatrix } from './login';
-import { baseUrl, userLoginInfo } from '../test-utils';
+import {
+  baseUrl,
+  dummyUserName,
+  dummyUserPass,
+  userLoginInfo,
+} from '../test-utils';
 import { updateRegistryEntry } from '../connectionUtils/saveRoomToRegistry';
+import { createMatrixUser } from '../test-utils/matrixTestUtil';
+import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
+
+beforeAll(async () => {
+  await ensureMatrixIsRunning();
+  await createMatrixUser(dummyUserName, dummyUserPass);
+}, 60000);
+afterEach(() => {
+  localStorage.clear();
+});
 
 describe('connectRoom', () => {
   it(` * 1. Joins the Matrix room if not in it
