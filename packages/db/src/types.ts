@@ -95,18 +95,30 @@ export type ConnectRoom = typeof connectRoom;
 export type Login = typeof login;
 export type ConnectRegistry = typeof connectRegistry;
 
-export type DBEvent = {
-  event: string;
-  level?: 'info' | 'warn' | 'error';
-  message?: string;
-  data?: {
-    collectionKey?: CollectionKey;
-    roomId?: string;
-    roomAlias?: string;
-    id?: string;
-    raw?: any;
-  };
-};
+export type LoginStatus =
+  | 'initial'
+  | 'loading'
+  | 'failed'
+  | 'ok'
+  | 'disconnected';
+
+export type DBEvent =
+  | {
+      event: string;
+      level?: 'info' | 'warn' | 'error';
+      message?: string;
+      data?: {
+        collectionKey?: CollectionKey;
+        roomId?: string;
+        roomAlias?: string;
+        id?: string;
+        raw?: any;
+      };
+    }
+  | {
+      event: 'loginStatus';
+      loginStatus?: LoginStatus;
+    };
 
 export type DBEventEmitter = (event: DBEvent) => void;
 
@@ -115,6 +127,7 @@ export interface IDatabase {
   userId: string;
   /** homeserver */
   baseUrl: string;
+  loginStatus: LoginStatus;
 
   collectionKeys: CollectionKey[];
   collections: Collections;

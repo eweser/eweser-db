@@ -5,7 +5,7 @@ import { createAndConnectRoom } from './methods/createAndConnectRoom';
 import { login } from './methods/login';
 import { emit, on } from './methods/on';
 
-import type { Collections, IDatabase } from './types';
+import type { Collections, IDatabase, LoginStatus } from './types';
 import type { MatrixClient } from 'matrix-js-sdk';
 
 export type { Note, NoteBase, FlashCard, FlashcardBase } from './collections';
@@ -38,6 +38,7 @@ export class Database implements IDatabase {
   matrixClient: MatrixClient | null = null;
   userId = '';
   baseUrl: string;
+  loginStatus: LoginStatus = 'initial';
 
   collectionKeys = collectionKeys;
   collections: Collections = {
