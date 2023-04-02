@@ -1,5 +1,6 @@
 import { describe, it, expect, vitest } from 'vitest';
-import { IDatabase, getRegistry, newDocument } from '..';
+import type { IDatabase } from '..';
+import { getRegistry, newDocument } from '..';
 import { CollectionKey, Database, buildAliasFromSeed } from '..';
 import {
   createRoom,
@@ -15,7 +16,7 @@ describe('connectRoom', () => {
   * 2. Creates a Y.Doc and saves it to the room object
   * 3. Creates a matrixCRDT provider and saves it to the room object
   * 4. Save the room's metadata to the registry`, async () => {
-    const DB = new Database({ baseUrl, debug: true }) as IDatabase;
+    const DB = new Database({ baseUrl }) as IDatabase;
     await loginToMatrix(DB, userLoginInfo);
     const registryRoomAlias = await getOrCreateRegistry(DB);
     if (!registryRoomAlias)
