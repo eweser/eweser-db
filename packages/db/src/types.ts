@@ -9,6 +9,11 @@ import type {
   Profile,
 } from './collections';
 import type { TypedDoc, TypedMap } from 'yjs-types';
+import type { connectRoom } from './methods/connectRoom';
+import type { login } from './methods/login';
+import type { connectRegistry } from './methods/connectRegistry';
+import type { createAndConnectRoom } from './methods/createAndConnectRoom';
+
 export type { Document, DocumentBase, Note, FlashCard, Profile };
 
 export enum CollectionKey {
@@ -85,28 +90,10 @@ export interface Collections {
   registry: RegistryCollection;
 }
 
-export type CreateAndConnectRoom = (
-  params: {
-    collectionKey: CollectionKey;
-    aliasName: string;
-    name?: string;
-    topic?: string;
-    registryStore?: { documents: Documents<RegistryData> };
-  },
-  callback?: (status: ConnectStatus) => void
-) => Promise<boolean>;
-
-export type ConnectRoom<T = any> = (
-  roomAliasSeed: string,
-  collectionKey: CollectionKey
-) => Promise<Room<T>>;
-
-export type Login = (
-  loginData: LoginData,
-  callback?: (status: ConnectStatus) => void
-) => Promise<boolean>;
-
-export type ConnectRegistry = () => Promise<TypedMap<Documents<RegistryData>>>;
+export type CreateAndConnectRoom = typeof createAndConnectRoom;
+export type ConnectRoom = typeof connectRoom;
+export type Login = typeof login;
+export type ConnectRegistry = typeof connectRegistry;
 
 export type DBEvent = {
   event: string;
@@ -117,6 +104,7 @@ export type DBEvent = {
     roomId?: string;
     roomAlias?: string;
     id?: string;
+    raw?: any;
   };
 };
 

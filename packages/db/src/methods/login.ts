@@ -1,4 +1,7 @@
-import { createMatrixClient, getOrCreateRegistry } from '../connectionUtils';
+import {
+  createMatrixClient,
+  getOrCreateRegistryRoom,
+} from '../connectionUtils';
 
 import type { LoginData, IDatabase, ConnectStatus } from '../types';
 
@@ -26,7 +29,7 @@ export async function login(
 ) {
   if (callback) callback('loading');
   await loginToMatrix(this, loginData);
-  const registryRoomAlias = await getOrCreateRegistry(this);
+  const registryRoomAlias = await getOrCreateRegistryRoom(this);
   if (!registryRoomAlias) throw new Error('could not get registry room alias');
   try {
     const connectRes = await this.connectRegistry();

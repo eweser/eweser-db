@@ -1,10 +1,29 @@
-import { describe, it, expect } from 'vitest';
-import { createRandomMatrixClient } from '../test-utils/matrixTestUtil';
+import { describe, it, expect, beforeAll, afterEach } from 'vitest';
+import { createMatrixUser } from '../test-utils/matrixTestUtil';
 import { createRoom } from './createRoom';
+import { loginToMatrix } from '../methods/login';
+import {
+  baseUrl,
+  dummyUserName,
+  dummyUserPass,
+  userLoginInfo,
+} from '../test-utils';
+import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
+import type { IDatabase } from '..';
+import { Database } from '..';
+
+beforeAll(async () => {
+  await ensureMatrixIsRunning();
+  await createMatrixUser(dummyUserName, dummyUserPass);
+}, 60000);
+afterEach(() => {
+  localStorage.clear();
+});
 
 describe('createRoom', () => {
   it('Can create a room on the matrix server', async () => {
-    const { client } = await createRandomMatrixClient();
+    const DB = new Database({ baseUrl }) as IDatabase;
+    const client = await loginToMatrix(DB, userLoginInfo);
     if (!client) throw new Error('No client');
     const room = await createRoom(client, {
       roomAliasName: 'test' + (Math.random() * 10000).toFixed(),

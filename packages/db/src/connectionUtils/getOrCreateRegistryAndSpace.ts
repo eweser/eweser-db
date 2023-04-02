@@ -60,7 +60,7 @@ export const getOrCreateSpace = async (_db: IDatabase) => {
 };
 
 /** creates the registry room on the Matrix server if it doesn't exist. Saves the roomAlias and roomID to the DB */
-export const getOrCreateRegistry = async (
+export const getOrCreateRegistryRoom = async (
   _db: IDatabase
 ): Promise<{ registryRoomAlias: string; wasNew: boolean }> => {
   const createRegistryLogger = (message: string) =>

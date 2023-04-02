@@ -19,6 +19,17 @@ export const updateRegistryEntry = (
     roomName?: string;
   }
 ) => {
+  const logger = (message: string, data?: any) =>
+    _db.emit({
+      event: 'updateRegistryEntry',
+      message,
+      data: { roomAlias, collectionKey, roomId, raw: data },
+    });
+  logger('starting updateRegistryEntry', {
+    roomAliasSeed,
+    roomName,
+  });
+
   //make sure we have at least the roomAliasSeed or roomAlias
   if (!roomAliasSeed && !roomAlias)
     throw new Error('must provide roomAliasSeed or roomAlias');
@@ -38,6 +49,8 @@ export const updateRegistryEntry = (
   const registry = getRegistry(_db);
 
   const registryDoc = registry.get('0');
+  logger('current registry', registryDoc);
+
   if (!registryDoc) throw new Error('registry document not found');
 
   const updatedRegistry = {
@@ -50,11 +63,13 @@ export const updateRegistryEntry = (
       },
     },
   };
+  logger('updated registry', updatedRegistry);
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   if (roomId) updatedRegistry[collectionKey][seed]!.roomId = roomId;
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   if (roomName) updatedRegistry[collectionKey][seed]!.roomName = roomName;
 
   registry.set('0', updatedRegistry);
+  logger('registry updated');
   return updatedRegistry;
 };

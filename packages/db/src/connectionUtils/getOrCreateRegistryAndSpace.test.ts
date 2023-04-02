@@ -16,7 +16,7 @@ import type { IDatabase } from '../types';
 import { loginToMatrix } from '../methods/login';
 import { createMatrixClient } from './createMatrixClient';
 import {
-  getOrCreateRegistry,
+  getOrCreateRegistryRoom,
   getOrCreateSpace,
 } from './getOrCreateRegistryAndSpace';
 
@@ -32,7 +32,7 @@ describe('getOrCreateRegistry', () => {
   it('Can get or create registry', async () => {
     const DB = new Database({ baseUrl }) as IDatabase;
     await loginToMatrix(DB, userLoginInfo);
-    const registryAliasReturned = await getOrCreateRegistry(DB);
+    const registryAliasReturned = await getOrCreateRegistryRoom(DB);
     expect(registryAliasReturned.registryRoomAlias).toEqual(registryAlias);
   });
 });

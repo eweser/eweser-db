@@ -47,6 +47,7 @@ const checkIfRoomIsInRegistry = async (
  * 2. Creates a Y.Doc, syncs with localStorage (indexeddb) and saves it to the room object
  * 3. Creates a matrixCRDT provider and saves it to the room object
  * 4. Save the room's metadata to the registry (if not already there)
+ * 5. saves teh room to the DB.collections, indexed by the roomAliasSeed, including the name of the collection
  *  Provides status updates using the DB.emit() method
  */
 export async function connectRoom<T = any>(
@@ -62,12 +63,13 @@ export async function connectRoom<T = any>(
     this.userId
   );
   const roomAliasName = getAliasNameFromAlias(roomAlias);
-  const connectRoomLogger = (message: string) =>
+  const connectRoomLogger = (message: string, data?: any) =>
     this.emit({
       event: 'DB.connectRoom',
       data: {
         collectionKey,
         roomAlias,
+        raw: data,
       },
       message,
     });
@@ -76,9 +78,13 @@ export async function connectRoom<T = any>(
   const room =
     this.collections[collectionKey][roomAliasName] ||
     newEmptyRoom<T>(collectionKey, roomAlias);
+  this.collections[collectionKey][roomAliasSeed] = room;
 
   if (room.matrixProvider?.canWrite && !!room.ydoc?.store) {
-    connectRoomLogger('room is already connected');
+    connectRoomLogger('room is already connected', {
+      canWrite: room.matrixProvider?.canWrite,
+      ydocStore: room.ydoc?.store,
+    });
     return room;
   }
 
@@ -89,12 +95,12 @@ export async function connectRoom<T = any>(
     throw new Error('could not get room id. Room has not been created yet');
   }
   const matrixRoom = await joinRoomIfNotJoined(this.matrixClient, roomId);
-  connectRoomLogger('room joined');
+  connectRoomLogger('room joined', matrixRoom);
 
   const { ydoc } = await initializeDocAndLocalProvider(roomAliasSeed);
   if (!ydoc) throw new Error('ydoc not found');
   room.ydoc = ydoc;
-  connectRoomLogger('ydoc created');
+  connectRoomLogger('ydoc created', ydoc);
 
   await connectMatrixProvider(this, room);
   connectRoomLogger('matrix provider connected');
@@ -107,7 +113,8 @@ export async function connectRoom<T = any>(
     roomAlias,
     roomName,
   });
-  connectRoomLogger('registry updated');
+  room.name = roomName;
+  connectRoomLogger('room connected successfully');
 
   return room;
 }

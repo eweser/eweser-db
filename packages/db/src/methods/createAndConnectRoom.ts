@@ -8,13 +8,14 @@ import {
 import { waitForRegistryPopulated } from '../connectionUtils/populateRegistry';
 import { updateRegistryEntry } from '../connectionUtils/saveRoomToRegistry';
 
-import type { IDatabase, CollectionKey, ConnectStatus } from '../types';
+import type { IDatabase, CollectionKey } from '../types';
+import { getRegistry } from '../utils';
 
 /**
  *
  *
  */
-export async function createAndConnectRoom(
+export async function createAndConnectRoom<T>(
   this: IDatabase,
   {
     collectionKey,
@@ -27,8 +28,7 @@ export async function createAndConnectRoom(
     aliasSeed: string;
     name?: string;
     topic?: string;
-  },
-  callback?: (status: ConnectStatus) => void
+  }
 ) {
   try {
     if (!this.matrixClient)
@@ -36,10 +36,20 @@ export async function createAndConnectRoom(
     const userId = this.matrixClient.getUserId();
 
     if (!userId) throw new Error('userId not found');
+    const roomAlias = buildAliasFromSeed(aliasSeed, collectionKey, userId);
+
+    const logger = (message: string, data?: any) =>
+      this.emit({
+        event: 'createAndConnectRoom',
+        message,
+        data: { roomAlias, collectionKey, raw: data },
+      });
+    logger('starting createAndConnectRoom', { aliasSeed, name, topic });
 
     await waitForRegistryPopulated(this);
+    const registry = getRegistry(this);
+    logger('registry populated', registry.get('0'));
 
-    const roomAlias = buildAliasFromSeed(aliasSeed, collectionKey, userId);
     const roomAliasName = getAliasNameFromAlias(roomAlias);
     try {
       const createRoomResult = await createRoom(this.matrixClient, {
@@ -47,6 +57,8 @@ export async function createAndConnectRoom(
         name,
         topic,
       });
+      logger('room created', createRoomResult);
+
       // save to registry.
       updateRegistryEntry(this, {
         collectionKey,
@@ -54,13 +66,13 @@ export async function createAndConnectRoom(
         roomAlias,
         roomId: createRoomResult.room_id,
       });
-      // console.log({ createRoomResult });
     } catch (error: any) {
       if (JSON.stringify(error).includes('M_ROOM_IN_USE')) {
-        console.log('room already exists');
+        logger('room already exists', error);
         const roomId = await getRoomId(this.matrixClient, roomAlias);
         if (typeof roomId === 'string') {
           await joinRoomIfNotJoined(this.matrixClient, roomId);
+          logger('room joined', roomId);
           updateRegistryEntry(this, {
             collectionKey,
             roomName: name,
@@ -71,10 +83,14 @@ export async function createAndConnectRoom(
       } else throw error;
     }
 
-    return await this.connectRoom(aliasSeed, collectionKey);
+    return await this.connectRoom<T>(aliasSeed, collectionKey);
   } catch (error) {
-    if (callback) callback('failed');
-    console.error(error);
-    return false;
+    this.emit({
+      event: 'createAndConnectRoom',
+      level: 'error',
+      message: 'error in createAndConnectRoom',
+      data: { collectionKey, raw: { error, aliasSeed } },
+    });
+    return null;
   }
 }
