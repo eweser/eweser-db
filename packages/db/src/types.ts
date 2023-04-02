@@ -102,23 +102,20 @@ export type LoginStatus =
   | 'ok'
   | 'disconnected';
 
-export type DBEvent =
-  | {
-      event: string;
-      level?: 'info' | 'warn' | 'error';
-      message?: string;
-      data?: {
-        collectionKey?: CollectionKey;
-        roomId?: string;
-        roomAlias?: string;
-        id?: string;
-        raw?: any;
-      };
-    }
-  | {
-      event: 'loginStatus';
-      loginStatus?: LoginStatus;
-    };
+export type DBEvent = {
+  event: string;
+  level?: 'info' | 'warn' | 'error';
+  message?: string;
+  data?: {
+    collectionKey?: CollectionKey;
+    roomId?: string;
+    roomAlias?: string;
+    id?: string;
+    loginStatus?: LoginStatus;
+
+    raw?: any;
+  };
+};
 
 export type DBEventEmitter = (event: DBEvent) => void;
 

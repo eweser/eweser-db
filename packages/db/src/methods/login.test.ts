@@ -71,8 +71,8 @@ describe('connectRoom', () => {
     expect(DB.loginStatus).toEqual('ok');
     const calls = eventListener.mock.calls;
     const statusUpdates = calls
-      .filter((call) => !!call[0].loginStatus)
-      .map((call) => call[0].loginStatus);
+      .filter((call) => !!call[0].data?.loginStatus)
+      .map((call) => call[0].data.loginStatus);
 
     expect(statusUpdates[0]).toEqual('loading');
     expect(statusUpdates[1]).toEqual('ok');

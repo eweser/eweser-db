@@ -20,7 +20,7 @@ const setLoginStatus = (_db: IDatabase, loginStatus: LoginStatus) => {
   _db.loginStatus = loginStatus;
   _db.emit({
     event: 'loginStatus',
-    loginStatus,
+    data: { loginStatus },
   });
 };
 
