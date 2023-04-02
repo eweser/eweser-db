@@ -65,7 +65,8 @@ const LoginForm = ({ handleLogin, loginStatus }: Props) => {
         </button>
         <p>
           {`* Sign up at `}
-          <a href="https://app.element.io/">element.io</a> with the username and password option
+          <a href="https://app.element.io/">element.io</a> with the username and
+          password option
         </p>
       </form>
     </div>

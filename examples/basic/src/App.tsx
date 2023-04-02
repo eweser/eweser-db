@@ -1,16 +1,13 @@
 import { useCallback, useContext, useEffect, useState } from 'react';
 
-import { CollectionKey } from '@eweser/db';
-import {
-  DatabaseContext,
-  CollectionProvider,
-  CollectionContext,
-} from '@eweser/hooks';
+import { CollectionKey, Database } from '@eweser/db';
+
 import type { Documents, Note, NoteBase } from '@eweser/db';
 
 import LoginForm from 'LoginForm';
 
 import { styles } from 'styles';
+import { MATRIX_SERVER } from 'config';
 
 const defaultNotesRoomAliasName = 'notes-default';
 const defaultCollectionData = {
@@ -19,13 +16,19 @@ const defaultCollectionData = {
   name: 'Default Notes Collection',
 };
 
+const db = new Database({ baseUrl: MATRIX_SERVER, debug: true });
 const App = () => {
-  const { db, loginStatus, login } = useContext(DatabaseContext);
+  const [loginStatus, setLoginStatus] = useState('initial');
+
+  db.on((event) => {
+    if (event.data?.loginStatus) setLoginStatus(event.data.loginStatus);
+  });
+
   if (loginStatus === 'initial')
     return (
       <>
         <h1>Login</h1>
-        <LoginForm handleLogin={login} loginStatus={loginStatus} />
+        <LoginForm handleLogin={db.login} loginStatus={loginStatus} />
       </>
     );
   else if (loginStatus === 'loading' || !db) return <div>Logging in...</div>;
