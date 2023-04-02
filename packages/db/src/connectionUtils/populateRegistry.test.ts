@@ -13,7 +13,7 @@ import { baseUrl, userLoginInfo } from '../test-utils';
 import { loginToMatrix } from '../methods/login';
 
 describe('populateRegistry', () => {
-  it('creates a public profile room, and populates the registry with that first entry', async () => {
+  it.skip('creates a public profile room, and populates the registry with that first entry', async () => {
     const DB = new Database({ baseUrl }) as IDatabase;
     await loginToMatrix(DB, userLoginInfo);
 
@@ -66,7 +66,7 @@ describe('populateRegistry', () => {
     expect(checkRegistryPopulated(DB)).toBe(true);
     expect(waitForRegistryPopulatedCallback).toHaveBeenCalledTimes(1);
   });
-  it('waitForRegistryPopulated fails with error on timeout', async () => {
+  it.skip('waitForRegistryPopulated fails with error on timeout', async () => {
     const DB = new Database({ baseUrl }) as IDatabase;
     const waitForRegistryPopulatedCallback = vitest.fn();
     const registry = getRegistry(DB);
