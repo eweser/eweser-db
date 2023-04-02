@@ -29,5 +29,5 @@ module.exports = {
       },
     },
   ],
-  ignorePatterns: ['vite.config.*'],
+  ignorePatterns: ['vite.config.*', 'types/**/*.d.ts'],
 };
