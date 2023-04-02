@@ -23,7 +23,6 @@ describe('connectRoom', () => {
 
   it('Can log in to matrix client. Sets login info in localStorage. ', async () => {
     const DB = new Database({ baseUrl }) as IDatabase;
-    const eventListener = vitest.fn();
 
     await loginToMatrix(DB, {
       userId: dummyUserName,
