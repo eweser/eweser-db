@@ -1,5 +1,5 @@
 import { describe, it, expect, vitest } from 'vitest';
-import type { IDatabase } from '..';
+import { IDatabase, getRegistry, newDocument } from '..';
 import { CollectionKey, Database, buildAliasFromSeed } from '..';
 import {
   createRoom,
@@ -7,32 +7,36 @@ import {
   getOrCreateRegistry,
 } from '../connectionUtils';
 import { loginToMatrix } from './login';
-import { userLoginInfo } from '../test-utils';
+import { baseUrl, userLoginInfo } from '../test-utils';
 import { updateRegistryEntry } from '../connectionUtils/saveRoomToRegistry';
 
 describe('connectRoom', () => {
-  it.skip(` * 1. Joins the Matrix room if not in it
+  it(` * 1. Joins the Matrix room if not in it
   * 2. Creates a Y.Doc and saves it to the room object
   * 3. Creates a matrixCRDT provider and saves it to the room object
   * 4. Save the room's metadata to the registry`, async () => {
-    const DB = new Database() as IDatabase;
-    const client = await loginToMatrix(DB, userLoginInfo);
+    const DB = new Database({ baseUrl, debug: true }) as IDatabase;
+    await loginToMatrix(DB, userLoginInfo);
     const registryRoomAlias = await getOrCreateRegistry(DB);
     if (!registryRoomAlias)
       throw new Error('could not get registry room alias');
-    DB.on((event) => console.log(event));
 
     await DB.connectRegistry();
-    // const registry = getRegistry(DB);
+    const registry = getRegistry(DB);
 
-    // registry.set(
-    //   '0',
-    //   newDocument('registry.0.0', {
-    //     flashcards: {},
-    //     profiles: {},
-    //     notes: {},
-    //   })
-    // );
+    // need to have `profiles.public` in the registry so satisfy 'checkRegistryPopulated'
+    registry.set(
+      '0',
+      newDocument('registry.0.0', {
+        flashcards: {},
+        profiles: {
+          public: {
+            roomAlias: 'test',
+          },
+        },
+        notes: {},
+      })
+    );
     const seed = 'test' + (Math.random() * 10000).toFixed();
     const roomAlias = buildAliasFromSeed(
       seed,
@@ -40,7 +44,7 @@ describe('connectRoom', () => {
       DB.userId
     );
 
-    const room = await createRoom(client, {
+    const room = await createRoom(DB.matrixClient, {
       roomAliasName: getAliasNameFromAlias(roomAlias),
       name: 'Test Room',
       topic: 'This is a test room',
@@ -107,5 +111,5 @@ describe('connectRoom', () => {
       level: 'info',
       message: 'matrix provider connected',
     });
-  });
+  }, 10000);
 });
