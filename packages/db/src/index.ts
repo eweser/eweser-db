@@ -5,7 +5,13 @@ import { createAndConnectRoom } from './methods/createAndConnectRoom';
 import { login } from './methods/login';
 import { emit, on } from './methods/on';
 
-import type { Collections, IDatabase, LoginStatus } from './types';
+import type {
+  CollectionKey,
+  Collections,
+  DBEventEmitter,
+  IDatabase,
+  LoginStatus,
+} from './types';
 import type { MatrixClient } from 'matrix-js-sdk';
 
 export type { Note, NoteBase, FlashCard, FlashcardBase } from './collections';
@@ -40,22 +46,22 @@ export class Database implements IDatabase {
   baseUrl: string;
   loginStatus: LoginStatus = 'initial';
 
-  collectionKeys = collectionKeys;
+  collectionKeys: CollectionKey[] = collectionKeys;
   collections: Collections = {
     registry: initialRegistry,
     ...collections,
   };
 
-  listeners = [];
+  listeners: DBEventEmitter[] = [];
 
   // methods
-  on = on;
-  emit = emit;
+  on = on(this);
+  emit = emit(this);
 
-  connectRegistry = connectRegistry;
-  connectRoom = connectRoom;
-  createAndConnectRoom = createAndConnectRoom;
-  login = login;
+  connectRegistry = connectRegistry(this);
+  connectRoom = connectRoom(this);
+  createAndConnectRoom = createAndConnectRoom(this);
+  login = login(this);
 
   constructor(options?: DatabaseOptions) {
     this.baseUrl = options?.baseUrl || 'https://matrix.org';

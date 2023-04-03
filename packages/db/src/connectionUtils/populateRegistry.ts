@@ -1,3 +1,4 @@
+import type { Database } from '..';
 import { buildAliasFromSeed } from '..';
 import type { IDatabase, RegistryData } from '../types';
 import { CollectionKey } from '../types';
@@ -9,7 +10,7 @@ export const registryRef = 'registry.0.0';
 export const publicProfileRoomAliasSeed = 'public';
 
 /** customSeed is used for testing to get it to create a new room */
-export const populateRegistry = async (_db: IDatabase, customSeed?: string) => {
+export const populateRegistry = async (_db: Database, customSeed?: string) => {
   const logger = (message: string) =>
     _db.emit({ event: 'populateRegistry', message });
   logger('starting populateRegistry');
@@ -42,7 +43,7 @@ export const populateRegistry = async (_db: IDatabase, customSeed?: string) => {
   logger('populated registry');
 };
 
-export const checkRegistryPopulated = (_db: IDatabase) => {
+export const checkRegistryPopulated = (_db: Database) => {
   const registry = getRegistry(_db);
   if (registry.size === 0) {
     return false;
@@ -61,7 +62,7 @@ export const checkRegistryPopulated = (_db: IDatabase) => {
 
 /** wait 5 seconds total by default before failing */
 export const waitForRegistryPopulated = async (
-  _db: IDatabase,
+  _db: Database,
   maxWaitMs = 5000,
   tryInterval = 200
 ) => {

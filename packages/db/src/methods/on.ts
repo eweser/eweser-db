@@ -1,12 +1,13 @@
-import type { DBEvent, DBEventEmitter, IDatabase } from '../types';
+import type { Database } from '..';
+import type { DBEvent, DBEventEmitter } from '../types';
 
-export function on(this: IDatabase, listener: DBEventEmitter) {
-  this.listeners.push(listener);
-}
+export const on = (_db: Database) => (listener: DBEventEmitter) => {
+  _db.listeners.push(listener);
+};
 
-export function emit(this: IDatabase, event: DBEvent) {
-  for (const listener of this.listeners) {
+export const emit = (_db: Database) => (event: DBEvent) => {
+  for (const listener of _db.listeners) {
     if (!event.level) event.level = 'info';
     listener(event);
   }
-}
+};

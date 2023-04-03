@@ -2,39 +2,40 @@ import {
   connectMatrixProvider,
   getOrCreateRegistryRoom,
 } from '../connectionUtils';
-import type { IDatabase, RegistryData } from '../types';
+import type { RegistryData } from '../types';
 import { initializeDocAndLocalProvider } from '../connectionUtils/initializeDoc';
 import { populateRegistry } from '../connectionUtils/populateRegistry';
 import { getRegistry } from '../utils';
+import type { Database } from '..';
 
 /** initializes the registry's ydoc and matrix provider */
-export async function connectRegistry(this: IDatabase) {
+export const connectRegistry = (_db: Database) => async () => {
   const logger = (message: string, data?: any) =>
-    this.emit({
+    _db.emit({
       event: 'DB.connectRegistry',
       message,
       data: { raw: data },
     });
-  const { wasNew } = await getOrCreateRegistryRoom(this);
+  const { wasNew } = await getOrCreateRegistryRoom(_db);
 
-  if (!this.userId) throw new Error('userId not found');
+  if (!_db.userId) throw new Error('userId not found');
 
   const { ydoc } = await initializeDocAndLocalProvider<RegistryData>(
     'registry'
   );
   logger('ydoc initialized', ydoc);
-  this.collections.registry[0].ydoc = ydoc;
+  _db.collections.registry[0].ydoc = ydoc;
 
   const connected = await connectMatrixProvider(
-    this,
-    this.collections.registry[0]
+    _db,
+    _db.collections.registry[0]
   );
 
   if (wasNew) {
-    await populateRegistry(this);
+    await populateRegistry(_db);
   }
   if (!connected) throw new Error('could not connect to registry');
 
-  logger('registry connected', getRegistry(this));
-  return getRegistry(this);
-}
+  logger('registry connected', getRegistry(_db));
+  return getRegistry(_db);
+};

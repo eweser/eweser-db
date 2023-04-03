@@ -1,4 +1,4 @@
-import type { IDatabase } from '../types';
+import type { Database } from '..';
 import {
   buildSpaceRoomAlias,
   getAliasNameFromAlias,
@@ -8,7 +8,7 @@ import { createRoom } from './createRoom';
 import { getRoomId } from './getRoomId';
 import { joinRoomIfNotJoined } from './joinRoomIfNotJoined';
 
-export const getOrCreateSpace = async (_db: IDatabase) => {
+export const getOrCreateSpace = async (_db: Database) => {
   const logger = (message: string) =>
     _db.emit({ event: 'getOrCreateSpace', message });
   logger('starting getOrCreateSpace');
@@ -60,7 +60,7 @@ export const getOrCreateSpace = async (_db: IDatabase) => {
 
 /** creates the registry room on the Matrix server if it doesn't exist. Saves the roomAlias and roomID to the DB */
 export const getOrCreateRegistryRoom = async (
-  _db: IDatabase
+  _db: Database
 ): Promise<{ registryRoomAlias: string; wasNew: boolean }> => {
   const logger = (message: string, data?: any) =>
     _db.emit({ event: 'getOrCreateRegistry', message, data: { raw: data } });

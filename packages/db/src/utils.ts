@@ -1,13 +1,13 @@
 import type { TypedMap } from 'yjs-types';
 import type { DocumentBase } from './collections/documentBase';
 import type {
-  IDatabase,
   CollectionKey,
   Room,
   Documents,
   RegistryData,
   CollectionType,
 } from './types';
+import type { Database } from '.';
 
 export const wait = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -63,7 +63,7 @@ export function getRoomDocumentsYMap<T extends CollectionType>(
 
 /** this in an uneditable version. use getRegistry() then .get('0') for the registry document  */
 export function getCollectionRegistry(
-  _db: IDatabase,
+  _db: Database,
   collectionKey: CollectionKey
 ) {
   const registry = getRegistry(_db);
@@ -75,7 +75,7 @@ export function getCollectionRegistry(
 }
 
 /** returns an editable YMap of the registry */
-export function getRegistry(_db: IDatabase): TypedMap<Documents<RegistryData>> {
+export function getRegistry(_db: Database): TypedMap<Documents<RegistryData>> {
   const registry = getRoomDocumentsYMap<RegistryData>(
     _db.collections.registry[0]
   );

@@ -1,5 +1,4 @@
 export * from './aliasHelpers';
-export * from './changeStatus';
 export * from './createMatrixClient';
 export * from './connectMatrixProvider';
 export * from './createRoom';

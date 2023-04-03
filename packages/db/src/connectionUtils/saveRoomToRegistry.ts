@@ -1,10 +1,11 @@
+import type { Database } from '..';
 import { buildAliasFromSeed } from '..';
-import type { CollectionKey, IDatabase } from '../types';
+import type { CollectionKey } from '../types';
 import { getRegistry } from '../utils';
 import { getAliasSeedFromAlias } from './aliasHelpers';
 
 export const updateRegistryEntry = (
-  _db: IDatabase,
+  _db: Database,
   {
     collectionKey,
     roomAliasSeed,

@@ -133,7 +133,7 @@ export interface IDatabase {
   emit: (event: DBEvent) => void;
 
   /** initializes the registry's ydoc and matrix provider */
-  connectRegistry(this: IDatabase): Promise<TypedMap<Documents<RegistryData>>>;
+  connectRegistry(): Promise<TypedMap<Documents<RegistryData>>>;
   /**
    * Note that the room must have been created already and the roomAlias must be in the registry
    * 1. Joins the Matrix room if not in it
@@ -143,7 +143,6 @@ export interface IDatabase {
    *  Provides status updates using the DB.emit() method
    */
   connectRoom<T extends CollectionType>(
-    this: IDatabase,
     roomAliasSeed: string,
     collectionKey: CollectionKey
   ): Promise<Room<T>>;
@@ -156,7 +155,6 @@ export interface IDatabase {
   }): Promise<Room<T> | null>;
 
   login(
-    this: IDatabase,
     loginData: LoginData
   ): Promise<TypedMap<Documents<RegistryData>> | null>;
 }

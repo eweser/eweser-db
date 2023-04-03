@@ -1,14 +1,20 @@
-import type { ConnectStatus, IDatabase, Room } from '../types';
-import { changeStatus } from './changeStatus';
+import type { Database } from '..';
+import type { Room } from '../types';
+
 import { newMatrixProvider } from './newMatrixProvider';
 
 /** make sure to query the current collection to ensure the passed room's id and alias are correct. Make sure to initialize the Doc before calling  */
 export function connectMatrixProvider(
-  _db: IDatabase,
+  _db: Database,
   /** full alias including host name :matrix.org */
-  room: Room<any>,
-  onStatusChange?: (status: ConnectStatus) => void
+  room: Room<any>
 ) {
+  const logger = (message: string, data?: any) =>
+    _db.emit({
+      event: 'DB.connectMatrixProvider',
+      message,
+      data: { raw: data },
+    });
   // This is a Promise because we need to wait for onDocumentAvailable to resolve
   return new Promise((resolve, reject) => {
     try {
@@ -18,18 +24,21 @@ export function connectMatrixProvider(
       if (!room?.ydoc) throw new Error('room.ydoc not found');
       const doc = room.ydoc;
 
+      logger('startconnectMatrixProvider', { room, doc });
       // quit early if already connected
       if (doc.isLoaded && room.matrixProvider?.canWrite) {
-        console.log(
-          'matrix provider already connected, ',
-          doc.isLoaded,
-          room.matrixProvider?.canWrite
-        );
-        changeStatus(room, 'ok', onStatusChange);
+        logger('matrix provider already connected', {
+          doc,
+          room,
+          isLoaded: doc.isLoaded,
+          canWrite: room.matrixProvider?.canWrite,
+        });
+        room.connectStatus = 'ok';
         return resolve(true);
       }
 
-      changeStatus(room, 'loading', onStatusChange);
+      room.connectStatus = 'loading';
+
       // room.matrixProvider?.dispose();
       // room.matrixProvider = null;
 
@@ -42,24 +51,25 @@ export function connectMatrixProvider(
       );
 
       room.matrixProvider.onDocumentAvailable((e) => {
-        console.log('onDocumentAvailable', e);
-        changeStatus(room, 'ok', onStatusChange);
+        room.connectStatus = 'ok';
+        logger('onDocumentAvailable', { room, doc, e });
         return resolve(true);
       });
 
       room.matrixProvider.initialize();
 
       room.matrixProvider.onDocumentUnavailable((e) => {
-        console.log('onDocumentUnavailable');
-        changeStatus(room, 'disconnected', onStatusChange);
+        room.connectStatus = 'disconnected';
+        logger('onDocumentUnavailable', { room, doc, e });
         reject('onDocumentUnavailable');
       });
     } catch (error: any) {
-      console.log('connectRoom error', error);
+      logger('connectMatrixProvider error', { error, room });
+      // eslint-disable-next-line no-console
       console.error(error);
 
       if (room) {
-        changeStatus(room, 'failed', onStatusChange);
+        room.connectStatus = 'failed';
       }
       return reject(error.message);
     }
