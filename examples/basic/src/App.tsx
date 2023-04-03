@@ -18,13 +18,14 @@ const defaultCollectionData = {
 
 const db = new Database({ baseUrl: MATRIX_SERVER, debug: true });
 const App = () => {
-  const [loginStatus, setLoginStatus] = useState('initial');
+  const [loginStatus, setLoginStatus] = useState(db.loginStatus);
 
   db.on((event) => {
     if (event.data?.loginStatus) setLoginStatus(event.data.loginStatus);
   });
 
-  if (loginStatus === 'initial')
+  if (loginStatus === 'ok') return <NotesInternal />;
+  else if (loginStatus === 'initial')
     return (
       <>
         <h1>Login</h1>
@@ -32,7 +33,7 @@ const App = () => {
       </>
     );
   else if (loginStatus === 'loading' || !db) return <div>Logging in...</div>;
-  else return <NotesInternal />;
+  else return <div>Something went wrong</div>;
 };
 
 const NotesInternal = () => {
