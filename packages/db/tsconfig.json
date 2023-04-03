@@ -22,10 +22,5 @@
     "useUnknownInCatchVariables": false
   },
   "include": ["src"],
-  "exclude": [
-    "**/*.test.ts",
-    "src/setupTests.ts",
-    "src/test-utils",
-    "src/examples"
-  ]
+  "exclude": ["src/setupTests.ts"]
 }
