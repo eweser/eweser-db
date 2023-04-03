@@ -15,13 +15,6 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "paths": {
-      "components/*": ["./components/*"],
-      "model/*": ["./model/*"],
-      "model": ["./model/index.ts"],
-      "config": ["./config.ts"],
-      "styles/*": ["./styles/*"]
-    },
     "baseUrl": "./src"
   },
 
