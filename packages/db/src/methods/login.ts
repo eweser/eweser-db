@@ -32,20 +32,23 @@ const setLoginStatus = (_db: Database, loginStatus: LoginStatus) => {
  * Saves loginData to localStorage on success
  */
 export const login = (_db: Database) => async (loginData: LoginData) => {
-  const logger = (message: string, data?: any) =>
-    _db.emit({
-      event: 'DB.login',
-      message,
-      data: { raw: data },
-    });
-  logger('starting login', loginData);
-  setLoginStatus(_db, 'loading');
-  _db.baseUrl = loginData.baseUrl;
-
-  await loginToMatrix(_db, loginData);
-  const registryRoomAlias = await getOrCreateRegistryRoom(_db);
-  if (!registryRoomAlias) throw new Error('could not get registry room alias');
   try {
+    const logger = (message: string, data?: any) =>
+      _db.emit({
+        event: 'DB.login',
+        message,
+        data: { raw: data },
+      });
+    logger('starting login', loginData);
+    setLoginStatus(_db, 'loading');
+    _db.baseUrl = loginData.baseUrl;
+
+    await loginToMatrix(_db, loginData);
+    const registryRoomAlias = await getOrCreateRegistryRoom(_db);
+    if (!registryRoomAlias) {
+      throw new Error('could not get registry room alias');
+    }
+
     const connectRes = await _db.connectRegistry();
     logger('finished login', { connectRes });
     setLoginStatus(_db, 'ok');

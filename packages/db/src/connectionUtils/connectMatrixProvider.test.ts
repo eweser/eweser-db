@@ -43,14 +43,9 @@ describe('connectMatrixProvider', () => {
 
     DB.collections[CollectionKey.flashcards][testRoomAlias] = room;
 
-    const onStatusChange = vitest.fn();
-
-    await connectMatrixProvider(DB, room, onStatusChange);
+    await connectMatrixProvider(DB, room);
 
     expect(room.matrixProvider).toBeDefined();
-
-    expect(onStatusChange).toHaveBeenCalledWith('loading');
-    expect(onStatusChange).toHaveBeenCalledWith('ok');
 
     expect(room.connectStatus).toEqual('ok');
 
