@@ -30,6 +30,7 @@ const LoginForm = ({ handleLogin, loginStatus }: Props) => {
 
   return (
     <div>
+      <h1>Login</h1>
       <form onSubmit={(e) => e.preventDefault()} style={styles.login}>
         <label htmlFor="server-input">Homeserver:</label>
         <input

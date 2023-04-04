@@ -4,17 +4,19 @@ import { connectRoom } from './methods/connectRoom';
 import { createAndConnectRoom } from './methods/createAndConnectRoom';
 import { login } from './methods/login';
 import { emit, on } from './methods/on';
-
 import type {
   CollectionKey,
   Collections,
   DBEventEmitter,
   LoginStatus,
 } from './types';
+
 import type { MatrixClient } from 'matrix-js-sdk';
 
-export type { Note, NoteBase, FlashCard, FlashcardBase } from './collections';
 export type {
+  Profile,
+  Note,
+  FlashCard,
   Collection,
   Collections,
   ConnectStatus,
@@ -22,15 +24,13 @@ export type {
   Room,
   Documents,
   Document,
+  YDoc,
+  DocumentBase,
 } from './types';
-export type { DocumentBase } from './collections/documentBase';
+
 export { CollectionKey } from './types'; // enum exported not as a type
 
-export {
-  buildAliasFromSeed,
-  getAliasNameFromAlias,
-  getAliasSeedFromAlias,
-} from './connectionUtils';
+export * from './connectionUtils/aliasHelpers';
 export * from './utils';
 
 export interface DatabaseOptions {

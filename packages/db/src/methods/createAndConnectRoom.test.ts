@@ -1,6 +1,7 @@
 import { describe, it, expect, vitest, beforeAll, afterEach } from 'vitest';
 import { Database, buildAliasFromSeed, getRegistry, newDocument } from '..';
 
+import type { RegistryData } from '../types';
 import { CollectionKey } from '../types';
 import { dummyUserName, dummyUserPass, userLoginInfo } from '../test-utils';
 import { loginToMatrix } from '../methods/login';
@@ -28,7 +29,7 @@ describe('createAndConnectRoom', () => {
     // need to have `profiles.public` in the registry so satisfy 'checkRegistryPopulated'
     registry.set(
       '0',
-      newDocument('registry.0.0', {
+      newDocument<RegistryData>('registry.0.0', {
         flashcards: {},
         profiles: {
           public: {
