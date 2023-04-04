@@ -35,7 +35,7 @@ export const login = (_db: Database) => async (loginData: LoginData) => {
   try {
     const logger = (message: string, data?: any) =>
       _db.emit({
-        event: 'DB.login',
+        event: '.login',
         message,
         data: { raw: data },
       });
@@ -55,7 +55,7 @@ export const login = (_db: Database) => async (loginData: LoginData) => {
     return connectRes;
   } catch (error) {
     _db.emit({
-      event: 'DB.login',
+      event: '.login',
       message: 'error connecting registry',
       data: { raw: error },
       level: 'error',

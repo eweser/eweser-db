@@ -12,7 +12,7 @@ import type { Database } from '..';
 export const connectRegistry = (_db: Database) => async () => {
   const logger = (message: string, data?: any) =>
     _db.emit({
-      event: 'DB.connectRegistry',
+      event: '.connectRegistry',
       message,
       data: { raw: data },
     });
