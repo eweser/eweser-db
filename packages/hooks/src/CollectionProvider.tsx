@@ -1,7 +1,7 @@
 import { createContext, FC, ReactNode } from 'react';
 
 import { CollectionKey, DocumentBase, Document } from '@eweser/db';
-import type { IDatabase } from '@eweser/db/types/types';
+import type { Database } from '@eweser/db/types/types';
 import useCollection from './useCollection';
 import { useSyncedStore } from '@syncedstore/react';
 // import * as Y from 'yjs';
@@ -13,7 +13,7 @@ type CollectionData = {
 
 type CollectionProviderProps = CollectionData & {
   children: ReactNode;
-  db: IDatabase;
+  db: Database;
   FailComponent?: () => JSX.Element;
   LoadingComponent?: () => JSX.Element;
 };

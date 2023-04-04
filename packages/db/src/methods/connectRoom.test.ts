@@ -1,5 +1,5 @@
 import { describe, it, expect, vitest, beforeAll, afterEach } from 'vitest';
-import type { IDatabase } from '..';
+
 import { getRegistry, newDocument } from '..';
 import { CollectionKey, Database, buildAliasFromSeed } from '..';
 import { createRoom, getAliasNameFromAlias } from '../connectionUtils';
@@ -27,7 +27,7 @@ describe('connectRoom', () => {
   * 2. Creates a Y.Doc and saves it to the room object
   * 3. Creates a matrixCRDT provider and saves it to the room object
   * 4. Save the room's metadata to the registry`, async () => {
-    const DB = new Database({ baseUrl }) as IDatabase;
+    const DB = new Database({ baseUrl });
     await loginToMatrix(DB, userLoginInfo);
     await DB.connectRegistry();
     const registry = getRegistry(DB);
@@ -70,8 +70,8 @@ describe('connectRoom', () => {
     const resRoom = await DB.connectRoom(seed, CollectionKey.flashcards);
 
     expect(resRoom).toBeDefined();
-    expect(resRoom.ydoc).toBeDefined();
-    expect(resRoom.matrixProvider).toBeDefined();
+    expect(resRoom?.ydoc).toBeDefined();
+    expect(resRoom?.matrixProvider).toBeDefined();
 
     const roomInDB = DB.collections.flashcards[seed];
     expect(roomInDB).toBeDefined();

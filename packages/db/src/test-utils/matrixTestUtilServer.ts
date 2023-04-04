@@ -1,4 +1,4 @@
-import * as cp from 'child_process';
+/* eslint-disable no-console */
 import { MATRIX_HOME_URL } from '.';
 
 async function hasMatrixStarted() {
@@ -21,19 +21,11 @@ async function waitForMatrixStart() {
       return;
     }
     await new Promise((resolve) => {
-      setTimeout(resolve, 2000);
+      setTimeout(resolve, 3000);
     });
   }
 }
 
 export async function ensureMatrixIsRunning() {
-  if (!(await hasMatrixStarted())) {
-    console.log('Starting matrix using docker-compose');
-    const ret = cp.execSync('docker-compose up -d', {
-      cwd: '../../test-server',
-    });
-    console.log(ret.toString('utf-8'));
-  }
-
   return await waitForMatrixStart();
 }

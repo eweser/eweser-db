@@ -18,13 +18,14 @@ export function connectMatrixProvider(
   // This is a Promise because we need to wait for onDocumentAvailable to resolve
   return new Promise((resolve, reject) => {
     try {
-      if (!_db.matrixClient)
+      if (!_db.matrixClient) {
         throw new Error("can't connect without matrixClient");
+      }
 
       if (!room?.ydoc) throw new Error('room.ydoc not found');
       const doc = room.ydoc;
 
-      logger('startconnectMatrixProvider', { room, doc });
+      logger('start connectMatrixProvider', { room, doc });
       // quit early if already connected
       if (doc.isLoaded && room.matrixProvider?.canWrite) {
         logger('matrix provider already connected', {

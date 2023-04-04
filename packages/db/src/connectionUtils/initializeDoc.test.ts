@@ -4,9 +4,6 @@ import { initializeDocAndLocalProvider } from './initializeDoc';
 import { buildRef, newDocument } from '../utils';
 import { CollectionKey } from '../types';
 import { testRoomAliasSeed } from '../test-utils';
-type TestDocument = {
-  testDocKey: string;
-};
 
 describe('initializeDoc', () => {
   it('Can initialize a yjs doc', async () => {
@@ -15,13 +12,13 @@ describe('initializeDoc', () => {
     expect(localProvider?.name).toBe('test');
   });
   it('can set data to the doc', async () => {
-    const { ydoc } = await initializeDocAndLocalProvider<TestDocument>('test');
+    const { ydoc } = await initializeDocAndLocalProvider<any>('test');
     const ref = buildRef({
       collection: CollectionKey.notes,
       roomAliasSeed: testRoomAliasSeed,
       documentID: 'testDocumentId',
     });
-    const testDocument = newDocument<TestDocument>(ref, {
+    const testDocument = newDocument<any>(ref, {
       testDocKey: 'testDocValue',
     });
     const ymap = ydoc.getMap('documents');

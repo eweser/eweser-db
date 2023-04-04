@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import type { LoginData, ConnectStatus } from '@eweser/db/types/types';
-import type { IDatabase } from '@eweser/db';
+import type { Database } from '@eweser/db';
 
-const useLogin = (db: IDatabase) => {
+const useLogin = (db: Database) => {
   const [loginStatus, setLoginStatus] = useState<ConnectStatus>('initial');
 
   const login = async (loginData: LoginData) => {

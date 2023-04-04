@@ -8,13 +8,10 @@ import {
   userLoginInfo,
   registryAlias,
   spaceAlias,
-  userIdWithServer,
 } from '../test-utils';
 import { createMatrixUser } from '../test-utils/matrixTestUtil';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
-import type { IDatabase } from '../types';
 import { loginToMatrix } from '../methods/login';
-import { createMatrixClient } from './createMatrixClient';
 import {
   getOrCreateRegistryRoom,
   getOrCreateSpace,
@@ -30,7 +27,7 @@ afterEach(() => {
 
 describe('getOrCreateRegistry', () => {
   it('Can get or create registry', async () => {
-    const DB = new Database({ baseUrl }) as IDatabase;
+    const DB = new Database({ baseUrl });
     await loginToMatrix(DB, userLoginInfo);
     const registryAliasReturned = await getOrCreateRegistryRoom(DB);
     expect(registryAliasReturned.registryRoomAlias).toEqual(registryAlias);
@@ -39,7 +36,7 @@ describe('getOrCreateRegistry', () => {
 
 describe('getOrCreateSpace', () => {
   it('Can get or create a matrix space which is a room that owns other rooms', async () => {
-    const DB = new Database({ baseUrl }) as IDatabase;
+    const DB = new Database({ baseUrl });
     await loginToMatrix(DB, userLoginInfo);
     const spaceAliasReturned = await getOrCreateSpace(DB);
     expect(spaceAliasReturned).toEqual(spaceAlias);

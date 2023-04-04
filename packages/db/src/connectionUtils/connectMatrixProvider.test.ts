@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeAll, afterEach, vitest } from 'vitest';
+import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import { Doc } from 'yjs';
 
 import type { FlashCard } from '..';
 import { Database } from '..';
-import type { IDatabase } from '../types';
+
 import { CollectionKey } from '../types';
 import {
   baseUrl,
@@ -29,7 +29,7 @@ afterEach(() => {
 
 describe('connectMatrixProvider', () => {
   it('Can connect to matrix provider', async () => {
-    const DB = new Database({ baseUrl }) as IDatabase;
+    const DB = new Database({ baseUrl });
     const doc = new Doc() as any;
     await loginToMatrix(DB, userLoginInfo);
     if (!DB.matrixClient) throw 'matrixClient not found';

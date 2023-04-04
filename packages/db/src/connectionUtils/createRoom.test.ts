@@ -9,7 +9,7 @@ import {
   userLoginInfo,
 } from '../test-utils';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
-import type { IDatabase } from '..';
+
 import { Database } from '..';
 
 beforeAll(async () => {
@@ -22,7 +22,7 @@ afterEach(() => {
 
 describe('createRoom', () => {
   it('Can create a room on the matrix server', async () => {
-    const DB = new Database({ baseUrl }) as IDatabase;
+    const DB = new Database({ baseUrl });
     const client = await loginToMatrix(DB, userLoginInfo);
     if (!client) throw new Error('No client');
     const room = await createRoom(client, {

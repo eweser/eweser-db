@@ -9,7 +9,6 @@ import type {
   CollectionKey,
   Collections,
   DBEventEmitter,
-  IDatabase,
   LoginStatus,
 } from './types';
 import type { MatrixClient } from 'matrix-js-sdk';
@@ -22,7 +21,6 @@ export type {
   LoginData,
   Room,
   Documents,
-  IDatabase,
   Document,
 } from './types';
 export type { DocumentBase } from './collections/documentBase';
@@ -40,7 +38,7 @@ export interface DatabaseOptions {
   debug?: boolean;
 }
 
-export class Database implements IDatabase {
+export class Database {
   matrixClient: MatrixClient | null = null;
   userId = '';
   baseUrl: string;

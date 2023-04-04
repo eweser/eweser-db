@@ -5,7 +5,6 @@ import {
   populateRegistry,
   waitForRegistryPopulated,
 } from './populateRegistry';
-import type { IDatabase } from '../types';
 import {
   baseUrl,
   dummyUserName,
@@ -26,7 +25,7 @@ afterEach(() => {
 
 describe('populateRegistry', () => {
   it('creates a public profile room, and populates the registry with that first entry', async () => {
-    const DB = new Database({ baseUrl }) as IDatabase;
+    const DB = new Database({ baseUrl });
     await loginToMatrix(DB, userLoginInfo);
 
     await DB.connectRegistry();
@@ -56,7 +55,7 @@ describe('populateRegistry', () => {
     expect(waitForRegistryPopulatedCallback).toHaveBeenCalledTimes(1);
   });
   it('waitForRegistryPopulated fails with error on timeout', async () => {
-    const DB = new Database({ baseUrl }) as IDatabase;
+    const DB = new Database({ baseUrl });
     const waitForRegistryPopulatedCallback = vitest.fn();
     const registry = getRegistry(DB);
     registry.clear();

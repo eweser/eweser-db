@@ -5,7 +5,12 @@ import {
   joinRoomIfNotJoined,
   newEmptyRoom,
 } from '../connectionUtils';
-import type { CollectionKey, CollectionType, Room } from '../types';
+import type {
+  CollectionKey,
+  CollectionType,
+  ConnectStatus,
+  Room,
+} from '../types';
 import type { Database } from '..';
 import { buildAliasFromSeed, getCollectionRegistry } from '..';
 import { initializeDocAndLocalProvider } from '../connectionUtils/initializeDoc';
@@ -56,66 +61,81 @@ export const connectRoom =
     roomAliasSeed: string,
     collectionKey: CollectionKey
   ) => {
-    if (!roomAliasSeed) throw new Error('roomAliasSeed not provided');
+    try {
+      if (!roomAliasSeed) throw new Error('roomAliasSeed not provided');
 
-    const roomAlias = buildAliasFromSeed(
-      roomAliasSeed,
-      collectionKey,
-      _db.userId
-    );
-    const roomAliasName = getAliasNameFromAlias(roomAlias);
-    const logger = (message: string, data?: any) =>
-      _db.emit({
-        event: 'DB.connectRoom',
-        data: {
-          collectionKey,
-          roomAlias,
-          raw: data,
-        },
-        message,
+      const roomAlias = buildAliasFromSeed(
+        roomAliasSeed,
+        collectionKey,
+        _db.userId
+      );
+      const roomAliasName = getAliasNameFromAlias(roomAlias);
+      const logger = (
+        message: string,
+        connectStatus: ConnectStatus,
+        data?: any
+      ) =>
+        _db.emit({
+          event: 'connectRoom',
+          data: {
+            collectionKey,
+            roomAlias,
+            raw: data,
+            connectStatus,
+          },
+          message,
+        });
+      const room =
+        _db.collections[collectionKey][roomAliasName] ||
+        newEmptyRoom<T>(collectionKey, roomAlias);
+      _db.collections[collectionKey][roomAliasSeed] = room;
+      logger('starting connectRoom', room.connectStatus);
+
+      if (room.matrixProvider?.canWrite && !!room.ydoc?.store) {
+        room.connectStatus = 'ok';
+        logger('room is already connected', room.connectStatus, {
+          canWrite: room.matrixProvider?.canWrite,
+          ydocStore: room.ydoc?.store,
+        });
+        return room as Room<T>;
+      }
+
+      await checkIfRoomIsInRegistry(_db, roomAliasSeed, collectionKey);
+
+      const roomId = await getRoomId(_db.matrixClient, roomAlias);
+      if (!roomId) {
+        throw new Error('could not get room id. Room has not been created yet');
+      }
+      const matrixRoom = await joinRoomIfNotJoined(_db.matrixClient, roomId);
+      logger('room joined', room.connectStatus, matrixRoom);
+
+      const { ydoc } = await initializeDocAndLocalProvider<any>(roomAliasSeed);
+      if (!ydoc) throw new Error('ydoc not found');
+      room.ydoc = ydoc;
+      logger('ydoc created', room.connectStatus, ydoc);
+
+      await connectMatrixProvider(_db, room);
+      logger('matrix provider connected', room.connectStatus);
+
+      const roomName = matrixRoom.name;
+      updateRegistryEntry(_db, {
+        collectionKey,
+        roomAliasSeed,
+        roomId,
+        roomAlias,
+        roomName,
       });
-    logger('starting connectRoom');
+      room.name = roomName;
+      logger('room connected successfully', room.connectStatus);
 
-    const room =
-      _db.collections[collectionKey][roomAliasName] ||
-      newEmptyRoom<T>(collectionKey, roomAlias);
-    _db.collections[collectionKey][roomAliasSeed] = room;
-
-    if (room.matrixProvider?.canWrite && !!room.ydoc?.store) {
-      logger('room is already connected', {
-        canWrite: room.matrixProvider?.canWrite,
-        ydocStore: room.ydoc?.store,
-      });
       return room as Room<T>;
+    } catch (error) {
+      _db.emit({
+        event: 'connectRoom',
+        level: 'error',
+        message: 'error in createAndConnectRoom',
+        data: { collectionKey, raw: { error, roomAliasSeed } },
+      });
+      return null;
     }
-
-    await checkIfRoomIsInRegistry(_db, roomAliasSeed, collectionKey);
-
-    const roomId = await getRoomId(_db.matrixClient, roomAlias);
-    if (!roomId) {
-      throw new Error('could not get room id. Room has not been created yet');
-    }
-    const matrixRoom = await joinRoomIfNotJoined(_db.matrixClient, roomId);
-    logger('room joined', matrixRoom);
-
-    const { ydoc } = await initializeDocAndLocalProvider<any>(roomAliasSeed);
-    if (!ydoc) throw new Error('ydoc not found');
-    room.ydoc = ydoc;
-    logger('ydoc created', ydoc);
-
-    await connectMatrixProvider(_db, room);
-    logger('matrix provider connected');
-
-    const roomName = matrixRoom.name;
-    updateRegistryEntry(_db, {
-      collectionKey,
-      roomAliasSeed,
-      roomId,
-      roomAlias,
-      roomName,
-    });
-    room.name = roomName;
-    logger('room connected successfully');
-
-    return room as Room<T>;
   };

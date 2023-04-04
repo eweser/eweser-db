@@ -1,7 +1,6 @@
 import { describe, it, expect, vitest, beforeAll, afterEach } from 'vitest';
 import { Database, buildAliasFromSeed, getRegistry, newDocument } from '..';
 
-import type { IDatabase } from '../types';
 import { CollectionKey } from '../types';
 import { dummyUserName, dummyUserPass, userLoginInfo } from '../test-utils';
 import { loginToMatrix } from '../methods/login';
@@ -21,7 +20,7 @@ describe('createAndConnectRoom', () => {
   * 2. Creates a Y.Doc and saves it to the room object
   * 3. Creates a matrixCRDT provider and saves it to the room object
   * 4. Save the room's metadata to the registry`, async () => {
-    const DB = new Database() as IDatabase;
+    const DB = new Database();
     await loginToMatrix(DB, userLoginInfo);
     await DB.connectRegistry();
     const registry = getRegistry(DB);

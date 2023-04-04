@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeAll, afterEach, vitest } from 'vitest';
 
 import { Database } from '..';
-import type { IDatabase } from '..';
 import {
   baseUrl,
   dummyUserName,
@@ -22,7 +21,7 @@ describe('connectRoom', () => {
   });
 
   it('Can log in to matrix client. Sets login info in localStorage. ', async () => {
-    const DB = new Database({ baseUrl }) as IDatabase;
+    const DB = new Database({ baseUrl });
 
     await loginToMatrix(DB, {
       userId: dummyUserName,
@@ -38,7 +37,7 @@ describe('connectRoom', () => {
     expect(loginInfo.password).toEqual(dummyUserPass);
   });
   it('DB.login() sets DB baseUrl to passed in baseURL, logs in to matrix client, connects registry. Sets loginStatus in db and `on` emitter', async () => {
-    const DB = new Database() as IDatabase;
+    const DB = new Database();
     const eventListener = vitest.fn();
     DB.baseUrl = 'something-else';
     expect(DB.baseUrl).toEqual('something-else');
@@ -77,7 +76,7 @@ describe('connectRoom', () => {
     expect(statusUpdates[1]).toEqual('ok');
   });
   it('sets loginStatus, emits error, and returns null on failed login', () => {
-    const DB = new Database() as IDatabase;
+    const DB = new Database();
     const eventListener = vitest.fn();
     DB.baseUrl = 'something-else';
     expect(DB.baseUrl).toEqual('something-else');

@@ -108,53 +108,9 @@ export type DBEvent = {
     roomAlias?: string;
     id?: string;
     loginStatus?: LoginStatus;
-
+    connectStatus?: ConnectStatus;
     raw?: any;
   };
 };
 
 export type DBEventEmitter = (event: DBEvent) => void;
-
-export interface IDatabase {
-  matrixClient: MatrixClient | null;
-  userId: string;
-  /** homeserver */
-  baseUrl: string;
-  loginStatus: LoginStatus;
-
-  collectionKeys: CollectionKey[];
-  collections: Collections;
-
-  listeners: DBEventEmitter[];
-
-  // methods
-  /** add a listener to the database */
-  on: (listener: DBEventEmitter) => void;
-  emit: (event: DBEvent) => void;
-
-  /** initializes the registry's ydoc and matrix provider */
-  connectRegistry(): Promise<TypedMap<Documents<RegistryData>>>;
-  /**
-   * Note that the room must have been created already and the roomAlias must be in the registry
-   * 1. Joins the Matrix room if not in it
-   * 2. Creates a Y.Doc, syncs with localStorage (indexeddb) and saves it to the room object
-   * 3. Creates a matrixCRDT provider and saves it to the room object
-   * 4. Save the room's metadata to the registry (if not already there)
-   *  Provides status updates using the DB.emit() method
-   */
-  connectRoom<T extends CollectionType>(
-    roomAliasSeed: string,
-    collectionKey: CollectionKey
-  ): Promise<Room<T>>;
-
-  createAndConnectRoom<T extends CollectionType>(options: {
-    collectionKey: CollectionKey;
-    aliasSeed: string;
-    name?: string;
-    topic?: string;
-  }): Promise<Room<T> | null>;
-
-  login(
-    loginData: LoginData
-  ): Promise<TypedMap<Documents<RegistryData>> | null>;
-}
