@@ -40,7 +40,7 @@ export async function createMatrixClient(data: LoginData) {
         password,
       }
     );
-    // console.log({ loginRes });
+
     const loginSaveData: LoginData = {
       baseUrl,
       userId,

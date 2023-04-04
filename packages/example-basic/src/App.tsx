@@ -85,13 +85,6 @@ const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
 
   const [selectedNote, setSelectedNote] = useState(nonDeletedNotes[0]);
 
-  notesRoom.ydoc?.on('update', (update) => {
-    console.log({ update });
-  });
-  notesRoom.matrixProvider?.onReceivedEvents((events) => {
-    console.log({ events });
-  });
-
   notesDoc?.observe((event) => {
     setNotes(notesDoc?.toJSON());
   });
