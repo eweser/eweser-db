@@ -1,4 +1,4 @@
-export type DocumentBase<T> = T & {
+export type DocumentBase = {
   /**
    * @example <collectionKey>.<roomID>.<documentID> == `notes.5.1`
    */

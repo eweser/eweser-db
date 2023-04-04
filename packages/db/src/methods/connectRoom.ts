@@ -5,12 +5,7 @@ import {
   joinRoomIfNotJoined,
   newEmptyRoom,
 } from '../connectionUtils';
-import type {
-  CollectionKey,
-  CollectionType,
-  ConnectStatus,
-  Room,
-} from '../types';
+import type { CollectionKey, Document, ConnectStatus, Room } from '../types';
 import type { Database } from '..';
 import { buildAliasFromSeed, getCollectionRegistry } from '..';
 import { initializeDocAndLocalProvider } from '../connectionUtils/initializeDoc';
@@ -57,7 +52,7 @@ const checkIfRoomIsInRegistry = async (
 
 export const connectRoom =
   (_db: Database) =>
-  async <T extends CollectionType>(
+  async <T extends Document>(
     roomAliasSeed: string,
     collectionKey: CollectionKey
   ) => {

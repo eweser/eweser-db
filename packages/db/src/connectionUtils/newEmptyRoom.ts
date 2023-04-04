@@ -1,6 +1,6 @@
-import type { CollectionKey, CollectionType, Room } from '../types';
+import type { CollectionKey, Document, Room } from '../types';
 
-export const newEmptyRoom = <T extends CollectionType>(
+export const newEmptyRoom = <T extends Document>(
   collectionKey: CollectionKey,
   roomAlias: string
 ) => {

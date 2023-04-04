@@ -4,4 +4,4 @@ export type ProfileBase = {
   firstName: string;
 };
 
-export type Profile = DocumentBase<ProfileBase>;
+export type Profile = DocumentBase & ProfileBase;

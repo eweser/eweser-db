@@ -9,7 +9,7 @@ import {
 import { waitForRegistryPopulated } from '../connectionUtils/populateRegistry';
 import { updateRegistryEntry } from '../connectionUtils/saveRoomToRegistry';
 
-import type { CollectionKey, CollectionType } from '../types';
+import type { CollectionKey, Document } from '../types';
 import { getRegistry } from '../utils';
 
 /**
@@ -18,7 +18,7 @@ import { getRegistry } from '../utils';
  */
 export const createAndConnectRoom =
   (_db: Database) =>
-  async <T extends CollectionType>({
+  async <T extends Document>({
     collectionKey,
     aliasSeed,
     name,

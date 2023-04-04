@@ -1,32 +1,29 @@
-import type { MatrixClient } from 'matrix-js-sdk';
 import type { MatrixProvider } from 'matrix-crdt';
 import type { ICreateClientOpts } from 'matrix-js-sdk';
-import type {
-  Document,
-  DocumentBase,
-  Note,
-  FlashCard,
-  Profile,
-} from './collections';
+import type { DocumentBase, Note, FlashCard, Profile } from './collections';
 import type { TypedDoc, TypedMap } from 'yjs-types';
 
-export type { login as DBLogin } from './methods/login';
-
-export type { Document, DocumentBase, Note, FlashCard, Profile };
+export type { DocumentBase, Note, FlashCard, Profile };
 
 export enum CollectionKey {
   notes = 'notes',
   flashcards = 'flashcards',
   profiles = 'profiles',
 }
-export type CollectionType = Note | FlashCard | Profile | RegistryData;
 
-export interface Documents<T extends CollectionType> {
+export type Document = Note | FlashCard | Profile | RegistryData;
+
+export type DocumentWithoutBase<T extends Document> = Omit<
+  T,
+  keyof DocumentBase
+>;
+
+export interface Documents<T extends Document> {
   /** document ID can be string number starting at zero, based on order of creation */
-  [documentId: string]: DocumentBase<T> | undefined;
+  [documentId: string]: T | undefined;
 }
 
-export type YDoc<T extends CollectionType> = TypedDoc<{
+export type YDoc<T extends Document> = TypedDoc<{
   documents: TypedMap<Documents<T>>;
 }>;
 
@@ -38,7 +35,7 @@ export type ConnectStatus =
   | 'disconnected';
 
 /** corresponds to a 'room' in Matrix */
-export interface Room<T extends CollectionType> {
+export interface Room<T extends Document> {
   connectStatus: ConnectStatus;
   collectionKey: CollectionKey | 'registry';
   matrixProvider: MatrixProvider | null;
@@ -52,7 +49,7 @@ export interface Room<T extends CollectionType> {
   ydoc?: YDoc<T>;
 }
 
-export type Collection<T extends CollectionType> = {
+export type Collection<T extends Document> = {
   [roomAliasSeed: string]: Room<T>;
 };
 

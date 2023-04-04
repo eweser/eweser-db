@@ -1,8 +1,6 @@
 import type { RegistryCollection } from '../types';
 import { CollectionKey } from '../types';
-import type { FlashCard } from './flashcards';
-import type { Note } from './notes';
-import type { Profile } from './profile';
+
 export * from './notes';
 export * from './flashcards';
 export * from './profile';
@@ -14,7 +12,6 @@ export const collectionKeys = [
   CollectionKey.flashcards,
   CollectionKey.profiles,
 ];
-export type Document = Note | FlashCard | Profile;
 
 export const collections = {
   [CollectionKey.notes]: {},

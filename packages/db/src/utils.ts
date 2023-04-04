@@ -5,7 +5,8 @@ import type {
   Room,
   Documents,
   RegistryData,
-  CollectionType,
+  Document,
+  DocumentWithoutBase,
 } from './types';
 import type { Database } from '.';
 
@@ -34,26 +35,27 @@ export const buildRef = ({
   return `${collection}.${roomAliasSeed}.${documentID}`;
 };
 
-export const newDocument = <T extends CollectionType>(
+export const newDocument = <T extends Document>(
   _ref: string,
-  doc: T
-): DocumentBase<T> => {
+  doc: DocumentWithoutBase<T>
+): T => {
   const _id = _ref.split('.').pop();
   if (!_id) throw new Error('no _id found in ref');
 
   const now = new Date().getTime();
-  return {
+  const base: DocumentBase = {
     _created: now,
     _id,
     _ref,
     _updated: now,
     _deleted: false,
     _ttl: undefined,
-    ...doc,
   };
+  // @ts-ignore
+  return { ...base, ...doc };
 };
 
-export function getRoomDocumentsYMap<T extends CollectionType>(
+export function getRoomDocumentsYMap<T extends Document>(
   room: Room<T>
 ): TypedMap<Documents<T>> {
   if (!room.ydoc) throw new Error('room.ydoc not found');
