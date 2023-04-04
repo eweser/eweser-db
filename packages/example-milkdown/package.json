@@ -1,0 +1,64 @@
+{
+  "name": "@eweser/example-milkdown",
+  "version": "1.0.1",
+  "private": true,
+  "description": "eweser-db example mini app using the ydoc directly to make CRUD updates",
+  "keywords": [
+    "user-owned",
+    "crdt",
+    "matrix",
+    "local-first"
+  ],
+  "author": "jacobcoro",
+  "type": "module",
+  "homepage": "https://github.com/jacobcoro/eweserdb",
+  "license": "MIT",
+  "directories": {
+    "src": "src"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jacobcoro/eweserdb.git"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "clean": "rm -rf dist"
+  },
+  "bugs": {
+    "url": "https://github.com/jacobcoro/eweserdb/issues"
+  },
+  "dependencies": {
+    "@eweser/db": "*",
+    "@milkdown/core": "^7.1.1",
+    "@milkdown/ctx": "^7.1.1",
+    "@milkdown/plugin-collab": "^7.1.1",
+    "@milkdown/preset-commonmark": "^7.1.1",
+    "@milkdown/prose": "^7.1.1",
+    "@milkdown/react": "^7.1.1",
+    "@milkdown/theme-nord": "^7.1.1",
+    "@milkdown/transformer": "^7.1.1",
+    "events": "3.3.0",
+    "matrix-crdt": "0.2.1-alpha.1",
+    "matrix-js-sdk": "^19.4.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.10.0",
+    "y-indexeddb": "^9.0.9",
+    "y-prosemirror": "^1.2.1",
+    "y-protocols": "^1.0.5",
+    "yjs": "^13.5.16"
+  },
+  "devDependencies": {
+    "@eweser/eslint-config": "*",
+    "@types/react": "^18.0.24",
+    "@types/react-dom": "^18.0.8",
+    "@vitejs/plugin-react": "^2.2.0",
+    "eslint": "^7.11.0",
+    "rollup-plugin-polyfill-node": "^0.12.0",
+    "typescript": "^4.4.4",
+    "vite": "^3.2.3"
+  }
+}
