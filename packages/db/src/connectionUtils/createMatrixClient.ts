@@ -23,6 +23,12 @@ export async function createMatrixClient(data: LoginData) {
         accessToken,
       })
     : sdk.createClient(signInOpts);
+  //@ts-expect-error
+  matrixClient.canSupportVoip = false;
+  //@ts-expect-error
+  matrixClient.clientOpts = {
+    lazyLoadMembers: true,
+  };
 
   if (accessToken) {
     await matrixClient.loginWithToken(accessToken);

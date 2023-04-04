@@ -1,5 +1,12 @@
 /* eslint-disable no-console */
 import { MATRIX_HOME_URL } from '.';
+import Matrix from 'matrix-js-sdk';
+import request from 'request';
+import * as http from 'http';
+import * as https from 'https';
+
+http.globalAgent.maxSockets = 2000;
+https.globalAgent.maxSockets = 2000;
 
 async function hasMatrixStarted() {
   try {
@@ -25,7 +32,12 @@ async function waitForMatrixStart() {
     });
   }
 }
+export function initMatrixSDK() {
+  // make sure the matrix sdk initializes request properly
+  Matrix.request(request);
+}
 
 export async function ensureMatrixIsRunning() {
+  initMatrixSDK();
   return await waitForMatrixStart();
 }

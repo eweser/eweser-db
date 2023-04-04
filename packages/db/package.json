@@ -44,23 +44,27 @@
   "bugs": {
     "url": "https://github.com/jacobcoro/eweserdb/issues"
   },
-  "peerDependencies": {
-    "matrix-crdt": "0.2.1-alpha.1",
-    "matrix-js-sdk": "^24.0.0",
-    "y-indexeddb": "^9.0.9"
-  },
   "publishConfig": {
     "access": "public"
   },
+  "peerDependencies": {
+    "matrix-crdt": "0.2.1-alpha.1",
+    "matrix-js-sdk": "^19.4.0",
+    "y-indexeddb": "^9.0.9",
+    "yjs": "^13.5.16"
+  },
   "devDependencies": {
-    "@eweser/eslint-config": "^1.0.1",
+    "@eweser/eslint-config": "*",
     "@matrix-org/olm": "^3.2.14",
+    "@types/request": "^2.48.8",
+    "eslint": "^7.11.0",
     "fake-indexeddb": "^4.0.1",
-    "vite-plugin-dts": "^1.5.0",
+    "jsdom": "^21.1.1",
+    "request": "^2.88.2",
+    "typescript": "^4.4.4",
+    "vite": "^3.2.3",
+    "vitest": "^0.29.8",
     "yjs-types": "^0.0.1"
   },
-  "gitHead": "3d39fd98760efd13963caa96db636df5cd985625",
-  "dependencies": {
-    "lodash": "^4.17.21"
-  }
+  "gitHead": "3d39fd98760efd13963caa96db636df5cd985625"
 }

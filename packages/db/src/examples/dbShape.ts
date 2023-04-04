@@ -78,7 +78,7 @@ const chineseFlashcardsYDoc: { documents: Documents<FlashCard> } = {
   },
 };
 
-const registryYDoc: { documents: { '0': DocumentBase<RegistryData> } } = {
+const registryYDoc: { documents: { '0': DocumentBase & RegistryData } } = {
   documents: {
     // registry only has one document, so it is just '0'
     ['0']: {

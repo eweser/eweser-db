@@ -1,7 +1,7 @@
 import { LoginData, ConnectStatus } from '@eweser/db';
 import { useState } from 'react';
-import { DEV_PASSWORD, DEV_USERNAME, MATRIX_SERVER } from 'config';
-import { styles } from 'styles';
+import { DEV_PASSWORD, DEV_USERNAME, MATRIX_SERVER } from './config';
+import { styles } from './styles';
 
 const initialLoginData: LoginData = {
   baseUrl: MATRIX_SERVER,
@@ -30,6 +30,7 @@ const LoginForm = ({ handleLogin, loginStatus }: Props) => {
 
   return (
     <div>
+      <h1>Login</h1>
       <form onSubmit={(e) => e.preventDefault()} style={styles.login}>
         <label htmlFor="server-input">Homeserver:</label>
         <input
@@ -65,7 +66,8 @@ const LoginForm = ({ handleLogin, loginStatus }: Props) => {
         </button>
         <p>
           {`* Sign up at `}
-          <a href="https://app.element.io/">element.io</a> with the username and password option
+          <a href="https://app.element.io/">element.io</a> with the username and
+          password option
         </p>
       </form>
     </div>

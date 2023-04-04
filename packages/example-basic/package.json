@@ -31,17 +31,25 @@
     "url": "https://github.com/jacobcoro/eweserdb/issues"
   },
   "dependencies": {
-    "@eweser/db": "^1.1.0",
+    "@eweser/db": "*",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.3.0",
+    "react-router-dom": "^6.10.0",
     "matrix-crdt": "0.2.1-alpha.1",
-    "matrix-js-sdk": "^24.0.0",
-    "y-indexeddb": "^9.0.9"
+    "matrix-js-sdk": "^19.4.0",
+    "y-indexeddb": "^9.0.9",
+    "yjs": "^13.5.16",
+    "events": "3.3.0"
   },
   "devDependencies": {
-    "buffer": "^6.0.3",
-    "events": "^3.3.0",
-    "vite-plugin-dts": "^1.5.0"
+    "@eweser/eslint-config": "*",
+    "vite": "^3.2.3",
+    "rollup-plugin-polyfill-node": "^0.12.0",
+    "eslint": "^7.11.0",
+    "typescript": "^4.4.4",
+    "@vitejs/plugin-react": "^2.2.0",
+    "vite-tsconfig-paths": "^4.0.7",
+    "@types/react": "^18.0.24",
+    "@types/react-dom": "^18.0.8"
   }
 }

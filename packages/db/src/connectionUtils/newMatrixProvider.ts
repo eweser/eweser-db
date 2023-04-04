@@ -34,15 +34,7 @@ export const newMatrixProvider = (
       ? { type: 'id', id: room.id }
       : { type: 'alias', alias: room.alias },
     undefined,
-    {
-      translator: { updatesAsRegularMessages: true },
-      reader: {
-        //  snapshotInterval: 1000
-      },
-      writer: {
-        //  flushInterval: 5000
-      },
-    }
+    {}
   );
   // console.log({ newMatrixProvider });
   return newMatrixProvider;

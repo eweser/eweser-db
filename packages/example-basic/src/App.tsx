@@ -1,17 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   CollectionKey,
   Database,
+  Room,
   buildAliasFromSeed,
   buildRef,
   newDocument,
 } from '@eweser/db';
-import type { Documents, Note, YDoc } from '@eweser/db';
+import type { Documents, Note } from '@eweser/db';
 
-import LoginForm from 'LoginForm';
+import LoginForm from './LoginForm';
 
-import { styles } from 'styles';
-import { MATRIX_SERVER } from 'config';
+import { styles } from './styles';
+import { MATRIX_SERVER } from './config';
 
 const aliasSeed = 'notes-default';
 const defaultCollectionData = {
@@ -46,12 +47,11 @@ const App = () => {
   });
 
   const defaultNotesRoom = db.collections[CollectionKey.notes][aliasSeed];
-  const ydoc = defaultNotesRoom?.ydoc;
 
   if (loginStatus === 'ok' && roomConnectionStatus !== 'ok') {
     return <div>Connecting collection...</div>;
-  } else if (loginStatus === 'ok' && ydoc) {
-    return <NotesInternal ydoc={ydoc} />;
+  } else if (loginStatus === 'ok' && defaultNotesRoom.ydoc) {
+    return <NotesInternal notesRoom={defaultNotesRoom} />;
   } else if (loginStatus === 'initial') {
     return <LoginForm handleLogin={db.login} loginStatus={loginStatus} />;
   } else if (loginStatus === 'loading') {
@@ -74,10 +74,10 @@ const buildNewNote = (notes: Documents<Note>) => {
   return newNote;
 };
 
-const NotesInternal = ({ ydoc }: { ydoc: YDoc<Note> }) => {
-  const notesDoc = ydoc.getMap('documents');
+const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
+  const notesDoc = notesRoom.ydoc?.getMap('documents');
 
-  const [notes, setNotes] = useState<Documents<Note>>(notesDoc.toJSON());
+  const [notes, setNotes] = useState<Documents<Note>>(notesDoc?.toJSON() ?? {});
 
   const nonDeletedNotes = Object.keys(notes).filter(
     (id) => !notes[id]?._deleted
@@ -85,12 +85,19 @@ const NotesInternal = ({ ydoc }: { ydoc: YDoc<Note> }) => {
 
   const [selectedNote, setSelectedNote] = useState(nonDeletedNotes[0]);
 
-  notesDoc.observe((event) => {
-    setNotes(notesDoc.toJSON());
+  notesRoom.ydoc?.on('update', (update) => {
+    console.log({ update });
+  });
+  notesRoom.matrixProvider?.onReceivedEvents((events) => {
+    console.log({ events });
+  });
+
+  notesDoc?.observe((event) => {
+    setNotes(notesDoc?.toJSON());
   });
 
   const setNote = (note: Note) => {
-    notesDoc.set(note._id, note);
+    notesDoc?.set(note._id, note);
   };
 
   const createNote = () => {
@@ -112,6 +119,11 @@ const NotesInternal = ({ ydoc }: { ydoc: YDoc<Note> }) => {
     setNote(note);
   };
 
+  useEffect(() => {
+    // makes sure we have a selected note on initial load
+    setSelectedNote(nonDeletedNotes[0]);
+  }, []);
+
   return (
     <div>
       <div>
@@ -129,8 +141,11 @@ const NotesInternal = ({ ydoc }: { ydoc: YDoc<Note> }) => {
           />
         )}
       </div>
+
       <h1>Notes</h1>
+
       <button onClick={() => createNote()}>New note</button>
+
       <div style={styles.flexWrap}>
         {nonDeletedNotes.map((id) => {
           const note = notes[id];
@@ -139,6 +154,7 @@ const NotesInternal = ({ ydoc }: { ydoc: YDoc<Note> }) => {
               <div
                 onClick={() => setSelectedNote(note._id)}
                 style={styles.card}
+                key={note._id}
               >
                 <button
                   onClick={() => deleteNote(note)}

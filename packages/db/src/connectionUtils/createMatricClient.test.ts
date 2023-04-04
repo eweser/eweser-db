@@ -8,10 +8,14 @@ import {
   userLoginInfo,
 } from '../test-utils';
 import { createMatrixUser } from '../test-utils/matrixTestUtil';
-import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
+import {
+  ensureMatrixIsRunning,
+  initMatrixSDK,
+} from '../test-utils/matrixTestUtilServer';
 import { createMatrixClient } from './createMatrixClient';
 
 beforeAll(async () => {
+  initMatrixSDK();
   await ensureMatrixIsRunning();
   await createMatrixUser(dummyUserName, dummyUserPass);
 }, 60000);
@@ -35,9 +39,7 @@ describe('createMatrixClient', () => {
     try {
       await signedInClient.whoami();
     } catch (error: any) {
-      expect(error.message).toEqual(
-        `MatrixError: [401] Invalid access token passed. (${baseUrl}/_matrix/client/r0/account/whoami)`
-      );
+      expect(error.message.includes('Invalid access token')).toEqual(true);
     }
 
     const signedInClient2 = await createMatrixClient(userLoginInfo);

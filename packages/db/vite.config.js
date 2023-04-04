@@ -20,6 +20,7 @@ export default defineConfig({
       ],
     },
   },
+  //@ts-expect-error
   test: {
     environment: 'jsdom',
     setupFiles: 'src/setupTests.ts',
