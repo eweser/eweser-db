@@ -1,8 +1,8 @@
 {
-  "name": "@eweser/example-milkdown",
+  "name": "@eweser/example-editor",
   "version": "1.0.1",
   "private": true,
-  "description": "eweser-db example mini app using the ydoc directly to make CRUD updates",
+  "description": "eweser-db example mini app using the Milkdown editor",
   "keywords": [
     "user-owned",
     "crdt",
