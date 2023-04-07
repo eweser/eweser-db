@@ -178,7 +178,7 @@ This is an area that needs further consideration. Community input is appreciated
 `npm run dev`
 
 The example app is in `packages/e2e/example`
-It will be served at http://localhost:5173/
+It will be served at http://localhost:8081/
 
 `npm run dev-e2e` will run the tests in `packages/e2e` and open cypress.
 

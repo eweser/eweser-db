@@ -39,12 +39,20 @@ jobs:
         run: npm install
 
       - name: Build packages
-        run: npx lerna run build --scope @eweser/db
+        run: npx lerna run build
         env:
           CI: true
 
       - name: Wait for Matrix
         run: npx wait-on http://localhost:8888/_matrix/static/
 
-      - name: Run tests
+      - name: Run unit tests
         run: npx lerna run test --scope @eweser/db
+
+      - name: Run integration tests
+        uses: cypress-io/github-action@v5
+        with:
+          browser: chrome
+          start: npm run-example-previews
+          wait-on: http://localhost:8081
+          wait-on-timeout: 180
