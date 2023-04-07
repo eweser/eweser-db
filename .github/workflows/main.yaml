@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    name: Unit-integration tests
+    name: Tests
     runs-on: ubuntu-latest
     environment: preview
 
@@ -46,10 +46,10 @@ jobs:
       - name: Wait for Matrix
         run: npx wait-on http://localhost:8888/_matrix/static/
 
-      - name: Run unit tests
+      - name: Run unit/integration tests
         run: npx lerna run test --scope @eweser/db
 
-      - name: Run integration tests
+      - name: Run e2e tests
         uses: cypress-io/github-action@v5
         with:
           browser: chrome
