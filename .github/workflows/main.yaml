@@ -53,6 +53,6 @@ jobs:
         uses: cypress-io/github-action@v5
         with:
           browser: chrome
-          start: npm run-example-previews
+          start: npm run run-example-previews
           wait-on: http://localhost:8081
           wait-on-timeout: 180
