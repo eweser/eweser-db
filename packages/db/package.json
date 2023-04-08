@@ -36,7 +36,9 @@
   "scripts": {
     "test": "vitest run",
     "build": "rm -rf dist; rm -rf types; tsc --project tsconfig.build.json && vite build",
-    "dev": "tsc --watch --project tsconfig.build.json  && vite build --watch",
+    "typescript-watch": "tsc --watch --project tsconfig.build.json",
+    "vite-build-watch": "vite build --watch",
+    "dev": "run-p vite-build-watch typescript-watch",
     "clean": "rm -rf dist; rm -rf types",
     "type-check": "tsc --noEmit",
     "lint": "eslint --ext .ts,.tsx,.js,.jsx ."
@@ -54,6 +56,7 @@
     "yjs": "^13.5.16"
   },
   "devDependencies": {
+    "npm-run-all": "^4.1.5",
     "@eweser/eslint-config": "*",
     "@matrix-org/olm": "^3.2.14",
     "@types/request": "^2.48.8",

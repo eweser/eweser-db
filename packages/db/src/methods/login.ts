@@ -13,7 +13,8 @@ import type { LoginData, LoginStatus } from '../types';
  *  Saves userId to db
  */
 export async function loginToMatrix(_db: Database, loginData: LoginData) {
-  _db.matrixClient = await createMatrixClient(loginData);
+  const { initialRoomConnect, ...options } = loginData;
+  _db.matrixClient = await createMatrixClient(options);
   _db.userId = _db.matrixClient?.getUserId() || '';
   return _db.matrixClient;
 }
@@ -58,6 +59,12 @@ export const login = (_db: Database) => async (loginData: LoginData) => {
     }
 
     const connectRes = await _db.connectRegistry();
+
+    if (loginData.initialRoomConnect) {
+      // run async, and listen for done by using the `connectRoom` event from db.on()
+      await _db.createAndConnectRoom(loginData.initialRoomConnect);
+    }
+
     logger('finished login', { connectRes });
     setLoginStatus(_db, 'ok');
     return connectRes;

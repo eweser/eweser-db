@@ -3,7 +3,7 @@ import { initializeDocAndLocalProvider } from './initializeDoc';
 
 import { buildRef, newDocument } from '../utils';
 import { CollectionKey } from '../types';
-import { testRoomAliasSeed } from '../test-utils';
+import { testAliasSeed } from '../test-utils';
 
 describe('initializeDoc', () => {
   it('Can initialize a yjs doc', async () => {
@@ -15,7 +15,7 @@ describe('initializeDoc', () => {
     const { ydoc } = await initializeDocAndLocalProvider<any>('test');
     const ref = buildRef({
       collection: CollectionKey.notes,
-      roomAliasSeed: testRoomAliasSeed,
+      aliasSeed: testAliasSeed,
       documentID: 'testDocumentId',
     });
     const testDocument = newDocument<any>(ref, {

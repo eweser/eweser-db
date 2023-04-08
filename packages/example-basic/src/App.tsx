@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   CollectionKey,
   Database,
+  LoginData,
   Room,
   buildAliasFromSeed,
   buildRef,
@@ -15,7 +16,7 @@ import { styles } from './styles';
 import { MATRIX_SERVER } from './config';
 
 const aliasSeed = 'notes-default';
-const defaultCollectionData = {
+const defaultRoomConfig = {
   collectionKey: CollectionKey.notes,
   aliasSeed,
   name: 'Default Notes Collection',
@@ -27,35 +28,38 @@ const App = () => {
   const [loginStatus, setLoginStatus] = useState(db.loginStatus);
   const [roomConnectionStatus, setRoomConnectionStatus] = useState('initial');
 
+  // add a db.load() to try to load login from localStorage
+
+  // add an 'initialRoomConnection' to db.login to skip the 'connectRoom' event
+
   db.on(({ event, data }) => {
     if (data?.loginStatus) {
       setLoginStatus(data.loginStatus);
     }
-    if (data?.loginStatus === 'ok') {
-      db.createAndConnectRoom(defaultCollectionData);
-    }
+    // listen for the 'connectRoom' event to know when the collection is ready
     if (event === 'connectRoom') {
-      const roomAlias = buildAliasFromSeed(
-        aliasSeed,
-        CollectionKey.notes,
-        db.userId
-      );
-      if (data?.connectStatus && data.roomAlias === roomAlias) {
+      if (data?.connectStatus && data.aliasSeed === aliasSeed) {
         setRoomConnectionStatus(data.connectStatus);
       }
     }
   });
 
   const defaultNotesRoom = db.collections[CollectionKey.notes][aliasSeed];
-
-  if (loginStatus === 'ok' && roomConnectionStatus !== 'ok') {
+  if (loginStatus === 'initial') {
+    return (
+      <LoginForm
+        handleLogin={(loginData: LoginData) =>
+          db.login({ initialRoomConnect: defaultRoomConfig, ...loginData })
+        }
+        loginStatus={loginStatus}
+      />
+    );
+  } else if (loginStatus === 'loading') {
+    return <div>Logging in...</div>;
+  } else if (loginStatus === 'ok' && roomConnectionStatus !== 'ok') {
     return <div>Connecting collection...</div>;
   } else if (loginStatus === 'ok' && defaultNotesRoom.ydoc) {
     return <NotesInternal notesRoom={defaultNotesRoom} />;
-  } else if (loginStatus === 'initial') {
-    return <LoginForm handleLogin={db.login} loginStatus={loginStatus} />;
-  } else if (loginStatus === 'loading') {
-    return <div>Logging in...</div>;
   } else {
     return <div>Something went wrong</div>;
   }
@@ -65,7 +69,7 @@ const buildNewNote = (notes: Documents<Note>) => {
   const id = Object.keys(notes).length;
   const ref = buildRef({
     collection: CollectionKey.notes,
-    roomAliasSeed: aliasSeed,
+    aliasSeed: aliasSeed,
     documentID: id,
   });
   const newNote = newDocument<Note>(ref, {

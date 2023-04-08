@@ -29,10 +29,10 @@ export const userIdWithServer = `@${dummyUserName}:${HOMESERVER_NAME}`;
 export const spaceAlias = buildSpaceRoomAlias(userIdWithServer);
 export const registryAlias = buildRegistryRoomAlias(userIdWithServer);
 
-export const testRoomAliasSeed = 'test_room';
+export const testAliasSeed = 'test_room';
 
 export const testRoomAlias = buildAliasFromSeed(
-  testRoomAliasSeed,
+  testAliasSeed,
   CollectionKey.flashcards,
   userIdWithServer
 );

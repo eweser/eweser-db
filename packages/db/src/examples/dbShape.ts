@@ -63,12 +63,12 @@ const chineseFlashcardsYDoc: { documents: Documents<FlashCard> } = {
       backText: 'Fire🔥',
       noteLink: buildRef({
         collection: CollectionKey.notes,
-        roomAliasSeed: 'my_study_notes',
+        aliasSeed: 'my_study_notes',
         documentID: '0',
       }),
       _ref: buildRef({
         collection: CollectionKey.flashcards,
-        roomAliasSeed: 'chinese_flashcards',
+        aliasSeed: 'chinese_flashcards',
         documentID: '0',
       }),
       _id: 'noteID',

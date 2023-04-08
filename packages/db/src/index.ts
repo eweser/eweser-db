@@ -1,4 +1,5 @@
 import { collectionKeys, collections, initialRegistry } from './collections';
+import { buildAliasFromSeed } from './connectionUtils';
 import { pollConnection } from './connectionUtils/pollConnection';
 import { connectRegistry } from './methods/connectRegistry';
 import { connectRoom } from './methods/connectRoom';
@@ -62,6 +63,8 @@ export class Database {
   connectRoom = connectRoom(this);
   createAndConnectRoom = createAndConnectRoom(this);
   login = login(this);
+  buildAliasFromSeed = (aliasSeed: string, collectionKey: CollectionKey) =>
+    buildAliasFromSeed(aliasSeed, collectionKey, this.userId);
 
   constructor(options?: DatabaseOptions) {
     this.baseUrl = options?.baseUrl || 'https://matrix.org';

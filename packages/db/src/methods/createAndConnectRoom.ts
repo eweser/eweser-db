@@ -9,7 +9,7 @@ import {
 import { waitForRegistryPopulated } from '../connectionUtils/populateRegistry';
 import { updateRegistryEntry } from '../connectionUtils/saveRoomToRegistry';
 
-import type { CollectionKey, Document } from '../types';
+import type { Document, createAndConnectRoomOptions } from '../types';
 import { getRegistry } from '../utils';
 
 /**
@@ -23,13 +23,7 @@ export const createAndConnectRoom =
     aliasSeed,
     name,
     topic,
-  }: {
-    collectionKey: CollectionKey;
-    /** undecorated alias */
-    aliasSeed: string;
-    name?: string;
-    topic?: string;
-  }) => {
+  }: createAndConnectRoomOptions) => {
     try {
       if (!_db.matrixClient)
         throw new Error("can't create room without matrixClient");
@@ -46,7 +40,9 @@ export const createAndConnectRoom =
         });
       logger('starting createAndConnectRoom', { aliasSeed, name, topic });
 
-      await waitForRegistryPopulated(_db);
+      const registryReady = await waitForRegistryPopulated(_db);
+      if (!registryReady) throw new Error('registry not ready');
+
       const registry = getRegistry(_db);
       logger('registry populated', registry.get('0'));
 
@@ -91,6 +87,6 @@ export const createAndConnectRoom =
         message: 'error in createAndConnectRoom',
         data: { collectionKey, raw: { error, aliasSeed } },
       });
-      return null;
+      return error.message;
     }
   };

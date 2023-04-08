@@ -7,7 +7,7 @@ import { getAliasNameFromAlias } from './aliasHelpers';
 import { createRoom } from './createRoom';
 
 export const registryRef = 'registry.0.0';
-export const publicProfileRoomAliasSeed = 'public';
+export const publicProfileAliasSeed = 'public';
 
 /** customSeed is used for testing to get it to create a new room */
 export const populateRegistry = async (_db: Database, customSeed?: string) => {
@@ -16,7 +16,7 @@ export const populateRegistry = async (_db: Database, customSeed?: string) => {
   logger('starting populateRegistry');
 
   const profileRoomAlias = buildAliasFromSeed(
-    customSeed ?? publicProfileRoomAliasSeed,
+    customSeed ?? publicProfileAliasSeed,
     CollectionKey.profiles,
     _db.userId
   );
@@ -45,6 +45,7 @@ export const populateRegistry = async (_db: Database, customSeed?: string) => {
 
 export const checkRegistryPopulated = (_db: Database) => {
   const registry = getRegistry(_db);
+  console.log(registry.toJSON());
   if (registry.size === 0) {
     return false;
   }

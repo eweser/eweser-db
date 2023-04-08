@@ -50,7 +50,7 @@ export interface Room<T extends Document> {
 }
 
 export type Collection<T extends Document> = {
-  [roomAliasSeed: string]: Room<T>;
+  [aliasSeed: string]: Room<T>;
 };
 
 export interface RoomMetaData {
@@ -77,8 +77,17 @@ export type OnRoomConnectStatusUpdate = (
 
 export type OnLoginStatusUpdate = (status: ConnectStatus) => void;
 
+export interface createAndConnectRoomOptions {
+  collectionKey: CollectionKey;
+  /** undecorated alias */
+  aliasSeed: string;
+  name?: string;
+  topic?: string;
+}
+
 export interface LoginData extends ICreateClientOpts {
   password?: string;
+  initialRoomConnect?: createAndConnectRoomOptions;
 }
 
 export interface Collections {
@@ -103,6 +112,7 @@ export type DBEvent = {
     collectionKey?: CollectionKey;
     roomId?: string;
     roomAlias?: string;
+    aliasSeed?: string;
     id?: string;
     loginStatus?: LoginStatus;
     connectStatus?: ConnectStatus;

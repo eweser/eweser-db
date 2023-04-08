@@ -8,13 +8,13 @@ export const updateRegistryEntry = (
   _db: Database,
   {
     collectionKey,
-    roomAliasSeed,
+    aliasSeed,
     roomId,
     roomAlias,
     roomName,
   }: {
     collectionKey: CollectionKey;
-    roomAliasSeed?: string;
+    aliasSeed?: string;
     roomId?: string;
     roomAlias?: string;
     roomName?: string;
@@ -27,23 +27,21 @@ export const updateRegistryEntry = (
       data: { roomAlias, collectionKey, roomId, raw: data },
     });
   logger('starting updateRegistryEntry', {
-    roomAliasSeed,
+    aliasSeed,
     roomName,
   });
 
-  //make sure we have at least the roomAliasSeed or roomAlias
-  if (!roomAliasSeed && !roomAlias)
-    throw new Error('must provide roomAliasSeed or roomAlias');
+  //make sure we have at least the aliasSeed or roomAlias
+  if (!aliasSeed && !roomAlias)
+    throw new Error('must provide aliasSeed or roomAlias');
 
   const seed =
-    !roomAliasSeed && roomAlias
-      ? getAliasSeedFromAlias(roomAlias)
-      : roomAliasSeed;
+    !aliasSeed && roomAlias ? getAliasSeedFromAlias(roomAlias) : aliasSeed;
 
   if (!seed) throw new Error('could not get seed from alias');
   const alias =
-    !roomAlias && roomAliasSeed
-      ? buildAliasFromSeed(roomAliasSeed, collectionKey, _db.userId)
+    !roomAlias && aliasSeed
+      ? buildAliasFromSeed(aliasSeed, collectionKey, _db.userId)
       : roomAlias;
   if (!alias) throw new Error('could not get alias from seed');
 

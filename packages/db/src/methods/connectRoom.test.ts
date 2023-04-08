@@ -13,6 +13,7 @@ import {
 import { updateRegistryEntry } from '../connectionUtils/saveRoomToRegistry';
 import { createMatrixUser } from '../test-utils/matrixTestUtil';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
+import { RegistryData } from '../types';
 
 beforeAll(async () => {
   await ensureMatrixIsRunning();
@@ -35,7 +36,7 @@ describe('connectRoom', () => {
     // need to have `profiles.public` in the registry so satisfy 'checkRegistryPopulated'
     registry.set(
       '0',
-      newDocument('registry.0.0', {
+      newDocument<RegistryData>('registry.0.0', {
         flashcards: {},
         profiles: {
           public: {
@@ -60,7 +61,7 @@ describe('connectRoom', () => {
 
     updateRegistryEntry(DB, {
       collectionKey: CollectionKey.flashcards,
-      roomAliasSeed: seed,
+      aliasSeed: seed,
       roomId: room.room_id,
     });
 
