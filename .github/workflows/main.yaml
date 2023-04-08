@@ -9,6 +9,8 @@ jobs:
     name: Tests
     runs-on: ubuntu-latest
     environment: preview
+    env:
+      VITE_MATRIX_SERVER: http://localhost:8888
 
     strategy:
       matrix:
