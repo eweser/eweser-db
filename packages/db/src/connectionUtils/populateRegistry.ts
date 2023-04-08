@@ -45,7 +45,6 @@ export const populateRegistry = async (_db: Database, customSeed?: string) => {
 
 export const checkRegistryPopulated = (_db: Database) => {
   const registry = getRegistry(_db);
-  console.log(registry.toJSON());
   if (registry.size === 0) {
     return false;
   }

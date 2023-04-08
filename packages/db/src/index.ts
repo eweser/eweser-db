@@ -6,6 +6,7 @@ import { connectRoom } from './methods/connectRoom';
 import { createAndConnectRoom } from './methods/createAndConnectRoom';
 import { login } from './methods/login';
 import { emit, on } from './methods/on';
+import { signup } from './methods/signup';
 import type {
   CollectionKey,
   Collections,
@@ -63,6 +64,7 @@ export class Database {
   connectRoom = connectRoom(this);
   createAndConnectRoom = createAndConnectRoom(this);
   login = login(this);
+  signup = signup(this);
   buildAliasFromSeed = (aliasSeed: string, collectionKey: CollectionKey) =>
     buildAliasFromSeed(aliasSeed, collectionKey, this.userId);
 

@@ -4,7 +4,6 @@ import {
   Database,
   LoginData,
   Room,
-  buildAliasFromSeed,
   buildRef,
   newDocument,
 } from '@eweser/db';
@@ -43,14 +42,19 @@ const App = () => {
       }
     }
   });
-
+  const handleSignup = (loginData: LoginData) => {
+    if (!loginData.userId) throw new Error('userId is required');
+    if (!loginData.password) throw new Error('password is required');
+    db.signup(loginData.userId, loginData.password, loginData.baseUrl);
+  };
   const defaultNotesRoom = db.collections[CollectionKey.notes][aliasSeed];
-  if (loginStatus === 'initial') {
+  if (loginStatus === 'initial' || loginStatus === 'failed') {
     return (
       <LoginForm
         handleLogin={(loginData: LoginData) =>
           db.login({ initialRoomConnect: defaultRoomConfig, ...loginData })
         }
+        handleSignup={handleSignup}
         loginStatus={loginStatus}
       />
     );

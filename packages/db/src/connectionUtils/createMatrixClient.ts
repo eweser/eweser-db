@@ -1,4 +1,4 @@
-import sdk from 'matrix-js-sdk';
+import { createClient } from 'matrix-js-sdk';
 import type { LoginData } from '../types';
 
 type MatrixLoginRes = {
@@ -18,27 +18,30 @@ export async function createMatrixClient(data: LoginData) {
     userId,
   };
   const matrixClient = accessToken
-    ? sdk.createClient({
+    ? createClient({
         ...signInOpts,
         accessToken,
       })
-    : sdk.createClient(signInOpts);
-  //@ts-expect-error
-  matrixClient.canSupportVoip = false;
-  //@ts-expect-error
-  matrixClient.clientOpts = {
+    : createClient(signInOpts);
+
+  // overwrites because we don't call .start();
+  (matrixClient as any).canSupportVoip = false;
+  (matrixClient as any).clientOpts = {
     lazyLoadMembers: true,
   };
 
   if (accessToken) {
     await matrixClient.loginWithToken(accessToken);
   } else {
-    const loginRes: MatrixLoginRes = await matrixClient.login(
-      'm.login.password',
-      {
-        user: userId,
-        password,
-      }
+    if (!userId) {
+      throw new Error('userId is required for password login');
+    }
+    if (!password) {
+      throw new Error('password is required for password login');
+    }
+    const loginRes: MatrixLoginRes = await matrixClient.loginWithPassword(
+      userId,
+      password
     );
 
     const loginSaveData: LoginData = {
@@ -52,10 +55,5 @@ export async function createMatrixClient(data: LoginData) {
     localStorage.setItem('loginData', JSON.stringify(loginSaveData));
   }
 
-  // overwrites because we don't call .start();
-  (matrixClient as any).canSupportVoip = false;
-  (matrixClient as any).clientOpts = {
-    lazyLoadMembers: true,
-  };
   return matrixClient;
 }

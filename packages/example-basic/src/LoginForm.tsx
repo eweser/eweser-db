@@ -11,14 +11,15 @@ const initialLoginData: LoginData = {
 
 export interface Props {
   handleLogin: (loginData: LoginData) => void;
+  handleSignup: (loginData: LoginData) => void;
   loginStatus: ConnectStatus;
 }
 
 type FormField = keyof LoginData;
 
-const LoginForm = ({ handleLogin, loginStatus }: Props) => {
+const LoginForm = ({ handleLogin, handleSignup, loginStatus }: Props) => {
   const [loginData, setLoginData] = useState(initialLoginData);
-
+  const [isSignup, setIsSignup] = useState(false);
   const handleChange = (field: FormField, value: string) => {
     const loginDataChange = {
       ...loginData,
@@ -27,10 +28,11 @@ const LoginForm = ({ handleLogin, loginStatus }: Props) => {
     setLoginData(loginDataChange);
   };
   const login = () => handleLogin(loginData);
+  const signup = () => handleSignup(loginData);
 
   return (
     <div>
-      <h1>Login</h1>
+      <h1>{isSignup ? 'Sign up' : 'Log In'}</h1>
       <form onSubmit={(e) => e.preventDefault()} style={styles.login}>
         <label htmlFor="server-input">Homeserver:</label>
         <input
@@ -61,11 +63,18 @@ const LoginForm = ({ handleLogin, loginStatus }: Props) => {
           <p>Login failed</p>
         )}
 
-        <button disabled={loginStatus === 'loading'} onClick={login}>
-          Login
+        <button
+          disabled={loginStatus === 'loading'}
+          onClick={isSignup ? signup : login}
+        >
+          {isSignup ? 'Sign up' : 'Log in'}
         </button>
         <p>
-          {`* Sign up at `}
+          No matrix account?{' '}
+          <button onClick={() => setIsSignup(!isSignup)}> Sign up </button> with
+          our homeserver ({MATRIX_SERVER}) or
+          <hr />
+          {`Sign up at `}
           <a href="https://app.element.io/">element.io</a> with the username and
           password option
         </p>

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterEach, vitest } from 'vitest';
 
-import { Database, wait } from '..';
+import { Database } from '..';
 import {
   baseUrl,
   dummyUserName,
@@ -11,7 +11,7 @@ import { createMatrixUser } from '../test-utils/matrixTestUtil';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
 import { loginToMatrix } from './login';
 
-describe('connectRoom', () => {
+describe('db.login()', () => {
   beforeAll(async () => {
     await ensureMatrixIsRunning();
     await createMatrixUser(dummyUserName, dummyUserPass);

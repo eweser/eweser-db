@@ -37,7 +37,7 @@ export const login = (_db: Database) => async (loginData: LoginData) => {
   try {
     const logger = (message: string, data?: any) =>
       _db.emit({
-        event: '.login',
+        event: 'login',
         message,
         data: { raw: data },
       });
@@ -71,7 +71,7 @@ export const login = (_db: Database) => async (loginData: LoginData) => {
   } catch (error: any) {
     const errorMessage = error?.message;
     _db.emit({
-      event: '.login',
+      event: 'login',
       message: errorMessage,
       data: { raw: error },
       level: 'error',
