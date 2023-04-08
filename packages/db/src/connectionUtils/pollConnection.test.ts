@@ -12,24 +12,18 @@ import {
 import { pollConnection } from './pollConnection';
 
 vitest.mock('./pingServer');
+const emitListener = vitest.fn();
 
 describe('pollConnection', () => {
-  let db: Database;
-
-  beforeEach(() => {
-    db = new Database();
-    db.online = true;
-  });
-
   afterEach(() => {
     vitest.clearAllMocks();
   });
 
   it('should set the database online status to true when pingServer returns true', async () => {
+    const db = new Database();
     const pingServerMock = pingServer as MockedFunction<typeof pingServer>;
     pingServerMock.mockResolvedValueOnce(true);
 
-    const emitListener = vitest.fn();
     db.on(emitListener);
 
     pollConnection(db, 100);
@@ -47,9 +41,10 @@ describe('pollConnection', () => {
   });
 
   it('should set the database online status to false when pingServer returns false', async () => {
+    const db = new Database();
+
     const pingServerMock = pingServer as MockedFunction<typeof pingServer>;
     pingServerMock.mockResolvedValueOnce(false);
-    const emitListener = vitest.fn();
     db.on(emitListener);
 
     pollConnection(db, 100);
@@ -67,6 +62,7 @@ describe('pollConnection', () => {
   });
 
   it('should call pingServer with the database instance', async () => {
+    const db = new Database();
     // Arrange
     const pingServerMock = pingServer as MockedFunction<typeof pingServer>;
 
@@ -81,6 +77,7 @@ describe('pollConnection', () => {
   });
 
   it('should poll the server at the specified interval', async () => {
+    const db = new Database();
     // Arrange
     const pingServerMock = pingServer as MockedFunction<typeof pingServer>;
 
