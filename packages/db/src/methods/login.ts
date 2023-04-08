@@ -3,6 +3,7 @@ import {
   createMatrixClient,
   getOrCreateRegistryRoom,
 } from '../connectionUtils';
+import { awaitOnline } from '../connectionUtils/awaitOnline';
 
 import type { LoginData, LoginStatus } from '../types';
 
@@ -40,8 +41,15 @@ export const login = (_db: Database) => async (loginData: LoginData) => {
         data: { raw: data },
       });
     logger('starting login', loginData);
-    setLoginStatus(_db, 'loading');
     _db.baseUrl = loginData.baseUrl;
+
+    const online = await awaitOnline(_db);
+    logger('starting login, online: ' + online, online);
+    if (!online) {
+      throw new Error('not online');
+    }
+
+    setLoginStatus(_db, 'loading');
 
     await loginToMatrix(_db, loginData);
     const registryRoomAlias = await getOrCreateRegistryRoom(_db);
@@ -53,14 +61,15 @@ export const login = (_db: Database) => async (loginData: LoginData) => {
     logger('finished login', { connectRes });
     setLoginStatus(_db, 'ok');
     return connectRes;
-  } catch (error) {
+  } catch (error: any) {
+    const errorMessage = error?.message;
     _db.emit({
       event: '.login',
-      message: 'error connecting registry',
+      message: errorMessage,
       data: { raw: error },
       level: 'error',
     });
     setLoginStatus(_db, 'failed');
-    return null;
+    return errorMessage;
   }
 };

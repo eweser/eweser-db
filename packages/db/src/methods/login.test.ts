@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterEach, vitest } from 'vitest';
 
-import { Database } from '..';
+import { Database, wait } from '..';
 import {
   baseUrl,
   dummyUserName,
@@ -19,7 +19,6 @@ describe('connectRoom', () => {
   afterEach(() => {
     localStorage.clear();
   });
-
   it('Can log in to matrix client. Sets login info in localStorage. ', async () => {
     const DB = new Database({ baseUrl });
 
@@ -36,6 +35,22 @@ describe('connectRoom', () => {
     const loginInfo = JSON.parse(localStorage.getItem('loginData') || '{}');
     expect(loginInfo.password).toEqual(dummyUserPass);
   });
+
+  it('returns "not online" error if offline', async () => {
+    const DB = new Database();
+    const eventListener = vitest.fn();
+    DB.on(eventListener);
+
+    const result = await DB.login({
+      userId: dummyUserName,
+      password: dummyUserPass,
+      baseUrl: 'http://localhost:123',
+    });
+    expect(result).toBe('not online');
+    expect(DB.loginStatus).toEqual('failed');
+    expect(eventListener.mock.calls[2][0].message).toEqual('not online');
+  });
+
   it('DB.login() sets DB baseUrl to passed in baseURL, logs in to matrix client, connects registry. Sets loginStatus in db and `on` emitter', async () => {
     const DB = new Database();
     const eventListener = vitest.fn();
@@ -74,25 +89,5 @@ describe('connectRoom', () => {
 
     expect(statusUpdates[0]).toEqual('loading');
     expect(statusUpdates[1]).toEqual('ok');
-  });
-  it('sets loginStatus, emits error, and returns null on failed login', () => {
-    const DB = new Database();
-    const eventListener = vitest.fn();
-    DB.baseUrl = 'something-else';
-    expect(DB.baseUrl).toEqual('something-else');
-
-    DB.on(eventListener);
-    expect(DB.loginStatus).toEqual('initial');
-    DB.login({
-      userId: dummyUserName,
-      password: dummyUserPass,
-      baseUrl,
-    }).catch((result) => {
-      expect(result).toBe(null);
-      expect(DB.loginStatus).toEqual('failed');
-      expect(eventListener.mock.calls[1][0].message).toEqual(
-        'error connecting registry'
-      );
-    });
-  });
+  }, 10000);
 });

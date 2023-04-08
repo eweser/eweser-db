@@ -1,4 +1,5 @@
 import { collectionKeys, collections, initialRegistry } from './collections';
+import { pollConnection } from './connectionUtils/pollConnection';
 import { connectRegistry } from './methods/connectRegistry';
 import { connectRoom } from './methods/connectRoom';
 import { createAndConnectRoom } from './methods/createAndConnectRoom';
@@ -43,6 +44,7 @@ export class Database {
   userId = '';
   baseUrl: string;
   loginStatus: LoginStatus = 'initial';
+  online = false;
 
   collectionKeys: CollectionKey[] = collectionKeys;
   collections: Collections = {
@@ -63,6 +65,8 @@ export class Database {
 
   constructor(options?: DatabaseOptions) {
     this.baseUrl = options?.baseUrl || 'https://matrix.org';
+
+    pollConnection(this); // start polling for connection status
     if (options?.debug) {
       this.on((event) => {
         if (options.debug === true) {

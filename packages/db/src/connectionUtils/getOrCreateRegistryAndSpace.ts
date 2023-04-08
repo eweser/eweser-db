@@ -127,7 +127,7 @@ export const getOrCreateRegistryRoom = async (
         });
         return { registryRoomAlias, wasNew };
       } else {
-        throw new Error(error);
+        throw error;
       }
     }
   }

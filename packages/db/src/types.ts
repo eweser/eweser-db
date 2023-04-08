@@ -107,6 +107,7 @@ export type DBEvent = {
     loginStatus?: LoginStatus;
     connectStatus?: ConnectStatus;
     raw?: any;
+    online?: boolean;
   };
 };
 
