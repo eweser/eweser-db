@@ -100,6 +100,7 @@ const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
   const createNote = () => {
     const newNote = buildNewNote(notes);
     setNote(newNote);
+    setSelectedNote(newNote._id);
   };
 
   const updateNoteText = (text: string, note?: Note) => {
