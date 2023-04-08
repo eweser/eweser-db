@@ -59,7 +59,7 @@ describe('populateRegistry', () => {
     const waitForRegistryPopulatedCallback = vitest.fn();
     const registry = getRegistry(DB);
     registry.clear();
-    const result = await waitForRegistryPopulated(DB, 200, 50).catch(
+    const result = await waitForRegistryPopulated(DB, 100, 10).catch(
       waitForRegistryPopulatedCallback
     );
     expect(result).toBeUndefined();

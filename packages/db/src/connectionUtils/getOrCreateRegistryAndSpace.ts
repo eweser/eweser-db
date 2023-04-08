@@ -80,7 +80,6 @@ export const getOrCreateRegistryRoom = async (
   registryRoom.roomAlias = registryRoomAlias;
 
   const roomId = await getRoomId(_db, registryRoomAlias);
-  logger('got registry roomId', roomId);
 
   // if registry exists
   if (typeof roomId === 'string') {

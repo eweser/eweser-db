@@ -1,5 +1,5 @@
 import type { TypedMap } from 'yjs-types';
-import type { DocumentBase } from './collections/documentBase';
+import type { DocumentBase } from '../collections/documentBase';
 import type {
   CollectionKey,
   Room,
@@ -7,8 +7,8 @@ import type {
   RegistryData,
   Document,
   DocumentWithoutBase,
-} from './types';
-import type { Database } from '.';
+} from '../types';
+import type { Database } from '..';
 
 export const wait = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -84,3 +84,19 @@ export function getRegistry(_db: Database): TypedMap<Documents<RegistryData>> {
   if (!registry) throw new Error('registry not found');
   return registry;
 }
+
+export const usernameValidation = (username: string) => {
+  // cannot contain  `~`, `@`, and `:`  and `.`
+  // must be between 3 and 32 characters
+  if (username.length < 3)
+    throw new Error('username must be at least 3 characters long');
+  if (username.length > 52)
+    throw new Error('username must be less than 52 characters long');
+  if (username.includes('.'))
+    throw new Error('username cannot contain a period');
+  if (username.includes('@')) throw new Error('username cannot contain a @');
+  if (username.includes(':')) throw new Error('username cannot contain a :');
+  if (username.includes('/')) throw new Error('username cannot contain a /');
+  if (username.includes('#')) throw new Error('username cannot contain a #');
+  if (username.includes('~')) throw new Error('username cannot contain a ~');
+};

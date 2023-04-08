@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterEach, vitest } from 'vitest';
 
-import { Database } from '..';
+import { CollectionKey, Database } from '..';
 import {
   baseUrl,
   dummyUserName,
@@ -48,7 +48,9 @@ describe('db.login()', () => {
     });
     expect(result).toBe('not online');
     expect(DB.loginStatus).toEqual('failed');
-    expect(eventListener.mock.calls[2][0].message).toEqual('not online');
+    expect(eventListener.mock.calls[2][0].message).toEqual(
+      'starting login, online: false'
+    );
   });
 
   it('DB.login() sets DB baseUrl to passed in baseURL, logs in to matrix client, connects registry. Sets loginStatus in db and `on` emitter', async () => {
@@ -90,21 +92,35 @@ describe('db.login()', () => {
     expect(statusUpdates[0]).toEqual('loading');
     expect(statusUpdates[1]).toEqual('ok');
   }, 10000);
-  it.skip('connects to a provided room if called with initialRoomConnect', async () => {
+  it('connects to a provided room if called with initialRoomConnect', async () => {
+    const userId = 'test-user' + Math.random().toString(36).substring(7);
+    const password = 'test-pass' + Math.random().toString(36).substring(7);
+    const signupDB = new Database();
+    await signupDB.signup({
+      userId,
+      password,
+      baseUrl,
+    });
+
     const DB = new Database();
     const eventListener = vitest.fn();
-    DB.baseUrl = 'something-else';
-    expect(DB.baseUrl).toEqual('something-else');
 
     DB.on(eventListener);
     expect(DB.loginStatus).toEqual('initial');
     await DB.login({
-      userId: dummyUserName,
-      password: dummyUserPass,
+      userId,
+      password,
       baseUrl,
-      // initialRoomConnect: {
-      //   aliasSeed: 'test-room' + Math.random().toFixed(),
-      // },
+      initialRoomConnect: {
+        aliasSeed: 'test-room' + Math.random().toFixed(),
+        collectionKey: CollectionKey.flashcards,
+      },
     });
-  });
+    const callMessages = eventListener.mock.calls.map(
+      (call) => call[0].message
+    );
+    // console.log(callMessages); // this is a really nice way to see all the events in order
+    expect(callMessages).toContain('starting createAndConnectRoom');
+    expect(callMessages).toContain('matrix provider connected');
+  }, 60000);
 });

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterEach, vitest } from 'vitest';
 
 import { Database } from '..';
-import { baseUrl, HOMESERVER_NAME } from '../test-utils';
+import { baseUrl, HOMESERVER_NAME, dummyUserName } from '../test-utils';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
 
 const randomUsername = Math.random().toString(36).substring(7);
@@ -14,7 +14,51 @@ describe('db.signup()', () => {
   afterEach(() => {
     localStorage.clear();
   });
+  it('does not allow unvalidate usernames', async () => {
+    const DB = new Database();
+    const res1 = await DB.signup({
+      userId: 'a',
+      password: randomPassword,
+      baseUrl,
+    });
+    expect(res1).toBe('username must be at least 3 characters long');
+    const res2 = await DB.signup({
+      userId: 'a'.repeat(53),
+      password: randomPassword,
+      baseUrl,
+    });
+    expect(res2).toBe('username must be less than 52 characters long');
+    const res3 = await DB.signup({
+      userId: 'a.123',
+      password: randomPassword,
+      baseUrl,
+    });
+    expect(res3).toBe('username cannot contain a period');
+  });
+  it('returns "user already exists" error if user already exists', async () => {
+    const DB1 = new Database();
 
+    try {
+      await DB1.signup({
+        userId: dummyUserName,
+        password: randomPassword,
+        baseUrl,
+      });
+      await DB1.matrixClient?.logout();
+    } catch (e) {
+      //
+    }
+    const DB = new Database();
+    const eventListener = vitest.fn();
+    DB.on(eventListener);
+    const result = await DB.signup({
+      userId: dummyUserName,
+      password: randomPassword,
+      baseUrl,
+    });
+    expect(DB.loginStatus).toEqual('failed');
+    expect(result).toBe('user already exists');
+  });
   it('returns "not online" error if offline', async () => {
     const DB = new Database();
     const eventListener = vitest.fn();
@@ -27,7 +71,11 @@ describe('db.signup()', () => {
     });
     expect(result).toBe('not online');
     expect(DB.loginStatus).toEqual('failed');
-    expect(eventListener.mock.calls[2][0].message).toEqual('not online');
+    expect(
+      eventListener.mock.calls
+        .map((call) => call[0].message)
+        .includes('starting signup, online: false')
+    ).toBe(true);
   });
 
   it('DB.signup() sets DB baseUrl to passed in baseURL, logs in to matrix client, connects registry. Sets loginStatus in db and `on` emitter', async () => {

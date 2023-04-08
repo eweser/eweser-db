@@ -70,7 +70,7 @@ describe('createAndConnectRoom', () => {
     const calls = eventListener.mock.calls;
     const callMessages = calls.map((call) => call[0].message);
     expect(callMessages).toContain('starting createAndConnectRoom');
-    expect(callMessages).toContain('registry populated');
+    expect(callMessages).toContain('registry was already populated');
     expect(callMessages).toContain('ydoc created');
     expect(callMessages).toContain('registry updated');
     expect(callMessages).toContain('matrix provider connected');

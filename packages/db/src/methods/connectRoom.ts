@@ -49,7 +49,7 @@ export const connectRoom =
   async <T extends Document>(
     aliasSeed: string,
     collectionKey: CollectionKey
-  ) => {
+  ): Promise<Room<T>> => {
     try {
       if (!aliasSeed) throw new Error('aliasSeed not provided');
 

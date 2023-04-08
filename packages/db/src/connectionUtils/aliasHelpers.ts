@@ -3,7 +3,7 @@
 // 2. the alias seed that a user will input: roomName -- these we'll call `aliasSeed` in the code
 // 3. the alias seed plus eweser metadata (collection key and user name) -- these we'll call `aliasName` in the code
 
-// `~`, `@`, and `:` must be restricted in the alias seed, because they are used to separate the alias seed from the user name and collection key in the alias name
+// `.`, `~`, `@`, and `:` must be restricted in the alias seed, because they are used to separate the alias seed from the user name and collection key in the alias name
 
 import type { CollectionKey } from '../types';
 

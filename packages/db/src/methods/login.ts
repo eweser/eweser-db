@@ -1,11 +1,9 @@
 import type { Database } from '..';
-import {
-  createMatrixClient,
-  getOrCreateRegistryRoom,
-} from '../connectionUtils';
+import { createMatrixClient } from '../connectionUtils';
 import { awaitOnline } from '../connectionUtils/awaitOnline';
 
-import type { LoginData, LoginStatus } from '../types';
+import type { LoginData, LoginStatus, Documents, RegistryData } from '../types';
+import type { TypedMap } from 'yjs-types';
 
 /**
  *  Connects to Matrix client without loading registry
@@ -33,49 +31,50 @@ const setLoginStatus = (_db: Database, loginStatus: LoginStatus) => {
  *
  * Saves loginData to localStorage on success
  */
-export const login = (_db: Database) => async (loginData: LoginData) => {
-  try {
-    const logger = (message: string, data?: any) =>
+export const login =
+  (_db: Database) =>
+  async (
+    loginData: LoginData,
+    fromSignup = false
+  ): Promise<TypedMap<Documents<RegistryData>> | string> => {
+    try {
+      if (!fromSignup) setLoginStatus(_db, 'loading');
+
+      const logger = (message: string, data?: any) =>
+        _db.emit({
+          event: 'login',
+          message,
+          data: { raw: data },
+        });
+      logger('starting login', loginData);
+      _db.baseUrl = loginData.baseUrl;
+
+      const online = await awaitOnline(_db);
+      logger('starting login, online: ' + online, online);
+      if (!online) {
+        throw new Error('not online');
+      }
+
+      await loginToMatrix(_db, loginData);
+
+      const connectRes = await _db.connectRegistry();
+
+      if (loginData.initialRoomConnect) {
+        await _db.createAndConnectRoom(loginData.initialRoomConnect);
+      }
+
+      logger('finished login', { connectRes });
+      setLoginStatus(_db, 'ok');
+      return connectRes;
+    } catch (error: any) {
+      const errorMessage = error?.message;
       _db.emit({
         event: 'login',
-        message,
-        data: { raw: data },
+        message: errorMessage,
+        data: { raw: error },
+        level: 'error',
       });
-    logger('starting login', loginData);
-    _db.baseUrl = loginData.baseUrl;
-
-    const online = await awaitOnline(_db);
-    logger('starting login, online: ' + online, online);
-    if (!online) {
-      throw new Error('not online');
+      setLoginStatus(_db, 'failed');
+      return errorMessage;
     }
-
-    setLoginStatus(_db, 'loading');
-
-    await loginToMatrix(_db, loginData);
-    const registryRoomAlias = await getOrCreateRegistryRoom(_db);
-    if (!registryRoomAlias) {
-      throw new Error('could not get registry room alias');
-    }
-
-    const connectRes = await _db.connectRegistry();
-
-    if (loginData.initialRoomConnect) {
-      await _db.createAndConnectRoom(loginData.initialRoomConnect);
-    }
-
-    logger('finished login', { connectRes });
-    setLoginStatus(_db, 'ok');
-    return connectRes;
-  } catch (error: any) {
-    const errorMessage = error?.message;
-    _db.emit({
-      event: 'login',
-      message: errorMessage,
-      data: { raw: error },
-      level: 'error',
-    });
-    setLoginStatus(_db, 'failed');
-    return errorMessage;
-  }
-};
+  };
