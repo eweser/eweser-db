@@ -90,4 +90,21 @@ describe('db.login()', () => {
     expect(statusUpdates[0]).toEqual('loading');
     expect(statusUpdates[1]).toEqual('ok');
   }, 10000);
+  it.skip('connects to a provided room if called with initialRoomConnect', async () => {
+    const DB = new Database();
+    const eventListener = vitest.fn();
+    DB.baseUrl = 'something-else';
+    expect(DB.baseUrl).toEqual('something-else');
+
+    DB.on(eventListener);
+    expect(DB.loginStatus).toEqual('initial');
+    await DB.login({
+      userId: dummyUserName,
+      password: dummyUserPass,
+      baseUrl,
+      // initialRoomConnect: {
+      //   aliasSeed: 'test-room' + Math.random().toFixed(),
+      // },
+    });
+  });
 });

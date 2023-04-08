@@ -1,13 +1,13 @@
 {
-  "name": "@eweser/eslint-config",
-  "version": "1.0.2",
+  "name": "@eweser/eslint-config-ts",
+  "version": "1.0.3",
   "description": "> TODO: description",
   "author": "jacobcoro <xiaokourou@gmail.com>",
   "homepage": "https://github.com/eweser/eweser-db#readme",
   "license": "ISC",
-  "main": "index.js",
+  "main": "./index.js",
   "files": [
-    "index.js"
+    "./index.js"
   ],
   "publishConfig": {
     "access": "public"
@@ -16,19 +16,13 @@
     "type": "git",
     "url": "git+https://github.com/eweser/eweser-db.git"
   },
-  "scripts": {
-    "test": "node ./__tests__/@eweser/eslint-config.test.js"
-  },
   "bugs": {
     "url": "https://github.com/eweser/eweser-db/issues"
   },
-  "peerDependencies": {
-    "eslint": "^8.37.0",
-    "eslint-plugin-prettier": "^4.2.1",
-    "prettier": "^2.8.7"
-  },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.57.1",
     "eslint": "^8.37.0",
+    "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-prettier": "^4.2.1",
     "prettier": "^2.8.7"
   }

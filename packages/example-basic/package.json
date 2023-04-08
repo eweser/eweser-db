@@ -42,7 +42,7 @@
     "events": "3.3.0"
   },
   "devDependencies": {
-    "@eweser/eslint-config": "*",
+    "@eweser/eslint-config-react-ts": "*",
     "vite": "^3.2.3",
     "rollup-plugin-polyfill-node": "^0.12.0",
     "eslint": "^7.11.0",

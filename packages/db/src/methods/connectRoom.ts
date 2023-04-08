@@ -92,11 +92,11 @@ export const connectRoom =
 
       await checkIfRoomIsInRegistry(_db, aliasSeed, collectionKey);
 
-      const roomId = await getRoomId(_db.matrixClient, roomAlias);
+      const roomId = await getRoomId(_db, roomAlias);
       if (!roomId) {
         throw new Error('could not get room id. Room has not been created yet');
       }
-      const matrixRoom = await joinRoomIfNotJoined(_db.matrixClient, roomId);
+      const matrixRoom = await joinRoomIfNotJoined(_db, roomId);
       logger('room joined', room.connectStatus, matrixRoom);
 
       const { ydoc } = await initializeDocAndLocalProvider<any>(aliasSeed);

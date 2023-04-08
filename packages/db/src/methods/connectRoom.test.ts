@@ -13,7 +13,7 @@ import {
 import { updateRegistryEntry } from '../connectionUtils/saveRoomToRegistry';
 import { createMatrixUser } from '../test-utils/matrixTestUtil';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
-import { RegistryData } from '../types';
+import type { RegistryData } from '../types';
 
 beforeAll(async () => {
   await ensureMatrixIsRunning();

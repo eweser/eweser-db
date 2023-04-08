@@ -1,7 +1,7 @@
 import { createClient } from 'matrix-js-sdk';
-import { Database } from '..';
+import type { Database } from '..';
 import { awaitOnline } from '../connectionUtils/awaitOnline';
-import { LoginData, LoginStatus } from '../types';
+import type { LoginData, LoginStatus } from '../types';
 
 const setLoginStatus = (_db: Database, loginStatus: LoginStatus) => {
   _db.loginStatus = loginStatus;
@@ -11,72 +11,72 @@ const setLoginStatus = (_db: Database, loginStatus: LoginStatus) => {
   });
 };
 
-export const signup =
-  (_db: Database) =>
-  async (userId: string, password: string, baseUrl: string) => {
-    if (!_db) throw new Error('db not initialized');
-    if (!userId) throw new Error('userId not set');
-    if (!password) throw new Error('password not set');
+export const signup = (_db: Database) => async (signupData: LoginData) => {
+  try {
     const logger = (message: string, data?: any) =>
       _db.emit({
         event: 'signup',
         message,
         data: { raw: data },
       });
-    logger('starting signup');
+    logger('starting signup', signupData);
+    const { userId, password, baseUrl } = signupData;
+    if (!userId || !password) {
+      throw new Error('missing userId or password');
+    }
+    if (!baseUrl) {
+      throw new Error('missing baseUrl');
+    }
     _db.baseUrl = baseUrl;
 
     const online = await awaitOnline(_db);
-    logger('starting login, online: ' + online, online);
+    logger('starting signup, online: ' + online, online);
     if (!online) {
       throw new Error('not online');
     }
-    setLoginStatus(_db, 'loading');
 
     const matrixClient = createClient({
       baseUrl: _db.baseUrl,
     });
-    let sessionId = '';
+    let session = '';
     // first get a session_id. this is returned in a 401 response :/
     try {
-      const result = await matrixClient.registerRequest({
-        username: userId,
-        password,
-      });
-      console.log({ result });
+      await matrixClient.register(userId, password, null, undefined as any);
+      matrixClient;
     } catch (e: any) {
       if (e.data?.errcode === 'M_USER_IN_USE') {
-        return _db.login({ userId, password, baseUrl: _db.baseUrl });
+        _db.emit({
+          event: 'signup',
+          message: 'user already exists',
+          level: 'error',
+        });
+        return 'user already exists';
       }
-      console.log('signup error', e);
-      sessionId = e?.data?.session;
+      session = e?.data?.session;
     }
 
-    if (!sessionId) {
-      throw new Error('unexpected, no sessionId set');
+    if (!session) {
+      throw new Error('unexpected, no session set');
     }
 
-    // now register
-    try {
-      const result = await matrixClient.registerRequest({
-        username: userId,
-        password,
-        auth: { session: sessionId },
-      });
-      console.log('signup result', result);
-    } catch (error) {
-      console.log('signup registerRequest error', error);
-    }
-
-    // login
-    const loginResult = await matrixClient.loginWithPassword(userId, password);
-    console.log('login result', loginResult);
-
-    const matrixClientLoggedIn = createClient({
-      baseUrl,
-      accessToken: loginResult.access_token,
-      userId: loginResult.user_id,
-      deviceId: loginResult.device_id,
+    await matrixClient.registerRequest({
+      username: userId,
+      password,
+      auth: { session, type: 'm.login.dummy' },
     });
-    _db.matrixClient = matrixClientLoggedIn;
-  };
+
+    const loginRes = await _db.login(signupData);
+    logger('finished signup', loginRes);
+    return loginRes;
+  } catch (error: any) {
+    const errorMessage = error?.message;
+    _db.emit({
+      event: 'signup',
+      message: errorMessage,
+      data: { raw: error },
+      level: 'error',
+    });
+    setLoginStatus(_db, 'failed');
+    return errorMessage;
+  }
+};

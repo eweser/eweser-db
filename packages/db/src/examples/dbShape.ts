@@ -1,5 +1,5 @@
 import type { FlashCard, Note, Profile } from '../collections';
-import { DocumentBase } from '../collections/documentBase';
+import type { DocumentBase } from '../collections/documentBase';
 import type { Collections, Documents, RegistryData } from '../types';
 import { CollectionKey } from '../types';
 import { buildRef } from '../utils';

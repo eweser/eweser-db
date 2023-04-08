@@ -1,13 +1,6 @@
 import { useEffect, useState } from 'react';
-import {
-  CollectionKey,
-  Database,
-  LoginData,
-  Room,
-  buildRef,
-  newDocument,
-} from '@eweser/db';
-import type { Documents, Note } from '@eweser/db';
+import { CollectionKey, Database, buildRef, newDocument } from '@eweser/db';
+import type { Documents, Note, LoginData, Room } from '@eweser/db';
 
 import LoginForm from './LoginForm';
 
@@ -30,7 +23,6 @@ const App = () => {
   // add a db.load() to try to load login from localStorage
 
   // add an 'initialRoomConnection' to db.login to skip the 'connectRoom' event
-
   db.on(({ event, data }) => {
     if (data?.loginStatus) {
       setLoginStatus(data.loginStatus);
@@ -42,11 +34,7 @@ const App = () => {
       }
     }
   });
-  const handleSignup = (loginData: LoginData) => {
-    if (!loginData.userId) throw new Error('userId is required');
-    if (!loginData.password) throw new Error('password is required');
-    db.signup(loginData.userId, loginData.password, loginData.baseUrl);
-  };
+
   const defaultNotesRoom = db.collections[CollectionKey.notes][aliasSeed];
   if (loginStatus === 'initial' || loginStatus === 'failed') {
     return (
@@ -54,7 +42,9 @@ const App = () => {
         handleLogin={(loginData: LoginData) =>
           db.login({ initialRoomConnect: defaultRoomConfig, ...loginData })
         }
-        handleSignup={handleSignup}
+        handleSignup={(loginData: LoginData) =>
+          db.signup({ initialRoomConnect: defaultRoomConfig, ...loginData })
+        }
         loginStatus={loginStatus}
       />
     );
@@ -93,7 +83,7 @@ const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
 
   const [selectedNote, setSelectedNote] = useState(nonDeletedNotes[0]);
 
-  notesDoc?.observe((event) => {
+  notesDoc?.observe((_event) => {
     setNotes(notesDoc?.toJSON());
   });
 

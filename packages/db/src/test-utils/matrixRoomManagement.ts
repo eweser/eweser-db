@@ -12,13 +12,13 @@ export const createTestRoomIfNotCreated = async (
     );
   } catch (error) {
     if (error.data?.errcode === 'M_ROOM_IN_USE') {
-      const rooms = matrixClient.getRooms();
-      console.log({ rooms });
+      // const rooms = matrixClient.getRooms();
+      // console.log({ rooms });
       const testRoomId = await matrixClient.getRoomIdForAlias(
         testRoomAliasName
       );
       await matrixClient.joinRoom(testRoomId.room_id);
-      console.log('test room already created');
+      // console.log('test room already created');
     } else {
       throw new Error(error);
     }

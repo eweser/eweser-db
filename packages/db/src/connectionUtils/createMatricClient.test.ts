@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 
 import {
-  baseUrl,
   dummyUserName,
   dummyUserPass,
   userIdWithServer,

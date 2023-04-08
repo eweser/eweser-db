@@ -1,6 +1,6 @@
 import { describe, it, expect, vitest } from 'vitest';
 import { Database } from '..';
-import { DBEvent } from '../types';
+import type { DBEvent } from '../types';
 
 describe('on', () => {
   it('should allow user to register listeners which emit events', () => {

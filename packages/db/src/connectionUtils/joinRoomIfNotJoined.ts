@@ -1,16 +1,27 @@
-import type { MatrixClient, Room } from 'matrix-js-sdk';
+import type { Room } from 'matrix-js-sdk';
+import type { Database } from '..';
 
 export const joinRoomIfNotJoined = async (
-  matrixClient: MatrixClient | null,
+  _db: Database,
   roomId: string
 ): Promise<Room> => {
+  const logger = (message: string, data?: any, error = false) =>
+    _db.emit({
+      event: 'joinRoomIfNotJoined',
+      message,
+      data: { roomId, raw: data },
+      level: error ? 'error' : 'info',
+    });
   return new Promise((resolve, reject) => {
-    if (!matrixClient) throw new Error('client not found');
-    const joinedRooms = matrixClient.getRooms();
+    if (!_db.matrixClient) throw new Error('client not found');
+    logger('starting joinRoomIfNotJoined');
+    const joinedRooms = _db.matrixClient.getRooms();
     const room = joinedRooms.find((room) => room.roomId === roomId);
+    logger('room found', { room, joinedRooms });
     try {
       if (!room) {
-        matrixClient.joinRoom(roomId).then((room) => {
+        _db.matrixClient.joinRoom(roomId).then((room) => {
+          logger('joined room', room);
           resolve(room);
         });
       }
@@ -20,14 +31,16 @@ export const joinRoomIfNotJoined = async (
         error.data.retry_after_ms
       ) {
         setTimeout(async () => {
-          console.log('retrying join room, ', error.data.retry_after_ms);
-          const room = await matrixClient.joinRoom(roomId);
-          if (room) resolve(room);
+          logger('retrying join room, ', error.data.retry_after_ms);
+          const room = await _db.matrixClient?.joinRoom(roomId);
+          if (room) {
+            logger('joined room after retry', room);
+            resolve(room);
+          }
         }, error.data.retry_after_ms);
       } else {
+        logger('error joining room', error, true);
         reject(error);
-        console.log('error joining room');
-        console.error(error);
       }
     }
   });

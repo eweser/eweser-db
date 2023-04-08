@@ -68,7 +68,7 @@ export const loginMatrixUser = async (
 };
 
 export async function createMatrixUser(username: string, password: string) {
-  console.log('create', username);
+  // console.log('create', username);
   const matrixClient = createClient({
     baseUrl: matrixTestConfig.baseUrl,
     // accessToken: access_token,
@@ -78,12 +78,7 @@ export async function createMatrixUser(username: string, password: string) {
   let sessionId = '';
   // first get a session_id. this is returned in a 401 response :/
   try {
-    const result = await matrixClient.register(
-      username,
-      password,
-      null,
-      undefined as any
-    );
+    await matrixClient.register(username, password, null, undefined as any);
   } catch (e: any) {
     if (e.data?.errcode === 'M_USER_IN_USE') {
       return loginMatrixUser(username, password, matrixClient);
@@ -96,7 +91,7 @@ export async function createMatrixUser(username: string, password: string) {
   }
   // now register
 
-  const result = await matrixClient.register(username, password, sessionId, {
+  await matrixClient.register(username, password, sessionId, {
     type: 'm.login.dummy',
   });
 

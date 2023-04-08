@@ -1,0 +1,33 @@
+{
+  "name": "@eweser/eslint-config-react-ts",
+  "version": "1.0.3",
+  "description": "> TODO: description",
+  "author": "jacobcoro <xiaokourou@gmail.com>",
+  "homepage": "https://github.com/eweser/eweser-db#readme",
+  "license": "ISC",
+  "main": "./index.js",
+  "files": [
+    "./index.js"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eweser/eweser-db.git"
+  },
+  "devDependencies": {
+    "@eweser/eslint-config-ts": "*",
+    "@typescript-eslint/eslint-plugin": "^5.57.1",
+    "@typescript-eslint/parser": "^5.57.1",
+    "eslint": "^8.38.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-n": "^15.7.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-promise": "^6.1.1",
+    "eslint-plugin-react": "^7.32.2",
+    "prettier": "^2.8.7",
+    "typescript": "^5.0.4"
+  }
+}

@@ -1,4 +1,4 @@
-import { Database } from '..';
+import type { Database } from '..';
 import { pingServer } from './pingServer';
 
 export const pollConnection = (_db: Database, interval = 1000) => {

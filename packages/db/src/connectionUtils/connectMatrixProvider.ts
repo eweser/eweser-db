@@ -11,7 +11,7 @@ export function connectMatrixProvider(
 ) {
   const logger = (message: string, data?: any) =>
     _db.emit({
-      event: '.connectMatrixProvider',
+      event: 'connectMatrixProvider',
       message,
       data: { raw: data },
     });

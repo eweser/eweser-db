@@ -1,5 +1,5 @@
 module.exports = {
-  extends: ['@eweser/eslint-config-ts'],
+  extends: ['@eweser/eslint-config-react-ts'],
   ignorePatterns: [
     'vite.config.*',
     'types/**/*.d.ts',

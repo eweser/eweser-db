@@ -65,9 +65,9 @@ export const createAndConnectRoom =
       } catch (error: any) {
         if (JSON.stringify(error).includes('M_ROOM_IN_USE')) {
           logger('room already exists', error);
-          const roomId = await getRoomId(_db.matrixClient, roomAlias);
+          const roomId = await getRoomId(_db, roomAlias);
           if (typeof roomId === 'string') {
-            await joinRoomIfNotJoined(_db.matrixClient, roomId);
+            await joinRoomIfNotJoined(_db, roomId);
             logger('room joined', roomId);
             updateRegistryEntry(_db, {
               collectionKey,

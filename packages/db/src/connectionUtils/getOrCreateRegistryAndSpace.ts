@@ -20,10 +20,10 @@ export const getOrCreateSpace = async (_db: Database) => {
 
   const spaceRoomAlias = buildSpaceRoomAlias(userId);
   const spaceRoomAliasName = getAliasNameFromAlias(spaceRoomAlias);
-  const roomId = await getRoomId(matrixClient, spaceRoomAlias);
+  const roomId = await getRoomId(_db, spaceRoomAlias);
   // if space exists
   if (typeof roomId == 'string') {
-    await joinRoomIfNotJoined(matrixClient, roomId);
+    await joinRoomIfNotJoined(_db, roomId);
     return spaceRoomAlias;
   } else {
     try {
@@ -44,10 +44,9 @@ export const getOrCreateSpace = async (_db: Database) => {
         error.message.includes('Room alias already taken')
       ) {
         logger('space room already exists');
-        const roomId = await getRoomId(matrixClient, spaceRoomAlias);
+        const roomId = await getRoomId(_db, spaceRoomAlias);
 
-        if (typeof roomId === 'string')
-          await joinRoomIfNotJoined(matrixClient, roomId);
+        if (typeof roomId === 'string') await joinRoomIfNotJoined(_db, roomId);
 
         logger('joined space room');
         return spaceRoomAlias;
@@ -80,12 +79,12 @@ export const getOrCreateRegistryRoom = async (
   const registryRoomAliasName = getAliasNameFromAlias(registryRoomAlias);
   registryRoom.roomAlias = registryRoomAlias;
 
-  const roomId = await getRoomId(matrixClient, registryRoomAlias);
+  const roomId = await getRoomId(_db, registryRoomAlias);
   logger('got registry roomId', roomId);
 
   // if registry exists
   if (typeof roomId === 'string') {
-    await joinRoomIfNotJoined(matrixClient, roomId);
+    await joinRoomIfNotJoined(_db, roomId);
     registryRoom.roomId = roomId;
     logger('joined registry room', { wasNew });
     return { registryRoomAlias, wasNew };
@@ -115,10 +114,10 @@ export const getOrCreateRegistryRoom = async (
         logger('registry room already exists', error);
         const registryRoom = _db.collections.registry[0];
         registryRoom.roomAlias = registryRoomAlias;
-        const roomId = await getRoomId(matrixClient, registryRoomAlias);
+        const roomId = await getRoomId(_db, registryRoomAlias);
         if (typeof roomId === 'string') {
           registryRoom.roomId = roomId;
-          await joinRoomIfNotJoined(matrixClient, roomId);
+          await joinRoomIfNotJoined(_db, roomId);
         }
         logger('joined existing registry room', {
           wasNew,

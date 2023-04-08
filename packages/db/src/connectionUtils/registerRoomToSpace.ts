@@ -15,7 +15,8 @@ export const registerRoomToSpace = async (
 
   const host = spaceId.split(':')[1];
 
-  const registerToSpaceRes = await matrixClient.sendStateEvent(
+  // const registerToSpaceRes =
+  await matrixClient.sendStateEvent(
     spaceId,
     'm.space.child',
     { via: host },

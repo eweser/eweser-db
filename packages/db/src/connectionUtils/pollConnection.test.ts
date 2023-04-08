@@ -1,14 +1,7 @@
 import { Database } from '..';
 import { pingServer } from './pingServer';
-import {
-  vitest,
-  it,
-  describe,
-  expect,
-  beforeEach,
-  MockedFunction,
-  afterEach,
-} from 'vitest';
+import type { MockedFunction } from 'vitest';
+import { vitest, it, describe, expect, afterEach } from 'vitest';
 import { pollConnection } from './pollConnection';
 
 vitest.mock('./pingServer');
@@ -48,7 +41,6 @@ describe('pollConnection', () => {
     db.on(emitListener);
 
     pollConnection(db, 100);
-
     // Wait for 150ms (to ensure that the first poll has completed)
     await new Promise((resolve) => setTimeout(resolve, 150));
 
