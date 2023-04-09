@@ -109,7 +109,7 @@ export type DBEvent = {
   level?: 'info' | 'warn' | 'error';
   message?: string;
   data?: {
-    collectionKey?: CollectionKey;
+    collectionKey?: CollectionKey | 'registry';
     roomId?: string;
     roomAlias?: string;
     aliasSeed?: string;

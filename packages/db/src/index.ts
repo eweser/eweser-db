@@ -15,6 +15,8 @@ import type {
 } from './types';
 
 import type { MatrixClient } from 'matrix-js-sdk';
+import { getRoom } from './utils';
+import { load } from './methods/load';
 
 export type {
   Profile,
@@ -29,6 +31,7 @@ export type {
   Document,
   YDoc,
   DocumentBase,
+  DBEvent,
 } from './types';
 
 export { CollectionKey } from './types'; // enum exported not as a type
@@ -57,16 +60,23 @@ export class Database {
   listeners: DBEventEmitter[] = [];
 
   // methods
+
+  // logger/event emitter
   on = on(this);
   emit = emit(this);
 
+  // connect methods
   connectRegistry = connectRegistry(this);
   connectRoom = connectRoom(this);
   createAndConnectRoom = createAndConnectRoom(this);
   login = login(this);
   signup = signup(this);
+  load = load(this);
+
+  // util methods
   buildAliasFromSeed = (aliasSeed: string, collectionKey: CollectionKey) =>
     buildAliasFromSeed(aliasSeed, collectionKey, this.userId);
+  getRoom = getRoom(this);
 
   constructor(options?: DatabaseOptions) {
     this.baseUrl = options?.baseUrl || 'https://matrix.org';

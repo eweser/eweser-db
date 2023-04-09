@@ -9,6 +9,7 @@ import type {
   DocumentWithoutBase,
 } from '../types';
 import type { Database } from '..';
+import { newEmptyRoom } from '../connectionUtils';
 
 export const wait = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -100,3 +101,21 @@ export const usernameValidation = (username: string) => {
   if (username.includes('#')) throw new Error('username cannot contain a #');
   if (username.includes('~')) throw new Error('username cannot contain a ~');
 };
+
+export const getRoom =
+  (_db: Database) =>
+  <T extends Document>(collectionKey: CollectionKey, aliasSeed: string) => {
+    const room = _db.collections[collectionKey][aliasSeed];
+    if (!room) return null;
+    return room as Room<T>;
+  };
+
+export const getOrSetRoom =
+  (_db: Database) =>
+  <T extends Document>(collectionKey: CollectionKey, aliasSeed: string) => {
+    const room = _db.getRoom<T>(collectionKey, aliasSeed);
+    if (room) return room;
+    const newRoom = newEmptyRoom<T>(_db, collectionKey, aliasSeed);
+    _db.collections[collectionKey][aliasSeed] = newRoom as Room<any>;
+    return newRoom;
+  };

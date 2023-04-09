@@ -1,12 +1,11 @@
 import {
   connectMatrixProvider,
-  getAliasNameFromAlias,
   getRoomId,
   joinRoomIfNotJoined,
-  newEmptyRoom,
 } from '../connectionUtils';
 import type { CollectionKey, Document, ConnectStatus, Room } from '../types';
 import type { Database } from '..';
+import { getOrSetRoom } from '..';
 import { buildAliasFromSeed, getCollectionRegistry } from '..';
 import { initializeDocAndLocalProvider } from '../connectionUtils/initializeDoc';
 import { waitForRegistryPopulated } from '../connectionUtils/populateRegistry';
@@ -58,7 +57,6 @@ export const connectRoom =
         collectionKey,
         _db.userId
       );
-      const roomAliasName = getAliasNameFromAlias(roomAlias);
       const logger = (
         message: string,
         connectStatus: ConnectStatus,
@@ -75,10 +73,9 @@ export const connectRoom =
           },
           message,
         });
-      const room =
-        _db.collections[collectionKey][roomAliasName] ||
-        newEmptyRoom<T>(collectionKey, roomAlias);
-      _db.collections[collectionKey][aliasSeed] = room;
+
+      const room = getOrSetRoom(_db)(collectionKey, aliasSeed);
+
       logger('starting connectRoom', room.connectStatus);
 
       if (room.matrixProvider?.canWrite && !!room.ydoc?.store) {
@@ -90,9 +87,13 @@ export const connectRoom =
         return room as Room<T>;
       }
 
-      await checkIfRoomIsInRegistry(_db, aliasSeed, collectionKey);
+      const registryEntry = await checkIfRoomIsInRegistry(
+        _db,
+        aliasSeed,
+        collectionKey
+      );
 
-      const roomId = await getRoomId(_db, roomAlias);
+      const roomId = registryEntry.roomId || (await getRoomId(_db, roomAlias));
       if (!roomId) {
         throw new Error('could not get room id. Room has not been created yet');
       }

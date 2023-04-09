@@ -1,5 +1,6 @@
 import { createClient } from 'matrix-js-sdk';
 import type { LoginData } from '../types';
+import { LocalStorageKey, localStorageSet } from '../utils/localStorageService';
 
 type MatrixLoginRes = {
   access_token: string;
@@ -52,7 +53,7 @@ export async function createMatrixClient(data: LoginData) {
       // accessToken: loginRes.access_token,
       deviceId: loginRes.device_id,
     };
-    localStorage.setItem('loginData', JSON.stringify(loginSaveData));
+    localStorageSet(LocalStorageKey.loginData, loginSaveData);
   }
 
   return matrixClient;

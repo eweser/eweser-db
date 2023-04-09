@@ -9,15 +9,15 @@ import {
   baseUrl,
   dummyUserName,
   dummyUserPass,
-  testRoomAlias,
+  testAliasSeed,
   userLoginInfo,
 } from '../test-utils';
 import { createMatrixUser } from '../test-utils/matrixTestUtil';
 import { loginToMatrix } from '../methods/login';
-import { connectMatrixProvider, newEmptyRoom } from '.';
+import { connectMatrixProvider } from '.';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
 import { createTestRoomIfNotCreated } from '../test-utils/matrixRoomManagement';
-import { wait } from '../utils';
+import { getOrSetRoom, wait } from '../utils';
 
 beforeAll(async () => {
   await ensureMatrixIsRunning();
@@ -35,13 +35,11 @@ describe('connectMatrixProvider', () => {
     if (!DB.matrixClient) throw 'matrixClient not found';
     await createTestRoomIfNotCreated(DB.matrixClient);
 
-    const room = newEmptyRoom<FlashCard>(
+    const room = getOrSetRoom(DB)<FlashCard>(
       CollectionKey.flashcards,
-      testRoomAlias
+      testAliasSeed
     );
     room.ydoc = doc;
-
-    DB.collections[CollectionKey.flashcards][testRoomAlias] = room;
 
     await connectMatrixProvider(DB, room);
 

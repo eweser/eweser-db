@@ -31,7 +31,7 @@ const LoginForm = ({ handleLogin, handleSignup, loginStatus }: Props) => {
   const signup = () => handleSignup(loginData);
 
   return (
-    <div style={styles.flexColCenter}>
+    <>
       <h1>{isSignup ? 'Sign up' : 'Log In'}</h1>
       <form onSubmit={(e) => e.preventDefault()} style={styles.login}>
         <label htmlFor="server-input">Homeserver:</label>
@@ -43,6 +43,7 @@ const LoginForm = ({ handleLogin, handleSignup, loginStatus }: Props) => {
 
         <label htmlFor="user-input">Matrix user id: *</label>
         <input
+          name="username"
           autoComplete="username"
           placeholder="e.g.: @jacob:matrix.org"
           id="user-input"
@@ -77,19 +78,22 @@ const LoginForm = ({ handleLogin, handleSignup, loginStatus }: Props) => {
             <button onClick={() => setIsSignup(!isSignup)}> Log in </button>
           </p>
         ) : (
-          <p>
-            No matrix account?{' '}
-            <button onClick={() => setIsSignup(!isSignup)}> Sign up </button>{' '}
-            with our homeserver ({MATRIX_SERVER}) <hr />
-            or
-            <hr />
-            {`Sign up at `}
-            <a href="https://app.element.io/">element.io</a> with the username
-            and password option
-          </p>
+          <>
+            <p>
+              {`No matrix account? `}
+              <button onClick={() => setIsSignup(!isSignup)}> Sign up </button>
+              {` with our homeserver ${MATRIX_SERVER}`}
+            </p>
+            <p style={{ margin: 0 }}>or</p>
+            <p>
+              {`Sign up at `}
+              <a href="https://app.element.io/">element.io</a> with the username
+              and password option
+            </p>
+          </>
         )}
       </form>
-    </div>
+    </>
   );
 };
 

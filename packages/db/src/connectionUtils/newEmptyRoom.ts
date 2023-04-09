@@ -1,9 +1,12 @@
+import type { Database } from '..';
 import type { CollectionKey, Document, Room } from '../types';
 
 export const newEmptyRoom = <T extends Document>(
+  _db: Database,
   collectionKey: CollectionKey,
-  roomAlias: string
+  aliasSeed: string
 ) => {
+  const roomAlias = _db.buildAliasFromSeed(aliasSeed, collectionKey);
   const room: Room<T> = {
     connectStatus: 'initial',
     collectionKey,

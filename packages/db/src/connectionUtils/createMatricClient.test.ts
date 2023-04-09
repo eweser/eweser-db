@@ -12,6 +12,8 @@ import {
   initMatrixSDK,
 } from '../test-utils/matrixTestUtilServer';
 import { createMatrixClient } from './createMatrixClient';
+import { LocalStorageKey, localStorageGet } from '../utils/localStorageService';
+import type { LoginData } from '../types';
 
 beforeAll(async () => {
   initMatrixSDK();
@@ -29,8 +31,8 @@ describe('createMatrixClient', () => {
     const whoami = await signedInClient.whoami();
     expect(whoami?.user_id).toEqual(userIdWithServer);
 
-    const loginInfo = JSON.parse(localStorage.getItem('loginData') || '{}');
-    expect(loginInfo.password).toEqual(dummyUserPass);
+    const loginInfo = localStorageGet<LoginData>(LocalStorageKey.loginData);
+    expect(loginInfo?.password).toEqual(dummyUserPass);
 
     // can logout and back in
     await signedInClient.logout();

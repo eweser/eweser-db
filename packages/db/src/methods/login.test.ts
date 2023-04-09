@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterEach, vitest } from 'vitest';
 
+import type { LoginData } from '..';
 import { CollectionKey, Database } from '..';
 import {
   baseUrl,
@@ -10,6 +11,7 @@ import {
 import { createMatrixUser } from '../test-utils/matrixTestUtil';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
 import { loginToMatrix } from './login';
+import { localStorageGet, LocalStorageKey } from '../utils/localStorageService';
 
 describe('db.login()', () => {
   beforeAll(async () => {
@@ -32,8 +34,8 @@ describe('db.login()', () => {
     const whoami = await DB.matrixClient?.whoami();
     expect(whoami?.user_id).toEqual(`@${dummyUserName}:${HOMESERVER_NAME}`);
 
-    const loginInfo = JSON.parse(localStorage.getItem('loginData') || '{}');
-    expect(loginInfo.password).toEqual(dummyUserPass);
+    const loginInfo = localStorageGet<LoginData>(LocalStorageKey.loginData);
+    expect(loginInfo?.password).toEqual(dummyUserPass);
   });
 
   it('returns "not online" error if offline', async () => {
@@ -73,8 +75,8 @@ describe('db.login()', () => {
     const whoami = await DB.matrixClient?.whoami();
     expect(whoami?.user_id).toEqual(`@${dummyUserName}:${HOMESERVER_NAME}`);
 
-    const loginInfo = JSON.parse(localStorage.getItem('loginData') || '{}');
-    expect(loginInfo.password).toEqual(dummyUserPass);
+    const loginInfo = localStorageGet<LoginData>(LocalStorageKey.loginData);
+    expect(loginInfo?.password).toEqual(dummyUserPass);
 
     //check registry
     const registryRoom = DB.collections.registry[0];

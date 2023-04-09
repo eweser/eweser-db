@@ -1,8 +1,10 @@
 import { describe, it, expect, beforeAll, afterEach, vitest } from 'vitest';
 
+import type { LoginData } from '..';
 import { Database } from '..';
 import { baseUrl, HOMESERVER_NAME, dummyUserName } from '../test-utils';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
+import { localStorageGet, LocalStorageKey } from '../utils/localStorageService';
 
 const randomUsername = Math.random().toString(36).substring(7);
 const randomPassword = Math.random().toString(36).substring(7);
@@ -98,8 +100,8 @@ describe('db.signup()', () => {
     const whoami = await DB.matrixClient?.whoami();
     expect(whoami?.user_id).toEqual(`@${randomUsername}:${HOMESERVER_NAME}`);
 
-    const loginInfo = JSON.parse(localStorage.getItem('loginData') || '{}');
-    expect(loginInfo.password).toEqual(randomPassword);
+    const loginInfo = localStorageGet<LoginData>(LocalStorageKey.loginData);
+    expect(loginInfo?.password).toEqual(randomPassword);
 
     //check registry
     const registryRoom = DB.collections.registry[0];

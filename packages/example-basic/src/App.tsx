@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CollectionKey, Database, buildRef, newDocument } from '@eweser/db';
-import type { Documents, Note, LoginData, Room } from '@eweser/db';
+import type { Documents, Note, LoginData, Room, DBEvent } from '@eweser/db';
 
 import LoginForm from './LoginForm';
 
@@ -16,33 +16,97 @@ const defaultRoomConfig = {
 
 const db = new Database({ baseUrl: MATRIX_SERVER, debug: true });
 
+// const DBContext = createContext(db);
+
+// const DBProvider = ({ children }: { children: React.ReactNode }) => {
+//   return <DBContext.Provider value={db}>{children}</DBContext.Provider>;
+// };
+
+const StatusBar = ({ db }: { db: Database }) => {
+  const [statusMessage, setStatusMessage] = useState('initializing');
+  // listen to various database events and update the status bar at the bottom of the screen.
+  // This could be used to show icons like connected/offline or a syncing spinner like in google sheets
+
+  useEffect(() => {
+    const handleStatusUpdate = ({ event, message }: DBEvent) => {
+      if (event === 'load') {
+        if (message === 'loading from localStorage') {
+          setStatusMessage('loading local database');
+        }
+        if (message?.includes('unable to load localStore')) {
+          setStatusMessage('no local database found');
+        }
+        if (message === 'loaded from localStorage') {
+          setStatusMessage('loaded local database');
+        }
+        if (message === 'load, online: true') {
+          setStatusMessage('loaded local database, connecting remote');
+        }
+        if (message === 'load, connected rooms') {
+          setStatusMessage('loaded local database, connected to remote');
+        }
+        if (message === 'load, login failed') {
+          setStatusMessage('loaded local database, offline');
+        }
+      }
+    };
+    db.on(handleStatusUpdate);
+  }, [db, setStatusMessage]);
+  return <div style={styles.statusBar}>{statusMessage}</div>;
+};
+
+// const AppWrapper = () => {
+//   return (
+//     <DBProvider>
+//       <App />
+//     </DBProvider>
+//   );
+// }
+
 const App = () => {
   const [loginStatus, setLoginStatus] = useState(db.loginStatus);
+  const [localLoaded, setLocalLoaded] = useState(false);
 
-  // TODO: add a db.load() to try to load login from localStorage
+  useEffect(() => {
+    // Set within a useEffect to make sure to only load and set the db.on() callback once
+    db.on(({ data, message }) => {
+      // this will be called during db.login or db.signup
+      if (data?.loginStatus) {
+        setLoginStatus(data.loginStatus);
+      }
+      // this will be called on db.load()
+      // after this message the database is ready to be used, but syncing to remote may still be in progress
+      if (message === 'loaded from localStorage') {
+        setLocalLoaded(true);
+      }
+    });
 
-  db.on(({ data }) => {
-    if (data?.loginStatus) {
-      setLoginStatus(data.loginStatus);
-    }
-  });
+    db.load([defaultRoomConfig]);
+  }, [db, setLoginStatus]);
 
-  const defaultNotesRoom = db.collections[CollectionKey.notes][aliasSeed];
-  if (loginStatus === 'ok' && defaultNotesRoom.ydoc) {
-    return <NotesInternal notesRoom={defaultNotesRoom} />;
-  } else {
-    return (
-      <LoginForm
-        handleLogin={(loginData: LoginData) =>
-          db.login({ initialRoomConnect: defaultRoomConfig, ...loginData })
-        }
-        handleSignup={(loginData: LoginData) =>
-          db.signup({ initialRoomConnect: defaultRoomConfig, ...loginData })
-        }
-        loginStatus={loginStatus}
-      />
-    );
-  }
+  const handleLogin = (loginData: LoginData) =>
+    db.login({ initialRoomConnect: defaultRoomConfig, ...loginData });
+  const handleSignup = (loginData: LoginData) =>
+    db.signup({ initialRoomConnect: defaultRoomConfig, ...loginData });
+
+  const defaultNotesRoom = db.getRoom<Note>(CollectionKey.notes, aliasSeed);
+
+  const dbReady = localLoaded || loginStatus === 'ok';
+
+  return (
+    <div style={styles.appRoot}>
+      {dbReady && defaultNotesRoom?.ydoc ? (
+        <NotesInternal notesRoom={defaultNotesRoom} />
+      ) : (
+        <LoginForm
+          handleLogin={handleLogin}
+          handleSignup={handleSignup}
+          loginStatus={loginStatus}
+        />
+      )}
+      <StatusBar db={db} />
+    </div>
+  );
 };
 
 const buildNewNote = (notes: Documents<Note>) => {
@@ -103,7 +167,7 @@ const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
   }, []);
 
   return (
-    <div style={styles.flexColCenter}>
+    <>
       <h1>Edit</h1>
       {nonDeletedNotes.length === 0 ? (
         <div>No notes found. Please create one</div>
@@ -143,7 +207,7 @@ const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
             );
         })}
       </div>
-    </div>
+    </>
   );
 };
 
