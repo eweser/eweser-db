@@ -1,4 +1,4 @@
-import { LoginData, ConnectStatus } from '@eweser/db';
+import type { LoginData, ConnectStatus } from '@eweser/db';
 import { useState } from 'react';
 import { DEV_PASSWORD, DEV_USERNAME, MATRIX_SERVER } from './config';
 import { styles } from './styles';
@@ -31,7 +31,7 @@ const LoginForm = ({ handleLogin, handleSignup, loginStatus }: Props) => {
   const signup = () => handleSignup(loginData);
 
   return (
-    <div>
+    <div style={styles.flexColCenter}>
       <h1>{isSignup ? 'Sign up' : 'Log In'}</h1>
       <form onSubmit={(e) => e.preventDefault()} style={styles.login}>
         <label htmlFor="server-input">Homeserver:</label>
@@ -48,7 +48,7 @@ const LoginForm = ({ handleLogin, handleSignup, loginStatus }: Props) => {
           id="user-input"
           onChange={(e) => handleChange('userId', e.target.value)}
           value={loginData.userId}
-        ></input>
+        />
 
         <label htmlFor="password-input">Password:</label>
         <input
@@ -57,27 +57,37 @@ const LoginForm = ({ handleLogin, handleSignup, loginStatus }: Props) => {
           type="password"
           onChange={(e) => handleChange('password', e.target.value)}
           value={loginData.password}
-        ></input>
+        />
         {loginStatus === 'failed' && (
           // TODO: show error
           <p>Login failed</p>
         )}
 
         <button
-          disabled={loginStatus === 'loading'}
+          style={{ margin: '1rem' }}
+          disabled={loginStatus !== 'initial' && loginStatus !== 'failed'}
           onClick={isSignup ? signup : login}
         >
           {isSignup ? 'Sign up' : 'Log in'}
         </button>
-        <p>
-          No matrix account?{' '}
-          <button onClick={() => setIsSignup(!isSignup)}> Sign up </button> with
-          our homeserver ({MATRIX_SERVER}) or
-          <hr />
-          {`Sign up at `}
-          <a href="https://app.element.io/">element.io</a> with the username and
-          password option
-        </p>
+
+        {isSignup ? (
+          <p>
+            Already have an account?{' '}
+            <button onClick={() => setIsSignup(!isSignup)}> Log in </button>
+          </p>
+        ) : (
+          <p>
+            No matrix account?{' '}
+            <button onClick={() => setIsSignup(!isSignup)}> Sign up </button>{' '}
+            with our homeserver ({MATRIX_SERVER}) <hr />
+            or
+            <hr />
+            {`Sign up at `}
+            <a href="https://app.element.io/">element.io</a> with the username
+            and password option
+          </p>
+        )}
       </form>
     </div>
   );

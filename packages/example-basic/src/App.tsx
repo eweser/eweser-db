@@ -18,25 +18,19 @@ const db = new Database({ baseUrl: MATRIX_SERVER, debug: true });
 
 const App = () => {
   const [loginStatus, setLoginStatus] = useState(db.loginStatus);
-  const [roomConnectionStatus, setRoomConnectionStatus] = useState('initial');
 
-  // add a db.load() to try to load login from localStorage
+  // TODO: add a db.load() to try to load login from localStorage
 
-  // add an 'initialRoomConnection' to db.login to skip the 'connectRoom' event
-  db.on(({ event, data }) => {
+  db.on(({ data }) => {
     if (data?.loginStatus) {
       setLoginStatus(data.loginStatus);
-    }
-    // listen for the 'connectRoom' event to know when the collection is ready
-    if (event === 'connectRoom') {
-      if (data?.connectStatus && data.aliasSeed === aliasSeed) {
-        setRoomConnectionStatus(data.connectStatus);
-      }
     }
   });
 
   const defaultNotesRoom = db.collections[CollectionKey.notes][aliasSeed];
-  if (loginStatus === 'initial' || loginStatus === 'failed') {
+  if (loginStatus === 'ok' && defaultNotesRoom.ydoc) {
+    return <NotesInternal notesRoom={defaultNotesRoom} />;
+  } else {
     return (
       <LoginForm
         handleLogin={(loginData: LoginData) =>
@@ -48,14 +42,6 @@ const App = () => {
         loginStatus={loginStatus}
       />
     );
-  } else if (loginStatus === 'loading') {
-    return <div>Logging in...</div>;
-  } else if (loginStatus === 'ok' && roomConnectionStatus !== 'ok') {
-    return <div>Connecting collection...</div>;
-  } else if (loginStatus === 'ok' && defaultNotesRoom.ydoc) {
-    return <NotesInternal notesRoom={defaultNotesRoom} />;
-  } else {
-    return <div>Something went wrong</div>;
   }
 };
 
@@ -117,22 +103,20 @@ const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
   }, []);
 
   return (
-    <div>
-      <div>
-        <h1>Edit</h1>
-        {nonDeletedNotes.length === 0 ? (
-          <div>No notes found. Please create one</div>
-        ) : (
-          <textarea
-            style={styles.editor}
-            name="main-card-editor"
-            value={notes[selectedNote]?.text ?? ''}
-            onChange={(e) => {
-              updateNoteText(e.target.value, notes[selectedNote]);
-            }}
-          />
-        )}
-      </div>
+    <div style={styles.flexColCenter}>
+      <h1>Edit</h1>
+      {nonDeletedNotes.length === 0 ? (
+        <div>No notes found. Please create one</div>
+      ) : (
+        <textarea
+          style={styles.editor}
+          name="main-card-editor"
+          value={notes[selectedNote]?.text ?? ''}
+          onChange={(e) => {
+            updateNoteText(e.target.value, notes[selectedNote]);
+          }}
+        />
+      )}
 
       <h1>Notes</h1>
 
