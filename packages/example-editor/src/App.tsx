@@ -1,92 +1,102 @@
 import { useEffect, useState } from 'react';
-import {
-  CollectionKey,
-  Database,
-  Room,
-  buildAliasFromSeed,
-  buildRef,
-  newDocument,
-} from '@eweser/db';
-import type { Documents, Note } from '@eweser/db';
+import { CollectionKey, Database, buildRef, newDocument } from '@eweser/db';
+import type { Documents, Note, LoginData, Room } from '@eweser/db';
 
 import LoginForm from './LoginForm';
+import { StatusBar } from './StatusBar';
 
 import { styles } from './styles';
-import { MATRIX_SERVER } from './config';
 import { MilkdownEditorWrapper } from './Editor';
+import { Doc } from 'yjs';
 
+// This example shows how to implement a basic login/signup form and a basic note-taking app using @eweser/db
+// The CRUD operations are all done directly on the ydoc.
+// For most real-world use-cases you will probably want to pass the doc to a helper library like synced-store https://syncedstore.org/docs/.
+// or pass the doc to an editor like prosemirror (preferably a subdoc like in the `example-editor` example to maintain interoperability)
+
+/** basically the code-facing 'name' of a room. This will be used to generate the `roomAlias that matrix uses to identify rooms */
 const aliasSeed = 'notes-default';
-const defaultCollectionData = {
-  collectionKey: CollectionKey.notes,
+const collectionKey = CollectionKey.notes;
+/** a room is a group of documents that all share a common `Collection` type, like Note. A room also corresponds with a Matrix chat room where the data is stored. */
+const initialRoomConnect = {
+  collectionKey,
   aliasSeed,
-  name: 'Default Notes Collection',
+  name: 'My Notes on Life and Things',
 };
 
-const db = new Database({ baseUrl: MATRIX_SERVER, debug: true });
+const db = new Database({
+  // set `debug` to true to see debug messages in the console
+  // debug: true,
+});
 
 const App = () => {
-  const [loginStatus, setLoginStatus] = useState(db.loginStatus);
-  const [roomConnectionStatus, setRoomConnectionStatus] = useState('initial');
+  const [started, setStarted] = useState(false);
 
-  db.on(({ event, data }) => {
-    if (data?.loginStatus) {
-      setLoginStatus(data.loginStatus);
-    }
-    if (data?.loginStatus === 'ok') {
-      db.createAndConnectRoom(defaultCollectionData);
-    }
-    if (event === 'connectRoom') {
-      const roomAlias = buildAliasFromSeed(
-        aliasSeed,
-        CollectionKey.notes,
-        db.userId
-      );
-      if (data?.connectStatus && data.roomAlias === roomAlias) {
-        setRoomConnectionStatus(data.connectStatus);
+  useEffect(() => {
+    // Set within a useEffect to make sure to only call `db.load()` and `db.on()` once
+    db.on(({ event }) => {
+      // 'started' or 'startFailed' will be called as the result of either db.load(), db.login(), or db.signup()
+      if (event === 'started') {
+        // after this message the database is ready to be used, but syncing to remote may still be in progress
+        setStarted(true);
       }
-    }
-  });
+    });
+    // `db.load()` tries to start up the database from an existing localStore. This will only work if the user has previously logged in from this device
+    db.load([initialRoomConnect]);
+  }, []);
 
-  const defaultNotesRoom = db.collections[CollectionKey.notes][aliasSeed];
+  const handleLogin = (loginData: LoginData) =>
+    db.login({ initialRoomConnect, ...loginData });
 
-  if (loginStatus === 'ok' && roomConnectionStatus !== 'ok') {
-    return <div>Connecting collection...</div>;
-  } else if (loginStatus === 'ok' && defaultNotesRoom.ydoc) {
-    return <NotesInternal notesRoom={defaultNotesRoom} />;
-  } else if (loginStatus === 'initial') {
-    return <LoginForm handleLogin={db.login} loginStatus={loginStatus} />;
-  } else if (loginStatus === 'loading') {
-    return <div>Logging in...</div>;
-  } else {
-    return <div>Something went wrong</div>;
-  }
+  const handleSignup = (loginData: LoginData) =>
+    db.signup({ initialRoomConnect, ...loginData });
+
+  const defaultNotesRoom = db.getRoom<Note>(collectionKey, aliasSeed);
+
+  return (
+    <div style={styles.appRoot}>
+      {/* You can check that the ydoc exists to make sure the room is connected */}
+      {started && defaultNotesRoom?.ydoc ? (
+        <NotesInternal notesRoom={defaultNotesRoom} />
+      ) : (
+        <LoginForm
+          handleLogin={handleLogin}
+          handleSignup={handleSignup}
+          db={db}
+        />
+      )}
+      <StatusBar db={db} />
+    </div>
+  );
 };
 
 const buildNewNote = (notes: Documents<Note>) => {
-  const id = Object.keys(notes).length;
+  const documentId = Object.keys(notes).length; // ids can be strings too. This will make them sequential numbers
+
+  // a ref is used to build up links between documents. It is a string that looks like `collectionKey:aliasSeed:documentId`
   const ref = buildRef({
-    collectionKey: CollectionKey.notes,
-    aliasSeed: aliasSeed,
-    documentId: id,
+    collectionKey,
+    aliasSeed,
+    documentId,
   });
-  const newNote = newDocument<Note>(ref, {
-    text: 'New Note Body',
-  });
-  return newNote;
+
+  return newDocument<Note>(ref, { text: 'New Note Body' });
 };
 
 const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
+  // initialize the ydoc with .getMap() and then use .observe() to update the state when the ydoc changes
   const notesDoc = notesRoom.ydoc?.getMap('documents');
 
   const [notes, setNotes] = useState<Documents<Note>>(notesDoc?.toJSON() ?? {});
 
+  // You can also delete entries by setting them to undefined/null, but it is better to use the _deleted flag to mark them for deletion later just in case the user changes their mind
   const nonDeletedNotes = Object.keys(notes).filter(
     (id) => !notes[id]?._deleted
   );
 
   const [selectedNote, setSelectedNote] = useState(nonDeletedNotes[0]);
 
-  notesDoc?.observe((event) => {
+  notesDoc?.observe((_event) => {
     setNotes(notesDoc?.toJSON());
   });
 
@@ -96,13 +106,12 @@ const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
 
   const createNote = () => {
     const newNote = buildNewNote(notes);
+    newNote.doc == new Doc();
     setNote(newNote);
-  };
 
-  const updateNoteText = (text: string, note?: Note) => {
-    if (!note) return;
-    note.text = text;
-    setNote(note);
+    // subdocs documentation https://docs.yjs.dev/api/subdocuments
+
+    setSelectedNote(newNote._id);
   };
 
   const deleteNote = (note: Note) => {
@@ -113,19 +122,18 @@ const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
     setNote(note);
   };
 
-  useEffect(() => {
-    // makes sure we have a selected note on initial load
-    setSelectedNote(nonDeletedNotes[0]);
-  }, []);
-
+  const editorDoc = notes[selectedNote]?.doc;
+  console.log(notes[selectedNote]);
   return (
-    <div>
-      <div>
-        <h1>Edit</h1>
-        {notesRoom.ydoc && (
-          <MilkdownEditorWrapper doc={notesRoom.ydoc as any} />
-        )}
-      </div>
+    <>
+      <h1>Edit</h1>
+      {nonDeletedNotes.length === 0 ? (
+        <div>No notes found. Please create one</div>
+      ) : editorDoc ? (
+        <MilkdownEditorWrapper doc={editorDoc} />
+      ) : (
+        <div>Loading doc...</div>
+      )}
 
       <h1>Notes</h1>
 
@@ -152,7 +160,7 @@ const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
             );
         })}
       </div>
-    </div>
+    </>
   );
 };
 

@@ -5,8 +5,9 @@ import { Milkdown, MilkdownProvider, useEditor } from '@milkdown/react';
 import { commonmark } from '@milkdown/preset-commonmark';
 import { collabServiceCtx, collab } from '@milkdown/plugin-collab';
 import { Note, YDoc } from '@eweser/db';
+import { Doc } from 'yjs';
 
-const MilkdownEditor: React.FC<{ doc: YDoc<Note> }> = ({ doc }) => {
+const MilkdownEditor: React.FC<{ doc: Doc }> = ({ doc }) => {
   const editor = useEditor((root) =>
     Editor.make()
       .config((ctx) => {
@@ -28,9 +29,7 @@ const MilkdownEditor: React.FC<{ doc: YDoc<Note> }> = ({ doc }) => {
   return <Milkdown />;
 };
 
-export const MilkdownEditorWrapper: React.FC<{ doc: YDoc<Note> }> = ({
-  doc,
-}) => {
+export const MilkdownEditorWrapper: React.FC<{ doc: Doc }> = ({ doc }) => {
   return (
     <MilkdownProvider>
       <MilkdownEditor doc={doc} />
