@@ -65,9 +65,9 @@ const App = () => {
 const buildNewNote = (notes: Documents<Note>) => {
   const id = Object.keys(notes).length;
   const ref = buildRef({
-    collection: CollectionKey.notes,
+    collectionKey: CollectionKey.notes,
     aliasSeed: aliasSeed,
-    documentID: id,
+    documentId: id,
   });
   const newNote = newDocument<Note>(ref, {
     text: 'New Note Body',

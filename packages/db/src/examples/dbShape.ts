@@ -62,14 +62,14 @@ const chineseFlashcardsYDoc: { documents: Documents<FlashCard> } = {
       frontText: 'What does 火 mean?',
       backText: 'Fire🔥',
       noteLink: buildRef({
-        collection: CollectionKey.notes,
+        collectionKey: CollectionKey.notes,
         aliasSeed: 'my_study_notes',
-        documentID: '0',
+        documentId: '0',
       }),
       _ref: buildRef({
-        collection: CollectionKey.flashcards,
+        collectionKey: CollectionKey.flashcards,
         aliasSeed: 'chinese_flashcards',
-        documentID: '0',
+        documentId: '0',
       }),
       _id: 'noteID',
       _created: 1653135317729,

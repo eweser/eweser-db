@@ -14,9 +14,9 @@ describe('initializeDoc', () => {
   it('can set data to the doc', async () => {
     const { ydoc } = await initializeDocAndLocalProvider<any>('test');
     const ref = buildRef({
-      collection: CollectionKey.notes,
+      collectionKey: CollectionKey.notes,
       aliasSeed: testAliasSeed,
-      documentID: 'testDocumentId',
+      documentId: 'testDocumentId',
     });
     const testDocument = newDocument<any>(ref, {
       testDocKey: 'testDocValue',

@@ -9,8 +9,9 @@ import { styles } from './styles';
 
 /** basically the code-facing 'name' of a room. This will be used to generate the `roomAlias that matrix uses to identify rooms */
 const aliasSeed = 'notes-default';
+const collectionKey = CollectionKey.notes;
 const roomConfig = {
-  collectionKey: CollectionKey.notes,
+  collectionKey,
   aliasSeed,
   name: 'My Notes on Life and Things',
 };
@@ -49,7 +50,7 @@ const App = () => {
     db.signup({ initialRoomConnect: roomConfig, ...loginData });
   };
 
-  const defaultNotesRoom = db.getRoom<Note>(CollectionKey.notes, aliasSeed);
+  const defaultNotesRoom = db.getRoom<Note>(collectionKey, aliasSeed);
 
   return (
     <div style={styles.appRoot}>
@@ -69,16 +70,13 @@ const App = () => {
 };
 
 const buildNewNote = (notes: Documents<Note>) => {
-  const id = Object.keys(notes).length;
+  const documentId = Object.keys(notes).length;
   const ref = buildRef({
-    collection: CollectionKey.notes,
-    aliasSeed: aliasSeed,
-    documentID: id,
+    collectionKey,
+    aliasSeed,
+    documentId,
   });
-  const newNote = newDocument<Note>(ref, {
-    text: 'New Note Body',
-  });
-  return newNote;
+  return newDocument<Note>(ref, { text: 'New Note Body' });
 };
 
 const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
