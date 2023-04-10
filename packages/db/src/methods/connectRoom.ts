@@ -97,6 +97,9 @@ export const connectRoom =
       if (!roomId) {
         throw new Error('could not get room id. Room has not been created yet');
       }
+      room.roomId = roomId;
+      room.roomAlias = roomAlias;
+
       const matrixRoom = await joinRoomIfNotJoined(_db, roomId);
       logger('room joined', room.connectStatus, matrixRoom);
 

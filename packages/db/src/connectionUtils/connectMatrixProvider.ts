@@ -57,13 +57,13 @@ export function connectMatrixProvider(
         return resolve(true);
       });
 
-      room.matrixProvider.initialize();
-
       room.matrixProvider.onDocumentUnavailable((e) => {
         room.connectStatus = 'disconnected';
         logger('onDocumentUnavailable', { room, doc, e });
         reject('onDocumentUnavailable');
       });
+
+      room.matrixProvider.initialize();
     } catch (error: any) {
       logger('connectMatrixProvider error', { error, room });
       // eslint-disable-next-line no-console

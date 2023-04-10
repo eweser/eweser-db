@@ -72,7 +72,7 @@ describe('load', () => {
     expect(loginMock).toHaveBeenCalled();
     expect(emitterCalls[4]).toEqual('load, login success');
     expect(connectRoomMock).toHaveBeenCalledTimes(2);
-    expect(emitterCalls[5]).toEqual('load, connected rooms');
+    expect(emitterCalls[7]).toEqual('load, connected rooms: 0/2');
 
     const startedCall = listenerMock.mock.calls.find(
       (call) => call[0].event === 'started'

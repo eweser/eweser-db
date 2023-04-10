@@ -46,7 +46,7 @@ describe('connectRoom', () => {
         notes: {},
       })
     );
-    const seed = 'test' + (Math.random() * 10000).toFixed();
+    const seed = 'test' + Math.random().toString(36).substring(7);
     const roomAlias = buildAliasFromSeed(
       seed,
       CollectionKey.flashcards,

@@ -76,10 +76,23 @@ export const load =
     }
     logger('load, login success');
     try {
+      let successfulRooms = 0;
+      const targetRooms = rooms.length;
       for (const { aliasSeed, collectionKey } of rooms) {
-        await _db.connectRoom(aliasSeed, collectionKey);
+        try {
+          const result = await _db.connectRoom(aliasSeed, collectionKey);
+          if (result.matrixProvider?.canWrite) {
+            successfulRooms++;
+          }
+        } catch (error) {
+          logger('load, connect room failed', {
+            aliasSeed,
+            collectionKey,
+            error,
+          });
+        }
       }
-      logger('load, connected rooms');
+      logger(`load, connected rooms: ${successfulRooms}/${targetRooms}`);
       _db.emit({ event: 'started' });
       return true;
     } catch (error) {

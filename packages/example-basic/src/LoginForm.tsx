@@ -1,23 +1,32 @@
-import type { LoginData, ConnectStatus } from '@eweser/db';
-import { useState } from 'react';
+import type { LoginData, Database } from '@eweser/db';
+import { useEffect, useState } from 'react';
 import { DEV_PASSWORD, DEV_USERNAME, MATRIX_SERVER } from './config';
 import { styles } from './styles';
 
 const initialLoginData: LoginData = {
   baseUrl: MATRIX_SERVER,
-  userId: DEV_USERNAME, // these will be empty in prod. This speeds up dev time
+  userId: DEV_USERNAME, // these will be empty in prod. This speeds up dev time by prefilling the login form
   password: DEV_PASSWORD,
 };
 
 export interface Props {
   handleLogin: (loginData: LoginData) => void;
   handleSignup: (loginData: LoginData) => void;
-  loginStatus: ConnectStatus;
+  failed: boolean;
+  db: Database;
 }
 
 type FormField = keyof LoginData;
+const LoginForm = ({ handleLogin, handleSignup, failed, db }: Props) => {
+  const [loginStatus, setLoginStatus] = useState(db.loginStatus);
 
-const LoginForm = ({ handleLogin, handleSignup, loginStatus }: Props) => {
+  useEffect(() => {
+    db.on(({ data }) => {
+      // this will be called during db.login() or db.signup() but not db.load()
+      if (data?.loginStatus) setLoginStatus(data.loginStatus);
+    });
+  }, [db]);
+
   const [loginData, setLoginData] = useState(initialLoginData);
   const [isSignup, setIsSignup] = useState(false);
   const handleChange = (field: FormField, value: string) => {
@@ -59,10 +68,11 @@ const LoginForm = ({ handleLogin, handleSignup, loginStatus }: Props) => {
           onChange={(e) => handleChange('password', e.target.value)}
           value={loginData.password}
         />
-        {loginStatus === 'failed' && (
-          // TODO: show error
-          <p>Login failed</p>
-        )}
+        {loginStatus === 'failed' ||
+          (failed && loginStatus !== 'initial' && (
+            // TODO: show error
+            <p style={{ color: 'red' }}>Login failed</p>
+          ))}
 
         <button
           style={{ margin: '1rem' }}

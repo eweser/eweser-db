@@ -1,107 +1,66 @@
 import { useEffect, useState } from 'react';
 import { CollectionKey, Database, buildRef, newDocument } from '@eweser/db';
-import type { Documents, Note, LoginData, Room, DBEvent } from '@eweser/db';
+import type { Documents, Note, LoginData, Room } from '@eweser/db';
 
 import LoginForm from './LoginForm';
+import { StatusBar } from './StatusBar';
 
 import { styles } from './styles';
-import { MATRIX_SERVER } from './config';
 
+/** basically the code-facing 'name' of a room. This will be used to generate the `roomAlias that matrix uses to identify rooms */
 const aliasSeed = 'notes-default';
-const defaultRoomConfig = {
+const roomConfig = {
   collectionKey: CollectionKey.notes,
   aliasSeed,
-  name: 'Default Notes Collection',
+  name: 'My Notes on Life and Things',
 };
 
-const db = new Database({ baseUrl: MATRIX_SERVER, debug: true });
-
-// const DBContext = createContext(db);
-
-// const DBProvider = ({ children }: { children: React.ReactNode }) => {
-//   return <DBContext.Provider value={db}>{children}</DBContext.Provider>;
-// };
-
-const StatusBar = ({ db }: { db: Database }) => {
-  const [statusMessage, setStatusMessage] = useState('initializing');
-  // listen to various database events and update the status bar at the bottom of the screen.
-  // This could be used to show icons like connected/offline or a syncing spinner like in google sheets
-
-  useEffect(() => {
-    const handleStatusUpdate = ({ event, message }: DBEvent) => {
-      if (event === 'load') {
-        if (message === 'loading from localStorage') {
-          setStatusMessage('loading local database');
-        }
-        if (message?.includes('unable to load localStore')) {
-          setStatusMessage('no local database found');
-        }
-        if (message === 'loaded from localStorage') {
-          setStatusMessage('loaded local database');
-        }
-        if (message === 'load, online: true') {
-          setStatusMessage('loaded local database, connecting remote');
-        }
-        if (message === 'load, connected rooms') {
-          setStatusMessage('loaded local database, connected to remote');
-        }
-        if (message === 'load, login failed') {
-          setStatusMessage('loaded local database, offline');
-        }
-      }
-    };
-    db.on(handleStatusUpdate);
-  }, [db, setStatusMessage]);
-  return <div style={styles.statusBar}>{statusMessage}</div>;
-};
-
-// const AppWrapper = () => {
-//   return (
-//     <DBProvider>
-//       <App />
-//     </DBProvider>
-//   );
-// }
+const db = new Database({
+  // set `debug` to true to see debug messages in the console
+  debug: true,
+});
 
 const App = () => {
-  const [loginStatus, setLoginStatus] = useState(db.loginStatus);
-  const [localLoaded, setLocalLoaded] = useState(false);
+  const [started, setStarted] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    // Set within a useEffect to make sure to only load and set the db.on() callback once
-    db.on(({ data, message }) => {
-      // this will be called during db.login or db.signup
-      if (data?.loginStatus) {
-        setLoginStatus(data.loginStatus);
+    // Set within a useEffect to make sure to only call `db.load()` and `db.on()` once
+    db.on(({ event }) => {
+      // 'started' or 'startFailed' will be called as the result of either db.load(), db.login(), or db.signup()
+      if (event === 'started') {
+        // after this message the database is ready to be used, but syncing to remote may still be in progress
+        setStarted(true);
       }
-      // this will be called on db.load()
-      // after this message the database is ready to be used, but syncing to remote may still be in progress
-      if (message === 'loaded from localStorage') {
-        setLocalLoaded(true);
+      if (event === 'startFailed') {
+        setFailed(true);
       }
     });
+    // `db.load()` tries to start up the database from an existing localStore. This will only work if the user has previously logged in from this device
+    db.load([roomConfig]);
+  }, []);
 
-    db.load([defaultRoomConfig]);
-  }, [db, setLoginStatus]);
-
-  const handleLogin = (loginData: LoginData) =>
-    db.login({ initialRoomConnect: defaultRoomConfig, ...loginData });
-  const handleSignup = (loginData: LoginData) =>
-    db.signup({ initialRoomConnect: defaultRoomConfig, ...loginData });
+  const handleLogin = (loginData: LoginData) => {
+    setFailed(false);
+    db.login({ initialRoomConnect: roomConfig, ...loginData });
+  };
+  const handleSignup = (loginData: LoginData) => {
+    setFailed(false);
+    db.signup({ initialRoomConnect: roomConfig, ...loginData });
+  };
 
   const defaultNotesRoom = db.getRoom<Note>(CollectionKey.notes, aliasSeed);
 
-  const dbReady = localLoaded || loginStatus === 'ok';
-
   return (
     <div style={styles.appRoot}>
-      {dbReady && defaultNotesRoom?.ydoc ? (
+      {started && defaultNotesRoom?.ydoc ? (
         <NotesInternal notesRoom={defaultNotesRoom} />
       ) : (
         <LoginForm
           handleLogin={handleLogin}
           handleSignup={handleSignup}
-          loginStatus={loginStatus}
+          failed={failed}
+          db={db}
         />
       )}
       <StatusBar db={db} />
@@ -160,11 +119,6 @@ const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
     note._ttl = new Date().getTime() + oneMonth;
     setNote(note);
   };
-
-  useEffect(() => {
-    // makes sure we have a selected note on initial load
-    setSelectedNote(nonDeletedNotes[0]);
-  }, []);
 
   return (
     <>
