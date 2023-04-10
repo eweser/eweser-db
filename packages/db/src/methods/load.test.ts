@@ -49,6 +49,10 @@ describe('load', () => {
       message: 'unable to load localStore loginInfo',
       data: { raw: { rooms } },
     });
+    const startFailedCall = listenerMock.mock.calls.find(
+      (call) => call[0].event === 'startFailed'
+    );
+    expect(startFailedCall).toBeDefined();
   });
 
   it('should load registry and rooms from localStorage and indexedDB if available', async () => {
@@ -69,6 +73,11 @@ describe('load', () => {
     expect(emitterCalls[4]).toEqual('load, login success');
     expect(connectRoomMock).toHaveBeenCalledTimes(2);
     expect(emitterCalls[5]).toEqual('load, connected rooms');
+
+    const startedCall = listenerMock.mock.calls.find(
+      (call) => call[0].event === 'started'
+    );
+    expect(startedCall).toBeDefined();
 
     expect(res).toBe(true);
   });

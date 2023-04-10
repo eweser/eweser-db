@@ -64,6 +64,7 @@ export const login =
       }
 
       logger('finished login', { connectRes });
+      _db.emit({ event: 'started' });
       setLoginStatus(_db, 'ok');
       return connectRes;
     } catch (error: any) {
@@ -75,6 +76,7 @@ export const login =
         level: 'error',
       });
       setLoginStatus(_db, 'failed');
+      _db.emit({ event: 'startFailed' });
       return errorMessage;
     }
   };

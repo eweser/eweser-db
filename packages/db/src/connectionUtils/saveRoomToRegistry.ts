@@ -22,7 +22,7 @@ export const updateRegistryEntry = (
 ) => {
   const logger = (message: string, data?: any) =>
     _db.emit({
-      event: 'updateRegistryEntry',
+      event: 'updateRegistry',
       message,
       data: { roomAlias, collectionKey, roomId, raw: data },
     });

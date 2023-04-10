@@ -53,6 +53,10 @@ describe('db.login()', () => {
     expect(eventListener.mock.calls[2][0].message).toEqual(
       'starting login, online: false'
     );
+    const startFailedCall = eventListener.mock.calls.find(
+      (call) => call[0].event === 'startFailed'
+    );
+    expect(startFailedCall).toBeDefined();
   });
 
   it('DB.login() sets DB baseUrl to passed in baseURL, logs in to matrix client, connects registry. Sets loginStatus in db and `on` emitter', async () => {
@@ -93,6 +97,10 @@ describe('db.login()', () => {
 
     expect(statusUpdates[0]).toEqual('loading');
     expect(statusUpdates[1]).toEqual('ok');
+    const startedCall = eventListener.mock.calls.find(
+      (call) => call[0].event === 'started'
+    );
+    expect(startedCall).toBeDefined();
   }, 10000);
   it('connects to a provided room if called with initialRoomConnect', async () => {
     const userId = 'test-user' + Math.random().toString(36).substring(7);
@@ -124,5 +132,9 @@ describe('db.login()', () => {
     // console.log(callMessages); // this is a really nice way to see all the events in order
     expect(callMessages).toContain('starting createAndConnectRoom');
     expect(callMessages).toContain('matrix provider connected');
+    const startedCall = eventListener.mock.calls.find(
+      (call) => call[0].event === 'started'
+    );
+    expect(startedCall).toBeDefined();
   }, 60000);
 });

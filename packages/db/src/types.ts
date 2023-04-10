@@ -104,8 +104,33 @@ export type LoginStatus =
   | 'ok'
   | 'disconnected';
 
+/**
+ * `started` can be for success of login, startup, or load
+ *
+ * `startFailed` can be for fail of login, startup, or load
+ */
+export type DBEventType =
+  | 'login'
+  | 'signup'
+  | 'load'
+  | 'started'
+  | 'startFailed'
+  | 'onlineChange'
+  | 'loginStatus'
+  | 'connectRoom'
+  | 'createAndConnectRoom'
+  | 'loadRoom'
+  | 'joinRoomIfNotJoined'
+  | 'updateRegistry'
+  | 'connectRegistry'
+  | 'populateRegistry'
+  | 'connectMatrixProvider'
+  | 'getOrCreateSpace'
+  | 'getOrCreateRegistry'
+  | 'getRoomId';
+
 export type DBEvent = {
-  event: string;
+  event: DBEventType;
   level?: 'info' | 'warn' | 'error';
   message?: string;
   data?: {

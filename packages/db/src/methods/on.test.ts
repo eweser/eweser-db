@@ -7,16 +7,16 @@ describe('on', () => {
     const DB = new Database();
     const listener = vitest.fn();
     DB.on(listener);
-    DB.emit({ event: 'test' });
+    DB.emit({ event: 'login' });
     expect(listener).toBeCalledTimes(1);
     // sets default level to info
-    expect(listener).toBeCalledWith({ event: 'test', level: 'info' });
+    expect(listener).toBeCalledWith({ event: 'login', level: 'info' });
 
     // can add another listener, can add data
     const listener2 = vitest.fn();
     DB.on(listener2);
     const event2: DBEvent = {
-      event: 'test2',
+      event: 'login',
       level: 'warn',
       data: { id: '123' },
     };

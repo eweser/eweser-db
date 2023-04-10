@@ -28,6 +28,7 @@ export const load =
     const loginInfo = localStorageGet<LoginData>(LocalStorageKey.loginData);
     if (!loginInfo || !loginInfo.userId) {
       logger('unable to load localStore loginInfo', loginInfo);
+      _db.emit({ event: 'startFailed' });
       return false;
     }
     _db.userId = loginInfo.userId;
@@ -37,6 +38,7 @@ export const load =
     const registryFind = indexedDBs.find((db) => db.name === 'registry');
     if (!registryFind || !registryFind.name) {
       logger('unable to load localStore indexedDB registry');
+      _db.emit({ event: 'startFailed' });
       return false;
     }
     logger('loading from localStorage', loginInfo);
@@ -48,6 +50,7 @@ export const load =
     // TODO: more detailed check that indexxedDB doc is there.
     if (!registryIndexedDB.readyState) {
       logger('unable to load localStore indexedDB db');
+      _db.emit({ event: 'startFailed' });
       return false;
     }
     // load registry ydoc from indexedDB to db
@@ -63,6 +66,7 @@ export const load =
     const online = await awaitOnline(_db);
     logger('load, online: ' + online);
     if (!online) {
+      _db.emit({ event: 'started' });
       return true;
     }
     const loginRes = await _db.login(loginInfo);
@@ -76,8 +80,11 @@ export const load =
         await _db.connectRoom(aliasSeed, collectionKey);
       }
       logger('load, connected rooms');
+      _db.emit({ event: 'started' });
       return true;
     } catch (error) {
+      _db.emit({ event: 'startFailed' });
+
       logger('load, connect rooms failed', error);
       return false;
     }
