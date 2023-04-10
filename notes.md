@@ -29,3 +29,4 @@
 - give some instructions on self-hosting.
 - make 2 servers and federate them. Figure out a federation strategy, like inviting another listener to each of your rooms.
 - figure out how E2E Encryption works and how it would work on multiple devices for users.
+- create an async cron job that runs after the db loads, and once a day, to delete items with the \_deleted flag whose ttl has expired.

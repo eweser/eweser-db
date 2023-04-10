@@ -7,6 +7,11 @@ import { StatusBar } from './StatusBar';
 
 import { styles } from './styles';
 
+// This example shows how to implement a basic login/signup form and a basic note-taking app using @eweser/db
+// The CRUD operations are all done directly on the ydoc.
+// For most real-world use-cases you will probably want to pass the doc to a helper library like synced-store https://syncedstore.org/docs/.
+// or pass the doc to an editor like prosemirror (preferably a subdoc like in the `example-editor` example to maintain interoperability)
+
 /** basically the code-facing 'name' of a room. This will be used to generate the `roomAlias that matrix uses to identify rooms */
 const aliasSeed = 'notes-default';
 const collectionKey = CollectionKey.notes;
@@ -48,6 +53,7 @@ const App = () => {
 
   return (
     <div style={styles.appRoot}>
+      {/* You can check that the ydoc exists to make sure the room is connected */}
       {started && defaultNotesRoom?.ydoc ? (
         <NotesInternal notesRoom={defaultNotesRoom} />
       ) : (
@@ -63,7 +69,9 @@ const App = () => {
 };
 
 const buildNewNote = (notes: Documents<Note>) => {
-  const documentId = Object.keys(notes).length;
+  const documentId = Object.keys(notes).length; // ids can be strings too. This will make them sequential numbers
+
+  // a ref is used to build up links between documents. It is a string that looks like `collectionKey:aliasSeed:documentId`
   const ref = buildRef({
     collectionKey,
     aliasSeed,
@@ -73,10 +81,12 @@ const buildNewNote = (notes: Documents<Note>) => {
 };
 
 const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
+  // initialize the ydoc with .getMap() and then use .observe() to update the state when the ydoc changes
   const notesDoc = notesRoom.ydoc?.getMap('documents');
 
   const [notes, setNotes] = useState<Documents<Note>>(notesDoc?.toJSON() ?? {});
 
+  // You can also delete entries by setting them to undefined/null, but it is better to use the _deleted flag to mark them for deletion later just in case the user changes their mind
   const nonDeletedNotes = Object.keys(notes).filter(
     (id) => !notes[id]?._deleted
   );
