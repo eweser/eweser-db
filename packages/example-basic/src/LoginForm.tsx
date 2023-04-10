@@ -12,18 +12,22 @@ const initialLoginData: LoginData = {
 export interface Props {
   handleLogin: (loginData: LoginData) => void;
   handleSignup: (loginData: LoginData) => void;
-  failed: boolean;
   db: Database;
 }
 
 type FormField = keyof LoginData;
-const LoginForm = ({ handleLogin, handleSignup, failed, db }: Props) => {
-  const [loginStatus, setLoginStatus] = useState(db.loginStatus);
+const LoginForm = ({ handleLogin, handleSignup, db }: Props) => {
+  const [loginStatus, setLoginStatus] = useState(db.loginStatus || 'initial');
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
-    db.on(({ data }) => {
+    db.on(({ data, event, message }) => {
       // this will be called during db.login() or db.signup() but not db.load()
       if (data?.loginStatus) setLoginStatus(data.loginStatus);
+      if (event === 'startFailed') {
+        // this will also include 'load' failures
+        setErrorMessage(message || '');
+      }
     });
   }, [db]);
 
@@ -68,11 +72,12 @@ const LoginForm = ({ handleLogin, handleSignup, failed, db }: Props) => {
           onChange={(e) => handleChange('password', e.target.value)}
           value={loginData.password}
         />
-        {loginStatus === 'failed' ||
-          (failed && loginStatus !== 'initial' && (
-            // TODO: show error
-            <p style={{ color: 'red' }}>Login failed</p>
-          ))}
+        {loginStatus === 'failed' && (
+          <p style={{ color: 'red' }}>Login failed: {loginStatus.toString()}</p>
+        )}
+        {errorMessage && loginStatus === 'failed' && (
+          <p style={{ color: 'red' }}>{errorMessage}</p>
+        )}
 
         <button
           style={{ margin: '1rem' }}

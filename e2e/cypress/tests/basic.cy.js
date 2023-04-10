@@ -46,7 +46,8 @@ describe('Index Page', () => {
     cy.contains('X').click();
   });
   it('should open app right away if credentials exist. It should allow offline editing using localStorage', async () => {
-    // if the login credentials and offline database exist in localStorage, allow to open and use the app right away. Send a login and request connect when internet connection is available again.cy.visit('/');
+    // if the login credentials and offline database exist in localStorage, allow to open and use the app right away. Send a login and request connect when internet connection is available again
+    cy.visit('/');
     cy.contains('Log In');
     cy.get('input[name=username]').clear().type(username);
     cy.get('input[type=password]').clear().type(password);
@@ -75,5 +76,15 @@ describe('Index Page', () => {
     cy.contains('connecting remote server...');
     cy.contains('remote server connected. syncing...');
     cy.contains('remote server synced');
+  });
+  it('shows error on incorrect login info', () => {
+    cy.visit('/');
+
+    cy.contains('Log In');
+    cy.contains('Invalid username or password').should('not.exist');
+    cy.get('input[name=username]').clear().type(username);
+    cy.get('input[type=password]').clear().type('wrong password');
+    cy.get('button').contains('Log in').click();
+    cy.contains('Invalid username or password');
   });
 });

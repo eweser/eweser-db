@@ -68,15 +68,15 @@ export const login =
       setLoginStatus(_db, 'ok');
       return connectRes;
     } catch (error: any) {
-      const errorMessage = error?.message;
+      const message = error?.message;
       _db.emit({
         event: 'login',
-        message: errorMessage,
+        message,
         data: { raw: error },
         level: 'error',
       });
       setLoginStatus(_db, 'failed');
-      _db.emit({ event: 'startFailed' });
-      return errorMessage;
+      _db.emit({ event: 'startFailed', message });
+      return message;
     }
   };

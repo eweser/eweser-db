@@ -27,8 +27,9 @@ export const load =
     // check if loginData is in localStorage
     const loginInfo = localStorageGet<LoginData>(LocalStorageKey.loginData);
     if (!loginInfo || !loginInfo.userId) {
-      logger('unable to load localStore loginInfo', loginInfo);
-      _db.emit({ event: 'startFailed' });
+      const message = 'unable to load localStore loginInfo';
+      logger(message, loginInfo);
+      _db.emit({ event: 'startFailed', message });
       return false;
     }
     _db.userId = loginInfo.userId;
@@ -37,8 +38,9 @@ export const load =
     const indexedDBs = await indexedDB.databases();
     const registryFind = indexedDBs.find((db) => db.name === 'registry');
     if (!registryFind || !registryFind.name) {
-      logger('unable to load localStore indexedDB registry');
-      _db.emit({ event: 'startFailed' });
+      const message = 'unable to load localStore indexedDB registry';
+      logger(message);
+      _db.emit({ event: 'startFailed', message });
       return false;
     }
     logger('loading from localStorage', loginInfo);
@@ -49,8 +51,9 @@ export const load =
     );
     // TODO: more detailed check that indexxedDB doc is there.
     if (!registryIndexedDB.readyState) {
-      logger('unable to load localStore indexedDB db');
-      _db.emit({ event: 'startFailed' });
+      const message = 'unable to load localStore indexedDB db';
+      logger(message);
+      _db.emit({ event: 'startFailed', message });
       return false;
     }
     // load registry ydoc from indexedDB to db
@@ -96,7 +99,7 @@ export const load =
       _db.emit({ event: 'started' });
       return true;
     } catch (error) {
-      _db.emit({ event: 'startFailed' });
+      _db.emit({ event: 'startFailed', message: error?.message });
 
       logger('load, connect rooms failed', error);
       return false;

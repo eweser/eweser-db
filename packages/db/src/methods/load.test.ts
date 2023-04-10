@@ -52,7 +52,10 @@ describe('load', () => {
     const startFailedCall = listenerMock.mock.calls.find(
       (call) => call[0].event === 'startFailed'
     );
-    expect(startFailedCall).toBeDefined();
+    expect(startFailedCall[0]).toEqual({
+      event: 'startFailed',
+      message: 'unable to load localStore loginInfo',
+    });
   });
 
   it('should load registry and rooms from localStorage and indexedDB if available', async () => {

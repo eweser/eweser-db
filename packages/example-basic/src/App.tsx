@@ -10,7 +10,8 @@ import { styles } from './styles';
 /** basically the code-facing 'name' of a room. This will be used to generate the `roomAlias that matrix uses to identify rooms */
 const aliasSeed = 'notes-default';
 const collectionKey = CollectionKey.notes;
-const roomConfig = {
+/** a room is a group of documents that all share a common `Collection` type, like Note. A room also corresponds with a Matrix chat room where the data is stored. */
+const initialRoomConnect = {
   collectionKey,
   aliasSeed,
   name: 'My Notes on Life and Things',
@@ -18,12 +19,11 @@ const roomConfig = {
 
 const db = new Database({
   // set `debug` to true to see debug messages in the console
-  debug: true,
+  // debug: true,
 });
 
 const App = () => {
   const [started, setStarted] = useState(false);
-  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     // Set within a useEffect to make sure to only call `db.load()` and `db.on()` once
@@ -33,22 +33,16 @@ const App = () => {
         // after this message the database is ready to be used, but syncing to remote may still be in progress
         setStarted(true);
       }
-      if (event === 'startFailed') {
-        setFailed(true);
-      }
     });
     // `db.load()` tries to start up the database from an existing localStore. This will only work if the user has previously logged in from this device
-    db.load([roomConfig]);
+    db.load([initialRoomConnect]);
   }, []);
 
-  const handleLogin = (loginData: LoginData) => {
-    setFailed(false);
-    db.login({ initialRoomConnect: roomConfig, ...loginData });
-  };
-  const handleSignup = (loginData: LoginData) => {
-    setFailed(false);
-    db.signup({ initialRoomConnect: roomConfig, ...loginData });
-  };
+  const handleLogin = (loginData: LoginData) =>
+    db.login({ initialRoomConnect, ...loginData });
+
+  const handleSignup = (loginData: LoginData) =>
+    db.signup({ initialRoomConnect, ...loginData });
 
   const defaultNotesRoom = db.getRoom<Note>(collectionKey, aliasSeed);
 
@@ -60,7 +54,6 @@ const App = () => {
         <LoginForm
           handleLogin={handleLogin}
           handleSignup={handleSignup}
-          failed={failed}
           db={db}
         />
       )}
