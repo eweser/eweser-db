@@ -58,7 +58,7 @@ describe('createAndConnectRoom', () => {
     if (!resRoom) throw new Error('resRoom undefined');
 
     expect(resRoom).toBeDefined();
-    expect(resRoom.ydoc).toBeDefined();
+    expect(resRoom.ydoc?.store).toBeDefined();
     expect(resRoom.matrixProvider).toBeDefined();
     const roomInDB = DB.collections.flashcards[seed];
     expect(roomInDB).toBeDefined();

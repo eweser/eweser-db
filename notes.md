@@ -4,6 +4,7 @@
 
 ## TODO
 
+- fixup e2e action
 - new load method unit tests. cleanup helpers/utils.
 - `getCollectionRoom` could return a class with some helpers that manipulate the ydoc. e.g. `getCollectionRoom('collection-name').getDoc('doc-id).update({title: 'new title'})` to make crud ops easier. Make the basic exampleapp use as little code as possible. Update the event emitter to have a special 'onLoaded' event and a 'onLoginSuccess' event so we just have to listen to those two.
 - get sub-docs working in editor example
