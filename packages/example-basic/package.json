@@ -45,7 +45,7 @@
     "@eweser/eslint-config-react-ts": "*",
     "vite": "^3.2.3",
     "rollup-plugin-polyfill-node": "^0.12.0",
-    "eslint": "^7.11.0",
+    "eslint": "^8.37.0",
     "typescript": "^4.4.4",
     "@vitejs/plugin-react": "^2.2.0",
     "@types/react": "^18.0.24",
