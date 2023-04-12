@@ -1,23 +1,17 @@
 import type { Database } from '..';
-import { pingServer } from './pingServer';
+import { checkServerConnection } from './checkServerConnection';
 
-export const pollConnection = (_db: Database, interval = 1000) => {
-  setInterval(async () => {
-    const res = await pingServer(_db);
-    if (res) {
-      if (_db.online) return;
-      _db.online = true;
-      _db.emit({
-        event: 'onlineChange',
-        data: { online: true },
-      });
-    } else {
-      if (!_db.online) return;
-      _db.online = false;
-      _db.emit({
-        event: 'onlineChange',
-        data: { online: false },
-      });
-    }
-  }, interval);
+/** by default polls often (500ms) trying to check for return of connection after connection loss, and less often (5000ms) checking to make sure connection is still there */
+export const pollConnection = (
+  _db: Database,
+  offlineInterval = 500,
+  onlineInterval = 5000
+) => {
+  setInterval(() => {
+    if (!_db.online) checkServerConnection(_db);
+  }, offlineInterval);
+
+  setInterval(() => {
+    if (_db.online) checkServerConnection(_db);
+  }, onlineInterval);
 };

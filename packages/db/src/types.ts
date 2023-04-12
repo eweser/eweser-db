@@ -2,6 +2,7 @@ import type { MatrixProvider } from 'matrix-crdt';
 import type { ICreateClientOpts } from 'matrix-js-sdk';
 import type { DocumentBase, Note, FlashCard, Profile } from './collections';
 import type { TypedDoc, TypedMap } from 'yjs-types';
+import { Doc } from 'yjs';
 
 export type { DocumentBase, Note, FlashCard, Profile };
 
@@ -47,6 +48,7 @@ export interface Room<T extends Document> {
   created?: Date;
   // roomId: string;
   ydoc?: YDoc<T>;
+  tempDocs: { [docRef: string]: { doc: Doc; matrixProvider?: MatrixProvider } };
 }
 
 export type Collection<T extends Document> = {
@@ -147,3 +149,7 @@ export type DBEvent = {
 };
 
 export type DBEventEmitter = (event: DBEvent) => void;
+
+export type DBEventListeners = {
+  [label: string]: DBEventEmitter;
+};

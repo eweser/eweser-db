@@ -21,7 +21,7 @@ export const joinRoomIfNotJoined = async (
     try {
       if (!room) {
         _db.matrixClient.joinRoom(roomId).then((room) => {
-          logger('joined room', room);
+          logger('joined room', room.roomId);
           resolve(room);
         });
       }

@@ -1,5 +1,11 @@
 import { describe, it, expect, vitest, beforeAll, afterEach } from 'vitest';
-import { Database, buildAliasFromSeed, getRegistry, newDocument } from '..';
+import {
+  Database,
+  buildAliasFromSeed,
+  getRegistry,
+  newDocument,
+  randomString,
+} from '..';
 
 import type { RegistryData } from '../types';
 import { CollectionKey } from '../types';
@@ -21,10 +27,10 @@ describe('createAndConnectRoom', () => {
   * 2. Creates a Y.Doc and saves it to the room object
   * 3. Creates a matrixCRDT provider and saves it to the room object
   * 4. Save the room's metadata to the registry`, async () => {
-    const DB = new Database();
-    await loginToMatrix(DB, userLoginInfo);
-    await DB.connectRegistry();
-    const registry = getRegistry(DB);
+    const db = new Database();
+    await loginToMatrix(db, userLoginInfo);
+    await db.connectRegistry();
+    const registry = getRegistry(db);
 
     // need to have `profiles.public` in the registry so satisfy 'checkRegistryPopulated'
     registry.set(
@@ -39,17 +45,17 @@ describe('createAndConnectRoom', () => {
         notes: {},
       })
     );
-    const seed = 'test' + (Math.random() * 10000).toFixed();
+    const seed = 'test' + randomString(8);
     const roomAlias = buildAliasFromSeed(
       seed,
       CollectionKey.flashcards,
-      DB.userId
+      db.userId
     );
 
     const eventListener = vitest.fn();
-    DB.on(eventListener);
+    db.on('test', eventListener);
 
-    const resRoom = await DB.createAndConnectRoom({
+    const resRoom = await db.createAndConnectRoom({
       aliasSeed: seed,
       collectionKey: CollectionKey.flashcards,
       name: 'Name_' + seed,
@@ -60,7 +66,7 @@ describe('createAndConnectRoom', () => {
     expect(resRoom).toBeDefined();
     expect(resRoom.ydoc?.store).toBeDefined();
     expect(resRoom.matrixProvider).toBeDefined();
-    const roomInDB = DB.collections.flashcards[seed];
+    const roomInDB = db.collections.flashcards[seed];
     expect(roomInDB).toBeDefined();
     expect(roomInDB.roomAlias).toEqual(roomAlias);
     // TODO: figure out why name is not set

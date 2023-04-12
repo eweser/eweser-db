@@ -1,3 +1,4 @@
+import type { MatrixProviderOptions } from 'matrix-crdt';
 import type { Database } from '..';
 import type { Room } from '../types';
 
@@ -7,7 +8,8 @@ import { newMatrixProvider } from './newMatrixProvider';
 export function connectMatrixProvider(
   _db: Database,
   /** full alias including host name :matrix.org */
-  room: Room<any>
+  room: Room<any>,
+  options?: MatrixProviderOptions
 ) {
   const logger = (message: string, data?: any) =>
     _db.emit({
@@ -48,7 +50,8 @@ export function connectMatrixProvider(
         doc,
         room.roomId
           ? { type: 'id', id: room.roomId }
-          : { type: 'alias', alias: room.roomAlias }
+          : { type: 'alias', alias: room.roomAlias },
+        options
       );
 
       room.matrixProvider.onDocumentAvailable((e) => {

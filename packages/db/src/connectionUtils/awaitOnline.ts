@@ -11,11 +11,12 @@ export const awaitOnline = async (_db: Database, timeoutMs = 3000) => {
     const listener = (event: any) => {
       if (event.event === 'onlineChange' && event.data.online === true) {
         clearTimeout(timeout);
+        _db.off('online-change');
         resolve(true);
       }
     };
 
-    _db.on(listener);
+    _db.on('online-change', listener);
 
     timeout = setTimeout(() => {
       resolve(false);

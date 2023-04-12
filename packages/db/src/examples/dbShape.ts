@@ -123,6 +123,7 @@ export const exampleDb: { collections: Collections } = {
         created: new Date(),
         connectStatus: 'ok',
         ydoc: myStudyNotesYDoc as any,
+        tempDocs: {},
       },
     },
     flashcards: {
@@ -134,6 +135,7 @@ export const exampleDb: { collections: Collections } = {
         connectStatus: 'ok',
         created: new Date(),
         ydoc: typescriptFlashcardsYDoc as any,
+        tempDocs: {},
       },
       ['chinese_flashcards']: {
         collectionKey: CollectionKey.flashcards,
@@ -143,6 +145,7 @@ export const exampleDb: { collections: Collections } = {
         connectStatus: 'ok',
         created: new Date(),
         ydoc: chineseFlashcardsYDoc as any,
+        tempDocs: {},
       },
     },
     profiles: {
@@ -154,6 +157,7 @@ export const exampleDb: { collections: Collections } = {
         connectStatus: 'ok',
         created: new Date(),
         ydoc: profileYDoc as any,
+        tempDocs: {},
       },
     },
     registry: {
@@ -164,6 +168,7 @@ export const exampleDb: { collections: Collections } = {
         roomAlias: '#eweser-db~registry~@username:matrix.org',
         connectStatus: 'ok',
         ydoc: registryYDoc as any,
+        tempDocs: {},
       },
     },
   },

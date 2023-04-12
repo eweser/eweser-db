@@ -1,6 +1,6 @@
 import { describe, it, expect, vitest, beforeAll, afterEach } from 'vitest';
 
-import { getRegistry, newDocument } from '..';
+import { getRegistry, newDocument, randomString } from '..';
 import { CollectionKey, Database, buildAliasFromSeed } from '..';
 import { createRoom, getAliasNameFromAlias } from '../connectionUtils';
 import { loginToMatrix } from './login';
@@ -28,10 +28,10 @@ describe('connectRoom', () => {
   * 2. Creates a Y.Doc and saves it to the room object
   * 3. Creates a matrixCRDT provider and saves it to the room object
   * 4. Save the room's metadata to the registry`, async () => {
-    const DB = new Database({ baseUrl });
-    await loginToMatrix(DB, userLoginInfo);
-    await DB.connectRegistry();
-    const registry = getRegistry(DB);
+    const db = new Database({ baseUrl });
+    await loginToMatrix(db, userLoginInfo);
+    await db.connectRegistry();
+    const registry = getRegistry(db);
 
     // need to have `profiles.public` in the registry so satisfy 'checkRegistryPopulated'
     registry.set(
@@ -46,35 +46,35 @@ describe('connectRoom', () => {
         notes: {},
       })
     );
-    const seed = 'test' + Math.random().toString(36).substring(7);
+    const seed = 'test' + randomString(8);
     const roomAlias = buildAliasFromSeed(
       seed,
       CollectionKey.flashcards,
-      DB.userId
+      db.userId
     );
 
-    const room = await createRoom(DB.matrixClient, {
+    const room = await createRoom(db.matrixClient, {
       roomAliasName: getAliasNameFromAlias(roomAlias),
       name: 'Test Room',
       topic: 'This is a test room',
     });
 
-    updateRegistryEntry(DB, {
+    updateRegistryEntry(db, {
       collectionKey: CollectionKey.flashcards,
       aliasSeed: seed,
       roomId: room.room_id,
     });
 
     const eventListener = vitest.fn();
-    DB.on(eventListener);
+    db.on('test', eventListener);
 
-    const resRoom = await DB.connectRoom(seed, CollectionKey.flashcards);
+    const resRoom = await db.connectRoom(seed, CollectionKey.flashcards);
 
     expect(resRoom).toBeDefined();
     expect(resRoom?.ydoc).toBeDefined();
     expect(resRoom?.matrixProvider).toBeDefined();
 
-    const roomInDB = DB.collections.flashcards[seed];
+    const roomInDB = db.collections.flashcards[seed];
     expect(roomInDB).toBeDefined();
     expect(roomInDB.roomAlias).toEqual(roomAlias);
 

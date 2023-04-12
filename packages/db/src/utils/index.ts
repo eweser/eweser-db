@@ -14,6 +14,11 @@ import { newEmptyRoom } from '../connectionUtils';
 export const wait = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
+export const randomString = (length: number) =>
+  Math.random()
+    .toString(36)
+    .substring(2, length + 2);
+
 /**
  *
  * @param collection e.g. `CollectionKey.flashcards` "flashcards"
@@ -70,7 +75,7 @@ export function getCollectionRegistry(
   collectionKey: CollectionKey
 ) {
   const registry = getRegistry(_db);
-  const registryDocument = registry.get('0');
+  const registryDocument = registry.get('0') as RegistryData;
   if (!registryDocument) throw new Error('registryDocument not found');
   const collectionRegistry = registryDocument[collectionKey];
   if (!collectionRegistry) throw new Error('collectionRegistry not found');

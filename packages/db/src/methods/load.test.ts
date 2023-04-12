@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vitest } from 'vitest';
 import type { LoginData } from '..';
+import { randomString } from '..';
 import { CollectionKey, Database } from '..';
 import 'fake-indexeddb';
 import { baseUrl } from '../test-utils';
@@ -7,8 +8,8 @@ import { LocalStorageKey, localStorageSet } from '../utils/localStorageService';
 import { initializeDocAndLocalProvider } from '../connectionUtils/initializeDoc';
 import { awaitOnline } from '../connectionUtils/awaitOnline';
 
-const randomUsername = Math.random().toString(36).substring(7);
-const randomPassword = Math.random().toString(36).substring(7);
+const randomUsername = randomString(8);
+const randomPassword = randomString(8);
 
 describe('load', () => {
   let db: Database;
@@ -27,7 +28,7 @@ describe('load', () => {
   const loginMock = vitest.fn();
   const connectRoomMock = vitest.fn();
   beforeEach(async () => {
-    db = new Database({ debug: true });
+    db = new Database();
     db.login = loginMock;
     db.connectRoom = connectRoomMock;
     listenerMock.mockReset();

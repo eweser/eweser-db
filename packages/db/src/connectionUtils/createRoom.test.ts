@@ -10,7 +10,7 @@ import {
 } from '../test-utils';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
 
-import { Database } from '..';
+import { Database, randomString } from '..';
 
 beforeAll(async () => {
   await ensureMatrixIsRunning();
@@ -26,7 +26,7 @@ describe('createRoom', () => {
     const client = await loginToMatrix(DB, userLoginInfo);
     if (!client) throw new Error('No client');
     const room = await createRoom(client, {
-      roomAliasName: 'test' + (Math.random() * 10000).toFixed(),
+      roomAliasName: 'test' + randomString(8),
       name: 'Test Room',
       topic: 'This is a test room',
     });

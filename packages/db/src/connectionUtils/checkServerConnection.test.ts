@@ -2,12 +2,12 @@ import { Database, wait } from '..';
 import { pingServer } from './pingServer';
 import type { MockedFunction } from 'vitest';
 import { vitest, it, describe, expect, afterEach } from 'vitest';
-import { pollConnection } from './pollConnection';
+import { checkServerConnection } from './checkServerConnection';
 
 vitest.mock('./pingServer');
 const emitListener = vitest.fn();
 
-describe('pollConnection', () => {
+describe('checkServerConnection', () => {
   afterEach(() => {
     vitest.clearAllMocks();
   });
@@ -15,14 +15,13 @@ describe('pollConnection', () => {
   it('should set the database online status to true when pingServer returns true', async () => {
     const db = new Database();
     const pingServerMock = pingServer as MockedFunction<typeof pingServer>;
-    pingServerMock.mockResolvedValueOnce(true);
+    pingServerMock.mockResolvedValue(true);
 
     db.on('test', emitListener);
 
-    pollConnection(db, 100);
+    checkServerConnection(db);
 
-    // Wait for 150ms (to ensure that the first poll has completed)
-    await wait(150);
+    await wait(50);
 
     // Assert
     expect(db.online).toBe(true);
@@ -40,9 +39,9 @@ describe('pollConnection', () => {
     pingServerMock.mockResolvedValue(false);
     db.on('test', emitListener);
 
-    pollConnection(db, 100, 100);
+    checkServerConnection(db);
     // Wait for 150ms (to ensure that the first poll has completed)
-    await wait(150);
+    await wait(50);
 
     // Assert
     expect(db.online).toBe(false);
@@ -51,34 +50,5 @@ describe('pollConnection', () => {
       data: { online: false },
       level: 'info',
     });
-  });
-
-  it('should call pingServer with the database instance', async () => {
-    const db = new Database();
-    // Arrange
-    const pingServerMock = pingServer as MockedFunction<typeof pingServer>;
-
-    // Act
-    pollConnection(db, 100);
-
-    // Wait for 150ms (to ensure that the first poll has completed)
-    await wait(150);
-
-    // Assert
-    expect(pingServerMock).toHaveBeenCalledWith(db);
-  });
-
-  it('should poll the server at the specified interval', async () => {
-    const db = new Database();
-    // Arrange
-    const pingServerMock = pingServer as MockedFunction<typeof pingServer>;
-
-    // Act
-    pollConnection(db, 100);
-
-    // Wait for 250ms (to ensure that the second poll has completed)
-    await wait(250);
-    // Assert
-    expect(pingServerMock.mock.calls.length).toBeGreaterThan(2);
   });
 });

@@ -1,13 +1,14 @@
 import { describe, it, expect, beforeAll, afterEach, vitest } from 'vitest';
 
 import type { LoginData } from '..';
+import { randomString } from '..';
 import { Database } from '..';
 import { baseUrl, HOMESERVER_NAME, dummyUserName } from '../test-utils';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
 import { localStorageGet, LocalStorageKey } from '../utils/localStorageService';
 
-const randomUsername = Math.random().toString(36).substring(7);
-const randomPassword = Math.random().toString(36).substring(7);
+const randomUsername = randomString(8);
+const randomPassword = randomString(8);
 
 describe('db.signup()', () => {
   beforeAll(async () => {
@@ -50,29 +51,29 @@ describe('db.signup()', () => {
     } catch (e) {
       //
     }
-    const DB = new Database();
+    const db = new Database();
     const eventListener = vitest.fn();
-    DB.on(eventListener);
-    const result = await DB.signup({
+    db.on('test', eventListener);
+    const result = await db.signup({
       userId: dummyUserName,
       password: randomPassword,
       baseUrl,
     });
-    expect(DB.loginStatus).toEqual('failed');
+    expect(db.loginStatus).toEqual('failed');
     expect(result).toBe('user already exists');
   });
   it('returns "not online" error if offline', async () => {
-    const DB = new Database();
+    const db = new Database();
     const eventListener = vitest.fn();
-    DB.on(eventListener);
+    db.on('test', eventListener);
 
-    const result = await DB.signup({
+    const result = await db.signup({
       userId: randomUsername,
       password: randomPassword,
       baseUrl: 'http://localhost:123',
     });
     expect(result).toBe('not online');
-    expect(DB.loginStatus).toEqual('failed');
+    expect(db.loginStatus).toEqual('failed');
     expect(
       eventListener.mock.calls
         .map((call) => call[0].message)
@@ -81,36 +82,36 @@ describe('db.signup()', () => {
   });
 
   it('DB.signup() sets DB baseUrl to passed in baseURL, logs in to matrix client, connects registry. Sets loginStatus in db and `on` emitter', async () => {
-    const DB = new Database();
+    const db = new Database();
     const eventListener = vitest.fn();
-    DB.baseUrl = 'something-else';
-    expect(DB.baseUrl).toEqual('something-else');
+    db.baseUrl = 'something-else';
+    expect(db.baseUrl).toEqual('something-else');
 
-    DB.on(eventListener);
-    expect(DB.loginStatus).toEqual('initial');
-    await DB.signup({
+    db.on('test', eventListener);
+    expect(db.loginStatus).toEqual('initial');
+    await db.signup({
       userId: randomUsername,
       password: randomPassword,
       baseUrl,
     });
-    expect(DB.baseUrl).toEqual(baseUrl);
+    expect(db.baseUrl).toEqual(baseUrl);
 
     // as above
-    expect(DB.userId).toEqual(`@${randomUsername}:${HOMESERVER_NAME}`);
-    const whoami = await DB.matrixClient?.whoami();
+    expect(db.userId).toEqual(`@${randomUsername}:${HOMESERVER_NAME}`);
+    const whoami = await db.matrixClient?.whoami();
     expect(whoami?.user_id).toEqual(`@${randomUsername}:${HOMESERVER_NAME}`);
 
     const loginInfo = localStorageGet<LoginData>(LocalStorageKey.loginData);
     expect(loginInfo?.password).toEqual(randomPassword);
 
     //check registry
-    const registryRoom = DB.collections.registry[0];
+    const registryRoom = db.collections.registry[0];
     expect(registryRoom.ydoc?.store).toBeDefined();
     expect(registryRoom.connectStatus).toEqual('ok');
     expect(registryRoom.matrixProvider?.roomId).toEqual(registryRoom.roomId);
 
     // login status and emitter
-    expect(DB.loginStatus).toEqual('ok');
+    expect(db.loginStatus).toEqual('ok');
     const calls = eventListener.mock.calls;
     const statusUpdates = calls
       .filter((call) => !!call[0].data?.loginStatus)

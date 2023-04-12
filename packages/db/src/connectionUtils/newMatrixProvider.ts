@@ -1,4 +1,5 @@
 import type { MatrixClient } from 'matrix-js-sdk';
+import type { MatrixProviderOptions } from 'matrix-crdt';
 import { MatrixProvider } from 'matrix-crdt';
 import type { Doc } from 'yjs';
 import type { YDoc } from '../types';
@@ -22,7 +23,8 @@ export const newMatrixProvider = (
     | {
         type: 'alias';
         alias: string;
-      }
+      },
+  options?: MatrixProviderOptions
 ) => {
   // This is the main code that sets up the connection between
   // yjs and Matrix. It creates a new MatrixProvider and
@@ -34,7 +36,7 @@ export const newMatrixProvider = (
       ? { type: 'id', id: room.id }
       : { type: 'alias', alias: room.alias },
     undefined,
-    {}
+    options
   );
   // console.log({ newMatrixProvider });
   return newMatrixProvider;

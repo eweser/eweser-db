@@ -14,6 +14,7 @@ export const newEmptyRoom = <T extends Document>(
     created: new Date(),
     roomAlias,
     roomId: undefined,
+    tempDocs: {},
   };
   return room;
 };

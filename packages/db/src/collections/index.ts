@@ -25,5 +25,6 @@ export const initialRegistry: RegistryCollection = {
     collectionKey: 'registry',
     matrixProvider: null,
     roomAlias: '', // to be replaced on login with real username
+    tempDocs: {},
   },
 };
