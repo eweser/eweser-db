@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Database } from '..';
+import { Database, wait } from '..';
 import { awaitOnline } from './awaitOnline';
 
 describe('awaitOnline', () => {
@@ -14,6 +14,7 @@ describe('awaitOnline', () => {
     const db = new Database();
     db.online = false; // set the database to offline
     const promise = awaitOnline(db); // call awaitOnline
+    await wait(100);
     db.emit({
       event: 'onlineChange',
       data: { online: true },
@@ -21,12 +22,18 @@ describe('awaitOnline', () => {
     const result = await promise; // wait for the promise to resolve
     expect(result).toBe(true);
   });
-  it('should resolve to false when the timeout expires', async () => {
+  it('should resolve to false if still false when the timeout expires', async () => {
     const db = new Database();
     db.online = false; // set the database to offline
-
-    const promise = awaitOnline(db, 1000); // call awaitOnline with a timeout of 1 second
-    const result = await promise; // wait for the promise to resolve
+    const promise = awaitOnline(db, 20);
+    await wait(100);
+    db.emit({
+      event: 'onlineChange',
+      data: { online: true },
+    });
+    db.online = true;
+    // was set to true after the timeout expired
+    const result = await promise;
     expect(result).toBe(false);
   });
 });
