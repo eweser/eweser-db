@@ -1,9 +1,8 @@
 /// <reference types="Cypress" />
 
-const username = 'user' + Math.random().toString(36).substring(7);
-const password = 'password' + Math.random().toString(36).substring(7);
-
 describe('Index Page', () => {
+  const username = 'user' + Math.random().toString(36).substring(7);
+  const password = 'password' + Math.random().toString(36).substring(7);
   it('should register user', () => {
     cy.visit('/');
     cy.contains('Sign up').click();
@@ -82,6 +81,7 @@ describe('Index Page', () => {
 
     cy.contains('Log In');
     cy.contains('Invalid username or password').should('not.exist');
+    cy.contains('Password');
     cy.get('input[name=username]').clear().type(username);
     cy.get('input[type=password]').clear().type('wrong password');
     cy.get('button').contains('Log in').click();

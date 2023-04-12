@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { ulid } from 'ulid';
 import { CollectionKey, Database, buildRef, newDocument } from '@eweser/db';
 import type { Documents, Note, LoginData, Room } from '@eweser/db';
 
@@ -32,7 +33,7 @@ const App = () => {
 
   useEffect(() => {
     // Set within a useEffect to make sure to only call `db.load()` and `db.on()` once
-    db.on(({ event }) => {
+    db.on('my-listener-name', ({ event }) => {
       // 'started' or 'startFailed' will be called as the result of either db.load(), db.login(), or db.signup()
       if (event === 'started') {
         // after this message the database is ready to be used, but syncing to remote may still be in progress
@@ -41,6 +42,10 @@ const App = () => {
     });
     // `db.load()` tries to start up the database from an existing localStore. This will only work if the user has previously logged in from this device
     db.load([initialRoomConnect]);
+    return () => {
+      // remove the listener when the component unmounts
+      db.off('my-listener-name');
+    };
   }, []);
 
   const handleLogin = (loginData: LoginData) =>
@@ -68,9 +73,8 @@ const App = () => {
   );
 };
 
-const buildNewNote = (notes: Documents<Note>) => {
-  const documentId = Object.keys(notes).length; // ids can be strings too. This will make them sequential numbers
-
+const buildNewNote = () => {
+  const documentId = ulid();
   // a ref is used to build up links between documents. It is a string that looks like `collectionKey:aliasSeed:documentId`
   const ref = buildRef({
     collectionKey,
@@ -102,7 +106,7 @@ const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
   };
 
   const createNote = () => {
-    const newNote = buildNewNote(notes);
+    const newNote = buildNewNote();
     setNote(newNote);
     setSelectedNote(newNote._id);
   };
