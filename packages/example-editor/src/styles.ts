@@ -26,8 +26,9 @@ export const styles: {
   },
   deleteButton: { position: 'absolute', top: 8, right: 8 },
   statusBar: {
-    position: 'absolute',
-    bottom: '1rem',
+    position: 'fixed',
+    backgroundColor: 'rgb(255 255 255 / 80%)',
+    bottom: '0.5rem',
     right: 0,
     left: 0,
     height: '1.5rem',

@@ -1,23 +1,21 @@
-import { useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import { CollectionKey, Database, buildRef, newDocument } from '@eweser/db';
 import type { Documents, Note, LoginData, Room } from '@eweser/db';
+import { ulid } from 'ulid';
 
 import LoginForm from './LoginForm';
 import { StatusBar } from './StatusBar';
 
 import { styles } from './styles';
 import { MilkdownEditorWrapper } from './Editor';
-import { Doc } from 'yjs';
 
-// This example shows how to implement a basic login/signup form and a basic note-taking app using @eweser/db
-// The CRUD operations are all done directly on the ydoc.
-// For most real-world use-cases you will probably want to pass the doc to a helper library like synced-store https://syncedstore.org/docs/.
-// or pass the doc to an editor like prosemirror (preferably a subdoc like in the `example-editor` example to maintain interoperability)
+// This example shows how to implement a collaborative editor using @eweser/db. It uses the `example-basic` example as a starting point.
+// It creates a new ydoc for each note that is being actively edited. This allows for multiple users or a user from multiple devices to edit the same note at the same time and have it sync without conflict.
+// each change updates the 'room' level doc that stores a simple text output of the note. This is used to display a list of notes.
 
-/** basically the code-facing 'name' of a room. This will be used to generate the `roomAlias that matrix uses to identify rooms */
 const aliasSeed = 'notes-default';
 const collectionKey = CollectionKey.notes;
-/** a room is a group of documents that all share a common `Collection` type, like Note. A room also corresponds with a Matrix chat room where the data is stored. */
+
 const initialRoomConnect = {
   collectionKey,
   aliasSeed,
@@ -26,23 +24,22 @@ const initialRoomConnect = {
 
 const db = new Database({
   // set `debug` to true to see debug messages in the console
-  // debug: true,
+  debug: true,
 });
 
 const App = () => {
   const [started, setStarted] = useState(false);
 
   useEffect(() => {
-    // Set within a useEffect to make sure to only call `db.load()` and `db.on()` once
-    db.on(({ event }) => {
-      // 'started' or 'startFailed' will be called as the result of either db.load(), db.login(), or db.signup()
+    db.on('my-listener-name', ({ event }) => {
       if (event === 'started') {
-        // after this message the database is ready to be used, but syncing to remote may still be in progress
         setStarted(true);
       }
     });
-    // `db.load()` tries to start up the database from an existing localStore. This will only work if the user has previously logged in from this device
     db.load([initialRoomConnect]);
+    return () => {
+      db.off('my-listener-name');
+    };
   }, []);
 
   const handleLogin = (loginData: LoginData) =>
@@ -55,9 +52,8 @@ const App = () => {
 
   return (
     <div style={styles.appRoot}>
-      {/* You can check that the ydoc exists to make sure the room is connected */}
       {started && defaultNotesRoom?.ydoc ? (
-        <NotesInternal notesRoom={defaultNotesRoom} />
+        <NotesInternal notesRoom={defaultNotesRoom} db={db} />
       ) : (
         <LoginForm
           handleLogin={handleLogin}
@@ -70,8 +66,8 @@ const App = () => {
   );
 };
 
-const buildNewNote = (notes: Documents<Note>) => {
-  const documentId = Object.keys(notes).length; // ids can be strings too. This will make them sequential numbers
+const buildNewNote = () => {
+  const documentId = ulid();
 
   // a ref is used to build up links between documents. It is a string that looks like `collectionKey:aliasSeed:documentId`
   const ref = buildRef({
@@ -80,16 +76,26 @@ const buildNewNote = (notes: Documents<Note>) => {
     documentId,
   });
 
-  return newDocument<Note>(ref, { text: 'New Note Body' });
+  return newDocument<Note>(ref, { text: 'My __markdown__ note' });
 };
 
-const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
-  // initialize the ydoc with .getMap() and then use .observe() to update the state when the ydoc changes
-  const notesDoc = notesRoom.ydoc?.getMap('documents');
+const EditorMemoIzed = memo(MilkdownEditorWrapper, (prev, next) => {
+  const dontUpdate = prev.note?._id === next.note?._id;
+  console.log({ dontUpdate });
+  return dontUpdate;
+});
+
+const NotesInternal = ({
+  notesRoom,
+  db,
+}: {
+  notesRoom: Room<Note>;
+  db: Database;
+}) => {
+  const notesDoc = notesRoom?.ydoc?.getMap('documents');
 
   const [notes, setNotes] = useState<Documents<Note>>(notesDoc?.toJSON() ?? {});
 
-  // You can also delete entries by setting them to undefined/null, but it is better to use the _deleted flag to mark them for deletion later just in case the user changes their mind
   const nonDeletedNotes = Object.keys(notes).filter(
     (id) => !notes[id]?._deleted
   );
@@ -100,39 +106,55 @@ const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
     setNotes(notesDoc?.toJSON());
   });
 
-  const setNote = (note: Note) => {
-    notesDoc?.set(note._id, note);
-  };
+  const setNote = useCallback(
+    (note: Note) => {
+      notesDoc?.set(note._id, note);
+    },
+    [notesDoc]
+  );
 
   const createNote = () => {
-    const newNote = buildNewNote(notes);
-    newNote.doc == new Doc();
+    const newNote = buildNewNote();
     setNote(newNote);
-
-    // subdocs documentation https://docs.yjs.dev/api/subdocuments
-
     setSelectedNote(newNote._id);
   };
 
+  const updateNoteText = useCallback(
+    (text: string, note?: Note) => {
+      if (!note) return;
+      note.text = text;
+      setNote(note);
+    },
+    [setNote]
+  );
+
   const deleteNote = (note: Note) => {
-    // This marks the document safe to delete from the database after 30 days
     const oneMonth = 1000 * 60 * 60 * 24 * 30;
     note._deleted = true;
     note._ttl = new Date().getTime() + oneMonth;
+    const nonDeletedNotes = Object.keys(notes).filter(
+      (id) => !notes[id]?._deleted && note._id !== id
+    );
+    console.log('nonDeletedNotes', nonDeletedNotes, note);
+    notesRoom.tempDocs[note._ref]?.matrixProvider?.dispose();
+    setSelectedNote(nonDeletedNotes[0]);
     setNote(note);
   };
-
-  const editorDoc = notes[selectedNote]?.doc;
-  console.log(notes[selectedNote]);
+  console.log(notesRoom.tempDocs);
   return (
     <>
       <h1>Edit</h1>
-      {nonDeletedNotes.length === 0 ? (
+      <EditorMemoIzed
+        key={selectedNote}
+        {...{
+          note: notes[selectedNote],
+          db,
+          onChange: (text) => updateNoteText(text, notes[selectedNote]),
+          room: notesRoom,
+        }}
+      />
+      {nonDeletedNotes.length === 0 && (
         <div>No notes found. Please create one</div>
-      ) : editorDoc ? (
-        <MilkdownEditorWrapper doc={editorDoc} />
-      ) : (
-        <div>Loading doc...</div>
       )}
 
       <h1>Notes</h1>
@@ -150,7 +172,10 @@ const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
                 key={note._id}
               >
                 <button
-                  onClick={() => deleteNote(note)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteNote(note);
+                  }}
                   style={styles.deleteButton}
                 >
                   X

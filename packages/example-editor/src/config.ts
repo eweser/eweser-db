@@ -1,4 +1,4 @@
-export const dummyUserName = 'dummy';
+export const dummyUserName = 'dummynes4gftrqwerwerqwee24sfds';
 export const dummyUserPass = 'dumdum';
 
 // export const TEST_ROOM_ID = import.meta.env.VITE_TEST_ROOM_ID ?? '';

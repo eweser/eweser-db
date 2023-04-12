@@ -91,7 +91,7 @@ export class Database {
       this.on('debugger', (event) => {
         if (options.debug === true) {
           // eslint-disable-next-line no-console
-          console.dir(event, { depth: 4 });
+          console.log(event);
         }
       });
     }

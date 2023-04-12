@@ -35,7 +35,10 @@ export const StatusBar = ({ db }: { db: Database }) => {
         }
       }
     };
-    db.on(handleStatusUpdate);
+    db.on('status-update', handleStatusUpdate);
+    return () => {
+      db.off('status-update');
+    };
   }, [db, setStatusMessage]);
   return <div style={styles.statusBar}>{statusMessage}</div>;
 };

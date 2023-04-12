@@ -21,7 +21,7 @@ const LoginForm = ({ handleLogin, handleSignup, db }: Props) => {
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
-    db.on(({ data, event, message }) => {
+    db.on('login-status', ({ data, event, message }) => {
       // this will be called during db.login() or db.signup() but not db.load()
       if (data?.loginStatus) setLoginStatus(data.loginStatus);
       if (event === 'startFailed') {
@@ -29,6 +29,9 @@ const LoginForm = ({ handleLogin, handleSignup, db }: Props) => {
         setErrorMessage(message || '');
       }
     });
+    return () => {
+      db.off('login-status');
+    };
   }, [db]);
 
   const [loginData, setLoginData] = useState(initialLoginData);

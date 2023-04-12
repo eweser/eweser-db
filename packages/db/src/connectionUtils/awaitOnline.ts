@@ -1,4 +1,5 @@
 import type { Database } from '..';
+import { checkServerConnection } from './checkServerConnection';
 
 /** Waits 3 seconds by default before failing */
 export const awaitOnline = async (_db: Database, timeoutMs = 3000) => {
@@ -17,7 +18,7 @@ export const awaitOnline = async (_db: Database, timeoutMs = 3000) => {
     };
 
     _db.on('online-change', listener);
-
+    checkServerConnection(_db);
     timeout = setTimeout(() => {
       resolve(false);
     }, timeoutMs);

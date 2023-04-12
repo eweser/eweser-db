@@ -4,12 +4,9 @@
 
 ## TODO
 
-- add failure messages to `startFailed`
 - fixup e2e action
 - new load method unit tests. cleanup helpers/utils.
 - `getCollectionRoom` could return a class with some helpers that manipulate the ydoc. e.g. `getCollectionRoom('collection-name').getDoc('doc-id).update({title: 'new title'})` to make crud ops easier. Make the basic exampleapp use as little code as possible. Update the event emitter to have a special 'onLoaded' event and a 'onLoginSuccess' event so we just have to listen to those two.
-- get sub-docs working in editor example
-- update plaintext on editor ydoc change
 - make example of multiple collections and switching between them
 - set up cross collection reference links and helpers. First we can just use data links,
   - but it would be awesome to set up links in the markdown. e.g. `[[collection-name:doc-id]]`. but how would we intercept the link click and distinguish it from a normal link?
