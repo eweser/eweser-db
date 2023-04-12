@@ -1,58 +1,101 @@
 import { collectionKeys, collections, initialRegistry } from './collections';
+import { buildAliasFromSeed, newMatrixProvider } from './connectionUtils';
+import { pollConnection } from './connectionUtils/pollConnection';
+import { connectRegistry } from './methods/connectRegistry';
 import { connectRoom } from './methods/connectRoom';
 import { createAndConnectRoom } from './methods/createAndConnectRoom';
 import { login } from './methods/login';
-
-import type { CollectionKey, Collections, IDatabase } from './types';
+import { emit, off, on } from './methods/on';
+import { signup } from './methods/signup';
+import type {
+  CollectionKey,
+  Collections,
+  DBEventListeners,
+  LoginStatus,
+} from './types';
 import type { MatrixClient } from 'matrix-js-sdk';
+import { getRoom } from './utils';
+import { load } from './methods/load';
+import { addTempDocToRoom } from './methods/addTempDocToRoom';
 
-export type { Note, NoteBase, FlashCard, FlashcardBase } from './collections';
 export type {
+  Profile,
+  Note,
+  FlashCard,
   Collection,
   Collections,
   ConnectStatus,
   LoginData,
   Room,
   Documents,
-  IDatabase,
   Document,
+  YDoc,
+  DocumentBase,
+  DBEvent,
 } from './types';
-export type { DocumentBase } from './collections/documentBase';
+
+export type { TypedMap, TypedDoc } from 'yjs-types';
 export { CollectionKey } from './types'; // enum exported not as a type
 
-export {
-  buildRoomAlias,
-  truncateRoomAlias,
-  getUndecoratedRoomAlias,
-} from './methods/connectionUtils';
-export { newDocument, buildRef, aliasKeyValidation } from './utils';
+export * from './connectionUtils/aliasHelpers';
+export * from './utils';
+export { newMatrixProvider };
 
-function getCollectionRegistry(this: IDatabase, collectionKey: CollectionKey) {
-  return this.collections.registry['0'].store.documents['0'][collectionKey];
+export interface DatabaseOptions {
+  baseUrl?: string;
+  debug?: boolean;
 }
 
-function getRegistryStore(this: IDatabase) {
-  return this.collections.registry['0'].store;
-}
-
-export class Database implements IDatabase {
+export class Database {
   matrixClient: MatrixClient | null = null;
   userId = '';
-  baseUrl = 'https://matrix.org';
+  baseUrl: string;
+  loginStatus: LoginStatus = 'initial';
+  online = false;
 
-  collectionKeys = collectionKeys;
+  collectionKeys: CollectionKey[] = collectionKeys;
   collections: Collections = {
     registry: initialRegistry,
     ...collections,
   };
 
-  connectRoom = connectRoom;
-  createAndConnectRoom = createAndConnectRoom;
-  login = login;
+  listeners: DBEventListeners = {};
 
-  getCollectionRegistry = getCollectionRegistry;
-  getRegistryStore = getRegistryStore;
-  constructor() {
+  // methods
+
+  // logger/event emitter
+  on = on(this);
+  off = off(this);
+  emit = emit(this);
+
+  // connect methods
+  connectRegistry = connectRegistry(this);
+  connectRoom = connectRoom(this);
+  createAndConnectRoom = createAndConnectRoom(this);
+  addTempDocToRoom = addTempDocToRoom(this);
+
+  login = login(this);
+  signup = signup(this);
+  load = load(this);
+
+  // util methods
+  buildAliasFromSeed = (aliasSeed: string, collectionKey: CollectionKey) =>
+    buildAliasFromSeed(aliasSeed, collectionKey, this.userId);
+  getRoom = getRoom(this);
+
+  constructor(options?: DatabaseOptions) {
+    this.baseUrl = options?.baseUrl || 'https://matrix.org';
+
+    pollConnection(this); // start polling for connection status
+    if (options?.debug) {
+      this.on('debugger', (event) => {
+        if (options.debug === true) {
+          // eslint-disable-next-line no-console
+          console.log(event);
+        }
+      });
+    }
+
     // todo: if registry is in localStorage, load up each room's store.
   }
 }

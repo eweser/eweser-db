@@ -1,54 +1,92 @@
-import { buildRoomAlias, createRoom, truncateRoomAlias } from './connectionUtils';
+import type { Database } from '..';
+import {
+  buildAliasFromSeed,
+  createRoom,
+  getAliasNameFromAlias,
+  getRoomId,
+  joinRoomIfNotJoined,
+} from '../connectionUtils';
+import { waitForRegistryPopulated } from '../connectionUtils/populateRegistry';
+import { updateRegistryEntry } from '../connectionUtils/saveRoomToRegistry';
 
-import type { Documents, RegistryData, IDatabase, CollectionKey, ConnectStatus } from '../types';
+import type { Document, Room, createAndConnectRoomOptions } from '../types';
+import { getRegistry } from '../utils';
 
-/** pass in undecorated alias. if the final will be # `#<alias>_<username>:matrix.org' just pass <alias> */
-export async function createAndConnectRoom(
-  this: IDatabase,
-  {
+/**
+ *
+ *
+ */
+export const createAndConnectRoom =
+  (_db: Database) =>
+  async <T extends Document>({
     collectionKey,
-    aliasKey,
+    aliasSeed,
     name,
     topic,
-    registryStore,
-  }: {
-    collectionKey: CollectionKey;
-    /** undecorated alias */
-    aliasKey: string;
-    name?: string;
-    topic?: string;
-    registryStore?: {
-      documents: Documents<RegistryData>;
-    };
-  },
-  callback?: (status: ConnectStatus) => void
-) {
-  try {
-    if (!this.matrixClient) throw new Error("can't create room without matrixClient");
-    const userId = this.matrixClient.getUserId();
-
-    if (!userId) throw new Error('userId not found');
-    const newRoomAlias = buildRoomAlias(aliasKey, userId);
-    const newRoomAliasTruncated = truncateRoomAlias(newRoomAlias);
+  }: createAndConnectRoomOptions): Promise<Room<T>> => {
     try {
-      const createRoomResult = await createRoom(
-        this.matrixClient,
-        newRoomAliasTruncated,
-        name,
-        topic
-      );
-      // console.log({ createRoomResult });
-    } catch (error: any) {
-      if (JSON.stringify(error).includes('M_ROOM_IN_USE')) {
-        console.log('room already exists');
-        await this.matrixClient.joinRoom(newRoomAlias);
-      } else throw error;
-    }
+      if (!_db.matrixClient)
+        throw new Error("can't create room without matrixClient");
+      const userId = _db.matrixClient.getUserId();
 
-    return await this.connectRoom(newRoomAlias, collectionKey, registryStore, callback);
-  } catch (error) {
-    if (callback) callback('failed');
-    console.error(error);
-    return false;
-  }
-}
+      if (!userId) throw new Error('userId not found');
+      const roomAlias = buildAliasFromSeed(aliasSeed, collectionKey, userId);
+
+      const logger = (message: string, data?: any) =>
+        _db.emit({
+          event: 'createAndConnectRoom',
+          message,
+          data: { roomAlias, collectionKey, raw: data },
+        });
+      logger('starting createAndConnectRoom', { aliasSeed, name, topic });
+
+      const registryReady = await waitForRegistryPopulated(_db, 30000);
+      if (!registryReady) throw new Error('registry not ready');
+
+      const registry = getRegistry(_db);
+      logger('registry was already populated', registry.get('0'));
+
+      const roomAliasName = getAliasNameFromAlias(roomAlias);
+      try {
+        const createRoomResult = await createRoom(_db.matrixClient, {
+          roomAliasName,
+          name,
+          topic,
+        });
+        logger('room created', createRoomResult);
+
+        // save to registry.
+        updateRegistryEntry(_db, {
+          collectionKey,
+          roomName: name,
+          roomAlias,
+          roomId: createRoomResult.room_id,
+        });
+      } catch (error: any) {
+        if (JSON.stringify(error).includes('M_ROOM_IN_USE')) {
+          logger('room already exists', error);
+          const roomId = await getRoomId(_db, roomAlias);
+          if (typeof roomId === 'string') {
+            await joinRoomIfNotJoined(_db, roomId);
+            logger('room joined', roomId);
+            updateRegistryEntry(_db, {
+              collectionKey,
+              roomName: name,
+              roomAlias,
+              roomId,
+            });
+          }
+        } else throw error;
+      }
+
+      return await _db.connectRoom<T>(aliasSeed, collectionKey);
+    } catch (error) {
+      _db.emit({
+        event: 'createAndConnectRoom',
+        level: 'error',
+        message: 'error in createAndConnectRoom',
+        data: { collectionKey, raw: { error, aliasSeed } },
+      });
+      throw error;
+    }
+  };

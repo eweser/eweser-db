@@ -72,7 +72,11 @@ import { DatabaseProvider } from '@eweser/hooks';
 ```
 
 ```jsx
-import { DatabaseContext, CollectionProvider, CollectionContext } from '@eweser/hooks';
+import {
+  DatabaseContext,
+  CollectionProvider,
+  CollectionContext,
+} from '@eweser/hooks';
 
 const App = () => {
   const { db, loginStatus, login } = useContext(DatabaseContext);
@@ -82,7 +86,7 @@ const App = () => {
       <CollectionProvider
         db={db}
         name="Notes Collection 1"
-        aliasKey="default-notes-collection"
+        aliasName="default-notes-collection"
         collectionKey="notes"
       >
         <Internal />
@@ -174,7 +178,7 @@ This is an area that needs further consideration. Community input is appreciated
 `npm run dev`
 
 The example app is in `packages/e2e/example`
-It will be served at http://localhost:5173/
+It will be served at http://localhost:8081/
 
 `npm run dev-e2e` will run the tests in `packages/e2e` and open cypress.
 

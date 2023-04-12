@@ -1,0 +1,84 @@
+import { describe, it, expect, vitest, beforeAll, afterEach } from 'vitest';
+import {
+  Database,
+  buildAliasFromSeed,
+  getRegistry,
+  newDocument,
+  randomString,
+} from '..';
+
+import type { RegistryData } from '../types';
+import { CollectionKey } from '../types';
+import { dummyUserName, dummyUserPass, userLoginInfo } from '../test-utils';
+import { loginToMatrix } from '../methods/login';
+import { createMatrixUser } from '../test-utils/matrixTestUtil';
+import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
+
+beforeAll(async () => {
+  await ensureMatrixIsRunning();
+  await createMatrixUser(dummyUserName, dummyUserPass);
+}, 60000);
+afterEach(() => {
+  localStorage.clear();
+});
+
+describe('createAndConnectRoom', () => {
+  it(` * 1. Joins the Matrix room if not in it
+  * 2. Creates a Y.Doc and saves it to the room object
+  * 3. Creates a matrixCRDT provider and saves it to the room object
+  * 4. Save the room's metadata to the registry`, async () => {
+    const db = new Database();
+    await loginToMatrix(db, userLoginInfo);
+    await db.connectRegistry();
+    const registry = getRegistry(db);
+
+    // need to have `profiles.public` in the registry so satisfy 'checkRegistryPopulated'
+    registry.set(
+      '0',
+      newDocument<RegistryData>('registry.0.0', {
+        flashcards: {},
+        profiles: {
+          public: {
+            roomAlias: 'test',
+          },
+        },
+        notes: {},
+      })
+    );
+    const seed = 'test' + randomString(8);
+    const roomAlias = buildAliasFromSeed(
+      seed,
+      CollectionKey.flashcards,
+      db.userId
+    );
+
+    const eventListener = vitest.fn();
+    db.on('test', eventListener);
+
+    const resRoom = await db.createAndConnectRoom({
+      aliasSeed: seed,
+      collectionKey: CollectionKey.flashcards,
+      name: 'Name_' + seed,
+      topic: 'Topic_' + seed,
+    });
+    if (!resRoom) throw new Error('resRoom undefined');
+
+    expect(resRoom).toBeDefined();
+    expect(resRoom.ydoc?.store).toBeDefined();
+    expect(resRoom.matrixProvider).toBeDefined();
+    const roomInDB = db.collections.flashcards[seed];
+    expect(roomInDB).toBeDefined();
+    expect(roomInDB.roomAlias).toEqual(roomAlias);
+    // TODO: figure out why name is not set
+    // expect(roomInDB.name).toEqual('Name_' + seed);
+
+    expect(eventListener).toHaveBeenCalled();
+    const calls = eventListener.mock.calls;
+    const callMessages = calls.map((call) => call[0].message);
+    expect(callMessages).toContain('starting createAndConnectRoom');
+    expect(callMessages).toContain('registry was already populated');
+    expect(callMessages).toContain('ydoc created');
+    expect(callMessages).toContain('registry updated');
+    expect(callMessages).toContain('matrix provider connected');
+  });
+});

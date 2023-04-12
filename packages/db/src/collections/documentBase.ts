@@ -1,6 +1,6 @@
-export type DocumentBase<T> = T & {
+export type DocumentBase = {
   /**
-   * @example <collectionKey>.<roomID>.<documentID> == `notes.5.1`
+   * @example <collectionKey>.<roomID>.<documentId> == `notes.5.1`
    */
   _ref: string;
   /** uuid, matches outer id */

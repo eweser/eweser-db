@@ -1,6 +1,6 @@
 {
   "name": "@eweser/db",
-  "version": "0.1.20",
+  "version": "1.1.1",
   "description": "eweser-db core database",
   "keywords": [
     "user-owned",
@@ -35,25 +35,39 @@
   },
   "scripts": {
     "test": "vitest run",
-    "build": "tsc && vite build",
-    "dev": "tsc --watch && vite build --watch",
-    "clean": "rm -rf dist"
+    "build": "rm -rf dist; rm -rf types; tsc --project tsconfig.build.json && vite build",
+    "typescript-watch": "tsc --watch --project tsconfig.build.json",
+    "vite-build-watch": "vite build --watch",
+    "dev": "run-p vite-build-watch typescript-watch",
+    "clean": "rm -rf dist; rm -rf types",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint --ext .ts,.tsx,.js,.jsx ."
   },
   "bugs": {
     "url": "https://github.com/jacobcoro/eweserdb/issues"
   },
-  "peerDependencies": {
-    "@syncedstore/core": "^0.4.1",
-    "matrix-crdt": "^0.2.0",
-    "matrix-js-sdk": "^19.5.0",
-    "y-indexeddb": "^9.0.9"
-  },
   "publishConfig": {
     "access": "public"
   },
+  "peerDependencies": {
+    "@matrix-org/olm": "^3.2.14",
+    "matrix-crdt": "0.2.1-alpha.1",
+    "matrix-js-sdk": "^19.4.0",
+    "y-indexeddb": "^9.0.9",
+    "yjs": "^13.5.16"
+  },
   "devDependencies": {
-    "cypress": "^10.8.0",
-    "vite-plugin-dts": "^1.5.0"
+    "@eweser/eslint-config-ts": "*",
+    "@types/request": "^2.48.8",
+    "eslint": "^8.37.0",
+    "fake-indexeddb": "^4.0.1",
+    "jsdom": "^21.1.1",
+    "npm-run-all": "^4.1.5",
+    "request": "^2.88.2",
+    "typescript": "^4.4.4",
+    "vite": "^3.2.3",
+    "vitest": "^0.29.8",
+    "yjs-types": "^0.0.1"
   },
   "gitHead": "3d39fd98760efd13963caa96db636df5cd985625"
 }

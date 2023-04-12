@@ -1,16 +1,17 @@
-// in case we run into these issues too
-export {};
-// https://github.com/developit/microbundle/issues/708, otherwise vscode-lib fails
-// import "regenerator-runtime/runtime.js";
+/* eslint-disable @typescript-eslint/no-var-requires */
+// in case we run into these issues too https://github.com/developit/microbundle/issues/708, otherwise vscode-lib fails
+import 'regenerator-runtime/runtime.js';
+import 'lodash';
+import 'fake-indexeddb/auto';
 
-// const { randomFillSync } = require("crypto");
-// (global as any).Olm = require("@matrix-org/olm");
-// // const { Crypto } = require("@peculiar/webcrypto");
-// // const crypto = new Crypto();
+const { randomFillSync } = require('crypto');
+(global as any).Olm = require('@matrix-org/olm');
+// const { Crypto } = require("@peculiar/webcrypto");
+// const crypto = new Crypto();
 
-// Object.defineProperty(globalThis, "crypto", {
-//   value: {
-//     getRandomValues: randomFillSync,
-//     // , subtle: crypto.subtle
-//   },
-// });
+Object.defineProperty(globalThis, 'crypto', {
+  value: {
+    getRandomValues: randomFillSync,
+    // , subtle: crypto.subtle
+  },
+});

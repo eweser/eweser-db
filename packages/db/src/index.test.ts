@@ -1,7 +1,15 @@
 import { Database } from '.';
 import { it, expect } from 'vitest';
+import { ensureMatrixIsRunning } from './test-utils/matrixTestUtilServer';
+import { createMatrixUser } from './test-utils/matrixTestUtil';
+import {
+  dummyUserName,
+  dummyUserPass,
+  HOMESERVER_NAME,
+  matrixTestConfig,
+} from './test-utils';
 
-const collectionKeys = ['notes', 'flashcards'];
+const collectionKeys = ['notes', 'flashcards', 'profiles'];
 const defaultHomeServer = 'https://matrix.org';
 
 it('Database initializes', () => {
@@ -13,3 +21,14 @@ it('Database initializes', () => {
   expect(DB.userId).toBe('');
   expect(DB.matrixClient).toBe(null);
 });
+it('Can use local server', async () => {
+  await ensureMatrixIsRunning();
+
+  const DB = new Database(matrixTestConfig);
+  expect(DB.baseUrl).toBe('http://localhost:8888');
+  // can create user against local server
+  const signedInClient = await createMatrixUser(dummyUserName, dummyUserPass);
+  const signedInUser = await signedInClient?.whoami();
+  expect(signedInUser?.user_id).toEqual(`@${dummyUserName}:${HOMESERVER_NAME}`);
+  // 60 seconds because it can take a bit for the server to start up with docker
+}, 60000);

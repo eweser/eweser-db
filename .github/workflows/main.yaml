@@ -1,0 +1,60 @@
+name: build
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  build:
+    name: Tests
+    runs-on: ubuntu-latest
+    environment: preview
+    env:
+      VITE_MATRIX_SERVER: http://localhost:8888
+
+    strategy:
+      matrix:
+        node-version: [18.14.0]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Set correct access for docker containers (server/test/data)
+        run: chmod -R a+rw test-server/data
+
+      - name: Build the docker-compose stack
+        run: docker-compose -f test-server/docker-compose.yml up -d
+
+      - name: Check running containers
+        run: docker ps -a
+
+      - name: Check docker logs
+        run: docker logs synapse
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build packages
+        run: npx lerna run build
+        env:
+          CI: true
+
+      - name: Wait for Matrix
+        run: npx wait-on http://localhost:8888/_matrix/static/
+
+      - name: Run unit/integration tests
+        run: npx lerna run test --scope @eweser/db
+
+      - name: Run e2e tests
+        uses: cypress-io/github-action@v5
+        with:
+          browser: chrome
+          start: npm run run-example-previews
+          wait-on: http://localhost:8081
+          wait-on-timeout: 180

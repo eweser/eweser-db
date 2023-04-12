@@ -1,39 +1,58 @@
-import type { MatrixClient } from 'matrix-js-sdk';
 import type { MatrixProvider } from 'matrix-crdt';
 import type { ICreateClientOpts } from 'matrix-js-sdk';
-import type { Note } from './collections/notes';
-import type { FlashCard } from './collections/flashcards';
-// import * as Y from 'yjs';
-import type { DocumentBase } from './collections/documentBase';
-export type { Document } from './collections';
+import type { DocumentBase, Note, FlashCard, Profile } from './collections';
+import type { TypedDoc, TypedMap } from 'yjs-types';
+import { Doc } from 'yjs';
+
+export type { DocumentBase, Note, FlashCard, Profile };
+
 export enum CollectionKey {
   notes = 'notes',
   flashcards = 'flashcards',
-  registry = 'registry',
+  profiles = 'profiles',
 }
 
-export interface Documents<T> {
+export type Document = Note | FlashCard | Profile | RegistryData;
+
+export type DocumentWithoutBase<T extends Document> = Omit<
+  T,
+  keyof DocumentBase
+>;
+
+export interface Documents<T extends Document> {
   /** document ID can be string number starting at zero, based on order of creation */
-  [documentId: string]: DocumentBase<T>;
+  [documentId: string]: T | undefined;
 }
-export type ConnectStatus = 'initial' | 'loading' | 'failed' | 'ok';
+
+export type YDoc<T extends Document> = TypedDoc<{
+  documents: TypedMap<Documents<T>>;
+}>;
+
+export type ConnectStatus =
+  | 'initial'
+  | 'loading'
+  | 'failed'
+  | 'ok'
+  | 'disconnected';
 
 /** corresponds to a 'room' in Matrix */
-export interface Room<T> {
+export interface Room<T extends Document> {
   connectStatus: ConnectStatus;
-  collectionKey: CollectionKey;
+  collectionKey: CollectionKey | 'registry';
   matrixProvider: MatrixProvider | null;
+  /** full alias e.g. '#eweser-db_registry_username:matrix.org' */
   roomAlias: string;
+  /** matrix roomID  */
+  roomId?: string;
   name?: string;
   created?: Date;
   // roomId: string;
-  doc?: any; // Y.Doc;
-  store: { documents: Documents<T> }; // the synced store.
+  ydoc?: YDoc<T>;
+  tempDocs: { [docRef: string]: { doc: Doc; matrixProvider?: MatrixProvider } };
 }
 
-export type Collection<T> = {
-  // todo: methods to create and delete rooms
-  [roomAlias: string]: Room<T>;
+export type Collection<T extends Document> = {
+  [aliasSeed: string]: Room<T>;
 };
 
 export interface RoomMetaData {
@@ -43,7 +62,13 @@ export interface RoomMetaData {
 }
 
 export type RegistryData = {
-  [key in CollectionKey]: { [roomAlias: string]: RoomMetaData };
+  [key in CollectionKey]: {
+    [roomAlias: string]: RoomMetaData | undefined;
+  };
+};
+
+export type RegistryCollection = {
+  [0]: Room<RegistryData>;
 };
 
 export type OnRoomConnectStatusUpdate = (
@@ -54,56 +79,77 @@ export type OnRoomConnectStatusUpdate = (
 
 export type OnLoginStatusUpdate = (status: ConnectStatus) => void;
 
+export interface createAndConnectRoomOptions {
+  collectionKey: CollectionKey;
+  /** undecorated alias */
+  aliasSeed: string;
+  name?: string;
+  topic?: string;
+}
+
 export interface LoginData extends ICreateClientOpts {
   password?: string;
+  initialRoomConnect?: createAndConnectRoomOptions;
 }
 
 export interface Collections {
   [CollectionKey.notes]: Collection<Note>;
   [CollectionKey.flashcards]: Collection<FlashCard>;
-  [CollectionKey.registry]: Collection<RegistryData>;
+  [CollectionKey.profiles]: Collection<Profile>;
+  registry: RegistryCollection;
 }
 
-export type CreateAndConnectRoom = (
-  params: {
-    collectionKey: CollectionKey;
-    aliasKey: string;
-    name?: string;
-    topic?: string;
-    registryStore?: { documents: Documents<RegistryData> };
-  },
-  callback?: (status: ConnectStatus) => void
-) => Promise<boolean>;
+export type LoginStatus =
+  | 'initial'
+  | 'loading'
+  | 'failed'
+  | 'ok'
+  | 'disconnected';
 
-export type ConnectRoom = (
-  roomAlias: string,
-  collectionKey: CollectionKey,
-  registryStore?: { documents: Documents<RegistryData> },
-  callback?: (status: ConnectStatus) => void
-) => Promise<boolean>;
+/**
+ * `started` can be for success of login, startup, or load
+ *
+ * `startFailed` can be for fail of login, startup, or load
+ */
+export type DBEventType =
+  | 'login'
+  | 'signup'
+  | 'load'
+  | 'started'
+  | 'startFailed'
+  | 'onlineChange'
+  | 'loginStatus'
+  | 'connectRoom'
+  | 'createAndConnectRoom'
+  | 'loadRoom'
+  | 'joinRoomIfNotJoined'
+  | 'updateRegistry'
+  | 'connectRegistry'
+  | 'populateRegistry'
+  | 'connectMatrixProvider'
+  | 'getOrCreateSpace'
+  | 'getOrCreateRegistry'
+  | 'getRoomId';
 
-export type Login = (
-  loginData: LoginData,
-  callback?: (status: ConnectStatus) => void
-) => Promise<boolean>;
-
-export interface IDatabase {
-  matrixClient: MatrixClient | null;
-  userId: string;
-  /** homeserver */
-  baseUrl: string;
-
-  collectionKeys: CollectionKey[];
-  collections: Collections;
-  connectRoom: ConnectRoom;
-
-  createAndConnectRoom: CreateAndConnectRoom;
-  login: Login;
-
-  getCollectionRegistry: (collectionKey: CollectionKey) => {
-    [roomAlias: string]: RoomMetaData;
+export type DBEvent = {
+  event: DBEventType;
+  level?: 'info' | 'warn' | 'error';
+  message?: string;
+  data?: {
+    collectionKey?: CollectionKey | 'registry';
+    roomId?: string;
+    roomAlias?: string;
+    aliasSeed?: string;
+    id?: string;
+    loginStatus?: LoginStatus;
+    connectStatus?: ConnectStatus;
+    raw?: any;
+    online?: boolean;
   };
-  getRegistryStore: () => {
-    documents: Documents<RegistryData>;
-  };
-}
+};
+
+export type DBEventEmitter = (event: DBEvent) => void;
+
+export type DBEventListeners = {
+  [label: string]: DBEventEmitter;
+};

@@ -4,4 +4,4 @@ export type NoteBase = {
   text: string;
 };
 
-export type Note = DocumentBase<NoteBase>;
+export type Note = DocumentBase & NoteBase;

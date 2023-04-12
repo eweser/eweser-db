@@ -18,7 +18,9 @@
     "declarationDir": "types",
     "sourceMap": true,
     "downlevelIteration": true,
-    "outDir": "dist"
+    "outDir": "dist",
+    "useUnknownInCatchVariables": false
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/setupTests.ts"]
 }
