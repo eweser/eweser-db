@@ -2,7 +2,7 @@ import type { MatrixProvider } from 'matrix-crdt';
 import type { ICreateClientOpts } from 'matrix-js-sdk';
 import type { DocumentBase, Note, FlashCard, Profile } from './collections';
 import type { TypedDoc, TypedMap } from 'yjs-types';
-import { Doc } from 'yjs';
+import type { Doc } from 'yjs';
 
 export type { DocumentBase, Note, FlashCard, Profile };
 
