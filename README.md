@@ -1,16 +1,18 @@
 # eweserdb
 
-🐑🐑🐑EweserDB, the user-owned database🐑🐑🐑
+🐑🐑🐑 EweserDB, the user-owned database 🐑🐑🐑
 
 <a href="https://matrix.to/#/#eweser-db:matrix.org"><img alt="Matrix" src="https://img.shields.io/badge/Chat on matrix%20-%23000.svg?&style=for-the-badge&logo=matrix&logoColor=white"/></a>
 
 # A User owned database
 
-`EweserDB`, pronounced (user deebee), empowers developers to quickly create a cloud-synced, local-first, user-owned database - it's like a decentralized firebase.
+`EweserDB`, (pronounced 'user deebee') empowers developers to quickly create a user-owned database that is local-first yet syncs to the cloud
 
-It syncs user data to a [Matrix](https://www.matrix.org/) chat room using a [yjs](https://github.com/yjs/yjs) [CRDT](https://crdt.tech/) facilitated by [matrix-crdt](https://github.com/YousefED/Matrix-CRDT).
+> it's like a decentralized 🔥firebase🔥.
 
-Features:
+It syncs user data to a [Matrix](https://www.matrix.org/) chat room using a [yjs](https://github.com/yjs/yjs) [CRDT](https://crdt.tech/) with the help of the [matrix-crdt](https://github.com/YousefED/Matrix-CRDT) library.
+
+## Features:
 
 - User owned
 - Interoperable between apps
@@ -20,23 +22,34 @@ Features:
 - No backend code needed
 - Strongly typed schemas
 - Extensible
+- Fully open source
 
 # Motivation
 
-### Current paradigm:
+## Frustration
+
+> I've been using this note-taking app for a while and built up a ton of data in it.
+
+> I want to try out or migrate to a new app, but I feel locked in.
+
+> Ugh! 😤 I have to start over and re-enter all my data. Even if they provide an export, it usually doesn't work or is missing data.
+
+## Current paradigm:
 
 You ask the app: "Can I see my data?"
 e.g.
 
 > You ask Facebook:
+
 > "Can I see my friends list, please?"
 
-### User-owned data paradigm:
+## User-owned data paradigm:
 
 The app asks you: Can I see your data?
 e.g.
 
 > Facebook asks you:
+
 > "Can I see your friends list?"
 
 This flipping of the ownership dynamic enables some important features:
@@ -102,7 +115,7 @@ const newNote: Note = {
 doc.set(newNote._id, newNote);
 ```
 
-That's it! You now have a user-owned database that syncs between devices and apps. Try opening in another browser or device and see the changes sync.
+That's it! 🚀🚀🚀 You now have a user-owned database that syncs between devices and apps. Try opening in another browser or device and see the changes sync.
 
 consider using [syncedStore](https://syncedstore.org/docs/) to make manipulating the ydoc even easier.
 
@@ -214,6 +227,7 @@ Priority:
 - [ ] End 2 End **Encryption** — multiple devices?
 - [ ] Per-App **Access control**. Instead of signing in the matrix client as the user, we could instead sign in with a Matrix account provided by the app owner, and then have the use invite that account into each room, specifying read-only or write permissions.
 - [ ] **Sharing,**: user can invite another to a room and collaborate on the documents within. Can also just be read only
+- [ ] Consider versioning strategy and how to maintain backwards compatibility with older versions of the database.
 
 Nice to haves:
 
