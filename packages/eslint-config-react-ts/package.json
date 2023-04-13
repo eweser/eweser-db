@@ -2,7 +2,7 @@
   "name": "@eweser/eslint-config-react-ts",
   "version": "1.0.3",
   "description": "> TODO: description",
-  "author": "jacobcoro <xiaokourou@gmail.com>",
+  "author": "jacobcoro",
   "homepage": "https://github.com/eweser/eweser-db#readme",
   "license": "ISC",
   "main": "./index.js",

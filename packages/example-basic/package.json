@@ -24,7 +24,6 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview --host",
-    "test": "vitest",
     "clean": "rm -rf dist"
   },
   "bugs": {

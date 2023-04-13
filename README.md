@@ -6,32 +6,30 @@
 
 # A User owned database
 
-`EweserDB` empowers developers to quickly create a cloud-synced, local-first, user-owned database, like a decentralized firebase.
+`EweserDB`, pronounced (user deebee), empowers developers to quickly create a cloud-synced, local-first, user-owned database - it's like a decentralized firebase.
 
-Built using [matrix-crdt](https://github.com/YousefED/Matrix-CRDT)
-Demo [link](https://eweser-db-demo.netlify.app/)
+It syncs user data to a [Matrix](https://www.matrix.org/) chat room using a [yjs](https://github.com/yjs/yjs) [CRDT](https://crdt.tech/) facilitated by [matrix-crdt](https://github.com/YousefED/Matrix-CRDT).
 
-features:
+Features:
 
-- user owned
-- interoperable between apps
-- real-time sync between devices
-- real-time collaboration
-- no backend code
-- strongly typed schemas
-- extensible
-- local-first (coming soon)
-- full end to end encryption (coming soon)
+- User owned
+- Interoperable between apps
+- Real-time sync between devices
+- Local-first / offline-first
+- Real-time collaboration
+- No backend code needed
+- Strongly typed schemas
+- Extensible
 
 # Motivation
 
 ### Current paradigm:
 
-You ask the app: Can I see my data?
+You ask the app: "Can I see my data?"
 e.g.
 
 > You ask Facebook:
-> Can I see my friends list, please?
+> "Can I see my friends list, please?"
 
 ### User-owned data paradigm:
 
@@ -39,81 +37,93 @@ The app asks you: Can I see your data?
 e.g.
 
 > Facebook asks you:
-> Can I see your friends list?
+> "Can I see your friends list?"
 
 This flipping of the ownership dynamic enables some important features:
 
-- Users can leave the platform at any time and take their data with them to a new one with no loss.
+- Data changed in the user-owned database by one app will sync to other apps.
+- Users can leave an app's platform at any time and take their data with them to a new one with no loss.
 - Apps cannot survive purely on vendor lock-in or network effects and must instead compete to provide the best experience for users.
 - Third party apps can build new features and use your data in new innovative ways without relying on the first app's permission, or on them maintaining an API.
-- Data changed in the user-owned database by one app will sync to other apps.
-- Users can decide to give apps access to only certain parts of their data, and some parts can be read only.
-- Users can get started or try out a new app with all their data ready, no onboarding, and able to enjoy all the features of the new app right away.
+- Users can get started or try out a new app with all their data ready, with no onboarding, and are able to enjoy all the features of the new app right away.
 
 # Get Started
 
-For react apps:
+`npm install @eweser/db`
 
-`npm install @eweser/db @eweser/hooks`
+and also our peer dependencies (currently not bundled, but could be based on feedback/user preference)
 
-and also our dependencies (currently not bundled, but could be based on feedback/user preference)
+`npm install matrix-crdt matrix-js-sdk`
 
-`npm install @syncedstore/core @syncedstore/react matrix-crdt matrix-js-sdk`
+This is a simplified example. For a more use cases and working demos see the example apps like `packages/example-basic/src/App.tsx`
 
-This is a simplified demo. For a more complete working version with typescript see `e2e/example/src/App.tsx`
+```tsx
+import { Database } from '@eweser/db';
+import type { Note } from '@eweser/db';
 
-```jsx
-// main.tsx
-import { DatabaseProvider } from '@eweser/hooks';
-// wrap your app in the DatabaseProvider
-<DatabaseProvider>
-  <App />
-</DatabaseProvider>;
-```
+const db = new Database();
 
-```jsx
-import {
-  DatabaseContext,
-  CollectionProvider,
-  CollectionContext,
-} from '@eweser/hooks';
-
-const App = () => {
-  const { db, loginStatus, login } = useContext(DatabaseContext);
-  // call `login()` and then:
-  if (loginStatus === 'ok')
-    return (
-      <CollectionProvider
-        db={db}
-        name="Notes Collection 1"
-        aliasName="default-notes-collection"
-        collectionKey="notes"
-      >
-        <Internal />
-      </CollectionProvider>
-    );
+const collectionKey = 'notes';
+const aliasSeed = 'notes-default';
+const initialRoomConnect = {
+  collectionKey,
+  aliasSeed,
 };
+
+// If a user has previously logged in `load` will try to start up the database connected to the collections provided in the array.
+// If offline, it will open up a local-only database and the user can start interacting with the data immediately. If online, it will also connect the matrix rooms and start syncing.
+db.load([initialRoomConnect]);
+
+db.login({
+  userId: 'user',
+  password: 'password',
+  baseUrl: 'https://matrix.org', // or your own homeserver, or the user's self-hosted homeserver. If using matrix.org, instruct users to signup for an account at https://app.element.io/.
+  initialRoomConnect,
+});
+// ...
+db.on('my-listener', ({ event }) => {
+  if (event === 'started') {
+    // load up the ui and start using the database
+  }
+});
+
+const room = db.getRoom<Note>(collectionKey, aliasSeed); // this is a matrix room that stores a collection of note documents
+
+// the room prepares a yjs doc that you can use to make changes and listen for changes
+const doc = room.ydoc.getMap('documents');
+doc.observe((event) => {
+  console.log('ydoc changed', event);
+});
+
+const newNote: Note = {
+  _id: 'note-id',
+  text: 'hello world',
+};
+doc.set(newNote._id, newNote);
 ```
 
-```jsx
-const Internal = () => {
-  const { store } = useContext(CollectionContext);
-  const notes = store.documents;
-  // do something with the documents
-  // you can edit the documents object directly and they will sync to the remote database.
-  // open in two browsers to see!
-};
-```
+That's it! You now have a user-owned database that syncs between devices and apps. Try opening in another browser or device and see the changes sync.
+
+consider using [syncedStore](https://syncedstore.org/docs/) to make manipulating the ydoc even easier.
 
 # Features
 
 ## Structure
 
-See `/examples/dbShape.ts` for how the data is structured.
+See `packages/db/examples/dbShape.ts` for how the data is structured.
 
-Like MongoDB, EweserDB has `documents` and `collections`. In SQL database terms, collections are like tables and documents like rows. Each collection can have only one document. Documents have a strict schema(typescript type). See examples of documents in the `/collections` folder.
+Like MongoDB, EweserDB has `document`s and `collection`s. In SQL database terms, collections are like tables and documents like rows. Each collection can have only one document. Documents have a strict schema(typescript type). See examples of documents in the `/collections` folder.
 
-documents can be linked by reference using the document's `_ref` property. The ref is simply the `<collection-name>.<room-id>.<document-id>`
+Documents can be linked by reference using the document's `_ref` property. The ref is simply the `<collection>.<roomAlias>.<documentId>` e.g. `flashcards.#roomName~flashcards~@username:matrix.org.doc-id`.
+Say you wanted to store a reference to a note from a flashcard, you could add the following to the flashcard document:
+
+```ts
+{
+  note_ref: db.buildRef('notes', 'default', 'note-id'),
+}
+```
+
+when using a document ref in another document, remember to add the `_ref` suffix to the property name. e.g. `flashcardRef` becomes `flashcardRef_ref`.
 
 ## Rooms
 
@@ -123,17 +133,19 @@ The `registry` is a special collection that stores the addresses(`roomAlias`s) t
 
 ## ACL - Access Control, Privacy and Sharing
 
-Building on top of Matrix allows for advanced ACL features right out of the box. All ACL happens on the `room` level. Users can decide which apps or other users have read or write access to which rooms simply by using Matrix's built in privacy control features and by inviting or kicking out other users in the room. The exact mechanics for how to achieve this are still being worked out. See "App development strategy, user consent" below.
+Building on top of Matrix allows for advanced ACL features right out of the box. All ACL happens on the `room` level. Users can decide which apps or other users have read or write access to which rooms simply by using Matrix's built in privacy control features and by inviting or kicking out other users in the room.
 
 ## User owned
 
-Matrix currently is a 'federated' system, working towards 100% user-owned and decentralized. When a user signs up to the DB they must provide a Matrix `homeserver` url. The user's data lives on the home server so at first glance it appears that the server owns the data and this is no different than facebook servers owning/controlling the data.
+Matrix is a 'federated' system, working towards 100% user-owned and decentralized. When a user signs up to the DB they must provide a Matrix `homeserver` url. The user's data lives on the home server so at first glance it appears that the server owns the data and this is no different than facebook servers owning/controlling the data.
 
 The first big difference is that users can sign up using a self-hosted homeserver or a homeserver of their choice that they trust more.
 
 Another key distinction is that with end to end encryption enabled (coming soon), the homeserver cannot read any of the data.
 
 Thirdly, because of Matrix's federated model, users could have a second homeserver that connects to each of their rooms, and their data would be stored on both, decreasing centralized control.
+
+In the future, Matrix has plans to roll out full P2P functionality, which would allow each device to act as its own homeserver.
 
 EweserDB also plans to increase user ownership by making backing up and restoring the user's data easy and automatic. Backups could be through a traditional provider like dropbox or web3 options like IPFS (through [pinata](https://pinata.cloud)) or Ethereum (through [swarm](https://ethersphere.github.io/swarm-home)).
 
@@ -143,15 +155,15 @@ Say you'd like to add a new collection or document type, like `TodoItem`, or `Bl
 
 To make the collection usable by other apps, submit a pull request to add the collection types. Follow the examples in the `db/src/collections` folder.
 
-To only use a document in your app, fork the project and do the same thing, or extend locally and use some `//@ts-ignore`s for the type errors you will encounter.
+To only use a document in your app that you don't want made available, fork the project and do the same thing, or extend locally and use some `//@ts-ignore`s for the type errors you will encounter.
 
 ## App development strategy, user consent
 
-As it is designed now, when the user signs in, for the duration of the session it gives read/write access to the full user-owned database. Users should be made aware of this fact. People are already comfortable with an app managing it's own data, but it is another level of trust required in the app to also let it manage data used by other apps. Users need to know the level of trust they are putting in each app when they sign ing.
+As it is designed now, when the user signs in, for the duration of the session the app will have read/write access to the full user-owned database. Users should be made aware of this fact when logging in to an app. People are already comfortable with an app managing its own data, but it is another level of trust required in the app to also let it manage data used by other apps. Users need to know the level of trust they are putting in each app when they sign ing.
 
 Because user-owned data flips the current data storage paradigm on its head, app developers might be wondering how to share public data between users. For example, a user might mark a certain collection of notes as public and apps could aggregate them and let other users search and discover those.
 
-One solution would be to add a matrix account of the app as an observer to the rooms(collections) the user has marked as public, update a traditional database as the updates happen. But this might not scale very well if the app needs to listen to thousands/millions of collections.
+One solution would be that for each room marked as 'public' by the user, we could invite an observer account into the room.
 
 Another option would be to simply use a traditional database for public collections, but then that would break interoperability between apps.
 
@@ -160,7 +172,8 @@ This is an area that needs further consideration. Community input is appreciated
 ## Limitations
 
 - [Matrix events size limit](https://github.com/YousefED/Matrix-CRDT/issues/11)
-- connecting to rooms can be slow depending on the homeserver, especially the `getRoomIdForAlias` call when the homeserver has many rooms it needs to search through.
+- connecting to rooms can be slow depending on the homeserver, especially the `getRoomIdForAlias` call when the homeserver has many rooms it needs to search through. Because the registry stores the id, the second time a room is connected to it should be faster.
+- Developers should minimize the number of rooms the user has connected to at any given time and use `room.matrixProvider.dispose()` to disconnect from rooms when they are not needed. Otherwise you might run into an error saying there are too many event listeners.
 
 # Contribute and develop
 
@@ -169,40 +182,46 @@ This is an area that needs further consideration. Community input is appreciated
   - a new collection type to the `db` package.
   - a new e2e test to the `e2e` package.
   - a new example app to the `example` package.
-  - a new feature to the `db` or `hooks` package.
+  - a new feature to the `db` package.
   - something from the to do list below.
 
 ### Set up local dev
 
-`lerna bootstrap && npm install && npm run build`
+`npm install && lerna bootstrap`
 `npm run dev`
 
-The example app is in `packages/e2e/example`
-It will be served at http://localhost:8081/
+The example apps are in in `packages/example-basic` and `packages/example-editor` etc.
+you
+Example apps will be served at `http://localhost:8081/`, `http://localhost:8082/` etc.
 
-`npm run dev-e2e` will run the tests in `packages/e2e` and open cypress.
+Run unit tests by first starting the docker server (make sure you have docker running) with `npm run start-test-server` and then `npm run test`
 
-Unit tests are rather limited at the moment, but you can run them with `npm run test`.
-
-End to end tests are more practical for this project because so much of the functionality is dependent on the live matrix server.
+Run e2e tests headless once with `npm run test:e2e`, or with `npm run dev-e2e` to open the Cypress GUI.
 
 # To Do
 
-- [ ] Helper functions like getRegistry, getRoom, getRef
-- [ ] Cross-collection refs, document linking and lookup
-- [ ] "Joins" or aggregation searches across collections. e.g. select all documents in the `notes` collection that have a ref to a document in the `flashcards` collection.
-- [ ] Backups - add storage account (dropbox, pinata, etc)
-- [ ] File storage - add storage account links in the document to the files.
-- [ ] Offline mode.
-- [ ] E2E encryption
-- [ ] Sharing, and public collections
-- [ ] Per-App Access control. Instead of signing in the matrix client as the user, we could instead sign in with a Matrix account provided by the app owner, and then have the use invite that account into each room, specifying read-only or write permissions.
+Priority:
+
+- [ ] get example apps hosted on netlify
+- [ ] **Example**: syncedStore
+- [ ] **Example**: use multiple rooms and switching between them
+- [ ] set up cross collection reference links and helpers. -`async getLinkedRef()` connect the linked ref’s room if needed and retrieve the linked document
+- [ ] **Example**: connect data from 2 apps with refs. e.g. in a note, click ‘turn into flashcard’ and it creates a flashcard in the flashcard app and links to it in the note.
+- [ ] **offline mode:** needs helpers to reconnect when back online from offline
+- [ ] **Files:** set up file hosting provider services like Pinata, Dropbox, etc. and give users the option to connect their accounts to the app. Could also try the ‘matrix files’ [library](~https://github.com/matrix-org/matrix-files-sdk~).
+- [ ] **Public data**: set up ‘aggregator’ listeners when a user makes a collection as public. These will be MatrixReader’s that live on a node server and listen for changes to the collection. How to aggregate and serve to public listeners?
+- [ ] **Backups** - user can add storage account (dropbox, pinata, etc) that store snapshots of the database in the file hosting provider.
+- [ ] End 2 End **Encryption** — multiple devices?
+- [ ] Per-App **Access control**. Instead of signing in the matrix client as the user, we could instead sign in with a Matrix account provided by the app owner, and then have the use invite that account into each room, specifying read-only or write permissions.
+- [ ] **Sharing,**: user can invite another to a room and collaborate on the documents within. Can also just be read only
+
+Nice to haves:
+
+- [ ] create an async cron job that runs after the db loads, and once a day, to delete items with the \_deleted flag whose ttl has expired.
+- [ ] set up the ‘awareness’ listeners for shared editing.
+- [ ] example of next.js, server-side rendering workarounds
+- [ ] give some instructions on self-hosting.
+- [ ] set up a matrix synapse server so that users can sign up with me instead of matrix.org.
+- [ ] make 2 servers and federate them. Figure out a federation-as-backup strategy for users, for example inviting another of our accounts as a listener to each of your rooms.
+- [ ] “Joins” or aggregation searches across collections. e.g. select all documents in the `notes` collection that have a ref to a document in the `flashcards` collection.
 - [ ] Stress testing. warnings about room or document size limits
-- [ ] Tests. Always more tests.
-
-flesh out example:
-
-- [x] make a note editor with basic CRUD
-- [ ] design a UI for grouping collections(rooms) of notes
-- [ ] make flashcard app.
-- [ ] connect data from 2 apps with refs. e.g. in a note, click 'turn into flashcard' and it creates a flashcard in the flashcard app and links to it in the note.
