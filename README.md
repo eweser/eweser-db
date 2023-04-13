@@ -10,7 +10,7 @@
 
 > it's like a decentralized 🔥firebase🔥.
 
-It syncs user data to a [Matrix](https://www.matrix.org/) chat room using a [yjs](https://github.com/yjs/yjs) [CRDT](https://crdt.tech/) with the help of the [matrix-crdt](https://github.com/YousefED/Matrix-CRDT) library.
+It syncs user data to a [Matrix](https://www.matrix.org/) chat room using a [yjs](https://github.com/yjs/yjs) [CRDT](https://crdt.tech/). Builds on the [matrix-crdt](https://github.com/YousefED/Matrix-CRDT) library to provide NoSQL style document database.
 
 ## Features:
 
@@ -117,7 +117,7 @@ doc.set(newNote._id, newNote);
 
 That's it! 🚀🚀🚀 You now have a user-owned database that syncs between devices and apps. Try opening in another browser or device and see the changes sync.
 
-consider using [syncedStore](https://syncedstore.org/docs/) to make manipulating the ydoc even easier.
+Consider using [syncedStore](https://syncedstore.org/docs/) to make manipulating the ydoc even easier.
 
 # Features
 
@@ -184,6 +184,7 @@ This is an area that needs further consideration. Community input is appreciated
 
 ## Limitations
 
+- This project is still in Alpha. It is not ready for production use. Database schema and API are subject to change.
 - [Matrix events size limit](https://github.com/YousefED/Matrix-CRDT/issues/11)
 - connecting to rooms can be slow depending on the homeserver, especially the `getRoomIdForAlias` call when the homeserver has many rooms it needs to search through. Because the registry stores the id, the second time a room is connected to it should be faster.
 - Developers should minimize the number of rooms the user has connected to at any given time and use `room.matrixProvider.dispose()` to disconnect from rooms when they are not needed. Otherwise you might run into an error saying there are too many event listeners.
