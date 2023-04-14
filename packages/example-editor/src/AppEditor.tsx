@@ -36,6 +36,14 @@ const App = () => {
         setStarted(true);
       }
     });
+    // todo: add this functionality to the db
+    db.on('connect-on-back-online', ({ event, data }) => {
+      if (event === 'onlineChange') {
+        if (data?.online) {
+          db.load([initialRoomConnect]);
+        }
+      }
+    });
     db.load([initialRoomConnect]);
     return () => {
       db.off('my-listener-name');
@@ -81,7 +89,6 @@ const buildNewNote = () => {
 
 const EditorMemoIzed = memo(MilkdownEditorWrapper, (prev, next) => {
   const dontUpdate = prev.note?._id === next.note?._id;
-  console.log({ dontUpdate });
   return dontUpdate;
 });
 
@@ -135,12 +142,11 @@ const NotesInternal = ({
     const nonDeletedNotes = Object.keys(notes).filter(
       (id) => !notes[id]?._deleted && note._id !== id
     );
-    console.log('nonDeletedNotes', nonDeletedNotes, note);
     notesRoom.tempDocs[note._ref]?.matrixProvider?.dispose();
     setSelectedNote(nonDeletedNotes[0]);
     setNote(note);
   };
-  console.log(notesRoom.tempDocs);
+
   return (
     <>
       <h1>Edit</h1>
