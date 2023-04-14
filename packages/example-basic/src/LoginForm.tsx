@@ -53,6 +53,7 @@ const LoginForm = ({ handleLogin, handleSignup, db }: Props) => {
         <label htmlFor="server-input">Homeserver:</label>
         <input
           id="server-input"
+          placeholder="Where your matrix account was created, e.g. 'https://matrix.org'"
           value={loginData.baseUrl}
           onChange={(e) => handleChange('baseUrl', e.target.value)}
         />
@@ -61,7 +62,7 @@ const LoginForm = ({ handleLogin, handleSignup, db }: Props) => {
         <input
           name="username"
           autoComplete="username"
-          placeholder="e.g.: @jacob:matrix.org"
+          placeholder="e.g. 'jacob' if your full username is '@jacob:matrix.org'"
           id="user-input"
           onChange={(e) => handleChange('userId', e.target.value)}
           value={loginData.userId}
@@ -99,10 +100,10 @@ const LoginForm = ({ handleLogin, handleSignup, db }: Props) => {
           <>
             <p>
               {`No matrix account? `}
-              <button onClick={() => setIsSignup(!isSignup)}> Sign up </button>
-              {` with our homeserver ${MATRIX_SERVER}`}
+              {/* <button onClick={() => setIsSignup(!isSignup)}> Sign up </button>
+              {` with our homeserver ${MATRIX_SERVER}`} */}
             </p>
-            <p style={{ margin: 0 }}>or</p>
+            {/* <p style={{ margin: 0 }}>or</p> */}
             <p>
               {`Sign up at `}
               <a href="https://app.element.io/">element.io</a> with the username
