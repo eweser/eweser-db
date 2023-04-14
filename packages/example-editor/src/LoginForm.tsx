@@ -99,7 +99,7 @@ const LoginForm = ({ handleLogin, handleSignup, db }: Props) => {
         ) : (
           <>
             <p>
-              {`No matrix account? `}
+              {`* No matrix account? `}
               {/* <button onClick={() => setIsSignup(!isSignup)}> Sign up </button>
               {` with our homeserver ${MATRIX_SERVER}`} */}
             </p>
