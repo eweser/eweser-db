@@ -31,13 +31,11 @@ const App = () => {
   const [started, setStarted] = useState(false);
 
   useEffect(() => {
-    db.on('my-listener-name', ({ event }) => {
+    db.on('my-listener-name', ({ event, data }) => {
       if (event === 'started') {
         setStarted(true);
       }
-    });
-    // todo: add this functionality to the db
-    db.on('connect-on-back-online', ({ event, data }) => {
+      // todo: add this functionality to the db
       if (event === 'onlineChange') {
         if (data?.online) {
           db.load([initialRoomConnect]);

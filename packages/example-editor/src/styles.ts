@@ -33,7 +33,9 @@ export const styles: {
     left: 0,
     height: '1.5rem',
     zIndex: 2,
-    padding: '0 0.5rem',
+    padding: '0.5rem',
     color: 'rgb(82 82 82)',
+    display: 'flex',
+    justifyContent: 'space-between',
   },
 };
