@@ -6,9 +6,9 @@ export const StatusBar = ({ db }: { db: Database }) => {
   const [statusMessage, setStatusMessage] = useState('initializing');
   // listen to various database events and update the status bar at the bottom of the screen.
   // This could be used to show icons like connected/offline or a syncing spinner like in google sheets
-
+  const [online, setOnline] = useState(db.online);
   useEffect(() => {
-    const handleStatusUpdate = ({ event, message }: DBEvent) => {
+    const handleStatusUpdate = ({ event, message, data }: DBEvent) => {
       if (event === 'load') {
         if (message === 'loading from localStorage') {
           setStatusMessage('loading local database');
@@ -34,11 +34,19 @@ export const StatusBar = ({ db }: { db: Database }) => {
           setStatusMessage('loaded local database, offline');
         }
       }
+      if (event === `onlineChange`) {
+        setOnline(data?.online ?? false);
+      }
     };
     db.on('status-update', handleStatusUpdate);
     return () => {
       db.off('status-update');
     };
   }, [db, setStatusMessage]);
-  return <div style={styles.statusBar}>{statusMessage}</div>;
+  return (
+    <div style={styles.statusBar}>
+      <p>{online ? 'online' : 'offline'}</p>
+      <p>{statusMessage}</p>
+    </div>
+  );
 };
