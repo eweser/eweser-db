@@ -1,6 +1,6 @@
 import type { LoginData, Database } from '@eweser/db';
 import { useEffect, useState } from 'react';
-import { DEV_PASSWORD, DEV_USERNAME, MATRIX_SERVER } from './config';
+import { DEV_PASSWORD, DEV_USERNAME, MATRIX_SERVER, env } from './config';
 import { styles } from './styles';
 
 const initialLoginData: LoginData = {
@@ -100,8 +100,14 @@ const LoginForm = ({ handleLogin, handleSignup, db }: Props) => {
           <>
             <p>
               {`* No matrix account? `}
-              {/* <button onClick={() => setIsSignup(!isSignup)}> Sign up </button>
-              {` with our homeserver ${MATRIX_SERVER}`} */}
+              {env !== 'prod' && (
+                <>
+                  <button onClick={() => setIsSignup(!isSignup)}>
+                    Sign up
+                  </button>
+                  {` with our homeserver ${MATRIX_SERVER}`}
+                </>
+              )}
             </p>
             {/* <p style={{ margin: 0 }}>or</p> */}
             <p>

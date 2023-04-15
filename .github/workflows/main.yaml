@@ -11,6 +11,7 @@ jobs:
     environment: preview
     env:
       VITE_MATRIX_SERVER: http://localhost:8888
+      VITE_CI: true
 
     strategy:
       matrix:
