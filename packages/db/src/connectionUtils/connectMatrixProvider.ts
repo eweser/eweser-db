@@ -9,8 +9,12 @@ export function connectMatrixProvider(
   _db: Database,
   /** full alias including host name :matrix.org */
   room: Room<any>,
-  options?: MatrixProviderOptions
+  /** enables experimental web rtc by default */
+  options: MatrixProviderOptions = {}
 ) {
+  if (!options.enableExperimentalWebrtcSync) {
+    options.enableExperimentalWebrtcSync = true;
+  }
   const logger = (message: string, data?: any) =>
     _db.emit({
       event: 'connectMatrixProvider',
