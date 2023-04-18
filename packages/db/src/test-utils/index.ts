@@ -10,6 +10,8 @@ import { CollectionKey } from '../types';
 http.globalAgent.maxSockets = 2000;
 https.globalAgent.maxSockets = 2000;
 
+export const localWebRtcServer = 'ws://localhost:4444';
+
 export const HOMESERVER_NAME = 'localhost:8888';
 export const matrixTestConfig = {
   baseUrl: 'http://' + HOMESERVER_NAME,

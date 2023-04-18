@@ -41,9 +41,19 @@ export * from './connectionUtils/aliasHelpers';
 export * from './utils';
 export { newMatrixProvider };
 
+const defaultRtcPeers = [
+  'wss://signaling.yjs.dev',
+  'wss://y-webrtc-signaling-eu.herokuapp.com',
+  'wss://y-webrtc-signaling-us.herokuapp.com',
+];
+
 export interface DatabaseOptions {
   baseUrl?: string;
   debug?: boolean;
+  /** elect out of using the WebRTC provider */
+  noWebRtc?: boolean;
+  /** provide a list of peers to use instead of the default */
+  webRTCPeers?: string[];
 }
 
 export class Database {
@@ -61,6 +71,7 @@ export class Database {
 
   listeners: DBEventListeners = {};
 
+  webRtcPeers: string[] = defaultRtcPeers;
   // methods
 
   // logger/event emitter
@@ -83,10 +94,14 @@ export class Database {
     buildAliasFromSeed(aliasSeed, collectionKey, this.userId);
   getRoom = getRoom(this);
 
-  constructor(options?: DatabaseOptions) {
+  constructor(optionsPassed?: DatabaseOptions) {
+    const options = optionsPassed || {};
     this.baseUrl = options?.baseUrl || 'https://matrix.org';
+    if (!options?.noWebRtc && options?.webRTCPeers) {
+      this.webRtcPeers = options?.webRTCPeers;
+    }
 
-    pollConnection(this); // start polling for connection status
+    pollConnection(this); // start polling for matrix baserUrl server connection status
     if (options?.debug) {
       this.on('debugger', (event) => {
         if (options.debug === true) {

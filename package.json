@@ -15,6 +15,7 @@
     "dev-e2e": "cypress open",
     "ci-build": "npm install lerna && lerna bootstrap && npm run build",
     "start-test-server": "cd test-server; docker-compose up -d",
+    "start-test-rpc-server": "cd test-rpc-server; node server.js",
     "install-lerna": "npm install --no-package-lock",
     "postinstall": "npx lerna bootstrap",
     "run-example-previews": "run-p run-example-preview:*",

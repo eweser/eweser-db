@@ -216,12 +216,12 @@ Run e2e tests headless once with `npm run test:e2e`, or with `npm run dev-e2e` t
 
 Priority:
 
-- [ ] get example apps hosted on netlify
+- [ ] **web rtc**: set up web rtc for more responsive and robust syncing and for awareness for shared editing.
+- [ ] **offline mode:** helpers to reconnect when back online from offline
 - [ ] **Example**: syncedStore
 - [ ] **Example**: use multiple rooms and switching between them
 - [ ] set up cross collection reference links and helpers. -`async getLinkedRef()` connect the linked ref’s room if needed and retrieve the linked document
 - [ ] **Example**: connect data from 2 apps with refs. e.g. in a note, click ‘turn into flashcard’ and it creates a flashcard in the flashcard app and links to it in the note.
-- [ ] **offline mode:** needs helpers to reconnect when back online from offline
 - [ ] **Files:** set up file hosting provider services like Pinata, Dropbox, etc. and give users the option to connect their accounts to the app. Could also try the ‘matrix files’ [library](~https://github.com/matrix-org/matrix-files-sdk~).
 - [ ] **Public data**: set up ‘aggregator’ listeners when a user makes a collection as public. These will be MatrixReader’s that live on a node server and listen for changes to the collection. How to aggregate and serve to public listeners?
 - [ ] **Backups** - user can add storage account (dropbox, pinata, etc) that store snapshots of the database in the file hosting provider.

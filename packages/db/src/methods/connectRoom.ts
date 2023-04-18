@@ -78,7 +78,11 @@ export const connectRoom =
 
       logger('starting connectRoom', room.connectStatus);
 
-      if (room.matrixProvider?.canWrite && !!room.ydoc?.store) {
+      if (
+        room.matrixProvider?.canWrite &&
+        room.ydoc?.store
+        // room.webRtcProvider.connected
+      ) {
         room.connectStatus = 'ok';
         logger('room is already connected', room.connectStatus, {
           canWrite: room.matrixProvider?.canWrite,
@@ -86,6 +90,10 @@ export const connectRoom =
         });
         return room as Room<T>;
       }
+      const { ydoc } = await initializeDocAndLocalProvider<any>(aliasSeed);
+      if (!ydoc) throw new Error('ydoc not found');
+      room.ydoc = ydoc;
+      logger('ydoc created', room.connectStatus, ydoc);
 
       const registryEntry = await checkIfRoomIsInRegistry(
         _db,
@@ -102,11 +110,6 @@ export const connectRoom =
 
       const matrixRoom = await joinRoomIfNotJoined(_db, roomId);
       logger('room joined', room.connectStatus, matrixRoom);
-
-      const { ydoc } = await initializeDocAndLocalProvider<any>(aliasSeed);
-      if (!ydoc) throw new Error('ydoc not found');
-      room.ydoc = ydoc;
-      logger('ydoc created', room.connectStatus, ydoc);
 
       await connectMatrixProvider(_db, room);
       logger('matrix provider connected', room.connectStatus);

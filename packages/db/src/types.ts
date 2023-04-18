@@ -1,6 +1,7 @@
 import type { MatrixProvider } from 'matrix-crdt';
 import type { ICreateClientOpts } from 'matrix-js-sdk';
 import type { DocumentBase, Note, FlashCard, Profile } from './collections';
+import { WebrtcProvider } from 'y-webrtc';
 import type { TypedDoc, TypedMap } from 'yjs-types';
 import type { Doc } from 'yjs';
 
@@ -40,6 +41,7 @@ export interface Room<T extends Document> {
   connectStatus: ConnectStatus;
   collectionKey: CollectionKey | 'registry';
   matrixProvider: MatrixProvider | null;
+  // webRtcProvider: WebrtcProvider;
   /** full alias e.g. '#eweser-db_registry_username:matrix.org' */
   roomAlias: string;
   /** matrix roomID  */
