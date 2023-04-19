@@ -4,6 +4,7 @@ import { CollectionKey, Database, buildRef, newDocument } from '@eweser/db';
 import type { Documents, Note, LoginData, YDoc } from '@eweser/db';
 
 import { styles, StatusBar, LoginForm } from '@eweser/examples-components';
+import * as config from './config';
 
 import { useSyncedStore } from '@syncedstore/react';
 import syncedStore from '@syncedstore/core';
@@ -59,6 +60,7 @@ const App = () => {
           handleLogin={handleLogin}
           handleSignup={handleSignup}
           db={db}
+          {...config}
         />
       )}
       <StatusBar db={db} />
@@ -117,9 +119,8 @@ const NotesInternal = ({
 
   const deleteNote = (note: Note) => {
     const oneMonth = 1000 * 60 * 60 * 24 * 30;
-    note._deleted = true;
-    note._ttl = new Date().getTime() + oneMonth;
-    notes[note._id] = note;
+    notes[note._id]._deleted = true;
+    notes[note._id]._ttl = new Date().getTime() + oneMonth;
   };
 
   return (

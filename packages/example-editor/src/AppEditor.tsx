@@ -1,13 +1,16 @@
 import { memo, useCallback, useEffect, useState } from 'react';
 import { CollectionKey, Database, buildRef, newDocument } from '@eweser/db';
-import type { Documents, Note, LoginData, Room, TypedMap } from '@eweser/db';
+import type { Documents, Note, LoginData } from '@eweser/db';
 import { ulid } from 'ulid';
+
+import * as config from './config';
 
 import {
   styles,
   StatusBar,
   LoginForm,
-  MilkdownEditorWrapper,
+  MilkdownEditor,
+  MilkdownViewer,
 } from '@eweser/examples-components';
 
 // This example shows how to implement a collaborative editor using @eweser/db. It uses the `example-basic` example as a starting point.
@@ -57,20 +60,16 @@ const App = () => {
 
   const defaultNotesRoom = db.getRoom<Note>(collectionKey, aliasSeed);
   const notesDoc = defaultNotesRoom?.ydoc?.getMap('documents');
-
   return (
     <div style={styles.appRoot}>
       {started && notesDoc && defaultNotesRoom?.ydoc ? (
-        <NotesInternal
-          notesRoom={defaultNotesRoom}
-          db={db}
-          notesDoc={notesDoc}
-        />
+        <NotesInternal db={db} />
       ) : (
         <LoginForm
           handleLogin={handleLogin}
           handleSignup={handleSignup}
           db={db}
+          {...config}
         />
       )}
       <StatusBar db={db} />
@@ -90,21 +89,18 @@ const buildNewNote = () => {
 
   return newDocument<Note>(ref, { text: 'My __markdown__ note' });
 };
-
-const EditorMemoIzed = memo(MilkdownEditorWrapper, (prev, next) => {
-  const dontUpdate = prev.note?._id === next.note?._id;
-  return dontUpdate;
+/**
+ * We memoize the editor so that it only updates when the note changes.
+ * We are doing some important doc connections in this component so please see `packages/examples-components/src/components/Editor.tsx` for details
+ */
+const EditorMemoIzed = memo(MilkdownEditor, (prev, next) => {
+  const doNotUpdate = prev.note?._id === next.note?._id;
+  return doNotUpdate;
 });
 
-const NotesInternal = ({
-  notesRoom,
-  db,
-  notesDoc,
-}: {
-  notesDoc: TypedMap<Documents<Note>>;
-  notesRoom: Room<Note>;
-  db: Database;
-}) => {
+const NotesInternal = ({ db }: { db: Database }) => {
+  const notesRoom = db.getRoom<Note>(collectionKey, aliasSeed);
+  const notesDoc = notesRoom?.ydoc?.getMap('documents');
   const [notes, setNotes] = useState<Documents<Note>>(notesDoc?.toJSON() ?? {});
 
   const nonDeletedNotes = Object.keys(notes).filter(
@@ -146,7 +142,7 @@ const NotesInternal = ({
     const nonDeletedNotes = Object.keys(notes).filter(
       (id) => !notes[id]?._deleted && note._id !== id
     );
-    notesRoom.tempDocs[note._ref]?.matrixProvider?.dispose();
+    notesRoom?.tempDocs[note._ref]?.matrixProvider?.dispose();
     setSelectedNote(nonDeletedNotes[0]);
     setNote(note);
   };
@@ -160,7 +156,8 @@ const NotesInternal = ({
           note: notes[selectedNote],
           db,
           onChange: (text) => updateNoteText(text, notes[selectedNote]),
-          room: notesRoom,
+          // eslint-disable-next-line
+          room: notesRoom!,
         }}
       />
       {nonDeletedNotes.length === 0 && (
@@ -190,7 +187,7 @@ const NotesInternal = ({
                 >
                   X
                 </button>
-                {note.text}
+                <MilkdownViewer key={note.text} markdown={note.text} />
               </div>
             );
         })}

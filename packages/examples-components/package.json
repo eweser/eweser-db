@@ -4,7 +4,9 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "typescript-watch": "tsc --watch",
+    "vite-build-watch": "vite build --watch",
+    "dev": "run-p vite-build-watch typescript-watch",
     "build": "tsc && vite build",
     "preview": "vite preview"
   },

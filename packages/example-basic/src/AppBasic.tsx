@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ulid } from 'ulid';
 import { CollectionKey, Database, buildRef, newDocument } from '@eweser/db';
 import type { Documents, Note, LoginData, Room } from '@eweser/db';
+import * as config from './config';
 
 import { styles, StatusBar, LoginForm } from '@eweser/examples-components';
 
@@ -63,6 +64,7 @@ const App = () => {
           handleLogin={handleLogin}
           handleSignup={handleSignup}
           db={db}
+          {...config}
         />
       )}
       <StatusBar db={db} />
