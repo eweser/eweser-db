@@ -1,6 +1,6 @@
 import { memo, useCallback, useEffect, useState } from 'react';
 import { CollectionKey, Database, buildRef, newDocument } from '@eweser/db';
-import type { Documents, Note, LoginData, Room } from '@eweser/db';
+import type { Documents, Note, LoginData, Room, TypedMap } from '@eweser/db';
 import { ulid } from 'ulid';
 
 import LoginForm from './LoginForm';
@@ -24,7 +24,7 @@ const initialRoomConnect = {
 
 const db = new Database({
   // set `debug` to true to see debug messages in the console
-  debug: true,
+  // debug: true,
 });
 
 const App = () => {
@@ -55,11 +55,16 @@ const App = () => {
     db.signup({ initialRoomConnect, ...loginData });
 
   const defaultNotesRoom = db.getRoom<Note>(collectionKey, aliasSeed);
+  const notesDoc = defaultNotesRoom?.ydoc?.getMap('documents');
 
   return (
     <div style={styles.appRoot}>
-      {started && defaultNotesRoom?.ydoc ? (
-        <NotesInternal notesRoom={defaultNotesRoom} db={db} />
+      {started && notesDoc && defaultNotesRoom?.ydoc ? (
+        <NotesInternal
+          notesRoom={defaultNotesRoom}
+          db={db}
+          notesDoc={notesDoc}
+        />
       ) : (
         <LoginForm
           handleLogin={handleLogin}
@@ -93,12 +98,12 @@ const EditorMemoIzed = memo(MilkdownEditorWrapper, (prev, next) => {
 const NotesInternal = ({
   notesRoom,
   db,
+  notesDoc,
 }: {
+  notesDoc: TypedMap<Documents<Note>>;
   notesRoom: Room<Note>;
   db: Database;
 }) => {
-  const notesDoc = notesRoom?.ydoc?.getMap('documents');
-
   const [notes, setNotes] = useState<Documents<Note>>(notesDoc?.toJSON() ?? {});
 
   const nonDeletedNotes = Object.keys(notes).filter(
