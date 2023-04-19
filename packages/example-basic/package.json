@@ -30,6 +30,7 @@
     "url": "https://github.com/jacobcoro/eweserdb/issues"
   },
   "dependencies": {
+    "@eweser/examples-components": "*",
     "@eweser/db": "*",
     "events": "3.3.0",
     "matrix-crdt": "0.2.1-alpha.1",

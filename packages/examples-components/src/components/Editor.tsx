@@ -21,7 +21,6 @@ const MilkdownEditor: React.FC<EditorProps & { doc: Doc }> = ({
   note,
   doc,
 }) => {
-  console.log('__________Editor');
   const editor = useEditor((root) =>
     Editor.make()
       .config((ctx) => {
@@ -38,13 +37,8 @@ const MilkdownEditor: React.FC<EditorProps & { doc: Doc }> = ({
       // bind doc and awareness
       .bindDoc(doc)
       .applyTemplate(note?.text || 'start writing', (docNode, template) => {
-        const docText = docNode.textContent;
-        const templateText = template.textContent;
-        console.log({ docText, templateText });
-
         const empty = !docNode.textContent;
         const equal = docNode.textContent === template.textContent;
-        console.log({ empty, equal });
         if (empty) return true;
         return !equal;
       })

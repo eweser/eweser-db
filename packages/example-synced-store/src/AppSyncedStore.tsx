@@ -3,10 +3,7 @@ import { ulid } from 'ulid';
 import { CollectionKey, Database, buildRef, newDocument } from '@eweser/db';
 import type { Documents, Note, LoginData, YDoc } from '@eweser/db';
 
-import LoginForm from './LoginForm';
-import { StatusBar } from './StatusBar';
-
-import { styles } from './styles';
+import { styles, StatusBar, LoginForm } from '@eweser/examples-components';
 
 import { useSyncedStore } from '@syncedstore/react';
 import syncedStore from '@syncedstore/core';

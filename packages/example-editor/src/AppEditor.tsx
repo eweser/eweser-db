@@ -3,11 +3,12 @@ import { CollectionKey, Database, buildRef, newDocument } from '@eweser/db';
 import type { Documents, Note, LoginData, Room, TypedMap } from '@eweser/db';
 import { ulid } from 'ulid';
 
-import LoginForm from './LoginForm';
-import { StatusBar } from './StatusBar';
-
-import { styles } from './styles';
-import { MilkdownEditorWrapper } from './Editor';
+import {
+  styles,
+  StatusBar,
+  LoginForm,
+  MilkdownEditorWrapper,
+} from '@eweser/examples-components';
 
 // This example shows how to implement a collaborative editor using @eweser/db. It uses the `example-basic` example as a starting point.
 // It creates a new ydoc for each note that is being actively edited. This allows for multiple users or a user from multiple devices to edit the same note at the same time and have it sync without conflict.

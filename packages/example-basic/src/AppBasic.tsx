@@ -3,10 +3,7 @@ import { ulid } from 'ulid';
 import { CollectionKey, Database, buildRef, newDocument } from '@eweser/db';
 import type { Documents, Note, LoginData, Room } from '@eweser/db';
 
-import LoginForm from './LoginForm';
-import { StatusBar } from './StatusBar';
-
-import { styles } from './styles';
+import { styles, StatusBar, LoginForm } from '@eweser/examples-components';
 
 // This example shows how to implement a basic login/signup form and a basic note-taking app using @eweser/db
 // The CRUD operations are all done directly on the ydoc.
