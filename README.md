@@ -216,8 +216,6 @@ Run e2e tests headless once with `npm run test:e2e`, or with `npm run dev-e2e` t
 
 Priority:
 
-- [ ] get example apps hosted on netlify
-- [ ] **Example**: syncedStore
 - [ ] **Example**: use multiple rooms and switching between them
 - [ ] set up cross collection reference links and helpers. -`async getLinkedRef()` connect the linked ref’s room if needed and retrieve the linked document
 - [ ] **Example**: connect data from 2 apps with refs. e.g. in a note, click ‘turn into flashcard’ and it creates a flashcard in the flashcard app and links to it in the note.
