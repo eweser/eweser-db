@@ -1,10 +1,22 @@
 /// <reference types="Cypress" />
+/// <reference types="@testing-library/cypress" />
+import { deleteDB } from 'idb';
+
+async function clearAllDatabases() {
+  const databases = await window.indexedDB.databases();
+  for (const database of databases) {
+    if (database.name) await deleteDB(database.name);
+  }
+}
 
 describe('Index Page', { baseUrl: 'http://localhost:8082' }, () => {
-  localStorage.clear();
+  beforeEach(async () => {
+    await clearAllDatabases();
+  });
+
   const username = 'user' + Math.random().toString(36).substring(7);
   const password = 'password' + Math.random().toString(36).substring(7);
-  it('should register user', () => {
+  it.only('should register user', () => {
     cy.visit('/');
     cy.contains('Sign up').click();
     cy.get('input[name=username]').clear().type(username);
@@ -14,12 +26,15 @@ describe('Index Page', { baseUrl: 'http://localhost:8082' }, () => {
 
     cy.contains('No notes found. Please create one');
   });
-  it('should login, create, edit, delete notes', () => {
+  it.only('should login, create, edit, delete notes', () => {
     cy.visit('/');
 
     cy.contains('Log In');
     cy.get('input[name=username]').clear().type(username);
-    cy.get('input[type=password]').clear().type(password);
+    cy.get('input[type=password]')
+      .should('not.be.disabled')
+      .clear()
+      .type(password);
     cy.get('button').contains('Log in').click();
 
     // logged in and loaded
@@ -29,23 +44,28 @@ describe('Index Page', { baseUrl: 'http://localhost:8082' }, () => {
 
     cy.contains('No notes found. Please create one');
     cy.contains('New note').click();
+    cy.contains('No notes found. Please create one').should('not.exist');
     cy.contains('My markdown note');
-    cy.contains('My __markdown__ note');
-    cy.get('div[role=textbox]').type('. Hello World');
-    cy.contains('My markdown note. Hello World');
-    cy.contains('My **markdown** note. Hello World'); // the markdown parser can be a bit funky
+    cy.wait(1000);
+    cy.get('div[role=textbox]').should('have.length', 2);
+    cy.get('div[role=textbox]').first().type('. Hello World');
+    cy.findAllByText('My markdown note. Hello World').should('have.length', 2);
+
     cy.contains('X').click();
     cy.contains('No notes found. Please create one');
 
     cy.contains('New note').click();
     cy.contains('My markdown note');
-    cy.contains('My __markdown__ note');
-    cy.get('div[role=textbox]').type('. Hello 2');
-    cy.contains('My markdown note. Hello 2');
+    cy.wait(1000);
+    cy.get('div[role=textbox]').should('have.length', 2);
+    cy.get('div[role=textbox]').first().type('. Hello 2');
+    cy.findAllByText('My markdown note. Hello 2').should('have.length', 2);
     cy.contains('New note').click();
-    cy.get('div[role=textbox]').type('. Hello 3');
-    cy.contains('My **markdown** note. Hello 2');
-    cy.contains('My **markdown** note. Hello 3');
+    cy.wait(1000);
+    cy.get('div[role=textbox]').should('have.length', 2);
+    cy.get('div[role=textbox]').first().type('. Hello 3');
+    cy.findAllByText('My markdown note. Hello 2').should('have.length', 2);
+    cy.findAllByText('My markdown note. Hello 3').should('have.length', 2);
     cy.contains('X').click();
     cy.contains('X').click();
     cy.wait(1000);
@@ -60,6 +80,7 @@ describe('Index Page', { baseUrl: 'http://localhost:8082' }, () => {
     cy.get('button').contains('Log in').click();
 
     cy.contains('Edit', { timeout: 30000 });
+    cy.contains('X').click();
 
     cy.reload();
     cy.contains('loading local database');
