@@ -1,8 +1,8 @@
 {
-  "name": "@eweser/example-basic",
+  "name": "@eweser/example-synced-store",
   "version": "1.0.1",
   "private": true,
-  "description": "eweser-db example mini app using the ydoc directly to make CRUD updates",
+  "description": "eweser-db example mini app using the syncedStore to make CRUD updates",
   "keywords": [
     "user-owned",
     "crdt",
@@ -30,8 +30,9 @@
     "url": "https://github.com/jacobcoro/eweserdb/issues"
   },
   "dependencies": {
-    "@eweser/examples-components": "*",
     "@eweser/db": "*",
+    "@syncedstore/core": "^0.5.1",
+    "@syncedstore/react": "^0.5.1",
     "events": "3.3.0",
     "matrix-crdt": "0.2.1-alpha.1",
     "matrix-js-sdk": "^19.4.0",

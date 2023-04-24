@@ -1,5 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Editor, rootCtx } from '@milkdown/core';
+import {
+  Editor,
+  rootCtx,
+  defaultValueCtx,
+  editorViewOptionsCtx,
+} from '@milkdown/core';
 import { nord } from '@milkdown/theme-nord';
 import { Milkdown, MilkdownProvider, useEditor } from '@milkdown/react';
 import { commonmark } from '@milkdown/preset-commonmark';
@@ -8,7 +13,6 @@ import type { Doc } from 'yjs';
 import { listener, listenerCtx } from '@milkdown/plugin-listener';
 import type { Database, Note, Room } from '@eweser/db';
 import { wait } from '@eweser/db';
-
 export interface EditorProps {
   db: Database;
   onChange: (markdown: string) => void;
@@ -16,12 +20,11 @@ export interface EditorProps {
   room: Room<Note>;
 }
 
-const MilkdownEditor: React.FC<EditorProps & { doc: Doc }> = ({
+const MilkdownEditorInner: React.FC<EditorProps & { doc: Doc }> = ({
   onChange,
   note,
   doc,
 }) => {
-  console.log('__________Editor');
   const editor = useEditor((root) =>
     Editor.make()
       .config((ctx) => {
@@ -38,13 +41,8 @@ const MilkdownEditor: React.FC<EditorProps & { doc: Doc }> = ({
       // bind doc and awareness
       .bindDoc(doc)
       .applyTemplate(note?.text || 'start writing', (docNode, template) => {
-        const docText = docNode.textContent;
-        const templateText = template.textContent;
-        console.log({ docText, templateText });
-
         const empty = !docNode.textContent;
         const equal = docNode.textContent === template.textContent;
-        console.log({ empty, equal });
         if (empty) return true;
         return !equal;
       })
@@ -59,7 +57,7 @@ const MilkdownEditor: React.FC<EditorProps & { doc: Doc }> = ({
   return <Milkdown />;
 };
 
-export const MilkdownEditorWrapper: React.FC<EditorProps> = (props) => {
+export const MilkdownEditor: React.FC<EditorProps> = (props) => {
   const { db, note, room } = props;
   const [doc, setDoc] = useState<Doc>();
 
@@ -90,8 +88,34 @@ export const MilkdownEditorWrapper: React.FC<EditorProps> = (props) => {
           border: '1px solid black',
         }}
       >
-        {doc ? <MilkdownEditor {...props} doc={doc} /> : <>...</>}
+        {doc ? <MilkdownEditorInner {...props} doc={doc} /> : <>...</>}
       </div>
     </MilkdownProvider>
   );
 };
+const editable = () => false;
+const MilkdownViewerInner: React.FC<{ markdown: string }> = ({ markdown }) => {
+  useEditor((root) =>
+    Editor.make()
+      .config((ctx) => {
+        ctx.set(rootCtx, root);
+        ctx.set(defaultValueCtx, markdown);
+        ctx.update(editorViewOptionsCtx, (prev) => ({
+          ...prev,
+          editable,
+        }));
+      })
+      .config(nord)
+      .use(commonmark)
+  );
+
+  return <Milkdown />;
+};
+
+export const MilkdownViewer: React.FC<{ markdown: string }> = ({
+  markdown,
+}) => (
+  <MilkdownProvider>
+    <MilkdownViewerInner markdown={markdown} />
+  </MilkdownProvider>
+);

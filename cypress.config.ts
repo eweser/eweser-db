@@ -6,8 +6,8 @@ export default defineConfig({
   screenshotsFolder: 'e2e/cypress/screenshots',
   videosFolder: 'e2e/cypress/videos',
   e2e: {
+    supportFile: 'e2e/cypress/support/e2e.js',
     specPattern: 'e2e/cypress/**/*.cy.{js,jsx,ts,tsx}',
-    supportFile: false,
     baseUrl: 'http://localhost:8081',
     setupNodeEvents(on, config) {
       // implement node event listeners here

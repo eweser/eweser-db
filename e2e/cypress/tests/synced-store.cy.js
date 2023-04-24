@@ -1,22 +1,9 @@
 /// <reference types="Cypress" />
-/// <reference types="@testing-library/cypress" />
-import { deleteDB } from 'idb';
 
-async function clearAllDatabases() {
-  const databases = await window.indexedDB.databases();
-  for (const database of databases) {
-    if (database.name) await deleteDB(database.name);
-  }
-}
-
-describe('Index Page', { baseUrl: 'http://localhost:8082' }, () => {
-  beforeEach(async () => {
-    await clearAllDatabases();
-  });
-
+describe('Index Page', { baseUrl: 'http://localhost:8083' }, () => {
   const username = 'user' + Math.random().toString(36).substring(7);
   const password = 'password' + Math.random().toString(36).substring(7);
-  it.only('should register user', () => {
+  it('should register user', () => {
     cy.visit('/');
     cy.contains('Sign up').click();
     cy.get('input[name=username]').clear().type(username);
@@ -26,49 +13,36 @@ describe('Index Page', { baseUrl: 'http://localhost:8082' }, () => {
 
     cy.contains('No notes found. Please create one');
   });
-  it.only('should login, create, edit, delete notes', () => {
+  it('should login, create, edit, delete notes', () => {
     cy.visit('/');
 
     cy.contains('Log In');
     cy.get('input[name=username]').clear().type(username);
-    cy.get('input[type=password]')
-      .should('not.be.disabled')
-      .clear()
-      .type(password);
+    cy.get('input[type=password]').clear().type(password);
     cy.get('button').contains('Log in').click();
 
     // logged in and loaded
     cy.contains('Edit', { timeout: 30000 });
-
     cy.contains('Notes');
 
     cy.contains('No notes found. Please create one');
     cy.contains('New note').click();
-    cy.contains('No notes found. Please create one').should('not.exist');
-    cy.contains('My markdown note');
-    cy.wait(1000);
-    cy.get('div[role=textbox]').should('have.length', 2);
-    cy.get('div[role=textbox]').first().type('. Hello World');
-    cy.findAllByText('My markdown note. Hello World').should('have.length', 2);
-
+    cy.contains('New Note Body');
+    cy.get('textarea').type('. Hello World');
+    cy.contains('New Note Body. Hello World');
     cy.contains('X').click();
     cy.contains('No notes found. Please create one');
 
     cy.contains('New note').click();
-    cy.contains('My markdown note');
-    cy.wait(1000);
-    cy.get('div[role=textbox]').should('have.length', 2);
-    cy.get('div[role=textbox]').first().type('. Hello 2');
-    cy.findAllByText('My markdown note. Hello 2').should('have.length', 2);
+    cy.contains('New Note Body');
+    cy.get('textarea').type('. Hello 2');
+    cy.contains('New Note Body. Hello 2');
     cy.contains('New note').click();
-    cy.wait(1000);
-    cy.get('div[role=textbox]').should('have.length', 2);
-    cy.get('div[role=textbox]').first().type('. Hello 3');
-    cy.findAllByText('My markdown note. Hello 2').should('have.length', 2);
-    cy.findAllByText('My markdown note. Hello 3').should('have.length', 2);
+    cy.get('textarea').type('. Hello 3');
+    cy.contains('New Note Body. Hello 2');
+    cy.contains('New Note Body. Hello 3');
     cy.contains('X').click();
     cy.contains('X').click();
-    cy.wait(1000);
   });
   it('should open app right away if credentials exist. It should allow offline editing using localStorage', async () => {
     // if the login credentials and offline database exist in localStorage, allow to open and use the app right away. Send a login and request connect when internet connection is available again
@@ -80,7 +54,6 @@ describe('Index Page', { baseUrl: 'http://localhost:8082' }, () => {
     cy.get('button').contains('Log in').click();
 
     cy.contains('Edit', { timeout: 30000 });
-    cy.contains('X').click();
 
     cy.reload();
     cy.contains('loading local database');

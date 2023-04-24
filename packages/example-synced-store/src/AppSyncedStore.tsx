@@ -1,20 +1,21 @@
 import { useEffect, useState } from 'react';
 import { ulid } from 'ulid';
 import { CollectionKey, Database, buildRef, newDocument } from '@eweser/db';
-import type { Documents, Note, LoginData, Room } from '@eweser/db';
-import * as config from './config';
+import type { Documents, Note, LoginData, YDoc } from '@eweser/db';
 
 import { styles, StatusBar, LoginForm } from '@eweser/examples-components';
+import * as config from './config';
 
-// This example shows how to implement a basic login/signup form and a basic note-taking app using @eweser/db
-// The CRUD operations are all done directly on the ydoc.
-// For most real-world use-cases you will probably want to pass the doc to a helper library like synced-store https://syncedstore.org/docs/.
-// or pass the doc to an editor like prosemirror (preferably a subdoc like in the `example-editor` example to maintain interoperability)
+import { useSyncedStore } from '@syncedstore/react';
+import syncedStore from '@syncedstore/core';
+import type { MappedTypeDescription } from '@syncedstore/core/types/doc';
 
-/** basically the code-facing 'name' of a room. This will be used to generate the `roomAlias that matrix uses to identify rooms */
+// This example shows how to implement a basic login/signup form and a basic note-taking app using @eweser/db and the [syncedStore](https://syncedstore.org) library which makes working with Yjs easier.
+// Please see example-basic for a simpler example with more contextual comments.
+
 const aliasSeed = 'notes-default';
 const collectionKey = CollectionKey.notes;
-/** a room is a group of documents that all share a common `Collection` type, like Note. A room also corresponds with a Matrix chat room where the data is stored. */
+
 const initialRoomConnect = {
   collectionKey,
   aliasSeed,
@@ -30,18 +31,13 @@ const App = () => {
   const [started, setStarted] = useState(false);
 
   useEffect(() => {
-    // Set within a useEffect to make sure to only call `db.load()` and `db.on()` once
     db.on('my-listener-name', ({ event }) => {
-      // 'started' or 'startFailed' will be called as the result of either db.load(), db.login(), or db.signup()
       if (event === 'started') {
-        // after this message the database is ready to be used, but syncing to remote may still be in progress
         setStarted(true);
       }
     });
-    // `db.load()` tries to start up the database from an existing localStore. This will only work if the user has previously logged in from this device
     db.load([initialRoomConnect]);
     return () => {
-      // remove the listener when the component unmounts
       db.off('my-listener-name');
     };
   }, []);
@@ -51,14 +47,14 @@ const App = () => {
 
   const handleSignup = (loginData: LoginData) =>
     db.signup({ initialRoomConnect, ...loginData });
-
   const defaultNotesRoom = db.getRoom<Note>(collectionKey, aliasSeed);
-
+  const doc = defaultNotesRoom?.ydoc;
+  const documents: Documents<Note> = {};
+  const store = syncedStore({ documents }, doc as any);
   return (
     <div style={styles.appRoot}>
-      {/* You can check that the ydoc exists to make sure the room is connected */}
-      {started && defaultNotesRoom?.ydoc ? (
-        <NotesInternal notesRoom={defaultNotesRoom} />
+      {started && doc?.store ? (
+        <NotesInternal doc={doc} store={store} />
       ) : (
         <LoginForm
           handleLogin={handleLogin}
@@ -74,7 +70,6 @@ const App = () => {
 
 const buildNewNote = () => {
   const documentId = ulid();
-  // a ref is used to build up links between documents. It is a string that looks like `collectionKey:aliasSeed:documentId`
   const ref = buildRef({
     collectionKey,
     aliasSeed,
@@ -83,45 +78,49 @@ const buildNewNote = () => {
   return newDocument<Note>(ref, { text: 'New Note Body' });
 };
 
-const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
-  // initialize the ydoc with .getMap() and then use .observe() to update the state when the ydoc changes
-  const notesDoc = notesRoom.ydoc?.getMap('documents');
+const NotesInternal = ({
+  doc,
+  store,
+}: {
+  doc: YDoc<Note>;
+  store: MappedTypeDescription<{
+    documents: Documents<Note>;
+  }>;
+}) => {
+  const notes = useSyncedStore(store).documents;
 
-  const [notes, setNotes] = useState<Documents<Note>>(notesDoc?.toJSON() ?? {});
+  useEffect(() => {
+    // load up the initial values from the external yDoc into the syncedStore
+    const documents = doc.getMap('documents').toJSON();
+    Object.entries(documents).forEach(([key, value]) => {
+      if (JSON.stringify(notes[key]) !== JSON.stringify(value)) {
+        notes[key] = value;
+      }
+    });
+  }, [doc, notes]);
 
-  // You can also delete entries by setting them to undefined/null, but it is better to use the _deleted flag to mark them for deletion later just in case the user changes their mind
   const nonDeletedNotes = Object.keys(notes).filter(
     (id) => !notes[id]?._deleted
   );
 
   const [selectedNote, setSelectedNote] = useState(nonDeletedNotes[0]);
 
-  notesDoc?.observe((_event) => {
-    setNotes(notesDoc?.toJSON());
-  });
-
-  const setNote = (note: Note) => {
-    notesDoc?.set(note._id, note);
-  };
-
   const createNote = () => {
     const newNote = buildNewNote();
-    setNote(newNote);
+    // this syncedStore you can simply assign to the key and it will be synced to the external yDoc
+    notes[newNote._id] = newNote;
     setSelectedNote(newNote._id);
   };
 
   const updateNoteText = (text: string, note?: Note) => {
     if (!note) return;
     note.text = text;
-    setNote(note);
   };
 
   const deleteNote = (note: Note) => {
-    // This marks the document safe to delete from the database after 30 days
     const oneMonth = 1000 * 60 * 60 * 24 * 30;
-    note._deleted = true;
-    note._ttl = new Date().getTime() + oneMonth;
-    setNote(note);
+    notes[note._id]._deleted = true;
+    notes[note._id]._ttl = new Date().getTime() + oneMonth;
   };
 
   return (

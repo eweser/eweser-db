@@ -1,22 +1,32 @@
 import type { LoginData, Database } from '@eweser/db';
 import { useEffect, useState } from 'react';
-import { DEV_PASSWORD, DEV_USERNAME, MATRIX_SERVER, env } from './config';
 import { styles } from './styles';
-
-const initialLoginData: LoginData = {
-  baseUrl: MATRIX_SERVER,
-  userId: DEV_USERNAME, // these will be empty in prod. This speeds up dev time by prefilling the login form
-  password: DEV_PASSWORD,
-};
 
 export interface Props {
   handleLogin: (loginData: LoginData) => void;
   handleSignup: (loginData: LoginData) => void;
   db: Database;
+  DEV_PASSWORD?: string;
+  DEV_USERNAME?: string;
+  MATRIX_SERVER?: string;
+  dev?: boolean;
 }
 
 type FormField = keyof LoginData;
-const LoginForm = ({ handleLogin, handleSignup, db }: Props) => {
+export const LoginForm = ({
+  handleLogin,
+  handleSignup,
+  db,
+  MATRIX_SERVER = 'https://matrix.org',
+  DEV_PASSWORD,
+  DEV_USERNAME,
+  dev,
+}: Props) => {
+  const initialLoginData: LoginData = {
+    baseUrl: MATRIX_SERVER,
+    userId: DEV_USERNAME, // these will be empty in prod. This speeds up dev time by prefilling the login form
+    password: DEV_PASSWORD,
+  };
   const [loginStatus, setLoginStatus] = useState(db.loginStatus || 'initial');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -67,7 +77,6 @@ const LoginForm = ({ handleLogin, handleSignup, db }: Props) => {
           onChange={(e) => handleChange('userId', e.target.value)}
           value={loginData.userId}
         />
-
         <label htmlFor="password-input">Password:</label>
         <input
           autoComplete="current-password"
@@ -100,7 +109,7 @@ const LoginForm = ({ handleLogin, handleSignup, db }: Props) => {
           <>
             <p>
               {`* No matrix account? `}
-              {env !== 'prod' && (
+              {dev && (
                 <>
                   <button onClick={() => setIsSignup(!isSignup)}>
                     Sign up
@@ -121,5 +130,3 @@ const LoginForm = ({ handleLogin, handleSignup, db }: Props) => {
     </>
   );
 };
-
-export default LoginForm;
