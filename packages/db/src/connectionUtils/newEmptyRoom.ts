@@ -11,6 +11,8 @@ export const newEmptyRoom = <T extends Document>(
     connectStatus: 'initial',
     collectionKey,
     matrixProvider: null,
+    webRtcProvider: null,
+    indexeddbProvider: null,
     created: new Date(),
     roomAlias,
     roomId: undefined,

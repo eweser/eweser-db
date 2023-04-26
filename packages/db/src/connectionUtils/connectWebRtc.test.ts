@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { connectRtc } from './connectRtc';
+import { connectWebRtcProvider } from './connectWebtRtc';
 import { Database, randomString, wait } from '..';
 import { Doc } from 'yjs';
 import { localWebRtcServer } from '../test-utils';
@@ -8,7 +8,7 @@ describe('connectRtc', () => {
   it('should connect', async () => {
     const doc = new Doc();
     const db = new Database({ webRTCPeers: [localWebRtcServer] });
-    const result = connectRtc(db, roomName, doc);
+    const result = connectWebRtcProvider(db, roomName, doc);
     const connection = result.provider.signalingConns[0];
     expect(connection.url).toEqual(localWebRtcServer);
     expect(result.doc.store).toBeTruthy();

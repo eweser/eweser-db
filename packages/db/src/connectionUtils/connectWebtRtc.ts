@@ -6,7 +6,7 @@ import { Awareness } from 'y-protocols/awareness.js';
 /**
  * adds a web rtc connection to a doc
  */
-export const connectRtc = (
+export const connectWebRtcProvider = (
   _db: Database,
   name: string,
   doc: Doc,

@@ -21,9 +21,12 @@ const initialRoomConnect = {
   name: 'My Notes on Life and Things',
 };
 
+// use this to sync webRTC locally with the test-rpc-server
+// const localWebRtcServer = 'ws://localhost:4444';
 const db = new Database({
   // set `debug` to true to see debug messages in the console
   // debug: true,
+  // webRTCPeers: [localWebRtcServer],
 });
 
 const App = () => {

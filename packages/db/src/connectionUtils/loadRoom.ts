@@ -19,17 +19,20 @@ export const loadRoom = async <T extends Document>(
     });
   logger('starting loadRoom');
   if (collectionKey === 'registry') {
-    const { ydoc } = await initializeDocAndLocalProvider<RegistryData>(
-      'registry'
-    );
+    const { ydoc, localProvider } =
+      await initializeDocAndLocalProvider<RegistryData>('registry');
     const room = getOrSetRoom(_db)<RegistryData>('registry' as any, '0');
     room.ydoc = ydoc;
+    room.indexeddbProvider = localProvider;
     logger('loaded room', room);
     return room as Room<T>;
   }
-  const { ydoc } = await initializeDocAndLocalProvider<T>(aliasSeed);
+  const { ydoc, localProvider } = await initializeDocAndLocalProvider<T>(
+    aliasSeed
+  );
   const room = getOrSetRoom(_db)<T>(collectionKey, aliasSeed);
   room.ydoc = ydoc;
+  room.indexeddbProvider = localProvider;
   logger('loaded room', room);
   return room;
 };

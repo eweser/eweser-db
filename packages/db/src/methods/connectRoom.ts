@@ -3,13 +3,23 @@ import {
   getRoomId,
   joinRoomIfNotJoined,
 } from '../connectionUtils';
-import type { CollectionKey, Document, ConnectStatus, Room } from '../types';
+import type {
+  CollectionKey,
+  Document,
+  ConnectStatus,
+  Room,
+  LoginData,
+  YDoc,
+} from '../types';
 import type { Database } from '..';
 import { getOrSetRoom } from '..';
 import { buildAliasFromSeed, getCollectionRegistry } from '..';
 import { initializeDocAndLocalProvider } from '../connectionUtils/initializeDoc';
 import { waitForRegistryPopulated } from '../connectionUtils/populateRegistry';
 import { updateRegistryEntry } from '../connectionUtils/saveRoomToRegistry';
+import { connectWebRtcProvider } from '../connectionUtils/connectWebtRtc';
+import { LocalStorageKey, localStorageGet } from '../utils/localStorageService';
+import { Doc } from 'yjs';
 
 const checkIfRoomIsInRegistry = async (
   _db: Database,
@@ -51,7 +61,6 @@ export const connectRoom =
   ): Promise<Room<T>> => {
     try {
       if (!aliasSeed) throw new Error('aliasSeed not provided');
-
       const roomAlias = buildAliasFromSeed(
         aliasSeed,
         collectionKey,
@@ -78,11 +87,17 @@ export const connectRoom =
 
       logger('starting connectRoom', room.connectStatus);
 
-      if (
-        room.matrixProvider?.canWrite &&
-        room.ydoc?.store
-        // room.webRtcProvider.connected
-      ) {
+      const matrixConnected = _db.useMatrix
+        ? room.matrixProvider?.canWrite
+        : true;
+      const yDocConnected = _db.useIndexedDB
+        ? room.indexeddbProvider?.name === aliasSeed
+        : true;
+      const webRtcConnected = _db.useWebRTC
+        ? room.webRtcProvider?.connected
+        : true;
+
+      if (matrixConnected && yDocConnected && webRtcConnected) {
         room.connectStatus = 'ok';
         logger('room is already connected', room.connectStatus, {
           canWrite: room.matrixProvider?.canWrite,
@@ -90,16 +105,50 @@ export const connectRoom =
         });
         return room as Room<T>;
       }
-      const { ydoc } = await initializeDocAndLocalProvider<any>(aliasSeed);
+
+      let ydoc = new Doc() as YDoc<T>;
+      if (_db.useIndexedDB) {
+        const { ydoc: localDoc, localProvider } =
+          await initializeDocAndLocalProvider<any>(aliasSeed);
+        ydoc = localDoc;
+        room.indexeddbProvider = localProvider;
+      }
+
       if (!ydoc) throw new Error('ydoc not found');
       room.ydoc = ydoc;
       logger('ydoc created', room.connectStatus, ydoc);
+
+      if (_db.useWebRTC && _db.webRtcPeers.length > 0) {
+        try {
+          const password =
+            localStorageGet<LoginData>(LocalStorageKey.loginData)?.password ??
+            '';
+          const { provider, doc } = connectWebRtcProvider(
+            _db,
+            roomAlias,
+            ydoc as Doc,
+            password
+          );
+          room.ydoc = doc as any;
+          room.webRtcProvider = provider;
+        } catch (error) {
+          logger('error connecting to webRtc', room.connectStatus, error);
+        }
+      }
 
       const registryEntry = await checkIfRoomIsInRegistry(
         _db,
         aliasSeed,
         collectionKey
       );
+
+      if (!_db.useMatrix) {
+        logger(
+          'room connected successfully. Not connecting Matrix',
+          room.connectStatus
+        );
+        return room as Room<T>;
+      }
 
       const roomId = registryEntry.roomId || (await getRoomId(_db, roomAlias));
       if (!roomId) {

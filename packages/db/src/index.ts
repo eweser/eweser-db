@@ -47,11 +47,12 @@ const defaultRtcPeers = [
   'wss://y-webrtc-signaling-us.herokuapp.com',
 ];
 
+export type ProviderOptions = 'WebRTC' | 'Matrix' | 'IndexedDB';
 export interface DatabaseOptions {
   baseUrl?: string;
   debug?: boolean;
-  /** elect out of using the WebRTC provider */
-  noWebRtc?: boolean;
+  /** Which providers to use. By default use all */
+  providers?: ProviderOptions[];
   /** provide a list of peers to use instead of the default */
   webRTCPeers?: string[];
 }
@@ -62,6 +63,10 @@ export class Database {
   baseUrl: string;
   loginStatus: LoginStatus = 'initial';
   online = false;
+
+  useMatrix = true;
+  useWebRTC = true;
+  useIndexedDB = true;
 
   collectionKeys: CollectionKey[] = collectionKeys;
   collections: Collections = {
@@ -97,10 +102,19 @@ export class Database {
   constructor(optionsPassed?: DatabaseOptions) {
     const options = optionsPassed || {};
     this.baseUrl = options?.baseUrl || 'https://matrix.org';
-    if (!options?.noWebRtc && options?.webRTCPeers) {
+    if (options?.webRTCPeers) {
       this.webRtcPeers = options?.webRTCPeers;
     }
-
+    if (!options.providers?.includes('WebRTC')) {
+      this.webRtcPeers = [];
+      this.useWebRTC = false;
+    }
+    if (!options.providers?.includes('Matrix')) {
+      this.useMatrix = false;
+    }
+    if (!options.providers?.includes('IndexedDB')) {
+      this.useIndexedDB = false;
+    }
     pollConnection(this); // start polling for matrix baserUrl server connection status
     if (options?.debug) {
       this.on('debugger', (event) => {
