@@ -51,7 +51,9 @@ export type ProviderOptions = 'WebRTC' | 'Matrix' | 'IndexedDB';
 export interface DatabaseOptions {
   baseUrl?: string;
   debug?: boolean;
-  /** Which providers to use. By default use all */
+  /** Which providers to use. By default uses all.
+   * Currently indexxedDB and Matrix are required and webRTC is optional
+   */
   providers?: ProviderOptions[];
   /** provide a list of peers to use instead of the default */
   webRTCPeers?: string[];
@@ -110,10 +112,12 @@ export class Database {
       this.useWebRTC = false;
     }
     if (!options.providers?.includes('Matrix')) {
-      this.useMatrix = false;
+      throw new Error('Matrix provider is required');
+      // this.useMatrix = false;
     }
     if (!options.providers?.includes('IndexedDB')) {
-      this.useIndexedDB = false;
+      throw new Error('IndexedDB provider is required');
+      // this.useIndexedDB = false;
     }
     pollConnection(this); // start polling for matrix baserUrl server connection status
     if (options?.debug) {
