@@ -119,8 +119,10 @@ const NotesInternal = ({
 
   const deleteNote = (note: Note) => {
     const oneMonth = 1000 * 60 * 60 * 24 * 30;
-    notes[note._id]._deleted = true;
-    notes[note._id]._ttl = new Date().getTime() + oneMonth;
+    const oldNote = notes[note._id];
+    if (!oldNote) return;
+    oldNote._deleted = true;
+    oldNote._ttl = new Date().getTime() + oneMonth;
   };
 
   return (
