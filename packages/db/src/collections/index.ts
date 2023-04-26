@@ -24,6 +24,8 @@ export const initialRegistry: RegistryCollection = {
     connectStatus: 'initial',
     collectionKey: 'registry',
     matrixProvider: null,
+    indexeddbProvider: null,
+    webRtcProvider: null,
     roomAlias: '', // to be replaced on login with real username
     tempDocs: {},
   },
