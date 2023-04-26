@@ -107,17 +107,19 @@ export class Database {
     if (options?.webRTCPeers) {
       this.webRtcPeers = options?.webRTCPeers;
     }
-    if (!options.providers?.includes('WebRTC')) {
-      this.webRtcPeers = [];
-      this.useWebRTC = false;
-    }
-    if (!options.providers?.includes('Matrix')) {
-      throw new Error('Matrix provider is required');
-      // this.useMatrix = false;
-    }
-    if (!options.providers?.includes('IndexedDB')) {
-      throw new Error('IndexedDB provider is required');
-      // this.useIndexedDB = false;
+    if (options.providers) {
+      if (!options.providers.includes('WebRTC')) {
+        this.webRtcPeers = [];
+        this.useWebRTC = false;
+      }
+      if (!options.providers.includes('Matrix')) {
+        throw new Error('Matrix provider is required');
+        // this.useMatrix = false;
+      }
+      if (!options.providers.includes('IndexedDB')) {
+        throw new Error('IndexedDB provider is required');
+        // this.useIndexedDB = false;
+      }
     }
     pollConnection(this); // start polling for matrix baserUrl server connection status
     if (options?.debug) {
