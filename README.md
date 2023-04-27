@@ -219,10 +219,8 @@ Run e2e tests headless once with `npm run test:e2e`, or with `npm run dev-e2e` t
 
 Priority:
 
-- [x] **web rtc**: set up web rtc for more responsive and robust syncing and for awareness for shared editing.
 - [ ] **offline mode:** helpers to reconnect when back online from offline. Add disconnect room method
 - [ ] **offline mode:** offline first - allow interacting with app before ever signed up or logged in. This might just need to be an example, not db feature
-- [x] **Example**: syncedStore
 - [ ] **Example**: use multiple rooms and switching between them
 - [ ] set up cross collection reference links and helpers. -`async getLinkedRef()` connect the linked ref’s room if needed and retrieve the linked document
 - [ ] **Example**: connect data from 2 apps with refs. e.g. in a note, click ‘turn into flashcard’ and it creates a flashcard in the flashcard app and links to it in the note.
@@ -232,7 +230,6 @@ Priority:
 - [ ] End 2 End **Encryption** — multiple devices?
 - [ ] Per-App **Access control**. Instead of signing in the matrix client as the user, we could instead sign in with a Matrix account provided by the app owner, and then have the use invite that account into each room, specifying read-only or write permissions.
 - [ ] **Sharing,**: user can invite another to a room and collaborate on the documents within. Can also just be read only
-- [ ] **Sharing,**: Example: Use the web rtc to allow realtime collaborative editing.
 - [ ] Versioning strategy for schema/api changes. How to maintain backwards compatibility with older versions of the database.
 
 Nice to haves:
