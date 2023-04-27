@@ -9,6 +9,7 @@ import * as config from './config';
 import { useSyncedStore } from '@syncedstore/react';
 import syncedStore from '@syncedstore/core';
 import type { MappedTypeDescription } from '@syncedstore/core/types/doc';
+import { WEB_RTC_PEERS } from './config';
 
 // This example shows how to implement a basic login/signup form and a basic note-taking app using @eweser/db and the [syncedStore](https://syncedstore.org) library which makes working with Yjs easier.
 // Please see example-basic for a simpler example with more contextual comments.
@@ -25,6 +26,7 @@ const initialRoomConnect = {
 const db = new Database({
   // set `debug` to true to see debug messages in the console
   // debug: true,
+  webRTCPeers: WEB_RTC_PEERS,
 });
 
 const App = () => {

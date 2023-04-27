@@ -5,6 +5,7 @@ import type { Documents, Note, LoginData, Room } from '@eweser/db';
 import * as config from './config';
 
 import { styles, StatusBar, LoginForm } from '@eweser/examples-components';
+import { WEB_RTC_PEERS } from './config';
 
 // This example shows how to implement a basic login/signup form and a basic note-taking app using @eweser/db
 // The CRUD operations are all done directly on the ydoc.
@@ -22,11 +23,10 @@ const initialRoomConnect = {
 };
 
 // use this to sync webRTC locally with the test-rpc-server
-// const localWebRtcServer = 'ws://localhost:4444';
 const db = new Database({
   // set `debug` to true to see debug messages in the console
   // debug: true,
-  // webRTCPeers: [localWebRtcServer],
+  webRTCPeers: WEB_RTC_PEERS,
 });
 
 const App = () => {

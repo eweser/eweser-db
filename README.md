@@ -115,7 +115,9 @@ const newNote: Note = {
 doc.set(newNote._id, newNote);
 ```
 
-That's it! 🚀🚀🚀 You now have a user-owned database that syncs between devices and apps. Try opening in another browser or device and see the changes sync.
+That's it! 🚀🚀🚀 You now have a user-owned database that syncs between devices and apps.
+
+Try opening in another browser or device and see the changes sync. Refresh the page and see the data persist. Turn off your internet and see the data still updates.
 
 Consider using [syncedStore](https://syncedstore.org/docs/) to make manipulating the ydoc even easier.
 
@@ -168,11 +170,11 @@ Say you'd like to add a new collection or document type, like `TodoItem`, or `Bl
 
 To make the collection usable by other apps, submit a pull request to add the collection types. Follow the examples in the `db/src/collections` folder.
 
-To only use a document in your app that you don't want made available, fork the project and do the same thing, or extend locally and use some `//@ts-ignore`s for the type errors you will encounter.
+To only use a document in your app that you don't want made available to other apps, fork the project and do the same thing, or extend locally and use some `//@ts-ignore`s for the type errors you will encounter.
 
 ## App development strategy, user consent
 
-As it is designed now, when the user signs in, for the duration of the session the app will have read/write access to the full user-owned database. Users should be made aware of this fact when logging in to an app. People are already comfortable with an app managing its own data, but it is another level of trust required in the app to also let it manage data used by other apps. Users need to know the level of trust they are putting in each app when they sign ing.
+As it is designed now, when the user signs in, the app will have read/write access to the full user-owned database for the duration of the session. Users should be made aware of this fact when logging in to an app. People are already comfortable with an app managing its own data, but it is another level of trust required in the app to also let it manage data used by other apps. Users need to know the level of trust they are putting in each app when they sign ing.
 
 Because user-owned data flips the current data storage paradigm on its head, app developers might be wondering how to share public data between users. For example, a user might mark a certain collection of notes as public and apps could aggregate them and let other users search and discover those.
 

@@ -12,10 +12,10 @@
     "clean": "lerna run clean",
     "build-link:components": "cd packages/examples-components && npm run build; cd ../../; lerna link",
     "build-link:db": "cd packages/db && npm run build; cd ../../; lerna link",
-    "build-examples": "run-p build-examples:*",
-    "build-examples:basic": "cd packages/example-basic && npm run build",
-    "build-examples:editor": "cd packages/example-editor && npm run build",
-    "build-examples:synced-store": "cd packages/example-synced-store && npm run build",
+    "build-examples": "run-p build-example:*",
+    "build-example:basic": "cd packages/example-basic && npm run build",
+    "build-example:editor": "cd packages/example-editor && npm run build",
+    "build-example:synced-store": "cd packages/example-synced-store && npm run build",
     "build": "run-s build-link:db build-link:components build-examples",
     "dev": "lerna run dev --parallel",
     "dev-e2e": "cypress open",
@@ -26,7 +26,8 @@
     "postinstall": "npx lerna bootstrap",
     "run-example-previews": "run-p run-example-preview:*",
     "run-example-preview:basic": "cd packages/example-basic; npm run preview",
-    "run-example-preview:editor": "cd packages/example-editor; npm run preview"
+    "run-example-preview:editor": "cd packages/example-editor; npm run preview",
+    "run-example-preview:synced-store": "cd packages/example-synced-store; npm run preview"
   },
   "devDependencies": {
     "@testing-library/cypress": "^9.0.0",
