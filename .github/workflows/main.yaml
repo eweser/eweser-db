@@ -50,6 +50,7 @@ jobs:
         run: npx wait-on http://localhost:8888/_matrix/static/
 
       - name: Start and wait for webRTC server
+        # the control operator & runs the first command in the background
         run: npm run start-test-rpc-server & npx wait-on http://localhost:4444
 
       - name: Run unit/integration tests
