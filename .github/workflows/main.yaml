@@ -42,7 +42,7 @@ jobs:
         run: npm install && cd test-rpc-server && npm install
 
       - name: Build packages
-        run: npx lerna run build
+        run: npm run build
         env:
           CI: true
 
