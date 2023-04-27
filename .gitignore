@@ -27,3 +27,7 @@ types
 
 # secrets
 .env
+
+# cypress
+e2e/cypress/videos
+e2e/cypress/screenshots

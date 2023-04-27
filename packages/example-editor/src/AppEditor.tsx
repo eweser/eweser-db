@@ -5,13 +5,9 @@ import { ulid } from 'ulid';
 
 import * as config from './config';
 
-import {
-  styles,
-  StatusBar,
-  LoginForm,
-  MilkdownEditor,
-  MilkdownViewer,
-} from '@eweser/examples-components';
+import { styles, StatusBar, LoginForm } from '@eweser/examples-components';
+
+import { MilkdownEditor, MilkdownViewer } from './Editor';
 
 // This example shows how to implement a collaborative editor using @eweser/db. It uses the `example-basic` example as a starting point.
 // It creates a new ydoc for each note that is being actively edited. This allows for multiple users or a user from multiple devices to edit the same note at the same time and have it sync without conflict.
@@ -91,7 +87,7 @@ const buildNewNote = () => {
 };
 /**
  * We memoize the editor so that it only updates when the note changes.
- * We are doing some important doc connections in this component so please see `packages/examples-components/src/components/Editor.tsx` for details
+ * We are doing some important doc connections in this component so please see `./Editor.tsx` for details
  */
 const EditorMemoIzed = memo(MilkdownEditor, (prev, next) => {
   const doNotUpdate = prev.note?._id === next.note?._id;
