@@ -220,7 +220,7 @@ Run e2e tests headless once with `npm run test:e2e`, or with `npm run dev-e2e` t
 Priority:
 
 - [x] **web rtc**: set up web rtc for more responsive and robust syncing and for awareness for shared editing.
-- [ ] **offline mode:** helpers to reconnect when back online from offline
+- [ ] **offline mode:** helpers to reconnect when back online from offline. Add disconnect room method
 - [ ] **offline mode:** offline first - allow interacting with app before ever signed up or logged in. This might just need to be an example, not db feature
 - [x] **Example**: syncedStore
 - [ ] **Example**: use multiple rooms and switching between them
