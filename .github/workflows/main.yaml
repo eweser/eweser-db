@@ -49,11 +49,8 @@ jobs:
       - name: Wait for Matrix
         run: npx wait-on http://localhost:8888/_matrix/static/
 
-      - name: Start webRTC
-        run: npm run start-test-rpc-server
-
-      - name: Wait for webRTC server
-        run: npx wait-on http://localhost:4444
+      - name: Start and wait for webRTC server
+        run: npm run start-test-rpc-server & npx wait-on http://localhost:4444
 
       - name: Run unit/integration tests
         run: npx lerna run test --scope @eweser/db
