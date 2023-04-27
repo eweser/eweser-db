@@ -115,7 +115,9 @@ const newNote: Note = {
 doc.set(newNote._id, newNote);
 ```
 
-That's it! 🚀🚀🚀 You now have a user-owned database that syncs between devices and apps. Try opening in another browser or device and see the changes sync.
+That's it! 🚀🚀🚀 You now have a user-owned database that syncs between devices and apps.
+
+Try opening in another browser or device and see the changes sync. Refresh the page and see the data persist. Turn off your internet and see the data still updates.
 
 Consider using [syncedStore](https://syncedstore.org/docs/) to make manipulating the ydoc even easier.
 
@@ -168,11 +170,11 @@ Say you'd like to add a new collection or document type, like `TodoItem`, or `Bl
 
 To make the collection usable by other apps, submit a pull request to add the collection types. Follow the examples in the `db/src/collections` folder.
 
-To only use a document in your app that you don't want made available, fork the project and do the same thing, or extend locally and use some `//@ts-ignore`s for the type errors you will encounter.
+To only use a document in your app that you don't want made available to other apps, fork the project and do the same thing, or extend locally and use some `//@ts-ignore`s for the type errors you will encounter.
 
 ## App development strategy, user consent
 
-As it is designed now, when the user signs in, for the duration of the session the app will have read/write access to the full user-owned database. Users should be made aware of this fact when logging in to an app. People are already comfortable with an app managing its own data, but it is another level of trust required in the app to also let it manage data used by other apps. Users need to know the level of trust they are putting in each app when they sign ing.
+As it is designed now, when the user signs in, the app will have read/write access to the full user-owned database for the duration of the session. Users should be made aware of this fact when logging in to an app. People are already comfortable with an app managing its own data, but it is another level of trust required in the app to also let it manage data used by other apps. Users need to know the level of trust they are putting in each app when they sign ing.
 
 Because user-owned data flips the current data storage paradigm on its head, app developers might be wondering how to share public data between users. For example, a user might mark a certain collection of notes as public and apps could aggregate them and let other users search and discover those.
 
@@ -186,6 +188,7 @@ This is an area that needs further consideration. Community input is appreciated
 
 - This project is still in Alpha. It is not ready for production use. Database schema and API are subject to change.
 - [Matrix events size limit](https://github.com/YousefED/Matrix-CRDT/issues/11)
+- [Matrix-crdt e2ee support](https://github.com/YousefED/Matrix-CRDT/pull/17)
 - connecting to rooms can be slow depending on the homeserver, especially the `getRoomIdForAlias` call when the homeserver has many rooms it needs to search through. Because the registry stores the id, the second time a room is connected to it should be faster.
 - Developers should minimize the number of rooms the user has connected to at any given time and use `room.matrixProvider.dispose()` to disconnect from rooms when they are not needed. Otherwise you might run into an error saying there are too many event listeners.
 
@@ -216,17 +219,21 @@ Run e2e tests headless once with `npm run test:e2e`, or with `npm run dev-e2e` t
 
 Priority:
 
+- [x] **web rtc**: set up web rtc for more responsive and robust syncing and for awareness for shared editing.
+- [ ] **offline mode:** helpers to reconnect when back online from offline. Add disconnect room method
+- [ ] **offline mode:** offline first - allow interacting with app before ever signed up or logged in. This might just need to be an example, not db feature
+- [x] **Example**: syncedStore
 - [ ] **Example**: use multiple rooms and switching between them
 - [ ] set up cross collection reference links and helpers. -`async getLinkedRef()` connect the linked ref’s room if needed and retrieve the linked document
 - [ ] **Example**: connect data from 2 apps with refs. e.g. in a note, click ‘turn into flashcard’ and it creates a flashcard in the flashcard app and links to it in the note.
-- [ ] **offline mode:** needs helpers to reconnect when back online from offline
 - [ ] **Files:** set up file hosting provider services like Pinata, Dropbox, etc. and give users the option to connect their accounts to the app. Could also try the ‘matrix files’ [library](~https://github.com/matrix-org/matrix-files-sdk~).
 - [ ] **Public data**: set up ‘aggregator’ listeners when a user makes a collection as public. These will be MatrixReader’s that live on a node server and listen for changes to the collection. How to aggregate and serve to public listeners?
 - [ ] **Backups** - user can add storage account (dropbox, pinata, etc) that store snapshots of the database in the file hosting provider.
 - [ ] End 2 End **Encryption** — multiple devices?
 - [ ] Per-App **Access control**. Instead of signing in the matrix client as the user, we could instead sign in with a Matrix account provided by the app owner, and then have the use invite that account into each room, specifying read-only or write permissions.
 - [ ] **Sharing,**: user can invite another to a room and collaborate on the documents within. Can also just be read only
-- [ ] Consider versioning strategy and how to maintain backwards compatibility with older versions of the database.
+- [ ] **Sharing,**: Example: Use the web rtc to allow realtime collaborative editing.
+- [ ] Versioning strategy for schema/api changes. How to maintain backwards compatibility with older versions of the database.
 
 Nice to haves:
 

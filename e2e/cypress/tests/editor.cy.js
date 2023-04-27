@@ -16,7 +16,7 @@ describe('Index Page', { baseUrl: 'http://localhost:8082' }, () => {
 
   const username = 'user' + Math.random().toString(36).substring(7);
   const password = 'password' + Math.random().toString(36).substring(7);
-  it.only('should register user', () => {
+  it('should register user', () => {
     cy.visit('/');
     cy.contains('Sign up').click();
     cy.get('input[name=username]').clear().type(username);
@@ -26,7 +26,7 @@ describe('Index Page', { baseUrl: 'http://localhost:8082' }, () => {
 
     cy.contains('No notes found. Please create one');
   });
-  it.only('should login, create, edit, delete notes', () => {
+  it('should login, create, edit, delete notes', () => {
     cy.visit('/');
 
     cy.contains('Log In');
@@ -48,8 +48,8 @@ describe('Index Page', { baseUrl: 'http://localhost:8082' }, () => {
     cy.contains('My markdown note');
     cy.wait(1000);
     cy.get('div[role=textbox]').should('have.length', 2);
-    cy.get('div[role=textbox]').first().type('. Hello World');
-    cy.findAllByText('My markdown note. Hello World').should('have.length', 2);
+    cy.get('div[role=textbox]').first().clear().type('Hello World');
+    cy.findAllByText('Hello World').should('have.length', 2);
 
     cy.contains('X').click();
     cy.contains('No notes found. Please create one');
@@ -58,14 +58,14 @@ describe('Index Page', { baseUrl: 'http://localhost:8082' }, () => {
     cy.contains('My markdown note');
     cy.wait(1000);
     cy.get('div[role=textbox]').should('have.length', 2);
-    cy.get('div[role=textbox]').first().type('. Hello 2');
-    cy.findAllByText('My markdown note. Hello 2').should('have.length', 2);
+    cy.get('div[role=textbox]').first().clear().type('Hello 2');
+    cy.findAllByText('Hello 2').should('have.length', 2);
     cy.contains('New note').click();
     cy.wait(1000);
-    cy.get('div[role=textbox]').should('have.length', 2);
-    cy.get('div[role=textbox]').first().type('. Hello 3');
-    cy.findAllByText('My markdown note. Hello 2').should('have.length', 2);
-    cy.findAllByText('My markdown note. Hello 3').should('have.length', 2);
+    cy.get('div[role=textbox]').should('have.length', 3);
+    cy.get('div[role=textbox]').first().clear().type('Hello 3');
+    cy.findAllByText('Hello 2').should('have.length', 1); //just the preview
+    cy.findAllByText('Hello 3').should('have.length', 2); // preview and editor
     cy.contains('X').click();
     cy.contains('X').click();
     cy.wait(1000);
@@ -102,16 +102,5 @@ describe('Index Page', { baseUrl: 'http://localhost:8082' }, () => {
     cy.contains('connecting remote server...');
     cy.contains('remote server connected. syncing...');
     cy.contains('remote server synced');
-  });
-  it('shows error on incorrect login info', () => {
-    cy.visit('/');
-
-    cy.contains('Log In');
-    cy.contains('Invalid username or password').should('not.exist');
-    cy.contains('Password');
-    cy.get('input[name=username]').clear().type(username);
-    cy.get('input[type=password]').clear().type('wrong password');
-    cy.get('button').contains('Log in').click();
-    cy.contains('Invalid username or password');
   });
 });

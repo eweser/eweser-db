@@ -41,9 +41,22 @@ export * from './connectionUtils/aliasHelpers';
 export * from './utils';
 export { newMatrixProvider };
 
+const defaultRtcPeers = [
+  'wss://signaling.yjs.dev',
+  'wss://y-webrtc-signaling-eu.herokuapp.com',
+  'wss://y-webrtc-signaling-us.herokuapp.com',
+];
+
+export type ProviderOptions = 'WebRTC' | 'Matrix' | 'IndexedDB';
 export interface DatabaseOptions {
   baseUrl?: string;
   debug?: boolean;
+  /** Which providers to use. By default uses all.
+   * Currently indexxedDB and Matrix are required and webRTC is optional
+   */
+  providers?: ProviderOptions[];
+  /** provide a list of peers to use instead of the default */
+  webRTCPeers?: string[];
 }
 
 export class Database {
@@ -53,6 +66,10 @@ export class Database {
   loginStatus: LoginStatus = 'initial';
   online = false;
 
+  useMatrix = true;
+  useWebRTC = true;
+  useIndexedDB = true;
+
   collectionKeys: CollectionKey[] = collectionKeys;
   collections: Collections = {
     registry: initialRegistry,
@@ -61,6 +78,7 @@ export class Database {
 
   listeners: DBEventListeners = {};
 
+  webRtcPeers: string[] = defaultRtcPeers;
   // methods
 
   // logger/event emitter
@@ -83,10 +101,27 @@ export class Database {
     buildAliasFromSeed(aliasSeed, collectionKey, this.userId);
   getRoom = getRoom(this);
 
-  constructor(options?: DatabaseOptions) {
+  constructor(optionsPassed?: DatabaseOptions) {
+    const options = optionsPassed || {};
     this.baseUrl = options?.baseUrl || 'https://matrix.org';
-
-    pollConnection(this); // start polling for connection status
+    if (options?.webRTCPeers) {
+      this.webRtcPeers = options?.webRTCPeers;
+    }
+    if (options.providers) {
+      if (!options.providers.includes('WebRTC')) {
+        this.webRtcPeers = [];
+        this.useWebRTC = false;
+      }
+      if (!options.providers.includes('Matrix')) {
+        throw new Error('Matrix provider is required');
+        // this.useMatrix = false;
+      }
+      if (!options.providers.includes('IndexedDB')) {
+        throw new Error('IndexedDB provider is required');
+        // this.useIndexedDB = false;
+      }
+    }
+    pollConnection(this); // start polling for matrix baserUrl server connection status
     if (options?.debug) {
       this.on('debugger', (event) => {
         if (options.debug === true) {

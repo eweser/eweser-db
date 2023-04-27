@@ -1,0 +1,19 @@
+{
+  "name": "test-rpc-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "lib0": "^0.2.73"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}

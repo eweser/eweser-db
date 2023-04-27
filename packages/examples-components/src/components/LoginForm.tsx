@@ -9,7 +9,7 @@ export interface Props {
   DEV_PASSWORD?: string;
   DEV_USERNAME?: string;
   MATRIX_SERVER?: string;
-  dev?: boolean;
+  showSignup?: boolean;
 }
 
 type FormField = keyof LoginData;
@@ -20,7 +20,7 @@ export const LoginForm = ({
   MATRIX_SERVER = 'https://matrix.org',
   DEV_PASSWORD,
   DEV_USERNAME,
-  dev,
+  showSignup,
 }: Props) => {
   const initialLoginData: LoginData = {
     baseUrl: MATRIX_SERVER,
@@ -109,7 +109,7 @@ export const LoginForm = ({
           <>
             <p>
               {`* No matrix account? `}
-              {dev && (
+              {showSignup && (
                 <>
                   <button onClick={() => setIsSignup(!isSignup)}>
                     Sign up

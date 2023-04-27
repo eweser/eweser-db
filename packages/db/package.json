@@ -68,5 +68,8 @@
     "vitest": "^0.29.8",
     "yjs-types": "^0.0.1"
   },
-  "gitHead": "3d39fd98760efd13963caa96db636df5cd985625"
+  "gitHead": "3d39fd98760efd13963caa96db636df5cd985625",
+  "dependencies": {
+    "y-webrtc": "^10.2.5"
+  }
 }
