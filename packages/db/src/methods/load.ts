@@ -83,7 +83,7 @@ export const load =
       const targetRooms = rooms.length;
       for (const { aliasSeed, collectionKey } of rooms) {
         try {
-          const result = await _db.connectRoom(aliasSeed, collectionKey);
+          const result = await _db.connectRoom({ aliasSeed, collectionKey });
           if (result.matrixProvider?.canWrite) {
             successfulRooms++;
           }

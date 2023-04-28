@@ -46,9 +46,9 @@ describe('connectRoom', () => {
         notes: {},
       })
     );
-    const seed = 'test' + randomString(8);
+    const aliasSeed = 'test' + randomString(8);
     const roomAlias = buildAliasFromSeed(
-      seed,
+      aliasSeed,
       CollectionKey.flashcards,
       db.userId
     );
@@ -61,20 +61,23 @@ describe('connectRoom', () => {
 
     updateRegistryEntry(db, {
       collectionKey: CollectionKey.flashcards,
-      aliasSeed: seed,
+      aliasSeed,
       roomId: room.room_id,
     });
 
     const eventListener = vitest.fn();
     db.on('test', eventListener);
 
-    const resRoom = await db.connectRoom(seed, CollectionKey.flashcards);
+    const resRoom = await db.connectRoom({
+      aliasSeed,
+      collectionKey: CollectionKey.flashcards,
+    });
 
     expect(resRoom).toBeDefined();
     expect(resRoom?.ydoc).toBeDefined();
     expect(resRoom?.matrixProvider).toBeDefined();
 
-    const roomInDB = db.collections.flashcards[seed];
+    const roomInDB = db.collections.flashcards[aliasSeed];
     expect(roomInDB).toBeDefined();
     expect(roomInDB.roomAlias).toEqual(roomAlias);
 

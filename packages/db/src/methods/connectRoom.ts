@@ -77,6 +77,11 @@ const populateInitialValues = <T extends UserDocument>(
   });
 };
 
+export type ConnectRoomOptions = Omit<
+  CreateAndConnectRoomOptions,
+  'name' | 'topic'
+>;
+
 /**
  * Note that the room must have been created already and the roomAlias must be in the registry
  * 1. Joins the Matrix room if not in it
@@ -89,11 +94,11 @@ const populateInitialValues = <T extends UserDocument>(
 
 export const connectRoom =
   (_db: Database) =>
-  async <T extends Document>(
-    aliasSeed: string,
-    collectionKey: CollectionKey,
-    initialValues?: CreateAndConnectRoomOptions['initialValues']
-  ): Promise<Room<T>> => {
+  async <T extends Document>({
+    collectionKey,
+    aliasSeed,
+    initialValues,
+  }: ConnectRoomOptions): Promise<Room<T>> => {
     try {
       if (!aliasSeed) throw new Error('aliasSeed not provided');
       const roomAlias = buildAliasFromSeed(

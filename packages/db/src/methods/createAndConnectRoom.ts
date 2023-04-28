@@ -80,7 +80,11 @@ export const createAndConnectRoom =
         } else throw error;
       }
 
-      return await _db.connectRoom<T>(aliasSeed, collectionKey, initialValues);
+      return await _db.connectRoom<T>({
+        aliasSeed,
+        collectionKey,
+        initialValues,
+      });
     } catch (error) {
       _db.emit({
         event: 'createAndConnectRoom',
