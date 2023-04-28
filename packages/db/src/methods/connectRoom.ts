@@ -89,6 +89,7 @@ export type ConnectRoomOptions = Omit<
  * 3. Creates a matrixCRDT provider and saves it to the room object
  * 4. Save the room's metadata to the registry (if not already there)
  * 5. saves teh room to the DB.collections, indexed by the aliasSeed, including the name of the collection
+ * 6. Populates the ydoc with initial values if passed any
  *  Provides status updates using the DB.emit() method
  */
 

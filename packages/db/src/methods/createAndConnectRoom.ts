@@ -12,10 +12,6 @@ import { updateRegistryEntry } from '../connectionUtils/saveRoomToRegistry';
 import type { Document, Room, CreateAndConnectRoomOptions } from '../types';
 import { getRegistry } from '../utils';
 
-/**
- *
- *
- */
 export const createAndConnectRoom =
   (_db: Database) =>
   async <T extends Document>({

@@ -50,9 +50,9 @@ describe('createAndConnectRoom', () => {
         notes: {},
       })
     );
-    const seed = 'test' + randomString(8);
+    const aliasSeed = 'test' + randomString(8);
     const roomAlias = buildAliasFromSeed(
-      seed,
+      aliasSeed,
       CollectionKey.flashcards,
       db.userId
     );
@@ -61,17 +61,17 @@ describe('createAndConnectRoom', () => {
     db.on('test', eventListener);
 
     const resRoom = await db.createAndConnectRoom({
-      aliasSeed: seed,
+      aliasSeed,
       collectionKey: CollectionKey.flashcards,
-      name: 'Name_' + seed,
-      topic: 'Topic_' + seed,
+      name: 'Name_' + aliasSeed,
+      topic: 'Topic_' + aliasSeed,
     });
     if (!resRoom) throw new Error('resRoom undefined');
 
     expect(resRoom).toBeDefined();
     expect(resRoom.ydoc?.store).toBeDefined();
     expect(resRoom.matrixProvider).toBeDefined();
-    const roomInDB = db.collections.flashcards[seed];
+    const roomInDB = db.collections.flashcards[aliasSeed];
     expect(roomInDB).toBeDefined();
     expect(roomInDB.roomAlias).toEqual(roomAlias);
     // TODO: figure out why name is not set
@@ -105,7 +105,7 @@ describe('createAndConnectRoom', () => {
         notes: {},
       })
     );
-    const seed = 'test' + randomString(8);
+    const aliasSeed = 'test' + randomString(8);
 
     const eventListener = vitest.fn();
     db.on('test', eventListener);
@@ -126,14 +126,14 @@ describe('createAndConnectRoom', () => {
     ];
 
     await db.createAndConnectRoom({
-      aliasSeed: seed,
+      aliasSeed,
       collectionKey: CollectionKey.flashcards,
-      name: 'Name_' + seed,
-      topic: 'Topic_' + seed,
+      name: 'Name_' + aliasSeed,
+      topic: 'Topic_' + aliasSeed,
       initialValues,
     });
 
-    const roomInDB = db.collections.flashcards[seed];
+    const roomInDB = db.collections.flashcards[aliasSeed];
     expect(roomInDB).toBeDefined();
     const cards = roomInDB.ydoc?.getMap('documents').toJSON() as {
       [key: string]: FlashCard;

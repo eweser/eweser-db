@@ -24,10 +24,14 @@ afterEach(() => {
 });
 
 describe('connectRoom', () => {
-  it(` * 1. Joins the Matrix room if not in it
-  * 2. Creates a Y.Doc and saves it to the room object
+  it(` 
+  * 1. Joins the Matrix room if not in it
+  * 2. Creates a Y.Doc, syncs with localStorage (indexeddb) and saves it to the room object
   * 3. Creates a matrixCRDT provider and saves it to the room object
-  * 4. Save the room's metadata to the registry`, async () => {
+  * 4. Save the room's metadata to the registry (if not already there)
+  * 5. saves teh room to the DB.collections, indexed by the aliasSeed, including the name of the collection
+  * 6. Populates the ydoc with initial values if passed any
+  * `, async () => {
     const db = new Database({ baseUrl });
     await loginToMatrix(db, userLoginInfo);
     await db.connectRegistry();
