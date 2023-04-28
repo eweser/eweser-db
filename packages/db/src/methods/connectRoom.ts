@@ -1,5 +1,6 @@
 import {
   connectMatrixProvider,
+  getAliasSeedFromAlias,
   getRoomId,
   joinRoomIfNotJoined,
 } from '../connectionUtils';
@@ -10,8 +11,11 @@ import type {
   Room,
   LoginData,
   YDoc,
+  CreateAndConnectRoomOptions,
+  UserDocument,
 } from '../types';
 import type { Database } from '..';
+import { buildRef, newDocument, randomString } from '..';
 import { getOrSetRoom } from '..';
 import { buildAliasFromSeed, getCollectionRegistry } from '..';
 import { initializeDocAndLocalProvider } from '../connectionUtils/initializeDoc';
@@ -43,6 +47,36 @@ const checkIfRoomIsInRegistry = async (
   return registryEntry;
 };
 
+const populateInitialValues = <T extends UserDocument>(
+  initialValues: Partial<T>[],
+  room: Room<T>
+) => {
+  const cleanupPassedInDocument = (doc: Partial<T>): T => {
+    if (!doc) throw new Error('doc not provided');
+    if (!room.roomAlias) throw new Error('roomAlias not set');
+    const { _id, _ref, _created, _updated, _deleted, _ttl, ...rest } = doc;
+    const aliasSeed = getAliasSeedFromAlias(room.roomAlias);
+    const newDoc = newDocument<T>(
+      _ref ??
+        buildRef({
+          collectionKey: room.collectionKey as CollectionKey,
+          aliasSeed,
+          documentId: _id ?? randomString(16),
+        }),
+      rest as any
+    );
+    if (_created) newDoc._created = _created;
+    if (_updated) newDoc._updated = _updated;
+    if (_deleted) newDoc._deleted = _deleted;
+    if (_ttl) newDoc._ttl = _ttl;
+    return newDoc;
+  };
+  const populatedInitialValues = initialValues.map(cleanupPassedInDocument);
+  populatedInitialValues.forEach((doc) => {
+    room.ydoc?.getMap('documents').set(doc._id, doc);
+  });
+};
+
 /**
  * Note that the room must have been created already and the roomAlias must be in the registry
  * 1. Joins the Matrix room if not in it
@@ -57,7 +91,8 @@ export const connectRoom =
   (_db: Database) =>
   async <T extends Document>(
     aliasSeed: string,
-    collectionKey: CollectionKey
+    collectionKey: CollectionKey,
+    initialValues?: CreateAndConnectRoomOptions['initialValues']
   ): Promise<Room<T>> => {
     try {
       if (!aliasSeed) throw new Error('aliasSeed not provided');
@@ -103,6 +138,10 @@ export const connectRoom =
           canWrite: room.matrixProvider?.canWrite,
           ydocStore: room.ydoc?.store,
         });
+        if (initialValues) {
+          populateInitialValues(initialValues, room as any);
+          logger('initialValues populated', room.connectStatus, initialValues);
+        }
         return room as Room<T>;
       }
 
@@ -117,6 +156,11 @@ export const connectRoom =
       if (!ydoc) throw new Error('ydoc not found');
       room.ydoc = ydoc;
       logger('ydoc created', room.connectStatus, ydoc);
+
+      if (initialValues) {
+        populateInitialValues(initialValues, room as any);
+        logger('initialValues populated', room.connectStatus, initialValues);
+      }
 
       if (_db.useWebRTC && _db.webRtcPeers.length > 0) {
         try {

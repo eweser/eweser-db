@@ -7,12 +7,17 @@ import {
   randomString,
 } from '..';
 
-import type { RegistryData } from '../types';
+import type {
+  CreateAndConnectRoomOptions,
+  FlashCard,
+  RegistryData,
+} from '../types';
 import { CollectionKey } from '../types';
 import { dummyUserName, dummyUserPass, userLoginInfo } from '../test-utils';
 import { loginToMatrix } from '../methods/login';
 import { createMatrixUser } from '../test-utils/matrixTestUtil';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
+import type { FlashcardBase } from '../collections';
 
 beforeAll(async () => {
   await ensureMatrixIsRunning();
@@ -80,5 +85,73 @@ describe('createAndConnectRoom', () => {
     expect(callMessages).toContain('ydoc created');
     expect(callMessages).toContain('registry updated');
     expect(callMessages).toContain('matrix provider connected');
+  });
+  it('takes in initial values and saves them to the collection', async () => {
+    const db = new Database();
+    await loginToMatrix(db, userLoginInfo);
+    await db.connectRegistry();
+    const registry = getRegistry(db);
+
+    // need to have `profiles.public` in the registry so satisfy 'checkRegistryPopulated'
+    registry.set(
+      '0',
+      newDocument<RegistryData>('registry.0.0', {
+        flashcards: {},
+        profiles: {
+          public: {
+            roomAlias: 'test',
+          },
+        },
+        notes: {},
+      })
+    );
+    const seed = 'test' + randomString(8);
+
+    const eventListener = vitest.fn();
+    db.on('test', eventListener);
+
+    // test that passed in _id is accepted, and if not, fills it in
+    const testCard = {
+      frontText: 'test1-front',
+      backText: 'test1-back',
+      _id: '1',
+    };
+    const testCard2: FlashcardBase = {
+      frontText: 'test2-front',
+      backText: 'test2-back',
+    };
+    const initialValues: CreateAndConnectRoomOptions['initialValues'] = [
+      testCard,
+      testCard2,
+    ];
+
+    await db.createAndConnectRoom({
+      aliasSeed: seed,
+      collectionKey: CollectionKey.flashcards,
+      name: 'Name_' + seed,
+      topic: 'Topic_' + seed,
+      initialValues,
+    });
+
+    const roomInDB = db.collections.flashcards[seed];
+    expect(roomInDB).toBeDefined();
+    const cards = roomInDB.ydoc?.getMap('documents').toJSON() as {
+      [key: string]: FlashCard;
+    };
+    const cardIds = Object.keys(cards);
+    expect(cardIds.length).toBe(2);
+    expect(cardIds).toContain('1');
+    expect(cards['1']._id).toEqual(testCard._id);
+    expect(cards['1'].frontText).toEqual(testCard.frontText);
+    expect(cards['1'].backText).toEqual(testCard.backText);
+    const cardId2 = cardIds.find((id) => id !== '1');
+    if (!cardId2) throw new Error('cardId2 undefined');
+    expect(cardId2?.length).toBeGreaterThan(7); // random string
+    expect(cards[cardId2].frontText).toEqual(testCard2.frontText);
+
+    expect(eventListener).toHaveBeenCalled();
+    const calls = eventListener.mock.calls;
+    const callMessages = calls.map((call) => call[0].message);
+    expect(callMessages).toContain('initialValues populated');
   });
 });

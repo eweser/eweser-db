@@ -14,7 +14,8 @@ export enum CollectionKey {
   profiles = 'profiles',
 }
 
-export type Document = Note | FlashCard | Profile | RegistryData;
+export type UserDocument = Note | FlashCard | Profile;
+export type Document = UserDocument | RegistryData;
 
 export type DocumentWithoutBase<T extends Document> = Omit<
   T,
@@ -83,17 +84,19 @@ export type OnRoomConnectStatusUpdate = (
 
 export type OnLoginStatusUpdate = (status: ConnectStatus) => void;
 
-export interface createAndConnectRoomOptions {
+export interface CreateAndConnectRoomOptions {
   collectionKey: CollectionKey;
   /** undecorated alias */
   aliasSeed: string;
   name?: string;
   topic?: string;
+  /** The initial documents can be with or without metadata (_id, _ref, etc.) When loaded, whatever metadata is provided will be filled in */
+  initialValues?: Partial<UserDocument>[];
 }
 
 export interface LoginData extends ICreateClientOpts {
   password?: string;
-  initialRoomConnect?: createAndConnectRoomOptions;
+  initialRoomConnect?: CreateAndConnectRoomOptions;
 }
 
 export interface Collections {
