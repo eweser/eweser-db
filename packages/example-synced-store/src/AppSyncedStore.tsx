@@ -41,6 +41,7 @@ const App = () => {
     db.load([initialRoomConnect]);
     return () => {
       db.off('my-listener-name');
+      db.disconnectRoom(initialRoomConnect);
     };
   }, []);
 

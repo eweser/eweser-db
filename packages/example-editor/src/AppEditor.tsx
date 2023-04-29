@@ -33,20 +33,15 @@ const App = () => {
   const [started, setStarted] = useState(false);
 
   useEffect(() => {
-    db.on('my-listener-name', ({ event, data }) => {
+    db.on('my-listener-name', ({ event }) => {
       if (event === 'started') {
         setStarted(true);
-      }
-      // todo: add this functionality to the db
-      if (event === 'onlineChange') {
-        if (data?.online) {
-          db.load([initialRoomConnect]);
-        }
       }
     });
     db.load([initialRoomConnect]);
     return () => {
       db.off('my-listener-name');
+      db.disconnectRoom(initialRoomConnect);
     };
   }, []);
 

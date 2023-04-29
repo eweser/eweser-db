@@ -9,7 +9,7 @@ import { populateRegistry } from '../connectionUtils/populateRegistry';
 import { getRegistry } from '../utils';
 import type { Database } from '..';
 import type { Doc } from 'yjs';
-import { connectWebRtcProvider } from '../connectionUtils/connectWebtRtc';
+import { connectWebRtcProvider } from '../connectionUtils/connectWebRtc';
 import { localStorageGet, LocalStorageKey } from '../utils/localStorageService';
 
 /** initializes the registry's ydoc and matrix provider */

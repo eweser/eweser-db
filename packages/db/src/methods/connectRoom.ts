@@ -21,9 +21,13 @@ import { buildAliasFromSeed, getCollectionRegistry } from '..';
 import { initializeDocAndLocalProvider } from '../connectionUtils/initializeDoc';
 import { waitForRegistryPopulated } from '../connectionUtils/populateRegistry';
 import { updateRegistryEntry } from '../connectionUtils/saveRoomToRegistry';
-import { connectWebRtcProvider } from '../connectionUtils/connectWebtRtc';
+import {
+  connectWebRtcProvider,
+  waitForWebRtcConnection,
+} from '../connectionUtils/connectWebRtc';
 import { LocalStorageKey, localStorageGet } from '../utils/localStorageService';
 import { Doc } from 'yjs';
+import { autoReconnect } from '../connectionUtils/autoReconnect';
 
 const checkIfRoomIsInRegistry = async (
   _db: Database,
@@ -91,15 +95,12 @@ export type ConnectRoomOptions = Omit<
  * 5. saves teh room to the DB.collections, indexed by the aliasSeed, including the name of the collection
  * 6. Populates the ydoc with initial values if passed any
  *  Provides status updates using the DB.emit() method
+ * 7. Sets up a listener for if going from offline to online, and then re-connects the room
  */
-
 export const connectRoom =
   (_db: Database) =>
-  async <T extends Document>({
-    collectionKey,
-    aliasSeed,
-    initialValues,
-  }: ConnectRoomOptions): Promise<Room<T>> => {
+  async <T extends Document>(params: ConnectRoomOptions): Promise<Room<T>> => {
+    const { collectionKey, aliasSeed, initialValues, waitForWebRTC } = params;
     try {
       if (!aliasSeed) throw new Error('aliasSeed not provided');
       const roomAlias = buildAliasFromSeed(
@@ -125,6 +126,9 @@ export const connectRoom =
         });
 
       const room = getOrSetRoom(_db)(collectionKey, aliasSeed);
+
+      // set up auto reconnect listener (remember to call disconnectRoom to remove it)
+      autoReconnect(_db, room, params);
 
       logger('starting connectRoom', room.connectStatus);
 
@@ -180,7 +184,11 @@ export const connectRoom =
             password
           );
           room.ydoc = doc as any;
+          if (waitForWebRTC) {
+            await waitForWebRtcConnection(provider);
+          }
           room.webRtcProvider = provider;
+          logger('webRtc connected', room.connectStatus, provider);
         } catch (error) {
           logger('error connecting to webRtc', room.connectStatus, error);
         }

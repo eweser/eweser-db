@@ -20,3 +20,19 @@ export const connectWebRtcProvider = (
   });
   return { doc, provider };
 };
+
+export const waitForWebRtcConnection = async (
+  provider?: WebrtcProvider | null,
+  timeout = 10000
+) => {
+  const startTime = Date.now();
+  while (
+    !provider ||
+    (!provider.connected && Date.now() - startTime < timeout)
+  ) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  if (!provider || !provider.connected) {
+    throw new Error('timed out waiting for rtc connection');
+  }
+};

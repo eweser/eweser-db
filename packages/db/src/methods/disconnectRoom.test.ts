@@ -1,21 +1,28 @@
-import { describe, it, expect, vitest, beforeAll, afterEach } from 'vitest';
-
-import { getRegistry, newDocument, randomString } from '..';
-import { CollectionKey, Database, buildAliasFromSeed } from '..';
-import { createRoom, getAliasNameFromAlias } from '../connectionUtils';
-import { loginToMatrix } from './login';
+import { describe, it, expect, vitest, afterEach, beforeAll } from 'vitest';
 import {
-  baseUrl,
+  CollectionKey,
+  Database,
+  buildAliasFromSeed,
+  getAliasNameFromAlias,
+  getRegistry,
+  newDocument,
+  randomString,
+  wait,
+} from '..';
+import { createRoom } from '../connectionUtils';
+import { updateRegistryEntry } from '../connectionUtils/saveRoomToRegistry';
+import {
   dummyUserName,
   dummyUserPass,
-  localWebRtcServer,
+  baseUrl,
   userLoginInfo,
+  localWebRtcServer,
 } from '../test-utils';
-import { updateRegistryEntry } from '../connectionUtils/saveRoomToRegistry';
 import { createMatrixUser } from '../test-utils/matrixTestUtil';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
 import type { RegistryData } from '../types';
-
+import { loginToMatrix } from './login';
+import { autoReconnectListenerName } from '../connectionUtils/autoReconnect';
 beforeAll(async () => {
   await ensureMatrixIsRunning();
   await createMatrixUser(dummyUserName, dummyUserPass);
@@ -23,16 +30,8 @@ beforeAll(async () => {
 afterEach(() => {
   localStorage.clear();
 });
-
-describe('connectRoom', () => {
-  it(` 
-  * 1. Joins the Matrix room if not in it
-  * 2. Creates a Y.Doc, syncs with localStorage (indexeddb) and saves it to the room object
-  * 3. Creates a matrixCRDT provider and saves it to the room object
-  * 4. Save the room's metadata to the registry (if not already there)
-  * 5. saves teh room to the DB.collections, indexed by the aliasSeed, including the name of the collection
-  * 6. Populates the ydoc with initial values if passed any
-  * `, async () => {
+describe('disconnectRoom', () => {
+  it('calls disconnect on all providers and removes autoReconnect listener', async () => {
     const db = new Database({
       baseUrl,
       webRTCPeers: [localWebRtcServer],
@@ -54,7 +53,7 @@ describe('connectRoom', () => {
         notes: {},
       })
     );
-    const aliasSeed = 'test' + randomString(12);
+    const aliasSeed = 'test' + randomString(8);
     const roomAlias = buildAliasFromSeed(
       aliasSeed,
       CollectionKey.flashcards,
@@ -87,18 +86,28 @@ describe('connectRoom', () => {
     expect(resRoom?.ydoc?.store).toBeDefined();
     expect(resRoom?.matrixProvider?.canWrite).toBe(true);
     expect(resRoom?.webRtcProvider?.connected).toBe(true);
+    const listeners = Object.keys(db.listeners);
+    const reconnectListener = autoReconnectListenerName(resRoom.roomAlias);
+    expect(listeners.includes(reconnectListener)).toBe(true);
 
-    const roomInDB = db.collections.flashcards[aliasSeed];
-    expect(roomInDB).toBeDefined();
-    expect(roomInDB.roomAlias).toEqual(roomAlias);
+    db.disconnectRoom({
+      collectionKey: CollectionKey.flashcards,
+      aliasSeed,
+    });
 
-    expect(eventListener).toHaveBeenCalled();
+    await wait(1000);
+    // calls resRoom event
     const calls = eventListener.mock.calls;
     const callMessages = calls.map((call) => call[0].message);
-    expect(callMessages).toContain('starting connectRoom');
-    expect(callMessages).toContain('room joined');
-    expect(callMessages).toContain('ydoc created');
-    expect(callMessages).toContain('registry updated');
-    expect(callMessages).toContain('matrix provider connected');
-  }, 15000);
+    expect(callMessages).toContain('disconnecting room');
+    //@ts-expect-error //private value
+    expect(resRoom.matrixProvider?.disposed).toBe(true);
+
+    const connection = resRoom.webRtcProvider?.signalingConns[0];
+    expect(connection.connected).toBe(false);
+
+    // removes reconnectListener
+    const listenersAfter = Object.keys(db.listeners);
+    expect(listenersAfter.includes(reconnectListener)).toBe(false);
+  });
 });

@@ -92,6 +92,8 @@ export interface CreateAndConnectRoomOptions {
   topic?: string;
   /** The initial documents can be with or without metadata (_id, _ref, etc.) When loaded, whatever metadata is provided will be filled in */
   initialValues?: Partial<UserDocument>[];
+  doNotAutoReconnect?: boolean;
+  waitForWebRTC?: boolean;
 }
 
 export interface LoginData extends ICreateClientOpts {
@@ -127,6 +129,8 @@ export type DBEventType =
   | 'onlineChange'
   | 'loginStatus'
   | 'connectRoom'
+  | 'disconnectRoom'
+  | 'reconnectRoom'
   | 'createAndConnectRoom'
   | 'loadRoom'
   | 'joinRoomIfNotJoined'
