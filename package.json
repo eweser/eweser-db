@@ -16,6 +16,7 @@
     "build-example:basic": "cd packages/example-basic && npm run build",
     "build-example:editor": "cd packages/example-editor && npm run build",
     "build-example:synced-store": "cd packages/example-synced-store && npm run build",
+    "build-example:multi-room": "cd packages/example-multi-room && npm run build",
     "build": "run-s build-link:db build-link:components build-examples",
     "dev": "lerna run dev --parallel",
     "dev-e2e": "cypress open",
@@ -27,7 +28,8 @@
     "run-example-previews": "run-p run-example-preview:*",
     "run-example-preview:basic": "cd packages/example-basic; npm run preview",
     "run-example-preview:editor": "cd packages/example-editor; npm run preview",
-    "run-example-preview:synced-store": "cd packages/example-synced-store; npm run preview"
+    "run-example-preview:synced-store": "cd packages/example-synced-store; npm run preview",
+    "run-example-preview:multi-store": "cd packages/example-multi-store; npm run preview"
   },
   "devDependencies": {
     "@testing-library/cypress": "^9.0.0",

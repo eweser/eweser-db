@@ -5,19 +5,15 @@ import {
   populateRegistry,
   waitForRegistryPopulated,
 } from './populateRegistry';
-import {
-  baseUrl,
-  dummyUserName,
-  dummyUserPass,
-  userLoginInfo,
-} from '../test-utils';
+import { baseUrl, userLoginInfo } from '../test-utils';
 import { loginToMatrix } from '../methods/login';
 import { createMatrixUser } from '../test-utils/matrixTestUtil';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
-
+const loginInfo = userLoginInfo();
+const { userId, password } = loginInfo;
 beforeAll(async () => {
   await ensureMatrixIsRunning();
-  await createMatrixUser(dummyUserName, dummyUserPass);
+  await createMatrixUser(userId, password);
 }, 60000);
 afterEach(() => {
   localStorage.clear();
@@ -26,7 +22,7 @@ afterEach(() => {
 describe('populateRegistry', () => {
   it('creates a public profile room, and populates the registry with that first entry', async () => {
     const db = new Database({ baseUrl });
-    await loginToMatrix(db, userLoginInfo);
+    await loginToMatrix(db, loginInfo);
 
     await db.connectRegistry();
 
