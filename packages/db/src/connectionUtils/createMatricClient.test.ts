@@ -1,11 +1,6 @@
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 
-import {
-  dummyUserName,
-  dummyUserPass,
-  userIdWithServer,
-  userLoginInfo,
-} from '../test-utils';
+import { userIdWithServer, userLoginInfo } from '../test-utils';
 import { createMatrixUser } from '../test-utils/matrixTestUtil';
 import {
   ensureMatrixIsRunning,
@@ -15,10 +10,13 @@ import { createMatrixClient } from './createMatrixClient';
 import { LocalStorageKey, localStorageGet } from '../utils/localStorageService';
 import type { LoginData } from '../types';
 
+const loginInfo = userLoginInfo();
+const { userId, password } = loginInfo;
+
 beforeAll(async () => {
   initMatrixSDK();
   await ensureMatrixIsRunning();
-  await createMatrixUser(dummyUserName, dummyUserPass);
+  await createMatrixUser(userId, password);
 }, 60000);
 afterEach(() => {
   localStorage.clear();
@@ -26,13 +24,13 @@ afterEach(() => {
 
 describe('createMatrixClient', () => {
   it('Can log in to matrix client. Sets login info in localStorage', async () => {
-    const signedInClient = await createMatrixClient(userLoginInfo);
+    const signedInClient = await createMatrixClient(loginInfo);
 
     const whoami = await signedInClient.whoami();
-    expect(whoami?.user_id).toEqual(userIdWithServer);
+    expect(whoami?.user_id).toEqual(userIdWithServer(userId));
 
-    const loginInfo = localStorageGet<LoginData>(LocalStorageKey.loginData);
-    expect(loginInfo?.password).toEqual(dummyUserPass);
+    const loginData = localStorageGet<LoginData>(LocalStorageKey.loginData);
+    expect(loginData?.password).toEqual(password);
 
     // can logout and back in
     await signedInClient.logout();
@@ -43,7 +41,7 @@ describe('createMatrixClient', () => {
       expect(error.message.includes('Invalid access token')).toEqual(true);
     }
 
-    const signedInClient2 = await createMatrixClient(userLoginInfo);
+    const signedInClient2 = await createMatrixClient(loginInfo);
 
     const whoami3 = await signedInClient2.whoami();
     expect(whoami3?.user_id).toEqual(userIdWithServer);

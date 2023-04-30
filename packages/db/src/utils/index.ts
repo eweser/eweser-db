@@ -94,6 +94,11 @@ export function getRegistry(_db: Database): TypedMap<Documents<RegistryData>> {
 export const usernameValidation = (username: string) => {
   // cannot contain  `~`, `@`, and `:`  and `.`
   // must be between 3 and 32 characters
+  if (username?.includes('@') && username?.includes(':')) {
+    throw new Error(
+      'userId   should be the base user ID without the the homeserver information, e.g. "jacob" not "@jacob:homserver.org". It cannot include @ or :'
+    );
+  }
   if (username.length < 3)
     throw new Error('username must be at least 3 characters long');
   if (username.length > 52)
@@ -124,3 +129,24 @@ export const getOrSetRoom =
     _db.collections[collectionKey][aliasSeed] = newRoom as Room<any>;
     return newRoom;
   };
+
+export const buildFullUserId = (username: string, homeserver: string) => {
+  if (!username) throw new Error('username is required');
+  if (!homeserver) throw new Error('homeserver is required');
+  const homeserverParsed =
+    homeserver.includes('http://') || homeserver.includes('https://')
+      ? homeserver.split('://')[1]
+      : homeserver;
+
+  return `@${username}:${homeserverParsed}`;
+};
+
+/** returns the local part of a userId.
+ * @example extractUserIdLocalPart('@username:matrix.org') => 'username'
+ */
+export const extractUserIdLocalPart = (userId: string) => {
+  if (!userId) throw new Error('userId is required');
+  if (!userId.includes('@')) throw new Error('userId is invalid');
+  if (!userId.includes(':')) throw new Error('userId is invalid');
+  return userId.split('@')[1].split(':')[0];
+};

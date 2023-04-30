@@ -9,23 +9,21 @@ import {
   randomString,
   wait,
 } from '..';
-import { createRoom } from '../connectionUtils';
+import { checkMatrixProviderConnected, createRoom } from '../connectionUtils';
 import { updateRegistryEntry } from '../connectionUtils/saveRoomToRegistry';
-import {
-  dummyUserName,
-  dummyUserPass,
-  baseUrl,
-  userLoginInfo,
-  localWebRtcServer,
-} from '../test-utils';
+import { baseUrl, userLoginInfo, localWebRtcServer } from '../test-utils';
 import { createMatrixUser } from '../test-utils/matrixTestUtil';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
 import type { RegistryData } from '../types';
 import { loginToMatrix } from './login';
 import { autoReconnectListenerName } from '../connectionUtils/autoReconnect';
+import { checkWebRtcConnection } from '../connectionUtils/connectWebRtc';
+
+const loginInfo = userLoginInfo();
+const { userId, password } = loginInfo;
 beforeAll(async () => {
   await ensureMatrixIsRunning();
-  await createMatrixUser(dummyUserName, dummyUserPass);
+  await createMatrixUser(userId, password);
 }, 60000);
 afterEach(() => {
   localStorage.clear();
@@ -36,7 +34,7 @@ describe('disconnectRoom', () => {
       baseUrl,
       webRTCPeers: [localWebRtcServer],
     });
-    await loginToMatrix(db, userLoginInfo);
+    await loginToMatrix(db, loginInfo);
     await db.connectRegistry();
     const registry = getRegistry(db);
 
@@ -84,8 +82,8 @@ describe('disconnectRoom', () => {
     expect(resRoom).toBeDefined();
     expect(resRoom?.roomAlias).toEqual(roomAlias);
     expect(resRoom?.ydoc?.store).toBeDefined();
-    expect(resRoom?.matrixProvider?.canWrite).toBe(true);
-    expect(resRoom?.webRtcProvider?.connected).toBe(true);
+    expect(checkMatrixProviderConnected(resRoom?.matrixProvider)).toBe(true);
+    expect(checkWebRtcConnection(resRoom.webRtcProvider)).toBe(true);
     const listeners = Object.keys(db.listeners);
     const reconnectListener = autoReconnectListenerName(resRoom.roomAlias);
     expect(listeners.includes(reconnectListener)).toBe(true);
@@ -110,4 +108,4 @@ describe('disconnectRoom', () => {
     const listenersAfter = Object.keys(db.listeners);
     expect(listenersAfter.includes(reconnectListener)).toBe(false);
   });
-});
+}, 20000);

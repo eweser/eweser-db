@@ -5,23 +5,18 @@ import type { FlashCard } from '..';
 import { Database } from '..';
 
 import { CollectionKey } from '../types';
-import {
-  baseUrl,
-  dummyUserName,
-  dummyUserPass,
-  testAliasSeed,
-  userLoginInfo,
-} from '../test-utils';
+import { baseUrl, testAliasSeed, userLoginInfo } from '../test-utils';
 import { createMatrixUser } from '../test-utils/matrixTestUtil';
 import { loginToMatrix } from '../methods/login';
 import { connectMatrixProvider } from '.';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
 import { createTestRoomIfNotCreated } from '../test-utils/matrixRoomManagement';
 import { getOrSetRoom, wait } from '../utils';
-
+const loginInfo = userLoginInfo();
+const { userId, password } = loginInfo;
 beforeAll(async () => {
   await ensureMatrixIsRunning();
-  await createMatrixUser(dummyUserName, dummyUserPass);
+  await createMatrixUser(userId, password);
 }, 60000);
 afterEach(() => {
   localStorage.clear();
@@ -29,19 +24,19 @@ afterEach(() => {
 
 describe('connectMatrixProvider', () => {
   it('Can connect to matrix provider', async () => {
-    const DB = new Database({ baseUrl });
+    const db = new Database({ baseUrl });
     const doc = new Doc() as any;
-    await loginToMatrix(DB, userLoginInfo);
-    if (!DB.matrixClient) throw 'matrixClient not found';
-    await createTestRoomIfNotCreated(DB.matrixClient);
+    await loginToMatrix(db, loginInfo);
+    if (!db.matrixClient) throw 'matrixClient not found';
+    await createTestRoomIfNotCreated(db.matrixClient, userId);
 
-    const room = getOrSetRoom(DB)<FlashCard>(
+    const room = getOrSetRoom(db)<FlashCard>(
       CollectionKey.flashcards,
       testAliasSeed
     );
     room.ydoc = doc;
 
-    await connectMatrixProvider(DB, room);
+    await connectMatrixProvider(db, room);
 
     expect(room.matrixProvider).toBeDefined();
 

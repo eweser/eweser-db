@@ -4,6 +4,7 @@ import { usernameValidation } from '..';
 import { awaitOnline } from '../connectionUtils/awaitOnline';
 import type { Documents, LoginData, LoginStatus, RegistryData } from '../types';
 import type { TypedMap } from 'yjs-types';
+import { LocalStorageKey, localStorageSet } from '../utils/localStorageService';
 
 const setLoginStatus = (_db: Database, loginStatus: LoginStatus) => {
   _db.loginStatus = loginStatus;
@@ -28,6 +29,7 @@ export const signup =
         });
       logger('starting signup', signupData);
       const { userId, password, baseUrl } = signupData;
+
       if (!userId || !password) {
         throw new Error('missing userId or password');
       }
@@ -43,14 +45,26 @@ export const signup =
         throw new Error('not online');
       }
 
-      const matrixClient = createClient({
-        baseUrl: _db.baseUrl,
-      });
-      let session = '';
+      const matrixClient = createClient({ baseUrl });
       // first get a session_id. this is returned in a 401 response :/
+
       try {
-        await matrixClient.register(userId, password, null, undefined as any);
-        matrixClient;
+        const registerRes = await matrixClient.register(
+          userId,
+          password,
+          null,
+          { type: 'm.login.dummy' }
+        );
+        if (!registerRes.access_token || !registerRes.user_id) {
+          throw new Error('unexpected, no access_token or user_id set');
+        }
+        signupData.accessToken = registerRes.access_token;
+        signupData.deviceId = registerRes.device_id;
+        signupData.userId = registerRes.user_id;
+        localStorageSet(LocalStorageKey.loginData, signupData);
+        const loginRes = await _db.login(signupData, true);
+        logger('finished signup', loginRes);
+        return loginRes;
       } catch (e: any) {
         if (e.data?.errcode === 'M_USER_IN_USE') {
           _db.emit({
@@ -60,22 +74,8 @@ export const signup =
           });
           throw new Error('user already exists');
         }
-        session = e?.data?.session;
+        throw e;
       }
-
-      if (!session) {
-        throw new Error('unexpected, no session set');
-      }
-
-      await matrixClient.registerRequest({
-        username: userId,
-        password,
-        auth: { session, type: 'm.login.dummy' },
-      });
-
-      const loginRes = await _db.login(signupData, true);
-      logger('finished signup', loginRes);
-      return loginRes;
     } catch (error: any) {
       const errorMessage: string = error?.message;
       _db.emit({

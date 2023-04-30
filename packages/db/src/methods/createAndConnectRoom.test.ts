@@ -13,15 +13,17 @@ import type {
   RegistryData,
 } from '../types';
 import { CollectionKey } from '../types';
-import { dummyUserName, dummyUserPass, userLoginInfo } from '../test-utils';
+import { userLoginInfo } from '../test-utils';
 import { loginToMatrix } from '../methods/login';
 import { createMatrixUser } from '../test-utils/matrixTestUtil';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
 import type { FlashcardBase } from '../collections';
 
+const loginInfo = userLoginInfo();
+const { userId, password } = loginInfo;
 beforeAll(async () => {
   await ensureMatrixIsRunning();
-  await createMatrixUser(dummyUserName, dummyUserPass);
+  await createMatrixUser(userId, password);
 }, 60000);
 afterEach(() => {
   localStorage.clear();
@@ -33,7 +35,7 @@ describe('createAndConnectRoom', () => {
   * 3. Creates a matrixCRDT provider and saves it to the room object
   * 4. Save the room's metadata to the registry`, async () => {
     const db = new Database();
-    await loginToMatrix(db, userLoginInfo);
+    await loginToMatrix(db, loginInfo);
     await db.connectRegistry();
     const registry = getRegistry(db);
 
@@ -88,7 +90,7 @@ describe('createAndConnectRoom', () => {
   });
   it('takes in initial values and saves them to the collection', async () => {
     const db = new Database();
-    await loginToMatrix(db, userLoginInfo);
+    await loginToMatrix(db, loginInfo);
     await db.connectRegistry();
     const registry = getRegistry(db);
 

@@ -7,6 +7,7 @@ import {
   getAliasNameFromAlias,
 } from '../connectionUtils';
 import { CollectionKey } from '../types';
+import { randomString } from '../utils';
 http.globalAgent.maxSockets = 2000;
 https.globalAgent.maxSockets = 2000;
 
@@ -18,25 +19,33 @@ export const matrixTestConfig = {
   // idBaseUrl: "https://vector.im",
 };
 export const MATRIX_HOME_URL = new URL('http://localhost:8888/_matrix/static/');
-export const dummyUserName = 'dummy';
-export const dummyUserPass = 'dumdum';
-export const { baseUrl } = matrixTestConfig;
-export const userLoginInfo = {
-  userId: dummyUserName,
-  password: dummyUserPass,
-  baseUrl,
-};
-export const userIdWithServer = `@${dummyUserName}:${HOMESERVER_NAME}`;
 
-export const spaceAlias = buildSpaceRoomAlias(userIdWithServer);
-export const registryAlias = buildRegistryRoomAlias(userIdWithServer);
+export const { baseUrl } = matrixTestConfig;
+export const userLoginInfo = () => {
+  const userId = randomString(8);
+  const password = randomString(8);
+  return {
+    baseUrl,
+    userId,
+    password,
+  };
+};
+export const userIdWithServer = (username: string) =>
+  `@${username}:${HOMESERVER_NAME}`;
+
+export const spaceAlias = (username: string) =>
+  buildSpaceRoomAlias(userIdWithServer(username));
+export const registryAlias = (username: string) =>
+  buildRegistryRoomAlias(userIdWithServer(username));
 
 export const testAliasSeed = 'test_room';
 
-export const testRoomAlias = buildAliasFromSeed(
-  testAliasSeed,
-  CollectionKey.flashcards,
-  userIdWithServer
-);
+export const testRoomAlias = (username: string) =>
+  buildAliasFromSeed(
+    testAliasSeed,
+    CollectionKey.flashcards,
+    userIdWithServer(username)
+  );
 
-export const testRoomAliasName = getAliasNameFromAlias(testRoomAlias);
+export const testRoomAliasName = (username: string) =>
+  getAliasNameFromAlias(testRoomAlias(username));
