@@ -29,7 +29,7 @@
     "run-example-preview:basic": "cd packages/example-basic; npm run preview",
     "run-example-preview:editor": "cd packages/example-editor; npm run preview",
     "run-example-preview:synced-store": "cd packages/example-synced-store; npm run preview",
-    "run-example-preview:multi-store": "cd packages/example-multi-store; npm run preview"
+    "run-example-preview:multi-room": "cd packages/example-multi-room; npm run preview"
   },
   "devDependencies": {
     "@testing-library/cypress": "^9.0.0",
