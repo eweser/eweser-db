@@ -219,17 +219,18 @@ Run e2e tests headless once with `npm run test:e2e`, or with `npm run dev-e2e` t
 
 Priority:
 
-- [ ] **offline mode:** offline first - allow interacting with app before ever signed up or logged in. This might just need to be an example, not db feature. Might need to add an 'initialValues' option to create and connect room.
-- [ ] **Example**: use multiple rooms and switching between them
 - [ ] set up cross collection reference links and helpers. -`async getLinkedRef()` connect the linked ref’s room if needed and retrieve the linked document
 - [ ] **Example**: connect data from 2 apps with refs. e.g. in a note, click ‘turn into flashcard’ and it creates a flashcard in the flashcard app and links to it in the note.
+
+--- at this point ready to make real apps ---
+
 - [ ] **Files:** set up file hosting provider services like Pinata, Dropbox, etc. and give users the option to connect their accounts to the app. Could also try the ‘matrix files’ [library](~https://github.com/matrix-org/matrix-files-sdk~).
 - [ ] **Public data**: set up ‘aggregator’ listeners when a user makes a collection as public. These will be MatrixReader’s that live on a node server and listen for changes to the collection. How to aggregate and serve to public listeners?
 - [ ] **Backups** - user can add storage account (dropbox, pinata, etc) that store snapshots of the database in the file hosting provider.
 - [ ] End 2 End **Encryption** — multiple devices?
-- [ ] Per-App **Access control**. Instead of signing in the matrix client as the user, we could instead sign in with a Matrix account provided by the app owner, and then have the use invite that account into each room, specifying read-only or write permissions.
 - [ ] **Sharing,**: user can invite another to a room and collaborate on the documents within. Can also just be read only
 - [ ] Versioning strategy for schema/api changes. How to maintain backwards compatibility with older versions of the database.
+- [ ] Per-App **Access control**. Instead of signing in the matrix client as the user, we could instead sign in with a Matrix account provided by the app owner, and then have the use invite that account into each room, specifying read-only or write permissions.
 
 Nice to haves:
 
@@ -242,3 +243,4 @@ Nice to haves:
 - [ ] make 2 servers and federate them. Figure out a federation-as-backup strategy for users, for example inviting another of our accounts as a listener to each of your rooms.
 - [ ] “Joins” or aggregation searches across collections. e.g. select all documents in the `notes` collection that have a ref to a document in the `flashcards` collection.
 - [ ] Stress testing. warnings about room or document size limits
+- [ ] **offline mode:** offline first - allow interacting with app before ever signed up or logged in. This might just need to be an example, not db feature. Might need to add an 'initialValues' option to create and connect room.

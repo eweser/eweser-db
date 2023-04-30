@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { loadRoom } from './loadRoom';
+
 import { CollectionKey, Database } from '..';
 
 describe('loadRoom', () => {
@@ -13,7 +13,7 @@ describe('loadRoom', () => {
     db.userId = 'testUserId';
     const collectionKey = CollectionKey.notes;
     const aliasSeed = 'testAliasSeed';
-    const room = await loadRoom(db, { collectionKey, aliasSeed });
+    const room = await db.loadRoom({ collectionKey, aliasSeed });
     expect(room).toBeDefined();
     expect(room.ydoc?.store).toBeDefined();
   });
@@ -21,7 +21,7 @@ describe('loadRoom', () => {
   it('should load the registry and return it', async () => {
     const collectionKey = 'registry';
     const aliasSeed = '';
-    const room = await loadRoom(db, { collectionKey, aliasSeed });
+    const room = await db.loadRoom({ collectionKey, aliasSeed });
     expect(room).toBeDefined();
     expect(room.ydoc?.store).toBeDefined();
   });

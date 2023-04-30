@@ -2,7 +2,6 @@ import type { CollectionKey, Database, LoginData } from '..';
 import { checkMatrixProviderConnected } from '../connectionUtils';
 import { awaitOnline } from '../connectionUtils/awaitOnline';
 import { checkServerConnection } from '../connectionUtils/checkServerConnection';
-import { loadRoom } from '../connectionUtils/loadRoom';
 import { localStorageGet, LocalStorageKey } from '../utils/localStorageService';
 
 /**
@@ -60,11 +59,11 @@ export const load =
       return false;
     }
     // load registry ydoc from indexedDB to db
-    await loadRoom(_db, { collectionKey: 'registry', aliasSeed: 'registry' });
+    await _db.loadRoom({ collectionKey: 'registry', aliasSeed: 'registry' });
 
     // load up the database, registering each ydoc in the room list that is in indexedDB to the corresponding collection room in the db.
     for (const room of rooms) {
-      await loadRoom(_db, room);
+      await _db.loadRoom(room);
     }
     logger('loaded from localStorage');
 
@@ -87,6 +86,9 @@ export const load =
       for (const { aliasSeed, collectionKey } of rooms) {
         try {
           const result = await _db.connectRoom({ aliasSeed, collectionKey });
+          if (typeof result === 'string') {
+            throw new Error(result);
+          }
           if (checkMatrixProviderConnected(result.matrixProvider)) {
             successfulRooms++;
           }

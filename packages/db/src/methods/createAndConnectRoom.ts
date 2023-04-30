@@ -76,11 +76,15 @@ export const createAndConnectRoom =
         } else throw error;
       }
 
-      return await _db.connectRoom<T>({
+      const connectResult = await _db.connectRoom<T>({
         aliasSeed,
         collectionKey,
         initialValues,
       });
+      if (typeof connectResult === 'string') {
+        throw new Error(connectResult);
+      }
+      return connectResult;
     } catch (error) {
       _db.emit({
         event: 'createAndConnectRoom',
