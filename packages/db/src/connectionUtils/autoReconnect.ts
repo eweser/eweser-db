@@ -10,14 +10,28 @@ export const autoReconnect = (
   params: ConnectRoomOptions
 ) => {
   if (params.doNotAutoReconnect) return;
-  _db.on(autoReconnectListenerName(room.roomAlias), ({ event, data }) => {
+  _db.on(autoReconnectListenerName(room.roomAlias), async ({ event, data }) => {
     if (event === 'onlineChange') {
       if (data?.online) {
         _db.emit({
           event: 'reconnectRoom',
           data: { roomAlias: room.roomAlias },
         });
-        _db.connectRoom(params);
+        try {
+          await _db.connectRoom(params);
+          _db.emit({
+            event: 'reconnectRoom',
+            data: { roomAlias: room.roomAlias },
+            message: 'reconnected',
+          });
+        } catch (error) {
+          _db.emit({
+            event: 'reconnectRoom',
+            level: 'error',
+            data: { roomAlias: room.roomAlias, raw: error },
+            message: 'reconnect failed',
+          });
+        }
       }
     }
   });

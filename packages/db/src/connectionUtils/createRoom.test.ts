@@ -20,8 +20,8 @@ afterEach(() => {
 
 describe('createRoom', () => {
   it('Can create a room on the matrix server', async () => {
-    const DB = new Database({ baseUrl });
-    const client = await loginToMatrix(DB, loginInfo);
+    const db = new Database({ baseUrl });
+    const client = await loginToMatrix(db, loginInfo);
     if (!client) throw new Error('No client');
     const room = await createRoom(client, {
       roomAliasName: 'test' + randomString(8),

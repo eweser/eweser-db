@@ -87,4 +87,30 @@ describe('Index Page', () => {
     cy.get('button').contains('Log in').click();
     cy.contains('Invalid username or password');
   });
+  it('reconnects automatically when internet connection is lost and regained', () => {
+    cy.visit('/');
+    cy.contains('Log In');
+    cy.get('input[name=username]').clear().type(username);
+    cy.get('input[type=password]').clear().type(password);
+    cy.get('button').contains('Log in').click();
+
+    cy.contains('Edit', { timeout: 30000 });
+    cy.contains('online');
+    cy.intercept(
+      'http://localhost:8888/_matrix/federation/v1/version',
+      (req) => {
+        req.reply({ statusCode: 500 });
+      }
+    );
+    cy.contains('offline', { timeout: 20000 });
+    cy.intercept(
+      'http://localhost:8888/_matrix/federation/v1/version',
+      (req) => {
+        req.reply({ statusCode: 200 });
+      }
+    );
+    cy.contains('reconnecting to remote');
+    cy.contains('online');
+    cy.contains('reconnected to remote', { timeout: 20000 });
+  });
 });
