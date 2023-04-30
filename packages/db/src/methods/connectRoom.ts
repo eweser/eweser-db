@@ -18,7 +18,7 @@ import type {
 import type { Database } from '..';
 import { buildRef, newDocument, randomString } from '..';
 import { getOrSetRoom } from '..';
-import { buildAliasFromSeed, getCollectionRegistry } from '..';
+import { buildAliasFromSeed } from '..';
 import { initializeDocAndLocalProvider } from '../connectionUtils/initializeDoc';
 import { waitForRegistryPopulated } from '../connectionUtils/populateRegistry';
 import { updateRegistryEntry } from '../connectionUtils/saveRoomToRegistry';
@@ -44,7 +44,7 @@ const checkIfRoomIsInRegistry = async (
   const registryReady = await waitForRegistryPopulated(_db);
   if (!registryReady) throw new Error('registry not yet ready');
 
-  const collectionRegistry = getCollectionRegistry(_db, collectionKey);
+  const collectionRegistry = _db.getCollectionRegistry(collectionKey);
   const registryEntry = collectionRegistry[aliasSeed];
   if (!registryEntry?.roomAlias)
     throw new Error('roomAlias not found in registry');
@@ -111,6 +111,7 @@ const disconnectWhenOffline = (
 
 /**
  * Note that the room must have been created already and the roomAlias must be in the registry
+ * Returns a string if there was an error, otherwise returns the room object
  * 1. Joins the Matrix room if not in it
  * 2. Creates a Y.Doc, syncs with localStorage (indexeddb) and saves it to the room object
  * 3. Creates a matrixCRDT provider and saves it to the room object
@@ -123,7 +124,9 @@ const disconnectWhenOffline = (
  */
 export const connectRoom =
   (_db: Database) =>
-  async <T extends Document>(params: ConnectRoomOptions): Promise<Room<T>> => {
+  async <T extends Document>(
+    params: ConnectRoomOptions
+  ): Promise<Room<T> | string> => {
     const { collectionKey, aliasSeed, initialValues, waitForWebRTC } = params;
     try {
       if (!aliasSeed) throw new Error('aliasSeed not provided');

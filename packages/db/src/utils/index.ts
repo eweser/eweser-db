@@ -70,17 +70,15 @@ export function getRoomDocumentsYMap<T extends Document>(
 }
 
 /** this in an uneditable version. use getRegistry() then .get('0') for the registry document  */
-export function getCollectionRegistry(
-  _db: Database,
-  collectionKey: CollectionKey
-) {
-  const registry = getRegistry(_db);
-  const registryDocument = registry.get('0') as RegistryData;
-  if (!registryDocument) throw new Error('registryDocument not found');
-  const collectionRegistry = registryDocument[collectionKey];
-  if (!collectionRegistry) throw new Error('collectionRegistry not found');
-  return collectionRegistry;
-}
+export const getCollectionRegistry =
+  (_db: Database) => (collectionKey: CollectionKey) => {
+    const registry = getRegistry(_db);
+    const registryDocument = registry.get('0') as RegistryData;
+    if (!registryDocument) throw new Error('registryDocument not found');
+    const collectionRegistry = registryDocument[collectionKey];
+    if (!collectionRegistry) throw new Error('collectionRegistry not found');
+    return collectionRegistry;
+  };
 
 /** returns an editable YMap of the registry */
 export function getRegistry(_db: Database): TypedMap<Documents<RegistryData>> {

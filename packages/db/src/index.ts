@@ -14,10 +14,11 @@ import type {
   LoginStatus,
 } from './types';
 import type { MatrixClient } from 'matrix-js-sdk';
-import { getRoom } from './utils';
+import { getCollectionRegistry, getRoom } from './utils';
 import { load } from './methods/load';
 import { addTempDocToRoom } from './methods/addTempDocToRoom';
 import { disconnectRoom } from './methods/disconnectRoom';
+import { loadRoom } from './connectionUtils/loadRoom';
 
 export type {
   Profile,
@@ -93,6 +94,7 @@ export class Database {
   disconnectRoom = disconnectRoom(this);
   createAndConnectRoom = createAndConnectRoom(this);
   addTempDocToRoom = addTempDocToRoom(this);
+  loadRoom = loadRoom(this);
 
   login = login(this);
   signup = signup(this);
@@ -102,6 +104,7 @@ export class Database {
   buildAliasFromSeed = (aliasSeed: string, collectionKey: CollectionKey) =>
     buildAliasFromSeed(aliasSeed, collectionKey, this.userId);
   getRoom = getRoom(this);
+  getCollectionRegistry = getCollectionRegistry(this);
 
   constructor(optionsPassed?: DatabaseOptions) {
     const options = optionsPassed || {};
