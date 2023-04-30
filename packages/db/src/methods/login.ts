@@ -1,4 +1,5 @@
 import type { Database } from '..';
+import { usernameValidation } from '..';
 import { createMatrixClient } from '../connectionUtils';
 import { awaitOnline } from '../connectionUtils/awaitOnline';
 
@@ -13,7 +14,11 @@ import type { TypedMap } from 'yjs-types';
 export async function loginToMatrix(_db: Database, loginData: LoginData) {
   const { initialRoomConnect: _filterOut, ...options } = loginData;
   _db.matrixClient = await createMatrixClient(options);
-  _db.userId = _db.matrixClient?.getUserId() || '';
+  const userId = _db.matrixClient?.getUserId();
+  _db.userId = userId || '';
+  if (!_db.userId) {
+    throw new Error('userId not found');
+  }
   return _db.matrixClient;
 }
 
@@ -26,6 +31,8 @@ const setLoginStatus = (_db: Database, loginStatus: LoginStatus) => {
 };
 
 /**
+ *
+ * The userId can be either the full userId which includes the homeserver or just the local part e.g. "@alice:matrix.org" or "alice"
  *
  * Connects to Matrix client and loads registry
  *
@@ -48,6 +55,12 @@ export const login =
         });
       logger('starting login', loginData);
       _db.baseUrl = loginData.baseUrl;
+
+      if (
+        !(loginData.userId?.includes('@') && loginData.userId.includes(':'))
+      ) {
+        usernameValidation(loginData.userId ?? '');
+      }
 
       const online = await awaitOnline(_db);
       logger('starting login, online: ' + online, online);

@@ -1,6 +1,7 @@
 import { createClient } from 'matrix-js-sdk';
 import type { LoginData } from '../types';
 import { LocalStorageKey, localStorageSet } from '../utils/localStorageService';
+import { buildFullUserId } from '../utils';
 
 type MatrixLoginRes = {
   access_token: string;
@@ -10,51 +11,58 @@ type MatrixLoginRes = {
   well_known: { 'm.homeserver': { base_url: string } };
 };
 
-/** logs into matrix. if successful sets login data into localStorage */
+/**
+ * The userId can be either the full userId which includes the homeserver or just the local part e.g. "@alice:matrix.org" or "alice"
+ *
+ * logs into matrix. if successful sets login data into localStorage */
 export async function createMatrixClient(data: LoginData) {
   // console.log({ data });
-  const { password, accessToken, baseUrl, userId } = data;
-  const signInOpts = {
+  const { password, baseUrl, userId: userIdSeed } = data;
+  let { accessToken, deviceId } = data;
+
+  if (!userIdSeed) {
+    throw new Error('userId is required for login');
+  }
+  // make sure id includes homeserver
+  const userId =
+    userIdSeed.includes('@') && userIdSeed.includes(':')
+      ? userIdSeed
+      : buildFullUserId(userIdSeed, baseUrl);
+
+  const tempClient = createClient({ baseUrl });
+  if (!accessToken || !deviceId) {
+    if (!password) {
+      throw new Error('password is required for password login');
+    }
+    const loginRes: MatrixLoginRes = await tempClient.loginWithPassword(
+      userId,
+      password
+    );
+    deviceId = loginRes.device_id;
+    accessToken = loginRes.access_token;
+  }
+
+  const matrixClient = createClient({
     baseUrl,
     userId,
+    accessToken,
+    deviceId,
+  });
+
+  const loginSaveData: LoginData = {
+    baseUrl,
+    userId,
+    password,
+    accessToken,
+    deviceId,
   };
-  const matrixClient = accessToken
-    ? createClient({
-        ...signInOpts,
-        accessToken,
-      })
-    : createClient(signInOpts);
+  localStorageSet(LocalStorageKey.loginData, loginSaveData);
 
   // overwrites because we don't call .start();
   (matrixClient as any).canSupportVoip = false;
   (matrixClient as any).clientOpts = {
     lazyLoadMembers: true,
   };
-
-  if (accessToken) {
-    await matrixClient.loginWithToken(accessToken);
-  } else {
-    if (!userId) {
-      throw new Error('userId is required for password login');
-    }
-    if (!password) {
-      throw new Error('password is required for password login');
-    }
-    const loginRes: MatrixLoginRes = await matrixClient.loginWithPassword(
-      userId,
-      password
-    );
-
-    const loginSaveData: LoginData = {
-      baseUrl,
-      userId,
-      password,
-      // TODO: reimplement this. For some reason matrix server is not accepting the token.
-      // accessToken: loginRes.access_token,
-      deviceId: loginRes.device_id,
-    };
-    localStorageSet(LocalStorageKey.loginData, loginSaveData);
-  }
 
   return matrixClient;
 }

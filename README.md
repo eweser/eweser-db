@@ -219,8 +219,7 @@ Run e2e tests headless once with `npm run test:e2e`, or with `npm run dev-e2e` t
 
 Priority:
 
-- [ ] **offline mode:** helpers to reconnect when back online from offline. Add disconnect room method
-- [ ] **offline mode:** offline first - allow interacting with app before ever signed up or logged in. This might just need to be an example, not db feature
+- [ ] **offline mode:** offline first - allow interacting with app before ever signed up or logged in. This might just need to be an example, not db feature. Might need to add an 'initialValues' option to create and connect room.
 - [ ] **Example**: use multiple rooms and switching between them
 - [ ] set up cross collection reference links and helpers. -`async getLinkedRef()` connect the linked ref’s room if needed and retrieve the linked document
 - [ ] **Example**: connect data from 2 apps with refs. e.g. in a note, click ‘turn into flashcard’ and it creates a flashcard in the flashcard app and links to it in the note.
@@ -234,6 +233,7 @@ Priority:
 
 Nice to haves:
 
+- [ ] Add WebRTC to addTempDocToRoom()
 - [ ] create an async cron job that runs after the db loads, and once a day, to delete items with the \_deleted flag whose ttl has expired.
 - [ ] set up the ‘awareness’ listeners for shared editing.
 - [ ] example of next.js, server-side rendering workarounds

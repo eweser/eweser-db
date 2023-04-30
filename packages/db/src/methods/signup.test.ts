@@ -3,12 +3,9 @@ import { describe, it, expect, beforeAll, afterEach, vitest } from 'vitest';
 import type { LoginData } from '..';
 import { randomString } from '..';
 import { Database } from '..';
-import { baseUrl, HOMESERVER_NAME, dummyUserName } from '../test-utils';
+import { baseUrl, HOMESERVER_NAME } from '../test-utils';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
 import { localStorageGet, LocalStorageKey } from '../utils/localStorageService';
-
-const randomUsername = randomString(8);
-const randomPassword = randomString(8);
 
 describe('db.signup()', () => {
   beforeAll(async () => {
@@ -18,6 +15,7 @@ describe('db.signup()', () => {
     localStorage.clear();
   });
   it('does not allow unvalidate usernames', async () => {
+    const randomPassword = randomString(8);
     const DB = new Database();
     const res1 = await DB.signup({
       userId: 'a',
@@ -39,11 +37,13 @@ describe('db.signup()', () => {
     expect(res3).toBe('username cannot contain a period');
   });
   it('returns "user already exists" error if user already exists', async () => {
+    const randomUsername = randomString(8);
+    const randomPassword = randomString(8);
     const DB1 = new Database();
 
     try {
       await DB1.signup({
-        userId: dummyUserName,
+        userId: randomUsername,
         password: randomPassword,
         baseUrl,
       });
@@ -55,7 +55,7 @@ describe('db.signup()', () => {
     const eventListener = vitest.fn();
     db.on('test', eventListener);
     const result = await db.signup({
-      userId: dummyUserName,
+      userId: randomUsername,
       password: randomPassword,
       baseUrl,
     });
@@ -66,6 +66,8 @@ describe('db.signup()', () => {
     const db = new Database();
     const eventListener = vitest.fn();
     db.on('test', eventListener);
+    const randomUsername = randomString(8);
+    const randomPassword = randomString(8);
 
     const result = await db.signup({
       userId: randomUsername,
@@ -82,7 +84,9 @@ describe('db.signup()', () => {
   });
 
   it('DB.signup() sets DB baseUrl to passed in baseURL, logs in to matrix client, connects registry. Sets loginStatus in db and `on` emitter', async () => {
-    const db = new Database();
+    const randomUsername = randomString(8);
+    const randomPassword = randomString(8);
+    const db = new Database({ baseUrl });
     const eventListener = vitest.fn();
     db.baseUrl = 'something-else';
     expect(db.baseUrl).toEqual('something-else');

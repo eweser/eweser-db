@@ -28,7 +28,7 @@ describe('load', () => {
   const loginMock = vitest.fn();
   const connectRoomMock = vitest.fn();
   beforeEach(async () => {
-    db = new Database();
+    db = new Database({ baseUrl });
     db.login = loginMock;
     db.connectRoom = connectRoomMock;
     listenerMock.mockReset();
@@ -84,5 +84,5 @@ describe('load', () => {
     expect(startedCall).toBeDefined();
 
     expect(res).toBe(true);
-  });
+  }, 10000);
 });

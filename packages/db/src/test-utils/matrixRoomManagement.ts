@@ -2,12 +2,13 @@ import type { MatrixClient } from 'matrix-js-sdk';
 import { testRoomAliasName } from '.';
 
 export const createTestRoomIfNotCreated = async (
-  matrixClient: MatrixClient
+  matrixClient: MatrixClient,
+  username: string
 ) => {
   try {
     return await createMatrixRoom(
       matrixClient,
-      testRoomAliasName,
+      testRoomAliasName(username),
       'public-read-write'
     );
   } catch (error) {
@@ -15,7 +16,7 @@ export const createTestRoomIfNotCreated = async (
       // const rooms = matrixClient.getRooms();
       // console.log({ rooms });
       const testRoomId = await matrixClient.getRoomIdForAlias(
-        testRoomAliasName
+        testRoomAliasName(username)
       );
       await matrixClient.joinRoom(testRoomId.room_id);
       // console.log('test room already created');

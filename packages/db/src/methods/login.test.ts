@@ -3,21 +3,17 @@ import { describe, it, expect, beforeAll, afterEach, vitest } from 'vitest';
 import type { LoginData } from '..';
 import { randomString } from '..';
 import { CollectionKey, Database } from '..';
-import {
-  baseUrl,
-  dummyUserName,
-  dummyUserPass,
-  HOMESERVER_NAME,
-} from '../test-utils';
+import { baseUrl, HOMESERVER_NAME, userLoginInfo } from '../test-utils';
 import { createMatrixUser } from '../test-utils/matrixTestUtil';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
 import { loginToMatrix } from './login';
 import { localStorageGet, LocalStorageKey } from '../utils/localStorageService';
-
+const loginInfo = userLoginInfo();
+const { userId, password } = loginInfo;
 describe('db.login()', () => {
   beforeAll(async () => {
     await ensureMatrixIsRunning();
-    await createMatrixUser(dummyUserName, dummyUserPass);
+    await createMatrixUser(userId, password);
   }, 60000);
   afterEach(() => {
     localStorage.clear();
@@ -26,17 +22,17 @@ describe('db.login()', () => {
     const db = new Database({ baseUrl });
 
     await loginToMatrix(db, {
-      userId: dummyUserName,
-      password: dummyUserPass,
+      userId,
+      password,
       baseUrl,
     });
 
-    expect(db.userId).toEqual(`@${dummyUserName}:${HOMESERVER_NAME}`);
+    expect(db.userId).toEqual(`@${userId}:${HOMESERVER_NAME}`);
     const whoami = await db.matrixClient?.whoami();
-    expect(whoami?.user_id).toEqual(`@${dummyUserName}:${HOMESERVER_NAME}`);
+    expect(whoami?.user_id).toEqual(`@${userId}:${HOMESERVER_NAME}`);
 
     const loginInfo = localStorageGet<LoginData>(LocalStorageKey.loginData);
-    expect(loginInfo?.password).toEqual(dummyUserPass);
+    expect(loginInfo?.password).toEqual(password);
   });
 
   it('returns "not online" error if offline', async () => {
@@ -45,8 +41,8 @@ describe('db.login()', () => {
     db.on('test', eventListener);
 
     const result = await db.login({
-      userId: dummyUserName,
-      password: dummyUserPass,
+      userId,
+      password,
       baseUrl: 'http://localhost:123',
     });
     expect(result).toBe('not online');
@@ -69,19 +65,19 @@ describe('db.login()', () => {
     db.on('test', eventListener);
     expect(db.loginStatus).toEqual('initial');
     await db.login({
-      userId: dummyUserName,
-      password: dummyUserPass,
+      userId,
+      password,
       baseUrl,
     });
     expect(db.baseUrl).toEqual(baseUrl);
 
     // as above
-    expect(db.userId).toEqual(`@${dummyUserName}:${HOMESERVER_NAME}`);
+    expect(db.userId).toEqual(`@${userId}:${HOMESERVER_NAME}`);
     const whoami = await db.matrixClient?.whoami();
-    expect(whoami?.user_id).toEqual(`@${dummyUserName}:${HOMESERVER_NAME}`);
+    expect(whoami?.user_id).toEqual(`@${userId}:${HOMESERVER_NAME}`);
 
     const loginInfo = localStorageGet<LoginData>(LocalStorageKey.loginData);
-    expect(loginInfo?.password).toEqual(dummyUserPass);
+    expect(loginInfo?.password).toEqual(password);
 
     //check registry
     const registryRoom = db.collections.registry[0];

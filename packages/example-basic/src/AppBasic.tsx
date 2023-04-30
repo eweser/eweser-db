@@ -44,8 +44,9 @@ const App = () => {
     // `db.load()` tries to start up the database from an existing localStore. This will only work if the user has previously logged in from this device
     db.load([initialRoomConnect]);
     return () => {
-      // remove the listener when the component unmounts
+      // practice good hygiene and clean up when the component unmounts
       db.off('my-listener-name');
+      db.disconnectRoom(initialRoomConnect);
     };
   }, []);
 

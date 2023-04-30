@@ -17,6 +17,7 @@ import type { MatrixClient } from 'matrix-js-sdk';
 import { getRoom } from './utils';
 import { load } from './methods/load';
 import { addTempDocToRoom } from './methods/addTempDocToRoom';
+import { disconnectRoom } from './methods/disconnectRoom';
 
 export type {
   Profile,
@@ -89,6 +90,7 @@ export class Database {
   // connect methods
   connectRegistry = connectRegistry(this);
   connectRoom = connectRoom(this);
+  disconnectRoom = disconnectRoom(this);
   createAndConnectRoom = createAndConnectRoom(this);
   addTempDocToRoom = addTempDocToRoom(this);
 

@@ -1,8 +1,24 @@
-import type { MatrixProviderOptions } from 'matrix-crdt';
+import type { MatrixProvider, MatrixProviderOptions } from 'matrix-crdt';
 import type { Database } from '..';
 import type { Room } from '../types';
 
 import { newMatrixProvider } from './newMatrixProvider';
+
+export const checkMatrixProviderConnected = (
+  provider?: MatrixProvider | null
+) => {
+  if (!provider) return false;
+
+  // @ts-expect-error // private value
+  if (provider.disposed) {
+    return false;
+  }
+  // @ts-expect-error // private value
+  if (provider._store?._disposed) {
+    return false;
+  }
+  return provider.canWrite;
+};
 
 /** make sure to query the current collection to ensure the passed room's id and alias are correct. Make sure to initialize the Doc before calling  */
 export function connectMatrixProvider(
@@ -29,7 +45,12 @@ export function connectMatrixProvider(
 
       logger('start connectMatrixProvider', { room, doc });
       // quit early if already connected
-      if (doc.isLoaded && room.matrixProvider?.canWrite) {
+      if (
+        doc.isLoaded &&
+        room.matrixProvider?.canWrite &&
+        // @ts-expect-error
+        !room.matrixProvider.disposed
+      ) {
         logger('matrix provider already connected', {
           doc,
           room,

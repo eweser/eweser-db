@@ -4,7 +4,7 @@ import 'regenerator-runtime/runtime.js';
 import 'lodash';
 import 'fake-indexeddb/auto';
 
-const { randomFillSync } = require('crypto');
+const { randomFillSync, subtle } = require('crypto');
 (global as any).Olm = require('@matrix-org/olm');
 // const { Crypto } = require("@peculiar/webcrypto");
 // const crypto = new Crypto();
@@ -12,6 +12,6 @@ const { randomFillSync } = require('crypto');
 Object.defineProperty(globalThis, 'crypto', {
   value: {
     getRandomValues: randomFillSync,
-    // , subtle: crypto.subtle
+    subtle,
   },
 });

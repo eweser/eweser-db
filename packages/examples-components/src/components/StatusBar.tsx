@@ -34,8 +34,19 @@ export const StatusBar = ({ db }: { db: Database }) => {
           setStatusMessage('loaded local database, offline');
         }
       }
+      if (event === 'reconnectRoom') {
+        if (message === 'reconnected') {
+          setStatusMessage('reconnected to remote');
+        } else if (message === 'reconnect failed') {
+          setStatusMessage('failed to reconnect to remote');
+        } else {
+          setStatusMessage('reconnecting to remote');
+        }
+      }
+
       if (event === `onlineChange`) {
         setOnline(data?.online ?? false);
+        if (!data?.online) setStatusMessage('disconnected from remote');
       }
     };
     db.on('status-update', handleStatusUpdate);

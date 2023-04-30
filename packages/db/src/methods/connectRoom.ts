@@ -1,5 +1,7 @@
 import {
+  checkMatrixProviderConnected,
   connectMatrixProvider,
+  getAliasSeedFromAlias,
   getRoomId,
   joinRoomIfNotJoined,
 } from '../connectionUtils';
@@ -10,16 +12,24 @@ import type {
   Room,
   LoginData,
   YDoc,
+  CreateAndConnectRoomOptions,
+  UserDocument,
 } from '../types';
 import type { Database } from '..';
+import { buildRef, newDocument, randomString } from '..';
 import { getOrSetRoom } from '..';
 import { buildAliasFromSeed, getCollectionRegistry } from '..';
 import { initializeDocAndLocalProvider } from '../connectionUtils/initializeDoc';
 import { waitForRegistryPopulated } from '../connectionUtils/populateRegistry';
 import { updateRegistryEntry } from '../connectionUtils/saveRoomToRegistry';
-import { connectWebRtcProvider } from '../connectionUtils/connectWebtRtc';
+import {
+  checkWebRtcConnection,
+  connectWebRtcProvider,
+  waitForWebRtcConnection,
+} from '../connectionUtils/connectWebRtc';
 import { LocalStorageKey, localStorageGet } from '../utils/localStorageService';
 import { Doc } from 'yjs';
+import { autoReconnect } from '../connectionUtils/autoReconnect';
 
 const checkIfRoomIsInRegistry = async (
   _db: Database,
@@ -43,6 +53,62 @@ const checkIfRoomIsInRegistry = async (
   return registryEntry;
 };
 
+const populateInitialValues = <T extends UserDocument>(
+  initialValues: Partial<T>[],
+  room: Room<T>
+) => {
+  const cleanupPassedInDocument = (doc: Partial<T>): T => {
+    if (!doc) throw new Error('doc not provided');
+    if (!room.roomAlias) throw new Error('roomAlias not set');
+    const { _id, _ref, _created, _updated, _deleted, _ttl, ...rest } = doc;
+    const aliasSeed = getAliasSeedFromAlias(room.roomAlias);
+    const newDoc = newDocument<T>(
+      _ref ??
+        buildRef({
+          collectionKey: room.collectionKey as CollectionKey,
+          aliasSeed,
+          documentId: _id ?? randomString(16),
+        }),
+      rest as any
+    );
+    if (_created) newDoc._created = _created;
+    if (_updated) newDoc._updated = _updated;
+    if (_deleted) newDoc._deleted = _deleted;
+    if (_ttl) newDoc._ttl = _ttl;
+    return newDoc;
+  };
+  const populatedInitialValues = initialValues.map(cleanupPassedInDocument);
+  populatedInitialValues.forEach((doc) => {
+    room.ydoc?.getMap('documents').set(doc._id, doc);
+  });
+};
+
+export type ConnectRoomOptions = Omit<
+  CreateAndConnectRoomOptions,
+  'name' | 'topic'
+>;
+
+const disconnectWhenOffline = (
+  _db: Database,
+  {
+    roomAlias,
+    collectionKey,
+  }: { roomAlias: string; collectionKey: CollectionKey }
+) => {
+  _db.on(roomAlias + '_disconnectListener', async ({ event, data }) => {
+    if (event === 'onlineChange' && !data?.online) {
+      if (!roomAlias) throw new Error('roomAlias not set');
+      if (!collectionKey) throw new Error('collectionKey not set');
+      const aliasSeed = getAliasSeedFromAlias(roomAlias);
+      _db.disconnectRoom({
+        collectionKey,
+        aliasSeed,
+        removeReconnectListener: false,
+      });
+    }
+  });
+};
+
 /**
  * Note that the room must have been created already and the roomAlias must be in the registry
  * 1. Joins the Matrix room if not in it
@@ -50,15 +116,15 @@ const checkIfRoomIsInRegistry = async (
  * 3. Creates a matrixCRDT provider and saves it to the room object
  * 4. Save the room's metadata to the registry (if not already there)
  * 5. saves teh room to the DB.collections, indexed by the aliasSeed, including the name of the collection
+ * 6. Populates the ydoc with initial values if passed any
  *  Provides status updates using the DB.emit() method
+ * 7. Sets up a listener for if going from offline to online, and then re-connects the room
+ * 8. Sets up a listener for if going from online to offline, and then disconnects the room
  */
-
 export const connectRoom =
   (_db: Database) =>
-  async <T extends Document>(
-    aliasSeed: string,
-    collectionKey: CollectionKey
-  ): Promise<Room<T>> => {
+  async <T extends Document>(params: ConnectRoomOptions): Promise<Room<T>> => {
+    const { collectionKey, aliasSeed, initialValues, waitForWebRTC } = params;
     try {
       if (!aliasSeed) throw new Error('aliasSeed not provided');
       const roomAlias = buildAliasFromSeed(
@@ -85,40 +151,54 @@ export const connectRoom =
 
       const room = getOrSetRoom(_db)(collectionKey, aliasSeed);
 
+      // set up auto reconnect listener when coming online (remember to call disconnectRoom to remove it)
+      autoReconnect(_db, room, params);
+      // disconnect room on when going offline
+      disconnectWhenOffline(_db, { roomAlias, collectionKey });
+
       logger('starting connectRoom', room.connectStatus);
 
       const matrixConnected = _db.useMatrix
-        ? room.matrixProvider?.canWrite
+        ? checkMatrixProviderConnected(room.matrixProvider)
         : true;
-      const yDocConnected = _db.useIndexedDB
+      const indexedDBConnected = _db.useIndexedDB
         ? room.indexeddbProvider?.name === aliasSeed
         : true;
       const webRtcConnected = _db.useWebRTC
-        ? room.webRtcProvider?.connected
+        ? checkWebRtcConnection(room.webRtcProvider)
         : true;
 
-      if (matrixConnected && yDocConnected && webRtcConnected) {
+      if (matrixConnected && indexedDBConnected && webRtcConnected) {
         room.connectStatus = 'ok';
         logger('room is already connected', room.connectStatus, {
           canWrite: room.matrixProvider?.canWrite,
           ydocStore: room.ydoc?.store,
         });
+        if (initialValues) {
+          populateInitialValues(initialValues, room as any);
+          logger('initialValues populated', room.connectStatus, initialValues);
+        }
         return room as Room<T>;
       }
 
-      let ydoc = new Doc() as YDoc<T>;
-      if (_db.useIndexedDB) {
+      const ydoc = room.ydoc?.store ?? (new Doc() as YDoc<T>);
+
+      if (_db.useIndexedDB && !indexedDBConnected) {
         const { ydoc: localDoc, localProvider } =
           await initializeDocAndLocalProvider<any>(aliasSeed);
-        ydoc = localDoc;
+        room.ydoc = localDoc;
         room.indexeddbProvider = localProvider;
       }
 
       if (!ydoc) throw new Error('ydoc not found');
-      room.ydoc = ydoc;
       logger('ydoc created', room.connectStatus, ydoc);
 
-      if (_db.useWebRTC && _db.webRtcPeers.length > 0) {
+      if (initialValues) {
+        populateInitialValues(initialValues, room as any);
+        logger('initialValues populated', room.connectStatus, initialValues);
+      }
+
+      if (_db.useWebRTC && !webRtcConnected && _db.webRtcPeers.length > 0) {
         try {
           const password =
             localStorageGet<LoginData>(LocalStorageKey.loginData)?.password ??
@@ -130,7 +210,11 @@ export const connectRoom =
             password
           );
           room.ydoc = doc as any;
+          if (waitForWebRTC) {
+            await waitForWebRtcConnection(provider);
+          }
           room.webRtcProvider = provider;
+          logger('webRtc connected', room.connectStatus, provider);
         } catch (error) {
           logger('error connecting to webRtc', room.connectStatus, error);
         }

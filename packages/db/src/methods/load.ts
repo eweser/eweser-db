@@ -1,5 +1,7 @@
 import type { CollectionKey, Database, LoginData } from '..';
+import { checkMatrixProviderConnected } from '../connectionUtils';
 import { awaitOnline } from '../connectionUtils/awaitOnline';
+import { checkServerConnection } from '../connectionUtils/checkServerConnection';
 import { loadRoom } from '../connectionUtils/loadRoom';
 import { localStorageGet, LocalStorageKey } from '../utils/localStorageService';
 
@@ -24,6 +26,7 @@ export const load =
         },
       });
     logger('starting load');
+    await checkServerConnection(_db);
     // check if loginData is in localStorage
     const loginInfo = localStorageGet<LoginData>(LocalStorageKey.loginData);
     if (!loginInfo || !loginInfo.userId) {
@@ -83,8 +86,8 @@ export const load =
       const targetRooms = rooms.length;
       for (const { aliasSeed, collectionKey } of rooms) {
         try {
-          const result = await _db.connectRoom(aliasSeed, collectionKey);
-          if (result.matrixProvider?.canWrite) {
+          const result = await _db.connectRoom({ aliasSeed, collectionKey });
+          if (checkMatrixProviderConnected(result.matrixProvider)) {
             successfulRooms++;
           }
         } catch (error) {

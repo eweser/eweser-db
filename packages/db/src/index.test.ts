@@ -2,13 +2,9 @@ import { Database } from '.';
 import { it, expect } from 'vitest';
 import { ensureMatrixIsRunning } from './test-utils/matrixTestUtilServer';
 import { createMatrixUser } from './test-utils/matrixTestUtil';
-import {
-  dummyUserName,
-  dummyUserPass,
-  HOMESERVER_NAME,
-  matrixTestConfig,
-} from './test-utils';
-
+import { userLoginInfo, HOMESERVER_NAME, matrixTestConfig } from './test-utils';
+const loginInfo = userLoginInfo();
+const { userId: dummyUserName, password: dummyUserPass } = loginInfo;
 const collectionKeys = ['notes', 'flashcards', 'profiles'];
 const defaultHomeServer = 'https://matrix.org';
 
