@@ -68,7 +68,11 @@ const App = () => {
     db.load([initialRoomConnect]);
     return () => {
       db.off('my-listener-name');
-      db.disconnectRoom(initialRoomConnect);
+      const registry = db.getCollectionRegistry(collectionKey);
+      // clean up all of the rooms we connected to
+      Object.keys(registry).forEach(([key]) => {
+        db.disconnectRoom({ collectionKey, aliasSeed: key });
+      });
     };
   }, []);
 
