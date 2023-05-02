@@ -1,15 +1,16 @@
 import type { TypedMap } from 'yjs-types';
-import type { DocumentBase } from '../collections/documentBase';
 import type {
   CollectionKey,
   Room,
   Documents,
   RegistryData,
   Document,
-  DocumentWithoutBase,
 } from '../types';
 import type { Database } from '..';
-import { newEmptyRoom } from '../connectionUtils';
+import { newEmptyRoom } from './db';
+
+export * from './db';
+export * from './connection';
 
 export const wait = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -18,48 +19,6 @@ export const randomString = (length: number) =>
   Math.random()
     .toString(36)
     .substring(2, length + 2);
-
-/**
- *
- * @param collection e.g. `CollectionKey.flashcards` "flashcards"
- * @param aliasSeed  e.g. just `roomName` if the full alias is '#roomName~flashcards~@username:matrix.org'`
- * @param documentId any number/string what doesn't include `.`
- * @returns `${collection}.${roomAlias}.${documentId}` e.g. `flashcards.#roomName~flashcards~@username:matrix.org.doc-id`
- */
-export const buildRef = ({
-  collectionKey,
-  aliasSeed,
-  documentId,
-}: {
-  collectionKey: CollectionKey;
-  aliasSeed: string;
-  documentId: string | number;
-}) => {
-  if (documentId.toString().includes('.') || aliasSeed.includes('.')) {
-    throw new Error('documentId cannot include .');
-  }
-  return `${collectionKey}.${aliasSeed}.${documentId}`;
-};
-
-export const newDocument = <T extends Document>(
-  _ref: string,
-  doc: DocumentWithoutBase<T>
-): T => {
-  const _id = _ref.split('.').pop();
-  if (!_id) throw new Error('no _id found in ref');
-
-  const now = new Date().getTime();
-  const base: DocumentBase = {
-    _created: now,
-    _id,
-    _ref,
-    _updated: now,
-    _deleted: false,
-    _ttl: undefined,
-  };
-  // @ts-ignore
-  return { ...base, ...doc };
-};
 
 export function getRoomDocumentsYMap<T extends Document>(
   room: Room<T>

@@ -1,7 +1,6 @@
 import type { Database } from '..';
 import { usernameValidation } from '..';
-import { createMatrixClient } from '../connectionUtils';
-import { awaitOnline } from '../connectionUtils/awaitOnline';
+import { createMatrixClient, awaitOnline } from '../utils';
 
 import type { LoginData, LoginStatus, Documents, RegistryData } from '../types';
 import type { TypedMap } from 'yjs-types';

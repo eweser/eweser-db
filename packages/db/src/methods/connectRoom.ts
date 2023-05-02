@@ -1,10 +1,3 @@
-import {
-  checkMatrixProviderConnected,
-  connectMatrixProvider,
-  getAliasSeedFromAlias,
-  getRoomId,
-  joinRoomIfNotJoined,
-} from '../connectionUtils';
 import type {
   CollectionKey,
   Document,
@@ -19,17 +12,23 @@ import type { Database } from '..';
 import { buildRef, newDocument, randomString } from '..';
 import { getOrSetRoom } from '..';
 import { buildAliasFromSeed } from '..';
-import { initializeDocAndLocalProvider } from '../connectionUtils/initializeDoc';
-import { waitForRegistryPopulated } from '../connectionUtils/populateRegistry';
-import { updateRegistryEntry } from '../connectionUtils/saveRoomToRegistry';
-import {
-  checkWebRtcConnection,
-  connectWebRtcProvider,
-  waitForWebRtcConnection,
-} from '../connectionUtils/connectWebRtc';
+
 import { LocalStorageKey, localStorageGet } from '../utils/localStorageService';
 import { Doc } from 'yjs';
-import { autoReconnect } from '../connectionUtils/autoReconnect';
+import {
+  checkMatrixProviderConnected,
+  connectMatrixProvider,
+  getAliasSeedFromAlias,
+  getRoomId,
+  joinRoomIfNotJoined,
+  updateRegistryEntry,
+  checkWebRtcConnection,
+  waitForRegistryPopulated,
+  connectWebRtcProvider,
+  initializeDocAndLocalProvider,
+  waitForWebRtcConnection,
+  autoReconnect,
+} from '../utils';
 
 const checkIfRoomIsInRegistry = async (
   _db: Database,

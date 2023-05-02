@@ -1,6 +1,5 @@
 import { collectionKeys, collections, initialRegistry } from './collections';
-import { buildAliasFromSeed, newMatrixProvider } from './connectionUtils';
-import { pollConnection } from './connectionUtils/pollConnection';
+
 import { connectRegistry } from './methods/connectRegistry';
 import { connectRoom } from './methods/connectRoom';
 import { createAndConnectRoom } from './methods/createAndConnectRoom';
@@ -14,11 +13,12 @@ import type {
   LoginStatus,
 } from './types';
 import type { MatrixClient } from 'matrix-js-sdk';
-import { getCollectionRegistry, getRoom } from './utils';
+import { buildAliasFromSeed, getCollectionRegistry, getRoom } from './utils';
 import { load } from './methods/load';
 import { addTempDocToRoom } from './methods/addTempDocToRoom';
 import { disconnectRoom } from './methods/disconnectRoom';
-import { loadRoom } from './connectionUtils/loadRoom';
+import { loadRoom } from './utils/connection/loadRoom';
+import { pollConnection } from './utils/connection/pollConnection';
 
 export type {
   Profile,
@@ -39,9 +39,7 @@ export type {
 export type { TypedMap, TypedDoc } from 'yjs-types';
 export { CollectionKey } from './types'; // enum exported not as a type
 
-export * from './connectionUtils/aliasHelpers';
 export * from './utils';
-export { newMatrixProvider };
 
 const defaultRtcPeers = [
   'wss://signaling.yjs.dev',

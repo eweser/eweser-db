@@ -2,13 +2,13 @@ import { describe, it, expect, vitest, beforeAll, afterEach } from 'vitest';
 
 import { randomString, wait } from '..';
 import { CollectionKey, Database, buildAliasFromSeed } from '..';
-import { checkMatrixProviderConnected } from '../connectionUtils';
+import { checkMatrixProviderConnected } from '../connection';
 import { baseUrl, localWebRtcServer, userLoginInfo } from '../test-utils';
 
 import { createMatrixUser } from '../test-utils/matrixTestUtil';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
 
-import { checkWebRtcConnection } from '../connectionUtils/connectWebRtc';
+import { checkWebRtcConnection } from '../connection/connectWebRtc';
 const loginInfo = userLoginInfo();
 const { userId, password } = loginInfo;
 

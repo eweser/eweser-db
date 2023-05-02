@@ -9,15 +9,15 @@ import {
   randomString,
   wait,
 } from '..';
-import { checkMatrixProviderConnected, createRoom } from '../connectionUtils';
-import { updateRegistryEntry } from '../connectionUtils/saveRoomToRegistry';
+import { checkMatrixProviderConnected, createRoom } from '../connection';
+import { updateRegistryEntry } from '../connection/saveRoomToRegistry';
 import { baseUrl, userLoginInfo, localWebRtcServer } from '../test-utils';
 import { createMatrixUser } from '../test-utils/matrixTestUtil';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
 import type { RegistryData } from '../types';
 import { loginToMatrix } from './login';
-import { autoReconnectListenerName } from '../connectionUtils/autoReconnect';
-import { checkWebRtcConnection } from '../connectionUtils/connectWebRtc';
+import { autoReconnectListenerName } from '../connection/autoReconnect';
+import { checkWebRtcConnection } from '../connection/connectWebRtc';
 
 const loginInfo = userLoginInfo();
 const { userId, password } = loginInfo;

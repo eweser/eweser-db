@@ -5,8 +5,8 @@ import { CollectionKey, Database } from '..';
 import 'fake-indexeddb';
 import { baseUrl } from '../test-utils';
 import { LocalStorageKey, localStorageSet } from '../utils/localStorageService';
-import { initializeDocAndLocalProvider } from '../connectionUtils/initializeDoc';
-import { awaitOnline } from '../connectionUtils/awaitOnline';
+import { initializeDocAndLocalProvider } from '../connection/initializeDoc';
+import { awaitOnline } from '../connection/awaitOnline';
 
 const randomUsername = randomString(8);
 const randomPassword = randomString(8);

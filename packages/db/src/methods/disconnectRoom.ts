@@ -1,5 +1,5 @@
 import type { Database, CollectionKey } from '..';
-import { autoReconnectListenerName } from '../connectionUtils/autoReconnect';
+import { autoReconnectListenerName } from '../utils';
 export type DisconnectRoomOptions = {
   collectionKey: CollectionKey;
   aliasSeed: string;

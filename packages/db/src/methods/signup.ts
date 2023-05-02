@@ -1,7 +1,7 @@
 import { createClient } from 'matrix-js-sdk';
 import type { Database } from '..';
 import { usernameValidation } from '..';
-import { awaitOnline } from '../connectionUtils/awaitOnline';
+import { awaitOnline } from '../utils';
 import type { Documents, LoginData, LoginStatus, RegistryData } from '../types';
 import type { TypedMap } from 'yjs-types';
 import { LocalStorageKey, localStorageSet } from '../utils/localStorageService';

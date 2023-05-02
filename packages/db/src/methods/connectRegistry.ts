@@ -2,14 +2,16 @@ import {
   buildRegistryRoomAlias,
   connectMatrixProvider,
   getOrCreateRegistryRoom,
-} from '../connectionUtils';
+  initializeDocAndLocalProvider,
+  populateRegistry,
+  connectWebRtcProvider,
+} from '../utils';
 import type { LoginData, RegistryData } from '../types';
-import { initializeDocAndLocalProvider } from '../connectionUtils/initializeDoc';
-import { populateRegistry } from '../connectionUtils/populateRegistry';
+
 import { getRegistry } from '../utils';
 import type { Database } from '..';
 import type { Doc } from 'yjs';
-import { connectWebRtcProvider } from '../connectionUtils/connectWebRtc';
+
 import { localStorageGet, LocalStorageKey } from '../utils/localStorageService';
 
 /** initializes the registry's ydoc and matrix provider */

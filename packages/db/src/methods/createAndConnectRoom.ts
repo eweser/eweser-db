@@ -5,9 +5,9 @@ import {
   getAliasNameFromAlias,
   getRoomId,
   joinRoomIfNotJoined,
-} from '../connectionUtils';
-import { waitForRegistryPopulated } from '../connectionUtils/populateRegistry';
-import { updateRegistryEntry } from '../connectionUtils/saveRoomToRegistry';
+  waitForRegistryPopulated,
+  updateRegistryEntry,
+} from '../utils';
 
 import type { Document, Room, CreateAndConnectRoomOptions } from '../types';
 import { getRegistry } from '../utils';

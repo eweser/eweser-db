@@ -1,7 +1,10 @@
 import type { CollectionKey, Database, LoginData } from '..';
-import { checkMatrixProviderConnected } from '../connectionUtils';
-import { awaitOnline } from '../connectionUtils/awaitOnline';
-import { checkServerConnection } from '../connectionUtils/checkServerConnection';
+import {
+  checkMatrixProviderConnected,
+  awaitOnline,
+  checkServerConnection,
+} from '../utils';
+
 import { localStorageGet, LocalStorageKey } from '../utils/localStorageService';
 
 /**

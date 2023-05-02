@@ -5,7 +5,7 @@ import {
   buildRegistryRoomAlias,
   buildSpaceRoomAlias,
   getAliasNameFromAlias,
-} from '../connectionUtils';
+} from '../connection';
 import { CollectionKey } from '../types';
 import { randomString } from '../utils';
 http.globalAgent.maxSockets = 2000;
