@@ -17,6 +17,8 @@
     "build-example:editor": "cd packages/example-editor && npm run build",
     "build-example:synced-store": "cd packages/example-synced-store && npm run build",
     "build-example:multi-room": "cd packages/example-multi-room && npm run build",
+    "build-example:interop-notes": "cd packages/example-interop-notes && npm run build",
+    "build-example:interop-flashcards": "cd packages/example-interop-flashcards && npm run build",
     "build": "run-s build-link:db build-link:components build-examples",
     "dev": "lerna run dev --parallel",
     "dev-e2e": "cypress open",
@@ -29,7 +31,9 @@
     "run-example-preview:basic": "cd packages/example-basic; npm run preview",
     "run-example-preview:editor": "cd packages/example-editor; npm run preview",
     "run-example-preview:synced-store": "cd packages/example-synced-store; npm run preview",
-    "run-example-preview:multi-room": "cd packages/example-multi-room; npm run preview"
+    "run-example-preview:multi-room": "cd packages/example-multi-room; npm run preview",
+    "run-example-preview:interop-notes": "cd packages/example-interop-notes; npm run pr`eview",
+    "run-example-preview:interop-flashcards": "cd packages/example-interop-flashcards; npm run preview"
   },
   "devDependencies": {
     "@testing-library/cypress": "^9.0.0",

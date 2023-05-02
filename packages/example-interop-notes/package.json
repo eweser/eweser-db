@@ -1,0 +1,56 @@
+{
+  "name": "@eweser/example-interop-flashcards",
+  "version": "1.0.1",
+  "private": true,
+  "description": "eweser-db example mini app using the ydoc directly to make CRUD updates",
+  "keywords": [
+    "user-owned",
+    "crdt",
+    "matrix",
+    "local-first"
+  ],
+  "author": "jacobcoro",
+  "type": "module",
+  "homepage": "https://github.com/jacobcoro/eweserdb",
+  "license": "MIT",
+  "directories": {
+    "src": "src"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jacobcoro/eweserdb.git"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview --host",
+    "clean": "rm -rf dist"
+  },
+  "bugs": {
+    "url": "https://github.com/jacobcoro/eweserdb/issues"
+  },
+  "dependencies": {
+    "@eweser/examples-components": "*",
+    "@eweser/db": "*",
+    "events": "3.3.0",
+    "matrix-crdt": "0.2.1-alpha.1",
+    "matrix-js-sdk": "^19.4.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.10.0",
+    "ulid": "^2.3.0",
+    "util": "^0.12.5",
+    "y-indexeddb": "^9.0.9",
+    "yjs": "^13.5.16"
+  },
+  "devDependencies": {
+    "@eweser/eslint-config-react-ts": "*",
+    "@types/react": "^18.0.24",
+    "@types/react-dom": "^18.0.8",
+    "@vitejs/plugin-react": "^2.2.0",
+    "eslint": "^8.37.0",
+    "rollup-plugin-polyfill-node": "^0.12.0",
+    "typescript": "^4.4.4",
+    "vite": "^3.2.3"
+  }
+}
