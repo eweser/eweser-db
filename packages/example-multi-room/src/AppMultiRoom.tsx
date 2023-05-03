@@ -136,25 +136,13 @@ const RoomsProvider = ({ db }: { db: Database }) => {
     }
   };
 
-  const handleSelectRoom = async (seed: string) => {
+  const handleSelectRoom = async (aliasSeed: string) => {
     setNotesRoom(null);
-    // load the offline first version of the room for a snappy UX
-    const offlineRoom = await db.loadRoom<Note>({
-      collectionKey,
-      aliasSeed: seed,
-    });
-    if (!offlineRoom) return alert('Could not load room');
-    setNotesRoom(offlineRoom);
-
-    // then connect the online version of the room
-    const room = await db.connectRoom<Note>({
-      collectionKey,
-      aliasSeed: seed,
-    });
-    if (typeof room === 'string') {
-      return alert(room);
-    }
-    setNotesRoom(room);
+    const onlineRoom = await db.loadAndConnectRoom<Note>(
+      { collectionKey, aliasSeed },
+      (offlineRoom) => setNotesRoom(offlineRoom)
+    );
+    setNotesRoom(onlineRoom);
   };
 
   return (

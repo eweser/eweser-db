@@ -19,6 +19,7 @@ import { addTempDocToRoom } from './methods/addTempDocToRoom';
 import { disconnectRoom } from './methods/disconnectRoom';
 import { loadRoom } from './utils/connection/loadRoom';
 import { pollConnection } from './utils/connection/pollConnection';
+import { loadAndConnectRoom } from './methods/loadAndConnectRoom';
 
 export type {
   Profile,
@@ -93,6 +94,7 @@ export class Database {
   createAndConnectRoom = createAndConnectRoom(this);
   addTempDocToRoom = addTempDocToRoom(this);
   loadRoom = loadRoom(this);
+  loadAndConnectRoom = loadAndConnectRoom(this);
 
   login = login(this);
   signup = signup(this);
