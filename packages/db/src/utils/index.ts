@@ -20,7 +20,7 @@ export const randomString = (length: number) =>
     .toString(36)
     .substring(2, length + 2);
 
-export function getRoomDocumentsYMap<T extends Document>(
+export function getRoomDocuments<T extends Document>(
   room: Room<T>
 ): TypedMap<Documents<T>> {
   if (!room.ydoc) throw new Error('room.ydoc not found');
@@ -41,9 +41,7 @@ export const getCollectionRegistry =
 
 /** returns an editable YMap of the registry */
 export function getRegistry(_db: Database): TypedMap<Documents<RegistryData>> {
-  const registry = getRoomDocumentsYMap<RegistryData>(
-    _db.collections.registry[0]
-  );
+  const registry = getRoomDocuments<RegistryData>(_db.collections.registry[0]);
   if (!registry) throw new Error('registry not found');
   return registry;
 }

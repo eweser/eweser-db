@@ -1,13 +1,14 @@
 import * as http from 'http';
 import * as https from 'https';
+
+import { CollectionKey } from '../types';
 import {
   buildAliasFromSeed,
   buildRegistryRoomAlias,
   buildSpaceRoomAlias,
   getAliasNameFromAlias,
-} from '../connection';
-import { CollectionKey } from '../types';
-import { randomString } from '../utils';
+  randomString,
+} from '../utils';
 http.globalAgent.maxSockets = 2000;
 https.globalAgent.maxSockets = 2000;
 

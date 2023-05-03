@@ -20,6 +20,7 @@ import { disconnectRoom } from './methods/disconnectRoom';
 import { loadRoom } from './utils/connection/loadRoom';
 import { pollConnection } from './utils/connection/pollConnection';
 import { loadAndConnectRoom } from './methods/loadAndConnectRoom';
+import { getDocumentByRef } from './methods/getDocumentByRef';
 
 export type {
   Profile,
@@ -95,6 +96,7 @@ export class Database {
   addTempDocToRoom = addTempDocToRoom(this);
   loadRoom = loadRoom(this);
   loadAndConnectRoom = loadAndConnectRoom(this);
+  getDocumentByRef = getDocumentByRef(this);
 
   login = login(this);
   signup = signup(this);
