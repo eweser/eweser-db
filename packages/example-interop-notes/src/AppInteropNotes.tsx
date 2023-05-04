@@ -317,30 +317,50 @@ const LinkFlashcardModal = ({
               + New Flashcard
             </button>
             <p> Click a flashcard to link to note:</p>
-            {Object.values(docs)?.map((doc) => {
-              if (!doc || doc._deleted) return null;
-              return (
-                <div
-                  key={doc._id}
-                  onClick={() => {
-                    handleLinkFlashcard(doc, room);
-                  }}
-                  style={{
-                    border: '1px solid black',
-                    padding: '1rem',
-                    margin: '1rem',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <p>{doc.frontText}</p>
-                  <hr />
-                  <p>{doc.backText}</p>
-                </div>
-              );
-            })}
+            {Object.values(docs)?.map((flashcard) => (
+              <FlashcardComponent
+                key={flashcard?._id}
+                flashcard={flashcard}
+                room={room}
+                handleLinkFlashcard={handleLinkFlashcard}
+              />
+            ))}
           </div>
         );
       })}
+    </div>
+  );
+};
+
+const FlashcardComponent = ({
+  flashcard,
+  handleLinkFlashcard,
+  room,
+}: {
+  flashcard?: Flashcard;
+  handleLinkFlashcard: (
+    flashcard: Flashcard,
+    flashcardsRoom: Room<Flashcard>
+  ) => Promise<void>;
+  room: Room<Flashcard>;
+}) => {
+  if (!flashcard || flashcard._deleted) return null;
+  return (
+    <div
+      key={flashcard._id}
+      onClick={() => {
+        handleLinkFlashcard(flashcard, room);
+      }}
+      style={{
+        border: '1px solid black',
+        padding: '1rem',
+        margin: '1rem',
+        cursor: 'pointer',
+      }}
+    >
+      <p>{flashcard.frontText}</p>
+      <hr />
+      <p>{flashcard.backText}</p>
     </div>
   );
 };
