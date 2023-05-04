@@ -8,14 +8,14 @@ import {
   getRoomDocuments,
   newDocument,
 } from '@eweser/db';
-import type { Documents, Note, LoginData, Room, Flashcard } from '@eweser/db';
+import type { Documents, Flashcard, LoginData, Room, Note } from '@eweser/db';
 import * as config from './config';
 
 import { styles, StatusBar, LoginForm } from '@eweser/examples-components';
 import { WEB_RTC_PEERS } from './config';
 
-const aliasSeed = 'notes-default';
-const collectionKey = CollectionKey.notes;
+const aliasSeed = 'flashcards-default';
+const collectionKey = CollectionKey.flashcards;
 const initialRoomConnect = {
   collectionKey,
   aliasSeed,
@@ -23,7 +23,7 @@ const initialRoomConnect = {
 };
 
 // This app, along with AppInteropFlashcards is an example of how two independent apps can interoperate by both connecting to the user's database. All this requires is the user signs in with the same matrix account. There will be real-time syncing between them.
-// The example here is a flashcard app that would let you link notes to flashcards and vice versa
+// The example here is a flashcard app that would let you link flashcards to flashcards and vice versa
 
 const db = new Database({
   // set `debug` to true to see debug messages in the console
@@ -54,7 +54,7 @@ const App = () => {
   const handleSignup = (loginData: LoginData) =>
     db.signup({ initialRoomConnect, ...loginData });
 
-  const defaultFlashcardsRoom = db.getRoom<Note>(collectionKey, aliasSeed);
+  const defaultFlashcardsRoom = db.getRoom<Flashcard>(collectionKey, aliasSeed);
 
   return (
     <div style={styles.appRoot}>
@@ -73,133 +73,136 @@ const App = () => {
   );
 };
 
-const buildNewNote = () => {
+const buildNewFlashcard = () => {
   const documentId = ulid();
   const ref = buildRef({
     collectionKey,
     aliasSeed,
     documentId,
   });
-  return newDocument<Note>(ref, { text: 'New Note Body' });
+  return newDocument<Flashcard>(ref, {
+    frontText: 'Fire 🔥',
+    backText: '火 huo3',
+  });
 };
 
 const FlashcardsInternal = ({
   flashcardsRoom,
 }: {
-  flashcardsRoom: Room<Note>;
+  flashcardsRoom: Room<Flashcard>;
 }) => {
-  const notesDocuments = getRoomDocuments(flashcardsRoom);
+  const flashcardsDocuments = getRoomDocuments(flashcardsRoom);
 
-  const [notes, setFlashcards] = useState<Documents<Note>>(
-    notesDocuments?.toJSON() ?? {}
+  const [flashcards, setFlashcards] = useState<Documents<Flashcard>>(
+    flashcardsDocuments?.toJSON() ?? {}
   );
 
-  const nonDeletedFlashcards = Object.keys(notes).filter(
-    (id) => !notes[id]?._deleted
+  const nonDeletedFlashcards = Object.keys(flashcards).filter(
+    (id) => !flashcards[id]?._deleted
   );
 
-  const [selectedNote, setSelectedNote] = useState(nonDeletedFlashcards[0]);
+  const [selectedFlashcard, setSelectedFlashcard] = useState(
+    nonDeletedFlashcards[0]
+  );
 
-  notesDocuments?.observe((_event) => {
-    setFlashcards(notesDocuments?.toJSON());
+  flashcardsDocuments?.observe((_event) => {
+    setFlashcards(flashcardsDocuments?.toJSON());
   });
 
-  const setNote = (note: Note) => {
-    notesDocuments?.set(note._id, note);
+  const setFlashcard = (flashcard: Flashcard) => {
+    flashcardsDocuments?.set(flashcard._id, flashcard);
   };
 
-  const createNote = () => {
-    const newNote = buildNewNote();
-    setNote(newNote);
-    setSelectedNote(newNote._id);
+  const createFlashcard = () => {
+    const newFlashcard = buildNewFlashcard();
+    setFlashcard(newFlashcard);
+    setSelectedFlashcard(newFlashcard._id);
   };
 
-  const updateNoteText = (text: string, note?: Note) => {
-    if (!note) return;
-    note.text = text;
-    setNote(note);
-  };
-
-  const deleteNote = (note: Note) => {
+  const deleteFlashcard = (flashcard: Flashcard) => {
     const oneMonth = 1000 * 60 * 60 * 24 * 30;
-    note._deleted = true;
-    note._ttl = new Date().getTime() + oneMonth;
-    setNote(note);
+    flashcard._deleted = true;
+    flashcard._ttl = new Date().getTime() + oneMonth;
+    setFlashcard(flashcard);
   };
 
   const [linkFlashcardModalOpen, setLinkFlashcardModalOpen] = useState(false);
 
-  const handleLinkFlashcard = async (
-    flashcard: Flashcard,
-    flashcardsRoom: Room<Flashcard>
-  ) => {
-    // add the note to the flashcards list of noteRefs and safe it to the doc.
+  const handleLinkNote = async (note: Note, notesRoom: Room<Note>) => {
+    // add the flashcard to the flashcards list of flashcardRefs and safe it to the doc.
 
-    const note = notes[selectedNote];
-    if (!note) return;
+    const flashcard = flashcards[selectedFlashcard];
+    if (!flashcard) return;
 
-    const noteRefs = flashcard.noteRefs ?? [];
-    noteRefs.push(flashcard._ref);
-    flashcard.noteRefs = noteRefs;
-    const flashcardsDocuments = getRoomDocuments(flashcardsRoom);
-    flashcardsDocuments.set(flashcard._id, flashcard);
-
-    // add the flashcard to the notes list of flashcardRefs and save it to the doc.
     const flashcardRefs = note.flashcardRefs ?? [];
     flashcardRefs.push(flashcard._ref);
     note.flashcardRefs = flashcardRefs;
-    setNote(note);
+    const notesDocuments = getRoomDocuments(notesRoom);
+    notesDocuments.set(note._id, note);
+
+    // add the flashcard to the flashcards list of flashcardRefs and save it to the doc.
+    const noteRefs = flashcard.noteRefs ?? [];
+    noteRefs.push(flashcard._ref);
+    flashcard.noteRefs = flashcardRefs;
+    setFlashcard(flashcard);
   };
+  const [newFlashcardModalOpen, setNewFlashcardModalOpen] = useState(false);
 
   return (
     <>
       <h1>Edit</h1>
-      {nonDeletedFlashcards.length === 0 ? (
-        <div>No notes found. Please create one</div>
-      ) : (
-        <textarea
-          style={styles.editor}
-          name="main-card-editor"
-          value={notes[selectedNote]?.text ?? ''}
-          onChange={(e) => {
-            updateNoteText(e.target.value, notes[selectedNote]);
-          }}
-        />
+      {nonDeletedFlashcards.length === 0 && (
+        <div>No flashcards found. Please create one</div>
       )}
-
+      {newFlashcardModalOpen && (
+        <div style={styles.modal}>
+          <div style={styles.modalContent}>
+            <button
+              onClick={() => setNewFlashcardModalOpen(false)}
+              style={styles.modalCloseButton}
+            >
+              X
+            </button>
+            <NewFlashcardModal room={flashcardsRoom} />
+          </div>
+        </div>
+      )}
+      <button onClick={() => setNewFlashcardModalOpen(true)}>
+        + New Flashcard
+      </button>
       <h1>Flashcards</h1>
 
-      <button onClick={() => createNote()}>New note</button>
+      <button onClick={() => createFlashcard()}>New flashcard</button>
 
       <div style={styles.flexWrap}>
         {nonDeletedFlashcards.map((id) => {
-          const note = notes[id];
-          if (note && !notes[id]?._deleted)
+          const flashcard = flashcards[id];
+          if (flashcard && !flashcards[id]?._deleted)
             return (
               <div
-                onClick={() => setSelectedNote(note._id)}
+                onClick={() => setSelectedFlashcard(flashcard._id)}
                 style={styles.card}
-                key={note._id}
+                key={flashcard._id}
               >
                 <button
-                  onClick={() => deleteNote(note)}
+                  onClick={() => deleteFlashcard(flashcard)}
                   style={styles.deleteButton}
                 >
                   X
                 </button>
-                <p> {note.text}</p>
+                <FlashcardComponent flashcard={flashcard} />
 
                 <button onClick={() => setLinkFlashcardModalOpen(true)}>
                   + Link flashcard
                 </button>
 
                 <div style={{ display: 'flex', marginTop: '2rem' }}>
-                  {note.flashcardRefs?.length &&
-                    note.flashcardRefs.length > 0 && (
+                  {flashcard.noteRefs?.length &&
+                    flashcard.noteRefs.length > 0 && (
                       <div>
-                        <p>Linked Flashcards:</p>
-                        {note.flashcardRefs.map((ref) => (
-                          <LinkedFlashcard key={ref} docRef={ref} />
+                        <p>Linked Notes:</p>
+                        {flashcard.noteRefs.map((ref) => (
+                          <LinkedNote key={ref} docRef={ref} />
                         ))}
                       </div>
                     )}
@@ -219,8 +222,8 @@ const FlashcardsInternal = ({
             </button>
             <LinkFlashcardModal
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              note={notes[selectedNote]!}
-              handleLinkFlashcard={handleLinkFlashcard}
+              flashcard={flashcards[selectedFlashcard]!}
+              handleLinkNote={handleLinkNote}
             />
           </div>
         </div>
@@ -228,50 +231,69 @@ const FlashcardsInternal = ({
     </>
   );
 };
+const FlashcardComponent = ({ flashcard }: { flashcard?: Flashcard }) => {
+  const [showBack, setShowBack] = useState(false);
+  if (!flashcard || flashcard._deleted) return null;
 
-const LinkedFlashcard = ({ docRef }: { docRef?: string }) => {
-  const [flashcard, setFlashcard] = useState<Flashcard | null>(null);
+  return (
+    <div
+      key={flashcard._id}
+      style={{
+        border: '1px solid black',
+        padding: '1rem',
+        margin: '1rem',
+        cursor: 'pointer',
+      }}
+    >
+      <p>{flashcard.frontText}</p>
+      <hr />
+      {showBack ? (
+        <p>{flashcard.backText}</p>
+      ) : (
+        <button onClick={() => setShowBack(true)}>Show Answer</button>
+      )}
+    </div>
+  );
+};
+
+const LinkedNote = ({ docRef }: { docRef?: string }) => {
+  const [note, setNote] = useState<Note | null>(null);
   useEffect(() => {
     if (!docRef) return;
-    const loadFlashcard = async () => {
-      const flashcard = await db.getDocumentByRef<Flashcard>(docRef);
-      setFlashcard(flashcard);
+    const loadNote = async () => {
+      const note = await db.getDocumentByRef<Note>(docRef);
+      setNote(note);
     };
-    loadFlashcard();
+    loadNote();
   }, [docRef]);
-  return <div>{flashcard?.frontText}</div>;
+  return <div>{note?.text}</div>;
 };
 
 const LinkFlashcardModal = ({
-  note,
-  handleLinkFlashcard,
+  flashcard,
+  handleLinkNote,
 }: {
-  note: Note;
-  handleLinkFlashcard: (
-    flashcard: Flashcard,
-    flashcardsRoom: Room<Flashcard>
-  ) => Promise<void>;
+  flashcard: Flashcard;
+  handleLinkNote: (note: Note, notesRoom: Room<Note>) => Promise<void>;
 }) => {
-  const flashcardRoomRegistry = db.getCollectionRegistry(
-    CollectionKey.flashcards
-  );
-  const [connectedRoms, setConnectedRooms] = useState<Room<Flashcard>[]>([]);
+  const notesRoomRegistry = db.getCollectionRegistry(CollectionKey.notes);
+  const [connectedRoms, setConnectedRooms] = useState<Room<Note>[]>([]);
 
   useEffect(() => {
-    const createDefaultFlashcardsRoom = async () => {
-      const room = await db.createAndConnectRoom<Flashcard>({
-        collectionKey: CollectionKey.flashcards,
-        aliasSeed: 'flashcards-default',
+    const createDefaultNotesRoom = async () => {
+      const room = await db.createAndConnectRoom<Note>({
+        collectionKey: CollectionKey.notes,
+        aliasSeed: 'notess-default',
       });
       setConnectedRooms([room]);
     };
 
     const populateRooms = async () => {
-      const connected: Room<Flashcard>[] = [];
-      for (const aliasSeed of Object.keys(flashcardRoomRegistry)) {
+      const connected: Room<Note>[] = [];
+      for (const aliasSeed of Object.keys(notesRoomRegistry)) {
         try {
-          const room = await db.loadAndConnectRoom<Flashcard>(
-            { collectionKey: CollectionKey.flashcards, aliasSeed }
+          const room = await db.loadAndConnectRoom<Note>(
+            { collectionKey: CollectionKey.notes, aliasSeed }
             // performance could be improved by using the offline room which returns earlier.
           );
           connected.push(room);
@@ -284,50 +306,28 @@ const LinkFlashcardModal = ({
       setConnectedRooms(connected);
     };
 
-    if (
-      flashcardRoomRegistry &&
-      Object.keys(flashcardRoomRegistry).length === 0
-    ) {
-      createDefaultFlashcardsRoom();
-    } else if (
-      connectedRoms.length < Object.keys(flashcardRoomRegistry).length
-    ) {
+    if (notesRoomRegistry && Object.keys(notesRoomRegistry).length === 0) {
+      createDefaultNotesRoom();
+    } else if (connectedRoms.length < Object.keys(notesRoomRegistry).length) {
       populateRooms();
     }
-  }, [connectedRoms, flashcardRoomRegistry]);
-  const [newFlashcardModalOpen, setNewFlashcardModalOpen] = useState(false);
+  }, [connectedRoms, notesRoomRegistry]);
 
   return (
     <div>
       {connectedRoms.map((room) => {
-        const docs: Documents<Flashcard> =
+        const docs: Documents<Note> =
           room?.ydoc?.getMap('documents')?.toJSON() ?? {};
         return (
           <div key={room.roomAlias}>
-            {newFlashcardModalOpen && (
-              <div style={styles.modal}>
-                <div style={styles.modalContent}>
-                  <button
-                    onClick={() => setNewFlashcardModalOpen(false)}
-                    style={styles.modalCloseButton}
-                  >
-                    X
-                  </button>
-                  <NewFlashcardModal room={room} noteText={note.text ?? ''} />
-                </div>
-              </div>
-            )}
-            <button onClick={() => setNewFlashcardModalOpen(true)}>
-              + New Flashcard
-            </button>
-            <p> Click a flashcard to link to note:</p>
+            <p> Click a note to link to flashcard:</p>
             {Object.values(docs)?.map((doc) => {
               if (!doc || doc._deleted) return null;
               return (
                 <div
                   key={doc._id}
                   onClick={() => {
-                    handleLinkFlashcard(doc, room);
+                    handleLinkNote(doc, room);
                   }}
                   style={{
                     border: '1px solid black',
@@ -336,9 +336,7 @@ const LinkFlashcardModal = ({
                     cursor: 'pointer',
                   }}
                 >
-                  <p>{doc.frontText}</p>
-                  <hr />
-                  <p>{doc.backText}</p>
+                  <p>{doc.text}</p>
                 </div>
               );
             })}
@@ -349,15 +347,9 @@ const LinkFlashcardModal = ({
   );
 };
 
-const NewFlashcardModal = ({
-  room,
-  noteText,
-}: {
-  room: Room<Flashcard>;
-  noteText: string;
-}) => {
+const NewFlashcardModal = ({ room }: { room: Room<Flashcard> }) => {
   const [frontText, setFrontText] = useState('');
-  const [backText, setBackText] = useState(noteText);
+  const [backText, setBackText] = useState('');
 
   const handleCreateFlashcard = async () => {
     const documentId = ulid();
