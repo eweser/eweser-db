@@ -1,6 +1,6 @@
-export const styles: {
-  [key: string]: React.HTMLAttributes<HTMLDivElement>['style'];
-} = {
+import type { CSSProperties } from 'react';
+
+export const styles: { [key: string]: CSSProperties } = {
   appRoot: {
     display: 'flex',
     flexDirection: 'column',
@@ -36,5 +36,27 @@ export const styles: {
     color: 'rgb(82 82 82)',
     display: 'flex',
     justifyContent: 'space-between',
+  },
+  modal: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  modalContent: {
+    position: 'relative',
+    padding: '5rem',
+    background: 'white',
+  },
+  modalCloseButton: {
+    position: 'absolute',
+    top: '1rem',
+    right: '1rem',
   },
 };

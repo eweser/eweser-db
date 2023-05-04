@@ -9,28 +9,6 @@ import { WEB_RTC_PEERS } from './config';
 import type { CSSProperties } from 'react';
 
 const appStyles: { [key: string]: CSSProperties } = {
-  modal: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
-  },
-  modalContent: {
-    position: 'relative',
-    padding: '5rem',
-    background: 'white',
-  },
-  modalCloseButton: {
-    position: 'absolute',
-    top: '1rem',
-    right: '1rem',
-  },
   collectionsList: {
     display: 'flex',
     columnGap: '2rem',
@@ -164,11 +142,11 @@ const RoomsProvider = ({ db }: { db: Database }) => {
           + New Collection
         </button>
         {createRoomModalOpen && (
-          <div style={appStyles.modal}>
-            <div style={appStyles.modalContent}>
+          <div style={styles.modal}>
+            <div style={styles.modalContent}>
               <button
                 onClick={() => setCreateRoomModalOpen(false)}
-                style={appStyles.modalCloseButton}
+                style={styles.modalCloseButton}
               >
                 X
               </button>

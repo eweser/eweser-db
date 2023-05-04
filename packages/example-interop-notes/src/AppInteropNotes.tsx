@@ -13,38 +13,6 @@ import * as config from './config';
 
 import { styles, StatusBar, LoginForm } from '@eweser/examples-components';
 import { WEB_RTC_PEERS } from './config';
-import type { CSSProperties } from 'react';
-
-const appStyles: { [key: string]: CSSProperties } = {
-  modal: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
-  },
-  modalContent: {
-    position: 'relative',
-    padding: '5rem',
-    background: 'white',
-  },
-  modalCloseButton: {
-    position: 'absolute',
-    top: '1rem',
-    right: '1rem',
-  },
-  collectionsList: {
-    display: 'flex',
-    columnGap: '2rem',
-    rowGap: '1rem',
-    flexWrap: 'wrap',
-  },
-};
 
 // This example shows how to implement a basic login/signup form and a basic note-taking app using @eweser/db
 // The CRUD operations are all done directly on the ydoc.
@@ -252,11 +220,11 @@ const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
         })}
       </div>
       {linkFlashcardModalOpen && (
-        <div style={appStyles.modal}>
-          <div style={appStyles.modalContent}>
+        <div style={styles.modal}>
+          <div style={styles.modalContent}>
             <button
               onClick={() => setLinkFlashcardModalOpen(false)}
-              style={appStyles.modalCloseButton}
+              style={styles.modalCloseButton}
             >
               X
             </button>
@@ -348,11 +316,11 @@ const LinkFlashcardModal = ({
         return (
           <div key={room.roomAlias}>
             {newFlashcardModalOpen && (
-              <div style={appStyles.modal}>
-                <div style={appStyles.modalContent}>
+              <div style={styles.modal}>
+                <div style={styles.modalContent}>
                   <button
                     onClick={() => setNewFlashcardModalOpen(false)}
-                    style={appStyles.modalCloseButton}
+                    style={styles.modalCloseButton}
                   >
                     X
                   </button>
