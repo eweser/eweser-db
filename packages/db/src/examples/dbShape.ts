@@ -1,4 +1,4 @@
-import type { FlashCard, Note, Profile } from '../collections';
+import type { Flashcard, Note, Profile } from '../collections';
 import type { DocumentBase } from '../collections/documentBase';
 import type { Collections, Documents, RegistryData } from '../types';
 import { CollectionKey } from '../types';
@@ -41,7 +41,7 @@ const myStudyNotesYDoc: { documents: Documents<Note> } = {
   },
 };
 
-const typescriptFlashcardsYDoc: { documents: Documents<FlashCard> } = {
+const typescriptFlashcardsYDoc: { documents: Documents<Flashcard> } = {
   documents: {
     ['0']: {
       frontText: 'Question',
@@ -56,7 +56,7 @@ const typescriptFlashcardsYDoc: { documents: Documents<FlashCard> } = {
   },
 };
 
-const chineseFlashcardsYDoc: { documents: Documents<FlashCard> } = {
+const chineseFlashcardsYDoc: { documents: Documents<Flashcard> } = {
   documents: {
     ['0']: {
       frontText: 'What does 火 mean?',

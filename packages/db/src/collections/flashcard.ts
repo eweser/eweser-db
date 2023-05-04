@@ -5,4 +5,4 @@ export type FlashcardBase = {
   backText: string;
   noteRefs?: string[];
 };
-export type FlashCard = DocumentBase & FlashcardBase;
+export type Flashcard = DocumentBase & FlashcardBase;

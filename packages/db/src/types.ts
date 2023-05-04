@@ -1,12 +1,12 @@
 import type { MatrixProvider } from 'matrix-crdt';
 import type { ICreateClientOpts } from 'matrix-js-sdk';
-import type { DocumentBase, Note, FlashCard, Profile } from './collections';
+import type { DocumentBase, Note, Flashcard, Profile } from './collections';
 import type { WebrtcProvider } from 'y-webrtc';
 import type { TypedDoc, TypedMap } from 'yjs-types';
 import type { Doc } from 'yjs';
 import type { IndexeddbPersistence } from 'y-indexeddb';
 
-export type { DocumentBase, Note, FlashCard, Profile };
+export type { DocumentBase, Note, Flashcard as Flashcard, Profile };
 
 export enum CollectionKey {
   notes = 'notes',
@@ -14,7 +14,7 @@ export enum CollectionKey {
   profiles = 'profiles',
 }
 
-export type UserDocument = Note | FlashCard | Profile;
+export type UserDocument = Note | Flashcard | Profile;
 export type Document = UserDocument | RegistryData;
 
 export type DocumentWithoutBase<T extends Document> = Omit<
@@ -103,7 +103,7 @@ export interface LoginData extends ICreateClientOpts {
 
 export interface Collections {
   [CollectionKey.notes]: Collection<Note>;
-  [CollectionKey.flashcards]: Collection<FlashCard>;
+  [CollectionKey.flashcards]: Collection<Flashcard>;
   [CollectionKey.profiles]: Collection<Profile>;
   registry: RegistryCollection;
 }

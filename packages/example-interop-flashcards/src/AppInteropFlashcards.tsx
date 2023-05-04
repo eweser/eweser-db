@@ -19,11 +19,11 @@ const collectionKey = CollectionKey.notes;
 const initialRoomConnect = {
   collectionKey,
   aliasSeed,
-  name: 'My Notes on Life and Things',
+  name: 'My Flashcards on Life and Things',
 };
 
 // This app, along with AppInteropFlashcards is an example of how two independent apps can interoperate by both connecting to the user's database. All this requires is the user signs in with the same matrix account. There will be real-time syncing between them.
-// The example here is a note-taking app that would let you link notes to flashcards and vice versa
+// The example here is a flashcard app that would let you link notes to flashcards and vice versa
 
 const db = new Database({
   // set `debug` to true to see debug messages in the console
@@ -54,12 +54,12 @@ const App = () => {
   const handleSignup = (loginData: LoginData) =>
     db.signup({ initialRoomConnect, ...loginData });
 
-  const defaultNotesRoom = db.getRoom<Note>(collectionKey, aliasSeed);
+  const defaultFlashcardsRoom = db.getRoom<Note>(collectionKey, aliasSeed);
 
   return (
     <div style={styles.appRoot}>
-      {started && defaultNotesRoom?.ydoc ? (
-        <NotesInternal notesRoom={defaultNotesRoom} />
+      {started && defaultFlashcardsRoom?.ydoc ? (
+        <FlashcardsInternal flashcardsRoom={defaultFlashcardsRoom} />
       ) : (
         <LoginForm
           handleLogin={handleLogin}
@@ -83,21 +83,25 @@ const buildNewNote = () => {
   return newDocument<Note>(ref, { text: 'New Note Body' });
 };
 
-const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
-  const notesDocuments = getRoomDocuments(notesRoom);
+const FlashcardsInternal = ({
+  flashcardsRoom,
+}: {
+  flashcardsRoom: Room<Note>;
+}) => {
+  const notesDocuments = getRoomDocuments(flashcardsRoom);
 
-  const [notes, setNotes] = useState<Documents<Note>>(
+  const [notes, setFlashcards] = useState<Documents<Note>>(
     notesDocuments?.toJSON() ?? {}
   );
 
-  const nonDeletedNotes = Object.keys(notes).filter(
+  const nonDeletedFlashcards = Object.keys(notes).filter(
     (id) => !notes[id]?._deleted
   );
 
-  const [selectedNote, setSelectedNote] = useState(nonDeletedNotes[0]);
+  const [selectedNote, setSelectedNote] = useState(nonDeletedFlashcards[0]);
 
   notesDocuments?.observe((_event) => {
-    setNotes(notesDocuments?.toJSON());
+    setFlashcards(notesDocuments?.toJSON());
   });
 
   const setNote = (note: Note) => {
@@ -150,7 +154,7 @@ const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
   return (
     <>
       <h1>Edit</h1>
-      {nonDeletedNotes.length === 0 ? (
+      {nonDeletedFlashcards.length === 0 ? (
         <div>No notes found. Please create one</div>
       ) : (
         <textarea
@@ -163,12 +167,12 @@ const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
         />
       )}
 
-      <h1>Notes</h1>
+      <h1>Flashcards</h1>
 
       <button onClick={() => createNote()}>New note</button>
 
       <div style={styles.flexWrap}>
-        {nonDeletedNotes.map((id) => {
+        {nonDeletedFlashcards.map((id) => {
           const note = notes[id];
           if (note && !notes[id]?._deleted)
             return (

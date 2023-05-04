@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import { Doc } from 'yjs';
 
-import type { FlashCard } from '../../';
+import type { Flashcard } from '../../';
 import { Database } from '../../';
 
 import { CollectionKey } from '../../types';
@@ -30,7 +30,7 @@ describe('connectMatrixProvider', () => {
     if (!db.matrixClient) throw 'matrixClient not found';
     await createTestRoomIfNotCreated(db.matrixClient, userId);
 
-    const room = getOrSetRoom(db)<FlashCard>(
+    const room = getOrSetRoom(db)<Flashcard>(
       CollectionKey.flashcards,
       testAliasSeed
     );

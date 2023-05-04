@@ -1,6 +1,6 @@
 import { describe, it, expect, vitest } from 'vitest';
 import { getDocumentByRef } from './getDocumentByRef';
-import type { FlashCard } from '..';
+import type { Flashcard } from '..';
 import {
   CollectionKey,
   Database,
@@ -37,7 +37,7 @@ describe('getDocumentByRef', () => {
     const connectRoomMock = vitest.fn();
     db.connectRoom = connectRoomMock;
     db.userId = userId;
-    const room = await db.loadRoom<FlashCard>({
+    const room = await db.loadRoom<Flashcard>({
       collectionKey: CollectionKey.flashcards,
       aliasSeed,
     });
@@ -56,7 +56,7 @@ describe('getDocumentByRef', () => {
       _updated: 0,
     });
     expect(connectRoomMock).not.toHaveBeenCalled();
-    const gotDoc = await db.getDocumentByRef<FlashCard>(ref);
+    const gotDoc = await db.getDocumentByRef<Flashcard>(ref);
 
     expect(gotDoc._id).toEqual('doc-id');
     expect(gotDoc.frontText).toEqual('front');

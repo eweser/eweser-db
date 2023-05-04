@@ -9,7 +9,7 @@ import {
 
 import type {
   CreateAndConnectRoomOptions,
-  FlashCard,
+  Flashcard,
   RegistryData,
 } from '../types';
 import { CollectionKey } from '../types';
@@ -138,7 +138,7 @@ describe('createAndConnectRoom', () => {
     const roomInDB = db.collections.flashcards[aliasSeed];
     expect(roomInDB).toBeDefined();
     const cards = roomInDB.ydoc?.getMap('documents').toJSON() as {
-      [key: string]: FlashCard;
+      [key: string]: Flashcard;
     };
     const cardIds = Object.keys(cards);
     expect(cardIds.length).toBe(2);

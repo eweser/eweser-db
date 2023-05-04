@@ -25,7 +25,7 @@ import { getDocumentByRef } from './methods/getDocumentByRef';
 export type {
   Profile,
   Note,
-  FlashCard,
+  Flashcard,
   Collection,
   Collections,
   ConnectStatus,
