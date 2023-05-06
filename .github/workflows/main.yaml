@@ -56,8 +56,6 @@ jobs:
       - name: Run unit/integration tests
         run: npx lerna run test --scope @eweser/db
 
-      - name: Wait on all previews
-
       - name: Run e2e tests
         uses: cypress-io/github-action@v5
         with:
