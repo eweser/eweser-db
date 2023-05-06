@@ -5,7 +5,7 @@ import {
   getRegistry,
   newDocument,
   randomString,
-} from '..';
+} from '../';
 
 import type {
   CreateAndConnectRoomOptions,
@@ -137,6 +137,7 @@ describe('createAndConnectRoom', () => {
 
     const roomInDB = db.collections.flashcards[aliasSeed];
     expect(roomInDB).toBeDefined();
+
     const cards = roomInDB.ydoc?.getMap('documents').toJSON() as {
       [key: string]: Flashcard;
     };

@@ -1,8 +1,8 @@
 import type { Database } from '../../';
-import { buildAliasFromSeed } from '../../';
+import { buildAliasFromSeed, getRegistry, newDocument } from '../';
 import type { RegistryData } from '../../types';
 import { CollectionKey } from '../../types';
-import { getRegistry, newDocument } from '../../utils';
+
 import { getAliasNameFromAlias } from './aliasHelpers';
 import { createRoom } from './createRoom';
 

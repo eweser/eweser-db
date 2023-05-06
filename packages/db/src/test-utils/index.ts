@@ -23,8 +23,9 @@ export const MATRIX_HOME_URL = new URL('http://localhost:8888/_matrix/static/');
 
 export const { baseUrl } = matrixTestConfig;
 export const userLoginInfo = () => {
-  const userId = randomString(8);
-  const password = randomString(8);
+  const userId = randomString(12);
+  const password = randomString(12);
+
   return {
     baseUrl,
     userId,

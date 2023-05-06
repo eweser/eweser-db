@@ -1,8 +1,9 @@
-import { Database, wait } from '../../';
+import { Database } from '../../';
 import { pingServer } from './pingServer';
 import type { MockedFunction } from 'vitest';
 import { vitest, it, describe, expect, afterEach } from 'vitest';
 import { checkServerConnection } from './checkServerConnection';
+import { wait } from '../';
 
 vitest.mock('./pingServer');
 const emitListener = vitest.fn();

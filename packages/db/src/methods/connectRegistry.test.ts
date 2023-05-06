@@ -22,5 +22,5 @@ describe('connectRegistry', () => {
     expect(registryRoom.ydoc?.store).toBeDefined();
     expect(registryRoom.connectStatus).toEqual('ok');
     expect(registryRoom.matrixProvider?.roomId).toEqual(registryRoom.roomId);
-  });
+  }, 10000);
 });

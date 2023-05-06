@@ -5,7 +5,10 @@ import { randomString } from '..';
 import { Database } from '..';
 import { baseUrl, HOMESERVER_NAME } from '../test-utils';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
-import { localStorageGet, LocalStorageKey } from '../utils/localStorageService';
+import {
+  localStorageGet,
+  LocalStorageKey,
+} from '../utils/db/localStorageService';
 
 describe('db.signup()', () => {
   beforeAll(async () => {

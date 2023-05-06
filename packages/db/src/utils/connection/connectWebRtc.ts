@@ -14,6 +14,7 @@ export const connectWebRtcProvider = (
 ) => {
   const awareness = new Awareness(doc);
   const servers = _db.webRtcPeers;
+
   const provider = new WebrtcProvider(name, doc, {
     password,
     signaling: servers,
@@ -24,6 +25,7 @@ export const connectWebRtcProvider = (
 
 export const checkWebRtcConnection = (provider?: WebrtcProvider | null) => {
   if (!provider) return false;
+  if (!provider.connected) return false;
   const conns = provider.signalingConns;
   if (conns.length === 0) {
     return false;
@@ -41,9 +43,12 @@ export const waitForWebRtcConnection = async (
   timeout = 10000
 ) => {
   const startTime = Date.now();
-  while (!checkWebRtcConnection(provider) && Date.now() - startTime < timeout) {
+  let connected = checkWebRtcConnection(provider);
+  while (!connected && Date.now() - startTime < timeout) {
     await new Promise((resolve) => setTimeout(resolve, 100));
+    connected = checkWebRtcConnection(provider);
   }
+
   if (!checkWebRtcConnection(provider)) {
     throw new Error('timed out waiting for rtc connection');
   }

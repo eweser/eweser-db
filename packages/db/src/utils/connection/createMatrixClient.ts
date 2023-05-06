@@ -1,9 +1,6 @@
 import { createClient } from 'matrix-js-sdk';
 import type { LoginData } from '../../types';
-import {
-  LocalStorageKey,
-  localStorageSet,
-} from '../../utils/localStorageService';
+import { LocalStorageKey, localStorageSet } from '../db/localStorageService';
 import { buildFullUserId } from '../../utils';
 
 type MatrixLoginRes = {

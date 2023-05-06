@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { Database, wait } from '../../';
+import { Database } from '../../';
 import { awaitOnline } from './awaitOnline';
+import { wait } from '../';
 
 describe('awaitOnline', () => {
   it('should return true if the database is already online', async () => {

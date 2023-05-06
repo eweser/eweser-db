@@ -1,9 +1,9 @@
 import { describe, it, expect, vitest, beforeAll } from 'vitest';
-import { Database, randomString } from '..';
+import { Database } from '..';
 import { CollectionKey } from '../types';
 import { baseUrl } from '../test-utils';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
-
+import { randomString } from '../';
 describe('addTempDocToRoom', () => {
   beforeAll(async () => {
     await ensureMatrixIsRunning();

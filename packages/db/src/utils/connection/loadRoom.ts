@@ -1,5 +1,5 @@
 import type { CollectionKey, Database, Document } from '../../';
-import { getOrSetRoom } from '../../';
+import { getOrSetRoom } from '../';
 import type { RegistryData, Room } from '../../types';
 import { initializeDocAndLocalProvider } from './initializeDoc';
 

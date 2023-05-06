@@ -3,7 +3,8 @@ import {
   connectWebRtcProvider,
   waitForWebRtcConnection,
 } from './connectWebRtc';
-import { Database, randomString, wait } from '../../';
+import { Database } from '../../';
+import { randomString, wait } from '../';
 import { Doc } from 'yjs';
 import { localWebRtcServer } from '../../test-utils';
 describe('connectRtc', () => {

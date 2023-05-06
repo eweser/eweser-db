@@ -1,10 +1,13 @@
 import { createClient } from 'matrix-js-sdk';
 import type { Database } from '..';
 import { usernameValidation } from '..';
-import { awaitOnline } from '../utils';
+import { awaitOnline, buildFullUserId } from '../utils';
 import type { Documents, LoginData, LoginStatus, RegistryData } from '../types';
 import type { TypedMap } from 'yjs-types';
-import { LocalStorageKey, localStorageSet } from '../utils/localStorageService';
+import {
+  LocalStorageKey,
+  localStorageSet,
+} from '../utils/db/localStorageService';
 
 const setLoginStatus = (_db: Database, loginStatus: LoginStatus) => {
   _db.loginStatus = loginStatus;
@@ -34,6 +37,8 @@ export const signup =
         throw new Error('missing userId or password');
       }
       usernameValidation(userId);
+      _db.userId = buildFullUserId(userId, baseUrl);
+
       if (!baseUrl) {
         throw new Error('missing baseUrl');
       }

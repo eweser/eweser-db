@@ -1,23 +1,18 @@
-import { describe, it, expect, beforeEach, vitest, beforeAll } from 'vitest';
-import {
-  awaitOnline,
-  buildAliasFromSeed,
-  initializeDocAndLocalProvider,
-} from '../utils';
-import type { Flashcard, LoginData } from '..';
-import { randomString } from '..';
+import { describe, it, expect, beforeAll } from 'vitest';
+import type { Flashcard } from '..';
+import { randomString, wait } from '../utils';
 import { CollectionKey, Database } from '..';
 import 'fake-indexeddb';
 import { baseUrl, userLoginInfo } from '../test-utils';
-import { LocalStorageKey, localStorageSet } from '../utils/localStorageService';
+import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
 
 const loginInfo = userLoginInfo();
-const { userId, password } = loginInfo;
 
 describe('getDocuments', () => {
   const db = new Database({ baseUrl });
   const aliasSeed = 'test' + randomString(12);
   beforeAll(async () => {
+    await ensureMatrixIsRunning();
     await db.signup({
       ...loginInfo,
       initialRoomConnect: {
@@ -68,12 +63,12 @@ describe('getDocuments', () => {
     expect(newCard._ref).toBeDefined();
     expect(newCard._created).toBeDefined();
     expect(newCard._updated).toBeDefined();
-    expect(newCard._deleted).toBeUndefined();
+    expect(newCard._deleted).toBe(false);
     expect(newCard._ttl).toBeUndefined();
   });
   it('.delete marks cards as deleted, and getUndeleted filters out deleted cards', async () => {
-    const room = await db.connectRoom<Flashcard>({
-      aliasSeed,
+    const room = await db.createAndConnectRoom<Flashcard>({
+      aliasSeed: aliasSeed + 'new-room',
       collectionKey: CollectionKey.flashcards,
     });
     if (!room || typeof room === 'string') {
@@ -103,6 +98,7 @@ describe('getDocuments', () => {
     const Flashcards = db.getDocuments(room);
     const newCard = Flashcards.new({ backText: 'test', frontText: 'front' });
     const originalEditedDate = new Date(newCard._updated);
+    await wait(1000);
     Flashcards.set(newCard._id, { ...newCard, backText: 'edited' });
     const editedCard = Flashcards.get(newCard._id);
     if (!editedCard) throw new Error('card not found');

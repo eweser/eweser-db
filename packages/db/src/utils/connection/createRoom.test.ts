@@ -4,8 +4,9 @@ import { createRoom } from './createRoom';
 import { loginToMatrix } from '../../methods/login';
 import { baseUrl, userLoginInfo } from '../../test-utils';
 import { ensureMatrixIsRunning } from '../../test-utils/matrixTestUtilServer';
+import { randomString } from '../';
 
-import { Database, randomString } from '../../';
+import { Database } from '../../';
 
 const loginInfo = userLoginInfo();
 const { userId, password } = loginInfo;

@@ -7,10 +7,7 @@ import {
   initMatrixSDK,
 } from '../../test-utils/matrixTestUtilServer';
 import { createMatrixClient } from './createMatrixClient';
-import {
-  LocalStorageKey,
-  localStorageGet,
-} from '../../utils/localStorageService';
+import { LocalStorageKey, localStorageGet } from '../db/localStorageService';
 import type { LoginData } from '../../types';
 
 const loginInfo = userLoginInfo();
@@ -47,7 +44,7 @@ describe('createMatrixClient', () => {
     const signedInClient2 = await createMatrixClient(loginInfo);
 
     const whoami3 = await signedInClient2.whoami();
-    expect(whoami3?.user_id).toEqual(userIdWithServer);
+    expect(whoami3?.user_id).toEqual(userIdWithServer(userId));
     await signedInClient2.logout();
   });
 });

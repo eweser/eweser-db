@@ -12,7 +12,10 @@ import { getRegistry } from '../utils';
 import type { Database } from '..';
 import type { Doc } from 'yjs';
 
-import { localStorageGet, LocalStorageKey } from '../utils/localStorageService';
+import {
+  localStorageGet,
+  LocalStorageKey,
+} from '../utils/db/localStorageService';
 
 /** initializes the registry's ydoc and matrix provider */
 export const connectRegistry = (_db: Database) => async () => {
@@ -37,16 +40,21 @@ export const connectRegistry = (_db: Database) => async () => {
 
   if (_db.useWebRTC && _db.webRtcPeers.length > 0) {
     try {
-      const password =
-        localStorageGet<LoginData>(LocalStorageKey.loginData)?.password ?? '';
-      const { provider, doc } = connectWebRtcProvider(
-        _db,
-        buildRegistryRoomAlias(_db.userId),
-        ydoc as Doc,
-        password
-      );
-      room.ydoc = doc as any;
-      room.webRtcProvider = provider;
+      if (room.webRtcProvider) {
+        room.webRtcProvider.doc = ydoc as any;
+        room.webRtcProvider.connect();
+      } else {
+        const password =
+          localStorageGet<LoginData>(LocalStorageKey.loginData)?.password ?? '';
+        const { provider, doc } = connectWebRtcProvider(
+          _db,
+          buildRegistryRoomAlias(_db.userId),
+          ydoc as Doc,
+          password
+        );
+        room.ydoc = doc as any;
+        room.webRtcProvider = provider;
+      }
     } catch (error) {
       logger('error connecting registry to webRtc', error);
     }

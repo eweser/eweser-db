@@ -29,7 +29,9 @@ describe('getOrCreateRegistry', () => {
     const DB = new Database({ baseUrl });
     await loginToMatrix(DB, loginInfo);
     const registryAliasReturned = await getOrCreateRegistryRoom(DB);
-    expect(registryAliasReturned.registryRoomAlias).toEqual(registryAlias);
+    expect(registryAliasReturned.registryRoomAlias).toEqual(
+      registryAlias(userId)
+    );
   });
 });
 
@@ -38,6 +40,6 @@ describe('getOrCreateSpace', () => {
     const DB = new Database({ baseUrl });
     await loginToMatrix(DB, loginInfo);
     const spaceAliasReturned = await getOrCreateSpace(DB);
-    expect(spaceAliasReturned).toEqual(spaceAlias);
+    expect(spaceAliasReturned).toEqual(spaceAlias(userId));
   });
 });

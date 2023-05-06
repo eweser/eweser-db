@@ -1,13 +1,16 @@
 import { describe, it, expect, beforeAll, afterEach, vitest } from 'vitest';
 
 import type { LoginData } from '..';
-import { randomString } from '..';
+import { randomString } from '../utils';
 import { CollectionKey, Database } from '..';
 import { baseUrl, HOMESERVER_NAME, userLoginInfo } from '../test-utils';
 import { createMatrixUser } from '../test-utils/matrixTestUtil';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
 import { loginToMatrix } from './login';
-import { localStorageGet, LocalStorageKey } from '../utils/localStorageService';
+import {
+  localStorageGet,
+  LocalStorageKey,
+} from '../utils/db/localStorageService';
 const loginInfo = userLoginInfo();
 const { userId, password } = loginInfo;
 describe('db.login()', () => {

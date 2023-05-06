@@ -4,13 +4,6 @@ import { MatrixProvider } from 'matrix-crdt';
 import type { Doc } from 'yjs';
 import type { YDoc } from '../../types';
 
-export type NewMatrixProviderOptions =
-  | {
-      matrixClient: MatrixClient;
-      doc: any; // Y.Doc;
-      /** full room alias with #name:host */
-    } & ({ roomAlias: string } | { roomId: string });
-
 /** passing the id will connect faster */
 export const newMatrixProvider = (
   matrixClient: MatrixClient,

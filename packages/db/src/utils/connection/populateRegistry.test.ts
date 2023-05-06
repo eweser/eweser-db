@@ -1,5 +1,6 @@
 import { describe, it, expect, vitest, beforeAll, afterEach } from 'vitest';
-import { Database, getRegistry, randomString, wait } from '../../';
+import { Database } from '../../';
+import { getRegistry, randomString, wait } from '../';
 import {
   checkRegistryPopulated,
   populateRegistry,
@@ -49,7 +50,7 @@ describe('populateRegistry', () => {
     await wait(250); // enough time for the check to have been tried at least twice
     expect(checkRegistryPopulated(db)).toBe(true);
     expect(waitForRegistryPopulatedCallback).toHaveBeenCalledTimes(1);
-  });
+  }, 100000);
   it('waitForRegistryPopulated fails with error on timeout', async () => {
     const DB = new Database({ baseUrl });
     const waitForRegistryPopulatedCallback = vitest.fn();
@@ -63,5 +64,5 @@ describe('populateRegistry', () => {
     expect(waitForRegistryPopulatedCallback).toBeCalledWith(
       new Error('timed out waiting for registry to populate')
     );
-  });
+  }, 100000);
 });

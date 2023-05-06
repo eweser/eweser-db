@@ -5,7 +5,10 @@ import {
   checkServerConnection,
 } from '../utils';
 
-import { localStorageGet, LocalStorageKey } from '../utils/localStorageService';
+import {
+  localStorageGet,
+  LocalStorageKey,
+} from '../utils/db/localStorageService';
 
 /**
  * Checks localStorage for loginData and indexedDB for registry. returns false if not found.
