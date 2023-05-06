@@ -17,9 +17,9 @@ export default defineConfig({
     global: 'window',
   },
   preview: {
-    port: 8086,
+    port: 8131,
   },
   server: {
-    port: 8086,
+    port: 8131,
   },
 });

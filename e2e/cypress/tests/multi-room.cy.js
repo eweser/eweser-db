@@ -1,6 +1,6 @@
 /// <reference types="Cypress" />
 
-describe('Index Page', { baseUrl: 'http://localhost:8084' }, () => {
+describe('Index Page', { baseUrl: 'http://localhost:8111' }, () => {
   const username = 'user' + Math.random().toString(36).substring(7);
   const password = 'password' + Math.random().toString(36).substring(7);
   it('should register user', () => {
