@@ -56,12 +56,10 @@ jobs:
       # - name: Run unit/integration tests
       #   run: npx lerna run test --scope @eweser/db
 
-      - name: Start previews
-        run: npm run run-example-previews
-
       - name: Run e2e tests
         uses: cypress-io/github-action@v5
         with:
+          start: npm run run-example-previews
           browser: chrome
           wait-on: http://localhost:8081, http://localhost:8082, http://localhost:8083, http://localhost:8084, http://localhost:8085, http://localhost:8086
           wait-on-timeout: 180
