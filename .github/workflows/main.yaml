@@ -51,8 +51,8 @@ jobs:
         # the control operator & runs the first command in the background
         run: npm run start-test-rpc-server & npx wait-on http://localhost:4444
 
-      # - name: Run unit/integration tests
-      #   run: npx lerna run test --scope @eweser/db
+      - name: Run unit/integration tests
+        run: npx lerna run test --scope @eweser/db
 
       - name: Run e2e tests
         uses: cypress-io/github-action@v5
