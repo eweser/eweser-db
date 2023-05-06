@@ -1,5 +1,6 @@
 import type { DocumentBase, DocumentWithoutBase, Document } from '../../types';
 
+/** Sets the metadata like created and updated for the doc */
 export const newDocument = <T extends Document>(
   _ref: string,
   doc: DocumentWithoutBase<T>

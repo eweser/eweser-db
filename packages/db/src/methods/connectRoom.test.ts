@@ -2,13 +2,12 @@ import { describe, it, expect, vitest, beforeAll, afterEach } from 'vitest';
 
 import { randomString, wait } from '..';
 import { CollectionKey, Database, buildAliasFromSeed } from '..';
-import { checkMatrixProviderConnected } from '../connection';
+import { checkMatrixProviderConnected, checkWebRtcConnection } from '../utils';
 import { baseUrl, localWebRtcServer, userLoginInfo } from '../test-utils';
 
 import { createMatrixUser } from '../test-utils/matrixTestUtil';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
 
-import { checkWebRtcConnection } from '../connection/connectWebRtc';
 const loginInfo = userLoginInfo();
 const { userId, password } = loginInfo;
 
@@ -67,6 +66,7 @@ describe('connectRoom', () => {
     });
 
     expect(resRoom).toBeDefined();
+    if (typeof resRoom === 'string') throw new Error('failed to connect');
     expect(resRoom?.roomAlias).toEqual(roomAlias);
     expect(resRoom?.ydoc?.store).toBeDefined();
     expect(checkMatrixProviderConnected(resRoom?.matrixProvider)).toBe(true);

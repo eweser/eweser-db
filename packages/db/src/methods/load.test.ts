@@ -1,12 +1,11 @@
 import { describe, it, expect, beforeEach, vitest } from 'vitest';
+import { awaitOnline, initializeDocAndLocalProvider } from '../utils';
 import type { LoginData } from '..';
 import { randomString } from '..';
 import { CollectionKey, Database } from '..';
 import 'fake-indexeddb';
 import { baseUrl } from '../test-utils';
 import { LocalStorageKey, localStorageSet } from '../utils/localStorageService';
-import { initializeDocAndLocalProvider } from '../connection/initializeDoc';
-import { awaitOnline } from '../connection/awaitOnline';
 
 const randomUsername = randomString(8);
 const randomPassword = randomString(8);

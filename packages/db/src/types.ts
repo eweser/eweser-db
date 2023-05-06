@@ -23,7 +23,6 @@ export type DocumentWithoutBase<T extends Document> = Omit<
 >;
 
 export interface Documents<T extends Document> {
-  /** document ID can be string number starting at zero, based on order of creation */
   [documentId: string]: T | undefined;
 }
 

@@ -21,6 +21,7 @@ import { loadRoom } from './utils/connection/loadRoom';
 import { pollConnection } from './utils/connection/pollConnection';
 import { loadAndConnectRoom } from './methods/loadAndConnectRoom';
 import { getDocumentByRef } from './methods/getDocumentByRef';
+import { getDocuments } from './methods/getDocuments';
 
 export type {
   Profile,
@@ -97,7 +98,7 @@ export class Database {
   loadRoom = loadRoom(this);
   loadAndConnectRoom = loadAndConnectRoom(this);
   getDocumentByRef = getDocumentByRef(this);
-
+  getDocuments = getDocuments(this);
   login = login(this);
   signup = signup(this);
   load = load(this);
