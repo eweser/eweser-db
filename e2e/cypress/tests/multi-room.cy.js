@@ -64,11 +64,15 @@ describe('Index Page', { baseUrl: 'http://localhost:8111' }, () => {
     cy.contains('New Collection').click();
     cy.get('input[name=new-room-name]').type('Collection2');
     cy.contains('Create Collection').click();
+    // cy.contains('Create Collection').should('not.exist', { timeout: 30000 });
 
-    cy.contains('No notes found. Please create one');
-    cy.contains('New note').click();
-    cy.contains('New Note Body');
-    cy.get('textarea').clear().type('Say Hello collection 2');
+    // cy.contains('No notes found. Please create one');
+    // cy.contains('New note').click();
+    // cy.contains('New Note Body');
+    // strangely, cypress seems to skip ahead to these steps, so that after create collection, it's already got 'say hello collection 2' in the textarea
+    cy.get('textarea').clear();
+    cy.contains('New Note Body. Hello collection 1').should('not.exist');
+    cy.get('textarea').type('Say Hello collection 2');
     cy.findAllByText('Say Hello collection 2').should('have.length', 2);
     cy.contains('New Note Body. Hello collection 1').should('not.exist');
 

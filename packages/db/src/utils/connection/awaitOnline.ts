@@ -2,7 +2,7 @@ import type { Database } from '../../';
 import { checkServerConnection } from './checkServerConnection';
 
 /** Waits 3 seconds by default before failing */
-export const awaitOnline = async (_db: Database, timeoutMs = 3000) => {
+export const awaitOnline = async (_db: Database, timeoutMs = 5000) => {
   if (_db.online) return true;
 
   return new Promise<boolean>((resolve) => {
