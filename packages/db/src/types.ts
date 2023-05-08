@@ -23,7 +23,7 @@ export type DocumentWithoutBase<T extends Document> = Omit<
 >;
 
 export interface Documents<T extends Document> {
-  [documentId: string]: T | undefined;
+  [documentId: string]: T;
 }
 
 export type YDoc<T extends Document> = TypedDoc<{

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ulid } from 'ulid';
-import { CollectionKey, Database, buildRef, newDocument } from '@eweser/db';
+import { CollectionKey, Database } from '@eweser/db';
 import type { Documents, Note, LoginData, Room } from '@eweser/db';
 import * as config from './config';
 
@@ -178,58 +177,50 @@ const RoomsProvider = ({ db }: { db: Database }) => {
   );
 };
 
-const buildNewNote = () => {
-  const documentId = ulid();
-  const ref = buildRef({
-    collectionKey,
-    aliasSeed,
-    documentId,
-  });
-  return newDocument<Note>(ref, { text: 'New Note Body' });
+const sortNotesByRecent = (notes: Documents<Note>): Documents<Note> => {
+  const sortedArray: [string, Note][] = Object.entries(notes).sort(
+    (a, b) => b[1]._updated - a[1]._updated
+  );
+  return Object.fromEntries(sortedArray);
 };
 
 const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
-  const notesDoc = notesRoom.ydoc?.getMap('documents');
+  const Notes = db.getDocuments(notesRoom);
 
-  const [notes, setNotes] = useState<Documents<Note>>(notesDoc?.toJSON() ?? {});
-  const nonDeletedNotes = Object.keys(notes).filter(
-    (id) => !notes[id]?._deleted
+  const [notes, setNotes] = useState<Documents<Note>>(
+    sortNotesByRecent(Notes.getUndeleted())
   );
 
-  const [selectedNote, setSelectedNote] = useState(nonDeletedNotes[0]);
+  const [selectedNote, setSelectedNote] = useState(notes[0]?._id);
 
-  notesDoc?.observe((_event) => {
-    setNotes(notesDoc?.toJSON());
+  // listen for changes to the ydoc and update the state
+  Notes.onChange((_event) => {
+    const unDeleted = sortNotesByRecent(Notes.getUndeleted());
+    setNotes(unDeleted);
+    if (!notes[selectedNote] || notes[selectedNote]?._deleted) {
+      setSelectedNote(Object.keys(unDeleted)[0]);
+    }
   });
 
-  const setNote = (note: Note) => {
-    notesDoc?.set(note._id, note);
-  };
-
   const createNote = () => {
-    const newNote = buildNewNote();
-    setNote(newNote);
+    const newNote = Notes.new({ text: 'New Note Body' });
     setSelectedNote(newNote._id);
   };
 
   const updateNoteText = (text: string, note?: Note) => {
     if (!note) return;
     note.text = text;
-    setNote(note);
+    Notes.set(note._id, note);
   };
 
   const deleteNote = (note: Note) => {
-    // This marks the document safe to delete from the database after 30 days
-    const oneMonth = 1000 * 60 * 60 * 24 * 30;
-    note._deleted = true;
-    note._ttl = new Date().getTime() + oneMonth;
-    setNote(note);
+    Notes.delete(note._id);
   };
 
   return (
     <>
       <h1>Edit</h1>
-      {nonDeletedNotes.length === 0 ? (
+      {Object.keys(notes).length === 0 ? (
         <div>No notes found. Please create one</div>
       ) : (
         <textarea
@@ -247,7 +238,7 @@ const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
       <button onClick={() => createNote()}>New note</button>
 
       <div style={styles.flexWrap}>
-        {nonDeletedNotes.map((id) => {
+        {Object.keys(notes).map((id) => {
           const note = notes[id];
           if (note && !notes[id]?._deleted)
             return (
@@ -257,7 +248,10 @@ const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
                 key={note._id}
               >
                 <button
-                  onClick={() => deleteNote(note)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteNote(note);
+                  }}
                   style={styles.deleteButton}
                 >
                   X

@@ -73,54 +73,44 @@ const App = () => {
   );
 };
 
-const buildNewNote = () => {
-  const documentId = ulid();
-  const ref = buildRef({
-    collectionKey,
-    aliasSeed,
-    documentId,
-  });
-  return newDocument<Note>(ref, { text: 'New Note Body' });
+const sortNotesByRecent = (notes: Documents<Note>): Documents<Note> => {
+  const sortedArray: [string, Note][] = Object.entries(notes).sort(
+    (a, b) => b[1]._updated - a[1]._updated
+  );
+  return Object.fromEntries(sortedArray);
 };
 
 const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
-  const notesDocuments = getRoomDocuments(notesRoom);
+  const Notes = db.getDocuments(notesRoom);
 
   const [notes, setNotes] = useState<Documents<Note>>(
-    notesDocuments?.toJSON() ?? {}
+    sortNotesByRecent(Notes.getUndeleted())
   );
 
-  const nonDeletedNotes = Object.keys(notes).filter(
-    (id) => !notes[id]?._deleted
-  );
+  const [selectedNote, setSelectedNote] = useState(notes[0]?._id);
 
-  const [selectedNote, setSelectedNote] = useState(nonDeletedNotes[0]);
-
-  notesDocuments?.observe((_event) => {
-    setNotes(notesDocuments?.toJSON());
+  // listen for changes to the ydoc and update the state
+  Notes.onChange((_event) => {
+    const unDeleted = sortNotesByRecent(Notes.getUndeleted());
+    setNotes(unDeleted);
+    if (!notes[selectedNote] || notes[selectedNote]?._deleted) {
+      setSelectedNote(Object.keys(unDeleted)[0]);
+    }
   });
 
-  const setNote = (note: Note) => {
-    notesDocuments?.set(note._id, note);
-  };
-
   const createNote = () => {
-    const newNote = buildNewNote();
-    setNote(newNote);
+    const newNote = Notes.new({ text: 'New Note Body' });
     setSelectedNote(newNote._id);
   };
 
   const updateNoteText = (text: string, note?: Note) => {
     if (!note) return;
     note.text = text;
-    setNote(note);
+    Notes.set(note._id, note);
   };
 
   const deleteNote = (note: Note) => {
-    const oneMonth = 1000 * 60 * 60 * 24 * 30;
-    note._deleted = true;
-    note._ttl = new Date().getTime() + oneMonth;
-    setNote(note);
+    Notes.delete(note._id);
   };
 
   const [linkFlashcardModalOpen, setLinkFlashcardModalOpen] = useState(false);
@@ -144,13 +134,13 @@ const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
     const flashcardRefs = note.flashcardRefs ?? [];
     flashcardRefs.push(flashcard._ref);
     note.flashcardRefs = flashcardRefs;
-    setNote(note);
+    Notes.set(note._id, note);
   };
 
   return (
     <>
       <h1>Edit</h1>
-      {nonDeletedNotes.length === 0 ? (
+      {Object.keys(notes).length === 0 ? (
         <div>No notes found. Please create one</div>
       ) : (
         <textarea
@@ -168,7 +158,7 @@ const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
       <button onClick={() => createNote()}>New note</button>
 
       <div style={styles.flexWrap}>
-        {nonDeletedNotes.map((id) => {
+        {Object.keys(notes).map((id) => {
           const note = notes[id];
           if (note && !notes[id]?._deleted)
             return (
@@ -178,7 +168,10 @@ const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
                 key={note._id}
               >
                 <button
-                  onClick={() => deleteNote(note)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteNote(note);
+                  }}
                   style={styles.deleteButton}
                 >
                   X

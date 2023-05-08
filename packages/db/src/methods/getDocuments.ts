@@ -61,10 +61,10 @@ export const getDocuments =
         return documents.toJSON() as Documents<T>;
       },
       getUndeleted: () => {
-        const undeleted: T[] = [];
+        const undeleted: Documents<T> = {};
         documents.forEach((doc) => {
           if (doc && !doc._deleted) {
-            undeleted.push(doc);
+            undeleted[doc._id] = doc;
           }
         });
         return undeleted;

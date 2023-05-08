@@ -31,7 +31,7 @@ export const load =
         },
       });
     logger('starting load');
-    await checkServerConnection(_db);
+    checkServerConnection(_db);
     // check if loginData is in localStorage
     const loginInfo = localStorageGet<LoginData>(LocalStorageKey.loginData);
     if (!loginInfo || !loginInfo.userId) {
