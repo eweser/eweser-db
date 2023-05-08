@@ -29,7 +29,7 @@ const initialRoomConnect = {
 
 const db = new Database({
   // set `debug` to true to see debug messages in the console
-  debug: true,
+  // debug: true,
   webRTCPeers: WEB_RTC_PEERS,
 });
 

@@ -63,7 +63,7 @@ describe('connectRoom', () => {
     const db = new Database({
       baseUrl,
       webRTCPeers: [localWebRtcServer],
-      debug: true,
+      // debug: true,
     });
     await db.login(loginInfo);
 
