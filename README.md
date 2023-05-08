@@ -132,8 +132,6 @@ Say you wanted to store a reference to a note from a flashcard, you could add th
 }
 ```
 
-when using a document ref in another document, remember to add the `_ref` suffix to the property name. e.g. `flashcardRef` becomes `flashcardRef_ref`.
-
 ## Rooms
 
 Each `room` corresponds to a Matrix chat room that will be created on the user's Matrix account inside a space called "My Database". Rooms in EweserDB are private (invite-only) and (coming soon) will be fully end to end encrypted by default.
