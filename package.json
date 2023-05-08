@@ -6,10 +6,11 @@
     "e2e/example"
   ],
   "scripts": {
-    "release": "lerna run clean && npm install && npm run build && lerna publish --force-publish=* --no-private",
+    "release": "lerna run clean && npm install && npm run build && npm run copy-readme && lerna publish --force-publish=* --no-private",
     "test": "lerna run test",
     "test:e2e": "cypress run",
     "clean": "lerna run clean",
+    "copy-readme": "cp README.md packages/db/README.md",
     "build-link:components": "cd packages/examples-components && npm run build; cd ../../; lerna link",
     "build-link:db": "cd packages/db && npm run build; cd ../../; lerna link",
     "build-examples": "run-p build-example:*",
