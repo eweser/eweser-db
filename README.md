@@ -209,7 +209,7 @@ This is an area that needs further consideration. Community input is appreciated
 
 The example apps are in in `packages/example-basic` and `packages/example-editor` etc.
 you
-Example apps will be served at `http://localhost:8081/`, `http://localhost:8091/` etc.
+Example apps will be served at http://localhost:8000/, http://localhost:8100/, http://localhost:8200/ etc.
 
 Run unit tests by first starting the docker server (make sure you have docker running) with `npm run start-test-server` and then `npm run test`
 
