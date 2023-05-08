@@ -1,6 +1,6 @@
 {
   "name": "@eweser/example-editor",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "description": "eweser-db example mini app using the Milkdown editor",
   "keywords": [
@@ -31,7 +31,7 @@
     "url": "https://github.com/jacobcoro/eweserdb/issues"
   },
   "dependencies": {
-    "@eweser/db": "^1.1.0",
+    "@eweser/db": "^1.2.0",
     "@milkdown/core": "^7.1.1",
     "@milkdown/ctx": "^7.1.1",
     "@milkdown/plugin-collab": "^7.1.1",
@@ -54,7 +54,7 @@
     "yjs": "^13.5.16"
   },
   "devDependencies": {
-    "@eweser/eslint-config-react-ts": "^1.1.0",
+    "@eweser/eslint-config-react-ts": "^1.2.0",
     "@types/react": "^18.0.24",
     "@types/react-dom": "^18.0.8",
     "@vitejs/plugin-react": "^2.2.0",
