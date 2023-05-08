@@ -1,6 +1,6 @@
 {
   "name": "@eweser/example-interop-flashcards",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "private": true,
   "description": "eweser-db example mini app using the ydoc directly to make CRUD updates",
   "keywords": [
@@ -30,8 +30,8 @@
     "url": "https://github.com/jacobcoro/eweserdb/issues"
   },
   "dependencies": {
-    "@eweser/examples-components": "*",
-    "@eweser/db": "*",
+    "@eweser/db": "^1.1.0",
+    "@eweser/examples-components": "^1.1.0",
     "events": "3.3.0",
     "matrix-crdt": "0.2.1-alpha.1",
     "matrix-js-sdk": "^19.4.0",
@@ -44,7 +44,7 @@
     "yjs": "^13.5.16"
   },
   "devDependencies": {
-    "@eweser/eslint-config-react-ts": "*",
+    "@eweser/eslint-config-react-ts": "^1.1.0",
     "@types/react": "^18.0.24",
     "@types/react-dom": "^18.0.8",
     "@vitejs/plugin-react": "^2.2.0",
