@@ -4,12 +4,9 @@ import type { Documents, Note, LoginData, Room } from '@eweser/db';
 import * as config from './config';
 
 import { styles, StatusBar, LoginForm } from '@eweser/examples-components';
-import { WEB_RTC_PEERS } from './config';
 
 // This example shows how to implement a basic login/signup form and a basic note-taking app using @eweser/db
-// The CRUD operations are all done directly on the ydoc.
-// For most real-world use-cases you will probably want to pass the doc to a helper library like synced-store https://syncedstore.org/docs/.
-// or pass the doc to an editor like prosemirror (preferably a subdoc like in the `example-editor` example to maintain interoperability)
+// The CRUD operations are all done directly on the yjs ydoc using the `Documents` object and its methods returned from `db.getDocuments()`
 
 /** basically the code-facing 'name' of a room. This will be used to generate the `roomAlias that matrix uses to identify rooms */
 const aliasSeed = 'notes-default';
@@ -21,11 +18,11 @@ const initialRoomConnect = {
   name: 'My Notes on Life and Things',
 };
 
-// use this to sync webRTC locally with the test-rpc-server
 const db = new Database({
   // set `debug` to true to see debug messages in the console
   // debug: true,
-  webRTCPeers: WEB_RTC_PEERS,
+  // use this to sync webRTC locally with the test-rpc-server started with `npm run start-test-rpc-server`
+  webRTCPeers: config.WEB_RTC_PEERS,
 });
 
 const App = () => {
