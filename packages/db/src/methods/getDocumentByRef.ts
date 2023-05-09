@@ -1,6 +1,5 @@
 import type { Database, Document } from '..';
-import { getRoomDocuments } from '..';
-import { parseRef } from '../utils/db/parseRef';
+import { wait, getRoomDocuments, parseRef } from '../utils';
 
 export const getDocumentByRef =
   (db: Database) =>
@@ -9,12 +8,29 @@ export const getDocumentByRef =
     const { collectionKey, aliasSeed, documentId } = parseRef(ref);
     // load the local room that has the ref and return the document from it
     return new Promise((resolve, reject) => {
-      // if the room is not connected to remote, it will async connect it
-      db.loadAndConnectRoom<T>({ collectionKey, aliasSeed }, (room) => {
+      const returnEarlyIfDocExists = async () => {
+        const room = await db.loadAndConnectRoom<T>(
+          { collectionKey, aliasSeed },
+          (room) => {
+            if (!room) return reject('room not found');
+            const document = getRoomDocuments(room).get(documentId);
+            if (document) {
+              resolve(document);
+            }
+          }
+        );
         if (!room) return reject('room not found');
-        const document = getRoomDocuments(room).get(documentId);
-        if (!document) return reject('document not found');
+        let document = getRoomDocuments(room).get(documentId);
+        if (!document) {
+          // wait a few seconds for the room to sync
+          await wait(2000);
+          document = getRoomDocuments(room).get(documentId);
+          if (!document) return reject('document not found');
+        }
         resolve(document);
+      };
+      returnEarlyIfDocExists().catch(() => {
+        reject('document not found');
       });
     });
   };

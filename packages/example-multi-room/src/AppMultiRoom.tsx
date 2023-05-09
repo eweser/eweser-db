@@ -177,27 +177,20 @@ const RoomsProvider = ({ db }: { db: Database }) => {
   );
 };
 
-const sortNotesByRecent = (notes: Documents<Note>): Documents<Note> => {
-  const sortedArray: [string, Note][] = Object.entries(notes).sort(
-    (a, b) => b[1]._updated - a[1]._updated
-  );
-  return Object.fromEntries(sortedArray);
-};
-
 const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
   const Notes = db.getDocuments(notesRoom);
 
   const [notes, setNotes] = useState<Documents<Note>>(
-    sortNotesByRecent(Notes.getUndeleted())
+    Notes.sortByRecent(Notes.getUndeleted())
   );
 
   const [selectedNote, setSelectedNote] = useState(notes[0]?._id);
 
   // listen for changes to the ydoc and update the state
   Notes.onChange((_event) => {
-    const unDeleted = sortNotesByRecent(Notes.getUndeleted());
+    const unDeleted = Notes.sortByRecent(Notes.getUndeleted());
     setNotes(unDeleted);
-    if (!notes[selectedNote] || notes[selectedNote]?._deleted) {
+    if (!notes[selectedNote] || notes[selectedNote]._deleted) {
       setSelectedNote(Object.keys(unDeleted)[0]);
     }
   });
@@ -210,7 +203,7 @@ const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
   const updateNoteText = (text: string, note?: Note) => {
     if (!note) return;
     note.text = text;
-    Notes.set(note._id, note);
+    Notes.set(note);
   };
 
   const deleteNote = (note: Note) => {

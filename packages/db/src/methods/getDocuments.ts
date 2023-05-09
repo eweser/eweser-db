@@ -26,9 +26,9 @@ export const getDocuments =
       get: (id: string) => {
         return documents.get(id);
       },
-      set: (id: string, doc: T) => {
+      set: (doc: T) => {
         doc._updated = Date.now();
-        return documents.set(id, doc);
+        return documents.set(doc._id, doc);
       },
       new: (doc: DocumentWithoutBase<T>, id?: string) => {
         if (id && documents.get(id)) throw new Error('document already exists');
@@ -73,6 +73,12 @@ export const getDocuments =
         callback: (event: YMapEvent<any>, transaction: Transaction) => void
       ) => {
         documents.observe(callback);
+      },
+      sortByRecent: (docs: Documents<T>): Documents<T> => {
+        const sortedArray = Object.entries(docs).sort(
+          (a, b) => b[1]._updated - a[1]._updated
+        );
+        return Object.fromEntries(sortedArray);
       },
     };
   };

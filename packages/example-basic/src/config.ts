@@ -1,4 +1,4 @@
-const dummyUserName = 'dummy12312313123';
+const dummyUserName = 'dummy-user123';
 const dummyUserPass = 'dumdum';
 
 export const MATRIX_SERVER =

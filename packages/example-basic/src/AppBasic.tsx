@@ -72,28 +72,21 @@ const App = () => {
   );
 };
 
-const sortNotesByRecent = (notes: Documents<Note>): Documents<Note> => {
-  const sortedArray: [string, Note][] = Object.entries(notes).sort(
-    (a, b) => b[1]._updated - a[1]._updated
-  );
-  return Object.fromEntries(sortedArray);
-};
-
 const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
   // This Notes object provides a set of methods for easily updating the documents in the room. It is a wrapper around the ydoc that is provided by the room.
   const Notes = db.getDocuments(notesRoom);
 
   const [notes, setNotes] = useState<Documents<Note>>(
-    sortNotesByRecent(Notes.getUndeleted())
+    Notes.sortByRecent(Notes.getUndeleted())
   );
 
   const [selectedNote, setSelectedNote] = useState(notes[0]?._id);
 
   // listen for changes to the ydoc and update the state
   Notes.onChange((_event) => {
-    const unDeleted = sortNotesByRecent(Notes.getUndeleted());
+    const unDeleted = Notes.sortByRecent(Notes.getUndeleted());
     setNotes(unDeleted);
-    if (!notes[selectedNote] || notes[selectedNote]?._deleted) {
+    if (!notes[selectedNote] || notes[selectedNote]._deleted) {
       setSelectedNote(Object.keys(unDeleted)[0]);
     }
   });
@@ -108,7 +101,7 @@ const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
     if (!note) return;
     note.text = text;
     // Notes.set will update _updated with the current timestamp
-    Notes.set(note._id, note);
+    Notes.set(note);
   };
 
   const deleteNote = (note: Note) => {
@@ -118,7 +111,7 @@ const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
   return (
     <>
       <h1>Edit</h1>
-      {Object.keys(notes).length === 0 ? (
+      {Object.keys(notes)?.length === 0 ? (
         <div>No notes found. Please create one</div>
       ) : (
         <textarea
