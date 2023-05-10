@@ -184,7 +184,36 @@ This is an area that needs further consideration. Community input is appreciated
 - connecting to rooms can be slow depending on the homeserver, especially the `getRoomIdForAlias` call when the homeserver has many rooms it needs to search through. Because the registry stores the id, the second time a room is connected to it should be faster.
 - Developers should minimize the number of rooms the user has connected to at any given time and use `room.matrixProvider.dispose()` to disconnect from rooms when they are not needed. Otherwise you might run into an error saying there are too many event listeners.
 
+# Example apps
+
+- [Basic Notes App](https://eweser-db-example-basic.netlify.app/)
+
+  - view the code at `/packages/example-basic`.
+  - E2E test is in `/e2e/cypress/tests/basic.cy.js`
+
+- [Notes App with Markdown Editor](https://eweser-db-example-editor.netlify.app/)
+
+  - view the code at `/packages/example-editor`.
+  - E2E test is in `/e2e/cypress/tests/editor.cy.js`
+
+- [Interoperability - Notes](https://eweser-db-example-interop-flashcards.netlify.app/) Use this app to link notes in this app to flashcards in the next flashcards app.
+
+  - view the code at `/packages/example-interop-flashcards`.
+  - E2E test is in `/e2e/cypress/tests/interoperability.cy.js`
+
+- [Interoperability - Flashcards](https://eweser-db-example-interop-flashcards.netlify.app/)
+
+  - view the code at `/packages/example-interop-flashcards`.
+  - E2E test is in `/e2e/cypress/tests/interoperability.cy.js`
+
+- Synced store app (no preview)
+
+  - view the code at `/packages/synced-store`.
+  - E2E test is in `/e2e/cypress/tests/synced-store.cy.js`
+
 # Contribute and develop
+
+## How to contribute
 
 - Make an app with EweserDB and provide feedback. We can make an 'awesome-eweserdb' list of interoperable apps that use it.
 - Submit a pull request to add (for example):
@@ -194,13 +223,13 @@ This is an area that needs further consideration. Community input is appreciated
   - a new feature to the `db` package.
   - something from the to do list below.
 
-### Set up local dev
+## Set up local dev
 
 `npm install && lerna bootstrap`
 `npm run dev`
 
-The example apps are in in `packages/example-basic` and `packages/example-editor` etc.
-you
+This will run the example apps in `packages/example-basic` and `packages/example-editor` etc.
+
 Example apps will be served at http://localhost:8000/, http://localhost:8100/, http://localhost:8200/ etc.
 
 Run unit tests by first starting the docker server (make sure you have docker running) with `npm run start-test-server` and then `npm run test`
