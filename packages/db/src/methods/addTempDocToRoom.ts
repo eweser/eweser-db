@@ -1,7 +1,7 @@
 import { IndexeddbPersistence } from 'y-indexeddb';
 import { Doc } from 'yjs';
 import type { Database, Room, YDoc } from '..';
-import { newMatrixProvider } from '../connectionUtils';
+import { newMatrixProvider } from '../utils/connection';
 
 /** adds an extra document and matrix provider to the matrix room, that isn't the central doc/provider which stores eweser documents but is instead used for something else. This is usually used provide a doc to collaborative editors like prosemirror  */
 export const addTempDocToRoom =

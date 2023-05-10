@@ -43,8 +43,6 @@ jobs:
 
       - name: Build packages
         run: npm run build
-        env:
-          CI: true
 
       - name: Wait for Matrix
         run: npx wait-on http://localhost:8888/_matrix/static/
@@ -56,12 +54,10 @@ jobs:
       - name: Run unit/integration tests
         run: npx lerna run test --scope @eweser/db
 
-      - name: Wait on all previews
-
-      - name: Run e2e tests
+      - name: Run e2e tests on all examples
         uses: cypress-io/github-action@v5
         with:
-          browser: chrome
           start: npm run run-example-previews
-          wait-on: http://localhost:8081, http://localhost:8082, http://localhost:8083, http://localhost:8084
+          browser: chrome
+          wait-on: http://localhost:8000, http://localhost:8100, http://localhost:8200, http://localhost:8300, http://localhost:8400, http://localhost:8500
           wait-on-timeout: 180

@@ -1,8 +1,14 @@
 import type { CollectionKey, Database, LoginData } from '..';
-import { checkMatrixProviderConnected } from '../connectionUtils';
-import { awaitOnline } from '../connectionUtils/awaitOnline';
-import { checkServerConnection } from '../connectionUtils/checkServerConnection';
-import { localStorageGet, LocalStorageKey } from '../utils/localStorageService';
+import {
+  checkMatrixProviderConnected,
+  awaitOnline,
+  checkServerConnection,
+} from '../utils';
+
+import {
+  localStorageGet,
+  LocalStorageKey,
+} from '../utils/db/localStorageService';
 
 /**
  * Checks localStorage for loginData and indexedDB for registry. returns false if not found.
@@ -25,7 +31,7 @@ export const load =
         },
       });
     logger('starting load');
-    await checkServerConnection(_db);
+    checkServerConnection(_db);
     // check if loginData is in localStorage
     const loginInfo = localStorageGet<LoginData>(LocalStorageKey.loginData);
     if (!loginInfo || !loginInfo.userId) {

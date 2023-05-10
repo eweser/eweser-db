@@ -6,10 +6,11 @@
     "e2e/example"
   ],
   "scripts": {
-    "release": "lerna run clean && lerna run build --scope=@eweser/db && lerna run build && lerna publish --force-publish=* --no-private",
+    "release": "rm -rf node_modules && lerna run clean && lerna link && npm install && npm run build && npm run copy-readme && lerna publish --force-publish --no-private",
     "test": "lerna run test",
     "test:e2e": "cypress run",
     "clean": "lerna run clean",
+    "copy-readme": "cp README.md packages/db/README.md",
     "build-link:components": "cd packages/examples-components && npm run build; cd ../../; lerna link",
     "build-link:db": "cd packages/db && npm run build; cd ../../; lerna link",
     "build-examples": "run-p build-example:*",
@@ -17,6 +18,8 @@
     "build-example:editor": "cd packages/example-editor && npm run build",
     "build-example:synced-store": "cd packages/example-synced-store && npm run build",
     "build-example:multi-room": "cd packages/example-multi-room && npm run build",
+    "build-example:interop-notes": "cd packages/example-interop-notes && npm run build",
+    "build-example:interop-flashcards": "cd packages/example-interop-flashcards && npm run build",
     "build": "run-s build-link:db build-link:components build-examples",
     "dev": "lerna run dev --parallel",
     "dev-e2e": "cypress open",
@@ -29,10 +32,12 @@
     "run-example-preview:basic": "cd packages/example-basic; npm run preview",
     "run-example-preview:editor": "cd packages/example-editor; npm run preview",
     "run-example-preview:synced-store": "cd packages/example-synced-store; npm run preview",
-    "run-example-preview:multi-room": "cd packages/example-multi-room; npm run preview"
+    "run-example-preview:multi-room": "cd packages/example-multi-room; npm run preview",
+    "run-example-preview:interop-notes": "cd packages/example-interop-notes; npm run preview",
+    "run-example-preview:interop-flashcards": "cd packages/example-interop-flashcards; npm run preview"
   },
   "devDependencies": {
-    "@testing-library/cypress": "^9.0.0",
+    "@testing-library/cypress": "^9.00",
     "cypress": "^12.9.0",
     "idb": "^7.1.1",
     "npm-run-all": "^4.1.5",

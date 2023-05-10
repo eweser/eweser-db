@@ -1,5 +1,5 @@
 import type { Database, CollectionKey } from '..';
-import { autoReconnectListenerName } from '../connectionUtils/autoReconnect';
+import { autoReconnectListenerName } from '../utils';
 export type DisconnectRoomOptions = {
   collectionKey: CollectionKey;
   aliasSeed: string;
@@ -25,13 +25,7 @@ export const disconnectRoom =
 
     if (room.webRtcProvider) {
       room.webRtcProvider.disconnect();
-      room.webRtcProvider.signalingConns.forEach((conn) => {
-        if (conn.connected) {
-          conn.send({ type: 'unsubscribe' });
-          // for some reason `.disconnect()` isn't setting these to false
-          conn.connected = false;
-        }
-      });
+      room.webRtcProvider.destroy();
     }
     if (removeReconnectListener) {
       _db.off(autoReconnectListenerName(room.roomAlias));

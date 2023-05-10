@@ -1,13 +1,14 @@
 import * as http from 'http';
 import * as https from 'https';
+
+import { CollectionKey } from '../types';
 import {
   buildAliasFromSeed,
   buildRegistryRoomAlias,
   buildSpaceRoomAlias,
   getAliasNameFromAlias,
-} from '../connectionUtils';
-import { CollectionKey } from '../types';
-import { randomString } from '../utils';
+  randomString,
+} from '../utils';
 http.globalAgent.maxSockets = 2000;
 https.globalAgent.maxSockets = 2000;
 
@@ -22,8 +23,9 @@ export const MATRIX_HOME_URL = new URL('http://localhost:8888/_matrix/static/');
 
 export const { baseUrl } = matrixTestConfig;
 export const userLoginInfo = () => {
-  const userId = randomString(8);
-  const password = randomString(8);
+  const userId = randomString(12);
+  const password = randomString(12);
+
   return {
     baseUrl,
     userId,

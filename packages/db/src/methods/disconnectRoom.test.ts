@@ -2,22 +2,23 @@ import { describe, it, expect, vitest, afterEach, beforeAll } from 'vitest';
 import {
   CollectionKey,
   Database,
+  autoReconnectListenerName,
   buildAliasFromSeed,
+  checkMatrixProviderConnected,
+  checkWebRtcConnection,
+  createRoom,
   getAliasNameFromAlias,
   getRegistry,
   newDocument,
   randomString,
+  updateRegistryEntry,
   wait,
 } from '..';
-import { checkMatrixProviderConnected, createRoom } from '../connectionUtils';
-import { updateRegistryEntry } from '../connectionUtils/saveRoomToRegistry';
-import { baseUrl, userLoginInfo, localWebRtcServer } from '../test-utils';
+import { baseUrl, localWebRtcServer, userLoginInfo } from '../test-utils';
 import { createMatrixUser } from '../test-utils/matrixTestUtil';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
 import type { RegistryData } from '../types';
 import { loginToMatrix } from './login';
-import { autoReconnectListenerName } from '../connectionUtils/autoReconnect';
-import { checkWebRtcConnection } from '../connectionUtils/connectWebRtc';
 
 const loginInfo = userLoginInfo();
 const { userId, password } = loginInfo;
@@ -80,6 +81,7 @@ describe('disconnectRoom', () => {
     });
 
     expect(resRoom).toBeDefined();
+    if (typeof resRoom === 'string') throw new Error('resRoom undefined');
     expect(resRoom?.roomAlias).toEqual(roomAlias);
     expect(resRoom?.ydoc?.store).toBeDefined();
     expect(checkMatrixProviderConnected(resRoom?.matrixProvider)).toBe(true);
@@ -101,8 +103,8 @@ describe('disconnectRoom', () => {
     //@ts-expect-error //private value
     expect(resRoom.matrixProvider?.disposed).toBe(true);
 
-    const connection = resRoom.webRtcProvider?.signalingConns[0];
-    expect(connection.connected).toBe(false);
+    expect(checkWebRtcConnection(resRoom.webRtcProvider)).toBe(false);
+    expect(checkMatrixProviderConnected(resRoom?.matrixProvider)).toBe(false);
 
     // removes reconnectListener
     const listenersAfter = Object.keys(db.listeners);

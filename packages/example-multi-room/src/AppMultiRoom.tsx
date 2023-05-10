@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ulid } from 'ulid';
-import { CollectionKey, Database, buildRef, newDocument } from '@eweser/db';
+import { CollectionKey, Database } from '@eweser/db';
 import type { Documents, Note, LoginData, Room } from '@eweser/db';
 import * as config from './config';
 
@@ -9,28 +8,6 @@ import { WEB_RTC_PEERS } from './config';
 import type { CSSProperties } from 'react';
 
 const appStyles: { [key: string]: CSSProperties } = {
-  modal: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
-  },
-  modalContent: {
-    position: 'relative',
-    padding: '5rem',
-    background: 'white',
-  },
-  modalCloseButton: {
-    position: 'absolute',
-    top: '1rem',
-    right: '1rem',
-  },
   collectionsList: {
     display: 'flex',
     columnGap: '2rem',
@@ -52,7 +29,7 @@ const initialRoomConnect = {
 
 const db = new Database({
   // set `debug` to true to see debug messages in the console
-  debug: true,
+  // debug: true,
   webRTCPeers: WEB_RTC_PEERS,
 });
 
@@ -68,11 +45,16 @@ const App = () => {
     db.load([initialRoomConnect]);
     return () => {
       db.off('my-listener-name');
-      const registry = db.getCollectionRegistry(collectionKey);
-      // clean up all of the rooms we connected to
-      Object.keys(registry).forEach(([key]) => {
-        db.disconnectRoom({ collectionKey, aliasSeed: key });
-      });
+      db.disconnectRoom(initialRoomConnect);
+      try {
+        const registry = db.getCollectionRegistry(collectionKey);
+        // clean up all of the rooms we connected to
+        Object.keys(registry).forEach(([key]) => {
+          db.disconnectRoom({ collectionKey, aliasSeed: key });
+        });
+      } catch (error) {
+        // console.log(error);
+      }
     };
   }, []);
 
@@ -136,25 +118,13 @@ const RoomsProvider = ({ db }: { db: Database }) => {
     }
   };
 
-  const handleSelectRoom = async (seed: string) => {
+  const handleSelectRoom = async (aliasSeed: string) => {
     setNotesRoom(null);
-    // load the offline first version of the room for a snappy UX
-    const offlineRoom = await db.loadRoom<Note>({
-      collectionKey,
-      aliasSeed: seed,
-    });
-    if (!offlineRoom) return alert('Could not load room');
-    setNotesRoom(offlineRoom);
-
-    // then connect the online version of the room
-    const room = await db.connectRoom<Note>({
-      collectionKey,
-      aliasSeed: seed,
-    });
-    if (typeof room === 'string') {
-      return alert(room);
-    }
-    setNotesRoom(room);
+    const onlineRoom = await db.loadAndConnectRoom<Note>(
+      { collectionKey, aliasSeed },
+      (offlineRoom) => setNotesRoom(offlineRoom)
+    );
+    setNotesRoom(onlineRoom);
   };
 
   return (
@@ -176,11 +146,11 @@ const RoomsProvider = ({ db }: { db: Database }) => {
           + New Collection
         </button>
         {createRoomModalOpen && (
-          <div style={appStyles.modal}>
-            <div style={appStyles.modalContent}>
+          <div style={styles.modal}>
+            <div style={styles.modalContent}>
               <button
                 onClick={() => setCreateRoomModalOpen(false)}
-                style={appStyles.modalCloseButton}
+                style={styles.modalCloseButton}
               >
                 X
               </button>
@@ -207,58 +177,43 @@ const RoomsProvider = ({ db }: { db: Database }) => {
   );
 };
 
-const buildNewNote = () => {
-  const documentId = ulid();
-  const ref = buildRef({
-    collectionKey,
-    aliasSeed,
-    documentId,
-  });
-  return newDocument<Note>(ref, { text: 'New Note Body' });
-};
-
 const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
-  const notesDoc = notesRoom.ydoc?.getMap('documents');
+  const Notes = db.getDocuments(notesRoom);
 
-  const [notes, setNotes] = useState<Documents<Note>>(notesDoc?.toJSON() ?? {});
-  const nonDeletedNotes = Object.keys(notes).filter(
-    (id) => !notes[id]?._deleted
+  const [notes, setNotes] = useState<Documents<Note>>(
+    Notes.sortByRecent(Notes.getUndeleted())
   );
 
-  const [selectedNote, setSelectedNote] = useState(nonDeletedNotes[0]);
+  const [selectedNote, setSelectedNote] = useState(notes[0]?._id);
 
-  notesDoc?.observe((_event) => {
-    setNotes(notesDoc?.toJSON());
+  // listen for changes to the ydoc and update the state
+  Notes.onChange((_event) => {
+    const unDeleted = Notes.sortByRecent(Notes.getUndeleted());
+    setNotes(unDeleted);
+    if (!notes[selectedNote] || notes[selectedNote]._deleted) {
+      setSelectedNote(Object.keys(unDeleted)[0]);
+    }
   });
 
-  const setNote = (note: Note) => {
-    notesDoc?.set(note._id, note);
-  };
-
   const createNote = () => {
-    const newNote = buildNewNote();
-    setNote(newNote);
+    const newNote = Notes.new({ text: 'New Note Body' });
     setSelectedNote(newNote._id);
   };
 
   const updateNoteText = (text: string, note?: Note) => {
     if (!note) return;
     note.text = text;
-    setNote(note);
+    Notes.set(note);
   };
 
   const deleteNote = (note: Note) => {
-    // This marks the document safe to delete from the database after 30 days
-    const oneMonth = 1000 * 60 * 60 * 24 * 30;
-    note._deleted = true;
-    note._ttl = new Date().getTime() + oneMonth;
-    setNote(note);
+    Notes.delete(note._id);
   };
 
   return (
     <>
       <h1>Edit</h1>
-      {nonDeletedNotes.length === 0 ? (
+      {Object.keys(notes).length === 0 ? (
         <div>No notes found. Please create one</div>
       ) : (
         <textarea
@@ -276,7 +231,7 @@ const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
       <button onClick={() => createNote()}>New note</button>
 
       <div style={styles.flexWrap}>
-        {nonDeletedNotes.map((id) => {
+        {Object.keys(notes).map((id) => {
           const note = notes[id];
           if (note && !notes[id]?._deleted)
             return (
@@ -286,7 +241,10 @@ const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
                 key={note._id}
               >
                 <button
-                  onClick={() => deleteNote(note)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteNote(note);
+                  }}
                   style={styles.deleteButton}
                 >
                   X

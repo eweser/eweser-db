@@ -76,14 +76,11 @@ import type { Note } from '@eweser/db';
 
 const db = new Database();
 
-const collectionKey = 'notes';
-const aliasSeed = 'notes-default';
-const initialRoomConnect = {
-  collectionKey,
-  aliasSeed,
-};
+const collectionKey = 'notes'; // or use the enum CollectionKey exported from the db package
+const aliasSeed = 'notes-default'; // basically the code-facing 'name' of a room
+const initialRoomConnect = { collectionKey, aliasSeed };
 
-// If a user has previously logged in `load` will try to start up the database connected to the collections provided in the array.
+// If a user has previously logged in, `load` will try to start up the database and connect to the collections provided in the array.
 // If offline, it will open up a local-only database and the user can start interacting with the data immediately. If online, it will also connect the matrix rooms and start syncing.
 db.load([initialRoomConnect]);
 
@@ -100,26 +97,23 @@ db.on('my-listener', ({ event }) => {
   }
 });
 
-const room = db.getRoom<Note>(collectionKey, aliasSeed); // this is a matrix room that stores a collection of note documents
+const room = db.getRoom<Note>(collectionKey, aliasSeed); // this is a matrix room that stores a collection of note documents which share a `Note` schema.
 
-// the room prepares a yjs doc that you can use to make changes and listen for changes
-const doc = room.ydoc.getMap('documents');
-doc.observe((event) => {
+// This Notes object provides a set of methods for easily updating the documents in the room. It is a wrapper around the ydoc that is provided by the room.
+const Notes = db.getDocuments(notesRoom);
+
+Notes.OnChange((event) => {
   console.log('ydoc changed', event);
 });
 
-const newNote: Note = {
-  _id: 'note-id',
-  text: 'hello world',
-};
-doc.set(newNote._id, newNote);
+Notes.new({ text: 'hello world' });
 ```
 
 That's it! 🚀🚀🚀 You now have a user-owned database that syncs between devices and apps.
 
-Try opening in another browser or device and see the changes sync. Refresh the page and see the data persist. Turn off your internet and see the data still updates.
-
-Consider using [syncedStore](https://syncedstore.org/docs/) to make manipulating the ydoc even easier.
+Try opening in another browser or device and notice the changes sync.
+Refresh the page and notice the data persists.
+Turn off your internet and notice the data still updates.
 
 # Features
 
@@ -137,8 +131,6 @@ Say you wanted to store a reference to a note from a flashcard, you could add th
   note_ref: db.buildRef('notes', 'default', 'note-id'),
 }
 ```
-
-when using a document ref in another document, remember to add the `_ref` suffix to the property name. e.g. `flashcardRef` becomes `flashcardRef_ref`.
 
 ## Rooms
 
@@ -192,7 +184,36 @@ This is an area that needs further consideration. Community input is appreciated
 - connecting to rooms can be slow depending on the homeserver, especially the `getRoomIdForAlias` call when the homeserver has many rooms it needs to search through. Because the registry stores the id, the second time a room is connected to it should be faster.
 - Developers should minimize the number of rooms the user has connected to at any given time and use `room.matrixProvider.dispose()` to disconnect from rooms when they are not needed. Otherwise you might run into an error saying there are too many event listeners.
 
+# Example apps
+
+- [Basic Notes App](https://eweser-db-example-basic.netlify.app/)
+
+  - view the code at `/packages/example-basic`.
+  - E2E test is in `/e2e/cypress/tests/basic.cy.js`
+
+- [Notes App with Markdown Editor](https://eweser-db-example-editor.netlify.app/)
+
+  - view the code at `/packages/example-editor`.
+  - E2E test is in `/e2e/cypress/tests/editor.cy.js`
+
+- [Interoperability - Notes](https://eweser-db-example-interop-flashcards.netlify.app/) Use this app to link notes in this app to flashcards in the next flashcards app.
+
+  - view the code at `/packages/example-interop-flashcards`.
+  - E2E test is in `/e2e/cypress/tests/interoperability.cy.js`
+
+- [Interoperability - Flashcards](https://eweser-db-example-interop-flashcards.netlify.app/)
+
+  - view the code at `/packages/example-interop-flashcards`.
+  - E2E test is in `/e2e/cypress/tests/interoperability.cy.js`
+
+- Synced store app (no preview)
+
+  - view the code at `/packages/synced-store`.
+  - E2E test is in `/e2e/cypress/tests/synced-store.cy.js`
+
 # Contribute and develop
+
+## How to contribute
 
 - Make an app with EweserDB and provide feedback. We can make an 'awesome-eweserdb' list of interoperable apps that use it.
 - Submit a pull request to add (for example):
@@ -202,14 +223,14 @@ This is an area that needs further consideration. Community input is appreciated
   - a new feature to the `db` package.
   - something from the to do list below.
 
-### Set up local dev
+## Set up local dev
 
 `npm install && lerna bootstrap`
 `npm run dev`
 
-The example apps are in in `packages/example-basic` and `packages/example-editor` etc.
-you
-Example apps will be served at `http://localhost:8081/`, `http://localhost:8082/` etc.
+This will run the example apps in `packages/example-basic` and `packages/example-editor` etc.
+
+Example apps will be served at http://localhost:8000/, http://localhost:8100/, http://localhost:8200/ etc.
 
 Run unit tests by first starting the docker server (make sure you have docker running) with `npm run start-test-server` and then `npm run test`
 
@@ -218,11 +239,6 @@ Run e2e tests headless once with `npm run test:e2e`, or with `npm run dev-e2e` t
 # To Do
 
 Priority:
-
-- [ ] set up cross collection reference links and helpers. -`async getLinkedRef()` connect the linked ref’s room if needed and retrieve the linked document
-- [ ] **Example**: connect data from 2 apps with refs. e.g. in a note, click ‘turn into flashcard’ and it creates a flashcard in the flashcard app and links to it in the note.
-
---- at this point ready to make real apps ---
 
 - [ ] **Files:** set up file hosting provider services like Pinata, Dropbox, etc. and give users the option to connect their accounts to the app. Could also try the ‘matrix files’ [library](~https://github.com/matrix-org/matrix-files-sdk~).
 - [ ] **Public data**: set up ‘aggregator’ listeners when a user makes a collection as public. These will be MatrixReader’s that live on a node server and listen for changes to the collection. How to aggregate and serve to public listeners?

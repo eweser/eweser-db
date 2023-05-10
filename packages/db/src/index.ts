@@ -1,6 +1,5 @@
 import { collectionKeys, collections, initialRegistry } from './collections';
-import { buildAliasFromSeed, newMatrixProvider } from './connectionUtils';
-import { pollConnection } from './connectionUtils/pollConnection';
+
 import { connectRegistry } from './methods/connectRegistry';
 import { connectRoom } from './methods/connectRoom';
 import { createAndConnectRoom } from './methods/createAndConnectRoom';
@@ -14,16 +13,20 @@ import type {
   LoginStatus,
 } from './types';
 import type { MatrixClient } from 'matrix-js-sdk';
-import { getCollectionRegistry, getRoom } from './utils';
+import { buildAliasFromSeed, getCollectionRegistry, getRoom } from './utils';
 import { load } from './methods/load';
 import { addTempDocToRoom } from './methods/addTempDocToRoom';
 import { disconnectRoom } from './methods/disconnectRoom';
-import { loadRoom } from './connectionUtils/loadRoom';
+import { loadRoom } from './utils/connection/loadRoom';
+import { pollConnection } from './utils/connection/pollConnection';
+import { loadAndConnectRoom } from './methods/loadAndConnectRoom';
+import { getDocumentByRef } from './methods/getDocumentByRef';
+import { getDocuments } from './methods/getDocuments';
 
 export type {
   Profile,
   Note,
-  FlashCard,
+  Flashcard,
   Collection,
   Collections,
   ConnectStatus,
@@ -39,9 +42,7 @@ export type {
 export type { TypedMap, TypedDoc } from 'yjs-types';
 export { CollectionKey } from './types'; // enum exported not as a type
 
-export * from './connectionUtils/aliasHelpers';
 export * from './utils';
-export { newMatrixProvider };
 
 const defaultRtcPeers = [
   'wss://signaling.yjs.dev',
@@ -95,7 +96,9 @@ export class Database {
   createAndConnectRoom = createAndConnectRoom(this);
   addTempDocToRoom = addTempDocToRoom(this);
   loadRoom = loadRoom(this);
-
+  loadAndConnectRoom = loadAndConnectRoom(this);
+  getDocumentByRef = getDocumentByRef(this);
+  getDocuments = getDocuments(this);
   login = login(this);
   signup = signup(this);
   load = load(this);

@@ -1,7 +1,6 @@
 import { memo, useCallback, useEffect, useState } from 'react';
-import { CollectionKey, Database, buildRef, newDocument } from '@eweser/db';
-import type { Documents, Note, LoginData } from '@eweser/db';
-import { ulid } from 'ulid';
+import { CollectionKey, Database } from '@eweser/db';
+import type { Documents, Note, LoginData, Room } from '@eweser/db';
 
 import * as config from './config';
 
@@ -52,11 +51,11 @@ const App = () => {
     db.signup({ initialRoomConnect, ...loginData });
 
   const defaultNotesRoom = db.getRoom<Note>(collectionKey, aliasSeed);
-  const notesDoc = defaultNotesRoom?.ydoc?.getMap('documents');
+
   return (
     <div style={styles.appRoot}>
-      {started && notesDoc && defaultNotesRoom?.ydoc ? (
-        <NotesInternal db={db} />
+      {started && defaultNotesRoom?.ydoc ? (
+        <NotesInternal notesRoom={defaultNotesRoom} />
       ) : (
         <LoginForm
           handleLogin={handleLogin}
@@ -70,18 +69,6 @@ const App = () => {
   );
 };
 
-const buildNewNote = () => {
-  const documentId = ulid();
-
-  // a ref is used to build up links between documents. It is a string that looks like `collectionKey:aliasSeed:documentId`
-  const ref = buildRef({
-    collectionKey,
-    aliasSeed,
-    documentId,
-  });
-
-  return newDocument<Note>(ref, { text: 'My __markdown__ note' });
-};
 /**
  * We memoize the editor so that it only updates when the note changes.
  * We are doing some important doc connections in this component so please see `./Editor.tsx` for details
@@ -91,54 +78,40 @@ const EditorMemoIzed = memo(MilkdownEditor, (prev, next) => {
   return doNotUpdate;
 });
 
-const NotesInternal = ({ db }: { db: Database }) => {
-  const notesRoom = db.getRoom<Note>(collectionKey, aliasSeed);
-  const notesDoc = notesRoom?.ydoc?.getMap('documents');
-  const [notes, setNotes] = useState<Documents<Note>>(notesDoc?.toJSON() ?? {});
-
-  const nonDeletedNotes = Object.keys(notes).filter(
-    (id) => !notes[id]?._deleted
+const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
+  const Notes = db.getDocuments(notesRoom);
+  const [notes, setNotes] = useState<Documents<Note>>(
+    Notes.sortByRecent(Notes.getUndeleted())
   );
 
-  const [selectedNote, setSelectedNote] = useState(nonDeletedNotes[0]);
+  const [selectedNote, setSelectedNote] = useState(notes[0]?._id);
 
-  notesDoc?.observe((_event) => {
-    setNotes(notesDoc?.toJSON());
+  Notes?.onChange((_event) => {
+    const unDeleted = Notes.sortByRecent(Notes.getUndeleted());
+    setNotes(unDeleted);
+    if (!notes[selectedNote] || notes[selectedNote]._deleted) {
+      setSelectedNote(Object.keys(unDeleted)[0]);
+    }
   });
 
-  const setNote = useCallback(
-    (note: Note) => {
-      notesDoc?.set(note._id, note);
-    },
-    [notesDoc]
-  );
-
   const createNote = () => {
-    const newNote = buildNewNote();
-    setNote(newNote);
+    const newNote = Notes.new({ text: 'My __markdown__ note' });
     setSelectedNote(newNote._id);
+  };
+
+  const deleteNote = (note: Note) => {
+    Notes.delete(note._id);
+    notesRoom.tempDocs[note._ref]?.matrixProvider?.dispose();
   };
 
   const updateNoteText = useCallback(
     (text: string, note?: Note) => {
       if (!note) return;
       note.text = text;
-      setNote(note);
+      Notes.set(note);
     },
-    [setNote]
+    [Notes]
   );
-
-  const deleteNote = (note: Note) => {
-    const oneMonth = 1000 * 60 * 60 * 24 * 30;
-    note._deleted = true;
-    note._ttl = new Date().getTime() + oneMonth;
-    const nonDeletedNotes = Object.keys(notes).filter(
-      (id) => !notes[id]?._deleted && note._id !== id
-    );
-    notesRoom?.tempDocs[note._ref]?.matrixProvider?.dispose();
-    setSelectedNote(nonDeletedNotes[0]);
-    setNote(note);
-  };
 
   return (
     <>
@@ -153,7 +126,7 @@ const NotesInternal = ({ db }: { db: Database }) => {
           room: notesRoom!,
         }}
       />
-      {nonDeletedNotes.length === 0 && (
+      {Object.keys(notes).length === 0 && (
         <div>No notes found. Please create one</div>
       )}
 
@@ -162,7 +135,7 @@ const NotesInternal = ({ db }: { db: Database }) => {
       <button onClick={() => createNote()}>New note</button>
 
       <div style={styles.flexWrap}>
-        {nonDeletedNotes.map((id) => {
+        {Object.keys(notes).map((id) => {
           const note = notes[id];
           if (note && !notes[id]?._deleted)
             return (

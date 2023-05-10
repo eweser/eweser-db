@@ -1,8 +1,8 @@
 import type { RegistryCollection } from '../types';
 import { CollectionKey } from '../types';
 
-export * from './notes';
-export * from './flashcards';
+export * from './note';
+export * from './flashcard';
 export * from './profile';
 export * from './documentBase';
 

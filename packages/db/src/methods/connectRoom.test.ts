@@ -1,20 +1,21 @@
 import { describe, it, expect, vitest, beforeAll, afterEach } from 'vitest';
 
-import { randomString, wait } from '..';
-import { CollectionKey, Database, buildAliasFromSeed } from '..';
-import { checkMatrixProviderConnected } from '../connectionUtils';
+import { CollectionKey, Database } from '../../';
+import {
+  checkMatrixProviderConnected,
+  checkWebRtcConnection,
+  randomString,
+  wait,
+  buildAliasFromSeed,
+} from '../utils';
 import { baseUrl, localWebRtcServer, userLoginInfo } from '../test-utils';
 
-import { createMatrixUser } from '../test-utils/matrixTestUtil';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
 
-import { checkWebRtcConnection } from '../connectionUtils/connectWebRtc';
 const loginInfo = userLoginInfo();
-const { userId, password } = loginInfo;
 
 beforeAll(async () => {
   await ensureMatrixIsRunning();
-  await createMatrixUser(userId, password);
 }, 60000);
 afterEach(() => {
   localStorage.clear();
@@ -26,7 +27,7 @@ describe('connectRoom', () => {
   * 2. Creates a Y.Doc, syncs with localStorage (indexeddb) and saves it to the room object
   * 3. Creates a matrixCRDT provider and saves it to the room object
   * 4. Save the room's metadata to the registry (if not already there)
-  * 5. saves teh room to the DB.collections, indexed by the aliasSeed, including the name of the collection
+  * 5. saves the room to the DB.collections, indexed by the aliasSeed, including the name of the collection
   * 6. Populates the ydoc with initial values if passed any
   * 7. Sets up a listener for if going from offline to online, and then re-connects the room
   * 8. Sets up a listener for if going from online to offline, and then disconnects the room  * `, async () => {
@@ -37,13 +38,16 @@ describe('connectRoom', () => {
 
     const aliasSeed = 'test' + randomString(12);
 
-    await db1.signup({
+    const signupRes = await db1.signup({
       ...loginInfo,
       initialRoomConnect: {
         aliasSeed,
         collectionKey: CollectionKey.flashcards,
       },
     });
+    if (typeof signupRes === 'string') {
+      throw new Error('failed to signup: ' + signupRes);
+    }
 
     const roomAlias = buildAliasFromSeed(
       aliasSeed,
@@ -51,9 +55,15 @@ describe('connectRoom', () => {
       db1.userId
     );
 
+    await db1.disconnectRoom({
+      aliasSeed,
+      collectionKey: CollectionKey.flashcards,
+    });
+
     const db = new Database({
       baseUrl,
       webRTCPeers: [localWebRtcServer],
+      // debug: true,
     });
     await db.login(loginInfo);
 
@@ -67,6 +77,7 @@ describe('connectRoom', () => {
     });
 
     expect(resRoom).toBeDefined();
+    if (typeof resRoom === 'string') throw new Error('failed to connect');
     expect(resRoom?.roomAlias).toEqual(roomAlias);
     expect(resRoom?.ydoc?.store).toBeDefined();
     expect(checkMatrixProviderConnected(resRoom?.matrixProvider)).toBe(true);
@@ -79,6 +90,7 @@ describe('connectRoom', () => {
     expect(eventListener).toHaveBeenCalled();
     const calls = eventListener.mock.calls;
     const callMessages = calls.map((call) => call[0].message);
+
     expect(callMessages).toContain('starting connectRoom');
     expect(callMessages).toContain('room joined');
     expect(callMessages).toContain('ydoc created');

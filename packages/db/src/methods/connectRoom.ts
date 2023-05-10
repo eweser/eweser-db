@@ -1,10 +1,3 @@
-import {
-  checkMatrixProviderConnected,
-  connectMatrixProvider,
-  getAliasSeedFromAlias,
-  getRoomId,
-  joinRoomIfNotJoined,
-} from '../connectionUtils';
 import type {
   CollectionKey,
   Document,
@@ -15,21 +8,34 @@ import type {
   CreateAndConnectRoomOptions,
   UserDocument,
 } from '../types';
-import type { Database } from '..';
-import { buildRef, newDocument, randomString } from '..';
-import { getOrSetRoom } from '..';
-import { buildAliasFromSeed } from '..';
-import { initializeDocAndLocalProvider } from '../connectionUtils/initializeDoc';
-import { waitForRegistryPopulated } from '../connectionUtils/populateRegistry';
-import { updateRegistryEntry } from '../connectionUtils/saveRoomToRegistry';
+import type { Database } from '../';
 import {
-  checkWebRtcConnection,
-  connectWebRtcProvider,
-  waitForWebRtcConnection,
-} from '../connectionUtils/connectWebRtc';
-import { LocalStorageKey, localStorageGet } from '../utils/localStorageService';
+  buildRef,
+  newDocument,
+  randomString,
+  getOrSetRoom,
+  buildAliasFromSeed,
+} from '../utils';
+
+import {
+  LocalStorageKey,
+  localStorageGet,
+} from '../utils/db/localStorageService';
 import { Doc } from 'yjs';
-import { autoReconnect } from '../connectionUtils/autoReconnect';
+import {
+  checkMatrixProviderConnected,
+  connectMatrixProvider,
+  getAliasSeedFromAlias,
+  getRoomId,
+  joinRoomIfNotJoined,
+  updateRegistryEntry,
+  checkWebRtcConnection,
+  waitForRegistryPopulated,
+  connectWebRtcProvider,
+  initializeDocAndLocalProvider,
+  waitForWebRtcConnection,
+  autoReconnect,
+} from '../utils';
 
 const checkIfRoomIsInRegistry = async (
   _db: Database,
@@ -184,8 +190,8 @@ export const connectRoom =
         return room as Room<T>;
       }
 
-      const ydoc = room.ydoc?.store ?? (new Doc() as YDoc<T>);
-
+      const ydoc = room.ydoc?.store ? room.ydoc : (new Doc() as YDoc<T>);
+      room.ydoc = ydoc as any;
       if (_db.useIndexedDB && !indexedDBConnected) {
         const { ydoc: localDoc, localProvider } =
           await initializeDocAndLocalProvider<any>(aliasSeed);
@@ -203,16 +209,24 @@ export const connectRoom =
 
       if (_db.useWebRTC && !webRtcConnected && _db.webRtcPeers.length > 0) {
         try {
+          let provider = room.webRtcProvider;
           const password =
             localStorageGet<LoginData>(LocalStorageKey.loginData)?.password ??
             '';
-          const { provider, doc } = connectWebRtcProvider(
-            _db,
-            roomAlias,
-            ydoc as Doc,
-            password
-          );
-          room.ydoc = doc as any;
+          if (provider) {
+            provider.doc = ydoc as any;
+            provider.connect();
+          } else {
+            const { provider: newProvider, doc } = connectWebRtcProvider(
+              _db,
+              roomAlias,
+              ydoc as Doc,
+              password
+            );
+            room.ydoc = doc as any;
+            provider = newProvider;
+          }
+
           if (waitForWebRTC) {
             await waitForWebRtcConnection(provider);
           }

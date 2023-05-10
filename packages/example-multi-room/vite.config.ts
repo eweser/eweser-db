@@ -10,6 +10,7 @@ export default defineConfig({
   build: {
     minify: false,
     rollupOptions: {
+      //@ts-expect-error
       plugins: [nodePolyfills()],
     },
   },
@@ -17,9 +18,9 @@ export default defineConfig({
     global: 'window',
   },
   preview: {
-    port: 8084,
+    port: 8300,
   },
   server: {
-    port: 8084,
+    port: 8300,
   },
 });
