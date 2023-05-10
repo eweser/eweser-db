@@ -54,7 +54,7 @@ jobs:
       - name: Run unit/integration tests
         run: npx lerna run test --scope @eweser/db
 
-      - name: Run e2e tests
+      - name: Run e2e tests on all examples
         uses: cypress-io/github-action@v5
         with:
           start: npm run run-example-previews
