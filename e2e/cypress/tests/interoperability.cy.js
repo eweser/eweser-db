@@ -1,10 +1,21 @@
 /// <reference types="Cypress" />
 
-describe('Index Page', { baseUrl: 'http://localhost:8200' }, () => {
-  const username = 'user' + Math.random().toString(36).substring(7);
-  const password = 'password' + Math.random().toString(36).substring(7);
+const username = 'the-usesr'; // these can't be random because otherwise they get reset each time we call cy.visit()
+const password = 'the-password';
+describe('Index Page', () => {
+  const login = () => {
+    cy.visit('http://localhost:8400/');
+    cy.contains('Log In');
+    cy.get('input[name=username]').clear().type(username);
+    cy.get('input[type=password]').clear().type(password);
+    cy.contains('no local database found');
+    cy.get('button').contains('Log in').click();
+
+    cy.contains('Edit', { timeout: 30000 });
+  };
+  // app basic functions work
   it('should register user', () => {
-    cy.visit('/');
+    cy.visit('http://localhost:8400/');
     cy.contains('Sign up').click();
     cy.get('input[name=username]').clear().type(username);
     cy.get('input[type=password]').clear().type(password);
@@ -14,15 +25,8 @@ describe('Index Page', { baseUrl: 'http://localhost:8200' }, () => {
     cy.contains('No notes found. Please create one');
   });
   it('should login, create, edit, delete notes', () => {
-    cy.visit('/');
-
-    cy.contains('Log In');
-    cy.get('input[name=username]').clear().type(username);
-    cy.get('input[type=password]').clear().type(password);
-    cy.get('button').contains('Log in').click();
-
+    login();
     // logged in and loaded
-    cy.contains('Edit', { timeout: 30000 });
     cy.contains('Notes');
 
     cy.contains('No notes found. Please create one');
@@ -46,14 +50,7 @@ describe('Index Page', { baseUrl: 'http://localhost:8200' }, () => {
   });
   it('should open app right away if credentials exist. It should allow offline editing using localStorage', async () => {
     // if the login credentials and offline database exist in localStorage, allow to open and use the app right away. Send a login and request connect when internet connection is available again
-    cy.visit('/');
-    cy.contains('Log In');
-    cy.get('input[name=username]').clear().type(username);
-    cy.get('input[type=password]').clear().type(password);
-    cy.contains('no local database found');
-    cy.get('button').contains('Log in').click();
-
-    cy.contains('Edit', { timeout: 30000 });
+    login();
 
     cy.reload();
     cy.contains('loading local database');
@@ -77,7 +74,7 @@ describe('Index Page', { baseUrl: 'http://localhost:8200' }, () => {
     cy.contains('remote server synced');
   });
   it('shows error on incorrect login info', () => {
-    cy.visit('/');
+    cy.visit('http://localhost:8400/');
 
     cy.contains('Log In');
     cy.contains('Invalid username or password').should('not.exist');
@@ -86,5 +83,46 @@ describe('Index Page', { baseUrl: 'http://localhost:8200' }, () => {
     cy.get('input[type=password]').clear().type('wrong password');
     cy.get('button').contains('Log in').click();
     cy.contains('Invalid username or password');
+  });
+  // interop stuff
+  it('can create a flashcard linked to a note', () => {
+    cy.visit('http://localhost:8500');
+
+    cy.contains('Log In');
+    cy.get('input[name=username]').clear().type(username);
+    cy.get('input[type=password]').clear().type(password);
+    cy.get('button').contains('Log in').click();
+    cy.contains('Flashcards', { timeout: 30000 });
+    cy.contains('No flashcards found. Please create one');
+    cy.contains('What is the meaning of life?').should('not.exist');
+    cy.contains('Hello Interoperability!').should('not.exist');
+
+    login();
+
+    cy.contains('New note').click();
+    cy.contains('New Note Body');
+    cy.get('textarea').clear().type('Hello Interoperability!');
+
+    cy.contains('Link flashcard').click();
+    cy.contains('New flashcard').click();
+    cy.get('input[id=front-text]').type('What is the meaning of life?');
+    cy.get('input[id=back-text]').clear().type('42');
+    cy.contains('Create').click();
+
+    cy.visit('http://localhost:8500');
+
+    cy.contains('Flashcards', { timeout: 30000 }); // will log in automatically cause second time returning.
+
+    // the flashcard we made in the other app should be here
+    cy.contains('No flashcards found. Please create one', {
+      timeout: 60000,
+    }).should('not.exist');
+    cy.contains('What is the meaning of life?');
+    cy.contains('42').should('not.exist');
+    cy.contains('Show Answer').click();
+    cy.contains('42');
+
+    cy.contains('Linked Notes:');
+    cy.contains('Hello Interoperability!');
   });
 });

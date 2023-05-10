@@ -280,14 +280,14 @@ const LinkFlashcardModal = ({
                   </button>
                   <NewFlashcardModal
                     room={room}
-                    noteText={note.text ?? ''}
+                    note={note}
                     setNewFlashcardModalOpen={setNewFlashcardModalOpen}
                   />
                 </div>
               </div>
             )}
             <button onClick={() => setNewFlashcardModalOpen(true)}>
-              New Flashcard
+              New flashcard
             </button>
             <p> Click a flashcard to link to note:</p>
             {Object.values(Flashcards.getUndeleted())?.map((flashcard) => (
@@ -335,19 +335,19 @@ const FlashcardComponent = ({
 
 const NewFlashcardModal = ({
   room,
-  noteText,
+  note,
   setNewFlashcardModalOpen,
 }: {
   room: Room<Flashcard>;
-  noteText: string;
+  note: Note;
   setNewFlashcardModalOpen: (open: boolean) => void;
 }) => {
   const [frontText, setFrontText] = useState('');
-  const [backText, setBackText] = useState(noteText);
+  const [backText, setBackText] = useState(note.text);
 
   const handleCreateFlashcard = async () => {
     const Flashcards = db.getDocuments(room);
-    Flashcards.new({ frontText, backText });
+    Flashcards.new({ frontText, backText, noteRefs: [note._ref] });
     setNewFlashcardModalOpen(false);
   };
   return (
