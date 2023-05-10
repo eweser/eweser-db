@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "@eweser/db": "^1.4.0",
-    "@eweser/examples-components": "^1.4.0",
+    "@eweser/examples-components": "*",
     "events": "3.3.0",
     "matrix-crdt": "0.2.1-alpha.1",
     "matrix-js-sdk": "^19.4.0",
