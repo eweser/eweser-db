@@ -41,17 +41,13 @@
     "@milkdown/react": "^7.1.1",
     "@milkdown/theme-nord": "^7.1.1",
     "@milkdown/transformer": "^7.1.1",
+    "buffer": "^6.0.3",
     "events": "3.3.0",
-    "matrix-crdt": "0.2.1-alpha.1",
-    "matrix-js-sdk": "^19.4.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.10.0",
-    "ulid": "^2.3.0",
-    "y-indexeddb": "^9.0.9",
     "y-prosemirror": "^1.2.1",
-    "y-protocols": "^1.0.5",
-    "yjs": "^13.5.16"
+    "util": "^0.12.5"
   },
   "devDependencies": {
     "@eweser/eslint-config-react-ts": "^1.4.0",

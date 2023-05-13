@@ -32,11 +32,11 @@
   "dependencies": {
     "@eweser/db": "^1.4.0",
     "@eweser/examples-components": "*",
+    "buffer": "^6.0.3",
     "events": "3.3.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.10.0",
-    "util": "^0.12.5"
+    "react-router-dom": "^6.10.0"
   },
   "devDependencies": {
     "@eweser/eslint-config-react-ts": "^1.4.0",

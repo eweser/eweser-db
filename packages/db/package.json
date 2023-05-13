@@ -67,6 +67,7 @@
     "matrix-crdt": "0.2.1-alpha.1",
     "matrix-js-sdk": "^19.4.0",
     "y-indexeddb": "^9.0.9",
+    "y-protocols": "^1.0.5",
     "yjs": "^13.5.16",
     "y-webrtc": "^10.2.5"
   }
