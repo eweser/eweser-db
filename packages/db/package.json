@@ -1,6 +1,6 @@
 {
   "name": "@eweser/db",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "eweser-db core database",
   "keywords": [
     "user-owned",
@@ -68,7 +68,7 @@
     "matrix-js-sdk": "^19.4.0",
     "y-indexeddb": "^9.0.9",
     "y-protocols": "^1.0.5",
-    "yjs": "^13.5.16",
-    "y-webrtc": "^10.2.5"
+    "y-webrtc": "^10.2.5",
+    "yjs": "^13.5.16"
   }
 }
