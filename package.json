@@ -23,7 +23,7 @@
     "build": "run-s build-link:db build-link:components build-examples",
     "dev": "lerna run dev --parallel",
     "dev-e2e": "cypress open",
-    "ci-build": "rm -rf package-lock.json && npm install && npm run build",
+    "ci-build": "rm -rf package-lock.json && npm install @esbuild/linux-x64 && npm run build",
     "start-test-server": "cd test-server; docker-compose up -d",
     "start-test-rpc-server": "cd test-rpc-server; node server.js",
     "install-lerna": "npm install --no-package-lock",
