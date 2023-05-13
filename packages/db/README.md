@@ -64,9 +64,7 @@ This flipping of the ownership dynamic enables some important features:
 
 `npm install @eweser/db`
 
-and also our peer dependencies (currently not bundled, but could be based on feedback/user preference)
-
-`npm install matrix-crdt matrix-js-sdk`
+Note: You'll probably also need to add some node.js polyfills for the browser, see `packages/example-basic`'s `package.json`, `vite.config.js`, and `index.html` for an example.
 
 This is a simplified example. For a more use cases and working demos see the example apps like `packages/example-basic/src/App.tsx`
 
@@ -102,7 +100,7 @@ const room = db.getRoom<Note>(collectionKey, aliasSeed); // this is a matrix roo
 // This Notes object provides a set of methods for easily updating the documents in the room. It is a wrapper around the ydoc that is provided by the room.
 const Notes = db.getDocuments(notesRoom);
 
-Notes.OnChange((event) => {
+Notes.onChange((event) => {
   console.log('ydoc changed', event);
 });
 
@@ -184,7 +182,37 @@ This is an area that needs further consideration. Community input is appreciated
 - connecting to rooms can be slow depending on the homeserver, especially the `getRoomIdForAlias` call when the homeserver has many rooms it needs to search through. Because the registry stores the id, the second time a room is connected to it should be faster.
 - Developers should minimize the number of rooms the user has connected to at any given time and use `room.matrixProvider.dispose()` to disconnect from rooms when they are not needed. Otherwise you might run into an error saying there are too many event listeners.
 
+# Example apps
+
+- [Basic Notes App](https://eweser-db-example-basic.netlify.app/), dev [url](http://localhost:8000/)
+
+  - view the code at `/packages/example-basic`.
+  - E2E test is in `/e2e/cypress/tests/basic.cy.js`
+
+- [Notes App with Markdown Editor](https://eweser-db-example-editor.netlify.app/), dev [url](http://localhost:8100/)
+
+  - view the code at `/packages/example-editor`.
+  - E2E test is in `/e2e/cypress/tests/editor.cy.js`
+
+- [Multi-room](https://eweser-db-example-editor.netlify.app/), dev [url](http://localhost:8300/)
+
+  - view the code at `/packages/example-multi-room`.
+  - E2E test is in `/e2e/cypress/tests/multi-room.cy.js`
+
+- [Interoperability - Notes](https://eweser-db-example-interop-flashcards.netlify.app/), dev [url](http://localhost:8400/)
+  Use this app to link notes in this app to flashcards in the next flashcards app.
+
+  - view the code at `/packages/example-interop-flashcards`.
+  - E2E test is in `/e2e/cypress/tests/interoperability.cy.js`
+
+- [Interoperability - Flashcards](https://eweser-db-example-interop-flashcards.netlify.app/), dev [url](http://localhost:8500/)
+
+  - view the code at `/packages/example-interop-flashcards`.
+  - E2E test is in `/e2e/cypress/tests/interoperability.cy.js`
+
 # Contribute and develop
+
+## How to contribute
 
 - Make an app with EweserDB and provide feedback. We can make an 'awesome-eweserdb' list of interoperable apps that use it.
 - Submit a pull request to add (for example):
@@ -194,14 +222,14 @@ This is an area that needs further consideration. Community input is appreciated
   - a new feature to the `db` package.
   - something from the to do list below.
 
-### Set up local dev
+## Set up local dev
 
 `npm install && lerna bootstrap`
 `npm run dev`
 
-The example apps are in in `packages/example-basic` and `packages/example-editor` etc.
-you
-Example apps will be served at http://localhost:8000/, http://localhost:8100/, http://localhost:8200/ etc.
+This will run the example apps in `packages/example-basic` and `packages/example-editor` etc.
+
+Example apps will be served at the dev urls listed above.
 
 Run unit tests by first starting the docker server (make sure you have docker running) with `npm run start-test-server` and then `npm run test`
 
@@ -210,11 +238,6 @@ Run e2e tests headless once with `npm run test:e2e`, or with `npm run dev-e2e` t
 # To Do
 
 Priority:
-
-- [ ] set up cross collection reference links and helpers. -`async getLinkedRef()` connect the linked ref’s room if needed and retrieve the linked document
-- [ ] **Example**: connect data from 2 apps with refs. e.g. in a note, click ‘turn into flashcard’ and it creates a flashcard in the flashcard app and links to it in the note.
-
---- at this point ready to make real apps ---
 
 - [ ] **Files:** set up file hosting provider services like Pinata, Dropbox, etc. and give users the option to connect their accounts to the app. Could also try the ‘matrix files’ [library](~https://github.com/matrix-org/matrix-files-sdk~).
 - [ ] **Public data**: set up ‘aggregator’ listeners when a user makes a collection as public. These will be MatrixReader’s that live on a node server and listen for changes to the collection. How to aggregate and serve to public listeners?
