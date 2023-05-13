@@ -17,7 +17,6 @@
     "build-examples": "run-p build-example:*",
     "build-example:basic": "cd packages/example-basic && npm run build",
     "build-example:editor": "cd packages/example-editor && npm run build",
-    "build-example:synced-store": "cd packages/example-synced-store && npm run build",
     "build-example:multi-room": "cd packages/example-multi-room && npm run build",
     "build-example:interop-notes": "cd packages/example-interop-notes && npm run build",
     "build-example:interop-flashcards": "cd packages/example-interop-flashcards && npm run build",
@@ -32,7 +31,6 @@
     "run-example-previews": "run-p run-example-preview:*",
     "run-example-preview:basic": "cd packages/example-basic; npm run preview",
     "run-example-preview:editor": "cd packages/example-editor; npm run preview",
-    "run-example-preview:synced-store": "cd packages/example-synced-store; npm run preview",
     "run-example-preview:multi-room": "cd packages/example-multi-room; npm run preview",
     "run-example-preview:interop-notes": "cd packages/example-interop-notes; npm run preview",
     "run-example-preview:interop-flashcards": "cd packages/example-interop-flashcards; npm run preview"
@@ -41,6 +39,7 @@
     "@testing-library/cypress": "^9.00",
     "cypress": "^12.9.0",
     "idb": "^7.1.1",
+    "lerna": "^6.6.2",
     "npm-run-all": "^4.1.5",
     "typescript": "^5.0.3"
   }
