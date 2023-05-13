@@ -48,13 +48,6 @@
   "publishConfig": {
     "access": "public"
   },
-  "peerDependencies": {
-    "@matrix-org/olm": "^3.2.14",
-    "matrix-crdt": "0.2.1-alpha.1",
-    "matrix-js-sdk": "^19.4.0",
-    "y-indexeddb": "^9.0.9",
-    "yjs": "^13.5.16"
-  },
   "devDependencies": {
     "@eweser/eslint-config-ts": "^1.4.0",
     "@types/request": "^2.48.8",
@@ -70,6 +63,11 @@
   },
   "gitHead": "3d39fd98760efd13963caa96db636df5cd985625",
   "dependencies": {
+    "@matrix-org/olm": "^3.2.14",
+    "matrix-crdt": "0.2.1-alpha.1",
+    "matrix-js-sdk": "^19.4.0",
+    "y-indexeddb": "^9.0.9",
+    "yjs": "^13.5.16",
     "y-webrtc": "^10.2.5"
   }
 }

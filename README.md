@@ -64,9 +64,7 @@ This flipping of the ownership dynamic enables some important features:
 
 `npm install @eweser/db`
 
-and also our peer dependencies (currently not bundled, but could be based on feedback/user preference)
-
-`npm install matrix-crdt matrix-js-sdk`
+Note: You'll probably also need to add some node.js polyfills for the browser, see `packages/example-basic`'s `package.json`, `vite.config.js`, and `index.html` for an example.
 
 This is a simplified example. For a more use cases and working demos see the example apps like `packages/example-basic/src/App.tsx`
 
@@ -102,7 +100,7 @@ const room = db.getRoom<Note>(collectionKey, aliasSeed); // this is a matrix roo
 // This Notes object provides a set of methods for easily updating the documents in the room. It is a wrapper around the ydoc that is provided by the room.
 const Notes = db.getDocuments(notesRoom);
 
-Notes.OnChange((event) => {
+Notes.onChange((event) => {
   console.log('ydoc changed', event);
 });
 
