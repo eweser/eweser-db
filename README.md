@@ -65,6 +65,7 @@ This flipping of the ownership dynamic enables some important features:
 `npm install @eweser/db`
 
 Note: You'll probably also need to add some node.js polyfills for the browser, see `packages/example-basic`'s `package.json`, `vite.config.js`, and `index.html` for an example.
+If you encounter an installation error about `@matrix-org/olm`, copy the `.npmrc` file from the root of this repo into your project.
 
 This is a simplified example. For a more use cases and working demos see the example apps like `packages/example-basic/src/App.tsx`
 
