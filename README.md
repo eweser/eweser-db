@@ -184,22 +184,28 @@ This is an area that needs further consideration. Community input is appreciated
 
 # Example apps
 
-- [Basic Notes App](https://eweser-db-example-basic.netlify.app/)
+- [Basic Notes App](https://eweser-db-example-basic.netlify.app/), dev [url](http://localhost:8000/)
 
   - view the code at `/packages/example-basic`.
   - E2E test is in `/e2e/cypress/tests/basic.cy.js`
 
-- [Notes App with Markdown Editor](https://eweser-db-example-editor.netlify.app/)
+- [Notes App with Markdown Editor](https://eweser-db-example-editor.netlify.app/), dev [url](http://localhost:8100/)
 
   - view the code at `/packages/example-editor`.
   - E2E test is in `/e2e/cypress/tests/editor.cy.js`
 
-- [Interoperability - Notes](https://eweser-db-example-interop-flashcards.netlify.app/) Use this app to link notes in this app to flashcards in the next flashcards app.
+- [Multi-room](https://eweser-db-example-editor.netlify.app/), dev [url](http://localhost:8300/)
+
+  - view the code at `/packages/example-multi-room`.
+  - E2E test is in `/e2e/cypress/tests/multi-room.cy.js`
+
+- [Interoperability - Notes](https://eweser-db-example-interop-flashcards.netlify.app/), dev [url](http://localhost:8400/)
+  Use this app to link notes in this app to flashcards in the next flashcards app.
 
   - view the code at `/packages/example-interop-flashcards`.
   - E2E test is in `/e2e/cypress/tests/interoperability.cy.js`
 
-- [Interoperability - Flashcards](https://eweser-db-example-interop-flashcards.netlify.app/)
+- [Interoperability - Flashcards](https://eweser-db-example-interop-flashcards.netlify.app/), dev [url](http://localhost:8500/)
 
   - view the code at `/packages/example-interop-flashcards`.
   - E2E test is in `/e2e/cypress/tests/interoperability.cy.js`
@@ -223,7 +229,7 @@ This is an area that needs further consideration. Community input is appreciated
 
 This will run the example apps in `packages/example-basic` and `packages/example-editor` etc.
 
-Example apps will be served at http://localhost:8000/, http://localhost:8100/, http://localhost:8200/ etc.
+Example apps will be served at the dev urls listed above.
 
 Run unit tests by first starting the docker server (make sure you have docker running) with `npm run start-test-server` and then `npm run test`
 
