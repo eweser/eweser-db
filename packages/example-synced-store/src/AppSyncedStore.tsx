@@ -11,6 +11,8 @@ import syncedStore from '@syncedstore/core';
 import type { MappedTypeDescription } from '@syncedstore/core/types/doc';
 import { WEB_RTC_PEERS } from './config';
 
+// WARNING: This example is broken ever since including yjs as a dependency in @eweser/db. SyncedStore expects yjs to be an external dependency.
+
 // This example shows how to implement a basic login/signup form and a basic note-taking app using @eweser/db and the [syncedStore](https://syncedstore.org) library which makes working with Yjs easier.
 // Please see example-basic for a simpler example with more contextual comments.
 

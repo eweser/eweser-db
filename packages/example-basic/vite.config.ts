@@ -10,7 +10,6 @@ export default defineConfig({
   build: {
     minify: false,
     rollupOptions: {
-      //@ts-expect-error
       plugins: [nodePolyfills()],
     },
   },

@@ -64,9 +64,7 @@ This flipping of the ownership dynamic enables some important features:
 
 `npm install @eweser/db`
 
-and also our peer dependencies (currently not bundled, but could be based on feedback/user preference)
-
-`npm install matrix-crdt matrix-js-sdk`
+Note: You'll probably also need to add some node.js polyfills for the browser, see `packages/example-basic`'s `package.json`, `vite.config.js`, and `index.html` for an example.
 
 This is a simplified example. For a more use cases and working demos see the example apps like `packages/example-basic/src/App.tsx`
 
@@ -102,7 +100,7 @@ const room = db.getRoom<Note>(collectionKey, aliasSeed); // this is a matrix roo
 // This Notes object provides a set of methods for easily updating the documents in the room. It is a wrapper around the ydoc that is provided by the room.
 const Notes = db.getDocuments(notesRoom);
 
-Notes.OnChange((event) => {
+Notes.onChange((event) => {
   console.log('ydoc changed', event);
 });
 
@@ -186,30 +184,31 @@ This is an area that needs further consideration. Community input is appreciated
 
 # Example apps
 
-- [Basic Notes App](https://eweser-db-example-basic.netlify.app/)
+- [Basic Notes App](https://eweser-db-example-basic.netlify.app/), dev [url](http://localhost:8000/)
 
   - view the code at `/packages/example-basic`.
   - E2E test is in `/e2e/cypress/tests/basic.cy.js`
 
-- [Notes App with Markdown Editor](https://eweser-db-example-editor.netlify.app/)
+- [Notes App with Markdown Editor](https://eweser-db-example-editor.netlify.app/), dev [url](http://localhost:8100/)
 
   - view the code at `/packages/example-editor`.
   - E2E test is in `/e2e/cypress/tests/editor.cy.js`
 
-- [Interoperability - Notes](https://eweser-db-example-interop-flashcards.netlify.app/) Use this app to link notes in this app to flashcards in the next flashcards app.
+- [Multi-room](https://eweser-db-example-editor.netlify.app/), dev [url](http://localhost:8300/)
+
+  - view the code at `/packages/example-multi-room`.
+  - E2E test is in `/e2e/cypress/tests/multi-room.cy.js`
+
+- [Interoperability - Notes](https://eweser-db-example-interop-flashcards.netlify.app/), dev [url](http://localhost:8400/)
+  Use this app to link notes in this app to flashcards in the next flashcards app.
 
   - view the code at `/packages/example-interop-flashcards`.
   - E2E test is in `/e2e/cypress/tests/interoperability.cy.js`
 
-- [Interoperability - Flashcards](https://eweser-db-example-interop-flashcards.netlify.app/)
+- [Interoperability - Flashcards](https://eweser-db-example-interop-flashcards.netlify.app/), dev [url](http://localhost:8500/)
 
   - view the code at `/packages/example-interop-flashcards`.
   - E2E test is in `/e2e/cypress/tests/interoperability.cy.js`
-
-- Synced store app (no preview)
-
-  - view the code at `/packages/synced-store`.
-  - E2E test is in `/e2e/cypress/tests/synced-store.cy.js`
 
 # Contribute and develop
 
@@ -230,7 +229,7 @@ This is an area that needs further consideration. Community input is appreciated
 
 This will run the example apps in `packages/example-basic` and `packages/example-editor` etc.
 
-Example apps will be served at http://localhost:8000/, http://localhost:8100/, http://localhost:8200/ etc.
+Example apps will be served at the dev urls listed above.
 
 Run unit tests by first starting the docker server (make sure you have docker running) with `npm run start-test-server` and then `npm run test`
 
