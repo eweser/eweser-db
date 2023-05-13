@@ -5,6 +5,7 @@
     "packages/*",
     "e2e/example"
   ],
+  "license": "MIT",
   "scripts": {
     "release": "rm -rf node_modules && lerna run clean && lerna link && npm install && npm run build && npm run copy-readme && lerna publish --force-publish --no-private",
     "test": "lerna run test",

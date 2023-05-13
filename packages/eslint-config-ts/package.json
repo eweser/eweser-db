@@ -4,7 +4,7 @@
   "description": "> TODO: description",
   "author": "jacobcoro",
   "homepage": "https://github.com/eweser/eweser-db#readme",
-  "license": "ISC",
+  "license": "MIT",
   "main": "./index.js",
   "files": [
     "./index.js"
