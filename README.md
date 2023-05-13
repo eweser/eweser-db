@@ -204,11 +204,6 @@ This is an area that needs further consideration. Community input is appreciated
   - view the code at `/packages/example-interop-flashcards`.
   - E2E test is in `/e2e/cypress/tests/interoperability.cy.js`
 
-- Synced store app (no preview)
-
-  - view the code at `/packages/synced-store`.
-  - E2E test is in `/e2e/cypress/tests/synced-store.cy.js`
-
 # Contribute and develop
 
 ## How to contribute
