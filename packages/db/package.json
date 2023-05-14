@@ -30,7 +30,8 @@
   "exports": {
     ".": {
       "import": "./dist/db.js",
-      "require": "./dist/db.umd.cjs"
+      "require": "./dist/db.umd.cjs",
+      "types": "./dist/types/index.d.ts"
     }
   },
   "scripts": {
