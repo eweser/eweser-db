@@ -1,6 +1,5 @@
 import type { Database } from '..';
-import { usernameValidation } from '..';
-import { createMatrixClient, awaitOnline } from '../utils';
+import { createMatrixClient, awaitOnline, validateUsername } from '../utils';
 
 import type { LoginData, LoginStatus, Documents, RegistryData } from '../types';
 import type { TypedMap } from 'yjs-types';
@@ -58,7 +57,7 @@ export const login =
       if (
         !(loginData.userId?.includes('@') && loginData.userId.includes(':'))
       ) {
-        usernameValidation(loginData.userId ?? '');
+        validateUsername(loginData.userId ?? '');
       }
 
       const online = await awaitOnline(_db);

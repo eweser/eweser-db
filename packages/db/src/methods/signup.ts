@@ -1,6 +1,6 @@
 import { createClient } from 'matrix-js-sdk';
 import type { Database } from '..';
-import { usernameValidation } from '..';
+import { validateUsername } from '../utils';
 import { awaitOnline, buildFullUserId } from '../utils';
 import type { Documents, LoginData, LoginStatus, RegistryData } from '../types';
 import type { TypedMap } from 'yjs-types';
@@ -36,7 +36,7 @@ export const signup =
       if (!userId || !password) {
         throw new Error('missing userId or password');
       }
-      usernameValidation(userId);
+      validateUsername(userId);
       _db.userId = buildFullUserId(userId, baseUrl);
 
       if (!baseUrl) {

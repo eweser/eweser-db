@@ -46,27 +46,6 @@ export function getRegistry(_db: Database): TypedMap<Documents<RegistryData>> {
   return registry;
 }
 
-export const usernameValidation = (username: string) => {
-  // cannot contain  `~`, `@`, and `:`  and `.`
-  // must be between 3 and 32 characters
-  if (username?.includes('@') && username?.includes(':')) {
-    throw new Error(
-      'userId   should be the base user ID without the the homeserver information, e.g. "jacob" not "@jacob:homserver.org". It cannot include @ or :'
-    );
-  }
-  if (username.length < 3)
-    throw new Error('username must be at least 3 characters long');
-  if (username.length > 52)
-    throw new Error('username must be less than 52 characters long');
-  if (username.includes('.'))
-    throw new Error('username cannot contain a period');
-  if (username.includes('@')) throw new Error('username cannot contain a @');
-  if (username.includes(':')) throw new Error('username cannot contain a :');
-  if (username.includes('/')) throw new Error('username cannot contain a /');
-  if (username.includes('#')) throw new Error('username cannot contain a #');
-  if (username.includes('~')) throw new Error('username cannot contain a ~');
-};
-
 export const getRoom =
   (_db: Database) =>
   <T extends Document>(collectionKey: CollectionKey, aliasSeed: string) => {
