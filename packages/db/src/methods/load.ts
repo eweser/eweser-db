@@ -37,7 +37,7 @@ export const load =
     if (!loginInfo || !loginInfo.userId) {
       const message = 'unable to load localStore loginInfo';
       logger(message, loginInfo);
-      _db.emit({ event: 'startFailed', message });
+      _db.emit({ level: 'error', event: 'startFailed', message });
       return false;
     }
     _db.userId = loginInfo.userId;
@@ -48,7 +48,7 @@ export const load =
     if (!registryFind || !registryFind.name) {
       const message = 'unable to load localStore indexedDB registry';
       logger(message);
-      _db.emit({ event: 'startFailed', message });
+      _db.emit({ level: 'error', event: 'startFailed', message });
       return false;
     }
     logger('loading from localStorage', loginInfo);
@@ -61,7 +61,7 @@ export const load =
     if (!registryIndexedDB.readyState) {
       const message = 'unable to load localStore indexedDB db';
       logger(message);
-      _db.emit({ event: 'startFailed', message });
+      _db.emit({ level: 'error', event: 'startFailed', message });
       return false;
     }
     // load registry ydoc from indexedDB to db
@@ -110,7 +110,11 @@ export const load =
       _db.emit({ event: 'started' });
       return true;
     } catch (error) {
-      _db.emit({ event: 'startFailed', message: error?.message });
+      _db.emit({
+        level: 'error',
+        event: 'startFailed',
+        message: error?.message,
+      });
 
       logger('load, connect rooms failed', error);
       return false;

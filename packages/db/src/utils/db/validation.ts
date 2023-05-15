@@ -44,7 +44,7 @@ export const validateUsername = (username: string) => {
  * * Throws with a descriptive error if invalid
  * * Must be at least 10 characters long and contain a number and a special symbol
  * * I don't think Matrix has strict password requirements, but it's a good idea to require strong passwords */
-export const passwordValidation = (password: string) => {
+export const validatePassword = (password: string) => {
   if (password.length < 10)
     throw new Error('password must be at least 10 characters long');
   const numberRegex = /\d/;

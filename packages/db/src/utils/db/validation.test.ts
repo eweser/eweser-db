@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  passwordValidation,
+  validatePassword,
   validateHomeserver,
   validateUsername,
 } from './validation';
@@ -74,23 +74,23 @@ describe('validateHomeserver', () => {
   });
 });
 
-describe('passwordValidation', () => {
+describe('validatePassword', () => {
   it('Must be at least 10 characters long and contain a number and a special symbol', () => {
     const validPassword = 'password123!';
     const expected = undefined;
-    const actual = passwordValidation(validPassword);
+    const actual = validatePassword(validPassword);
     expect(actual).toEqual(expected);
 
     const tooShort = 'pass';
-    expect(() => passwordValidation(tooShort)).toThrow(
+    expect(() => validatePassword(tooShort)).toThrow(
       'password must be at least 10 characters long'
     );
     const noNumber = 'password!!!!!';
-    expect(() => passwordValidation(noNumber)).toThrow(
+    expect(() => validatePassword(noNumber)).toThrow(
       'password must contain a number'
     );
-    const noSymbole = 'password123';
-    expect(() => passwordValidation(noSymbole)).toThrow(
+    const noSymbol = 'password123';
+    expect(() => validatePassword(noSymbol)).toThrow(
       'password must contain a special symbol'
     );
   });
