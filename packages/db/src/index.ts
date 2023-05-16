@@ -37,6 +37,7 @@ export type {
   YDoc,
   DocumentBase,
   DBEvent,
+  RoomMetaData,
 } from './types';
 
 export type { TypedMap, TypedDoc } from 'yjs-types';
