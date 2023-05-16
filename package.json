@@ -7,7 +7,7 @@
   ],
   "license": "MIT",
   "scripts": {
-    "release": "rm -rf node_modules && lerna run clean && lerna link && npm install && npm run build && npm run copy-readme && lerna publish --force-publish --no-private",
+    "release": "rm -rf node_modules && npx lerna run clean && npx lerna link && npm install && npm run build && npm run copy-readme && npx lerna publish --force-publish --no-private",
     "test": "lerna run test",
     "test:e2e": "cypress run",
     "clean": "lerna run clean",
