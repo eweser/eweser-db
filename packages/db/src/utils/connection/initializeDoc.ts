@@ -4,9 +4,10 @@ import { Doc } from 'yjs';
 import type { Document, YDoc } from '../../types';
 
 export const initializeDocAndLocalProvider = async <T extends Document>(
-  aliasSeed: string
+  aliasSeed: string,
+  existingDoc?: YDoc<T>
 ): Promise<{ ydoc: YDoc<T>; localProvider: IndexeddbPersistence }> => {
-  const ydoc = new Doc() as YDoc<T>;
+  const ydoc = existingDoc || (new Doc() as YDoc<T>);
   if (!ydoc) throw new Error('could not create doc');
 
   const localProvider = new IndexeddbPersistence(aliasSeed, ydoc as Doc);

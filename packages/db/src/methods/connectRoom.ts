@@ -4,7 +4,6 @@ import type {
   ConnectStatus,
   Room,
   LoginData,
-  YDoc,
   CreateAndConnectRoomOptions,
   UserDocument,
 } from '../types';
@@ -21,7 +20,6 @@ import {
   LocalStorageKey,
   localStorageGet,
 } from '../utils/db/localStorageService';
-import { Doc } from 'yjs';
 import {
   checkMatrixProviderConnected,
   connectMatrixProvider,
@@ -190,17 +188,15 @@ export const connectRoom =
         return room as Room<T>;
       }
 
-      const ydoc = room.ydoc?.store ? room.ydoc : (new Doc() as YDoc<T>);
-      room.ydoc = ydoc as any;
       if (_db.useIndexedDB && !indexedDBConnected) {
         const { ydoc: localDoc, localProvider } =
-          await initializeDocAndLocalProvider<any>(aliasSeed);
+          await initializeDocAndLocalProvider<any>(aliasSeed, room.ydoc);
         room.ydoc = localDoc;
         room.indexeddbProvider = localProvider;
       }
 
-      if (!ydoc) throw new Error('ydoc not found');
-      logger('ydoc created', room.connectStatus, ydoc);
+      if (!room.ydoc) throw new Error('ydoc not found');
+      logger('ydoc created', room.connectStatus, room.ydoc);
 
       if (initialValues) {
         populateInitialValues(initialValues, room as any);
@@ -214,16 +210,15 @@ export const connectRoom =
             localStorageGet<LoginData>(LocalStorageKey.loginData)?.password ??
             '';
           if (provider) {
-            provider.doc = ydoc as any;
+            provider.doc = room.ydoc as any;
             provider.connect();
           } else {
-            const { provider: newProvider, doc } = connectWebRtcProvider(
+            const { provider: newProvider } = connectWebRtcProvider(
               _db,
               roomAlias,
-              ydoc as Doc,
+              room.ydoc as any,
               password
             );
-            room.ydoc = doc as any;
             provider = newProvider;
           }
 
