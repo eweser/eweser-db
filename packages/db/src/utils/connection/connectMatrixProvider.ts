@@ -41,20 +41,19 @@ export function connectMatrixProvider(
       }
 
       if (!room?.ydoc) throw new Error('room.ydoc not found');
-      const doc = room.ydoc;
 
-      logger('start connectMatrixProvider', { room, doc });
+      logger('start connectMatrixProvider', { room, doc: room.ydoc });
       // quit early if already connected
       if (
-        doc.isLoaded &&
+        room.ydoc.isLoaded &&
         room.matrixProvider?.canWrite &&
         // @ts-expect-error
         !room.matrixProvider.disposed
       ) {
         logger('matrix provider already connected', {
-          doc,
+          doc: room.ydoc,
           room,
-          isLoaded: doc.isLoaded,
+          isLoaded: room.ydoc.isLoaded,
           canWrite: room.matrixProvider?.canWrite,
         });
         room.connectStatus = 'ok';
@@ -68,7 +67,7 @@ export function connectMatrixProvider(
 
       room.matrixProvider = newMatrixProvider(
         _db.matrixClient,
-        doc,
+        room.ydoc,
         room.roomId
           ? { type: 'id', id: room.roomId }
           : { type: 'alias', alias: room.roomAlias },
@@ -77,13 +76,13 @@ export function connectMatrixProvider(
 
       room.matrixProvider.onDocumentAvailable((e) => {
         room.connectStatus = 'ok';
-        logger('onDocumentAvailable', { room, doc, e });
+        logger('onDocumentAvailable', { room, doc: room.ydoc, e });
         return resolve(true);
       });
 
       room.matrixProvider.onDocumentUnavailable((e) => {
         room.connectStatus = 'disconnected';
-        logger('onDocumentUnavailable', { room, doc, e });
+        logger('onDocumentUnavailable', { room, doc: room.ydoc, e });
         reject('onDocumentUnavailable');
       });
 

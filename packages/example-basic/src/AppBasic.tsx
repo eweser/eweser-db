@@ -80,13 +80,13 @@ const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
     Notes.sortByRecent(Notes.getUndeleted())
   );
 
-  const [selectedNote, setSelectedNote] = useState(notes[0]?._id);
+  const [selectedNote, setSelectedNote] = useState(Object.keys(Notes.sortByRecent(Notes.getUndeleted()))[0]);
 
   // listen for changes to the ydoc and update the state
   Notes.onChange((_event) => {
     const unDeleted = Notes.sortByRecent(Notes.getUndeleted());
     setNotes(unDeleted);
-    if (!notes[selectedNote] || notes[selectedNote]._deleted) {
+    if (!unDeleted[selectedNote]) {
       setSelectedNote(Object.keys(unDeleted)[0]);
     }
   });
