@@ -57,6 +57,7 @@ describe('load', () => {
     );
     expect(startFailedCall[0]).toEqual({
       event: 'startFailed',
+      level: 'error',
       message: 'unable to load localStore loginInfo',
     });
   });

@@ -1,17 +1,15 @@
 import type { MatrixClient } from 'matrix-js-sdk';
 import { createClient, MemoryStore } from 'matrix-js-sdk';
-import { uuid } from 'vscode-lib';
-import { dummyUserPass, matrixTestConfig } from './';
+import { matrixTestConfig, userLoginInfo } from './';
 import { createMatrixRoom } from './matrixRoomManagement';
 
 export async function createRandomMatrixClient() {
-  const testId = uuid.generateUuid();
-  const username = 'testuser_' + testId;
-
-  const client = await createMatrixUser(username, dummyUserPass);
+  const loginInfo = userLoginInfo();
+  const { userId, password } = loginInfo;
+  const client = await createMatrixUser(userId, password);
 
   return {
-    username,
+    username: userId,
     client,
   };
 }

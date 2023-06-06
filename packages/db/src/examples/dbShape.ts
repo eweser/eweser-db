@@ -47,7 +47,7 @@ const typescriptFlashcardsYDoc: { documents: Documents<Flashcard> } = {
       frontText: 'Question',
       backText: 'Answer',
       // links to other document ref
-      noteLink: 'notes.my_study_notes.0', // or use buildRef()
+      noteRefs: ['notes.my_study_notes.0'], // or use buildRef()
       _ref: 'flashcards.typescript_study_cards.0',
       _id: '0',
       _created: 1653135317729,
@@ -61,11 +61,13 @@ const chineseFlashcardsYDoc: { documents: Documents<Flashcard> } = {
     ['0']: {
       frontText: 'What does 火 mean?',
       backText: 'Fire🔥',
-      noteLink: buildRef({
-        collectionKey: CollectionKey.notes,
-        aliasSeed: 'my_study_notes',
-        documentId: '0',
-      }),
+      noteRefs: [
+        buildRef({
+          collectionKey: CollectionKey.notes,
+          aliasSeed: 'my_study_notes',
+          documentId: '0',
+        }),
+      ],
       _ref: buildRef({
         collectionKey: CollectionKey.flashcards,
         aliasSeed: 'chinese_flashcards',
@@ -124,6 +126,8 @@ export const exampleDb: { collections: Collections } = {
         connectStatus: 'ok',
         ydoc: myStudyNotesYDoc as any,
         tempDocs: {},
+        webRtcProvider: null,
+        indexeddbProvider: null,
       },
     },
     flashcards: {
@@ -136,6 +140,8 @@ export const exampleDb: { collections: Collections } = {
         created: new Date(),
         ydoc: typescriptFlashcardsYDoc as any,
         tempDocs: {},
+        webRtcProvider: null,
+        indexeddbProvider: null,
       },
       ['chinese_flashcards']: {
         collectionKey: CollectionKey.flashcards,
@@ -146,6 +152,8 @@ export const exampleDb: { collections: Collections } = {
         created: new Date(),
         ydoc: chineseFlashcardsYDoc as any,
         tempDocs: {},
+        webRtcProvider: null,
+        indexeddbProvider: null,
       },
     },
     profiles: {
@@ -158,6 +166,8 @@ export const exampleDb: { collections: Collections } = {
         created: new Date(),
         ydoc: profileYDoc as any,
         tempDocs: {},
+        webRtcProvider: null,
+        indexeddbProvider: null,
       },
     },
     registry: {
@@ -169,6 +179,8 @@ export const exampleDb: { collections: Collections } = {
         connectStatus: 'ok',
         ydoc: registryYDoc as any,
         tempDocs: {},
+        webRtcProvider: null,
+        indexeddbProvider: null,
       },
     },
   },

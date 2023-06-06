@@ -48,7 +48,13 @@ export function getRegistry(_db: Database): TypedMap<Documents<RegistryData>> {
 
 export const getRoom =
   (_db: Database) =>
-  <T extends Document>(collectionKey: CollectionKey, aliasSeed: string) => {
+  <T extends Document>({
+    collectionKey,
+    aliasSeed,
+  }: {
+    collectionKey: CollectionKey;
+    aliasSeed: string;
+  }) => {
     const room = _db.collections[collectionKey][aliasSeed];
     if (!room) return null;
     return room as Room<T>;
@@ -57,7 +63,7 @@ export const getRoom =
 export const getOrSetRoom =
   (_db: Database) =>
   <T extends Document>(collectionKey: CollectionKey, aliasSeed: string) => {
-    const room = _db.getRoom<T>(collectionKey, aliasSeed);
+    const room = _db.getRoom<T>({ collectionKey, aliasSeed });
     if (room) return room;
     const newRoom = newEmptyRoom<T>(_db, collectionKey, aliasSeed);
     _db.collections[collectionKey][aliasSeed] = newRoom as Room<any>;

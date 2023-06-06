@@ -52,7 +52,7 @@ const App = () => {
 
   const handleSignup = (loginData: LoginData) =>
     db.signup({ initialRoomConnect, ...loginData });
-  const defaultNotesRoom = db.getRoom<Note>(collectionKey, aliasSeed);
+  const defaultNotesRoom = db.getRoom<Note>({ collectionKey, aliasSeed });
   const doc = defaultNotesRoom?.ydoc;
   const documents: Documents<Note> = {};
   const store = syncedStore({ documents }, doc as any);

@@ -18,7 +18,6 @@ import { baseUrl, localWebRtcServer, userLoginInfo } from '../test-utils';
 import { createMatrixUser } from '../test-utils/matrixTestUtil';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
 import type { RegistryData } from '../types';
-import { loginToMatrix } from './login';
 
 const loginInfo = userLoginInfo();
 const { userId, password } = loginInfo;
@@ -35,8 +34,8 @@ describe('disconnectRoom', () => {
       baseUrl,
       webRTCPeers: [localWebRtcServer],
     });
-    await loginToMatrix(db, loginInfo);
-    await db.connectRegistry();
+
+    await db.login(loginInfo);
     const registry = getRegistry(db);
 
     // need to have `profiles.public` in the registry so satisfy 'checkRegistryPopulated'
