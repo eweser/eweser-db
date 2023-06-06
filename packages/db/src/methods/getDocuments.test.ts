@@ -99,7 +99,7 @@ describe('getDocuments', () => {
     const newCard = Flashcards.new({ backText: 'test', frontText: 'front' });
     const originalEditedDate = new Date(newCard._updated);
     await wait(1000);
-    Flashcards.set(newCard._id, { ...newCard, backText: 'edited' });
+    Flashcards.set({ ...newCard, backText: 'edited' });
     const editedCard = Flashcards.get(newCard._id);
     if (!editedCard) throw new Error('card not found');
     const editedDate = new Date(editedCard._updated);

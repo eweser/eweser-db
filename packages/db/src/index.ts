@@ -22,6 +22,7 @@ import { pollConnection } from './utils/connection/pollConnection';
 import { loadAndConnectRoom } from './methods/loadAndConnectRoom';
 import { getDocumentByRef } from './methods/getDocumentByRef';
 import { getDocuments } from './methods/getDocuments';
+import { deleteRoom } from './methods/deleteRoom';
 
 export type {
   Profile,
@@ -98,6 +99,7 @@ export class Database {
   addTempDocToRoom = addTempDocToRoom(this);
   loadRoom = loadRoom(this);
   loadAndConnectRoom = loadAndConnectRoom(this);
+  deleteRoom = deleteRoom(this);
   getDocumentByRef = getDocumentByRef(this);
   getDocuments = getDocuments(this);
   login = login(this);
