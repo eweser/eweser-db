@@ -96,7 +96,7 @@ db.on('my-listener', ({ event }) => {
   }
 });
 
-const room = db.getRoom<Note>({ collectionKey, aliasSeed }); // this is a matrix room that stores a collection of note documents which share a `Note` schema.
+const room = db.getRoom<Note>(collectionKey, aliasSeed); // this is a matrix room that stores a collection of note documents which share a `Note` schema.
 
 // This Notes object provides a set of methods for easily updating the documents in the room. It is a wrapper around the ydoc that is provided by the room.
 const Notes = db.getDocuments(notesRoom);
