@@ -64,7 +64,7 @@ const App = () => {
   const handleSignup = (loginData: LoginData) =>
     db.signup({ initialRoomConnect, ...loginData });
 
-  const defaultNotesRoom = db.getRoom<Note>(collectionKey, aliasSeed);
+  const defaultNotesRoom = db.getRoom<Note>({ collectionKey, aliasSeed });
 
   return (
     <div style={styles.appRoot}>
@@ -89,7 +89,7 @@ const RoomsProvider = ({ db }: { db: Database }) => {
   // allow the user to select one to connect to
   // Pass the current room down to the NotesInternal component
   const [notesRoom, setNotesRoom] = useState(
-    db.getRoom<Note>(collectionKey, aliasSeed)
+    db.getRoom<Note>({ collectionKey, aliasSeed })
   );
   // allow creating new rooms.
   const [createRoomModalOpen, setCreateRoomModalOpen] = useState(false);

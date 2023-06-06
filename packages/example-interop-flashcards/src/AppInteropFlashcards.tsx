@@ -46,7 +46,10 @@ const App = () => {
   const handleSignup = (loginData: LoginData) =>
     db.signup({ initialRoomConnect, ...loginData });
 
-  const defaultFlashcardsRoom = db.getRoom<Flashcard>(collectionKey, aliasSeed);
+  const defaultFlashcardsRoom = db.getRoom<Flashcard>({
+    collectionKey,
+    aliasSeed,
+  });
 
   return (
     <div style={styles.appRoot}>

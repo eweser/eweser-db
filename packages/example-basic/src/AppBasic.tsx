@@ -52,7 +52,7 @@ const App = () => {
   const handleSignup = (loginData: LoginData) =>
     db.signup({ initialRoomConnect, ...loginData });
 
-  const defaultNotesRoom = db.getRoom<Note>(collectionKey, aliasSeed);
+  const defaultNotesRoom = db.getRoom<Note>({ collectionKey, aliasSeed });
 
   return (
     <div style={styles.appRoot}>

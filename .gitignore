@@ -31,3 +31,6 @@ types
 # cypress
 e2e/cypress/videos
 e2e/cypress/screenshots
+
+# builds
+vite.config.ts.timestamp*.mjs
