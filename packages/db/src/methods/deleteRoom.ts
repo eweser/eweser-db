@@ -11,22 +11,26 @@ export const deleteRoom =
     aliasSeed: string;
     collectionKey: CollectionKey;
   }) => {
-    const room = _db.getRoom({ collectionKey, aliasSeed });
-    if (!room?.roomId) {
-      throw new Error('room ID not found');
+    if (!_db.matrixClient) {
+      throw new Error('matrixClient not found');
     }
-    await _db.matrixClient?.leave(room.roomId);
-
-    delete _db.collections[collectionKey][aliasSeed];
 
     const registry = getRegistry(_db);
     const registryDoc = registry.get('0');
-    if (!registryDoc) throw new Error('registry document not found');
-    if (!registryDoc[collectionKey][aliasSeed])
+    if (!registryDoc) {
+      throw new Error('registry document not found');
+    }
+    const roomId = registryDoc[collectionKey][aliasSeed]?.roomId;
+    if (!roomId) {
       throw new Error('collection aliasSeed not found in registry');
+    }
+    await _db.matrixClient?.leave(roomId);
+
     const updatedRegistry = {
       ...registryDoc,
     };
     delete updatedRegistry[collectionKey][aliasSeed];
     registry.set('0', updatedRegistry);
+
+    delete _db.collections[collectionKey][aliasSeed];
   };
