@@ -14,7 +14,12 @@ import {
   updateRegistryEntry,
   wait,
 } from '..';
-import { baseUrl, localWebRtcServer, userLoginInfo } from '../test-utils';
+import {
+  baseUrl,
+  localWebRtcServer,
+  populateTestRegistry,
+  userLoginInfo,
+} from '../test-utils';
 import { createMatrixUser } from '../test-utils/matrixTestUtil';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
 import type { RegistryData } from '../types';
@@ -36,21 +41,8 @@ describe('disconnectRoom', () => {
     });
 
     await db.login(loginInfo);
-    const registry = getRegistry(db);
+    await populateTestRegistry(db);
 
-    // need to have `profiles.public` in the registry so satisfy 'checkRegistryPopulated'
-    registry.set(
-      '0',
-      newDocument<RegistryData>('registry.0.0', {
-        flashcards: {},
-        profiles: {
-          public: {
-            roomAlias: 'test',
-          },
-        },
-        notes: {},
-      })
-    );
     const aliasSeed = 'test' + randomString(8);
     const roomAlias = buildAliasFromSeed(
       aliasSeed,

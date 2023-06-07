@@ -6,10 +6,21 @@ import { buildRef } from '../utils';
 
 const profileYDoc: { documents: Documents<Profile> } = {
   documents: {
-    public: {
+    ['default']: {
       firstName: 'Eweser',
-      _ref: 'profiles.public.0',
-      _id: '0',
+      _ref: 'profiles.public.default',
+      _id: 'default',
+      _created: 1653135317729,
+      _updated: 1653135317729,
+    },
+  },
+};
+const profilePrivateYDoc: { documents: Documents<Profile> } = {
+  documents: {
+    ['default']: {
+      firstName: 'Eweser',
+      _ref: 'profiles.private.default',
+      _id: 'default',
       _created: 1653135317729,
       _updated: 1653135317729,
     },
@@ -166,6 +177,18 @@ export const exampleDb: { collections: Collections } = {
         connectStatus: 'ok',
         created: new Date(),
         ydoc: profileYDoc as any,
+        tempDocs: {},
+        webRtcProvider: null,
+        indexeddbProvider: null,
+      },
+      ['private']: {
+        collectionKey: CollectionKey.profiles,
+        matrixProvider: null,
+        roomAlias: '#private~profiles~@username:matrix:org',
+        name: 'Private Profile',
+        connectStatus: 'ok',
+        created: new Date(),
+        ydoc: profilePrivateYDoc as any,
         tempDocs: {},
         webRtcProvider: null,
         indexeddbProvider: null,

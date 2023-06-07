@@ -4,13 +4,11 @@ import {
   Database,
   buildAliasFromSeed,
   getRegistry,
-  newDocument,
   randomString,
 } from '..';
-import { baseUrl, userLoginInfo } from '../test-utils';
+import { populateTestRegistry, userLoginInfo } from '../test-utils';
 import { createMatrixUser } from '../test-utils/matrixTestUtil';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
-import type { RegistryData } from '../types';
 
 const loginInfo = userLoginInfo();
 const { userId, password } = loginInfo;
@@ -23,24 +21,12 @@ afterEach(() => {
   localStorage.clear();
 });
 describe('deleteRoom', () => {
-  it('should leaver the matrix room, delete rgistry entry and collection', async () => {
-    const db = new Database({ debug: false, baseUrl });
+  it('should leave the matrix room, delete registry entry and collection', async () => {
+    const db = new Database();
     await db.login(loginInfo);
+    await populateTestRegistry(db);
     const registry = getRegistry(db);
 
-    // need to have `profiles.public` in the registry so satisfy 'checkRegistryPopulated'
-    registry.set(
-      '0',
-      newDocument<RegistryData>('registry.0.0', {
-        flashcards: {},
-        profiles: {
-          public: {
-            roomAlias: 'test',
-          },
-        },
-        notes: {},
-      })
-    );
     const aliasSeed = 'test' + randomString(8);
     const roomAlias = buildAliasFromSeed(
       aliasSeed,
@@ -92,5 +78,5 @@ describe('deleteRoom', () => {
 
     // collection has been deleted
     expect(db.collections.flashcards[aliasSeed]).toBeUndefined();
-  });
+  }, 30000);
 });

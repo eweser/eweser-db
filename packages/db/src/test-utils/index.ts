@@ -1,14 +1,18 @@
 import * as http from 'http';
 import * as https from 'https';
 
+import type { RegistryData } from '../types';
 import { CollectionKey } from '../types';
 import {
   buildAliasFromSeed,
   buildRegistryRoomAlias,
   buildSpaceRoomAlias,
   getAliasNameFromAlias,
+  getRegistry,
+  newDocument,
   randomString,
 } from '../utils';
+import type { Database } from '..';
 http.globalAgent.maxSockets = 2000;
 https.globalAgent.maxSockets = 2000;
 
@@ -51,3 +55,26 @@ export const testRoomAlias = (username: string) =>
 
 export const testRoomAliasName = (username: string) =>
   getAliasNameFromAlias(testRoomAlias(username));
+
+export const populateTestRegistry = async (db: Database) => {
+  await db.connectRegistry();
+
+  const registry = getRegistry(db);
+
+  // need to have `profiles.public` in the registry so satisfy 'checkRegistryPopulated'
+  registry.set(
+    '0',
+    newDocument<RegistryData>('registry.0.0', {
+      flashcards: {},
+      profiles: {
+        public: {
+          roomAlias: 'test',
+        },
+        private: {
+          roomAlias: 'test1',
+        },
+      },
+      notes: {},
+    })
+  );
+};
