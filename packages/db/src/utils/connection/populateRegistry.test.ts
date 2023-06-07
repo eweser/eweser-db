@@ -1,6 +1,6 @@
 import { describe, it, expect, vitest, beforeAll, afterEach } from 'vitest';
-import { Database } from '../../';
-import { getRegistry, randomString, wait } from '../';
+import { CollectionKey, Database } from '../../';
+import { buildAliasFromSeed, getRegistry, randomString, wait } from '../';
 import {
   checkRegistryPopulated,
   populateRegistry,
@@ -10,6 +10,7 @@ import { baseUrl, userLoginInfo } from '../../test-utils';
 import { loginToMatrix } from '../../methods/login';
 import { createMatrixUser } from '../../test-utils/matrixTestUtil';
 import { ensureMatrixIsRunning } from '../../test-utils/matrixTestUtilServer';
+import type { Profile } from '../../collections';
 const loginInfo = userLoginInfo();
 const { userId, password } = loginInfo;
 beforeAll(async () => {
@@ -21,7 +22,7 @@ afterEach(() => {
 });
 
 describe('populateRegistry', () => {
-  it('creates a public profile room, and populates the registry with that first entry', async () => {
+  it('creates a public and private profile room, and populates the registry with empty profile entries', async () => {
     const db = new Database({ baseUrl });
     await loginToMatrix(db, loginInfo);
 
@@ -36,20 +37,57 @@ describe('populateRegistry', () => {
     const registry = getRegistry(db);
     registry.clear();
     expect(checkRegistryPopulated(db)).toBe(false);
-
+    const testSeed = 'test' + randomString(8);
     const eventListener = vitest.fn();
     db.on('test', eventListener);
-    await populateRegistry(db, 'test' + randomString(8));
+    await populateRegistry(db, testSeed);
     expect(eventListener).toHaveBeenCalled();
     const calls = eventListener.mock.calls;
     const callMessages = calls.map((call) => call[0].message);
     expect(callMessages).toContain('starting populateRegistry');
     expect(callMessages).toContain('created profile room');
+    expect(callMessages).toContain('created private profile room');
     expect(callMessages).toContain('populated registry');
 
     await wait(250); // enough time for the check to have been tried at least twice
     expect(checkRegistryPopulated(db)).toBe(true);
     expect(waitForRegistryPopulatedCallback).toHaveBeenCalledTimes(1);
+
+    const registryAfter = getRegistry(db);
+    const values = registryAfter.get('0');
+    expect(values?.profiles['public' + testSeed]?.roomAlias).toEqual(
+      buildAliasFromSeed('public' + testSeed, CollectionKey.profiles, db.userId)
+    );
+    expect(values?.profiles['private' + testSeed]?.roomAlias).toEqual(
+      buildAliasFromSeed(
+        'private' + testSeed,
+        CollectionKey.profiles,
+        db.userId
+      )
+    );
+    const publicRoom = db.getRoom({
+      collectionKey: CollectionKey.profiles,
+      aliasSeed: 'public' + testSeed,
+    });
+    if (!publicRoom) {
+      throw new Error('publicRoom undefined');
+    }
+    const publicDocs = db.getDocuments<Profile>(publicRoom);
+    const defaultProfile = publicDocs.get('default');
+    expect(defaultProfile?.firstName).toEqual('New');
+    expect(defaultProfile?.lastName).toEqual('User');
+
+    const privateRoom = db.getRoom({
+      collectionKey: CollectionKey.profiles,
+      aliasSeed: 'private' + testSeed,
+    });
+    if (!privateRoom) {
+      throw new Error('privateRoom undefined');
+    }
+    const privateDocs = db.getDocuments<Profile>(privateRoom);
+    const privateDefaultProfile = privateDocs.get('default');
+    expect(privateDefaultProfile?.firstName).toEqual('New');
+    expect(privateDefaultProfile?.lastName).toEqual('User');
   }, 100000);
   it('waitForRegistryPopulated fails with error on timeout', async () => {
     const DB = new Database({ baseUrl });

@@ -23,7 +23,7 @@ afterEach(() => {
   localStorage.clear();
 });
 describe('deleteRoom', () => {
-  it('should leaver the matrix room, delete rgistry entry and collection', async () => {
+  it('should leave the matrix room, delete registry entry and collection', async () => {
     const db = new Database({ debug: false, baseUrl });
     await db.login(loginInfo);
     const registry = getRegistry(db);
