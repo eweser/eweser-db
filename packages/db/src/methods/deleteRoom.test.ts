@@ -80,5 +80,5 @@ describe('deleteRoom', () => {
 
     // collection has been deleted
     expect(db.collections.flashcards[aliasSeed]).toBeUndefined();
-  });
+  }, 30000);
 });

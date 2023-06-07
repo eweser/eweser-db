@@ -18,7 +18,9 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: 'src/setupTests.ts',
-    maxConcurrency: 3,
+    maxConcurrency: 2,
+    maxThreads: 2,
+    minThreads: 1,
     // coverage: {
     //   reporter: ['text', 'json', 'html', 'lcov'],
     // },
