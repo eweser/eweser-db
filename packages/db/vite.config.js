@@ -1,5 +1,5 @@
 import { resolve } from 'path';
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   build: {
@@ -15,10 +15,10 @@ export default defineConfig({
       ],
     },
   },
-  //@ts-expect-error
   test: {
     environment: 'jsdom',
     setupFiles: 'src/setupTests.ts',
+    maxConcurrency: 3,
     // coverage: {
     //   reporter: ['text', 'json', 'html', 'lcov'],
     // },
