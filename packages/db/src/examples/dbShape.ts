@@ -3,11 +3,12 @@ import type { DocumentBase } from '../collections/documentBase';
 import type { Collections, Documents, RegistryData } from '../types';
 import { CollectionKey } from '../types';
 import { buildRef } from '../utils';
+
 const profileYDoc: { documents: Documents<Profile> } = {
   documents: {
-    ['0']: {
+    public: {
       firstName: 'Eweser',
-      _ref: 'flashcards.typescript_study_cards.0',
+      _ref: 'profiles.public.0',
       _id: '0',
       _created: 1653135317729,
       _updated: 1653135317729,
