@@ -24,7 +24,7 @@ afterEach(() => {
 });
 describe('deleteRoom', () => {
   it('should leave the matrix room, delete registry entry and collection', async () => {
-    const db = new Database({ debug: true, baseUrl });
+    const db = new Database();
     await db.login(loginInfo);
     await populateTestRegistry(db);
     const registry = getRegistry(db);
