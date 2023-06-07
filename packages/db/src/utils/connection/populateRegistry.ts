@@ -6,7 +6,7 @@ import {
   getRoomId,
   newDocument,
 } from '../';
-import type { RegistryData } from '../../types';
+import type { Profile, RegistryData } from '../../types';
 import { CollectionKey } from '../../types';
 
 import { getAliasNameFromAlias } from './aliasHelpers';
@@ -110,11 +110,11 @@ export const populateRegistry = async (_db: Database, customSeed?: string) => {
   getOrSetRoom(_db)(CollectionKey.profiles, privateSeed);
 
   // add some initial values to the profiles
-  const dbRoomPublic = await _db.connectRoom({
+  const dbRoomPublic = await _db.connectRoom<Profile>({
     aliasSeed: publicSeed,
     collectionKey: CollectionKey.profiles,
   });
-  const dbRoomPrivate = await _db.connectRoom({
+  const dbRoomPrivate = await _db.connectRoom<Profile>({
     aliasSeed: privateSeed,
     collectionKey: CollectionKey.profiles,
   });
