@@ -83,21 +83,21 @@ export type OnRoomConnectStatusUpdate = (
 
 export type OnLoginStatusUpdate = (status: ConnectStatus) => void;
 
-export interface CreateAndConnectRoomOptions {
+export interface CreateAndConnectRoomOptions<T extends Document> {
   collectionKey: CollectionKey;
   /** undecorated alias */
   aliasSeed: string;
   name?: string;
   topic?: string;
   /** The initial documents can be with or without metadata (_id, _ref, etc.) When loaded, whatever metadata is provided will be filled in */
-  initialValues?: Partial<UserDocument>[];
+  initialValues?: Partial<T>[];
   doNotAutoReconnect?: boolean;
   waitForWebRTC?: boolean;
 }
 
 export interface LoginData extends ICreateClientOpts {
   password?: string;
-  initialRoomConnect?: CreateAndConnectRoomOptions;
+  initialRoomConnect?: CreateAndConnectRoomOptions<any>;
 }
 
 export interface Collections {
@@ -121,6 +121,7 @@ export type LoginStatus =
  */
 export type DBEventType =
   | 'login'
+  | 'logout'
   | 'signup'
   | 'load'
   | 'started'
@@ -139,7 +140,8 @@ export type DBEventType =
   | 'connectMatrixProvider'
   | 'getOrCreateSpace'
   | 'getOrCreateRegistry'
-  | 'getRoomId';
+  | 'getRoomId'
+  | 'createOfflineRoom';
 
 export type DBEvent = {
   event: DBEventType;

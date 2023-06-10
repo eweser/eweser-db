@@ -23,6 +23,8 @@ import { loadAndConnectRoom } from './methods/loadAndConnectRoom';
 import { getDocumentByRef } from './methods/getDocumentByRef';
 import { getDocuments } from './methods/getDocuments';
 import { deleteRoom } from './methods/deleteRoom';
+import { createOfflineRoom } from './methods/createOfflineRoom';
+import { logout } from './methods/logout';
 
 export type {
   Profile,
@@ -62,6 +64,7 @@ export interface DatabaseOptions {
   providers?: ProviderOptions[];
   /** provide a list of peers to use instead of the default */
   webRTCPeers?: string[];
+  offlineOnly?: boolean;
 }
 
 export class Database {
@@ -70,6 +73,7 @@ export class Database {
   baseUrl: string;
   loginStatus: LoginStatus = 'initial';
   online = false;
+  offlineOnly = false;
 
   useMatrix = true;
   useWebRTC = true;
@@ -96,15 +100,16 @@ export class Database {
   connectRoom = connectRoom(this);
   disconnectRoom = disconnectRoom(this);
   createAndConnectRoom = createAndConnectRoom(this);
+  createOfflineRoom = createOfflineRoom;
   addTempDocToRoom = addTempDocToRoom(this);
   loadRoom = loadRoom(this);
   loadAndConnectRoom = loadAndConnectRoom(this);
   deleteRoom = deleteRoom(this);
-  getDocumentByRef = getDocumentByRef(this);
-  getDocuments = getDocuments(this);
-  login = login(this);
+
+  login = login;
   signup = signup(this);
   load = load(this);
+  logout = logout(this);
 
   // util methods
   buildAliasFromSeed = (aliasSeed: string, collectionKey: CollectionKey) =>
@@ -112,27 +117,39 @@ export class Database {
   getRoom = getRoom(this);
   getCollectionRegistry = getCollectionRegistry(this);
 
+  // collection methods
+  getDocumentByRef = getDocumentByRef(this);
+  getDocuments = getDocuments(this);
+
   constructor(optionsPassed?: DatabaseOptions) {
     const options = optionsPassed || {};
     this.baseUrl = options?.baseUrl || 'https://matrix.org';
-    if (options?.webRTCPeers) {
-      this.webRtcPeers = options?.webRTCPeers;
+    if (options.offlineOnly) {
+      this.offlineOnly = true;
+      this.userId = 'offline-user';
+      this.baseUrl = 'offline-user';
     }
-    if (options.providers) {
-      if (!options.providers.includes('WebRTC')) {
-        this.webRtcPeers = [];
-        this.useWebRTC = false;
+    if (!this.offlineOnly) {
+      if (options?.webRTCPeers) {
+        this.webRtcPeers = options?.webRTCPeers;
       }
-      if (!options.providers.includes('Matrix')) {
-        throw new Error('Matrix provider is required');
-        // this.useMatrix = false;
+      if (options.providers) {
+        if (!options.providers.includes('WebRTC')) {
+          this.webRtcPeers = [];
+          this.useWebRTC = false;
+        }
+        if (!options.providers.includes('Matrix')) {
+          throw new Error('Matrix provider is required');
+          // this.useMatrix = false;
+        }
+        if (!options.providers.includes('IndexedDB')) {
+          throw new Error('IndexedDB provider is required');
+          // this.useIndexedDB = false;
+        }
       }
-      if (!options.providers.includes('IndexedDB')) {
-        throw new Error('IndexedDB provider is required');
-        // this.useIndexedDB = false;
-      }
+      pollConnection(this); // start polling for matrix baserUrl server connection status
     }
-    pollConnection(this); // start polling for matrix baserUrl server connection status
+
     if (options?.debug) {
       this.on('debugger', (event) => {
         if (options.debug === true) {
@@ -141,7 +158,5 @@ export class Database {
         }
       });
     }
-
-    // todo: if registry is in localStorage, load up each room's store.
   }
 }

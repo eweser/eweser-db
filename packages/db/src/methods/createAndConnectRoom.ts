@@ -20,7 +20,7 @@ export const createAndConnectRoom =
     name,
     topic,
     initialValues,
-  }: CreateAndConnectRoomOptions): Promise<Room<T>> => {
+  }: CreateAndConnectRoomOptions<T>): Promise<Room<T>> => {
     try {
       if (!_db.matrixClient)
         throw new Error("can't create room without matrixClient");

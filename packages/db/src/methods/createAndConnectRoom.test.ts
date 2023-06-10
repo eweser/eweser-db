@@ -100,7 +100,7 @@ describe('createAndConnectRoom', () => {
         frontText: 'test2-front',
         backText: 'test2-back',
       };
-      const initialValues: CreateAndConnectRoomOptions['initialValues'] = [
+      const initialValues: CreateAndConnectRoomOptions<any>['initialValues'] = [
         testCard,
         testCard2,
       ];

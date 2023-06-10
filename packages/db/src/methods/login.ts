@@ -36,58 +36,55 @@ const setLoginStatus = (_db: Database, loginStatus: LoginStatus) => {
  *
  * Saves loginData to localStorage on success
  */
-export const login =
-  (_db: Database) =>
-  async (
-    loginData: LoginData,
-    fromSignup = false
-  ): Promise<TypedMap<Documents<RegistryData>> | string> => {
-    try {
-      if (!fromSignup) setLoginStatus(_db, 'loading');
+export async function login(
+  this: Database,
+  loginData: LoginData,
+  fromSignup = false
+): Promise<TypedMap<Documents<RegistryData>> | string> {
+  try {
+    if (!fromSignup) setLoginStatus(this, 'loading');
 
-      const logger = (message: string, data?: any) =>
-        _db.emit({
-          event: 'login',
-          message,
-          data: { raw: data },
-        });
-      logger('starting login', loginData);
-      _db.baseUrl = loginData.baseUrl;
-
-      if (
-        !(loginData.userId?.includes('@') && loginData.userId.includes(':'))
-      ) {
-        validateUsername(loginData.userId ?? '');
-      }
-
-      const online = await awaitOnline(_db);
-      logger('starting login, online: ' + online, online);
-      if (!online) {
-        throw new Error('not online');
-      }
-
-      await loginToMatrix(_db, loginData);
-
-      const connectRes = await _db.connectRegistry();
-
-      if (loginData.initialRoomConnect) {
-        await _db.createAndConnectRoom(loginData.initialRoomConnect);
-      }
-
-      logger('finished login', { connectRes });
-      _db.emit({ event: 'started' });
-      setLoginStatus(_db, 'ok');
-      return connectRes;
-    } catch (error: any) {
-      const message = error?.message;
-      _db.emit({
+    const logger = (message: string, data?: any) =>
+      this.emit({
         event: 'login',
         message,
-        data: { raw: error },
-        level: 'error',
+        data: { raw: data },
       });
-      setLoginStatus(_db, 'failed');
-      _db.emit({ event: 'startFailed', message });
-      return message;
+    logger('starting login', loginData);
+    this.baseUrl = loginData.baseUrl;
+
+    if (!(loginData.userId?.includes('@') && loginData.userId.includes(':'))) {
+      validateUsername(loginData.userId ?? '');
     }
-  };
+
+    const online = await awaitOnline(this);
+    logger('starting login, online: ' + online, online);
+    if (!online) {
+      throw new Error('not online');
+    }
+
+    await loginToMatrix(this, loginData);
+
+    const connectRes = await this.connectRegistry();
+
+    if (loginData.initialRoomConnect) {
+      await this.createAndConnectRoom(loginData.initialRoomConnect);
+    }
+
+    logger('finished login', { connectRes });
+    this.emit({ event: 'started' });
+    setLoginStatus(this, 'ok');
+    return connectRes;
+  } catch (error: any) {
+    const message = error?.message;
+    this.emit({
+      event: 'login',
+      message,
+      data: { raw: error },
+      level: 'error',
+    });
+    setLoginStatus(this, 'failed');
+    this.emit({ event: 'startFailed', message });
+    return message;
+  }
+}
