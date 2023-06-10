@@ -5,16 +5,9 @@ import type {
   Room,
   LoginData,
   CreateAndConnectRoomOptions,
-  UserDocument,
 } from '../types';
 import type { Database } from '../';
-import {
-  buildRef,
-  newDocument,
-  randomString,
-  getOrSetRoom,
-  buildAliasFromSeed,
-} from '../utils';
+import { getOrSetRoom, buildAliasFromSeed } from '../utils';
 
 import {
   LocalStorageKey,
@@ -34,6 +27,7 @@ import {
   waitForWebRtcConnection,
   autoReconnect,
 } from '../utils';
+import { populateInitialValues } from '../utils/db/populateInitialValues';
 
 const checkIfRoomIsInRegistry = async (
   _db: Database,
@@ -57,38 +51,8 @@ const checkIfRoomIsInRegistry = async (
   return registryEntry;
 };
 
-const populateInitialValues = <T extends UserDocument>(
-  initialValues: Partial<T>[],
-  room: Room<T>
-) => {
-  const cleanupPassedInDocument = (doc: Partial<T>): T => {
-    if (!doc) throw new Error('doc not provided');
-    if (!room.roomAlias) throw new Error('roomAlias not set');
-    const { _id, _ref, _created, _updated, _deleted, _ttl, ...rest } = doc;
-    const aliasSeed = getAliasSeedFromAlias(room.roomAlias);
-    const newDoc = newDocument<T>(
-      _ref ??
-        buildRef({
-          collectionKey: room.collectionKey as CollectionKey,
-          aliasSeed,
-          documentId: _id ?? randomString(16),
-        }),
-      rest as any
-    );
-    if (_created) newDoc._created = _created;
-    if (_updated) newDoc._updated = _updated;
-    if (_deleted) newDoc._deleted = _deleted;
-    if (_ttl) newDoc._ttl = _ttl;
-    return newDoc;
-  };
-  const populatedInitialValues = initialValues.map(cleanupPassedInDocument);
-  populatedInitialValues.forEach((doc) => {
-    room.ydoc?.getMap('documents').set(doc._id, doc);
-  });
-};
-
-export type ConnectRoomOptions = Omit<
-  CreateAndConnectRoomOptions,
+export type ConnectRoomOptions<T extends Document> = Omit<
+  CreateAndConnectRoomOptions<T>,
   'name' | 'topic'
 >;
 
@@ -113,23 +77,23 @@ const disconnectWhenOffline = (
   });
 };
 
-/**
- * Note that the room must have been created already and the roomAlias must be in the registry
- * Returns a string if there was an error, otherwise returns the room object
- * 1. Joins the Matrix room if not in it
- * 2. Creates a Y.Doc, syncs with localStorage (indexeddb) and saves it to the room object
- * 3. Creates a matrixCRDT provider and saves it to the room object
- * 4. Save the room's metadata to the registry (if not already there)
- * 5. saves teh room to the DB.collections, indexed by the aliasSeed, including the name of the collection
- * 6. Populates the ydoc with initial values if passed any
- *  Provides status updates using the DB.emit() method
- * 7. Sets up a listener for if going from offline to online, and then re-connects the room
- * 8. Sets up a listener for if going from online to offline, and then disconnects the room
- */
 export const connectRoom =
   (_db: Database) =>
+  /**
+   * Note that the room must have been created already and the roomAlias must be in the registry
+   * Returns a string if there was an error, otherwise returns the room object
+   * 1. Joins the Matrix room if not in it
+   * 2. Creates a Y.Doc, syncs with localStorage (indexeddb) and saves it to the room object
+   * 3. Creates a matrixCRDT provider and saves it to the room object
+   * 4. Save the room's metadata to the registry (if not already there)
+   * 5. saves teh room to the DB.collections, indexed by the aliasSeed, including the name of the collection
+   * 6. Populates the ydoc with initial values if passed any
+   *  Provides status updates using the DB.emit() method
+   * 7. Sets up a listener for if going from offline to online, and then re-connects the room
+   * 8. Sets up a listener for if going from online to offline, and then disconnects the room
+   */
   async <T extends Document>(
-    params: ConnectRoomOptions
+    params: ConnectRoomOptions<T>
   ): Promise<Room<T> | string> => {
     const { collectionKey, aliasSeed, initialValues, waitForWebRTC } = params;
     try {

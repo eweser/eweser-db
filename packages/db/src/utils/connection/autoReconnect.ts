@@ -7,7 +7,7 @@ export const autoReconnectListenerName = (roomAlias: string) =>
 export const autoReconnect = (
   _db: Database,
   room: Room<Document>,
-  params: ConnectRoomOptions
+  params: ConnectRoomOptions<any>
 ) => {
   if (params.doNotAutoReconnect) return;
   _db.on(autoReconnectListenerName(room.roomAlias), async ({ event, data }) => {

@@ -8,8 +8,6 @@ import {
   checkWebRtcConnection,
   createRoom,
   getAliasNameFromAlias,
-  getRegistry,
-  newDocument,
   randomString,
   updateRegistryEntry,
   wait,
@@ -22,7 +20,6 @@ import {
 } from '../test-utils';
 import { createMatrixUser } from '../test-utils/matrixTestUtil';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
-import type { RegistryData } from '../types';
 
 const loginInfo = userLoginInfo();
 const { userId, password } = loginInfo;

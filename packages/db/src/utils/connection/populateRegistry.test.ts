@@ -65,7 +65,7 @@ describe('populateRegistry', () => {
         db.userId
       )
     );
-    const publicRoom = db.getRoom({
+    const publicRoom = db.getRoom<Profile>({
       collectionKey: CollectionKey.profiles,
       aliasSeed: 'public' + testSeed,
     });
@@ -77,14 +77,14 @@ describe('populateRegistry', () => {
     expect(defaultProfile?.firstName).toEqual('New');
     expect(defaultProfile?.lastName).toEqual('User');
 
-    const privateRoom = db.getRoom({
+    const privateRoom = db.getRoom<Profile>({
       collectionKey: CollectionKey.profiles,
       aliasSeed: 'private' + testSeed,
     });
     if (!privateRoom) {
       throw new Error('privateRoom undefined');
     }
-    const privateDocs = db.getDocuments<Profile>(privateRoom);
+    const privateDocs = db.getDocuments(privateRoom);
     const privateDefaultProfile = privateDocs.get('default');
     expect(privateDefaultProfile?.firstName).toEqual('New');
     expect(privateDefaultProfile?.lastName).toEqual('User');
