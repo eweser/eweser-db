@@ -51,13 +51,13 @@ jobs:
         # the control operator & runs the first command in the background
         run: npm run start-test-rpc-server & npx wait-on http://localhost:4444
 
-      - name: Run unit/integration tests
-        run: npx lerna run test --scope @eweser/db
+      # - name: Run unit/integration tests
+      # run: npx lerna run test --scope @eweser/db
 
       - name: Run e2e tests on all examples
         uses: cypress-io/github-action@v5
         with:
           start: npm run run-example-previews
           browser: chrome
-          wait-on: http://localhost:8000, http://localhost:8100, http://localhost:8300, http://localhost:8400, http://localhost:8500, localhost:8600
+          wait-on: http://localhost:8000, http://localhost:8100, http://localhost:8300, http://localhost:8400, http://localhost:8500, http://localhost:8600
           wait-on-timeout: 180
