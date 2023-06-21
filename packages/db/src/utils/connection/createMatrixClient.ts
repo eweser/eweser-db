@@ -1,3 +1,4 @@
+import type { MatrixClient } from 'matrix-js-sdk';
 import { createClient } from 'matrix-js-sdk';
 import type { LoginData } from '../../types';
 import { LocalStorageKey, localStorageSet } from '../db/localStorageService';
@@ -41,13 +42,31 @@ export async function createMatrixClient(data: LoginData) {
     deviceId = loginRes.device_id;
     accessToken = loginRes.access_token;
   }
+  let matrixClient: MatrixClient | null = null;
 
-  const matrixClient = createClient({
-    baseUrl,
-    userId,
-    accessToken,
-    deviceId,
-  });
+  try {
+    matrixClient = createClient({
+      baseUrl,
+      userId,
+      accessToken,
+      deviceId,
+    });
+  } catch (error) {
+    if (password && error.message.includes('M_UNKNOWN_TOKEN')) {
+      const loginRes: MatrixLoginRes = await tempClient.loginWithPassword(
+        userId,
+        password
+      );
+      deviceId = loginRes.device_id;
+      accessToken = loginRes.access_token;
+      matrixClient = createClient({
+        baseUrl,
+        userId,
+        accessToken,
+        deviceId,
+      });
+    }
+  }
 
   const loginSaveData: LoginData = {
     baseUrl,
@@ -57,6 +76,8 @@ export async function createMatrixClient(data: LoginData) {
     deviceId,
   };
   localStorageSet(LocalStorageKey.loginData, loginSaveData);
+
+  if (!matrixClient) throw new Error('matrixClient not created');
 
   // overwrites because we don't call .start();
   (matrixClient as any).canSupportVoip = false;
