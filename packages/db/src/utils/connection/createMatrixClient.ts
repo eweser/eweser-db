@@ -67,7 +67,6 @@ export async function createMatrixClient(data: LoginData) {
       });
     }
   }
-
   const loginSaveData: LoginData = {
     baseUrl,
     userId,
@@ -78,7 +77,9 @@ export async function createMatrixClient(data: LoginData) {
   localStorageSet(LocalStorageKey.loginData, loginSaveData);
 
   if (!matrixClient) throw new Error('matrixClient not created');
-
+  // avoid warning
+  // MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11
+  matrixClient?.setMaxListeners(100);
   // overwrites because we don't call .start();
   (matrixClient as any).canSupportVoip = false;
   (matrixClient as any).clientOpts = {
