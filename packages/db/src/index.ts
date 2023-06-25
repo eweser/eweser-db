@@ -25,6 +25,7 @@ import { getDocuments } from './methods/getDocuments';
 import { deleteRoom } from './methods/deleteRoom';
 import { createOfflineRoom } from './methods/createOfflineRoom';
 import { logout } from './methods/logout';
+import { addPublicAggregatorsToRoom } from './methods/addPublicAggregatorsToRoom';
 
 export type {
   Profile,
@@ -55,6 +56,7 @@ const defaultRtcPeers = [
 ];
 
 export type ProviderOptions = 'WebRTC' | 'Matrix' | 'IndexedDB';
+export type AggregatorInfo = { url: string; userId: string };
 export interface DatabaseOptions {
   baseUrl?: string;
   debug?: boolean;
@@ -65,6 +67,8 @@ export interface DatabaseOptions {
   /** provide a list of peers to use instead of the default */
   webRTCPeers?: string[];
   offlineOnly?: boolean;
+  /** These listener accounts will be added to Matrix rooms that the user marks as public */
+  publicAggregators?: AggregatorInfo[];
 }
 
 export class Database {
@@ -88,6 +92,9 @@ export class Database {
   listeners: DBEventListeners = {};
 
   webRtcPeers: string[] = defaultRtcPeers;
+  /** a list of matrix userId's of public aggregator accounts  */
+  publicAggregators: AggregatorInfo[] = [];
+
   // methods
 
   // logger/event emitter
@@ -105,6 +112,7 @@ export class Database {
   loadRoom = loadRoom(this);
   loadAndConnectRoom = loadAndConnectRoom(this);
   deleteRoom = deleteRoom(this);
+  addPublicAggregatorsToRoom = addPublicAggregatorsToRoom;
 
   login = login;
   signup = signup(this);
@@ -124,6 +132,9 @@ export class Database {
   constructor(optionsPassed?: DatabaseOptions) {
     const options = optionsPassed || {};
     this.baseUrl = options?.baseUrl || 'https://matrix.org';
+    if (options.publicAggregators) {
+      this.publicAggregators = options.publicAggregators;
+    }
     if (options.offlineOnly) {
       this.offlineOnly = true;
       this.userId = 'offline-user';

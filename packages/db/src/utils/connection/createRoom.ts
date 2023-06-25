@@ -13,6 +13,7 @@ export interface CreateRoomOptions {
   topic?: string;
   encrypt?: boolean;
   spaceRoom?: boolean;
+  publicRoom?: boolean;
 }
 
 export const createRoom = async (
@@ -25,7 +26,23 @@ export const createRoom = async (
 
   let newRoom: { room_id: string } | null = null;
   const initialState: sdk.ICreateRoomStateEvent[] = [];
-  if (encrypt) {
+  if (options.name) {
+    initialState.push({
+      type: 'm.room.name',
+      state_key: '',
+      content: { name },
+    });
+  }
+  if (options.publicRoom) {
+    initialState.push({
+      type: 'm.room.join_rules',
+      state_key: '',
+      content: {
+        join_rule: 'public',
+      },
+    });
+  }
+  if (!options.publicRoom && encrypt) {
     initialState.push({
       type: 'm.room.encryption',
       state_key: '',
@@ -34,12 +51,14 @@ export const createRoom = async (
       },
     });
   }
+  console.dir({ initialState }, { depth: null });
   newRoom = await matrixClient.createRoom({
     // see the example in MatrixProvider source. options might not be correct
     room_alias_name: roomAliasName,
     name,
     topic,
-    visibility: Visibility.Private, // some bad typings from the sdk. this is expecting an enum. but the enum is not exported from the library.
+    visibility:
+      options.publicRoom === true ? Visibility.Public : Visibility.Private, // some bad typings from the sdk. this is expecting an enum. but the enum is not exported from the library.
     // this enables encryption
     initial_state: initialState,
     creation_content: { type: spaceRoom ? 'm.space' : undefined },

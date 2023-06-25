@@ -10,7 +10,7 @@
   ],
   "author": "jacobcoro",
   "type": "module",
-  "homepage": "https://github.com/jacobcoro/eweserdb",
+  "homepage": "https://github.com/eweser/eweser-db",
   "license": "MIT",
   "directories": {
     "src": "src"
@@ -35,7 +35,8 @@
     }
   },
   "scripts": {
-    "test": "vitest --run",
+    "test": "NODE_TLS_REJECT_UNAUTHORIZED=0 vitest --run",
+    "test:watch": "NODE_TLS_REJECT_UNAUTHORIZED=0 vitest --watch",
     "build": "rm -rf dist; rm -rf types; tsc --project tsconfig.build.json && vite build",
     "typescript-watch": "tsc --watch --project tsconfig.build.json",
     "vite-build-watch": "vite build --watch",
@@ -65,6 +66,7 @@
   "gitHead": "da7009f0729d7f3e60b30d7d26c85bc67ecb17a5",
   "dependencies": {
     "@matrix-org/olm": "^3.2.14",
+    "@eweser/websockets": "*",
     "matrix-crdt": "0.2.1-alpha.1",
     "matrix-js-sdk": "^19.4.0",
     "y-indexeddb": "^9.0.9",
