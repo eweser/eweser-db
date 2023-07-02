@@ -6,7 +6,7 @@ import {
   waitForMessage,
   waitForSocketState,
 } from '@eweser/websockets';
-// Because we changed the 'publicRoom' setting to allow any user to join the room, we don't need to send an invite, just tell the aggregator to join. But keeping this code cause it was a bit tricky, and keep it just in case we go back to requiring invites.
+// Because we changed the 'isPublic' setting to allow any user to join the room, we don't need to send an invite, just tell the aggregator to join. But keeping this code cause it was a bit tricky, and keep it just in case we go back to requiring invites.
 // const sendInvite = async (
 //   matrixClient: MatrixClient,
 //   aggregator: AggregatorInfo,
@@ -84,8 +84,8 @@ export async function addPublicAggregatorsToRoom<T extends Document>(
     roomId: string
   ) => {
     const socket = new WebSocket(aggregatorUrl);
-
     await waitForSocketState(socket, socket.OPEN);
+
     sendMessage(socket, { type: 'joinRoom', roomId });
     const res = await waitForMessage(socket, 'joinedRoom', {
       field: 'roomId',

@@ -36,7 +36,7 @@ export const populateRegistry = async (_db: Database, customSeed?: string) => {
       roomAliasName: getAliasNameFromAlias(profileRoomAlias),
       name: 'Public Profile',
       topic: 'Your public profile',
-      publicRoom: true,
+      isPublic: true,
     });
     if (!profileRoom.room_id) throw new Error('failed to create profile room');
     profileRoomId = profileRoom.room_id;

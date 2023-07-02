@@ -13,7 +13,7 @@ export interface CreateRoomOptions {
   topic?: string;
   encrypt?: boolean;
   spaceRoom?: boolean;
-  publicRoom?: boolean;
+  isPublic?: boolean;
 }
 
 export const createRoom = async (
@@ -33,7 +33,7 @@ export const createRoom = async (
       content: { name },
     });
   }
-  if (options.publicRoom) {
+  if (options.isPublic) {
     initialState.push({
       type: 'm.room.join_rules',
       state_key: '',
@@ -42,7 +42,7 @@ export const createRoom = async (
       },
     });
   }
-  if (!options.publicRoom && encrypt) {
+  if (!options.isPublic && encrypt) {
     initialState.push({
       type: 'm.room.encryption',
       state_key: '',
@@ -58,7 +58,7 @@ export const createRoom = async (
     name,
     topic,
     visibility:
-      options.publicRoom === true ? Visibility.Public : Visibility.Private, // some bad typings from the sdk. this is expecting an enum. but the enum is not exported from the library.
+      options.isPublic === true ? Visibility.Public : Visibility.Private, // some bad typings from the sdk. this is expecting an enum. but the enum is not exported from the library.
     // this enables encryption
     initial_state: initialState,
     creation_content: { type: spaceRoom ? 'm.space' : undefined },

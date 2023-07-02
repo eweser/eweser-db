@@ -65,14 +65,14 @@ describe('populateRegistry', () => {
         db.userId
       )
     );
-    const publicRoom = db.getRoom<Profile>({
+    const isPublic = db.getRoom<Profile>({
       collectionKey: CollectionKey.profiles,
       aliasSeed: 'public' + testSeed,
     });
-    if (!publicRoom) {
-      throw new Error('publicRoom undefined');
+    if (!isPublic) {
+      throw new Error('isPublic undefined');
     }
-    const publicDocs = db.getDocuments<Profile>(publicRoom);
+    const publicDocs = db.getDocuments<Profile>(isPublic);
     const defaultProfile = publicDocs.get('default');
     expect(defaultProfile?.firstName).toEqual('New');
     expect(defaultProfile?.lastName).toEqual('User');

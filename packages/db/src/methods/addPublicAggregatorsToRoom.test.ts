@@ -58,7 +58,7 @@ describe('addPublicAggregatorsToRoom', () => {
     const room = await db.createAndConnectRoom({
       aliasSeed,
       collectionKey: CollectionKey.flashcards,
-      publicRoom: true,
+      isPublic: true,
     });
     await wait(1000);
     console.log(room.roomId);

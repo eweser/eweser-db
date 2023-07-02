@@ -20,7 +20,7 @@ export const createAndConnectRoom =
     name,
     topic,
     initialValues,
-    publicRoom,
+    isPublic,
   }: CreateAndConnectRoomOptions<T>): Promise<Room<T>> => {
     try {
       if (!_db.matrixClient)
@@ -50,7 +50,7 @@ export const createAndConnectRoom =
           roomAliasName,
           name,
           topic,
-          publicRoom,
+          isPublic,
         });
         logger('room created', createRoomResult);
 

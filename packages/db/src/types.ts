@@ -93,7 +93,7 @@ export interface CreateAndConnectRoomOptions<T extends Document> {
   initialValues?: Partial<T>[];
   doNotAutoReconnect?: boolean;
   waitForWebRTC?: boolean;
-  publicRoom?: boolean;
+  isPublic?: boolean;
 }
 
 export interface LoginData extends ICreateClientOpts {
