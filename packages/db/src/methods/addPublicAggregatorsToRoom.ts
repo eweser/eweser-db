@@ -1,6 +1,5 @@
 import type { Database } from '..';
-import type { DBEvent } from '../../types';
-import type { Document, Room } from '../types';
+import type { Document, Room, DBEvent } from '../types';
 import { WebSocket } from 'ws';
 import {
   sendMessage,
