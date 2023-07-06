@@ -1,81 +1,55 @@
-import { createClient } from 'matrix-js-sdk';
-import { readFileSync } from 'fs';
-import { createServer } from 'https';
-
-import { WebSocketServer } from 'ws';
-import { join, dirname } from 'path';
-import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable no-console */
 import type { WebSocketMessage } from '@eweser/websockets';
 import { sendMessage, parseMessage } from '@eweser/websockets';
+import type { Document, YDoc } from '@eweser/db';
+import type { MatrixProvider } from 'matrix-crdt';
+import type { Doc } from 'yjs';
+import type { MongoRoomRecord } from './mongo-helpers.js';
+import { addRoom, getAllRooms } from './mongo-helpers.js';
+import { initServer } from './server.js';
+import { connectMatrixProvider, matrixClient } from './matrix.js';
+import { logger } from './helpers.js';
 
-const logger = (data: any, level: 'info' | 'error' = 'info') => {
-  // eslint-disable-next-line no-console
-  level === 'info' ? console.log(data) : console.error(data);
+const sockServer = await initServer();
+
+const handleJoinRoom = async (
+  roomId: string,
+  sendMessageToAll: (message: WebSocketMessage) => Promise<void>
+) => {
+  const joined = await matrixClient.joinRoom(roomId);
+  if (joined?.roomId === roomId) {
+    console.log('joined room', roomId);
+    sendMessageToAll({ type: 'joinedRoom', roomId });
+    addRoom(roomId); // add to DB
+    rooms[roomId] = await connectMatrixProvider(roomId);
+  }
 };
 
-dotenv.config();
-
-const dev = process.env.NODE_ENV !== 'production';
-
-type MatrixLoginRes = {
-  access_token: string;
-  device_id: string;
-  home_server: string;
-  user_id: string;
-  well_known: { 'm.homeserver': { base_url: string } };
+const handleGetDocuments = async (
+  roomId: string,
+  baseUrl: string,
+  sendMessageToAll: (message: WebSocketMessage) => Promise<void>
+) => {
+  //
 };
 
-const password = process.env.PASSWORD;
-const userId = process.env.USER_ID;
-const baseUrl = process.env.BASE_URL || 'http://localhost:8888';
-
-if (!password) {
-  throw new Error('PASSWORD env var is required');
-}
-if (!userId) {
-  throw new Error('USER_ID env var is required');
-}
-
-const httpsOptions = {
-  key: readFileSync(
-    join(dirname(fileURLToPath(import.meta.url)), '../certs/key.pem')
-  ),
-  cert: readFileSync(
-    join(dirname(fileURLToPath(import.meta.url)), '../certs/cert.pem')
-  ),
+export type AppMemoryRoom = MongoRoomRecord & {
+  ydoc: Doc;
+  matrixProvider: MatrixProvider;
 };
 
-const httpsServer = createServer(httpsOptions);
-const port = dev ? 3333 : 443;
-httpsServer.listen(port, () =>
-  // eslint-disable-next-line no-console
-  console.log('HTTPS server listening on port ' + port)
-);
+const rooms: { [roomId: string]: AppMemoryRoom } = {};
 
-const sockServer = new WebSocketServer({
-  server: httpsServer,
+const joinedRoomsList = await getAllRooms();
+
+joinedRoomsList.forEach(async ({ roomId }) => {
+  rooms[roomId] = await connectMatrixProvider(roomId);
+  const typedDoc: YDoc<Document> = rooms[roomId].ydoc as any;
+  const documents = typedDoc.getMap('documents');
+  const allDocs = documents.toJSON();
+  // console.log({ allDocs });
 });
-
-const tempClient = createClient({ baseUrl });
-
-const loginRes: MatrixLoginRes = await tempClient.loginWithPassword(
-  userId,
-  password
-);
-
-const matrixClient = createClient({
-  baseUrl,
-  userId,
-  accessToken: loginRes.access_token,
-  deviceId: loginRes.device_id,
-});
-
-export const wait = (ms: number) =>
-  new Promise((resolve) => setTimeout(resolve, ms));
-
-const rooms = await matrixClient.getJoinedRooms();
-console.log({ rooms });
 
 sockServer.on('connection', (ws) => {
   const sendMessageToAll = async (message: WebSocketMessage) => {
@@ -85,22 +59,13 @@ sockServer.on('connection', (ws) => {
   };
   logger('New client connected: ' + ws.url);
 
-  const handleJoinRoom = async (roomId: string) => {
-    console.log('joining room', roomId);
-    const joined = await matrixClient.joinRoom(roomId);
-    if (joined?.roomId === roomId) {
-      console.log('joined room', roomId);
-      sendMessageToAll({ type: 'joinedRoom', roomId });
-    }
-  };
-
   ws.on('message', async (rawMessage) => {
     const message = parseMessage(rawMessage);
     console.log({ message });
     try {
       switch (message.type) {
         case 'joinRoom':
-          handleJoinRoom(message.roomId);
+          handleJoinRoom(message.roomId, sendMessageToAll);
           break;
       }
     } catch (error: any) {
