@@ -63,7 +63,8 @@ describe('addPublicAggregatorsToRoom', () => {
     await wait(1000);
     console.log(room.roomId);
     expect(room.roomId).toBeDefined();
-
+    const Flashcards = await db.getDocuments(room);
+    Flashcards.new({ front: 'front', back: 'back' });
     const res = await db.addPublicAggregatorsToRoom(room);
     console.log({ res });
     console.log(localAggregatorURL);

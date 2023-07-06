@@ -12,7 +12,11 @@ export type WebSocketMessage =
       type: 'joinRoom';
       roomId: string;
     }
-  | { type: 'joinedRoom'; roomId: string };
+  | { type: 'joinedRoom'; roomId: string }
+  | {
+      type: 'getRoomDocuments';
+      roomId: string;
+    };
 
 export const sendMessage = (socket: WebSocket, message: WebSocketMessage) => {
   const stringifiedMessage = JSON.stringify(message);

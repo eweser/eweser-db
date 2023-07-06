@@ -1,5 +1,5 @@
 {
-  "name": "@eweser/example-interop-notes",
+  "name": "@eweser/example-public-sharing",
   "version": "1.4.0",
   "private": true,
   "description": "eweser-db example mini app using the ydoc directly to make CRUD updates",

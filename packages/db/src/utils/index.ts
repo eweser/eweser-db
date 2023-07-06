@@ -24,8 +24,7 @@ export function getRoomDocuments<T extends Document>(
   room: Room<T>
 ): TypedMap<Documents<T>> {
   if (!room.ydoc) throw new Error('room.ydoc not found');
-  const registryMap = room.ydoc.getMap('documents');
-  return registryMap;
+  return room.ydoc.getMap('documents');
 }
 
 /** this in an uneditable version. use getRegistry() then .get('0') for the registry document  */

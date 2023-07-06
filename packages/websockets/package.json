@@ -14,5 +14,10 @@
   "license": "MIT",
   "dependencies": {
     "ws": "^8.13.0"
+  },
+  "devDependencies": {
+    "@eweser/eslint-config-ts": "^1.4.0",
+    "@types/ws": "^8.5.5",
+    "typescript": "^5.1.3"
   }
 }

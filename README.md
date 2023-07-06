@@ -181,35 +181,50 @@ This is an area that needs further consideration. Community input is appreciated
 - [Matrix events size limit](https://github.com/YousefED/Matrix-CRDT/issues/11)
 - [Matrix-crdt e2ee support](https://github.com/YousefED/Matrix-CRDT/pull/17)
 - connecting to rooms can be slow depending on the homeserver, especially the `getRoomIdForAlias` call when the homeserver has many rooms it needs to search through. Because the registry stores the id, the second time a room is connected to it should be faster.
-- Developers should minimize the number of rooms the user has connected to at any given time and use `room.matrixProvider.dispose()` to disconnect from rooms when they are not needed. Otherwise you might run into an error saying there are too many event listeners.
+- Developers should minimize the number of rooms the user has connected to at any given time (current limit is set to 100) and use `db.disconnectRoom()` to disconnect from rooms when they are not needed. Otherwise you might run into an error saying there are too many event listeners.
 
 # Example apps
 
-- [Basic Notes App](https://eweser-db-example-basic.netlify.app/), dev [url](http://localhost:8000/)
+### [Basic Notes App](https://eweser-db-example-basic.netlify.app/)
 
-  - view the code at `/packages/example-basic`.
-  - E2E test is in `/e2e/cypress/tests/basic.cy.js`
+- dev [url](http://localhost:8000/)
+- view the code at `/packages/example-basic`.
+- E2E test is in `/e2e/cypress/tests/basic.cy.js`
 
-- [Notes App with Markdown Editor](https://eweser-db-example-editor.netlify.app/), dev [url](http://localhost:8100/)
+### [Markdown Editor](https://eweser-db-example-editor.netlify.app/)
 
-  - view the code at `/packages/example-editor`.
-  - E2E test is in `/e2e/cypress/tests/editor.cy.js`
+- This shows how to use a collaborative wysiwyg markdown editor with eweser-db.
+- dev [url](http://localhost:8100/)
+- view the code at `/packages/example-editor`.
+- E2E test is in `/e2e/cypress/tests/editor.cy.js`
 
-- [Multi-room](https://eweser-db-example-editor.netlify.app/), dev [url](http://localhost:8300/)
+### [Multi-room](https://eweser-db-example-editor.netlify.app/)
 
-  - view the code at `/packages/example-multi-room`.
-  - E2E test is in `/e2e/cypress/tests/multi-room.cy.js`
+- This shows how to use eweser-db with multiple Matrix rooms ('folders' or groups of documents).
+- dev [url](http://localhost:8300/)
+- view the code at `/packages/example-multi-room`.
+- E2E test is in `/e2e/cypress/tests/multi-room.cy.js`
 
-- [Interoperability - Notes](https://eweser-db-example-interop-flashcards.netlify.app/), dev [url](http://localhost:8400/)
-  Use this app to link notes in this app to flashcards in the next flashcards app.
+### Interoperability - [Notes](https://eweser-db-example-interop-notes.netlify.app/) and [Flashcards](https://eweser-db-example-interop-flashcards.netlify.app/)
 
-  - view the code at `/packages/example-interop-flashcards`.
-  - E2E test is in `/e2e/cypress/tests/interoperability.cy.js`
+- These two apps show how 2 independently developed apps can sync data in the user's database. Use this app to link notes in this app to flashcards in the next flashcards app.
+- dev [url](http://localhost:8400/)
+- dev [url flashcards](http://localhost:8500/)
+- view the code at `/packages/example-interop-notes` and `/packages/example-interop-flashcards`.
+- E2E test is in `/e2e/cypress/tests/interoperability.cy.js`
 
-- [Interoperability - Flashcards](https://eweser-db-example-interop-flashcards.netlify.app/), dev [url](http://localhost:8500/)
+### Offline first
 
-  - view the code at `/packages/example-interop-flashcards`.
-  - E2E test is in `/e2e/cypress/tests/interoperability.cy.js`
+- This app shows how to let the user first use the app offline without signup up. Then keep their data when the user signs up and connects a Matrix account.
+- dev [url](http://localhost:8600)
+- view the code at `/packages/example-offline-first`.
+- E2E test is in `/e2e/cypress/tests/offline-first.cy.js`
+
+### Public sharing
+
+- This app shows how to share data with a public 'aggregator' that listens to changes in the shared room and serves it publicly. Note that you must also run the aggregator server locally to see the data. See the `packages/aggregator` folder for more info.
+- dev [url](http://localhost:8700)
+- view the code at `/packages/example-public-sharing`.
 
 # Contribute and develop
 
