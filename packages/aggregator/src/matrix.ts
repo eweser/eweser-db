@@ -3,12 +3,11 @@ import type { MatrixClient } from 'matrix-js-sdk';
 
 import { MatrixProvider } from 'matrix-crdt';
 import request from 'request';
+Matrix.request(request);
+
 import { Doc } from 'yjs';
 import { logger } from './helpers.js';
-import type { AppMemoryRoom } from '.';
-import { MATRIX_CONFIG } from './constants.js';
-
-const { password, userId, baseUrl } = MATRIX_CONFIG;
+import type { AppMemoryRoom } from './start.js';
 
 type MatrixLoginRes = {
   access_token: string;
@@ -17,36 +16,47 @@ type MatrixLoginRes = {
   user_id: string;
   well_known: { 'm.homeserver': { base_url: string } };
 };
+export type MatrixConfig = {
+  baseUrl: string;
+  userId: string;
+  password: string;
+};
 
-Matrix.request(request);
-
-const tempClient = createClient({ baseUrl });
-
-const loginRes: MatrixLoginRes = await tempClient.loginWithPassword(
-  userId,
-  password
-);
-
-const matrixClient: MatrixClient = createClient({
+export const startMatrixClient = async ({
   baseUrl,
   userId,
-  accessToken: loginRes.access_token,
-  deviceId: loginRes.device_id,
-});
-matrixClient?.setMaxListeners(10000);
-(matrixClient as any).canSupportVoip = false;
-(matrixClient as any).clientOpts = {
-  lazyLoadMembers: true,
+  password,
+}: MatrixConfig) => {
+  const tempClient = createClient({ baseUrl });
+  console.log({ userId, password });
+  const loginRes: MatrixLoginRes = await tempClient.loginWithPassword(
+    userId,
+    password
+  );
+
+  const matrixClient: MatrixClient = createClient({
+    baseUrl,
+    userId,
+    accessToken: loginRes.access_token,
+    deviceId: loginRes.device_id,
+  });
+  matrixClient?.setMaxListeners(10000);
+  (matrixClient as any).canSupportVoip = false;
+  (matrixClient as any).clientOpts = {
+    lazyLoadMembers: true,
+  };
+  return matrixClient;
 };
 
 export const connectMatrixProvider = async (
-  roomId: string
+  roomId: string,
+  matrixClient: MatrixClient
 ): Promise<AppMemoryRoom> => {
   return new Promise((resolve, reject) => {
     const ydoc = new Doc();
     const matrixProvider = new MatrixProvider(
       ydoc,
-      matrixClient as any,
+      matrixClient,
       { type: 'id', id: roomId },
       undefined,
       { writer: { flushInterval: 1000 } }
@@ -61,5 +71,3 @@ export const connectMatrixProvider = async (
     });
   });
 };
-
-export { matrixClient };

@@ -4,6 +4,8 @@ export const wait = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
 export type WebSocketMessage =
+  | { type: 'ping' }
+  | { type: 'pong' }
   | {
       type: 'error';
       error: Error;
@@ -14,8 +16,22 @@ export type WebSocketMessage =
     }
   | { type: 'joinedRoom'; roomId: string }
   | {
-      type: 'getRoomDocuments';
+      type: 'connectRoom';
       roomId: string;
+    }
+  | {
+      type: 'connectedRoom';
+      roomId: string;
+    }
+  | {
+      type: 'documentGet';
+      roomId: string;
+      documentId: string;
+    }
+  | {
+      type: 'documentGetResponse';
+      roomId: string;
+      documentId: string;
     };
 
 export const sendMessage = (socket: WebSocket, message: WebSocketMessage) => {

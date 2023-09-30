@@ -6,6 +6,17 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { logger } from './helpers.js';
 import { dev } from './constants.js';
+import type { WebSocketMessage } from '@eweser/websockets';
+import { sendMessage, parseMessage } from '@eweser/websockets';
+
+export const sendMessageToAll = async (
+  sockServer: WebSocketServer,
+  message: WebSocketMessage
+) => {
+  sockServer.clients.forEach((client) => {
+    sendMessage(client, message);
+  });
+};
 
 export const initServer = async () => {
   const httpsOptions = {
@@ -29,6 +40,16 @@ export const initServer = async () => {
 
   const sockServer = new WebSocketServer({
     server: httpsServer,
+  });
+
+  // set up ping
+  sockServer.on('connection', (ws) => {
+    ws.on('message', (rawMessage) => {
+      const message = parseMessage(rawMessage);
+      if (message.type === 'ping') {
+        sendMessageToAll(sockServer, { type: 'pong' });
+      }
+    });
   });
 
   return sockServer;

@@ -1,39 +1,25 @@
 import { describe, it, expect, beforeAll, afterEach, vitest } from 'vitest';
-import type { LoginData } from '..';
-import { buildAliasFromSeed, randomString, wait } from '../utils';
+import { randomString, wait } from '../utils';
 import { CollectionKey, Database } from '..';
 import { baseUrl, HOMESERVER_NAME, userLoginInfo } from '../test-utils';
 import { createMatrixUser } from '../test-utils/matrixTestUtil';
 import { ensureMatrixIsRunning } from '../test-utils/matrixTestUtilServer';
-import { loginToMatrix } from './login';
-import {
-  localStorageGet,
-  LocalStorageKey,
-} from '../utils/db/localStorageService';
-import { WebSocket } from 'ws';
+
+import type { Flashcard } from '../types';
 
 const loginInfo = userLoginInfo();
 const { userId, password } = loginInfo;
-function waitForSocketState(socket: WebSocket, state: WebSocket['OPEN']) {
-  return new Promise(function (resolve) {
-    setTimeout(function () {
-      if (socket.readyState === state) {
-        resolve(1);
-      } else {
-        waitForSocketState(socket, state).then(resolve);
-      }
-    }, 5);
-  });
-}
+
 // const localAggregator = 'testAggregator' + randomString(8);
 const localAggregator = 'testAggregatorm87axorh';
 const localAggregatorUserId = `@${localAggregator}:${HOMESERVER_NAME}`;
 const localAggregatorURL = 'wss://localhost:3333';
-console.log(password, localAggregatorUserId);
+
 beforeAll(async () => {
   await ensureMatrixIsRunning();
   await createMatrixUser(userId, password);
   // await createMatrixUser(localAggregator, password);
+  // TODO: run the aggregator from here
 }, 60000);
 afterEach(() => {
   localStorage.clear();
@@ -55,23 +41,19 @@ describe('addPublicAggregatorsToRoom', () => {
 
     const aliasSeed = 'test' + randomString(8);
 
-    const room = await db.createAndConnectRoom({
+    const room = await db.createAndConnectRoom<Flashcard>({
       aliasSeed,
       collectionKey: CollectionKey.flashcards,
       isPublic: true,
     });
     await wait(1000);
-    console.log(room.roomId);
     expect(room.roomId).toBeDefined();
     const Flashcards = await db.getDocuments(room);
-    Flashcards.new({ front: 'front', back: 'back' });
-    const res = await db.addPublicAggregatorsToRoom(room);
-    console.log({ res });
-    console.log(localAggregatorURL);
-
-    const events = listener.mock.calls
-      .filter((call) => call[0].event === 'addPublicAggregatorsToRoom')
-      .map((call) => call[0]);
-    console.log(events);
+    Flashcards.new({ frontText: 'front', backText: 'back' });
+    await db.addPublicAggregatorsToRoom(room);
+    // TODO: add event emitters
+    // const events = listener.mock.calls
+    //   .filter((call) => call[0].event === 'addPublicAggregatorsToRoom')
+    //   .map((call) => call[0]);
   }, 80000);
 });

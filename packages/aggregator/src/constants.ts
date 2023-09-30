@@ -5,6 +5,7 @@ dotenv.config();
 const password = process.env.PASSWORD || '';
 const userId = process.env.USER_ID || '';
 const baseUrl = process.env.BASE_URL || 'http://localhost:8888';
+
 if (!password) {
   throw new Error('PASSWORD env var is required');
 }

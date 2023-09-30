@@ -3,8 +3,13 @@
 import 'regenerator-runtime/runtime.js';
 import 'lodash';
 import 'fake-indexeddb/auto';
-import dotenv from 'dotenv';
-dotenv.config();
+import Matrix from 'matrix-js-sdk';
+import request from 'request';
+import fetch from 'node-fetch';
+Matrix.request(request);
+
+(global as any).fetch = fetch;
+
 const { randomFillSync, subtle } = require('crypto');
 (global as any).Olm = require('@matrix-org/olm');
 // const { Crypto } = require("@peculiar/webcrypto");
