@@ -31,7 +31,7 @@
     "ci-build": "rm -rf package-lock.json && npm install @esbuild/linux-x64 && npm run build",
     "start-test-server": "cd test-server; docker-compose up -d",
     "start-test-rpc-server": "cd test-rpc-server; node server.js",
-    "start-test-aggregator": "cd packages/aggregator; npm run dev",
+    "start-test-aggregator": "cd packages/aggregator; npm run start",
     "install-lerna": "npm install --no-package-lock",
     "postinstall": "npx lerna bootstrap",
     "run-example-previews": "run-p run-example-preview:*",
