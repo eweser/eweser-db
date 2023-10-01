@@ -4,6 +4,7 @@ import type { WebSocketMessage } from '@eweser/websockets';
 import { parseMessage } from '@eweser/websockets';
 import type { Document, YDoc } from '@eweser/db';
 import type { MatrixProvider } from 'matrix-crdt';
+import type { MatrixClient } from 'matrix-js-sdk';
 import type { Doc } from 'yjs';
 import type { MongoRoomRecord } from './mongo-helpers.js';
 import { addRoom, getAllRooms } from './mongo-helpers.js';
@@ -11,7 +12,6 @@ import { initServer, sendMessageToAll } from './server.js';
 import type { MatrixConfig } from './matrix.js';
 import { connectMatrixProvider, startMatrixClient } from './matrix.js';
 import { logger } from './helpers.js';
-import type { MatrixClient } from 'matrix-js-sdk';
 
 const handleGetDocuments = async (
   roomId: string,

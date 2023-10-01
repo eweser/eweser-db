@@ -1,7 +1,7 @@
 import { describe, it } from 'vitest';
-import { initServer } from './server';
+import { initServer } from './server.js';
 
-import { pingTestServer } from './test-utils';
+import { pingTestServer } from './test-utils.js';
 
 describe('server', () => {
   it('starts a websocket server', async () => {

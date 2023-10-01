@@ -9,7 +9,7 @@ import {
   randomString,
 } from '@eweser/db';
 import type { FlashcardBase } from '@eweser/db/types/collections';
-import { getAllRooms, upsertDocument } from './mongo-helpers';
+import { getAllRooms, upsertDocument } from './mongo-helpers.js';
 import { beforeAll, describe, it } from 'vitest';
 import {
   baseUrl,

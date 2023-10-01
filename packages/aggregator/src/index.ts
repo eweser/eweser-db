@@ -1,4 +1,4 @@
-import { MATRIX_CONFIG } from './constants';
-import { startApp } from './start';
+import { MATRIX_CONFIG } from './constants.js';
+import { startApp } from './start.js';
 
 startApp(MATRIX_CONFIG);
