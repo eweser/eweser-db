@@ -4,8 +4,8 @@
   "description": "Listens to changes in eweser database rooms marked as public, and serves changes over an API",
   "main": "./dist/main.js",
   "scripts": {
-    "build": "tsc",
-    "start": "tsc; node ./dist/main.js",
+    "build": "tsc -f tsconfig.build.json",
+    "start": "tsc -f tsconfig.build.json; node ./dist/main.js",
     "dev": "ts-node-dev ./src/main.ts",
     "test": "vitest"
   },
