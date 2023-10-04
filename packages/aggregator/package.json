@@ -2,11 +2,11 @@
   "name": "@eweser/aggregator",
   "version": "1.0.0",
   "description": "Listens to changes in eweser database rooms marked as public, and serves changes over an API",
-  "main": "dist/main.js",
+  "main": "./dist/main.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/main.js",
-    "dev": "ts-node-dev src/main.ts",
+    "start": "node ./dist/main.js",
+    "dev": "ts-node-dev ./src/main.ts",
     "test": "vitest"
   },
   "repository": {
