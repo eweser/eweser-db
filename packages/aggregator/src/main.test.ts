@@ -1,6 +1,6 @@
-import { it, describe, should, expect } from 'vitest';
+import { it, describe, expect } from 'vitest';
 import request from 'supertest';
-import app from './main';
+import app from './main.js';
 
 describe('GET /ping', () => {
   it('ping returns pong', async () => {
