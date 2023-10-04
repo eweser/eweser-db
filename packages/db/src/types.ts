@@ -93,6 +93,7 @@ export interface CreateAndConnectRoomOptions<T extends Document> {
   initialValues?: Partial<T>[];
   doNotAutoReconnect?: boolean;
   waitForWebRTC?: boolean;
+  isPublic?: boolean;
 }
 
 export interface LoginData extends ICreateClientOpts {
@@ -141,7 +142,8 @@ export type DBEventType =
   | 'getOrCreateSpace'
   | 'getOrCreateRegistry'
   | 'getRoomId'
-  | 'createOfflineRoom';
+  | 'createOfflineRoom'
+  | 'addPublicAggregatorsToRoom';
 
 export type DBEvent = {
   event: DBEventType;

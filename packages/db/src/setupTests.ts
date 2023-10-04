@@ -3,7 +3,8 @@
 import 'regenerator-runtime/runtime.js';
 import 'lodash';
 import 'fake-indexeddb/auto';
-
+import dotenv from 'dotenv';
+dotenv.config();
 const { randomFillSync, subtle } = require('crypto');
 (global as any).Olm = require('@matrix-org/olm');
 // const { Crypto } = require("@peculiar/webcrypto");

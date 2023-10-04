@@ -31,7 +31,7 @@
     "url": "https://github.com/jacobcoro/eweserdb/issues"
   },
   "dependencies": {
-    "@eweser/db": "^1.4.0",
+    "@eweser/db": "^1.6.2",
     "@milkdown/core": "^7.1.1",
     "@milkdown/ctx": "^7.1.1",
     "@milkdown/plugin-collab": "^7.1.1",

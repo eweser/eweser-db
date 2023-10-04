@@ -195,7 +195,7 @@ This is an area that needs further consideration. Community input is appreciated
   - view the code at `/packages/example-editor`.
   - E2E test is in `/e2e/cypress/tests/editor.cy.js`
 
-- [Multi-room](https://eweser-db-example-editor.netlify.app/), dev [url](http://localhost:8300/)
+- [Multi-room](https://eweser-db-example-editor.netlify.app/), dev [url](http://localhost:8300/) This shows
 
   - view the code at `/packages/example-multi-room`.
   - E2E test is in `/e2e/cypress/tests/multi-room.cy.js`
