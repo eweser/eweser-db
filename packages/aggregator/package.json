@@ -4,7 +4,7 @@
   "description": "Listens to changes in eweser database rooms marked as public, and serves changes over an API",
   "main": "./dist/main.js",
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "rm -rf ./dist; tsc -p tsconfig.build.json",
     "start": "tsc -p tsconfig.build.json; node ./dist/main.js",
     "dev": "ts-node-dev ./src/main.ts",
     "test": "vitest"
@@ -24,7 +24,6 @@
   "bugs": {
     "url": "https://github.com/eweser/eweser-db/issues"
   },
-  "type": "module",
   "homepage": "https://github.com/eweser/eweser-db#readme",
   "devDependencies": {
     "@types/express": "^4.17.18",
