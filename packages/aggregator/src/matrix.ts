@@ -7,7 +7,7 @@ Matrix.request(request);
 
 import { Doc } from 'yjs';
 import { logger } from './helpers.js';
-import type { AppMemoryRoom } from './main.js';
+import type { AppMemoryRoom } from './rooms.js';
 
 type MatrixLoginRes = {
   access_token: string;
