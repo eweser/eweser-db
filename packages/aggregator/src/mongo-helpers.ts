@@ -1,7 +1,8 @@
 import { MongoClient, ServerApiVersion } from 'mongodb';
+import type { CollectionKey, UserDocument } from '@eweser/db/types/types.js';
+
 import { logger } from './helpers.js';
 import { MONGO_URL } from './constants.js';
-import type { CollectionKey, UserDocument } from '@eweser/db/types/types.js';
 
 const mongoClient = await new MongoClient(MONGO_URL, {
   serverApi: {

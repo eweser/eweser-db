@@ -1,13 +1,13 @@
 import Matrix, { createClient } from 'matrix-js-sdk';
 import type { MatrixClient } from 'matrix-js-sdk';
-
 import { MatrixProvider } from 'matrix-crdt';
 import request from 'request';
-Matrix.request(request);
-
 import { Doc } from 'yjs';
+
 import { logger } from './helpers.js';
 import type { AppMemoryRoom } from './rooms.js';
+
+Matrix.request(request);
 
 type MatrixLoginRes = {
   access_token: string;

@@ -1,11 +1,11 @@
-import { addRoom, getAllRooms } from './mongo-helpers';
-import type { MatrixClient } from 'matrix-js-sdk';
-import { connectMatrixProvider } from './matrix.js';
-import type { MongoRoomRecord } from './mongo-helpers.js';
-
 import type { Doc } from 'yjs';
 import type { MatrixProvider } from 'matrix-crdt';
 import type { Document, YDoc } from '@eweser/db';
+import type { MatrixClient } from 'matrix-js-sdk';
+
+import { addRoom, getAllRooms } from './mongo-helpers.js';
+import { connectMatrixProvider } from './matrix.js';
+import type { MongoRoomRecord } from './mongo-helpers.js';
 
 export type AppMemoryRoom = MongoRoomRecord & {
   ydoc: Doc;
