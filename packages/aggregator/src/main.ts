@@ -1,9 +1,9 @@
 import type { MatrixClient } from 'matrix-js-sdk';
-import { MATRIX_CONFIG } from './constants';
-import { connectMatrixProvider, startMatrixClient } from './matrix';
-import type { MongoRoomRecord } from './mongo-helpers';
-import { getAllRooms } from './mongo-helpers';
-import { startServer } from './server';
+import { MATRIX_CONFIG } from './constants.js';
+import { connectMatrixProvider, startMatrixClient } from './matrix.js';
+import type { MongoRoomRecord } from './mongo-helpers.js';
+import { getAllRooms } from './mongo-helpers.js';
+import { startServer } from './server.js';
 import type { Doc } from 'yjs';
 import type { MatrixProvider } from 'matrix-crdt';
 import type { Document, YDoc } from '@eweser/db';
