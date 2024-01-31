@@ -13,6 +13,7 @@ export enum CollectionKey {
   flashcards = 'flashcards',
   profiles = 'profiles',
 }
+export const collectionKeys = Object.values(CollectionKey);
 
 export type UserDocument = Note | Flashcard | Profile;
 export type Document = UserDocument | RegistryData;

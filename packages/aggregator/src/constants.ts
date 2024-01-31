@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
-
 dotenv.config();
+
+export const dev = process.env.NODE_ENV !== 'production';
 
 const password = process.env.PASSWORD || '';
 const userId = process.env.USER_ID || '';
@@ -22,4 +23,5 @@ export const MATRIX_CONFIG = {
 export const MONGO_URL = process.env.MONGO_URL || '';
 if (!MONGO_URL) throw new Error('missing MONGO_URL env var');
 
-export const dev = process.env.NODE_ENV !== 'production';
+export const PORT = dev ? 3333 : process.env.PORT;
+if (!PORT) throw new Error('missing PORT env var');

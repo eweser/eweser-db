@@ -71,3 +71,10 @@ export const connectMatrixProvider = async (
     });
   });
 };
+import type { Document } from '@eweser/db';
+// all the tables in the aggregator's mongodb will be some metadata, and then the collection.
+export type AggregatorDocument = {
+  userId: string;
+  roomId: string;
+  document: Document;
+};

@@ -4,6 +4,7 @@ import type { CollectionKey, UserDocument } from '@eweser/db/types/types.js';
 import { logger } from './helpers.js';
 import { MONGO_URL } from './constants.js';
 
+console.log('MONGO_URL', MONGO_URL);
 const mongoClient = await new MongoClient(MONGO_URL, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -56,6 +57,21 @@ export const upsertDocument = async (
       { $set: document }
     );
   }
+};
+
+/** strips the metadata from the document */
+export const getDocumentData = (document: DatabaseDocument): UserDocument => {
+  const { userId: _filterOut, roomId: __filterOut, ...data } = document;
+  return data;
+};
+
+export const getDocument = async (
+  collectionKey: CollectionKey,
+  roomId: string,
+  userId: string
+) => {
+  const collection = db.collection<DatabaseDocument>(collectionKey);
+  return await collection.findOne({ roomId, userId });
 };
 
 export default db;

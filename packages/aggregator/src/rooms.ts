@@ -3,9 +3,10 @@ import type { MatrixProvider } from 'matrix-crdt';
 import type { Document, YDoc } from '@eweser/db';
 import type { MatrixClient } from 'matrix-js-sdk';
 
-import { addRoom, getAllRooms } from './mongo-helpers.js';
+import { addRoom, getAllRooms, upsertDocument } from './mongo-helpers.js';
 import { connectMatrixProvider } from './matrix.js';
 import type { MongoRoomRecord } from './mongo-helpers.js';
+import { CollectionKey } from '@eweser/db';
 
 export type AppMemoryRoom = MongoRoomRecord & {
   ydoc: Doc;
@@ -24,6 +25,7 @@ export const handleJoinRoom = async (
     addRoom(roomId); // add to DB
     rooms[roomId] = await connectMatrixProvider(roomId, matrixClient); // connect room
   }
+  return joined;
 };
 
 export const connectAllJoinedRooms = async (matrixClient: MatrixClient) => {
@@ -34,5 +36,23 @@ export const connectAllJoinedRooms = async (matrixClient: MatrixClient) => {
     const documents = typedDoc.getMap('documents');
     const allDocs = documents.toJSON();
     console.log({ allDocs });
+  });
+};
+
+/** Listens to changes in the room's ydoc and updates the aggregator database */
+export const listenToRoom = async (
+  roomId: string,
+  userId: string,
+  collectionKey: CollectionKey
+) => {
+  const ydoc = rooms[roomId].ydoc;
+  const documentToJson = ydoc.getMap('documents').toJSON();
+  // set initial
+  await upsertDocument(collectionKey, roomId, userId, documentToJson as any);
+  // listen for updates
+  const document = ydoc.getMap('documents');
+  document.observe(() => {
+    const documentToJson = ydoc.getMap('documents').toJSON();
+    upsertDocument(collectionKey, roomId, userId, documentToJson as any);
   });
 };
