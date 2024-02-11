@@ -3,7 +3,8 @@
   "private": true,
   "workspaces": [
     "packages/*",
-    "e2e/example"
+    "e2e/example",
+    "examples/*"
   ],
   "license": "MIT",
   "scripts": {
