@@ -225,7 +225,7 @@ This is an area that needs further consideration. Community input is appreciated
 
 ## Set up local dev
 
-`npm install && lerna bootstrap`
+`npm install`
 `npm run dev`
 
 This will run the example apps in `packages/example-basic` and `packages/example-editor` etc.

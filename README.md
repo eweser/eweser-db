@@ -238,7 +238,7 @@ This is achieved using 'aggregator' servers. These are public Matrix accounts/se
 
 ## Set up local dev
 
-`npm install && lerna bootstrap`
+`npm install`
 `npm run dev`
 
 This will run the example apps in `packages/example-basic` and `packages/example-editor` etc.
