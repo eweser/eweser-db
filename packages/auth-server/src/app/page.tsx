@@ -13,34 +13,33 @@ export const metadata: Metadata = {
 
 export default function AuthenticationPage() {
   return (
-    <>
-      <div className="flex flex-col lg:flex-row h-screen">
-        <div className="flex flex-col flex-shrink-2 p-10 lg:w-1/2 justify-center items-center bg-primary order-2 lg:order-1">
-          <div className="relative flex flex-1 w-full min-h-40">
-            <Image
-              src="/EweserDB logo.png"
-              alt="EweserDB logo"
-              fill
-              objectFit="contain"
-            />
-          </div>
-
-          <p className="text-lg text-white">
-            A user-owned database. Just for ewe
-          </p>
+    <div className="flex flex-col lg:flex-row flex-1">
+      <div className="flex flex-col flex-shrink-2 p-10 lg:w-1/2 justify-center items-center bg-primary order-2 lg:order-1">
+        <div className="relative flex flex-1 w-full min-h-40">
+          <Image
+            src="/EweserDB logo.png"
+            alt="EweserDB logo"
+            fill
+            objectFit="contain"
+          />
         </div>
-        <div className="lg:p-8 flex items-center flex-1 justify-center  lg:w-1/2 order-1 lg:order-2">
-          <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
-            <div className="flex flex-col space-y-2 text-center">
-              <h1 className="text-2xl font-semibold tracking-tight">
-                Create an account
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Enter your email below to create your account
-              </p>
-            </div>
-            <UserAuthForm />
-            {/* <p className="px-8 text-center text-sm text-muted-foreground">
+
+        <p className="text-lg text-white">
+          A user-owned database. Just for ewe
+        </p>
+      </div>
+      <div className="lg:p-8 flex items-center flex-1 justify-center  lg:w-1/2 order-1 lg:order-2">
+        <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
+          <div className="flex flex-col space-y-2 text-center">
+            <h1 className="text-2xl font-semibold tracking-tight">
+              Create an account
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Enter your email below to create your account
+            </p>
+          </div>
+          <UserAuthForm />
+          {/* <p className="px-8 text-center text-sm text-muted-foreground">
               By clicking continue, you agree to our{' '}
               <Link
                 href="/terms"
@@ -57,9 +56,8 @@ export default function AuthenticationPage() {
               </Link>
               .
             </p> */}
-          </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
