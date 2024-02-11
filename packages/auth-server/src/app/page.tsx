@@ -1,19 +1,16 @@
 import { Metadata } from 'next';
 import Image from 'next/image';
-import Link from 'next/link';
 
-import { cn } from '@/lib/utils';
 import { UserAuthForm } from '@/components/user-auth-form';
-import { buttonVariants } from '@/components/button';
+import { siteConfig } from '@/config/site';
 
 export const metadata: Metadata = {
-  title: 'Authentication',
-  description: 'Authentication forms built using the components.',
+  title: siteConfig.pageName('Login'),
 };
 
 export default function AuthenticationPage() {
   return (
-    <div className="flex flex-col lg:flex-row flex-1">
+    <div className="flex flex-col lg:flex-row flex-1" suppressHydrationWarning>
       <div className="flex flex-col flex-shrink-2 p-10 lg:w-1/2 justify-center items-center bg-primary order-2 lg:order-1">
         <div className="relative flex flex-1 w-full min-h-40">
           <Image

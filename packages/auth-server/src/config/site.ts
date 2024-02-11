@@ -1,9 +1,9 @@
 export type SiteConfig = typeof siteConfig;
-
+const name = 'Eweser DB';
 export const siteConfig = {
-  name: 'Eweser DB',
-  description:
-    'Beautifully designed components that you can copy and paste into your apps. Accessible. Customizable. Open Source.',
+  name,
+  pageName: (page: string) => `${page} | ${name}`,
+  description: 'EweserDB, the user-owned database. Just for ewe 🐑',
   mainNav: [
     {
       title: 'Home',
@@ -12,5 +12,10 @@ export const siteConfig = {
   ],
   links: {
     github: 'https://github.com/eweser/eweser-db',
+  },
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/EweserDB logo.png',
+    apple: '/EweserDB logo.png',
   },
 };
