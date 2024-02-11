@@ -3,6 +3,7 @@ import Image from 'next/image';
 
 import { UserAuthForm } from '@/components/user-auth-form';
 import { siteConfig } from '@/config/site';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: siteConfig.pageName('Login'),
@@ -36,23 +37,23 @@ export default function AuthenticationPage() {
             </p>
           </div>
           <UserAuthForm />
-          {/* <p className="px-8 text-center text-sm text-muted-foreground">
-              By clicking continue, you agree to our{' '}
-              <Link
-                href="/terms"
-                className="underline underline-offset-4 hover:text-primary"
-              >
-                Terms of Service
-              </Link>{' '}
-              and{' '}
-              <Link
-                href="/privacy"
-                className="underline underline-offset-4 hover:text-primary"
-              >
-                Privacy Policy
-              </Link>
-              .
-            </p> */}
+          <p className="px-8 text-center text-sm text-muted-foreground">
+            By clicking continue, you agree to our{' '}
+            <Link
+              href="/statement/terms-of-service"
+              className="underline underline-offset-4 hover:text-primary"
+            >
+              Terms of Service
+            </Link>{' '}
+            and{' '}
+            <Link
+              href="/statement/privacy"
+              className="underline underline-offset-4 hover:text-primary"
+            >
+              Privacy Policy
+            </Link>
+            .
+          </p>
         </div>
       </div>
     </div>
