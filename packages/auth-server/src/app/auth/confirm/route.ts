@@ -16,20 +16,22 @@ export async function GET(request: NextRequest) {
   redirectTo.searchParams.delete('token_hash');
   redirectTo.searchParams.delete('type');
 
-  if (token_hash && type) {
-    const supabase = serverSupabase(cookieStore);
-
-    const { error } = await supabase.auth.verifyOtp({
-      type,
-      token_hash,
-    });
-    if (!error) {
-      redirectTo.searchParams.delete('next');
-      return NextResponse.redirect(redirectTo);
-    }
+  if (!token_hash || !type) {
+    // return the user to an error page with some instructions
+    redirectTo.pathname = `/auth/error?message=Invalid token_hash or type`;
+    return NextResponse.redirect(redirectTo);
   }
+  const supabase = serverSupabase(cookieStore);
 
-  // return the user to an error page with some instructions
-  redirectTo.pathname = '/?error=invalid-confirmation';
+  const { error } = await supabase.auth.verifyOtp({
+    type,
+    token_hash,
+  });
+  if (error) {
+    // return the user to an error page with some instructions
+    redirectTo.pathname = `/auth/error?message=${error.message?.toString()}`;
+    return NextResponse.redirect(redirectTo);
+  }
+  redirectTo.searchParams.delete('next');
   return NextResponse.redirect(redirectTo);
 }

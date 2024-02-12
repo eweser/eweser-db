@@ -7,9 +7,11 @@ export default async function Home() {
   const supabase = serverSupabase(cookieStore);
 
   const { data, error } = await supabase.auth.getUser();
-  console.log({ data, error });
+
   if (error || !data?.user) {
-    redirect('/?error=unauthenticated');
+    return redirect(
+      `/auth/error?message=${error?.message?.toString() || 'unauthenticated'}`
+    );
   }
 
   return <p>Hello {data.user.email}</p>;

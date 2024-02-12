@@ -19,7 +19,6 @@ export default function OAuthForm({
   const handleOauthProviderLogin = async (provider: Provider) => {
     setIsLoading(true);
     const redirectTo = `http://localhost:3000/auth/callback`;
-    console.log({ redirectTo });
     try {
       await supabase.auth.signInWithOAuth({
         provider,
@@ -28,6 +27,7 @@ export default function OAuthForm({
     } catch (error: any) {
       alert(error.message || 'An error occurred. Please try again.');
     }
+    setIsLoading(false);
   };
   return (
     <>

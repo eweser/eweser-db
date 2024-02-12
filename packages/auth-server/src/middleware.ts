@@ -13,8 +13,8 @@ export async function middleware(request: NextRequest) {
   });
 
   const supabase = createServerClient(
-    NEXT_PUBLIC_SUPABASE_URL!,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
         get(name: string) {
@@ -58,10 +58,13 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const session = await supabase.auth.getSession();
-  console.log(session);
-  const user = await supabase.auth.getUser();
-  console.log({ user });
+  const { data, error } = await supabase.auth.getUser();
+  if (error) {
+    return NextResponse.redirect('/');
+  }
+  if (!data.user?.id) {
+    return NextResponse.redirect('/');
+  }
   return response;
 }
 

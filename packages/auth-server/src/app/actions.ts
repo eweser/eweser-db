@@ -19,10 +19,10 @@ export async function login(formData: FormData) {
     return;
   }
 
-  const { error, data } = await supabase.auth.signInWithPassword(loginData);
+  const { error } = await supabase.auth.signInWithPassword(loginData);
 
   if (error) {
-    redirect('/error');
+    redirect(`/auth/error?message=${error.message?.toString()}`);
   }
 
   revalidatePath('/', 'layout');
@@ -42,16 +42,10 @@ export async function signup(formData: FormData) {
     password: formData.get('password') as string,
   };
 
-  const { error, data } = await supabase.auth.signUp(signupData);
+  const { error } = await supabase.auth.signUp(signupData);
 
-  if (data.session?.access_token) {
-    const set = await supabase.auth.setSession({
-      access_token: data.session.access_token,
-      refresh_token: data.session.refresh_token,
-    });
-  }
   if (error) {
-    redirect('/error');
+    redirect(`/auth/error?message=${error.message?.toString()}`);
   }
 
   revalidatePath('/', 'layout');

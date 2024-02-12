@@ -7,7 +7,9 @@ import { login, signup } from '@/app/actions';
 import PasswordForm from './password-form';
 import OAuthForm from './oauth-form';
 
-interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {}
+type UserAuthFormProps = React.ComponentPropsWithoutRef<'div'> & {
+  className?: string;
+};
 
 export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
