@@ -11,6 +11,7 @@ export async function middleware(request: NextRequest) {
       headers: request.headers,
     },
   });
+  const { origin } = new URL(request.url);
 
   const supabase = createServerClient(
     NEXT_PUBLIC_SUPABASE_URL,
@@ -60,10 +61,10 @@ export async function middleware(request: NextRequest) {
 
   const { data, error } = await supabase.auth.getUser();
   if (error) {
-    return NextResponse.redirect('/');
+    return NextResponse.redirect(`${origin}/`);
   }
   if (!data.user?.id) {
-    return NextResponse.redirect('/');
+    return NextResponse.redirect(`${origin}/`);
   }
   return response;
 }
