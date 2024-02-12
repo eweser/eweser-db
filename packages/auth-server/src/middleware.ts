@@ -11,7 +11,10 @@ export async function middleware(request: NextRequest) {
       headers: request.headers,
     },
   });
-  const { origin } = new URL(request.url);
+  const { origin, pathname } = new URL(request.url);
+
+  // turn off middleware for the root path
+  if (pathname === '/') return response;
 
   const supabase = createServerClient(
     NEXT_PUBLIC_SUPABASE_URL,
@@ -60,11 +63,12 @@ export async function middleware(request: NextRequest) {
   );
 
   const { data, error } = await supabase.auth.getUser();
-  if (error) {
-    return NextResponse.redirect(`${origin}/`);
-  }
-  if (!data.user?.id) {
-    return NextResponse.redirect(`${origin}/`);
+  if (error || !data.user?.id) {
+    return NextResponse.redirect(
+      `${origin}/auth/error?message=${
+        error?.message?.toString() || 'unauthenticated response from getUser()'
+      }`
+    );
   }
   return response;
 }
@@ -78,11 +82,10 @@ export const config = {
      * - favicon.ico (favicon file)
      * - statement/privacy (privacy statement)
      * - statement/terms-of-service (terms of service statement)
-     * - / (landing page)
      * - auth/ (all routes starting with auth/)
      * - any file with extensions: svg, png, jpg, jpeg, gif, webp
      * Feel free to modify this pattern to include more paths.
      */
-    '/((?!_next/static|_next/image|favicon.ico|statement/privacy|statement/terms-of-service|^/$|auth/.*|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|statement/privacy|statement/terms-of-service|auth/.*|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
