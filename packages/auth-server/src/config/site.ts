@@ -15,7 +15,7 @@ export const siteConfig = {
   },
   icons: {
     icon: '/favicon.ico',
-    shortcut: '/EweserDB logo.png',
-    apple: '/EweserDB logo.png',
+    shortcut: '/eweser-db-logo.png',
+    apple: '/eweser-db-logo-small.svg',
   },
 };

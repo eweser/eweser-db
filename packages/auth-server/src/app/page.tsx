@@ -15,8 +15,8 @@ export default function AuthenticationPage() {
       <div className="flex flex-col flex-shrink-2 p-10 lg:w-1/2 justify-center items-center bg-primary order-2 lg:order-1">
         <div className="relative flex flex-1 w-full min-h-40 max-w-sm">
           <Image
-            src="/EweserDB logo.png"
-            alt="EweserDB logo"
+            src="/eweser-db-logo.png"
+            alt="eweser-db-logo"
             fill
             className="object-contain"
           />
