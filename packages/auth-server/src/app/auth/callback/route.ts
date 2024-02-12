@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   const next = 'dashboard';
 
   if (!code) {
-    return NextResponse.redirect(`${origin}/auth/error?message=Invalid code`);
+    return NextResponse.redirect(`${origin}/error?message=Invalid code`);
   }
   const cookieStore = cookies();
   const supabase = createServerClient(
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
   if (error) {
     logger(error);
     return NextResponse.redirect(
-      `${origin}/auth/error?message=${error.message?.toString()}`
+      `${origin}/error?message=${error.message?.toString()}`
     );
   }
   if (data.session) {
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
     } catch (error: any) {
       logger(error);
       return NextResponse.redirect(
-        `${origin}/auth/error?message=${error.message?.toString()}`
+        `${origin}/error?message=${error.message?.toString()}`
       );
     }
   }

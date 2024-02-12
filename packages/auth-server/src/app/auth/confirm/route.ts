@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
   if (!token_hash || !type) {
     // return the user to an error page with some instructions
-    redirectTo.pathname = `/auth/error?message=Invalid token_hash or type`;
+    redirectTo.pathname = `/error?message=Invalid token_hash or type`;
     return NextResponse.redirect(redirectTo);
   }
   const supabase = serverSupabase(cookieStore);
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
   });
   if (error) {
     // return the user to an error page with some instructions
-    redirectTo.pathname = `/auth/error?message=${error.message?.toString()}`;
+    redirectTo.pathname = `/error?message=${error.message?.toString()}`;
     return NextResponse.redirect(redirectTo);
   }
   redirectTo.searchParams.delete('next');

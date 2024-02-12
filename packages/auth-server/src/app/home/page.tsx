@@ -10,7 +10,7 @@ export default async function Home() {
 
   if (error || !data?.user) {
     return redirect(
-      `/auth/error?message=${error?.message?.toString() || 'unauthenticated'}`
+      `/error?message=${error?.message?.toString() || 'unauthenticated'}`
     );
   }
 

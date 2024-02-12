@@ -65,7 +65,7 @@ export async function middleware(request: NextRequest) {
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user?.id) {
     return NextResponse.redirect(
-      `${origin}/auth/error?message=${
+      `${origin}/error?message=${
         error?.message?.toString() || 'unauthenticated response from getUser()'
       }`
     );
@@ -83,9 +83,10 @@ export const config = {
      * - statement/privacy (privacy statement)
      * - statement/terms-of-service (terms of service statement)
      * - auth/ (all routes starting with auth/)
+     * - error/ (all routes starting with error/)
      * - any file with extensions: svg, png, jpg, jpeg, gif, webp
      * Feel free to modify this pattern to include more paths.
      */
-    '/((?!_next/static|_next/image|favicon.ico|statement/privacy|statement/terms-of-service|auth/.*|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|statement/privacy|statement/terms-of-service|auth/.*|error*|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
