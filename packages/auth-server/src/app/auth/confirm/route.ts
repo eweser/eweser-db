@@ -1,4 +1,5 @@
 import { serverSupabase } from '@/lib/supabase/server';
+import { handleServerErrorRedirect } from '@/lib/utils';
 import { type EmailOtpType } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -17,9 +18,10 @@ export async function GET(request: NextRequest) {
   redirectTo.searchParams.delete('type');
 
   if (!token_hash || !type) {
-    // return the user to an error page with some instructions
-    redirectTo.pathname = `/error?message=Invalid token_hash or type`;
-    return NextResponse.redirect(redirectTo);
+    return handleServerErrorRedirect(
+      new Error('Invalid token_hash or type'),
+      redirectTo
+    );
   }
   const supabase = serverSupabase(cookieStore);
 
@@ -28,9 +30,7 @@ export async function GET(request: NextRequest) {
     token_hash,
   });
   if (error) {
-    // return the user to an error page with some instructions
-    redirectTo.pathname = `/error?message=${error.message?.toString()}`;
-    return NextResponse.redirect(redirectTo);
+    return handleServerErrorRedirect(error, redirectTo);
   }
   redirectTo.searchParams.delete('next');
   return NextResponse.redirect(redirectTo);

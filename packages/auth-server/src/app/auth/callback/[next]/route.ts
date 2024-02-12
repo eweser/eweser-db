@@ -6,19 +6,22 @@ import {
   NEXT_PUBLIC_SUPABASE_ANON_KEY,
   NEXT_PUBLIC_SUPABASE_URL,
 } from '@/config/supabase';
-import { logger } from '@/lib/utils';
+import { handleServerErrorRedirect } from '@/lib/utils';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { next?: string } }
 ) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
   // if "next" is in param, use it as the redirect URL
-  const next = params.next ?? 'dashboard';
+  const next = params.next ?? '/home';
+  const redirectTo = request.nextUrl.clone();
+  redirectTo.pathname = next;
+  redirectTo.searchParams.delete('code');
 
   if (!code) {
-    return NextResponse.redirect(`${origin}/error?message=Invalid code`);
+    return handleServerErrorRedirect(new Error('Invalid code'), redirectTo);
   }
   const cookieStore = cookies();
   const supabase = createServerClient(
@@ -40,20 +43,14 @@ export async function GET(
   );
   const { error, data } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
-    logger(error);
-    return NextResponse.redirect(
-      `${origin}/error?message=${error.message?.toString()}`
-    );
+    return handleServerErrorRedirect(error, redirectTo);
   }
   if (data.session) {
     try {
       await supabase.auth.setSession(data.session);
     } catch (error: any) {
-      logger(error);
-      return NextResponse.redirect(
-        `${origin}/error?message=${error.message?.toString()}`
-      );
+      return handleServerErrorRedirect(error, redirectTo);
     }
   }
-  return NextResponse.redirect(`${origin}/${next}`);
+  return NextResponse.redirect(redirectTo);
 }

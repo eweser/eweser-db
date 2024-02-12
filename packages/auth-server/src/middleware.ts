@@ -4,6 +4,7 @@ import {
   NEXT_PUBLIC_SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_ANON_KEY,
 } from './config/supabase';
+import { handleServerErrorRedirect } from './lib/utils';
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -11,7 +12,8 @@ export async function middleware(request: NextRequest) {
       headers: request.headers,
     },
   });
-  const { origin, pathname } = new URL(request.url);
+  const redirect = new URL(request.url);
+  const { pathname } = redirect;
 
   // turn off middleware for the root path
   if (pathname === '/') return response;
@@ -64,10 +66,10 @@ export async function middleware(request: NextRequest) {
 
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user?.id) {
-    return NextResponse.redirect(
-      `${origin}/error?message=${
-        error?.message?.toString() || 'unauthenticated response from getUser()'
-      }`
+    return handleServerErrorRedirect(
+      error ||
+        new Error('unauthenticated response from getUser() in middleware'),
+      redirect
     );
   }
   return response;
