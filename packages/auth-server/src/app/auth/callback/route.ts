@@ -9,10 +9,12 @@ import {
 import { handleServerErrorRedirect } from '@/lib/utils';
 
 export async function GET(request: NextRequest) {
+  console.dir(request, { depth: 10 });
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
   const next = '/home';
   const redirectTo = request.nextUrl.clone();
+  console.dir(redirectTo, { depth: null });
   redirectTo.pathname = next;
   redirectTo.searchParams.delete('code');
 
