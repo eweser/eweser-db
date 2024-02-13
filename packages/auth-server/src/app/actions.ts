@@ -1,5 +1,6 @@
 'use server';
 import { serverSupabase } from '@/lib/supabase/server';
+import { logger } from '@/lib/utils';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -22,6 +23,7 @@ export async function login(formData: FormData) {
   const { error } = await supabase.auth.signInWithPassword(loginData);
 
   if (error) {
+    logger(error);
     redirect(`/error?message=${error.message?.toString()}`);
   }
 
@@ -41,10 +43,9 @@ export async function signup(formData: FormData) {
     email: formData.get('email') as string,
     password: formData.get('password') as string,
   };
-
   const { error } = await supabase.auth.signUp(signupData);
-
   if (error) {
+    logger(error);
     redirect(`/error?message=${error.message?.toString()}`);
   }
 
