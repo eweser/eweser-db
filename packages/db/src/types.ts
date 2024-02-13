@@ -1,5 +1,3 @@
-import type { MatrixProvider } from 'matrix-crdt';
-import type { ICreateClientOpts } from 'matrix-js-sdk';
 import type { DocumentBase, Note, Flashcard, Profile } from './collections';
 import type { WebrtcProvider } from 'y-webrtc';
 import type { TypedDoc, TypedMap } from 'yjs-types';
@@ -41,19 +39,17 @@ export type ConnectStatus =
 /** corresponds to a 'room' in Matrix */
 export interface Room<T extends Document> {
   connectStatus: ConnectStatus;
-  collectionKey: CollectionKey | 'registry';
-  matrixProvider: MatrixProvider | null;
+  collectionKey: CollectionKey;
   webRtcProvider: WebrtcProvider | null;
   indexeddbProvider: IndexeddbPersistence | null;
-  /** full alias e.g. '#eweser-db_registry_username:matrix.org' */
-  roomAlias: string;
-  /** matrix roomID  */
-  roomId?: string;
+  /** <https://auth-server.com>|<uuid> */
+  roomId: string;
+  /** User facing name of the room ('folder') */
   name?: string;
   created?: Date;
   // roomId: string;
   ydoc?: YDoc<T>;
-  tempDocs: { [docRef: string]: { doc: Doc; matrixProvider?: MatrixProvider } };
+  tempDocs: { [docRef: string]: { doc: Doc } };
 }
 
 export type Collection<T extends Document> = {
@@ -61,14 +57,13 @@ export type Collection<T extends Document> = {
 };
 
 export interface RoomMetaData {
-  roomAlias: string;
   roomName?: string;
   roomId?: string;
 }
 
 export type RegistryData = {
   [key in CollectionKey]: {
-    [roomAlias: string]: RoomMetaData | undefined;
+    [roomId: string]: RoomMetaData | undefined;
   };
 };
 
@@ -96,24 +91,11 @@ export interface CreateAndConnectRoomOptions<T extends Document> {
   waitForWebRTC?: boolean;
 }
 
-export interface LoginData extends ICreateClientOpts {
-  password?: string;
-  initialRoomConnect?: CreateAndConnectRoomOptions<any>;
-}
-
 export interface Collections {
   [CollectionKey.notes]: Collection<Note>;
   [CollectionKey.flashcards]: Collection<Flashcard>;
   [CollectionKey.profiles]: Collection<Profile>;
-  registry: RegistryCollection;
 }
-
-export type LoginStatus =
-  | 'initial'
-  | 'loading'
-  | 'failed'
-  | 'ok'
-  | 'disconnected';
 
 /**
  * `started` can be for success of login, startup, or load
@@ -149,12 +131,10 @@ export type DBEvent = {
   level?: 'info' | 'warn' | 'error';
   message?: string;
   data?: {
-    collectionKey?: CollectionKey | 'registry';
+    collectionKey?: CollectionKey;
     roomId?: string;
-    roomAlias?: string;
     aliasSeed?: string;
     id?: string;
-    loginStatus?: LoginStatus;
     connectStatus?: ConnectStatus;
     raw?: any;
     online?: boolean;

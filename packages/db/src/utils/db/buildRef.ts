@@ -3,21 +3,25 @@ import type { CollectionKey } from '../../types';
 /**
  *
  * @param collection e.g. `CollectionKey.flashcards` "flashcards"
- * @param aliasSeed  e.g. just `roomName` if the full alias is '#roomName~flashcards~@username:matrix.org'`
- * @param documentId any number/string what doesn't include `.`
- * @returns `${collection}.${roomAlias}.${documentId}` e.g. `flashcards.roomName.doc-id`
+ * @param roomId  format `<auth-server>|<uuid>` @example 'https://eweser.com|uuid'
+ * @param documentId any number/string what doesn't include `|`
+ * @returns `${collection}|${roomId}|${documentId}` @example 'flashcards.https://eweser.com|uuid.doc-id'
  */
 export const buildRef = ({
   collectionKey,
-  aliasSeed,
+  roomId,
   documentId,
 }: {
   collectionKey: CollectionKey;
-  aliasSeed: string;
+  roomId: string;
   documentId: string | number;
 }) => {
-  if (documentId.toString().includes('.') || aliasSeed.includes('.')) {
-    throw new Error('documentId cannot include .');
+  if (documentId.toString().includes('|')) {
+    throw new Error('documentId cannot include |');
   }
-  return `${collectionKey}.${aliasSeed}.${documentId}`;
+  // roomId should have one |
+  if (roomId.split('|').length !== 2) {
+    throw new Error('roomId must have exactly one |');
+  }
+  return `${collectionKey}|${roomId}|${documentId}`;
 };
