@@ -1,7 +1,6 @@
 import type { Flashcard, Note, Profile } from '../collections';
 import type { DocumentBase } from '../collections/documentBase';
 import type { Collections, Documents } from '../types';
-import { CollectionKey } from '../types';
 import { buildRef } from '../utils';
 
 /**
@@ -80,13 +79,13 @@ const chineseFlashcardsYDoc: { documents: Documents<Flashcard> } = {
       backText: 'Fire🔥',
       noteRefs: [
         buildRef({
-          collectionKey: CollectionKey.notes,
+          collectionKey: 'notes',
           roomId: 'https://eweser.com|abc123',
           documentId: '0',
         }),
       ],
       _ref: buildRef({
-        collectionKey: CollectionKey.flashcards,
+        collectionKey: 'flashcards',
         roomId: 'https://eweser.com|abc123',
         documentId: '0',
       }),
@@ -103,7 +102,7 @@ export const exampleDb: { collections: Collections } = {
     notes: {
       // Rooms
       ['my_study_notes']: {
-        collectionKey: CollectionKey.notes,
+        collectionKey: 'notes',
         roomId: 'https://eweser.com|uuid',
         name: 'My Study Notes',
         created: new Date(),
@@ -116,7 +115,7 @@ export const exampleDb: { collections: Collections } = {
     },
     flashcards: {
       ['typescript_study_cards']: {
-        collectionKey: CollectionKey.flashcards,
+        collectionKey: 'flashcards',
         roomId: 'https://eweser.com|uuid',
         name: 'Typescript Study Flashcards',
         connectStatus: 'ok',
@@ -127,7 +126,7 @@ export const exampleDb: { collections: Collections } = {
         indexeddbProvider: null,
       },
       ['chinese_flashcards']: {
-        collectionKey: CollectionKey.flashcards,
+        collectionKey: 'flashcards',
         roomId: 'https://eweser.com|uuid',
         name: 'Chinese Study Flashcards',
         connectStatus: 'ok',
@@ -140,7 +139,7 @@ export const exampleDb: { collections: Collections } = {
     },
     profiles: {
       ['public']: {
-        collectionKey: CollectionKey.profiles,
+        collectionKey: 'profiles',
         roomId: 'https://eweser.com|uuid',
         name: 'Public Profile',
         connectStatus: 'ok',
@@ -151,7 +150,7 @@ export const exampleDb: { collections: Collections } = {
         indexeddbProvider: null,
       },
       ['private']: {
-        collectionKey: CollectionKey.profiles,
+        collectionKey: 'profiles',
         roomId: 'https://eweser.com|uuid',
         name: 'Private Profile',
         connectStatus: 'ok',
@@ -180,9 +179,9 @@ export const room = {
   doc_id: 'string', // y-sweet document id. <user_id>|<collection_key>|<room_id>
   public: 'boolean', // if true, anyone can access the room. will invite all aggregators.
 
-  read_access: 'enum array user_id[]', // can read
-  write_access: 'enum array user_id[]', // can write
-  admin_access: 'enum array user_id[]', // can change access
+  read_access: 'array user_id[]', // can read
+  write_access: 'array user_id[]', // can write
+  admin_access: 'array user_id[]', // can change access
 
   created: 'date',
   updated: 'date',

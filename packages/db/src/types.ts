@@ -4,17 +4,18 @@ import type { TypedDoc, TypedMap } from 'yjs-types';
 import type { Doc } from 'yjs';
 import type { IndexeddbPersistence } from 'y-indexeddb';
 
-export type { DocumentBase, Note, Flashcard as Flashcard, Profile };
+export type { DocumentBase, Note, Flashcard, Profile };
 
-export enum CollectionKey {
-  notes = 'notes',
-  flashcards = 'flashcards',
-  profiles = 'profiles',
-}
-export const collectionKeys = Object.values(CollectionKey);
+export const COLLECTION_KEYS = ['notes', 'flashcards', 'profiles'] as const;
+export type CollectionKey = (typeof COLLECTION_KEYS)[number];
 
-export type UserDocument = Note | Flashcard | Profile;
-export type Document = UserDocument | RegistryData;
+type CollectionToDocument = {
+  notes: Note;
+  flashcards: Flashcard;
+  profiles: Profile;
+};
+
+export type Document = Note | Flashcard | Profile;
 
 export type DocumentWithoutBase<T extends Document> = Omit<
   T,
@@ -61,16 +62,6 @@ export interface RoomMetaData {
   roomId?: string;
 }
 
-export type RegistryData = {
-  [key in CollectionKey]: {
-    [roomId: string]: RoomMetaData | undefined;
-  };
-};
-
-export type RegistryCollection = {
-  [0]: Room<RegistryData>;
-};
-
 export type OnRoomConnectStatusUpdate = (
   status: ConnectStatus,
   collectionKey: CollectionKey,
@@ -91,11 +82,9 @@ export interface CreateAndConnectRoomOptions<T extends Document> {
   waitForWebRTC?: boolean;
 }
 
-export interface Collections {
-  [CollectionKey.notes]: Collection<Note>;
-  [CollectionKey.flashcards]: Collection<Flashcard>;
-  [CollectionKey.profiles]: Collection<Profile>;
-}
+export type Collections = {
+  [K in CollectionKey]: Collection<CollectionToDocument[K]>;
+};
 
 /**
  * `started` can be for success of login, startup, or load
