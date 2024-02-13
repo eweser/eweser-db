@@ -1,14 +1,12 @@
-import {
-  NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  NEXT_PUBLIC_SUPABASE_URL,
-} from '@/config/supabase';
+import { NEXT_PUBLIC_SUPABASE_URL } from '@/config/supabase';
+import { SUPABASE_SERVICE_ROLE_KEY } from '@/config/supabase-server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { type cookies } from 'next/headers';
 
 export function serverSupabase(cookieStore: ReturnType<typeof cookies>) {
   return createServerClient(
     NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    SUPABASE_SERVICE_ROLE_KEY,
     {
       cookies: {
         get(name: string) {

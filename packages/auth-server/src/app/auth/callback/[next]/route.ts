@@ -2,11 +2,9 @@ import { cookies } from 'next/headers';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { type CookieOptions, createServerClient } from '@supabase/ssr';
-import {
-  NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  NEXT_PUBLIC_SUPABASE_URL,
-} from '@/config/supabase';
+import { NEXT_PUBLIC_SUPABASE_URL } from '@/config/supabase';
 import { handleServerErrorRedirect } from '@/lib/utils';
+import { SUPABASE_SERVICE_ROLE_KEY } from '@/config/supabase-server';
 
 export async function GET(
   request: NextRequest,
@@ -26,7 +24,7 @@ export async function GET(
   const cookieStore = cookies();
   const supabase = createServerClient(
     NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    SUPABASE_SERVICE_ROLE_KEY,
     {
       cookies: {
         get(name: string) {

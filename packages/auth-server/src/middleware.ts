@@ -1,10 +1,8 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
-import {
-  NEXT_PUBLIC_SUPABASE_URL,
-  NEXT_PUBLIC_SUPABASE_ANON_KEY,
-} from './config/supabase';
+import { NEXT_PUBLIC_SUPABASE_URL } from './config/supabase';
 import { handleServerErrorRedirect } from './lib/utils';
+import { SUPABASE_SERVICE_ROLE_KEY } from './config/supabase-server';
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -20,7 +18,7 @@ export async function middleware(request: NextRequest) {
 
   const supabase = createServerClient(
     NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    SUPABASE_SERVICE_ROLE_KEY,
     {
       cookies: {
         get(name: string) {
