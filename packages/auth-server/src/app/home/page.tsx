@@ -13,5 +13,8 @@ export default async function Home() {
     );
   }
 
+  // const profile = get public and private profile rooms from db. if they don't exist, create them and show "setting up profile" spinner.
+  // on the client side, check if db
+
   return <p>Hello {data.user.email}</p>;
 }
