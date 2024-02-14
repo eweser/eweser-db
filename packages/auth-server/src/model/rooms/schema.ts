@@ -1,8 +1,12 @@
 import { COLLECTION_KEYS } from '@/shared/constants';
 import { pgTable, boolean, text, timestamp } from 'drizzle-orm/pg-core';
+import { users } from '../users';
 
 export const rooms = pgTable('rooms', {
   id: text('id').primaryKey().notNull(), // <authserver-url>|<uuid>
+  creator: text('creator')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
   name: text('name').notNull(), // user facing name of the room ('folder')
   collectionKey: text('collection_key', {
     enum: COLLECTION_KEYS,
@@ -21,3 +25,5 @@ export const rooms = pgTable('rooms', {
   }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' }),
 });
+
+export type Room = typeof rooms.$inferSelect;
