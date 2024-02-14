@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation';
-import { getUser } from './get-user';
+import { getSessionUser } from './get-session-user';
 
 export async function protectPage() {
-  const { error, user } = await getUser();
+  const { error, user } = await getSessionUser();
 
   if (error) {
     return redirect(
