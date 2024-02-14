@@ -1,12 +1,9 @@
-import { serverSupabase } from '@/lib/supabase/server';
-import { handleServerErrorRedirect } from '@/lib/utils';
+import { backendSupabase } from '@/services/database/supabase/backend-client-init';
+import { handleServerErrorRedirect } from '@/shared/utils';
 import { type EmailOtpType } from '@supabase/supabase-js';
-import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
-  const cookieStore = cookies();
-
   const { searchParams } = new URL(request.url);
   const token_hash = searchParams.get('token_hash');
   const type = searchParams.get('type') as EmailOtpType | null;
@@ -23,7 +20,7 @@ export async function GET(request: NextRequest) {
       redirectTo
     );
   }
-  const supabase = serverSupabase(cookieStore);
+  const supabase = backendSupabase();
 
   const { error } = await supabase.auth.verifyOtp({
     type,

@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 
-import { UserAuthForm } from '@/components/auth/user-auth-form';
-import { siteConfig } from '@/config/site';
+import { UserAuthForm } from '@/frontend/components/auth/user-auth-form';
+import { siteConfig } from '@/frontend/config/site';
 import Link from 'next/link';
 
 export const metadata: Metadata = {

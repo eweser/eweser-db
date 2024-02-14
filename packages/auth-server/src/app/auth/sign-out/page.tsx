@@ -1,10 +1,10 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Icons } from '@/components/icons';
-import { clientSupabase } from '@/lib/supabase/client';
+import { Icons } from '@/frontend/components/library/icons';
+import { frontendSupabase } from '@/services/database/supabase/frontend-client-init';
 
 export default function SignOutPage() {
-  const supabase = clientSupabase();
+  const supabase = frontendSupabase();
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
