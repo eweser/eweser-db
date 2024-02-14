@@ -1,7 +1,9 @@
 'use server';
 import { backendSupabase } from '@/services/database/supabase/backend-client-init';
+import { authIdToUserId, logger } from '@/shared/utils';
 import type { EmailOtpType } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
+import { createNewUsersProfileRooms } from '../rooms/create-new-user-profile-rooms';
 
 export async function verifyOtp({
   token_hash,
@@ -15,13 +17,19 @@ export async function verifyOtp({
   }
   const supabase = backendSupabase(cookies());
 
-  const { error } = await supabase.auth.verifyOtp({
+  const { error, data } = await supabase.auth.verifyOtp({
     type,
     token_hash,
   });
   if (error) {
     return { error };
-  } else {
-    return {};
+  } else if (!data.session?.user.id) {
+    return { error: new Error('Invalid session') };
   }
+  try {
+    await createNewUsersProfileRooms(authIdToUserId(data.session.user.id));
+  } catch (error) {
+    logger(error);
+  }
+  return {};
 }

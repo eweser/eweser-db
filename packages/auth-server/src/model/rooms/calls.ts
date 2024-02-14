@@ -1,11 +1,18 @@
 import { db } from '@/services/database';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import type { Room } from './schema';
 import { rooms } from './schema';
 import type { RoomInsert, RoomUpdate } from './validation';
 
 export async function getRoomsByUserId(userId: string): Promise<Room[]> {
   return await db().select().from(rooms).where(eq(rooms.creator, userId));
+}
+
+export async function getProfileRoomsByUserId(userId: string): Promise<Room[]> {
+  return await db()
+    .select()
+    .from(rooms)
+    .where(and(eq(rooms.creator, userId), eq(rooms.collectionKey, 'profiles')));
 }
 
 export async function insertRooms(inserts: RoomInsert[]) {
