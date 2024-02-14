@@ -22,5 +22,5 @@ jobs:
         with:
           version: latest
 
-      - run: cd packages/auth-server; supabase link --workdir packages/auth-server
+      - run: cd packages/auth-server; supabase link --project-ref=$SUPABASE_PROJECT_ID
       - run: cd packages/auth-server; supabase db push
