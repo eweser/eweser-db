@@ -20,6 +20,16 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
 
   return (
     <div className={cn('grid gap-6', className)} {...props}>
+      <div className="flex flex-col space-y-2 text-center">
+        <h1 className="text-2xl font-semibold tracking-tight">
+          {isSignup ? 'Create an account' : 'Welcome back'}
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          {isSignup
+            ? 'And take control of your data today'
+            : 'Log in to provision and manage your data'}
+        </p>
+      </div>
       <form
         action={isSignup ? signup : login}
         className="flex flex-col space-y-2"
