@@ -1,7 +1,8 @@
 import { backendSupabase } from '@/services/database/supabase/backend-client-init';
+import { cookies } from 'next/headers';
 
 export async function getUser() {
-  const supabase = backendSupabase();
+  const supabase = backendSupabase(cookies());
 
   const { data, error } = await supabase.auth.getUser();
   if (error) {

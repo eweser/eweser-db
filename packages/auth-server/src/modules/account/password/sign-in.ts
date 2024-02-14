@@ -1,7 +1,8 @@
 import { backendSupabase } from '@/services/database/supabase/backend-client-init';
+import { cookies } from 'next/headers';
 
 export async function passwordSignIn(formData: FormData) {
-  const supabase = backendSupabase();
+  const supabase = backendSupabase(cookies());
   // type-casting here for convenience
   // in practice, you should validate your inputs
   const loginData = {
