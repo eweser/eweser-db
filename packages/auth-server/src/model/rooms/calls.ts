@@ -8,15 +8,22 @@ export async function getRoomsByUserId(userId: string): Promise<Room[]> {
   return await db().select().from(rooms).where(eq(rooms.creator, userId));
 }
 
-export async function getProfileRoomsByUserId(userId: string): Promise<Room[]> {
+export async function getProfileRoomsByUserId(userId: string) {
   return await db()
-    .select()
+    .select({
+      token: rooms.token,
+      id: rooms.id,
+      name: rooms.name,
+    })
     .from(rooms)
     .where(and(eq(rooms.creator, userId), eq(rooms.collectionKey, 'profiles')));
 }
 
 export async function insertRooms(inserts: RoomInsert[]) {
-  return await db().insert(rooms).values(inserts).returning({ id: rooms.id });
+  return await db()
+    .insert(rooms)
+    .values(inserts)
+    .returning({ token: rooms.token, id: rooms.id, name: rooms.name });
 }
 
 export async function updateRooms(update: RoomUpdate) {
