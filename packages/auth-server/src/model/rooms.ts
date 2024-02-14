@@ -1,5 +1,5 @@
+import { COLLECTION_KEYS } from '@/shared/constants';
 import { pgTable, boolean, text, timestamp } from 'drizzle-orm/pg-core';
-import { COLLECTION_KEYS } from '../../../db/types/types';
 
 export const rooms = pgTable('rooms', {
   id: text('id').primaryKey().notNull(), // <authserver-url>|<uuid>
