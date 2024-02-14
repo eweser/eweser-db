@@ -1,4 +1,4 @@
-import { backendSupabase } from '@/services/database/supabase/backend-client-init';
+import { verifyOtp } from '@/modules/account/verify-otp';
 import { handleServerErrorRedirect } from '@/shared/utils';
 import { type EmailOtpType } from '@supabase/supabase-js';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -14,18 +14,8 @@ export async function GET(request: NextRequest) {
   redirectTo.searchParams.delete('token_hash');
   redirectTo.searchParams.delete('type');
 
-  if (!token_hash || !type) {
-    return handleServerErrorRedirect(
-      new Error('Invalid token_hash or type'),
-      redirectTo
-    );
-  }
-  const supabase = backendSupabase();
+  const { error } = await verifyOtp({ token_hash, type });
 
-  const { error } = await supabase.auth.verifyOtp({
-    type,
-    token_hash,
-  });
   if (error) {
     return handleServerErrorRedirect(error, redirectTo);
   }
