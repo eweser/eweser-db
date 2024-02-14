@@ -22,5 +22,5 @@ jobs:
         with:
           version: latest
 
-      - run: supabase link --project-ref $SUPABASE_PROJECT_ID
+      - run: supabase link --project-ref ${{ secrets.PRODUCTION_PROJECT_ID }} --workdir packages/auth-server
       - run: supabase db push
