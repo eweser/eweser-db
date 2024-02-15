@@ -49,10 +49,18 @@ export async function getProfileRoomsByUserId(userId: string) {
  * Insert rooms and update the user's rooms list
  */
 export async function insertRooms(inserts: RoomInsert[], userId: string) {
+  const usersRooms =
+    (
+      await db()
+        .select({ rooms: users.rooms })
+        .from(users)
+        .where(eq(users.id, userId))
+    )[0]?.rooms || [];
+
   return await db().transaction(async (dbInstance) => {
     await updateUserRooms(
       userId,
-      inserts.map((i) => i.id),
+      usersRooms.concat(inserts.map((r) => r.id)),
       dbInstance
     );
 
@@ -68,15 +76,18 @@ export async function insertRooms(inserts: RoomInsert[], userId: string) {
  * Deletes rooms and removes them from the user's rooms list
  */
 export async function deleteRooms(ids: string[], userId: string) {
-  const userRooms = await db()
-    .select({ rooms: users.rooms })
-    .from(users)
-    .where(eq(users.id, userId));
+  const usersRooms =
+    (
+      await db()
+        .select({ rooms: users.rooms })
+        .from(users)
+        .where(eq(users.id, userId))
+    )[0]?.rooms || [];
 
   return await db().transaction(async (dbInstance) => {
     await updateUserRooms(
       userId,
-      userRooms[0].rooms.filter((r) => !ids.includes(r)),
+      usersRooms.filter((r) => !ids.includes(r)),
       dbInstance
     );
     await dbInstance.delete(rooms).where(inArray(rooms.id, ids));
