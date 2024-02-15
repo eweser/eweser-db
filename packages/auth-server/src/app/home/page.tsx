@@ -1,6 +1,5 @@
 import { protectPage } from '@/modules/account/protect-page';
 import { getOrCreateNewUsersProfileRooms } from '@/modules/rooms/create-new-user-profile-rooms';
-import { authIdToUserId } from '@/shared/utils';
 
 import type { Metadata } from 'next';
 export const metadata: Metadata = {
@@ -9,9 +8,7 @@ export const metadata: Metadata = {
 
 export default async function Home() {
   const user = await protectPage();
-  const profiles = await getOrCreateNewUsersProfileRooms(
-    authIdToUserId(user.id)
-  );
+  const profiles = await getOrCreateNewUsersProfileRooms(user.id);
 
   return (
     <div className="p-4 bg-gray-100 rounded-md shadow-md">

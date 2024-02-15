@@ -1,7 +1,7 @@
 import { getOrCreateNewUsersProfileRooms } from '@/modules/rooms/create-new-user-profile-rooms';
 import { SUPABASE_SERVICE_ROLE_KEY } from '@/services/database/supabase/backend-config';
 import { NEXT_PUBLIC_SUPABASE_URL } from '@/services/database/supabase/frontend-config';
-import { authIdToUserId } from '@/shared/utils';
+
 import type { CookieOptions } from '@supabase/ssr';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
@@ -37,7 +37,7 @@ export async function oAuthLoginCallback({ code }: { code?: string | null }) {
     try {
       await supabase.auth.setSession(session);
 
-      await getOrCreateNewUsersProfileRooms(authIdToUserId(session.user.id));
+      await getOrCreateNewUsersProfileRooms(session.user.id);
     } catch (error: any) {
       return { error };
     }

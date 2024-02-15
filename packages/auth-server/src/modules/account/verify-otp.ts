@@ -1,6 +1,6 @@
 'use server';
 import { backendSupabase } from '@/services/database/supabase/backend-client-init';
-import { authIdToUserId, logger } from '@/shared/utils';
+import { logger } from '@/shared/utils';
 import type { EmailOtpType } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { getOrCreateNewUsersProfileRooms } from '../rooms/create-new-user-profile-rooms';
@@ -27,7 +27,7 @@ export async function verifyOtp({
     return { error: new Error('Invalid session') };
   }
   try {
-    await getOrCreateNewUsersProfileRooms(authIdToUserId(data.session.user.id));
+    await getOrCreateNewUsersProfileRooms(data.session.user.id);
   } catch (error) {
     logger(error);
   }
