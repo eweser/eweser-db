@@ -13,7 +13,7 @@ import { db } from '@/services/database';
 import { eq } from 'drizzle-orm';
 
 export const accessGrants = pgTable('access_grants', {
-  id: text('id').primaryKey().notNull(), // <owner_user_id>|<requester_id>
+  id: text('id').primaryKey().notNull(), // <owner_user_id>|<requester_id/app_domain>
   ownerId: text('owner_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }), // user_id
@@ -98,4 +98,11 @@ export async function getAccessGrantById(id: string): Promise<AccessGrant> {
     throw new Error('Access grant not found');
   }
   return results[0];
+}
+
+export async function getAppsAccessGrantsByOwnerId(
+  ownerId: string,
+  appDomain: string
+): Promise<AccessGrant> {
+  return getAccessGrantById(`${ownerId}|${appDomain}`);
 }
