@@ -60,7 +60,7 @@ export async function insertRooms(inserts: RoomInsert[], userId: string) {
   return await db().transaction(async (dbInstance) => {
     await updateUserRooms(
       userId,
-      usersRooms.concat(inserts.map((r) => r.id)),
+      usersRooms.concat(inserts.map(({ id }) => id)),
       dbInstance
     );
 
@@ -72,7 +72,7 @@ export async function insertRooms(inserts: RoomInsert[], userId: string) {
 }
 
 /**
- *
+
  * Deletes rooms and removes them from the user's rooms list
  */
 export async function deleteRooms(ids: string[], userId: string) {
