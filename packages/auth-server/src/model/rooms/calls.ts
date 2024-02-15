@@ -4,6 +4,7 @@ import type { Room } from './schema';
 import { rooms } from './schema';
 import type { RoomInsert, RoomUpdate } from './validation';
 import { updateUserRooms, users } from '../users';
+import type { DBInstance } from '@/services/database/drizzle/init';
 
 export async function getRoomsByUserId(userId: string): Promise<Room[]> {
   const usersRooms =
@@ -19,45 +20,84 @@ export async function getRoomsByUserId(userId: string): Promise<Room[]> {
   return await db().select().from(rooms).where(inArray(rooms.id, usersRooms));
 }
 
-export async function getProfileRoomsByUserId(userId: string) {
-  const usersRooms =
-    (
-      await db()
-        .select({ rooms: users.rooms })
-        .from(users)
-        .where(eq(users.id, userId))
-    )[0]?.rooms || [];
-  if (usersRooms.length == 0) {
-    return [];
-  }
-  return await db()
-    .select({
-      token: rooms.token,
-      id: rooms.id,
-      name: rooms.name,
-    })
-    .from(rooms)
-    .where(
-      and(
-        eq(inArray(rooms.id, usersRooms), userId),
-        eq(rooms.collectionKey, 'profiles')
-      )
-    );
+export async function getProfileRoomsByUserId(
+  userId: string,
+  instance?: DBInstance
+) {
+  return await db(instance).transaction(async (dbInstance) => {
+    const usersRooms =
+      (
+        await db(dbInstance)
+          .select({ rooms: users.rooms })
+          .from(users)
+          .where(eq(users.id, userId))
+      )[0]?.rooms || [];
+    if (usersRooms.length == 0) {
+      return [];
+    }
+    return await db(dbInstance)
+      .select({
+        token: rooms.token,
+        id: rooms.id,
+        name: rooms.name,
+      })
+      .from(rooms)
+      .where(
+        and(inArray(rooms.id, usersRooms), eq(rooms.collectionKey, 'profiles'))
+      );
+  });
+}
+
+/**
+ *
+ * locks the rows for update
+ */
+export async function getProfileRoomsByUserIdForUpdate(
+  userId: string,
+  instance?: DBInstance
+) {
+  return await db(instance).transaction(async (dbInstance) => {
+    const usersRooms =
+      (
+        await db(dbInstance)
+          .select({ rooms: users.rooms })
+          .from(users)
+          .for('update')
+          .where(eq(users.id, userId))
+      )[0]?.rooms || [];
+    if (usersRooms.length == 0) {
+      return [];
+    }
+    return await db(dbInstance)
+      .select({
+        token: rooms.token,
+        id: rooms.id,
+        name: rooms.name,
+      })
+      .from(rooms)
+
+      .where(
+        and(inArray(rooms.id, usersRooms), eq(rooms.collectionKey, 'profiles'))
+      );
+  });
 }
 
 /**
  * Insert rooms and update the user's rooms list
  */
-export async function insertRooms(inserts: RoomInsert[], userId: string) {
-  const usersRooms =
-    (
-      await db()
-        .select({ rooms: users.rooms })
-        .from(users)
-        .where(eq(users.id, userId))
-    )[0]?.rooms || [];
-
-  return await db().transaction(async (dbInstance) => {
+export async function insertRooms(
+  inserts: RoomInsert[],
+  userId: string,
+  instance?: DBInstance
+) {
+  return await db(instance).transaction(async (dbInstance) => {
+    const usersRooms =
+      (
+        await db()
+          .select({ rooms: users.rooms })
+          .from(users)
+          .where(eq(users.id, userId))
+      )[0]?.rooms || [];
     await updateUserRooms(
       userId,
       usersRooms.concat(inserts.map(({ id }) => id)),
@@ -75,16 +115,19 @@ export async function insertRooms(inserts: RoomInsert[], userId: string) {
 
  * Deletes rooms and removes them from the user's rooms list
  */
-export async function deleteRooms(ids: string[], userId: string) {
-  const usersRooms =
-    (
-      await db()
-        .select({ rooms: users.rooms })
-        .from(users)
-        .where(eq(users.id, userId))
-    )[0]?.rooms || [];
-
-  return await db().transaction(async (dbInstance) => {
+export async function deleteRooms(
+  ids: string[],
+  userId: string,
+  instance?: DBInstance
+) {
+  return await db(instance).transaction(async (dbInstance) => {
+    const usersRooms =
+      (
+        await db()
+          .select({ rooms: users.rooms })
+          .from(users)
+          .where(eq(users.id, userId))
+      )[0]?.rooms || [];
     await updateUserRooms(
       userId,
       usersRooms.filter((r) => !ids.includes(r)),
