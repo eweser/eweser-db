@@ -1,33 +1,28 @@
 import { getProfileRoomsByUserId, insertRooms } from '@/model/rooms/calls';
 import { getOrCreateToken } from '@/services/y-sweet/get-or-create-token';
-
-export function createProfileRoomId(
-  userId: string,
-  type: 'public' | 'private'
-) {
-  return `${type}-profile-${userId}`;
-}
+import { v4 } from 'uuid';
 
 export async function getOrCreateNewUsersProfileRooms(userId: string) {
   const profiles = await getProfileRoomsByUserId(userId);
 
-  const publicProfileId = createProfileRoomId(userId, 'public');
-  const privateProfileId = createProfileRoomId(userId, 'private');
+  const publicProfileName = 'Public Profile';
+  const privateProfileName = 'Private Profile';
 
-  let publicProfile = profiles.find((p) => p.id === publicProfileId);
-  let privateProfile = profiles.find((p) => p.id === privateProfileId);
+  let publicProfile = profiles.find((p) => p.name === publicProfileName);
+  let privateProfile = profiles.find((p) => p.name === privateProfileName);
   if (publicProfile && privateProfile) {
     return { publicProfile, privateProfile };
   }
 
   if (!publicProfile) {
-    const { token } = await getOrCreateToken(publicProfileId);
+    const id = v4();
+    const { token } = await getOrCreateToken(id);
     const insertResult = await insertRooms(
       [
         {
-          id: publicProfileId,
+          id,
           collectionKey: 'profiles',
-          name: 'Public Profile',
+          name: publicProfileName,
           publicAccess: 'read',
           readAccess: [userId],
           writeAccess: [userId],
@@ -43,11 +38,12 @@ export async function getOrCreateNewUsersProfileRooms(userId: string) {
     publicProfile = insertResult[0];
   }
   if (!privateProfile) {
-    const { token } = await getOrCreateToken(privateProfileId);
+    const id = v4();
+    const { token } = await getOrCreateToken(id);
     const insertResult = await insertRooms(
       [
         {
-          id: privateProfileId,
+          id,
           collectionKey: 'profiles',
           name: 'Private Profile',
           publicAccess: 'private',

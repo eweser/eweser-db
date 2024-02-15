@@ -13,6 +13,9 @@ export async function getRoomsByUserId(userId: string): Promise<Room[]> {
         .from(users)
         .where(eq(users.id, userId))
     )[0]?.rooms || [];
+  if (usersRooms.length == 0) {
+    return [];
+  }
   return await db().select().from(rooms).where(inArray(rooms.id, usersRooms));
 }
 
@@ -24,6 +27,9 @@ export async function getProfileRoomsByUserId(userId: string) {
         .from(users)
         .where(eq(users.id, userId))
     )[0]?.rooms || [];
+  if (usersRooms.length == 0) {
+    return [];
+  }
   return await db()
     .select({
       token: rooms.token,
