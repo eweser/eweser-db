@@ -45,7 +45,7 @@ export async function getOrCreateNewUsersProfileRooms(userId: string) {
         {
           id,
           collectionKey: 'profiles',
-          name: 'Private Profile',
+          name: privateProfileName,
           publicAccess: 'private',
           readAccess: [userId],
           writeAccess: [userId],
