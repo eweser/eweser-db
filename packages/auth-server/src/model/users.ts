@@ -1,11 +1,17 @@
 import { db } from '@/services/database';
+import type { DBInstance } from '@/services/database/drizzle/init';
 import { eq } from 'drizzle-orm';
 import { pgTable, uuid, text, timestamp } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
-  id: text('id').primaryKey().notNull(), // internal user id. includes the authserver url <authserver-url>|<uuid>
-  authId: uuid('auth_id').notNull(), // corresponds to the auth.users table
+  id: uuid('id').primaryKey().notNull(), // corresponds to the auth.users table
+
   email: text('email').notNull(),
+  /**
+   * Make sure to update this rooms list when adding/removing/inviting users to rooms. Should be handled in the rooms model calls. only use those calls to be sure
+   */
+  rooms: uuid('rooms').array().notNull().default([]), // room.id array
+
   createdAt: timestamp('created_at', {
     withTimezone: true,
     mode: 'string',
@@ -21,4 +27,22 @@ export async function getUserById(userId: string) {
     throw new Error('User not found');
   }
   return results[0];
+}
+
+export async function getUserRooms(userId: string, instance?: DBInstance) {
+  return await db(instance)
+    .select({ rooms: users.rooms })
+    .from(users)
+    .where(eq(users.id, userId));
+}
+
+export async function updateUserRooms(
+  userId: string,
+  roomIds: string[],
+  instance?: DBInstance
+) {
+  return await db(instance)
+    .update(users)
+    .set({ rooms: roomIds })
+    .where(eq(users.id, userId));
 }

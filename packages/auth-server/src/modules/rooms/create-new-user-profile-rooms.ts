@@ -1,17 +1,11 @@
 import { getProfileRoomsByUserId, insertRooms } from '@/model/rooms/calls';
 import { getOrCreateToken } from '@/services/y-sweet/get-or-create-token';
-import { AUTH_SERVER_URL } from '@/shared/constants';
-import { v4 as uuid } from 'uuid';
-
-export function createRoomId() {
-  return `${AUTH_SERVER_URL}|${uuid()}`;
-}
 
 export function createProfileRoomId(
   userId: string,
   type: 'public' | 'private'
 ) {
-  return `${AUTH_SERVER_URL}|${type}-profile-${userId}`;
+  return `${type}-profile-${userId}`;
 }
 
 export async function getOrCreateNewUsersProfileRooms(userId: string) {
@@ -28,19 +22,21 @@ export async function getOrCreateNewUsersProfileRooms(userId: string) {
 
   if (!publicProfile) {
     const { token } = await getOrCreateToken(publicProfileId);
-    const insertResult = await insertRooms([
-      {
-        id: publicProfileId,
-        collectionKey: 'profiles',
-        creator: userId,
-        name: 'Public Profile',
-        readAccess: [userId],
-        writeAccess: [userId],
-        adminAccess: [userId],
-        public: true,
-        token,
-      },
-    ]);
+    const insertResult = await insertRooms(
+      [
+        {
+          id: publicProfileId,
+          collectionKey: 'profiles',
+          name: 'Public Profile',
+          publicAccess: 'read',
+          readAccess: [userId],
+          writeAccess: [userId],
+          adminAccess: [userId],
+          token,
+        },
+      ],
+      userId
+    );
     if (insertResult.length !== 1) {
       throw new Error('Failed to insert public profile room');
     }
@@ -48,19 +44,21 @@ export async function getOrCreateNewUsersProfileRooms(userId: string) {
   }
   if (!privateProfile) {
     const { token } = await getOrCreateToken(privateProfileId);
-    const insertResult = await insertRooms([
-      {
-        id: privateProfileId,
-        collectionKey: 'profiles',
-        creator: userId,
-        name: 'Private Profile',
-        readAccess: [userId],
-        writeAccess: [userId],
-        adminAccess: [userId],
-        public: false,
-        token,
-      },
-    ]);
+    const insertResult = await insertRooms(
+      [
+        {
+          id: privateProfileId,
+          collectionKey: 'profiles',
+          name: 'Private Profile',
+          publicAccess: 'private',
+          readAccess: [userId],
+          writeAccess: [userId],
+          adminAccess: [userId],
+          token,
+        },
+      ],
+      userId
+    );
     if (insertResult.length !== 1) {
       throw new Error('Failed to insert private profile room');
     }
