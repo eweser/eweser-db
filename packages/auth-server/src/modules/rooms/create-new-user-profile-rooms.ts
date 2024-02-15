@@ -24,7 +24,7 @@ export async function getOrCreateNewUsersProfileRooms(userId: string) {
 
     if (!publicProfile) {
       const id = v4();
-      const { token } = await getOrCreateToken(id);
+      const { token, url } = await getOrCreateToken(id);
       inserts.push({
         id,
         collectionKey: 'profiles',
@@ -34,11 +34,12 @@ export async function getOrCreateNewUsersProfileRooms(userId: string) {
         writeAccess: [userId],
         adminAccess: [userId],
         token,
+        ySweetUrl: url,
       });
     }
     if (!privateProfile) {
       const id = v4();
-      const { token } = await getOrCreateToken(id);
+      const { token, url } = await getOrCreateToken(id);
       inserts.push({
         id,
         collectionKey: 'profiles',
@@ -48,6 +49,7 @@ export async function getOrCreateNewUsersProfileRooms(userId: string) {
         writeAccess: [userId],
         adminAccess: [userId],
         token,
+        ySweetUrl: url,
       });
     }
 

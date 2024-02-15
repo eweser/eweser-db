@@ -12,6 +12,8 @@ export const rooms = pgTable('rooms', {
 
   token: text('token'), // y-sweet access token to sync the document
 
+  ySweetUrl: text('y_sweet_url'), // y-sweet url to sync the document
+
   publicAccess: text('public_access', { enum: PUBLIC_ACCESS_TYPES })
     .default('private')
     .notNull(), // if not 'private', will ignore the user lists below for read and write and, anyone can access the room. Will invite all aggregators.
