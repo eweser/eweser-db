@@ -1,7 +1,7 @@
 import { getProfileRoomsByUserId } from '@/model/rooms/calls';
 
 import type { User } from '@supabase/supabase-js';
-import ProfileViewExport from './profile-view-frontend-export';
+import ProfileViewFrontend from './profile-view-frontend';
 
 export async function ProfileView({ user }: { user: User }) {
   if (!user.email) {
@@ -22,7 +22,7 @@ export async function ProfileView({ user }: { user: User }) {
   }
 
   return (
-    <ProfileViewExport
+    <ProfileViewFrontend
       publicProfileRoom={publicProfileRoom}
       privateProfileRoom={privateProfileRoom}
       email={user.email || ''}

@@ -1,65 +1,20 @@
 'use client';
+import { DatabaseProvider, useDatabase } from '@/frontend/eweser-db-provider';
 import type { Room } from '@/model/rooms/schema';
 import type { Profile } from '@eweser/db';
-import { Database } from '@eweser/db';
-import { useEffect, useMemo, useState } from 'react';
-
-function DatabaseProvider({
-  publicProfileRoom,
-  privateProfileRoom,
-  email,
-}: {
-  publicProfileRoom: Room;
-  privateProfileRoom: Room;
-  email: string;
-}) {
-  const [loaded, setLoaded] = useState(false);
-  const eweserDB = useMemo(() => {
-    if (!publicProfileRoom || !privateProfileRoom) {
-      return null;
-    }
-    return new Database({
-      authServer: 'http://localhost:3000',
-      logLevel: 0, // log debug events
-      initialRooms: [publicProfileRoom, privateProfileRoom].map(
-        ({ id, collectionKey, token, ySweetUrl, name }) => ({
-          roomId: id,
-          collectionKey,
-          ySweetToken: token || '',
-          ySweetUrl: ySweetUrl || '',
-          name,
-        })
-      ),
-    }).on('roomsLoaded', (_rooms) => {
-      // could also add check that rooms are correct rooms
-      setLoaded(true);
-    });
-  }, [privateProfileRoom, publicProfileRoom]);
-
-  if (!loaded || !eweserDB) {
-    return null;
-  }
-  return (
-    <ProfileViewInner
-      db={eweserDB}
-      publicProfileRoom={publicProfileRoom}
-      privateProfileRoom={privateProfileRoom}
-      email={email}
-    />
-  );
-}
+import dynamic from 'next/dynamic';
+import { useEffect, useState } from 'react';
 
 function ProfileViewInner({
-  db,
   publicProfileRoom,
   privateProfileRoom,
   email,
 }: {
-  db: Database;
   publicProfileRoom: Room;
   privateProfileRoom: Room;
   email: string;
 }) {
+  const { db } = useDatabase();
   const PrivateProfile = db.getDocuments(
     db.collections.profiles[privateProfileRoom.id]
   );
@@ -126,7 +81,7 @@ function ProfileViewInner({
   );
 }
 
-export default function ProfileViewFrontend({
+export function ProfileViewFrontend({
   publicProfileRoom,
   privateProfileRoom,
   email,
@@ -136,10 +91,16 @@ export default function ProfileViewFrontend({
   email: string;
 }) {
   return (
-    <DatabaseProvider
-      publicProfileRoom={publicProfileRoom}
-      privateProfileRoom={privateProfileRoom}
-      email={email}
-    />
+    <DatabaseProvider initialRooms={[publicProfileRoom, privateProfileRoom]}>
+      <ProfileViewInner
+        privateProfileRoom={privateProfileRoom}
+        publicProfileRoom={publicProfileRoom}
+        email={email}
+      />
+    </DatabaseProvider>
   );
 }
+
+export default dynamic(() => Promise.resolve(ProfileViewFrontend), {
+  ssr: false,
+});
