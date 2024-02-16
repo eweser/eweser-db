@@ -1,18 +1,7 @@
 import type { YMapEvent, Transaction } from 'yjs';
 import type { Database } from '..';
-import type {
-  Document,
-  DocumentWithoutBase,
-  Room,
-  CollectionKey,
-  Documents,
-} from '../types';
-import {
-  randomString,
-  buildRef,
-  newDocument,
-  getroomIdFromAlias,
-} from '../utils';
+import type { Document, DocumentWithoutBase, Room, Documents } from '../types';
+import { randomString, buildRef, newDocument } from '../utils';
 
 export const getDocuments =
   (_db: Database) =>
@@ -30,7 +19,9 @@ export const getDocuments =
         return documents.set(doc._id, doc);
       },
       new: (doc: DocumentWithoutBase<T>, id?: string) => {
-        if (id && documents.get(id)) throw new Error('document already exists');
+        if (id && documents.get(id)) {
+          throw new Error('document already exists');
+        }
         let documentId = id || randomString(24);
         if (documents.get(documentId)) {
           documentId = randomString(24);
@@ -40,11 +31,12 @@ export const getDocuments =
           }
         }
         const ref = buildRef({
-          collectionKey: room.collectionKey as CollectionKey,
-          roomId: getroomIdFromAlias(room.roomId),
+          authServer: _db.authServer,
+          collectionKey: room.collectionKey,
+          roomId: room.roomId,
           documentId,
         });
-        const newDoc = newDocument(ref, doc);
+        const newDoc = newDocument(documentId, ref, doc);
         documents.set(documentId, newDoc);
         return newDoc;
       },

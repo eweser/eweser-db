@@ -1,10 +1,10 @@
 import type { Database } from '..';
 import { getOrSetRoom, initializeDocAndLocalProvider } from '..';
 import type { CollectionKey } from '../types';
-import type { UserDocument } from '../types';
+import type { Document } from '../types';
 import { populateInitialValues } from '../utils/db/populateInitialValues';
 
-export async function createOfflineRoom<T extends UserDocument>(
+export async function createOfflineRoom<T extends Document>(
   this: Database,
   {
     collectionKey,

@@ -3,14 +3,19 @@ import type {
   Collections,
   DatabaseEvents,
   ProviderOptions,
+  RoomRegistryEntry,
 } from './types';
 import { TypedEventEmitter } from './types';
 import { collectionKeys, collections } from './collections';
+import { initializeDocAndLocalProvider } from './utils/connection/initializeDoc';
+import { createYjsProvider } from '@y-sweet/client';
+import type { Doc } from 'yjs';
+import { getDocuments } from './utils/getDocuments';
 
 export * from './utils';
 
 const defaultRtcPeers = [
-  'wss://signaling.yjs.dev',
+  'wss://signaling.yjs.debv',
   'wss://y-webrtc-signaling-eu.herokuapp.com',
   'wss://y-webrtc-signaling-us.herokuapp.com',
 ];
@@ -29,6 +34,7 @@ export interface DatabaseOptions {
   providers?: ProviderOptions[];
   /** provide a list of peers to use instead of the default */
   webRTCPeers?: string[];
+  initialRooms?: RoomRegistryEntry[];
 }
 
 export class Database extends TypedEventEmitter<DatabaseEvents> {
@@ -61,10 +67,34 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
   error: DatabaseEvents['error'] = (message) => this.log(3, message);
 
   // connect methods
+  loadRoom = async (room: RoomRegistryEntry) => {
+    this.info('loading room', room);
+    const { roomId, ySweetUrl, ySweetToken, collectionKey } = room;
+    const { ydoc, localProvider } = await initializeDocAndLocalProvider(roomId);
+    this.debug('initialized ydoc and localProvider', ydoc, localProvider);
+    let ySweetProvider = null;
+    if (ySweetToken && ySweetUrl && this.useYSweet) {
+      ySweetProvider = createYjsProvider(ydoc as Doc, {
+        url: ySweetUrl,
+        token: ySweetToken,
+        docId: roomId,
+      });
+      this.debug('created ySweetProvider', ySweetProvider);
+    }
+
+    this.collections[collectionKey][roomId] = {
+      ...room,
+      indexeddbProvider: localProvider,
+      webRtcProvider: null,
+      ySweetProvider,
+      ydoc,
+    };
+  };
 
   // util methods
 
   // collection methods
+  collection = getDocuments(this);
 
   constructor(optionsPassed?: DatabaseOptions) {
     super();
@@ -122,5 +152,16 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
           break;
       }
     });
+    this.debug('Database created with options', options);
+
+    // check the local storage for the room registry, if not, create a blank one.
+
+    // lets just try getting the ysweet connection working first and worry about indexeddb later
+    // also just use passed in rooms for now and worry about getting and storing the registry later. that should let me be able to use the app in the auth server's page without having to request an access_grant.
+    if (options.initialRooms) {
+      options.initialRooms.forEach((room) => {
+        this.loadRoom(room);
+      });
+    }
   }
 }

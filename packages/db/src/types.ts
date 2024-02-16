@@ -39,22 +39,25 @@ export type YDoc<T extends Document> = TypedDoc<{
   documents: TypedMap<Documents<T>>;
 }>;
 
-/** corresponds to a 'room' in Matrix */
-export interface Room<T extends Document> {
+export interface RoomRegistryEntry {
   roomId: string;
   collectionKey: CollectionKey;
+  /** User facing name of the room ('folder') */
+  name: string;
+  ySweetToken?: string;
+  ySweetUrl?: string;
+}
 
+/** corresponds to a 'room' in Matrix */
+export interface Room<T extends Document> extends RoomRegistryEntry {
   indexeddbProvider: IndexeddbPersistence | null;
   webRtcProvider: WebrtcProvider | null;
   ySweetProvider: YSweetProvider | null;
-  ySweetToken?: string;
   ydoc?: YDoc<T>;
 
   // connectStatus: ConnectStatus;
-  created?: Date;
-  /** User facing name of the room ('folder') */
-  name?: string;
   // tempDocs: { [docRef: string]: { doc: Doc } };
+  created?: Date;
 }
 
 export type Collection<T extends Document> = {
