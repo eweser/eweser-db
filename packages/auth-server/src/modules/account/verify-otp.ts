@@ -3,7 +3,7 @@ import { backendSupabase } from '@/services/database/supabase/backend-client-ini
 import { logger } from '@/shared/utils';
 import type { EmailOtpType } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
-import { getOrCreateNewUsersProfileRooms } from '../rooms/create-new-user-profile-rooms';
+import { createNewUserRoomsAndAuthServerAccess } from './create-new-user-rooms-and-auth-server-access';
 
 export async function verifyOtp({
   token_hash,
@@ -27,7 +27,7 @@ export async function verifyOtp({
     return { error: new Error('Invalid session') };
   }
   try {
-    await getOrCreateNewUsersProfileRooms(data.session.user.id);
+    await createNewUserRoomsAndAuthServerAccess(data.session.user.id);
   } catch (error) {
     logger(error);
   }

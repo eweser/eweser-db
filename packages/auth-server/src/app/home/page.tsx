@@ -1,6 +1,6 @@
 import { ProfileView } from '@/frontend/components/profile/profile-view';
 import { protectPage } from '@/modules/account/protect-page';
-import { getOrCreateNewUsersProfileRooms } from '@/modules/rooms/create-new-user-profile-rooms';
+import { createNewUserRoomsAndAuthServerAccess } from '@/modules/account/create-new-user-rooms-and-auth-server-access';
 
 import type { Metadata } from 'next';
 export const metadata: Metadata = {
@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default async function Home() {
   const user = await protectPage();
-  await getOrCreateNewUsersProfileRooms(user.id);
+  await createNewUserRoomsAndAuthServerAccess(user.id);
 
   return <ProfileView user={user} />;
 }

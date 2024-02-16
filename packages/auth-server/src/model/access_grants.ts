@@ -2,15 +2,20 @@ import {
   pgTable,
   text,
   boolean,
-  numeric,
   timestamp,
+  integer,
 } from 'drizzle-orm/pg-core';
 import { users } from './users';
-import { REQUESTER_TYPES } from '@/shared/constants';
+import { COLLECTION_KEYS, REQUESTER_TYPES } from '@/shared/constants';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 import { db } from '@/services/database';
 import { eq } from 'drizzle-orm';
+import type { DBInstance } from '@/services/database/drizzle/init';
+
+export function createAccessGrantId(ownerId: string, requesterId: string) {
+  return `${ownerId}|${requesterId}`;
+}
 
 export const accessGrants = pgTable('access_grants', {
   id: text('id').primaryKey().notNull(), // <owner_user_id>|<requester_id/app_domain>
@@ -23,13 +28,12 @@ export const accessGrants = pgTable('access_grants', {
   }).notNull(),
 
   roomIds: text('room_ids').array().notNull(),
-  jwtId: text('jwt_id').notNull(),
-  isValid: boolean('is_valid').default(true).notNull(), // use to revoke an existing jwt
-  expires: timestamp('expires', {
-    withTimezone: true,
-    mode: 'string',
-  }).notNull(),
-  keepAliveDays: numeric('keep_alive_days').default('1').notNull(), // auto renew, extend expiry date by x days every time token is used
+  collections: text('collections', { enum: [...COLLECTION_KEYS, 'all'] })
+    .array()
+    .notNull(),
+  isValid: boolean('is_valid').default(true).notNull(), // use to revoke an existing jwt next time its keep alive is called
+
+  keepAliveDays: integer('keep_alive_days').default(1).notNull(), // auto renew, extend expiry date by x days every time token is used
   createdAt: timestamp('created_at', {
     withTimezone: true,
     mode: 'string',
@@ -40,7 +44,9 @@ export const accessGrants = pgTable('access_grants', {
 export type AccessGrant = typeof accessGrants.$inferSelect;
 
 export const accessGrantInsertSchema = createInsertSchema(accessGrants, {
+  id: z.string(),
   roomIds: z.string().array(),
+  collections: z.enum([...COLLECTION_KEYS, 'all']).array(),
 });
 
 export type AccessGrantInsert = typeof accessGrantInsertSchema._type;
@@ -78,8 +84,11 @@ export async function getAccessGrantsByOwnerId(
     .where(eq(accessGrants.ownerId, ownerId));
 }
 
-export async function insertAccessGrants(inserts: AccessGrantInsert[]) {
-  return await db().insert(accessGrants).values(inserts);
+export async function insertAccessGrants(
+  inserts: AccessGrantInsert[],
+  dbInstance?: DBInstance
+) {
+  return await db(dbInstance).insert(accessGrants).values(inserts).returning();
 }
 
 export async function updateAccessGrants(update: AccessGrantUpdate) {
