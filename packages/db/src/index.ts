@@ -71,28 +71,55 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
   loadRoom = async (room: RoomRegistryEntry) => {
     this.info('loading room', room);
     const { roomId, ySweetUrl, ySweetToken, collectionKey } = room;
-    const { ydoc, localProvider } = await initializeDocAndLocalProvider(roomId);
-    this.debug('initialized ydoc and localProvider', ydoc, localProvider);
-    let ySweetProvider = null;
-    if (ySweetToken && ySweetUrl && this.useYSweet) {
+    if (!roomId) {
+      throw new Error('roomId is required');
+    }
+    const existingRoom = this.collections[collectionKey][roomId];
+    let ydoc = existingRoom?.ydoc;
+    let indexeddbProvider = existingRoom?.indexeddbProvider;
+
+    if (!ydoc || !indexeddbProvider) {
+      const { ydoc: newYDoc, localProvider } =
+        await initializeDocAndLocalProvider(roomId);
+
+      ydoc = newYDoc;
+      indexeddbProvider = localProvider;
+      this.debug('initialized ydoc and localProvider', ydoc, indexeddbProvider);
+    }
+
+    let ySweetProvider = existingRoom?.ySweetProvider;
+    if (!ySweetProvider && ySweetToken && ySweetUrl && this.useYSweet) {
       try {
         const provider = createYjsProvider(ydoc as Doc, {
           url: ySweetUrl,
           token: ySweetToken,
           docId: roomId,
         });
-        this.debug('created ySweetProvider', ySweetProvider);
         if (provider) {
           ySweetProvider = provider;
+          provider.on('status', (status: any) => {
+            this.debug('ySweetProvider status', status);
+          });
+          this.debug('created ySweetProvider', ySweetProvider);
         }
       } catch (error) {
         this.error(error);
       }
     }
 
+    if (
+      existingRoom &&
+      existingRoom.ydoc &&
+      existingRoom.indexeddbProvider &&
+      existingRoom.ySweetProvider
+    ) {
+      this.debug('room already loaded', existingRoom);
+      return existingRoom;
+    }
+
     const loadedRoom = (this.collections[collectionKey][roomId] = {
       ...room,
-      indexeddbProvider: localProvider,
+      indexeddbProvider,
       webRtcProvider: null,
       ySweetProvider,
       ydoc,

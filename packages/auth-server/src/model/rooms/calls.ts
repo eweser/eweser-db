@@ -36,11 +36,7 @@ export async function getProfileRoomsByUserId(
       return [];
     }
     return await db(dbInstance)
-      .select({
-        token: rooms.token,
-        id: rooms.id,
-        name: rooms.name,
-      })
+      .select()
       .from(rooms)
       .where(
         and(inArray(rooms.id, usersRooms), eq(rooms.collectionKey, 'profiles'))
