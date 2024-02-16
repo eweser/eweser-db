@@ -47,8 +47,9 @@
   "bugs": {
     "url": "https://github.com/jacobcoro/eweserdb/issues"
   },
+  "private": true,
   "publishConfig": {
-    "access": "public"
+    "access": "restricted"
   },
   "devDependencies": {
     "@eweser/eslint-config-ts": "^1.4.0",
@@ -62,7 +63,7 @@
     "vite": "^4.2.0",
     "vitest": "^0.29.8"
   },
-  "gitHead": "da7009f0729d7f3e60b30d7d26c85bc67ecb17a5",
+  "gitHead": "6e8c8870a4a7cefbe005a571eb36f2edfcebc6c3",
   "dependencies": {
     "y-indexeddb": "^9.0.9",
     "y-protocols": "^1.0.5",
