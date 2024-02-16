@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@eweser/db": "^1.6.2",
+    "@eweser/db": "^1.7.0",
     "@supabase/ssr": "^0.1.0",
     "@supabase/supabase-js": "^2.39.3",
     "@y-sweet/client": "^0.1.0",
