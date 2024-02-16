@@ -10,7 +10,7 @@
   ],
   "author": "jacobcoro",
   "type": "module",
-  "homepage": "https://github.com/jacobcoro/eweserdb",
+  "homepage": "https://github.com/eweser/eweserdb",
   "license": "MIT",
   "directories": {
     "src": "src"
@@ -21,7 +21,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jacobcoro/eweserdb.git"
+    "url": "git+https://github.com/eweser/eweserdb.git"
   },
   "source": "src/index.ts",
   "types": "types/index.d.ts",
@@ -45,7 +45,7 @@
     "lint": "eslint --ext .ts,.tsx,.js,.jsx ."
   },
   "bugs": {
-    "url": "https://github.com/jacobcoro/eweserdb/issues"
+    "url": "https://github.com/eweser/eweserdb/issues"
   },
   "publishConfig": {
     "access": "public"
