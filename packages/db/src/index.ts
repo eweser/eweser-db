@@ -13,6 +13,7 @@ import type { Doc } from 'yjs';
 import { getDocuments } from './utils/getDocuments';
 
 export * from './utils';
+export * from './types';
 
 const defaultRtcPeers = [
   'wss://signaling.yjs.debv',
@@ -55,16 +56,16 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
   // logger/event emitter
 
   logLevel = 2;
-  log: DatabaseEvents['log'] = (level, message) => {
+  log: DatabaseEvents['log'] = (level, ...message) => {
     if (level <= this.logLevel) {
-      this.emit('log', level, message);
+      this.emit('log', level, ...message);
     }
   };
 
-  debug: DatabaseEvents['debug'] = (message) => this.log(0, message);
-  info: DatabaseEvents['info'] = (message) => this.log(1, message);
-  warn: DatabaseEvents['warn'] = (message) => this.log(2, message);
-  error: DatabaseEvents['error'] = (message) => this.log(3, message);
+  debug: DatabaseEvents['debug'] = (...message) => this.log(0, ...message);
+  info: DatabaseEvents['info'] = (...message) => this.log(1, ...message);
+  warn: DatabaseEvents['warn'] = (...message) => this.log(2, ...message);
+  error: DatabaseEvents['error'] = (...message) => this.log(3, message);
 
   // connect methods
   loadRoom = async (room: RoomRegistryEntry) => {
@@ -74,27 +75,47 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     this.debug('initialized ydoc and localProvider', ydoc, localProvider);
     let ySweetProvider = null;
     if (ySweetToken && ySweetUrl && this.useYSweet) {
-      ySweetProvider = createYjsProvider(ydoc as Doc, {
-        url: ySweetUrl,
-        token: ySweetToken,
-        docId: roomId,
-      });
-      this.debug('created ySweetProvider', ySweetProvider);
+      try {
+        const provider = createYjsProvider(ydoc as Doc, {
+          url: ySweetUrl,
+          token: ySweetToken,
+          docId: roomId,
+        });
+        this.debug('created ySweetProvider', ySweetProvider);
+        if (provider) {
+          ySweetProvider = provider;
+        }
+      } catch (error) {
+        this.error(error);
+      }
     }
 
-    this.collections[collectionKey][roomId] = {
+    const loadedRoom = (this.collections[collectionKey][roomId] = {
       ...room,
       indexeddbProvider: localProvider,
       webRtcProvider: null,
       ySweetProvider,
       ydoc,
-    };
+    });
+    this.emit('roomLoaded', loadedRoom);
+    return loadedRoom;
+  };
+
+  loadRooms = async (rooms: RoomRegistryEntry[]) => {
+    const loadedRooms = [];
+    this.debug('loading rooms', rooms);
+    for (const room of rooms) {
+      const loadedRoom = await this.loadRoom(room);
+      loadedRooms.push(loadedRoom);
+    }
+    this.debug('loaded rooms', loadedRooms);
+    this.emit('roomsLoaded', loadedRooms);
   };
 
   // util methods
 
   // collection methods
-  collection = getDocuments(this);
+  getDocuments = getDocuments(this);
 
   constructor(optionsPassed?: DatabaseOptions) {
     super();
@@ -118,6 +139,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     }
 
     if (
+      options.providers?.length &&
       options.providers?.length === 1 &&
       options.providers[0] === 'IndexedDB'
     ) {
@@ -132,23 +154,23 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     if (options.logLevel) {
       this.logLevel = options.logLevel;
     }
-    this.on('log', (level, message) => {
+    this.on('log', (level, ...message) => {
       switch (level) {
         case 0:
           // eslint-disable-next-line no-console
-          console.log(message);
+          console.info(...message);
           break;
         case 1:
           // eslint-disable-next-line no-console
-          console.info(message);
+          console.log(...message);
           break;
         case 2:
           // eslint-disable-next-line no-console
-          console.warn(message);
+          console.warn(...message);
           break;
         case 3:
           // eslint-disable-next-line no-console
-          console.error(message);
+          console.error(...message);
           break;
       }
     });
@@ -159,9 +181,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     // lets just try getting the ysweet connection working first and worry about indexeddb later
     // also just use passed in rooms for now and worry about getting and storing the registry later. that should let me be able to use the app in the auth server's page without having to request an access_grant.
     if (options.initialRooms) {
-      options.initialRooms.forEach((room) => {
-        this.loadRoom(room);
-      });
+      this.loadRooms(options.initialRooms);
     }
   }
 }

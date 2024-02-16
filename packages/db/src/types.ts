@@ -74,6 +74,8 @@ export type DatabaseEvents = {
   info: (...args: any[]) => void;
   warn: (...args: any[]) => void;
   error: (...args: any[]) => void;
+  roomLoaded: (room: Room<any>) => void;
+  roomsLoaded: (rooms: Room<any>[]) => void;
 };
 
 type EmittedEvents = Record<string | symbol, (...args: any[]) => any>;
