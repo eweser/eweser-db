@@ -65,10 +65,8 @@
   "gitHead": "da7009f0729d7f3e60b30d7d26c85bc67ecb17a5",
   "dependencies": {
     "@y-sweet/client": "^0.1.0",
-    "y-indexeddb": "^9.0.9",
-    "y-protocols": "^1.0.5",
-    "y-webrtc": "^10.2.5",
-    "yjs": "^13.5.16",
+    "y-indexeddb": "^9.0.12",
+    "yjs": "^13.6.12",
     "yjs-types": "^0.0.1"
   }
 }
