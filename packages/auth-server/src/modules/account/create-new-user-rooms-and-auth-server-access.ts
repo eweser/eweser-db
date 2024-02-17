@@ -14,7 +14,11 @@ import { getOrCreateToken } from '@/services/y-sweet/get-or-create-token';
 import { AUTH_SERVER_DOMAIN } from '@/shared/constants';
 import { v4 } from 'uuid';
 
-export async function createNewUserRoomsAndAuthServerAccess(userId: string) {
+export async function createNewUserRoomsAndAuthServerAccess(
+  userId: string
+): Promise<{
+  authServerAccessGrant: AccessGrant;
+}> {
   return await db().transaction(async (dbInstance) => {
     const profiles = await getProfileRoomsByUserIdForUpdate(userId, dbInstance);
 
@@ -23,9 +27,6 @@ export async function createNewUserRoomsAndAuthServerAccess(userId: string) {
 
     let publicProfile = profiles.find((p) => p.name === publicProfileName);
     let privateProfile = profiles.find((p) => p.name === privateProfileName);
-    if (publicProfile && privateProfile) {
-      return { publicProfile, privateProfile };
-    }
 
     const inserts: RoomInsert[] = [];
 
@@ -67,7 +68,7 @@ export async function createNewUserRoomsAndAuthServerAccess(userId: string) {
     }
 
     if (!publicProfile || !privateProfile) {
-      throw new Error('Failed to create profile rooms');
+      throw new Error('Failed to find or create profile rooms');
     }
 
     // Create an all access grant for the auth server
@@ -94,21 +95,17 @@ export async function createNewUserRoomsAndAuthServerAccess(userId: string) {
         isValid: true,
         keepAliveDays: 365,
       };
-
       const result = await insertAccessGrants([accessGrantInsert], dbInstance);
       if (result.length !== 1) {
         throw new Error('Failed to insert access grant');
       }
       authServerAccessGrant = result[0];
     }
-    if (
-      !authServerAccessGrant ||
-      !authServerAccessGrant.collections.includes('all')
-    ) {
+    if (!authServerAccessGrant) {
       throw new Error('Failed to create access grant');
     }
 
-    return { publicProfile, privateProfile, authServerAccessGrant };
+    return { authServerAccessGrant };
   });
   // TODO: send public room token to aggregators.
 }

@@ -1,47 +1,15 @@
 import { db } from '@/services/database';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, arrayOverlaps, eq, inArray, or } from 'drizzle-orm';
 import type { Room } from './schema';
 import { rooms } from './schema';
 import type { RoomInsert, RoomUpdate } from './validation';
 import { updateUserRooms, users } from '../users';
 import type { DBInstance } from '@/services/database/drizzle/init';
+import type { CollectionKey } from '@eweser/db';
+import type { AccessGrant } from '../access_grants';
 
-export async function getRoomsByUserId(userId: string): Promise<Room[]> {
-  const usersRooms =
-    (
-      await db()
-        .select({ rooms: users.rooms })
-        .from(users)
-        .where(eq(users.id, userId))
-    )[0]?.rooms || [];
-  if (usersRooms.length == 0) {
-    return [];
-  }
-  return await db().select().from(rooms).where(inArray(rooms.id, usersRooms));
-}
-
-export async function getProfileRoomsByUserId(
-  userId: string,
-  instance?: DBInstance
-) {
-  return await db(instance).transaction(async (dbInstance) => {
-    const usersRooms =
-      (
-        await db(dbInstance)
-          .select({ rooms: users.rooms })
-          .from(users)
-          .where(eq(users.id, userId))
-      )[0]?.rooms || [];
-    if (usersRooms.length == 0) {
-      return [];
-    }
-    return await db(dbInstance)
-      .select()
-      .from(rooms)
-      .where(
-        and(inArray(rooms.id, usersRooms), eq(rooms.collectionKey, 'profiles'))
-      );
-  });
+export async function getRoomsByIds(ids: string[]): Promise<Room[]> {
+  return await db().select().from(rooms).where(inArray(rooms.id, ids));
 }
 
 /**
@@ -71,7 +39,6 @@ export async function getProfileRoomsByUserIdForUpdate(
         name: rooms.name,
       })
       .from(rooms)
-
       .where(
         and(inArray(rooms.id, usersRooms), eq(rooms.collectionKey, 'profiles'))
       );
@@ -135,4 +102,33 @@ export async function deleteRooms(
 
 export async function updateRooms(update: RoomUpdate) {
   return await db().update(rooms).set(update).where(eq(rooms.id, update.id));
+}
+
+export async function getRoomIdsFromAccessGrant(
+  accessGrant: AccessGrant,
+  dbInstance?: DBInstance
+): Promise<string[]> {
+  const { collections, roomIds: grantRoomIds, ownerId } = accessGrant;
+  const allAccess = collections.includes('all');
+  const collectionsWithoutAll = collections.filter(
+    (c) => c !== 'all'
+  ) as CollectionKey[];
+  const roomIds = allAccess
+    ? await db(dbInstance)
+        .select({ id: rooms.id })
+        .from(rooms)
+        .where(arrayOverlaps(rooms.writeAccess, [ownerId]))
+    : await db(dbInstance)
+        .select({ id: rooms.id })
+        .from(rooms)
+        .where(
+          and(
+            arrayOverlaps(rooms.writeAccess, [ownerId]),
+            or(
+              inArray(rooms.id, grantRoomIds),
+              inArray(rooms.collectionKey, collectionsWithoutAll)
+            )
+          )
+        );
+  return roomIds.map((r) => r.id);
 }
