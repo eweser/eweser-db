@@ -68,6 +68,15 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
   error: DatabaseEvents['error'] = (...message) => this.log(3, message);
 
   // connect methods
+  getRoomsWithAccessGrantToken = async (token: string) => {
+    const rooms = await fetch(`${this.authServer}/access-grant/get-rooms`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+    }).then((res) => res.json());
+    this.debug('got rooms with access grant token', rooms);
+  };
+
   loadRoom = async (room: RoomRegistryEntry) => {
     this.info('loading room', room);
     const { roomId, ySweetUrl, ySweetToken, collectionKey } = room;
