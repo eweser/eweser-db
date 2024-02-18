@@ -85,19 +85,28 @@ function ProfileViewInner({
         },
         'default'
       );
+    } else if (!publicProfile.firstName && !privateProfile?.firstName) {
+      PublicProfile.set({
+        ...publicProfile,
+        firstName: `${AUTH_SERVER_DOMAIN} user #${userCount}`,
+      });
     }
-  }, [publicProfile, PublicProfile, publicProfileRoom.id, userCount]);
+  }, [
+    publicProfile,
+    PublicProfile,
+    publicProfileRoom.id,
+    userCount,
+    privateProfile?.firstName,
+  ]);
 
-  const [firstNameIsPublic, setFirstNameIsPublic] = useState(
-    !!publicProfile?.firstName
-  );
+  const firstNameIsPublic = !!publicProfile?.firstName;
+
   const firstName = firstNameIsPublic
     ? publicProfile?.firstName
     : privateProfile?.firstName;
 
-  const [lastNameIsPublic, setLastNameIsPublic] = useState(
-    !!publicProfile?.lastName
-  );
+  const lastNameIsPublic = !!publicProfile?.lastName;
+
   const lastName = lastNameIsPublic
     ? publicProfile?.lastName
     : privateProfile?.lastName;
@@ -160,7 +169,6 @@ function ProfileViewInner({
                       PublicProfile.set({ ...publicProfile, firstName: '' });
                       PrivateProfile.set({ ...privateProfile, firstName });
                     }
-                    setFirstNameIsPublic(isPublic);
                   }}
                 >
                   <SelectTrigger id="first-name-visibility">
@@ -215,7 +223,6 @@ function ProfileViewInner({
                       PublicProfile.set({ ...publicProfile, lastName: '' });
                       PrivateProfile.set({ ...privateProfile, lastName });
                     }
-                    setLastNameIsPublic(isPublic);
                   }}
                 >
                   <SelectTrigger id="last-name-visibility">
