@@ -26,8 +26,8 @@ export async function getUserCount() {
   const result = await db()
     .select({ value: count(users.id) })
     .from(users);
-  if (!result || !result[0]?.value || result[0].value >= 0) {
-    logger('getUserCount result is null');
+  if (!result || !result[0]?.value) {
+    logger('getUserCount result is null', result);
     return 0;
   }
   return result[0].value;
