@@ -5,7 +5,7 @@ export default function P({
 }: React.HTMLAttributes<HTMLParagraphElement>) {
   return (
     <p
-      className={`leading-7 [&:not(:first-child)]:mt-6 ${className}`}
+      className={`leading-7 [&:not(:first-child)]:mt-2 ${className}`}
       {...props}
     >
       {children}

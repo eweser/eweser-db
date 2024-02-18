@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../library/select';
+import { Badge } from '../library/badge';
 
 export interface ProfileViewProps {
   publicProfileRoom: Room;
@@ -69,7 +70,7 @@ function ProfileViewInner({
       }
       PrivateProfile.new({ firstName: '' }, 'default');
     }
-  }, [privateProfile, email, PrivateProfile, privateProfileRoom.id]);
+  }, [privateProfile, PrivateProfile, privateProfileRoom.id]);
   // set up the initial document if it doesn't exist
   useEffect(() => {
     if (!publicProfile) {
@@ -85,7 +86,7 @@ function ProfileViewInner({
         'default'
       );
     }
-  }, [publicProfile, email, PublicProfile, publicProfileRoom.id, userCount]);
+  }, [publicProfile, PublicProfile, publicProfileRoom.id, userCount]);
 
   const [firstNameIsPublic, setFirstNameIsPublic] = useState(
     !!publicProfile?.firstName
@@ -111,6 +112,15 @@ function ProfileViewInner({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          <Label className="text-muted-foreground" htmlFor="email">
+            Email
+          </Label>
+          <div className="flex justify-between">
+            <Input disabled readOnly value={email} className="w-fit" />
+            <Badge variant="secondary" className="ml-2">
+              Private
+            </Badge>
+          </div>
           <div>
             <Label className="text-muted-foreground" htmlFor="first-name">
               First Name

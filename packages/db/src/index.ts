@@ -4,6 +4,7 @@ import type {
   DatabaseEvents,
   ProviderOptions,
   RoomRegistryEntry,
+  YDoc,
 } from './types';
 import { TypedEventEmitter } from './types';
 import { collectionKeys, collections } from './collections';
@@ -106,6 +107,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
         });
         if (provider) {
           ySweetProvider = provider;
+          ydoc = provider.doc as YDoc<any>;
           provider.on('status', (status: any) => {
             this.debug('ySweetProvider status', status);
           });
@@ -113,6 +115,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
             this.debug('ySweetProvider synced', synced);
           });
           this.debug('created ySweetProvider', ySweetProvider);
+          provider.connect();
         }
       } catch (error) {
         this.error(error);
