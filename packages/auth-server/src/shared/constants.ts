@@ -19,8 +19,3 @@ export const AUTH_SERVER_DOMAIN =
 if (!AUTH_SERVER_DOMAIN) {
   throw new Error('AUTH_SERVER_DOMAIN is not defined');
 }
-
-export const SERVER_SECRET = process.env.SERVER_SECRET ?? '';
-if (!SERVER_SECRET) {
-  throw new Error('SERVER_SECRET is not defined');
-}

@@ -1,6 +1,6 @@
 import type { AccessGrant } from '@/model/access_grants';
 import { getRoomIdsFromAccessGrant } from '@/model/rooms/calls';
-import { SERVER_SECRET } from '@/shared/constants';
+import { SERVER_SECRET } from '@/shared/server-constants';
 
 import jwt from 'jsonwebtoken';
 

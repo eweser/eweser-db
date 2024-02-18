@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import jwt from 'jsonwebtoken';
-import { SERVER_SECRET } from '@/shared/constants';
+import { SERVER_SECRET } from '@/shared/server-constants';
 import type { AccessGrantJWT } from '@/modules/account/access-grant/create-token-from-grant';
 import { getAccessGrantById } from '@/model/access_grants';
 import { getRoomsByIds } from '@/model/rooms/calls';

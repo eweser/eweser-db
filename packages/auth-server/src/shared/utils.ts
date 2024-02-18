@@ -7,14 +7,14 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function logger(log: string | Error | any) {
+export function logger(...log: any[]) {
   if (log instanceof Error) {
     // eslint-disable-next-line no-console
     console.error(log);
     return;
   }
   // eslint-disable-next-line no-console
-  console.log(log);
+  console.log(...log);
 }
 
 export function handleServerErrorRedirect(

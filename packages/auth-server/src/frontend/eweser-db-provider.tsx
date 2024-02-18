@@ -10,9 +10,11 @@ const DatabaseContext = createContext({ db: {} } as { db: Database });
 export const DatabaseProvider = ({
   children,
   initialRooms,
+  loadingComponent,
 }: {
   children: React.ReactNode;
   initialRooms?: Room[];
+  loadingComponent?: React.ReactNode;
 }) => {
   const [loaded, setLoaded] = useState(false);
 
@@ -39,7 +41,7 @@ export const DatabaseProvider = ({
 
   return (
     <DatabaseContext.Provider value={{ db: eweserDB }}>
-      {loaded ? children : <Icons.spinner />}
+      {loaded ? children : loadingComponent ?? <Icons.spinner />}
     </DatabaseContext.Provider>
   );
 };

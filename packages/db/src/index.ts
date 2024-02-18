@@ -109,6 +109,9 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
           provider.on('status', (status: any) => {
             this.debug('ySweetProvider status', status);
           });
+          provider.on('sync', (synced: any) => {
+            this.debug('ySweetProvider synced', synced);
+          });
           this.debug('created ySweetProvider', ySweetProvider);
         }
       } catch (error) {
