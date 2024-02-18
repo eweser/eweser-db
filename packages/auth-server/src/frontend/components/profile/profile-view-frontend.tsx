@@ -74,22 +74,23 @@ function ProfileViewInner({
   // set up the initial document if it doesn't exist
   useEffect(() => {
     if (!publicProfile) {
+      const newName = `${AUTH_SERVER_DOMAIN} user #${userCount}`;
       const existing = PublicProfile.get('default');
       if (existing) {
-        setPublicProfile(existing);
+        if (!existing.firstName && !privateProfile?.firstName) {
+          PublicProfile.set({
+            ...existing,
+            firstName: newName,
+          });
+        }
+        setPublicProfile({
+          ...existing,
+          firstName: newName,
+        });
         return;
+      } else {
+        PublicProfile.new({ firstName: newName }, 'default');
       }
-      PublicProfile.new(
-        {
-          firstName: `${AUTH_SERVER_DOMAIN} user #${userCount}`,
-        },
-        'default'
-      );
-    } else if (!publicProfile.firstName && !privateProfile?.firstName) {
-      PublicProfile.set({
-        ...publicProfile,
-        firstName: `${AUTH_SERVER_DOMAIN} user #${userCount}`,
-      });
     }
   }, [
     publicProfile,
