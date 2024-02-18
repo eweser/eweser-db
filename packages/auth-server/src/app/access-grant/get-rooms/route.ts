@@ -1,31 +1,22 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
 import jwt from 'jsonwebtoken';
 import { SERVER_SECRET } from '@/shared/server-constants';
 import type { AccessGrantJWT } from '@/modules/account/access-grant/create-token-from-grant';
 import { getAccessGrantById } from '@/model/access_grants';
 import { getRoomsByIds } from '@/model/rooms/calls';
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  if (req.method === 'POST') {
-    const { token } = req.body;
-    const { access_grant_id, roomIds } = jwt.verify(
-      token,
-      SERVER_SECRET
-    ) as AccessGrantJWT;
+export default async function POST(request: Request) {
+  const { token } = await request.json();
 
-    // check the grant real quick to make sure it's valid
-    const grant = await getAccessGrantById(access_grant_id);
-    if (!grant || !grant.isValid) {
-      res.status(401).json({ message: 'Invalid access grant' });
-      return;
-    }
-    const rooms = await getRoomsByIds(roomIds);
+  const { access_grant_id, roomIds } = jwt.verify(
+    token,
+    SERVER_SECRET
+  ) as AccessGrantJWT;
 
-    res.status(200).json({ rooms });
-  } else {
-    res.status(405).json({ message: 'Method not allowed' });
+  // check the grant real quick to make sure it's valid
+  const grant = await getAccessGrantById(access_grant_id);
+  if (!grant || !grant.isValid) {
+    return Response.json({ message: 'Invalid access grant' });
   }
+  const rooms = await getRoomsByIds(roomIds);
+  return Response.json(rooms);
 }
