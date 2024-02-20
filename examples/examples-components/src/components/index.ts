@@ -1,3 +1,3 @@
 export * from './styles';
-export * from './LoginForm';
 export * from './StatusBar';
+export * from './LoginButton';

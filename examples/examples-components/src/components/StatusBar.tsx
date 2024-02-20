@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { DBEvent, Database } from '@eweser/db';
+import type { Database } from '@eweser/db';
 import { styles } from './styles';
 
 export const StatusBar = ({ db }: { db: Database }) => {
@@ -8,7 +8,7 @@ export const StatusBar = ({ db }: { db: Database }) => {
   // This could be used to show icons like connected/offline or a syncing spinner like in google sheets
   const [online, setOnline] = useState(db.online);
   useEffect(() => {
-    const handleStatusUpdate = ({ event, message, data }: DBEvent) => {
+    const handleStatusUpdate = ({ event, message, data }: any) => {
       if (event === 'load') {
         if (message === 'loading from localStorage') {
           setStatusMessage('loading local database');
@@ -49,9 +49,9 @@ export const StatusBar = ({ db }: { db: Database }) => {
         if (!data?.online) setStatusMessage('disconnected from remote');
       }
     };
-    db.on('status-update', handleStatusUpdate);
+    db.on('log', handleStatusUpdate);
     return () => {
-      db.off('status-update');
+      db.removeListener('log', handleStatusUpdate);
     };
   }, [db, setStatusMessage]);
   return (
