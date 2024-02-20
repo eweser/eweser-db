@@ -1,5 +1,5 @@
 import { COLLECTION_KEYS, PUBLIC_ACCESS_TYPES } from '@/shared/constants';
-import { pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { boolean, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 export const rooms = pgTable('rooms', {
   id: uuid('id').primaryKey().notNull(),
@@ -27,6 +27,9 @@ export const rooms = pgTable('rooms', {
     mode: 'string',
   }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' }),
+
+  _deleted: boolean('_deleted').default(false).notNull(),
+  _ttl: timestamp('_ttl', { withTimezone: true, mode: 'string' }),
 });
 
 export type Room = typeof rooms.$inferSelect;
