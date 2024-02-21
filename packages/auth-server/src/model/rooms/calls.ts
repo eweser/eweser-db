@@ -67,15 +67,12 @@ export async function insertRooms(
       dbInstance
     );
 
-    return dbInstance
-      .insert(rooms)
-      .values(inserts)
-      .returning({ token: rooms.token, id: rooms.id, name: rooms.name });
+    return dbInstance.insert(rooms).values(inserts).returning();
   });
 }
 
 /**
-
+ * ACTUALLY deletes rooms, doesn't just mark _deleted
  * Deletes rooms and removes them from the user's rooms list
  */
 export async function deleteRooms(
@@ -100,10 +97,16 @@ export async function deleteRooms(
   });
 }
 
-export async function updateRooms(update: RoomUpdate) {
-  return await db().update(rooms).set(update).where(eq(rooms.id, update.id));
+export async function updateRoom(
+  { id, ...update }: RoomUpdate,
+  dbInstance?: DBInstance
+) {
+  return await db(dbInstance).update(rooms).set(update).where(eq(rooms.id, id));
 }
 
+/**
+ * Note: filters out soft deleted rooms (rooms with _deleted = true)
+ */
 export async function getRoomIdsFromAccessGrant(
   accessGrant: AccessGrant,
   dbInstance?: DBInstance
@@ -117,13 +120,19 @@ export async function getRoomIdsFromAccessGrant(
     ? await db(dbInstance)
         .select({ id: rooms.id })
         .from(rooms)
-        .where(arrayOverlaps(rooms.writeAccess, [ownerId]))
+        .where(
+          and(
+            arrayOverlaps(rooms.writeAccess, [ownerId]),
+            eq(rooms._deleted, false)
+          )
+        )
     : await db(dbInstance)
         .select({ id: rooms.id })
         .from(rooms)
         .where(
           and(
             arrayOverlaps(rooms.writeAccess, [ownerId]),
+            eq(rooms._deleted, false),
             or(
               inArray(rooms.id, grantRoomIds),
               inArray(rooms.collectionKey, collectionsWithoutAll)
@@ -131,4 +140,43 @@ export async function getRoomIdsFromAccessGrant(
           )
         );
   return roomIds.map((r) => r.id);
+}
+
+/**
+ * Note: filters out soft deleted rooms (rooms with _deleted = true)
+ */
+export async function getRoomsFromAccessGrant(
+  accessGrant: AccessGrant,
+  dbInstance?: DBInstance
+): Promise<Room[]> {
+  const { collections, roomIds: grantRoomIds, ownerId } = accessGrant;
+  const allAccess = collections.includes('all');
+  const collectionsWithoutAll = collections.filter(
+    (c) => c !== 'all'
+  ) as CollectionKey[];
+  if (allAccess) {
+    return await db(dbInstance)
+      .select()
+      .from(rooms)
+      .where(
+        and(
+          arrayOverlaps(rooms.writeAccess, [ownerId]),
+          eq(rooms._deleted, false)
+        )
+      );
+  } else {
+    return await db(dbInstance)
+      .select()
+      .from(rooms)
+      .where(
+        and(
+          arrayOverlaps(rooms.writeAccess, [ownerId]),
+          eq(rooms._deleted, false),
+          or(
+            inArray(rooms.id, grantRoomIds),
+            inArray(rooms.collectionKey, collectionsWithoutAll)
+          )
+        )
+      );
+  }
 }

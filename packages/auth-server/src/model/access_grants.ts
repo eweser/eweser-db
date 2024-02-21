@@ -17,6 +17,14 @@ export function createAccessGrantId(ownerId: string, requesterId: string) {
   return `${ownerId}|${requesterId}`;
 }
 
+export function parseAccessGrantId(id: string): {
+  ownerId: string;
+  requesterId: string;
+} {
+  const [ownerId, requesterId] = id.split('|');
+  return { ownerId, requesterId };
+}
+
 export const accessGrants = pgTable('access_grants', {
   id: text('id').primaryKey().notNull(), // <owner_user_id>|<requester_id/app_domain>
   ownerId: text('owner_id')
@@ -91,15 +99,26 @@ export async function insertAccessGrants(
   return await db(dbInstance).insert(accessGrants).values(inserts).returning();
 }
 
-export async function updateAccessGrants(update: AccessGrantUpdate) {
-  return await db()
+export async function updateAccessGrant(
+  { id, ...update }: AccessGrantUpdate,
+  dbInstance?: DBInstance
+) {
+  const updated = await db(dbInstance)
     .update(accessGrants)
     .set(update)
-    .where(eq(accessGrants.id, update.id));
+    .where(eq(accessGrants.id, id))
+    .returning();
+  if (updated.length !== 1) {
+    throw new Error('Failed to update access grant');
+  }
+  return updated[0];
 }
 
-export async function getAccessGrantById(id: string): Promise<AccessGrant> {
-  const results = await db()
+export async function getAccessGrantById(
+  id: string,
+  dbInstance?: DBInstance
+): Promise<AccessGrant> {
+  const results = await db(dbInstance)
     .select()
     .from(accessGrants)
     .where(eq(accessGrants.id, id));

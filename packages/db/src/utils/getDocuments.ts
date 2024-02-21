@@ -33,7 +33,7 @@ export const getDocuments =
         const ref = buildRef({
           authServer: _db.authServer,
           collectionKey: room.collectionKey,
-          roomId: room.roomId,
+          roomId: room.id,
           documentId,
         });
         const newDoc = newDocument(documentId, ref, doc);
