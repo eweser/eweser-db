@@ -30,3 +30,14 @@ export function handleServerErrorRedirect(
   );
   return NextResponse.redirect(redirectTo);
 }
+
+export function serverRouteError(message?: string, status = 500): Response {
+  return new Response(
+    JSON.stringify({ error: message || 'An error occurred' }),
+    { status }
+  );
+}
+
+export function authTokenFromHeaders(headers: Headers) {
+  return headers.get('Authorization')?.replace('Bearer ', '');
+}
