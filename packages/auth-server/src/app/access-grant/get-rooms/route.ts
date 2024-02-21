@@ -1,3 +1,5 @@
+// Seems we might not need this route if we just always use the sync-rooms-with-client.ts function
+
 import jwt from 'jsonwebtoken';
 import { SERVER_SECRET } from '@/shared/server-constants';
 import type { AccessGrantJWT } from '@/modules/account/access-grant/create-token-from-grant';
