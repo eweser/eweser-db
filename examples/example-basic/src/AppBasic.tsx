@@ -1,71 +1,92 @@
 import { useEffect, useState } from 'react';
-import { CollectionKey, Database } from '@eweser/db';
-import type { Documents, Note, LoginData, Room } from '@eweser/db';
+import { Database } from '@eweser/db';
+import type { Documents, Note, Registry, Room } from '@eweser/db';
 import * as config from './config';
-
-import { styles, StatusBar, LoginForm } from '@eweser/examples-components';
+import { v4 as uuid } from 'uuid';
+import { styles, StatusBar, LoginButton } from '@eweser/examples-components';
 
 // This example shows how to implement a basic login/signup form and a basic note-taking app using @eweser/db
 // The CRUD operations are all done directly on the yjs ydoc using the `Documents` object and its methods returned from `db.getDocuments()`
 
-/** basically the code-facing 'name' of a room. This will be used to generate the `roomAlias that matrix uses to identify rooms */
-const aliasSeed = 'notes-default';
-const collectionKey = CollectionKey.notes;
-/** a room is a group of documents that all share a common `Collection` type, like Note. A room also corresponds with a Matrix chat room where the data is stored. */
-const initialRoomConnect = {
-  collectionKey,
-  aliasSeed,
-  name: 'My Notes on Life and Things',
-};
+/** to make sure that we only have one default room created, make a new uuid for the default room, but if there is already one in localStorage use that*/
+const randomRoomId = uuid();
+const roomId = localStorage.getItem('roomId') || randomRoomId;
+localStorage.setItem('roomId', roomId);
+const collectionKey = 'notes';
+/** A room is a group of documents that all share a common `Collection` type, like Note. Sharing and view permissions can be set on a per room basis */
+const initialRooms: Registry = [
+  {
+    collectionKey,
+    id: roomId,
+    name: 'My Notes on Life and Things',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    publicAccess: 'private',
+    readAccess: [],
+    writeAccess: [],
+    adminAccess: [],
+  },
+];
 
 const db = new Database({
-  // set `debug` to true to see debug messages in the console
-  // debug: true,
+  // set `logLevel` to 0 to see debug messages in the console
+  logLevel: 0,
   // use this to sync webRTC locally with the test-rpc-server started with `npm run start-test-rpc-server`
   webRTCPeers: config.WEB_RTC_PEERS,
+  initialRooms,
 });
+const loginUrl = db.generateLoginUrl();
 
 const App = () => {
-  const [started, setStarted] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [hasToken, setHasToken] = useState(false);
 
   useEffect(() => {
-    // Set within a useEffect to make sure to only call `db.load()` and `db.on()` once
-    db.on('my-listener-name', ({ event }) => {
-      // 'started' or 'startFailed' will be called as the result of either db.load(), db.login(), or db.signup()
-      if (event === 'started') {
-        // after this message the database is ready to be used, but syncing to remote may still be in progress
-        setStarted(true);
+    if (hasToken) {
+      return;
+    }
+    const foundToken = db.getToken(); // will pull token from the query string or from localStorage
+    if (foundToken) {
+      setHasToken(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasToken, window.location.search]); // token will be in the query string after login redirect
+
+  useEffect(() => {
+    if (loggedIn || !hasToken) {
+      return;
+    }
+    async function login() {
+      try {
+        const loginRes = await db.login();
+        if (loginRes) {
+          setLoggedIn(true);
+        }
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(error);
       }
-    });
-    // `db.load()` tries to start up the database from an existing localStore. This will only work if the user has previously logged in from this device
-    db.load([initialRoomConnect]);
-    return () => {
-      // practice good hygiene and clean up when the component unmounts
-      db.off('my-listener-name');
-      db.disconnectRoom(initialRoomConnect);
-    };
-  }, []);
+    }
+    login();
+  }, [loggedIn, hasToken]);
 
-  const handleLogin = (loginData: LoginData) =>
-    db.login({ initialRoomConnect, ...loginData });
-
-  const handleSignup = (loginData: LoginData) =>
-    db.signup({ initialRoomConnect, ...loginData });
-
-  const defaultNotesRoom = db.getRoom<Note>({ collectionKey, aliasSeed });
+  const defaultNotesRoom = db.getRoom<Note>(collectionKey, roomId);
 
   return (
     <div style={styles.appRoot}>
       {/* You can check that the ydoc exists to make sure the room is connected */}
-      {started && defaultNotesRoom?.ydoc ? (
+      {defaultNotesRoom?.ydoc ? (
         <NotesInternal notesRoom={defaultNotesRoom} />
       ) : (
-        <LoginForm
-          handleLogin={handleLogin}
-          handleSignup={handleSignup}
-          db={db}
-          {...config}
-        />
+        // usually loads almost instantaneously, but we need to make sure a yDoc is ready before we can use it
+        <>loading...</>
+      )}
+
+      {!loggedIn && (
+        <div>
+          Log in to sync your notes to the cloud and other devices
+          <LoginButton loginUrl={loginUrl} />
+        </div>
       )}
       <StatusBar db={db} />
     </div>
