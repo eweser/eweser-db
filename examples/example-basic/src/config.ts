@@ -1,8 +1,8 @@
 const dummyUserName = 'dummy-user123';
 const dummyUserPass = 'dumdum';
 
-export const MATRIX_SERVER =
-  import.meta.env.VITE_MATRIX_SERVER ?? 'https://matrix.org';
+export const AUTH_SERVER =
+  import.meta.env.VITE_AUTH_SERVER ?? 'https://eweser.com';
 
 export const env =
   import.meta.env.VITE_CI === 'true'

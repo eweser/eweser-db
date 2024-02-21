@@ -29,6 +29,7 @@ const initialRooms: Registry = [
 ];
 
 const db = new Database({
+  authServer: config.AUTH_SERVER,
   // set `logLevel` to 0 to see debug messages in the console
   logLevel: 0,
   // use this to sync webRTC locally with the test-rpc-server started with `npm run start-test-rpc-server`
@@ -38,6 +39,7 @@ const db = new Database({
 const loginUrl = db.generateLoginUrl();
 
 const App = () => {
+  const [loaded, setLoaded] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
   const [hasToken, setHasToken] = useState(false);
 
@@ -57,25 +59,24 @@ const App = () => {
       return;
     }
     async function login() {
-      try {
-        const loginRes = await db.login();
-        if (loginRes) {
-          setLoggedIn(true);
-        }
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error(error);
+      const loginRes = await db.login();
+      if (loginRes) {
+        setLoggedIn(true);
       }
     }
     login();
   }, [loggedIn, hasToken]);
+
+  db.on('roomsLoaded', () => {
+    setLoaded(true);
+  });
 
   const defaultNotesRoom = db.getRoom<Note>(collectionKey, roomId);
 
   return (
     <div style={styles.appRoot}>
       {/* You can check that the ydoc exists to make sure the room is connected */}
-      {defaultNotesRoom?.ydoc ? (
+      {loaded && defaultNotesRoom?.ydoc ? (
         <NotesInternal notesRoom={defaultNotesRoom} />
       ) : (
         // usually loads almost instantaneously, but we need to make sure a yDoc is ready before we can use it
