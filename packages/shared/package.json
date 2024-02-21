@@ -1,0 +1,25 @@
+{
+  "name": "@eweser/shared",
+  "version": "0.0.1",
+  "description": "shared types and helpers for @eweser/db and other @eweser packages",
+  "main": "index.ts",
+  "homepage": "https://github.com/eweser/eweserdb",
+  "author": "jacobcoro",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eweser/eweserdb.git"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@eweser/eslint-config-ts": "^1.4.0",
+    "request": "^2.88.2",
+    "typescript": "^4.4.4"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.29.3"
+  }
+}

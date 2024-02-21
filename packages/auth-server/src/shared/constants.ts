@@ -1,10 +1,4 @@
-// import { COLLECTION_KEYS } from '@eweser/db';
-/**
- * @todo fix library and import these from the library
- */
-export const COLLECTION_KEYS = ['notes', 'flashcards', 'profiles'] as const;
-
-export const PUBLIC_ACCESS_TYPES = ['private', 'read', 'write'] as const;
+export { COLLECTION_KEYS } from '@eweser/db';
 
 export const REQUESTER_TYPES = ['app', 'user'] as const;
 

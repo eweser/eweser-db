@@ -8,7 +8,7 @@ export const serverFetch =
   (_db: Database) =>
   async <ReturnType extends object>(path: string, _options?: Options) => {
     try {
-      const token = _db.getAccessGrantToken();
+      const token = _db.getToken();
       const options = {
         ..._options,
       };

@@ -5,7 +5,8 @@ import type {
   Flashcard,
   Profile,
   COLLECTION_KEYS,
-} from './collections';
+  ServerRoom,
+} from '@eweser/shared';
 import type { WebrtcProvider } from 'y-webrtc';
 import type { TypedDoc, TypedMap } from 'yjs-types';
 // import type { Doc } from 'yjs';
@@ -14,8 +15,9 @@ import type { YSweetProvider } from '@y-sweet/client';
 
 export type ProviderOptions = 'WebRTC' | 'YSweet' | 'IndexedDB';
 
-export type { DocumentBase, Note, Flashcard, Profile };
+export type { DocumentBase, Note, Flashcard, Profile, ServerRoom };
 
+export { COLLECTION_KEYS };
 export type CollectionKey = (typeof COLLECTION_KEYS)[number];
 
 type CollectionToDocument = {
@@ -39,25 +41,10 @@ export type YDoc<T extends Document> = TypedDoc<{
   documents: TypedMap<Documents<T>>;
 }>;
 
-/** matches Room on the server */
-export interface RoomRegistryEntry {
-  id: string;
-  name: string;
-  createdAt: string | null;
-  updatedAt: string | null;
-  collectionKey: 'notes' | 'flashcards' | 'profiles';
-  token: string | null;
-  ySweetUrl: string | null;
-  publicAccess: 'private' | 'read' | 'write';
-  readAccess: string[];
-  writeAccess: string[];
-  adminAccess: string[];
-  _deleted: boolean;
-  _ttl: string | null;
-}
+export type Registry = ServerRoom[];
 
 /** adds the ydoc providers ans connection status */
-export interface Room<T extends Document> extends RoomRegistryEntry {
+export interface Room<T extends Document> extends ServerRoom {
   indexeddbProvider: IndexeddbPersistence | null;
   webRtcProvider: WebrtcProvider | null;
   ySweetProvider: YSweetProvider | null;

@@ -5,7 +5,7 @@
   "keywords": [
     "user-owned",
     "crdt",
-    "matrix",
+    "interoperable",
     "local-first"
   ],
   "author": "jacobcoro",
@@ -64,6 +64,7 @@
   },
   "gitHead": "6e8c8870a4a7cefbe005a571eb36f2edfcebc6c3",
   "dependencies": {
+    "@eweser/shared": "^0.0.1",
     "@y-sweet/client": "^0.1.0",
     "y-indexeddb": "^9.0.12",
     "y-webrtc": "^10.3.0",

@@ -1,5 +1,9 @@
-import type { Flashcard, Note, Profile } from '../collections';
-import type { DocumentBase } from '../collections/documentBase';
+import type {
+  Flashcard,
+  Note,
+  Profile,
+} from '@eweser/shared/node_modules/collections';
+import type { DocumentBase } from '@eweser/shared/node_modules/collections/documentBase';
 import type { Collections, Documents } from '../types';
 import { buildRef } from '../utils';
 
