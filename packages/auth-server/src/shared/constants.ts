@@ -1,4 +1,4 @@
-export { COLLECTION_KEYS } from '@eweser/db';
+export { COLLECTION_KEYS } from '@eweser/shared';
 
 export const REQUESTER_TYPES = ['app', 'user'] as const;
 
