@@ -7,8 +7,10 @@ import { login, signup } from '@/app/actions';
 import PasswordForm from './password-form';
 import OAuthForm from './oauth-form';
 import type { LoginQueryOptions } from '@eweser/shared';
+import type { ComponentPropsWithoutRef } from 'react';
+import { useState } from 'react';
 
-type UserAuthFormProps = React.ComponentPropsWithoutRef<'div'> &
+type UserAuthFormProps = ComponentPropsWithoutRef<'div'> &
   Partial<LoginQueryOptions> & {
     className?: string;
   };
@@ -16,9 +18,9 @@ type UserAuthFormProps = React.ComponentPropsWithoutRef<'div'> &
 // if LoginQueryOptions are defined, then redirect to the access permissions page after login.
 
 export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const [isSignup, setIsSignup] = React.useState<boolean>(true);
+  const [isSignup, setIsSignup] = useState<boolean>(true);
 
   const toggleSignup = () => setIsSignup((prev) => !prev);
 
