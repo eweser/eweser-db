@@ -24,20 +24,14 @@ export const DatabaseProvider = ({
     return new Database({
       authServer: 'http://localhost:3000',
       logLevel: 0, // log debug events
-      initialRooms: initialRooms
-        ? initialRooms.map(({ id, collectionKey, token, ySweetUrl, name }) => ({
-            roomId: id,
-            collectionKey,
-            ySweetToken: token || '',
-            ySweetUrl: ySweetUrl || '',
-            name,
-          }))
-        : undefined,
+      initialRooms,
     }).on('roomsLoaded', (_rooms) => {
       // could also add check that rooms are correct rooms
       setLoaded(true);
     });
   }, [initialRooms]);
+
+  console.log({ eweserDB, loaded });
 
   return (
     <DatabaseContext.Provider value={{ db: eweserDB }}>

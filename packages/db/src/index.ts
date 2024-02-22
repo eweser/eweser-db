@@ -6,13 +6,16 @@ import type {
   ProviderOptions,
   Registry,
   Room,
-  ServerRoom,
   YDoc,
 } from './types';
-import { TypedEventEmitter } from './types';
-import type { LoginQueryOptions, LoginQueryParams } from '@eweser/shared';
+import { TypedEventEmitter, collections } from './types';
+import type {
+  LoginQueryOptions,
+  LoginQueryParams,
+  ServerRoom,
+} from '@eweser/shared';
 
-import { collectionKeys, collections } from '@eweser/shared';
+import { collectionKeys } from '@eweser/shared';
 import { initializeDocAndLocalProvider } from './utils/connection/initializeDoc';
 import { createYjsProvider } from '@y-sweet/client';
 import type { Doc } from 'yjs';

@@ -14,6 +14,16 @@
   "publishConfig": {
     "access": "public"
   },
+  "files": [
+    "/dist",
+    "/types"
+  ],
+  "source": "src/index.ts",
+  "types": "types/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w"
+  },
   "devDependencies": {
     "@eweser/eslint-config-ts": "^1.4.0",
     "request": "^2.88.2",

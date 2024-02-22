@@ -6,6 +6,8 @@ import type {
   Profile,
   COLLECTION_KEYS,
   ServerRoom,
+  Document,
+  CollectionKey,
 } from '@eweser/shared';
 import type { WebrtcProvider } from 'y-webrtc';
 import type { TypedDoc, TypedMap } from 'yjs-types';
@@ -15,18 +17,28 @@ import type { YSweetProvider } from '@y-sweet/client';
 
 export type ProviderOptions = 'WebRTC' | 'YSweet' | 'IndexedDB';
 
-export type { DocumentBase, Note, Flashcard, Profile, ServerRoom };
+export type {
+  ServerRoom,
+  Document,
+  CollectionKey,
+  DocumentBase,
+  Note,
+  Flashcard,
+  Profile,
+};
 
 export { COLLECTION_KEYS };
-export type CollectionKey = (typeof COLLECTION_KEYS)[number];
 
 type CollectionToDocument = {
   notes: Note;
   flashcards: Flashcard;
   profiles: Profile;
 };
-
-export type Document = Note | Flashcard | Profile;
+export const collections: Collections = {
+  notes: {},
+  flashcards: {},
+  profiles: {},
+};
 
 export type DocumentWithoutBase<T extends Document> = Omit<
   T,
