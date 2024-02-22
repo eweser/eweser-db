@@ -6,10 +6,14 @@ import { cn } from '@/shared/utils';
 import { login, signup } from '@/app/actions';
 import PasswordForm from './password-form';
 import OAuthForm from './oauth-form';
+import type { LoginQueryOptions } from '@eweser/shared';
 
-type UserAuthFormProps = React.ComponentPropsWithoutRef<'div'> & {
-  className?: string;
-};
+type UserAuthFormProps = React.ComponentPropsWithoutRef<'div'> &
+  Partial<LoginQueryOptions> & {
+    className?: string;
+  };
+
+// if LoginQueryOptions are defined, then redirect to the access permissions page after login.
 
 export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
   const [isLoading, setIsLoading] = React.useState<boolean>(false);

@@ -1,3 +1,8 @@
+import {
+  collectionKeys,
+  type LoginQueryOptions,
+  type LoginQueryParams,
+} from '@eweser/shared';
 import type { AuthError } from '@supabase/supabase-js';
 import { type ClassValue, clsx } from 'clsx';
 import { NextResponse } from 'next/server';
@@ -40,4 +45,38 @@ export function serverRouteError(message?: string, status = 500): Response {
 
 export function authTokenFromHeaders(headers: Headers) {
   return headers.get('Authorization')?.replace('Bearer ', '');
+}
+
+export function validateLoginQueryOptions(
+  queryOptions: Partial<LoginQueryParams>
+): LoginQueryOptions | null {
+  const { redirect, domain } = queryOptions;
+
+  const validRedirect =
+    typeof redirect === 'string' &&
+    redirect.length > 0 &&
+    redirect.startsWith('http') &&
+    redirect.includes(domain ?? '');
+
+  const validDomain = typeof domain === 'string' && domain.length > 0;
+
+  const collections =
+    queryOptions.collections === 'all'
+      ? ['all']
+      : queryOptions.collections?.split('|');
+  const validCollections =
+    Array.isArray(collections) &&
+    collections.length > 0 &&
+    collections.every((c) => c.length > 0) &&
+    (collections[0] === 'all' ||
+      collections.every((c) => collectionKeys.includes(c as any)));
+
+  if (validRedirect && validDomain && validCollections) {
+    return {
+      redirect,
+      domain,
+      collections,
+    };
+  }
+  return null;
 }

@@ -4,12 +4,32 @@ import Image from 'next/image';
 import { UserAuthForm } from '@/frontend/components/auth/user-auth-form';
 import { siteConfig } from '@/frontend/config/site';
 import Link from 'next/link';
+import type { LoginQueryParams } from '@eweser/shared';
+import { getSessionUser } from '@/modules/account/get-session-user';
+import { validateLoginQueryOptions } from '@/shared/utils';
+import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: siteConfig.pageName('Login'),
 };
 
-export default function AuthenticationPage() {
+export default async function AuthenticationPage({
+  searchParams,
+}: {
+  searchParams: LoginQueryParams;
+}) {
+  // if LoginQueryOptions are set, check if the user is already logged in or not. if they are send them to the access permissions page.
+  const { user } = await getSessionUser();
+  const validLoginQueryOptions =
+    searchParams && validateLoginQueryOptions(searchParams);
+
+  if (validLoginQueryOptions && user) {
+    const redirectUrl = new URL('/access-grant/permission');
+    Object.entries(searchParams).forEach(([key, value]) => {
+      redirectUrl.searchParams.append(key, value);
+    });
+    redirect(redirectUrl.toString());
+  }
   return (
     <div className="flex flex-col lg:flex-row flex-1" suppressHydrationWarning>
       <div className="flex flex-col flex-shrink-2 p-10 lg:w-1/2 justify-center items-center bg-primary order-2 lg:order-1">
@@ -28,7 +48,7 @@ export default function AuthenticationPage() {
       </div>
       <div className="p-8 flex items-center flex-1 justify-center  lg:w-1/2 order-1 lg:order-2">
         <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
-          <UserAuthForm />
+          <UserAuthForm {...validLoginQueryOptions} />
           <p className="px-8 text-center text-sm text-muted-foreground">
             By clicking continue, you agree to our{' '}
             <Link

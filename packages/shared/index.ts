@@ -3,9 +3,16 @@ export * from './collections';
 import type { Room } from './roomsSchema';
 
 export type LoginQueryOptions = {
-  redirectUrl?: string;
-  appDomain?: string;
-  collections?: string[];
+  redirect: string;
+  domain: string;
+  collections: string[];
+};
+
+export type LoginQueryParams = {
+  redirect: string;
+  domain: string;
+  /** collections array string joined with '|' */
+  collections: string;
 };
 
 export type ServerRoom = Room;

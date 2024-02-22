@@ -10,7 +10,7 @@ import type {
   YDoc,
 } from './types';
 import { TypedEventEmitter } from './types';
-import type { LoginQueryOptions } from '@eweser/shared';
+import type { LoginQueryOptions, LoginQueryParams } from '@eweser/shared';
 
 import { collectionKeys, collections } from '@eweser/shared';
 import { initializeDocAndLocalProvider } from './utils/connection/initializeDoc';
@@ -89,19 +89,22 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
 
   /**
    *
-   * @param redirectUrl default uses window.location
+   * @param redirect default uses window.location
    * @param appDomain default uses window.location.hostname
    * @param collections default 'all', which collections your app would like to have write access to
    * @returns a string you can use to redirect the user to the auth server's login page
    */
-  generateLoginUrl = (options?: LoginQueryOptions) => {
+  generateLoginUrl = (options?: LoginQueryOptions): string => {
     const url = new URL(this.authServer);
-    const redirectUrl = options?.redirectUrl || window.location.href;
-    const appDomain = options?.appDomain || window.location.hostname;
-    const collections = options?.collections || ['all'];
-    url.searchParams.set('redirectUrl', redirectUrl);
-    url.searchParams.set('appDomain', appDomain);
-    url.searchParams.set('collections', collections.join(','));
+
+    const params: LoginQueryParams = {
+      redirect: options?.redirect || window.location.href,
+      domain: options?.domain || window.location.hostname,
+      collections: options?.collections ? options.collections.join('|') : 'all',
+    };
+    Object.entries(params).forEach(([key, value]) => {
+      url.searchParams.append(key, value);
+    });
 
     return url.toString();
   };
