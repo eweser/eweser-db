@@ -36,8 +36,7 @@
     "run-example-preview-old:multi-room": "cd old-examples/example-multi-room; npm run preview",
     "run-example-preview-old:interop-notes": "cd old-examples/example-interop-notes; npm run preview",
     "run-example-preview-old:interop-flashcards": "cd old-examples/example-interop-flashcards; npm run preview",
-    "run-example-preview:offline-first": "cd old-examples/example-offline-first; npm run preview",
-    "auth-server-prod-build": "npm i && cd packages/shared && npm run build && cd ../db && npm run build && cd ../auth-server && next build"
+    "run-example-preview:offline-first": "cd old-examples/example-offline-first; npm run preview"
   },
   "devDependencies": {
     "@testing-library/cypress": "^9.00",
