@@ -2,7 +2,8 @@
   "name": "@eweser/shared",
   "version": "0.0.1",
   "description": "shared types and helpers for @eweser/db and other @eweser packages",
-  "main": "index.ts",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
   "homepage": "https://github.com/eweser/eweserdb",
   "author": "jacobcoro",
   "type": "module",
@@ -18,10 +19,16 @@
     "/dist",
     "/types"
   ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
   "source": "src/index.ts",
   "types": "types/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "rm -rf ./dist; tsc",
     "dev": "tsc -w"
   },
   "devDependencies": {
