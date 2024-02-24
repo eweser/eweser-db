@@ -36,7 +36,7 @@
   },
   "scripts": {
     "test": "vitest --run",
-    "build": "rm -rf dist; rm -rf types; tsc --project tsconfig.build.json && vite build",
+    "build": "rm -rf dist; rm -rf types; tsc --project tsconfig.build.json && npx vite build",
     "typescript-watch": "tsc --watch --project tsconfig.build.json",
     "vite-build-watch": "vite build --watch",
     "dev": "run-p vite-build-watch typescript-watch",
