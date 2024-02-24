@@ -76,8 +76,8 @@ import type { Note } from '@eweser/db';
 const db = new Database();
 
 const collectionKey = 'notes'; // or use the enum CollectionKey exported from the db package
-const roomId = 'notes-default'; // basically the code-facing 'name' of a room
-const initialRoomConnect = { collectionKey, roomId };
+const aliasSeed = 'notes-default'; // basically the code-facing 'name' of a room
+const initialRoomConnect = { collectionKey, aliasSeed };
 
 // If a user has previously logged in, `load` will try to start up the database and connect to the collections provided in the array.
 // If offline, it will open up a local-only database and the user can start interacting with the data immediately. If online, it will also connect the matrix rooms and start syncing.
@@ -96,7 +96,7 @@ db.on('my-listener', ({ event }) => {
   }
 });
 
-const room = db.getRoom<Note>(collectionKey, roomId); // this is a matrix room that stores a collection of note documents which share a `Note` schema.
+const room = db.getRoom<Note>(collectionKey, aliasSeed); // this is a matrix room that stores a collection of note documents which share a `Note` schema.
 
 // This Notes object provides a set of methods for easily updating the documents in the room. It is a wrapper around the ydoc that is provided by the room.
 const Notes = db.getDocuments(notesRoom);
@@ -120,9 +120,9 @@ Turn off your internet and notice the data still updates.
 
 See `packages/db/examples/dbShape.ts` for how the data is structured.
 
-Like MongoDB, EweserDB has `document`s and `collection`s. In SQL database terms, collections are like tables and documents like rows. Each collection can have only one document. Documents have a strict schema(typescript type). See examples of documents in the `/collections` folder.
+Like MongoDB, EweserDB has `document`s and `collection`s. In SQL database terms, collections are like tables and documents like rows. Documents have a strict schema(typescript type). Each collection can have only one schema(document) but as many of those documents as you'd like. See examples of document schemas in the `/collections` folder.
 
-Documents can be linked by reference using the document's `_ref` property. The ref is simply the `<collection>.<roomId>.<documentId>` e.g. `flashcards.#roomName~flashcards~@username:matrix.org.doc-id`.
+Documents can be linked by reference using the document's `_ref` property. The ref is simply the `<collection>.<roomAlias>.<documentId>` e.g. `flashcards.#roomName~flashcards~@username:matrix.org.doc-id`.
 Say you wanted to store a reference to a note from a flashcard, you could add the following to the flashcard document:
 
 ```ts
@@ -135,11 +135,11 @@ Say you wanted to store a reference to a note from a flashcard, you could add th
 
 Each `room` corresponds to a Matrix chat room that will be created on the user's Matrix account inside a space called "My Database". Rooms in EweserDB are private (invite-only) and (coming soon) will be fully end to end encrypted by default.
 
-The `registry` is a special collection that stores the addresses(`roomId`s) to all of the user's other rooms.
+The `registry` is a special collection that stores the addresses(`roomAlias`s) to all of the user's other rooms.
 
 ## ACL - Access Control, Privacy and Sharing
 
-Building on top of Matrix allows for advanced ACL features right out of the box. All ACL happens on the `room` level. Users can decide which apps or other users have read or write access to which rooms simply by using Matrix's built in privacy control features and by inviting or kicking out other users in the room.
+Building on top of Matrix allows for advanced ACL features right out of the box. All ACL happens on the `room` level. Users can decide which apps or other users have read or write access to which rooms simply by using Matrix's built in privacy control features and by inviting or kicking out other users in the room. This is not entirely implemented yet.
 
 ## User owned
 
@@ -163,17 +163,15 @@ To make the collection usable by other apps, submit a pull request to add the co
 
 To only use a document in your app that you don't want made available to other apps, fork the project and do the same thing, or extend locally and use some `//@ts-ignore`s for the type errors you will encounter.
 
-## App development strategy, user consent
+## User consent notice
 
-As it is designed now, when the user signs in, the app will have read/write access to the full user-owned database for the duration of the session. Users should be made aware of this fact when logging in to an app. People are already comfortable with an app managing its own data, but it is another level of trust required in the app to also let it manage data used by other apps. Users need to know the level of trust they are putting in each app when they sign ing.
+As it is designed now, when the user signs in, the app will have read/write access to the full user-owned database for the duration of the session. Users should be made aware of this fact when logging in to an app. People are already comfortable with an app managing its own data, but it is another level of trust required in the app to also let it manage data used by other apps. Users need to know the level of trust they are putting in each app when they sign in.
 
-Because user-owned data flips the current data storage paradigm on its head, app developers might be wondering how to share public data between users. For example, a user might mark a certain collection of notes as public and apps could aggregate them and let other users search and discover those.
+## Publicly shared data - aggregator servers
 
-One solution would be that for each room marked as 'public' by the user, we could invite an observer account into the room.
+Because user-owned data flips the current data storage paradigm on its head, app developers might be wondering how to share public data between users.
 
-Another option would be to simply use a traditional database for public collections, but then that would break interoperability between apps.
-
-This is an area that needs further consideration. Community input is appreciated.
+This is achieved using 'aggregator' servers. These are public Matrix accounts/servers which the user can invite to the room that they wish to make public. The aggregator server will listen to changes in the room and update a local database. Apps can query the aggregators to search public data.
 
 ## Limitations
 
@@ -181,35 +179,50 @@ This is an area that needs further consideration. Community input is appreciated
 - [Matrix events size limit](https://github.com/YousefED/Matrix-CRDT/issues/11)
 - [Matrix-crdt e2ee support](https://github.com/YousefED/Matrix-CRDT/pull/17)
 - connecting to rooms can be slow depending on the homeserver, especially the `getRoomIdForAlias` call when the homeserver has many rooms it needs to search through. Because the registry stores the id, the second time a room is connected to it should be faster.
-- Developers should minimize the number of rooms the user has connected to at any given time and use `room.matrixProvider.dispose()` to disconnect from rooms when they are not needed. Otherwise you might run into an error saying there are too many event listeners.
+- Developers should minimize the number of rooms the user has connected to at any given time (current limit is set to 100) and use `db.disconnectRoom()` to disconnect from rooms when they are not needed. Otherwise you might run into an error saying there are too many event listeners.
 
 # Example apps
 
-- [Basic Notes App](https://eweser-db-example-basic.netlify.app/), dev [url](http://localhost:8000/)
+### [Basic Notes App](https://eweser-db-example-basic.netlify.app/)
 
-  - view the code at `/packages/example-basic`.
-  - E2E test is in `/e2e/cypress/tests/basic.cy.js`
+- dev [url](http://localhost:8000/)
+- view the code at `/packages/example-basic`.
+- E2E test is in `/e2e/cypress/tests/basic.cy.js`
 
-- [Notes App with Markdown Editor](https://eweser-db-example-editor.netlify.app/), dev [url](http://localhost:8100/)
+### [Markdown Editor](https://eweser-db-example-editor.netlify.app/)
 
-  - view the code at `/packages/example-editor`.
-  - E2E test is in `/e2e/cypress/tests/editor.cy.js`
+- This shows how to use a collaborative wysiwyg markdown editor with eweser-db.
+- dev [url](http://localhost:8100/)
+- view the code at `/packages/example-editor`.
+- E2E test is in `/e2e/cypress/tests/editor.cy.js`
 
-- [Multi-room](https://eweser-db-example-editor.netlify.app/), dev [url](http://localhost:8300/)
+### [Multi-room](https://eweser-db-example-editor.netlify.app/)
 
-  - view the code at `/packages/example-multi-room`.
-  - E2E test is in `/e2e/cypress/tests/multi-room.cy.js`
+- This shows how to use eweser-db with multiple Matrix rooms ('folders' or groups of documents).
+- dev [url](http://localhost:8300/)
+- view the code at `/packages/example-multi-room`.
+- E2E test is in `/e2e/cypress/tests/multi-room.cy.js`
 
-- [Interoperability - Notes](https://eweser-db-example-interop-flashcards.netlify.app/), dev [url](http://localhost:8400/)
-  Use this app to link notes in this app to flashcards in the next flashcards app.
+### Interoperability - [Notes](https://eweser-db-example-interop-notes.netlify.app/) and [Flashcards](https://eweser-db-example-interop-flashcards.netlify.app/)
 
-  - view the code at `/packages/example-interop-flashcards`.
-  - E2E test is in `/e2e/cypress/tests/interoperability.cy.js`
+- These two apps show how 2 independently developed apps can sync data in the user's database. Use this app to link notes in this app to flashcards in the next flashcards app.
+- dev [url](http://localhost:8400/)
+- dev [url flashcards](http://localhost:8500/)
+- view the code at `/packages/example-interop-notes` and `/packages/example-interop-flashcards`.
+- E2E test is in `/e2e/cypress/tests/interoperability.cy.js`
 
-- [Interoperability - Flashcards](https://eweser-db-example-interop-flashcards.netlify.app/), dev [url](http://localhost:8500/)
+### Offline first
 
-  - view the code at `/packages/example-interop-flashcards`.
-  - E2E test is in `/e2e/cypress/tests/interoperability.cy.js`
+- This app shows how to let the user first use the app offline without signup up. Then keep their data when the user signs up and connects a Matrix account.
+- dev [url](http://localhost:8600)
+- view the code at `/packages/example-offline-first`.
+- E2E test is in `/e2e/cypress/tests/offline-first.cy.js`
+
+### Public sharing
+
+- This app shows how to share data with a public 'aggregator' that listens to changes in the shared room and serves it publicly. Note that you must also run the aggregator server locally to see the data. See the `packages/aggregator` folder for more info.
+- dev [url](http://localhost:8700)
+- view the code at `/packages/example-public-sharing`.
 
 # Contribute and develop
 
@@ -240,11 +253,11 @@ Run e2e tests headless once with `npm run test:e2e`, or with `npm run dev-e2e` t
 
 Priority:
 
-- [ ] **Files:** set up file hosting provider services like Pinata, Dropbox, etc. and give users the option to connect their accounts to the app. Could also try the ‘matrix files’ [library](~https://github.com/matrix-org/matrix-files-sdk~).
 - [ ] **Public data**: set up ‘aggregator’ listeners when a user makes a collection as public. These will be MatrixReader’s that live on a node server and listen for changes to the collection. How to aggregate and serve to public listeners?
+- [ ] **Files:** set up file hosting provider services like Pinata, Dropbox, etc. and give users the option to connect their accounts to the app. Could also try the ‘matrix files’ [library](~https://github.com/matrix-org/matrix-files-sdk~).
 - [ ] **Backups** - user can add storage account (dropbox, pinata, etc) that store snapshots of the database in the file hosting provider.
-- [ ] End 2 End **Encryption** — multiple devices?
 - [ ] **Sharing,**: user can invite another to a room and collaborate on the documents within. Can also just be read only
+- [ ] End 2 End **Encryption** — multiple devices?
 - [ ] Versioning strategy for schema/api changes. How to maintain backwards compatibility with older versions of the database.
 - [ ] Per-App **Access control**. Instead of signing in the matrix client as the user, we could instead sign in with a Matrix account provided by the app owner, and then have the use invite that account into each room, specifying read-only or write permissions.
 

@@ -1,6 +1,6 @@
 {
   "name": "@eweser/shared",
-  "version": "0.0.1",
+  "version": "1.8.0",
   "description": "shared types and helpers for @eweser/db and other @eweser packages",
   "main": "dist/index.js",
   "module": "dist/index.js",
