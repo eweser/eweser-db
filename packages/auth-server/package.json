@@ -10,7 +10,7 @@
     "clean": "rm -rf .next"
   },
   "dependencies": {
-    "@eweser/db": "^1.7.0",
+    "@eweser/db": "^1.8.0",
     "@eweser/shared": "^1.8.0",
     "@radix-ui/react-icons": "^1.3.0",
     "@supabase/ssr": "^0.1.0",
