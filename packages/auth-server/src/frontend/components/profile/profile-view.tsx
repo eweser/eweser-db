@@ -1,8 +1,8 @@
 import ProfileViewFrontend from './profile-view-frontend';
 import type { User } from '@supabase/supabase-js';
-import { getRoomsFromAccessGrant } from '@/model/rooms/calls';
-import { createNewUserRoomsAndAuthServerAccess } from '@/modules/account/create-new-user-rooms-and-auth-server-access';
-import { getUserCount } from '@/model/users';
+import { getRoomsFromAccessGrant } from '../../../model/rooms/calls';
+import { createNewUserRoomsAndAuthServerAccess } from '../../../modules/account/create-new-user-rooms-and-auth-server-access';
+import { getUserCount } from '../../../model/users';
 
 export async function ProfileView({ user }: { user: User }) {
   const { authServerAccessGrant } = await createNewUserRoomsAndAuthServerAccess(

@@ -1,8 +1,7 @@
-import type { AccessGrant } from '@/model/access_grants';
-import { getRoomIdsFromAccessGrant } from '@/model/rooms/calls';
-import { SERVER_SECRET } from '@/shared/server-constants';
-
 import jwt from 'jsonwebtoken';
+import type { AccessGrant } from '../../../model/access_grants';
+import { getRoomIdsFromAccessGrant } from '../../../model/rooms/calls';
+import { SERVER_SECRET } from '../../../shared/server-constants';
 
 export interface AccessGrantJWT {
   access_grant_id: string;

@@ -1,11 +1,11 @@
 import '../frontend/styles/globals.css';
 import type { Metadata } from 'next';
 
-import { siteConfig } from '@/frontend/config/site';
-import { fontSans } from '@/frontend/styles/fonts';
-import { cn } from '@/shared/utils';
-import { ThemeProvider } from '@/frontend/theme-provider';
-import { SiteHeader } from '@/frontend/components/site-header';
+import { siteConfig } from '../frontend/config/site';
+import { fontSans } from '../frontend/styles/fonts';
+import { cn } from '../shared/utils';
+import { ThemeProvider } from '../frontend/theme-provider';
+import { SiteHeader } from '../frontend/components/site-header';
 
 interface RootLayoutProps {
   children: React.ReactNode;

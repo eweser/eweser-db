@@ -1,22 +1,22 @@
-import type { Room } from '@/model/rooms/schema';
-import { generateTTLDate } from '@/model/rooms/helpers';
+import type { Room } from '../../model/rooms/schema';
+import { generateTTLDate } from '../../model/rooms/helpers';
 import jwt from 'jsonwebtoken';
-import { SERVER_SECRET } from '@/shared/server-constants';
-import type { AccessGrantJWT } from '@/modules/account/access-grant/create-token-from-grant';
-import type { AccessGrant } from '@/model/access_grants';
+import { SERVER_SECRET } from '../../shared/server-constants';
+import type { AccessGrantJWT } from '../../modules/account/access-grant/create-token-from-grant';
+import type { AccessGrant } from '../../model/access_grants';
 import {
   getAccessGrantById,
   parseAccessGrantId,
   updateAccessGrant,
-} from '@/model/access_grants';
+} from '../../model/access_grants';
 import {
   getRoomsFromAccessGrant,
   insertRooms,
   updateRoom,
-} from '@/model/rooms/calls';
-import { db } from '@/services/database';
-import { getOrCreateToken } from '@/services/y-sweet/get-or-create-token';
-import type { RoomInsert } from '@/model/rooms/validation';
+} from '../../model/rooms/calls';
+import { db } from '../../services/database';
+import { getOrCreateToken } from '../../services/y-sweet/get-or-create-token';
+import type { RoomInsert } from '../../model/rooms/validation';
 /**
  * To update:
  * add client created rooms to server `rooms` table. Make a ySweet token for each

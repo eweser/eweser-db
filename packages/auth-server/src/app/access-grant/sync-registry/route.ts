@@ -1,5 +1,5 @@
-import { syncRoomsWithClient } from '@/modules/rooms/sync-rooms-with-client';
-import { authTokenFromHeaders, serverRouteError } from '@/shared/utils';
+import { syncRoomsWithClient } from '../../../modules/rooms/sync-rooms-with-client';
+import { authTokenFromHeaders, serverRouteError } from '../../../shared/utils';
 import type {
   RegistrySyncRequestBody,
   RegistrySyncResponse,

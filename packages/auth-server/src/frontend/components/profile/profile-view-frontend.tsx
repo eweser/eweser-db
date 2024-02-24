@@ -1,6 +1,9 @@
 'use client';
-import { DatabaseProvider, useDatabase } from '@/frontend/eweser-db-provider';
-import type { Room } from '@/model/rooms/schema';
+import {
+  DatabaseProvider,
+  useDatabase,
+} from '../../../frontend/eweser-db-provider';
+import type { Room } from '../../../model/rooms/schema';
 import type { Profile } from '@eweser/db';
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
@@ -15,7 +18,7 @@ import { Skeleton } from '../library/skeleton';
 import H2 from '../library/typography-h2';
 import { Label } from '../library/label';
 import { Input } from '../library/input';
-import { AUTH_SERVER_DOMAIN } from '@/shared/constants';
+import { AUTH_SERVER_DOMAIN } from '../../../shared/constants';
 import {
   Select,
   SelectContent,

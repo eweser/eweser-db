@@ -1,10 +1,9 @@
-import { createNewUserRoomsAndAuthServerAccess } from '@/modules/account/create-new-user-rooms-and-auth-server-access';
-import { SUPABASE_SERVICE_ROLE_KEY } from '@/services/database/supabase/backend-config';
-import { NEXT_PUBLIC_SUPABASE_URL } from '@/services/database/supabase/frontend-config';
-
 import type { CookieOptions } from '@supabase/ssr';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { SUPABASE_SERVICE_ROLE_KEY } from '../../../services/database/supabase/backend-config';
+import { NEXT_PUBLIC_SUPABASE_URL } from '../../../services/database/supabase/frontend-config';
+import { createNewUserRoomsAndAuthServerAccess } from '../create-new-user-rooms-and-auth-server-access';
 
 export async function oAuthLoginCallback({ code }: { code?: string | null }) {
   if (!code) {

@@ -1,5 +1,5 @@
 'use client';
-import type { Room } from '@/model/rooms/schema';
+import type { Room } from '../model/rooms/schema';
 
 import { Database } from '@eweser/db';
 import React, { createContext, useContext, useMemo, useState } from 'react';

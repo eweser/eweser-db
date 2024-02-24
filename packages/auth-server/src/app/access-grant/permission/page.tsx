@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 
-import { siteConfig } from '@/frontend/config/site';
+import { siteConfig } from '../../../frontend/config/site';
 import type { LoginQueryParams } from '@eweser/shared';
-import { protectPage } from '@/modules/account/protect-page';
-import { validateLoginQueryOptions } from '@/shared/utils';
+import { protectPage } from '../../../modules/account/protect-page';
+import { validateLoginQueryOptions } from '../../../shared/utils';
 
 export const metadata: Metadata = {
   title: siteConfig.pageName('Login'),

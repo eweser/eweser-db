@@ -1,10 +1,10 @@
 import * as React from 'react';
 import Link from 'next/link';
 
-import { siteConfig } from '@/frontend/config/site';
-import { cn } from '@/shared/utils';
-import { Icons } from '@/frontend/components/library/icons';
-import { getLoginStatus } from '@/modules/account/get-login-status';
+import { siteConfig } from '../../frontend/config/site';
+import { cn } from '../../shared/utils';
+import { Icons } from '../../frontend/components/library/icons';
+import { getLoginStatus } from '../../modules/account/get-login-status';
 
 export interface NavItem {
   title: string;

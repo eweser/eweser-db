@@ -1,4 +1,4 @@
-import { backendSupabase } from '@/services/database/supabase/backend-client-init';
+import { backendSupabase } from '../../services/database/supabase/backend-client-init';
 import { cookies } from 'next/headers';
 
 export async function getSessionUser() {

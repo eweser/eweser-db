@@ -1,11 +1,11 @@
 // Seems we might not need this route if we just always use the sync-rooms-with-client.ts function
 
 import jwt from 'jsonwebtoken';
-import { SERVER_SECRET } from '@/shared/server-constants';
-import type { AccessGrantJWT } from '@/modules/account/access-grant/create-token-from-grant';
-import { getAccessGrantById } from '@/model/access_grants';
-import { getRoomsByIds } from '@/model/rooms/calls';
-import { authTokenFromHeaders, serverRouteError } from '@/shared/utils';
+import { SERVER_SECRET } from '../../../shared/server-constants';
+import type { AccessGrantJWT } from '../../../modules/account/access-grant/create-token-from-grant';
+import { getAccessGrantById } from '../../../model/access_grants';
+import { getRoomsByIds } from '../../../model/rooms/calls';
+import { authTokenFromHeaders, serverRouteError } from '../../../shared/utils';
 
 export default async function POST(request: Request) {
   const token = authTokenFromHeaders(request.headers);

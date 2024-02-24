@@ -1,9 +1,10 @@
 'use server';
-import { backendSupabase } from '@/services/database/supabase/backend-client-init';
-import { logger } from '@/shared/utils';
+
 import type { EmailOtpType } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { createNewUserRoomsAndAuthServerAccess } from './create-new-user-rooms-and-auth-server-access';
+import { backendSupabase } from '../../services/database/supabase/backend-client-init';
+import { logger } from '../../shared/utils';
 
 export async function verifyOtp({
   token_hash,

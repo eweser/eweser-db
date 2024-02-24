@@ -1,4 +1,4 @@
-import { siteConfig } from '@/frontend/config/site';
+import { siteConfig } from '../../../frontend/config/site';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {

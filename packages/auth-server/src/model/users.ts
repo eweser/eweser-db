@@ -1,8 +1,8 @@
-import { db } from '@/services/database';
-import type { DBInstance } from '@/services/database/drizzle/init';
-import { logger } from '@/shared/utils';
 import { count, eq } from 'drizzle-orm';
 import { pgTable, uuid, text, timestamp } from 'drizzle-orm/pg-core';
+import { db } from '../services/database';
+import type { DBInstance } from '../services/database/drizzle/init';
+import { logger } from '../shared/utils';
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().notNull(), // corresponds to the auth.users table

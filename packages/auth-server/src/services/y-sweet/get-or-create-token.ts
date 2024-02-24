@@ -1,6 +1,6 @@
 import { getOrCreateDocAndToken } from '@y-sweet/sdk';
 import { Y_SWEET_CONNECTION_STRING } from './config';
-import { logger } from '@/shared/utils';
+import { logger } from '../../shared/utils';
 
 export async function getOrCreateToken(roomId: string) {
   try {

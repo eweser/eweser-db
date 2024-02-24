@@ -1,7 +1,7 @@
 'use server';
-import { passwordSignIn } from '@/modules/account/password/sign-in';
-import { passwordSignUp } from '@/modules/account/password/sign-up';
-import { logger } from '@/shared/utils';
+import { passwordSignIn } from '../modules/account/password/sign-in';
+import { passwordSignUp } from '../modules/account/password/sign-up';
+import { logger } from '../shared/utils';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 

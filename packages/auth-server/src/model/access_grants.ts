@@ -6,12 +6,15 @@ import {
   integer,
 } from 'drizzle-orm/pg-core';
 import { users } from './users';
-import { COLLECTION_KEYS, REQUESTER_TYPES } from '@/shared/constants';
+
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
-import { db } from '@/services/database';
+
 import { eq } from 'drizzle-orm';
-import type { DBInstance } from '@/services/database/drizzle/init';
+import { COLLECTION_KEYS } from '@eweser/shared';
+import { db } from '../services/database';
+import type { DBInstance } from '../services/database/drizzle/init';
+import { REQUESTER_TYPES } from '../shared/constants';
 
 export function createAccessGrantId(ownerId: string, requesterId: string) {
   return `${ownerId}|${requesterId}`;

@@ -1,18 +1,18 @@
-import type { AccessGrant, AccessGrantInsert } from '@/model/access_grants';
+import { v4 } from 'uuid';
+import type { AccessGrant, AccessGrantInsert } from '../../model/access_grants';
 import {
   createAccessGrantId,
   getAccessGrantById,
   insertAccessGrants,
-} from '@/model/access_grants';
+} from '../../model/access_grants';
 import {
   getProfileRoomsByUserIdForUpdate,
   insertRooms,
-} from '@/model/rooms/calls';
-import type { RoomInsert } from '@/model/rooms/validation';
-import { db } from '@/services/database';
-import { getOrCreateToken } from '@/services/y-sweet/get-or-create-token';
-import { AUTH_SERVER_DOMAIN } from '@/shared/constants';
-import { v4 } from 'uuid';
+} from '../../model/rooms/calls';
+import type { RoomInsert } from '../../model/rooms/validation';
+import { db } from '../../services/database';
+import { getOrCreateToken } from '../../services/y-sweet/get-or-create-token';
+import { AUTH_SERVER_DOMAIN } from '../../shared/constants';
 
 export async function createNewUserRoomsAndAuthServerAccess(
   userId: string

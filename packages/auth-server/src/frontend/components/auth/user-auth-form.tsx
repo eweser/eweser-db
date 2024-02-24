@@ -2,8 +2,8 @@
 
 import * as React from 'react';
 
-import { cn } from '@/shared/utils';
-import { login, signup } from '@/app/actions';
+import { cn } from '../../../shared/utils';
+import { login, signup } from '../../../app/actions';
 import PasswordForm from './password-form';
 import OAuthForm from './oauth-form';
 import type { LoginQueryOptions } from '@eweser/shared';

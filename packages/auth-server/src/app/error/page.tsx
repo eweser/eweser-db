@@ -1,4 +1,4 @@
-import { Button } from '@/frontend/components/library/button';
+import { Button } from '../../frontend/components/library/button';
 import Link from 'next/link';
 
 export default function ErrorPage({

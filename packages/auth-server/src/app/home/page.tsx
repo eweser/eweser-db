@@ -1,5 +1,5 @@
-import { ProfileView } from '@/frontend/components/profile/profile-view';
-import { protectPage } from '@/modules/account/protect-page';
+import { ProfileView } from '../../frontend/components/profile/profile-view';
+import { protectPage } from '../../modules/account/protect-page';
 
 import type { Metadata } from 'next';
 

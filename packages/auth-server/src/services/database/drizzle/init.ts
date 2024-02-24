@@ -1,6 +1,6 @@
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import { SUPABASE_CONNECTION_URL } from '@/services/database/supabase/backend-config';
+import { SUPABASE_CONNECTION_URL } from '../../../services/database/supabase/backend-config';
 
 export type DBInstance = ReturnType<typeof drizzle>;
 export type DBQuery<T> = (dbInstance?: DBInstance) => T;

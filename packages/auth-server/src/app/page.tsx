@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 
-import { UserAuthForm } from '@/frontend/components/auth/user-auth-form';
-import { siteConfig } from '@/frontend/config/site';
+import { UserAuthForm } from '../frontend/components/auth/user-auth-form';
+import { siteConfig } from '../frontend/config/site';
 import Link from 'next/link';
 import type { LoginQueryParams } from '@eweser/shared';
-import { getSessionUser } from '@/modules/account/get-session-user';
-import { validateLoginQueryOptions } from '@/shared/utils';
+import { getSessionUser } from '../modules/account/get-session-user';
+import { validateLoginQueryOptions } from '../shared/utils';
 import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {

@@ -6,8 +6,6 @@
   "homepage": "https://github.com/eweser/eweser-db#readme",
   "license": "MIT",
   "main": "./index.js",
-  "**note**": "marking this as private because it isn't often updated. remove this to publish new version with lerna",
-  "private": true,
   "files": [
     "./index.js"
   ],

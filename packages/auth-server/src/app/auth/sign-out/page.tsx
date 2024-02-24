@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Icons } from '@/frontend/components/library/icons';
-import { frontendSupabase } from '@/services/database/supabase/frontend-client-init';
+import { Icons } from '../../../frontend/components/library/icons';
+import { frontendSupabase } from '../../../services/database/supabase/frontend-client-init';
 
 export default function SignOutPage() {
   const supabase = frontendSupabase();

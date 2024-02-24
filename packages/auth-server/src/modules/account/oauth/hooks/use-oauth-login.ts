@@ -1,4 +1,5 @@
-import { frontendSupabase } from '@/services/database/supabase/frontend-client-init';
+import { frontendSupabase } from '../../../../services/database/supabase/frontend-client-init';
+
 export const OAUTH_PROVIDERS = ['google', 'github'] as const;
 
 export type Provider = (typeof OAUTH_PROVIDERS)[number];

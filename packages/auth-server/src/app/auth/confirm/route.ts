@@ -1,6 +1,6 @@
 'use server';
-import { verifyOtp } from '@/modules/account/verify-otp';
-import { handleServerErrorRedirect } from '@/shared/utils';
+import { verifyOtp } from '../../../modules/account/verify-otp';
+import { handleServerErrorRedirect } from '../../../shared/utils';
 import { type EmailOtpType } from '@supabase/supabase-js';
 import { type NextRequest, NextResponse } from 'next/server';
 

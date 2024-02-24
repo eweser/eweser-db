@@ -1,5 +1,5 @@
-import { NEXT_PUBLIC_SUPABASE_URL } from '@/services/database/supabase/frontend-config';
-import { SUPABASE_SERVICE_ROLE_KEY } from '@/services/database/supabase/backend-config';
+import { NEXT_PUBLIC_SUPABASE_URL } from '../../../services/database/supabase/frontend-config';
+import { SUPABASE_SERVICE_ROLE_KEY } from '../../../services/database/supabase/backend-config';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import type { cookies } from 'next/headers';
 

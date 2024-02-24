@@ -1,6 +1,6 @@
 import { Button } from '../library/button';
 import { Icons } from '../library/icons';
-import { useOauthLogin } from '@/modules/account/oauth/hooks/use-oauth-login';
+import { useOauthLogin } from '../../../modules/account/oauth/hooks/use-oauth-login';
 
 export default function OAuthForm({
   isLoading,

@@ -1,10 +1,10 @@
-import { db } from '@/services/database';
+import { db } from '../../services/database';
 import { and, arrayOverlaps, eq, inArray, or } from 'drizzle-orm';
 import type { Room } from './schema';
 import { rooms } from './schema';
 import type { RoomInsert, RoomUpdate } from './validation';
 import { updateUserRooms, users } from '../users';
-import type { DBInstance } from '@/services/database/drizzle/init';
+import type { DBInstance } from '../../services/database/drizzle/init';
 import type { CollectionKey } from '@eweser/db';
 import type { AccessGrant } from '../access_grants';
 
