@@ -1,7 +1,8 @@
 {
   "name": "@eweser/aggregator",
-  "version": "1.8.1",
+  "version": "1.8.2",
   "type": "module",
+  "private": true,
   "description": "Listens to changes in eweser database rooms marked as public, and serves changes over an API",
   "main": "./dist/main.js",
   "scripts": {
@@ -28,7 +29,7 @@
   },
   "homepage": "https://github.com/eweser/eweser-db#readme",
   "devDependencies": {
-    "@eweser/eslint-config-ts": "^1.4.0",
+    "@eweser/eslint-config-ts": "^1.8.2",
     "@types/express": "^4.17.18",
     "@types/node": "^20.8.2",
     "@types/request": "^2.48.9",
@@ -40,11 +41,11 @@
     "vitest": "^0.34.6"
   },
   "dependencies": {
-    "@eweser/db": "^1.8.1",
+    "@eweser/db": "^1.8.2",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "mongodb": "^6.1.0",
     "request": "^2.88.2"
   },
-  "gitHead": "6e8c8870a4a7cefbe005a571eb36f2edfcebc6c3"
+  "gitHead": "d6ee91d84092583f851548fa9ffe8ccf5de5705a"
 }
