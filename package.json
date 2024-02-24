@@ -38,6 +38,7 @@
     "run-example-preview:offline-first": "cd old-examples/example-offline-first; npm run preview"
   },
   "devDependencies": {
+    "@nx/nx-linux-x64-gnu": "^18.0.5",
     "@testing-library/cypress": "^9.00",
     "cypress": "^12.9.0",
     "idb": "^7.1.1",

@@ -57,9 +57,9 @@ export type Registry = ServerRoom[];
 
 /** adds the ydoc providers ans connection status */
 export interface Room<T extends Document> extends ServerRoom {
-  indexeddbProvider: IndexeddbPersistence | null;
-  webRtcProvider: WebrtcProvider | null;
-  ySweetProvider: YSweetProvider | null;
+  indexeddbProvider?: IndexeddbPersistence | null;
+  webRtcProvider?: WebrtcProvider | null;
+  ySweetProvider?: YSweetProvider | null;
   ydoc?: YDoc<T>;
 
   // connectStatus: ConnectStatus;

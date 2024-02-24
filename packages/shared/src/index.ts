@@ -15,7 +15,13 @@ export type LoginQueryParams = {
   collections: string;
 };
 
-export type ServerRoom = Room;
+export type ServerRoom = Room &
+  Partial<{
+    token: Room['token'];
+    ySweetUrl: Room['ySweetUrl'];
+    _deleted: Room['_deleted'];
+    _ttl: Room['_ttl'];
+  }>;
 
 export type RegistrySyncRequestBody = {
   rooms: ServerRoom[];

@@ -28,7 +28,7 @@ export const rooms = pgTable('rooms', {
   }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' }),
 
-  _deleted: boolean('_deleted').default(false).notNull(),
+  _deleted: boolean('_deleted').default(false),
   _ttl: timestamp('_ttl', { withTimezone: true, mode: 'string' }),
 });
 

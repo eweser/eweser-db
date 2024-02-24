@@ -99,10 +99,9 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
    */
   generateLoginUrl = (options?: LoginQueryOptions): string => {
     const url = new URL(this.authServer);
-
     const params: LoginQueryParams = {
       redirect: options?.redirect || window.location.href,
-      domain: options?.domain || window.location.hostname,
+      domain: options?.domain || window.location.host,
       collections: options?.collections ? options.collections.join('|') : 'all',
     };
     Object.entries(params).forEach(([key, value]) => {

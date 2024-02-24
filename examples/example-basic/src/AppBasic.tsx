@@ -25,6 +25,10 @@ const initialRooms: Registry = [
     readAccess: [],
     writeAccess: [],
     adminAccess: [],
+    token: '',
+    ySweetUrl: '',
+    _deleted: false,
+    _ttl: '',
   },
 ];
 
