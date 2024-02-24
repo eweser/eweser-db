@@ -1,5 +1,5 @@
 export * from './collections';
-export * from './roomsSchema';
+export { rooms } from './roomsSchema';
 import type { Room } from './roomsSchema';
 
 export type LoginQueryOptions = {

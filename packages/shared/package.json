@@ -22,11 +22,12 @@
   "exports": {
     ".": {
       "import": "./dist/index.js",
-      "require": "./dist/index.js"
+      "require": "./dist/index.js",
+      "types": "./types/index.d.ts"
     }
   },
   "source": "src/index.ts",
-  "types": "types/index.d.ts",
+  "types": "./types/index.d.ts",
   "scripts": {
     "build": "rm -rf ./dist; tsc",
     "dev": "tsc -w",

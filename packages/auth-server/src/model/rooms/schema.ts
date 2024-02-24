@@ -1,1 +1,1 @@
-export * from '@eweser/shared/roomsSchema';
+export { rooms } from '@eweser/shared';
