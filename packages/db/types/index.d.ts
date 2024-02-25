@@ -69,16 +69,16 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
         id: string;
         name: string;
         collectionKey: "notes" | "flashcards" | "profiles";
-        token?: string | null | undefined;
-        ySweetUrl?: string | null | undefined;
+        token: string | null;
+        ySweetUrl: string | null;
         publicAccess: "private" | "read" | "write";
         readAccess: string[];
         writeAccess: string[];
         adminAccess: string[];
-        createdAt: string;
+        createdAt: string | null;
         updatedAt: string | null;
-        _deleted?: boolean | undefined;
-        _ttl?: string | null | undefined;
+        _deleted: boolean | null;
+        _ttl: string | null;
     }>;
     loadRooms: (rooms: Registry) => Promise<void>;
     getDocuments: <T extends Document>(room: Room<T>) => {
