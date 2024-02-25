@@ -25,6 +25,7 @@ export const DatabaseProvider = ({
       authServer: 'http://localhost:3000',
       logLevel: 0, // log debug events
       initialRooms,
+      providers: ['IndexedDB', 'YSweet'],
     }).on('roomsLoaded', (_rooms) => {
       // could also add check that rooms are correct rooms
       setLoaded(true);

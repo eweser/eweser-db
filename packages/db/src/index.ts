@@ -331,8 +331,8 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
         this.webRtcPeers = [];
         this.useWebRTC = false;
       }
-      if (!options.providers.includes('YSweet')) {
-        this.useYSweet = false;
+      if (options.providers.includes('YSweet')) {
+        this.useYSweet = true;
       }
       if (!options.providers.includes('IndexedDB')) {
         // need to have at least one provider, the local storage provider

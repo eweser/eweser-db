@@ -9364,8 +9364,8 @@ class Database extends TypedEventEmitter {
         this.webRtcPeers = [];
         this.useWebRTC = false;
       }
-      if (!options.providers.includes("YSweet")) {
-        this.useYSweet = false;
+      if (options.providers.includes("YSweet")) {
+        this.useYSweet = true;
       }
       if (!options.providers.includes("IndexedDB")) {
         throw new Error("IndexedDB provider is required");
