@@ -77,7 +77,7 @@ export function validateLoginQueryOptions(
     return {
       redirect,
       domain,
-      collections,
+      collections: collections as LoginQueryOptions['collections'],
       name,
     };
   }
