@@ -1,5 +1,15 @@
-export default function Small({ children }: { children: React.ReactNode }) {
+import { cn } from '../../../shared/utils';
+
+export default function Small({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <small className="text-sm font-medium leading-none"> {children}</small>
+    <small className={cn('text-sm font-medium leading-none', className)}>
+      {children}
+    </small>
   );
 }

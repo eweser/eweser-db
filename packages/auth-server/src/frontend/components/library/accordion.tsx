@@ -27,7 +27,7 @@ const AccordionTrigger = React.forwardRef<
     className?: string;
   }
 >(({ className, children, ...props }, ref) => (
-  <AccordionPrimitive.Header className="flex">
+  <AccordionPrimitive.Header className="flex justify-between w-full pl-2">
     <AccordionPrimitive.Trigger
       ref={ref}
       className={cn(
