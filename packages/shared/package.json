@@ -29,7 +29,7 @@
   "source": "src/index.ts",
   "types": "./types/index.d.ts",
   "scripts": {
-    "build": "rm -rf ./dist; tsc",
+    "build": "rm -rf ./dist; rm -rf ./types; tsc",
     "dev": "tsc -w",
     "clean": "rm -rf ./dist; rm -rf ./types"
   },

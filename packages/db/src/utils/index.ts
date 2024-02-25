@@ -3,14 +3,14 @@ import type {
   CollectionKey,
   Room,
   Documents,
-  Document,
+  EweDocument,
   DocumentWithoutBase,
   DocumentBase,
 } from '../types';
 import type { Database } from '..';
 
 /** Sets the metadata like created and updated for the doc */
-export const newDocument = <T extends Document>(
+export const newDocument = <T extends EweDocument>(
   _id: string,
   _ref: string,
   doc: DocumentWithoutBase<T>
@@ -60,7 +60,7 @@ export const randomString = (length: number) =>
     .toString(36)
     .substring(2, length + 2);
 
-export function getRoomDocuments<T extends Document>(
+export function getRoomDocuments<T extends EweDocument>(
   room: Room<T>
 ): TypedMap<Documents<T>> {
   if (!room.ydoc) throw new Error('room.ydoc not found');
@@ -70,7 +70,7 @@ export function getRoomDocuments<T extends Document>(
 
 export const getRoom =
   (_db: Database) =>
-  <T extends Document>({
+  <T extends EweDocument>({
     collectionKey,
     roomId,
   }: {

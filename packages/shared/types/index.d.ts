@@ -1,39 +1,40 @@
+import type { CollectionKey, CollectionKeyOrAll } from './collections';
 export * from './collections';
 export type LoginQueryOptions = {
-  redirect: string;
-  domain: string;
-  collections: string[];
-  /** app name */
-  name: string;
+    redirect: string;
+    domain: string;
+    collections: CollectionKeyOrAll[];
+    /** app name */
+    name: string;
 };
 export type LoginQueryParams = {
-  redirect: string;
-  domain: string;
-  /** collections array string joined with '|' */
-  collections: string;
-  /** app name */
-  name: string;
+    redirect: string;
+    domain: string;
+    /** CollectionOrAll array string joined with '|' */
+    collections: string;
+    /** app name */
+    name: string;
 };
-/** Should match the rooms schema in tha auth-server. Unfortunately we can't see the null values as undefined or else drizzle types will be out of sync. */
+/** Should match the rooms schema in the auth-server. Unfortunately we can't see the null values as undefined or else drizzle types will be out of sync. */
 export type ServerRoom = {
-  id: string;
-  name: string;
-  collectionKey: 'notes' | 'flashcards' | 'profiles';
-  token: string | null;
-  ySweetUrl: string | null;
-  publicAccess: 'private' | 'read' | 'write';
-  readAccess: string[];
-  writeAccess: string[];
-  adminAccess: string[];
-  createdAt: string | null;
-  updatedAt: string | null;
-  _deleted: boolean | null;
-  _ttl: string | null;
+    id: string;
+    name: string;
+    collectionKey: CollectionKey;
+    token: string | null;
+    ySweetUrl: string | null;
+    publicAccess: 'private' | 'read' | 'write';
+    readAccess: string[];
+    writeAccess: string[];
+    adminAccess: string[];
+    createdAt: string | null;
+    updatedAt: string | null;
+    _deleted: boolean | null;
+    _ttl: string | null;
 };
 export type RegistrySyncRequestBody = {
-  rooms: ServerRoom[];
+    rooms: ServerRoom[];
 };
 export type RegistrySyncResponse = {
-  rooms: ServerRoom[];
-  token: string;
+    rooms: ServerRoom[];
+    token: string;
 };

@@ -6,7 +6,7 @@ import type {
   Profile,
   COLLECTION_KEYS,
   ServerRoom,
-  Document,
+  EweDocument,
   CollectionKey,
 } from '@eweser/shared';
 import type { WebrtcProvider } from 'y-webrtc';
@@ -19,7 +19,7 @@ export type ProviderOptions = 'WebRTC' | 'YSweet' | 'IndexedDB';
 
 export type {
   ServerRoom,
-  Document,
+  EweDocument,
   CollectionKey,
   DocumentBase,
   Note,
@@ -40,23 +40,23 @@ export const collections: Collections = {
   profiles: {},
 };
 
-export type DocumentWithoutBase<T extends Document> = Omit<
+export type DocumentWithoutBase<T extends EweDocument> = Omit<
   T,
   keyof DocumentBase
 >;
 
-export interface Documents<T extends Document> {
+export interface Documents<T extends EweDocument> {
   [documentId: string]: T;
 }
 
-export type YDoc<T extends Document> = TypedDoc<{
+export type YDoc<T extends EweDocument> = TypedDoc<{
   documents: TypedMap<Documents<T>>;
 }>;
 
 export type Registry = ServerRoom[];
 
 /** adds the ydoc providers ans connection status */
-export interface Room<T extends Document> extends ServerRoom {
+export interface Room<T extends EweDocument> extends ServerRoom {
   indexeddbProvider?: IndexeddbPersistence | null;
   webRtcProvider?: WebrtcProvider | null;
   ySweetProvider?: YSweetProvider | null;
@@ -66,7 +66,7 @@ export interface Room<T extends Document> extends ServerRoom {
   // tempDocs: { [docRef: string]: { doc: Doc } };
 }
 
-export type Collection<T extends Document> = {
+export type Collection<T extends EweDocument> = {
   [roomId: string]: Room<T>;
 };
 

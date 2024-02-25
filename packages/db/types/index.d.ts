@@ -1,4 +1,4 @@
-import type { CollectionKey, Collections, DatabaseEvents, Document, ProviderOptions, Registry, Room, YDoc } from './types';
+import type { CollectionKey, Collections, DatabaseEvents, EweDocument, ProviderOptions, Registry, Room, YDoc } from './types';
 import { TypedEventEmitter } from './types';
 import type { LoginQueryOptions, ServerRoom } from '@eweser/shared';
 export * from './utils';
@@ -83,7 +83,7 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
         _ttl: string | null;
     }>;
     loadRooms: (rooms: Registry) => Promise<void>;
-    getDocuments: <T extends Document>(room: Room<T>) => {
+    getDocuments: <T extends EweDocument>(room: Room<T>) => {
         documents: import("yjs-types").TypedMap<import("./types").Documents<T>>;
         get: (id: string) => T | undefined;
         set: (doc: T) => T;
@@ -94,7 +94,7 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
         onChange: (callback: (event: import("yjs").YMapEvent<any>, transaction: import("yjs").Transaction) => void) => void;
         sortByRecent: (docs: import("./types").Documents<T>) => import("./types").Documents<T>;
     };
-    getRoom: <T extends Document>(collectionKey: CollectionKey, roomId: string) => Room<T>;
-    newRoom: <_T extends Document>() => void;
+    getRoom: <T extends EweDocument>(collectionKey: CollectionKey, roomId: string) => Room<T>;
+    newRoom: <_T extends EweDocument>() => void;
     constructor(optionsPassed?: DatabaseOptions);
 }

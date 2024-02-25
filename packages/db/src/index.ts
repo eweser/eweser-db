@@ -2,7 +2,7 @@ import type {
   CollectionKey,
   Collections,
   DatabaseEvents,
-  Document,
+  EweDocument,
   ProviderOptions,
   Registry,
   Room,
@@ -308,13 +308,13 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
 
   // collection methods
   getDocuments = getDocuments(this);
-  getRoom = <T extends Document>(
+  getRoom = <T extends EweDocument>(
     collectionKey: CollectionKey,
     roomId: string
   ) => {
     return this.collections[collectionKey][roomId] as Room<T>;
   };
-  newRoom = <_T extends Document>() => {
+  newRoom = <_T extends EweDocument>() => {
     //TODO: implement newRoom
     // remember that new rooms must be added to the registry and then synced with the auth server
     if (this.online) {

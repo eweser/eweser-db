@@ -10,13 +10,16 @@ export * from './documentBase';
 /** We don't include registry because we use this after login to get all non-registry collections. */
 export const COLLECTION_KEYS = ['notes', 'flashcards', 'profiles'] as const;
 
+export const COLLECTION_KEYS_OR_ALL = [...COLLECTION_KEYS, 'all'] as const;
+
 export const PUBLIC_ACCESS_TYPES = ['private', 'read', 'write'] as const;
 
 export const collectionKeys = COLLECTION_KEYS.map((key) => key);
-export type Document = Note | Flashcard | Profile;
+export type EweDocument = Note | Flashcard | Profile;
 export type CollectionKey = (typeof COLLECTION_KEYS)[number];
+export type CollectionKeyOrAll = (typeof COLLECTION_KEYS_OR_ALL)[number];
 
-export type DocumentWithoutBase<T extends Document> = Omit<
+export type DocumentWithoutBase<T extends EweDocument> = Omit<
   T,
   keyof DocumentBase
 >;
