@@ -40,7 +40,7 @@ const db = new Database({
   webRTCPeers: config.WEB_RTC_PEERS,
   initialRooms,
 });
-const loginUrl = db.generateLoginUrl();
+const loginUrl = db.generateLoginUrl({ name: 'Basic Example App' });
 
 const App = () => {
   const [loaded, setLoaded] = useState(false);

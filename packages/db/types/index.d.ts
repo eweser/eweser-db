@@ -53,7 +53,9 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
      * @param collections default 'all', which collections your app would like to have write access to
      * @returns a string you can use to redirect the user to the auth server's login page
      */
-    generateLoginUrl: (options?: LoginQueryOptions) => string;
+    generateLoginUrl: (options: Partial<LoginQueryOptions> & {
+        name: string;
+    }) => string;
     getAccessGrantTokenFromUrl: () => string | null;
     getToken: () => string | null;
     login: () => Promise<boolean>;

@@ -5,6 +5,8 @@ import { siteConfig } from '../../../frontend/config/site';
 import type { LoginQueryParams } from '@eweser/shared';
 import { protectPage } from '../../../modules/account/protect-page';
 import { validateLoginQueryOptions } from '../../../shared/utils';
+import H1 from '../../../frontend/components/library/typography-h1';
+import Large from '../../../frontend/components/library/typography-large';
 
 export const metadata: Metadata = {
   title: siteConfig.pageName('Login'),
@@ -17,7 +19,7 @@ export default async function GrantPermissionsPage({
 }) {
   const user = await protectPage();
   const validParams = validateLoginQueryOptions(searchParams);
-  const { redirect, domain, collections } = validParams ?? {};
+  const { redirect, domain, collections, name } = validParams ?? {};
   // eslint-disable-next-line no-console
   console.log({ user, redirect, domain, collections });
   return (
@@ -36,9 +38,10 @@ export default async function GrantPermissionsPage({
           A user-owned database. Just for ewe
         </p>
       </div>
-      <div className="p-8 flex items-center flex-1 justify-center  lg:w-1/2 order-1 lg:order-2">
-        <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
-          <h1>Grant Permissions</h1>
+      <div className="p-8 flex items-center flex-1 justify-center lg:w-1/2 order-1 lg:order-2">
+        <div className="flex flex-col space-y-4">
+          <H1>Grant Permissions</H1>
+          <Large>{name}</Large>
         </div>
       </div>
     </div>

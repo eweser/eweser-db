@@ -97,12 +97,15 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
    * @param collections default 'all', which collections your app would like to have write access to
    * @returns a string you can use to redirect the user to the auth server's login page
    */
-  generateLoginUrl = (options?: LoginQueryOptions): string => {
+  generateLoginUrl = (
+    options: Partial<LoginQueryOptions> & { name: string }
+  ): string => {
     const url = new URL(this.authServer);
     const params: LoginQueryParams = {
       redirect: options?.redirect || window.location.href,
       domain: options?.domain || window.location.host,
       collections: options?.collections ? options.collections.join('|') : 'all',
+      name: options.name,
     };
     Object.entries(params).forEach(([key, value]) => {
       url.searchParams.append(key, value);

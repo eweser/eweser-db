@@ -9187,7 +9187,8 @@ ${reason}`);
         const params2 = {
           redirect: (options == null ? void 0 : options.redirect) || window.location.href,
           domain: (options == null ? void 0 : options.domain) || window.location.host,
-          collections: (options == null ? void 0 : options.collections) ? options.collections.join("|") : "all"
+          collections: (options == null ? void 0 : options.collections) ? options.collections.join("|") : "all",
+          name: options.name
         };
         Object.entries(params2).forEach(([key, value]) => {
           url.searchParams.append(key, value);
