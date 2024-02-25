@@ -116,14 +116,15 @@ export async function getRoomIdsFromAccessGrant(
   const collectionsWithoutAll = collections.filter(
     (c) => c !== 'all'
   ) as CollectionKey[];
+
   const roomIds = allAccess
     ? await db(dbInstance)
         .select({ id: rooms.id })
         .from(rooms)
         .where(
           and(
-            arrayOverlaps(rooms.writeAccess, [ownerId]),
-            eq(rooms._deleted, false)
+            or(isNull(rooms._deleted), ne(rooms._deleted, true)),
+            arrayOverlaps(rooms.writeAccess, [ownerId])
           )
         )
     : await db(dbInstance)
@@ -131,11 +132,14 @@ export async function getRoomIdsFromAccessGrant(
         .from(rooms)
         .where(
           and(
-            arrayOverlaps(rooms.writeAccess, [ownerId]),
-            eq(rooms._deleted, false),
+            or(isNull(rooms._deleted), ne(rooms._deleted, true)),
             or(
-              inArray(rooms.id, grantRoomIds),
-              inArray(rooms.collectionKey, collectionsWithoutAll)
+              grantRoomIds.length > 0
+                ? inArray(rooms.id, grantRoomIds)
+                : isNull(rooms.id), // we can't pass an empty array to inArray so just provide a condition here that is always false
+              collectionsWithoutAll.length > 0
+                ? inArray(rooms.collectionKey, collectionsWithoutAll)
+                : isNull(rooms.id)
             )
           )
         );
@@ -170,11 +174,14 @@ export async function getRoomsFromAccessGrant(
       .from(rooms)
       .where(
         and(
-          arrayOverlaps(rooms.writeAccess, [ownerId]),
           or(isNull(rooms._deleted), ne(rooms._deleted, true)),
           or(
-            inArray(rooms.id, grantRoomIds),
-            inArray(rooms.collectionKey, collectionsWithoutAll)
+            grantRoomIds.length > 0
+              ? inArray(rooms.id, grantRoomIds)
+              : isNull(rooms.id), // we can't pass an empty array to inArray so just provide a condition here that is always false
+            collectionsWithoutAll.length > 0
+              ? inArray(rooms.collectionKey, collectionsWithoutAll)
+              : isNull(rooms.id)
           )
         )
       );
