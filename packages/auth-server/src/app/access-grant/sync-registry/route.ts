@@ -5,7 +5,7 @@ import type {
   RegistrySyncResponse,
 } from '@eweser/shared';
 
-export default async function POST(request: Request) {
+export async function POST(request: Request) {
   const token = authTokenFromHeaders(request.headers);
   if (!token) {
     return serverRouteError('No token provided', 401);

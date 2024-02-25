@@ -7,7 +7,7 @@ import { getAccessGrantById } from '../../../model/access_grants';
 import { getRoomsByIds } from '../../../model/rooms/calls';
 import { authTokenFromHeaders, serverRouteError } from '../../../shared/utils';
 
-export default async function POST(request: Request) {
+export async function POST(request: Request) {
   const token = authTokenFromHeaders(request.headers);
   if (!token) {
     return serverRouteError('No token provided', 401);

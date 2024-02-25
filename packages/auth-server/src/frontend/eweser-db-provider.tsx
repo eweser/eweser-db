@@ -31,8 +31,6 @@ export const DatabaseProvider = ({
     });
   }, [initialRooms]);
 
-  console.log({ eweserDB, loaded });
-
   return (
     <DatabaseContext.Provider value={{ db: eweserDB }}>
       {loaded ? children : loadingComponent ?? <Icons.spinner />}
