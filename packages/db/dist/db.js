@@ -4,7 +4,6 @@ var __publicField = (obj, key, value) => {
   __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
   return value;
 };
-var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _A, _B, _C, _D, _E, _F, _G, _H, _I, _J, _K, _L, _M, _N;
 var events = { exports: {} };
 var R = typeof Reflect === "object" ? Reflect : null;
 var ReflectApply = R && typeof R.apply === "function" ? R.apply : function ReflectApply2(target, receiver, args) {
@@ -385,1009 +384,7 @@ class TypedEventEmitter extends eventsExports.EventEmitter {
   }
 }
 const COLLECTION_KEYS = ["notes", "flashcards", "profiles"];
-const PUBLIC_ACCESS_TYPES = ["private", "read", "write"];
 const collectionKeys = COLLECTION_KEYS.map((key) => key);
-const entityKind = Symbol.for("drizzle:entityKind");
-function is(value, type) {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-  if (value instanceof type) {
-    return true;
-  }
-  if (!Object.prototype.hasOwnProperty.call(type, entityKind)) {
-    throw new Error(
-      `Class "${type.name ?? "<unknown>"}" doesn't look like a Drizzle entity. If this is incorrect and the class is provided by Drizzle, please report this as a bug.`
-    );
-  }
-  let cls = value.constructor;
-  if (cls) {
-    while (cls) {
-      if (entityKind in cls && cls[entityKind] === type[entityKind]) {
-        return true;
-      }
-      cls = Object.getPrototypeOf(cls);
-    }
-  }
-  return false;
-}
-class Column {
-  constructor(table, config) {
-    __publicField(this, "name");
-    __publicField(this, "primary");
-    __publicField(this, "notNull");
-    __publicField(this, "default");
-    __publicField(this, "defaultFn");
-    __publicField(this, "hasDefault");
-    __publicField(this, "isUnique");
-    __publicField(this, "uniqueName");
-    __publicField(this, "uniqueType");
-    __publicField(this, "dataType");
-    __publicField(this, "columnType");
-    __publicField(this, "enumValues");
-    __publicField(this, "config");
-    this.table = table;
-    this.config = config;
-    this.name = config.name;
-    this.notNull = config.notNull;
-    this.default = config.default;
-    this.defaultFn = config.defaultFn;
-    this.hasDefault = config.hasDefault;
-    this.primary = config.primaryKey;
-    this.isUnique = config.isUnique;
-    this.uniqueName = config.uniqueName;
-    this.uniqueType = config.uniqueType;
-    this.dataType = config.dataType;
-    this.columnType = config.columnType;
-  }
-  mapFromDriverValue(value) {
-    return value;
-  }
-  mapToDriverValue(value) {
-    return value;
-  }
-}
-_a = entityKind;
-__publicField(Column, _a, "Column");
-const SubqueryConfig = Symbol.for("drizzle:SubqueryConfig");
-class Subquery {
-  constructor(sql2, selection, alias, isWith = false) {
-    /** @internal */
-    __publicField(this, _c);
-    this[SubqueryConfig] = {
-      sql: sql2,
-      selection,
-      alias,
-      isWith
-    };
-  }
-  // getSQL(): SQL<unknown> {
-  // 	return new SQL([this]);
-  // }
-}
-_b = entityKind, _c = SubqueryConfig;
-__publicField(Subquery, _b, "Subquery");
-function iife(fn, ...args) {
-  return fn(...args);
-}
-const tracer = {
-  startActiveSpan(name, fn) {
-    {
-      return fn();
-    }
-  }
-};
-const ViewBaseConfig = Symbol.for("drizzle:ViewBaseConfig");
-const TableName = Symbol.for("drizzle:Name");
-const Schema = Symbol.for("drizzle:Schema");
-const Columns = Symbol.for("drizzle:Columns");
-const OriginalName = Symbol.for("drizzle:OriginalName");
-const BaseName = Symbol.for("drizzle:BaseName");
-const IsAlias = Symbol.for("drizzle:IsAlias");
-const ExtraConfigBuilder = Symbol.for("drizzle:ExtraConfigBuilder");
-const IsDrizzleTable = Symbol.for("drizzle:IsDrizzleTable");
-class Table {
-  constructor(name, schema, baseName) {
-    /**
-     * @internal
-     * Can be changed if the table is aliased.
-     */
-    __publicField(this, _e);
-    /**
-     * @internal
-     * Used to store the original name of the table, before any aliasing.
-     */
-    __publicField(this, _f);
-    /** @internal */
-    __publicField(this, _g);
-    /** @internal */
-    __publicField(this, _h);
-    /**
-     *  @internal
-     * Used to store the table name before the transformation via the `tableCreator` functions.
-     */
-    __publicField(this, _i);
-    /** @internal */
-    __publicField(this, _j, false);
-    /** @internal */
-    __publicField(this, _k);
-    __publicField(this, _l, true);
-    this[TableName] = this[OriginalName] = name;
-    this[Schema] = schema;
-    this[BaseName] = baseName;
-  }
-}
-_d = entityKind, _e = TableName, _f = OriginalName, _g = Schema, _h = Columns, _i = BaseName, _j = IsAlias, _k = ExtraConfigBuilder, _l = IsDrizzleTable;
-__publicField(Table, _d, "Table");
-/** @internal */
-__publicField(Table, "Symbol", {
-  Name: TableName,
-  Schema,
-  OriginalName,
-  Columns,
-  BaseName,
-  IsAlias,
-  ExtraConfigBuilder
-});
-function isSQLWrapper(value) {
-  return typeof value === "object" && value !== null && "getSQL" in value && typeof value.getSQL === "function";
-}
-function mergeQueries(queries) {
-  var _a2;
-  const result = { sql: "", params: [] };
-  for (const query of queries) {
-    result.sql += query.sql;
-    result.params.push(...query.params);
-    if ((_a2 = query.typings) == null ? void 0 : _a2.length) {
-      if (!result.typings) {
-        result.typings = [];
-      }
-      result.typings.push(...query.typings);
-    }
-  }
-  return result;
-}
-class StringChunk {
-  constructor(value) {
-    __publicField(this, "value");
-    this.value = Array.isArray(value) ? value : [value];
-  }
-  getSQL() {
-    return new SQL([this]);
-  }
-}
-_m = entityKind;
-__publicField(StringChunk, _m, "StringChunk");
-const _SQL = class _SQL {
-  constructor(queryChunks) {
-    /** @internal */
-    __publicField(this, "decoder", noopDecoder);
-    __publicField(this, "shouldInlineParams", false);
-    this.queryChunks = queryChunks;
-  }
-  append(query) {
-    this.queryChunks.push(...query.queryChunks);
-    return this;
-  }
-  toQuery(config) {
-    return tracer.startActiveSpan("drizzle.buildSQL", (span) => {
-      const query = this.buildQueryFromSourceParams(this.queryChunks, config);
-      span == null ? void 0 : span.setAttributes({
-        "drizzle.query.text": query.sql,
-        "drizzle.query.params": JSON.stringify(query.params)
-      });
-      return query;
-    });
-  }
-  buildQueryFromSourceParams(chunks, _config) {
-    const config = Object.assign({}, _config, {
-      inlineParams: _config.inlineParams || this.shouldInlineParams,
-      paramStartIndex: _config.paramStartIndex || { value: 0 }
-    });
-    const {
-      escapeName,
-      escapeParam,
-      prepareTyping,
-      inlineParams,
-      paramStartIndex
-    } = config;
-    return mergeQueries(chunks.map((chunk) => {
-      if (is(chunk, StringChunk)) {
-        return { sql: chunk.value.join(""), params: [] };
-      }
-      if (is(chunk, Name)) {
-        return { sql: escapeName(chunk.value), params: [] };
-      }
-      if (chunk === void 0) {
-        return { sql: "", params: [] };
-      }
-      if (Array.isArray(chunk)) {
-        const result = [new StringChunk("(")];
-        for (const [i, p] of chunk.entries()) {
-          result.push(p);
-          if (i < chunk.length - 1) {
-            result.push(new StringChunk(", "));
-          }
-        }
-        result.push(new StringChunk(")"));
-        return this.buildQueryFromSourceParams(result, config);
-      }
-      if (is(chunk, _SQL)) {
-        return this.buildQueryFromSourceParams(chunk.queryChunks, {
-          ...config,
-          inlineParams: inlineParams || chunk.shouldInlineParams
-        });
-      }
-      if (is(chunk, Table)) {
-        const schemaName = chunk[Table.Symbol.Schema];
-        const tableName = chunk[Table.Symbol.Name];
-        return {
-          sql: schemaName === void 0 ? escapeName(tableName) : escapeName(schemaName) + "." + escapeName(tableName),
-          params: []
-        };
-      }
-      if (is(chunk, Column)) {
-        return { sql: escapeName(chunk.table[Table.Symbol.Name]) + "." + escapeName(chunk.name), params: [] };
-      }
-      if (is(chunk, View)) {
-        const schemaName = chunk[ViewBaseConfig].schema;
-        const viewName = chunk[ViewBaseConfig].name;
-        return {
-          sql: schemaName === void 0 ? escapeName(viewName) : escapeName(schemaName) + "." + escapeName(viewName),
-          params: []
-        };
-      }
-      if (is(chunk, Param)) {
-        const mappedValue = chunk.value === null ? null : chunk.encoder.mapToDriverValue(chunk.value);
-        if (is(mappedValue, _SQL)) {
-          return this.buildQueryFromSourceParams([mappedValue], config);
-        }
-        if (inlineParams) {
-          return { sql: this.mapInlineParam(mappedValue, config), params: [] };
-        }
-        let typings;
-        if (prepareTyping !== void 0) {
-          typings = [prepareTyping(chunk.encoder)];
-        }
-        return { sql: escapeParam(paramStartIndex.value++, mappedValue), params: [mappedValue], typings };
-      }
-      if (is(chunk, Placeholder)) {
-        return { sql: escapeParam(paramStartIndex.value++, chunk), params: [chunk] };
-      }
-      if (is(chunk, _SQL.Aliased) && chunk.fieldAlias !== void 0) {
-        return { sql: escapeName(chunk.fieldAlias), params: [] };
-      }
-      if (is(chunk, Subquery)) {
-        if (chunk[SubqueryConfig].isWith) {
-          return { sql: escapeName(chunk[SubqueryConfig].alias), params: [] };
-        }
-        return this.buildQueryFromSourceParams([
-          new StringChunk("("),
-          chunk[SubqueryConfig].sql,
-          new StringChunk(") "),
-          new Name(chunk[SubqueryConfig].alias)
-        ], config);
-      }
-      if (isSQLWrapper(chunk)) {
-        return this.buildQueryFromSourceParams([
-          new StringChunk("("),
-          chunk.getSQL(),
-          new StringChunk(")")
-        ], config);
-      }
-      if (inlineParams) {
-        return { sql: this.mapInlineParam(chunk, config), params: [] };
-      }
-      return { sql: escapeParam(paramStartIndex.value++, chunk), params: [chunk] };
-    }));
-  }
-  mapInlineParam(chunk, { escapeString }) {
-    if (chunk === null) {
-      return "null";
-    }
-    if (typeof chunk === "number" || typeof chunk === "boolean") {
-      return chunk.toString();
-    }
-    if (typeof chunk === "string") {
-      return escapeString(chunk);
-    }
-    if (typeof chunk === "object") {
-      const mappedValueAsString = chunk.toString();
-      if (mappedValueAsString === "[object Object]") {
-        return escapeString(JSON.stringify(chunk));
-      }
-      return escapeString(mappedValueAsString);
-    }
-    throw new Error("Unexpected param value: " + chunk);
-  }
-  getSQL() {
-    return this;
-  }
-  as(alias) {
-    if (alias === void 0) {
-      return this;
-    }
-    return new _SQL.Aliased(this, alias);
-  }
-  mapWith(decoder) {
-    this.decoder = typeof decoder === "function" ? { mapFromDriverValue: decoder } : decoder;
-    return this;
-  }
-  inlineParams() {
-    this.shouldInlineParams = true;
-    return this;
-  }
-};
-_n = entityKind;
-__publicField(_SQL, _n, "SQL");
-let SQL = _SQL;
-class Name {
-  constructor(value) {
-    __publicField(this, "brand");
-    this.value = value;
-  }
-  getSQL() {
-    return new SQL([this]);
-  }
-}
-_o = entityKind;
-__publicField(Name, _o, "Name");
-const noopDecoder = {
-  mapFromDriverValue: (value) => value
-};
-const noopEncoder = {
-  mapToDriverValue: (value) => value
-};
-({
-  ...noopDecoder,
-  ...noopEncoder
-});
-class Param {
-  /**
-   * @param value - Parameter value
-   * @param encoder - Encoder to convert the value to a driver parameter
-   */
-  constructor(value, encoder = noopEncoder) {
-    __publicField(this, "brand");
-    this.value = value;
-    this.encoder = encoder;
-  }
-  getSQL() {
-    return new SQL([this]);
-  }
-}
-_p = entityKind;
-__publicField(Param, _p, "Param");
-function sql(strings, ...params2) {
-  const queryChunks = [];
-  if (params2.length > 0 || strings.length > 0 && strings[0] !== "") {
-    queryChunks.push(new StringChunk(strings[0]));
-  }
-  for (const [paramIndex, param2] of params2.entries()) {
-    queryChunks.push(param2, new StringChunk(strings[paramIndex + 1]));
-  }
-  return new SQL(queryChunks);
-}
-((sql2) => {
-  function empty() {
-    return new SQL([]);
-  }
-  sql2.empty = empty;
-  function fromList(list) {
-    return new SQL(list);
-  }
-  sql2.fromList = fromList;
-  function raw(str) {
-    return new SQL([new StringChunk(str)]);
-  }
-  sql2.raw = raw;
-  function join(chunks, separator) {
-    const result = [];
-    for (const [i, chunk] of chunks.entries()) {
-      if (i > 0 && separator !== void 0) {
-        result.push(separator);
-      }
-      result.push(chunk);
-    }
-    return new SQL(result);
-  }
-  sql2.join = join;
-  function identifier(value) {
-    return new Name(value);
-  }
-  sql2.identifier = identifier;
-  function placeholder2(name2) {
-    return new Placeholder(name2);
-  }
-  sql2.placeholder = placeholder2;
-  function param2(value, encoder) {
-    return new Param(value, encoder);
-  }
-  sql2.param = param2;
-})(sql || (sql = {}));
-((SQL2) => {
-  var _a2;
-  const _Aliased = class _Aliased {
-    constructor(sql2, fieldAlias) {
-      /** @internal */
-      __publicField(this, "isSelectionField", false);
-      this.sql = sql2;
-      this.fieldAlias = fieldAlias;
-    }
-    getSQL() {
-      return this.sql;
-    }
-    /** @internal */
-    clone() {
-      return new _Aliased(this.sql, this.fieldAlias);
-    }
-  };
-  _a2 = entityKind;
-  __publicField(_Aliased, _a2, "SQL.Aliased");
-  let Aliased = _Aliased;
-  SQL2.Aliased = Aliased;
-})(SQL || (SQL = {}));
-class Placeholder {
-  constructor(name2) {
-    this.name = name2;
-  }
-  getSQL() {
-    return new SQL([this]);
-  }
-}
-_q = entityKind;
-__publicField(Placeholder, _q, "Placeholder");
-class View {
-  constructor({ name: name2, schema, selectedFields, query }) {
-    /** @internal */
-    __publicField(this, _s);
-    this[ViewBaseConfig] = {
-      name: name2,
-      originalName: name2,
-      schema,
-      selectedFields,
-      query,
-      isExisting: !query,
-      isAlias: false
-    };
-  }
-  getSQL() {
-    return new SQL([this]);
-  }
-}
-_r = entityKind, _s = ViewBaseConfig;
-__publicField(View, _r, "View");
-Column.prototype.getSQL = function() {
-  return new SQL([this]);
-};
-Table.prototype.getSQL = function() {
-  return new SQL([this]);
-};
-Subquery.prototype.getSQL = function() {
-  return new SQL([this]);
-};
-class ColumnBuilder {
-  constructor(name, dataType, columnType) {
-    __publicField(this, "config");
-    /**
-     * Alias for {@link $defaultFn}.
-     */
-    __publicField(this, "$default", this.$defaultFn);
-    this.config = {
-      name,
-      notNull: false,
-      default: void 0,
-      hasDefault: false,
-      primaryKey: false,
-      isUnique: false,
-      uniqueName: void 0,
-      uniqueType: void 0,
-      dataType,
-      columnType
-    };
-  }
-  /**
-   * Changes the data type of the column. Commonly used with `json` columns. Also, useful for branded types.
-   *
-   * @example
-   * ```ts
-   * const users = pgTable('users', {
-   * 	id: integer('id').$type<UserId>().primaryKey(),
-   * 	details: json('details').$type<UserDetails>().notNull(),
-   * });
-   * ```
-   */
-  $type() {
-    return this;
-  }
-  /**
-   * Adds a `not null` clause to the column definition.
-   *
-   * Affects the `select` model of the table - columns *without* `not null` will be nullable on select.
-   */
-  notNull() {
-    this.config.notNull = true;
-    return this;
-  }
-  /**
-   * Adds a `default <value>` clause to the column definition.
-   *
-   * Affects the `insert` model of the table - columns *with* `default` are optional on insert.
-   *
-   * If you need to set a dynamic default value, use {@link $defaultFn} instead.
-   */
-  default(value) {
-    this.config.default = value;
-    this.config.hasDefault = true;
-    return this;
-  }
-  /**
-   * Adds a dynamic default value to the column.
-   * The function will be called when the row is inserted, and the returned value will be used as the column value.
-   *
-   * **Note:** This value does not affect the `drizzle-kit` behavior, it is only used at runtime in `drizzle-orm`.
-   */
-  $defaultFn(fn) {
-    this.config.defaultFn = fn;
-    this.config.hasDefault = true;
-    return this;
-  }
-  /**
-   * Adds a `primary key` clause to the column definition. This implicitly makes the column `not null`.
-   *
-   * In SQLite, `integer primary key` implicitly makes the column auto-incrementing.
-   */
-  primaryKey() {
-    this.config.primaryKey = true;
-    this.config.notNull = true;
-    return this;
-  }
-}
-_t = entityKind;
-__publicField(ColumnBuilder, _t, "ColumnBuilder");
-const InlineForeignKeys = Symbol.for("drizzle:PgInlineForeignKeys");
-class PgTable extends Table {
-  constructor() {
-    super(...arguments);
-    /**@internal */
-    __publicField(this, _v, []);
-    /** @internal */
-    __publicField(this, _w);
-  }
-}
-_u = entityKind, _v = InlineForeignKeys, _w = Table.Symbol.ExtraConfigBuilder;
-__publicField(PgTable, _u, "PgTable");
-/** @internal */
-__publicField(PgTable, "Symbol", Object.assign({}, Table.Symbol, {
-  InlineForeignKeys
-}));
-function pgTableWithSchema(name, columns, extraConfig, schema, baseName = name) {
-  const rawTable = new PgTable(name, schema, baseName);
-  const builtColumns = Object.fromEntries(
-    Object.entries(columns).map(([name2, colBuilderBase]) => {
-      const colBuilder = colBuilderBase;
-      const column = colBuilder.build(rawTable);
-      rawTable[InlineForeignKeys].push(...colBuilder.buildForeignKeys(column, rawTable));
-      return [name2, column];
-    })
-  );
-  const table = Object.assign(rawTable, builtColumns);
-  table[Table.Symbol.Columns] = builtColumns;
-  if (extraConfig) {
-    table[PgTable.Symbol.ExtraConfigBuilder] = extraConfig;
-  }
-  return table;
-}
-const pgTable = (name, columns, extraConfig) => {
-  return pgTableWithSchema(name, columns, extraConfig, void 0);
-};
-class ForeignKeyBuilder {
-  constructor(config, actions) {
-    /** @internal */
-    __publicField(this, "reference");
-    /** @internal */
-    __publicField(this, "_onUpdate", "no action");
-    /** @internal */
-    __publicField(this, "_onDelete", "no action");
-    this.reference = () => {
-      const { name, columns, foreignColumns } = config();
-      return { name, columns, foreignTable: foreignColumns[0].table, foreignColumns };
-    };
-    if (actions) {
-      this._onUpdate = actions.onUpdate;
-      this._onDelete = actions.onDelete;
-    }
-  }
-  onUpdate(action) {
-    this._onUpdate = action === void 0 ? "no action" : action;
-    return this;
-  }
-  onDelete(action) {
-    this._onDelete = action === void 0 ? "no action" : action;
-    return this;
-  }
-  /** @internal */
-  build(table) {
-    return new ForeignKey(table, this);
-  }
-}
-_x = entityKind;
-__publicField(ForeignKeyBuilder, _x, "PgForeignKeyBuilder");
-class ForeignKey {
-  constructor(table, builder) {
-    __publicField(this, "reference");
-    __publicField(this, "onUpdate");
-    __publicField(this, "onDelete");
-    this.table = table;
-    this.reference = builder.reference;
-    this.onUpdate = builder._onUpdate;
-    this.onDelete = builder._onDelete;
-  }
-  getName() {
-    const { name, columns, foreignColumns } = this.reference();
-    const columnNames = columns.map((column) => column.name);
-    const foreignColumnNames = foreignColumns.map((column) => column.name);
-    const chunks = [
-      this.table[PgTable.Symbol.Name],
-      ...columnNames,
-      foreignColumns[0].table[PgTable.Symbol.Name],
-      ...foreignColumnNames
-    ];
-    return name ?? `${chunks.join("_")}_fk`;
-  }
-}
-_y = entityKind;
-__publicField(ForeignKey, _y, "PgForeignKey");
-function uniqueKeyName(table, columns) {
-  return `${table[PgTable.Symbol.Name]}_${columns.join("_")}_unique`;
-}
-function parsePgArrayValue(arrayString, startFrom, inQuotes) {
-  for (let i = startFrom; i < arrayString.length; i++) {
-    const char = arrayString[i];
-    if (char === "\\") {
-      i++;
-      continue;
-    }
-    if (char === '"') {
-      return [arrayString.slice(startFrom, i).replace(/\\/g, ""), i + 1];
-    }
-    if (inQuotes) {
-      continue;
-    }
-    if (char === "," || char === "}") {
-      return [arrayString.slice(startFrom, i).replace(/\\/g, ""), i];
-    }
-  }
-  return [arrayString.slice(startFrom).replace(/\\/g, ""), arrayString.length];
-}
-function parsePgNestedArray(arrayString, startFrom = 0) {
-  const result = [];
-  let i = startFrom;
-  let lastCharIsComma = false;
-  while (i < arrayString.length) {
-    const char = arrayString[i];
-    if (char === ",") {
-      if (lastCharIsComma || i === startFrom) {
-        result.push("");
-      }
-      lastCharIsComma = true;
-      i++;
-      continue;
-    }
-    lastCharIsComma = false;
-    if (char === "\\") {
-      i += 2;
-      continue;
-    }
-    if (char === '"') {
-      const [value2, startFrom2] = parsePgArrayValue(arrayString, i + 1, true);
-      result.push(value2);
-      i = startFrom2;
-      continue;
-    }
-    if (char === "}") {
-      return [result, i + 1];
-    }
-    if (char === "{") {
-      const [value2, startFrom2] = parsePgNestedArray(arrayString, i + 1);
-      result.push(value2);
-      i = startFrom2;
-      continue;
-    }
-    const [value, newStartFrom] = parsePgArrayValue(arrayString, i, false);
-    result.push(value);
-    i = newStartFrom;
-  }
-  return [result, i];
-}
-function parsePgArray(arrayString) {
-  const [result] = parsePgNestedArray(arrayString, 1);
-  return result;
-}
-function makePgArray(array) {
-  return `{${array.map((item) => {
-    if (Array.isArray(item)) {
-      return makePgArray(item);
-    }
-    if (typeof item === "string") {
-      return `"${item.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
-    }
-    return `${item}`;
-  }).join(",")}}`;
-}
-class PgColumnBuilder extends ColumnBuilder {
-  constructor() {
-    super(...arguments);
-    __publicField(this, "foreignKeyConfigs", []);
-  }
-  array(size) {
-    return new PgArrayBuilder(this.config.name, this, size);
-  }
-  references(ref, actions = {}) {
-    this.foreignKeyConfigs.push({ ref, actions });
-    return this;
-  }
-  unique(name, config) {
-    this.config.isUnique = true;
-    this.config.uniqueName = name;
-    this.config.uniqueType = config == null ? void 0 : config.nulls;
-    return this;
-  }
-  /** @internal */
-  buildForeignKeys(column, table) {
-    return this.foreignKeyConfigs.map(({ ref, actions }) => {
-      return iife(
-        (ref2, actions2) => {
-          const builder = new ForeignKeyBuilder(() => {
-            const foreignColumn = ref2();
-            return { columns: [column], foreignColumns: [foreignColumn] };
-          });
-          if (actions2.onUpdate) {
-            builder.onUpdate(actions2.onUpdate);
-          }
-          if (actions2.onDelete) {
-            builder.onDelete(actions2.onDelete);
-          }
-          return builder.build(table);
-        },
-        ref,
-        actions
-      );
-    });
-  }
-}
-_z = entityKind;
-__publicField(PgColumnBuilder, _z, "PgColumnBuilder");
-class PgColumn extends Column {
-  constructor(table, config) {
-    if (!config.uniqueName) {
-      config.uniqueName = uniqueKeyName(table, [config.name]);
-    }
-    super(table, config);
-    this.table = table;
-  }
-}
-_A = entityKind;
-__publicField(PgColumn, _A, "PgColumn");
-class PgArrayBuilder extends PgColumnBuilder {
-  constructor(name, baseBuilder, size) {
-    super(name, "array", "PgArray");
-    this.config.baseBuilder = baseBuilder;
-    this.config.size = size;
-  }
-  /** @internal */
-  build(table) {
-    const baseColumn = this.config.baseBuilder.build(table);
-    return new PgArray(
-      table,
-      this.config,
-      baseColumn
-    );
-  }
-}
-_B = entityKind;
-__publicField(PgArrayBuilder, _B, "PgArrayBuilder");
-const _PgArray = class _PgArray extends PgColumn {
-  constructor(table, config, baseColumn, range) {
-    super(table, config);
-    __publicField(this, "size");
-    this.baseColumn = baseColumn;
-    this.range = range;
-    this.size = config.size;
-  }
-  getSQLType() {
-    return `${this.baseColumn.getSQLType()}[${typeof this.size === "number" ? this.size : ""}]`;
-  }
-  mapFromDriverValue(value) {
-    if (typeof value === "string") {
-      value = parsePgArray(value);
-    }
-    return value.map((v) => this.baseColumn.mapFromDriverValue(v));
-  }
-  mapToDriverValue(value, isNestedArray = false) {
-    const a = value.map(
-      (v) => v === null ? null : is(this.baseColumn, _PgArray) ? this.baseColumn.mapToDriverValue(v, true) : this.baseColumn.mapToDriverValue(v)
-    );
-    if (isNestedArray)
-      return a;
-    return makePgArray(a);
-  }
-};
-_C = entityKind;
-__publicField(_PgArray, _C, "PgArray");
-let PgArray = _PgArray;
-class PgBooleanBuilder extends PgColumnBuilder {
-  constructor(name) {
-    super(name, "boolean", "PgBoolean");
-  }
-  /** @internal */
-  build(table) {
-    return new PgBoolean(table, this.config);
-  }
-}
-_D = entityKind;
-__publicField(PgBooleanBuilder, _D, "PgBooleanBuilder");
-class PgBoolean extends PgColumn {
-  getSQLType() {
-    return "boolean";
-  }
-}
-_E = entityKind;
-__publicField(PgBoolean, _E, "PgBoolean");
-function boolean(name) {
-  return new PgBooleanBuilder(name);
-}
-class PgDateColumnBaseBuilder extends PgColumnBuilder {
-  defaultNow() {
-    return this.default(sql`now()`);
-  }
-}
-_F = entityKind;
-__publicField(PgDateColumnBaseBuilder, _F, "PgDateColumnBaseBuilder");
-class PgTextBuilder extends PgColumnBuilder {
-  constructor(name, config) {
-    super(name, "string", "PgText");
-    this.config.enumValues = config.enum;
-  }
-  /** @internal */
-  build(table) {
-    return new PgText(table, this.config);
-  }
-}
-_G = entityKind;
-__publicField(PgTextBuilder, _G, "PgTextBuilder");
-class PgText extends PgColumn {
-  constructor() {
-    super(...arguments);
-    __publicField(this, "enumValues", this.config.enumValues);
-  }
-  getSQLType() {
-    return "text";
-  }
-}
-_H = entityKind;
-__publicField(PgText, _H, "PgText");
-function text(name, config = {}) {
-  return new PgTextBuilder(name, config);
-}
-class PgTimestampBuilder extends PgDateColumnBaseBuilder {
-  constructor(name, withTimezone, precision) {
-    super(name, "date", "PgTimestamp");
-    this.config.withTimezone = withTimezone;
-    this.config.precision = precision;
-  }
-  /** @internal */
-  build(table) {
-    return new PgTimestamp(table, this.config);
-  }
-}
-_I = entityKind;
-__publicField(PgTimestampBuilder, _I, "PgTimestampBuilder");
-class PgTimestamp extends PgColumn {
-  constructor(table, config) {
-    super(table, config);
-    __publicField(this, "withTimezone");
-    __publicField(this, "precision");
-    __publicField(this, "mapFromDriverValue", (value) => {
-      return new Date(this.withTimezone ? value : value + "+0000");
-    });
-    __publicField(this, "mapToDriverValue", (value) => {
-      return this.withTimezone ? value.toUTCString() : value.toISOString();
-    });
-    this.withTimezone = config.withTimezone;
-    this.precision = config.precision;
-  }
-  getSQLType() {
-    const precision = this.precision === void 0 ? "" : ` (${this.precision})`;
-    return `timestamp${precision}${this.withTimezone ? " with time zone" : ""}`;
-  }
-}
-_J = entityKind;
-__publicField(PgTimestamp, _J, "PgTimestamp");
-class PgTimestampStringBuilder extends PgDateColumnBaseBuilder {
-  constructor(name, withTimezone, precision) {
-    super(name, "string", "PgTimestampString");
-    this.config.withTimezone = withTimezone;
-    this.config.precision = precision;
-  }
-  /** @internal */
-  build(table) {
-    return new PgTimestampString(
-      table,
-      this.config
-    );
-  }
-}
-_K = entityKind;
-__publicField(PgTimestampStringBuilder, _K, "PgTimestampStringBuilder");
-class PgTimestampString extends PgColumn {
-  constructor(table, config) {
-    super(table, config);
-    __publicField(this, "withTimezone");
-    __publicField(this, "precision");
-    this.withTimezone = config.withTimezone;
-    this.precision = config.precision;
-  }
-  getSQLType() {
-    const precision = this.precision === void 0 ? "" : `(${this.precision})`;
-    return `timestamp${precision}${this.withTimezone ? " with time zone" : ""}`;
-  }
-}
-_L = entityKind;
-__publicField(PgTimestampString, _L, "PgTimestampString");
-function timestamp(name, config = {}) {
-  if (config.mode === "string") {
-    return new PgTimestampStringBuilder(name, config.withTimezone ?? false, config.precision);
-  }
-  return new PgTimestampBuilder(name, config.withTimezone ?? false, config.precision);
-}
-class PgUUIDBuilder extends PgColumnBuilder {
-  constructor(name) {
-    super(name, "string", "PgUUID");
-  }
-  /**
-   * Adds `default gen_random_uuid()` to the column definition.
-   */
-  defaultRandom() {
-    return this.default(sql`gen_random_uuid()`);
-  }
-  /** @internal */
-  build(table) {
-    return new PgUUID(table, this.config);
-  }
-}
-_M = entityKind;
-__publicField(PgUUIDBuilder, _M, "PgUUIDBuilder");
-class PgUUID extends PgColumn {
-  getSQLType() {
-    return "uuid";
-  }
-}
-_N = entityKind;
-__publicField(PgUUID, _N, "PgUUID");
-function uuid(name) {
-  return new PgUUIDBuilder(name);
-}
-pgTable("rooms", {
-  id: uuid("id").primaryKey().notNull(),
-  name: text("name").notNull(),
-  collectionKey: text("collection_key", {
-    enum: COLLECTION_KEYS
-  }).notNull(),
-  token: text("token"),
-  ySweetUrl: text("y_sweet_url"),
-  publicAccess: text("public_access", { enum: PUBLIC_ACCESS_TYPES }).default("private").notNull(),
-  readAccess: text("read_access").array().notNull(),
-  writeAccess: text("write_access").array().notNull(),
-  adminAccess: text("admin_access").array().notNull(),
-  createdAt: timestamp("created_at", {
-    withTimezone: true,
-    mode: "string"
-  }).defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" }),
-  _deleted: boolean("_deleted").default(false),
-  _ttl: timestamp("_ttl", { withTimezone: true, mode: "string" })
-});
 const create$6 = () => /* @__PURE__ */ new Map();
 const copy = (m) => {
   const r = create$6();
@@ -1443,11 +440,11 @@ let Observable$1 = class Observable {
    * @param {function} f
    */
   once(name, f) {
-    const _f2 = (...args) => {
-      this.off(name, _f2);
+    const _f = (...args) => {
+      this.off(name, _f);
       f(...args);
     };
-    this.on(name, _f2);
+    this.on(name, _f);
   }
   /**
    * @param {N} name
@@ -2126,7 +1123,7 @@ const forEach = (obj, f) => {
 };
 const length$1 = (obj) => keys(obj).length;
 const isEmpty = (obj) => {
-  for (const _k2 in obj) {
+  for (const _k in obj) {
     return false;
   }
   return true;
@@ -5748,7 +4745,7 @@ const insertAttributes = (transaction, parent, currPos, attributes) => {
   }
   return negatedAttributes;
 };
-const insertText = (transaction, parent, currPos, text2, attributes) => {
+const insertText = (transaction, parent, currPos, text, attributes) => {
   currPos.currentAttributes.forEach((_val, key) => {
     if (attributes[key] === void 0) {
       attributes[key] = null;
@@ -5758,10 +4755,10 @@ const insertText = (transaction, parent, currPos, text2, attributes) => {
   const ownClientId = doc.clientID;
   minimizeAttributeChanges(currPos, attributes);
   const negatedAttributes = insertAttributes(transaction, parent, currPos, attributes);
-  const content = text2.constructor === String ? new ContentString(
+  const content = text.constructor === String ? new ContentString(
     /** @type {string} */
-    text2
-  ) : text2 instanceof AbstractType ? new ContentType(text2) : new ContentEmbed(text2);
+    text
+  ) : text instanceof AbstractType ? new ContentType(text) : new ContentEmbed(text);
   let { left, right, index } = currPos;
   if (parent._searchMarker) {
     updateMarkerChanges(parent._searchMarker, currPos.index, content.getLength());
@@ -6284,9 +5281,9 @@ class YText extends AbstractType {
    * @return {YText}
    */
   clone() {
-    const text2 = new YText();
-    text2.applyDelta(this.toDelta());
-    return text2;
+    const text = new YText();
+    text.applyDelta(this.toDelta());
+    return text;
   }
   /**
    * Creates YTextEvent and calls observers.
@@ -6479,8 +5476,8 @@ class YText extends AbstractType {
    *                                    Text.
    * @public
    */
-  insert(index, text2, attributes) {
-    if (text2.length <= 0) {
+  insert(index, text, attributes) {
+    if (text.length <= 0) {
       return;
     }
     const y = this.doc;
@@ -6493,10 +5490,10 @@ class YText extends AbstractType {
             attributes[k] = v;
           });
         }
-        insertText(transaction, this, pos, text2, attributes);
+        insertText(transaction, this, pos, text, attributes);
       });
     } else {
-      this._pending.push(() => this.insert(index, text2, attributes));
+      this._pending.push(() => this.insert(index, text, attributes));
     }
   }
   /**
@@ -7320,9 +6317,9 @@ class YXmlText extends YText {
    * @return {YXmlText}
    */
   clone() {
-    const text2 = new YXmlText();
-    text2.applyDelta(this.toDelta());
-    return text2;
+    const text = new YXmlText();
+    text.applyDelta(this.toDelta());
+    return text;
   }
   /**
    * Creates a Dom Element that mirrors this YXmlText.
@@ -9173,7 +8170,7 @@ const encodeAwarenessUpdate = (awareness, clients, states = awareness.states) =>
 };
 const applyAwarenessUpdate = (awareness, update, origin) => {
   const decoder = createDecoder$1(update);
-  const timestamp2 = getUnixTime$1();
+  const timestamp = getUnixTime$1();
   const added = [];
   const updated = [];
   const filteredUpdated = [];
@@ -9198,7 +8195,7 @@ const applyAwarenessUpdate = (awareness, update, origin) => {
       }
       awareness.meta.set(clientID, {
         clock,
-        lastUpdated: timestamp2
+        lastUpdated: timestamp
       });
       if (clientMeta === void 0 && state !== null) {
         added.push(clientID);
@@ -9578,11 +8575,11 @@ var Observable2 = class {
    * @param {function} f
    */
   once(name, f) {
-    const _f2 = (...args2) => {
-      this.off(name, _f2);
+    const _f = (...args2) => {
+      this.off(name, _f);
       f(...args2);
     };
-    this.on(name, _f2);
+    this.on(name, _f);
   }
   /**
    * @param {N} name
@@ -9847,9 +8844,9 @@ var YSweetProvider = class extends Observable2 {
     }
     awareness.on("update", this._awarenessUpdateHandler);
     this._checkInterval = setInterval(() => {
-      var _a2;
+      var _a;
       if (this.wsconnected && messageReconnectTimeout < getUnixTime() - this.wsLastMessageReceived) {
-        (_a2 = this.ws) == null ? void 0 : _a2.close();
+        (_a = this.ws) == null ? void 0 : _a.close();
       }
     }, messageReconnectTimeout / 10);
     if (connect) {
@@ -10006,10 +9003,10 @@ const extractUserIdLocalPart = (userId) => {
   return userId.split("@")[1].split(":")[0];
 };
 const getDocuments = (_db) => (room) => {
-  var _a2;
+  var _a;
   if (!room)
     throw new Error("no room");
-  const documents = (_a2 = room.ydoc) == null ? void 0 : _a2.getMap("documents");
+  const documents = (_a = room.ydoc) == null ? void 0 : _a.getMap("documents");
   if (!documents)
     throw new Error("no documents");
   return {
@@ -10145,7 +9142,7 @@ const defaultRtcPeers = [
 ];
 class Database extends TypedEventEmitter {
   constructor(optionsPassed) {
-    var _a2, _b2;
+    var _a, _b;
     super();
     __publicField(this, "userId", "");
     __publicField(this, "authServer", "https://eweser.com");
@@ -10194,8 +9191,8 @@ class Database extends TypedEventEmitter {
       return url.toString();
     });
     __publicField(this, "getAccessGrantTokenFromUrl", () => {
-      var _a2;
-      const query = new URLSearchParams(((_a2 = window == null ? void 0 : window.location) == null ? void 0 : _a2.search) ?? "");
+      var _a;
+      const query = new URLSearchParams(((_a = window == null ? void 0 : window.location) == null ? void 0 : _a.search) ?? "");
       const token = query.get("token");
       if (token && typeof token === "string") {
         setLocalAccessGrantToken(token);
@@ -10374,7 +9371,7 @@ class Database extends TypedEventEmitter {
         throw new Error("IndexedDB provider is required");
       }
     }
-    if (((_a2 = options.providers) == null ? void 0 : _a2.length) && ((_b2 = options.providers) == null ? void 0 : _b2.length) === 1 && options.providers[0] === "IndexedDB") {
+    if (((_a = options.providers) == null ? void 0 : _a.length) && ((_b = options.providers) == null ? void 0 : _b.length) === 1 && options.providers[0] === "IndexedDB") {
       this.offlineOnly = true;
     } else {
       if (options == null ? void 0 : options.webRTCPeers) {

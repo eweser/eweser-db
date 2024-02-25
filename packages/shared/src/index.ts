@@ -1,6 +1,4 @@
 export * from './collections';
-export { rooms } from './roomsSchema';
-import type { Room } from './roomsSchema';
 
 export type LoginQueryOptions = {
   redirect: string;
@@ -15,13 +13,21 @@ export type LoginQueryParams = {
   collections: string;
 };
 
-export type ServerRoom = Room &
-  Partial<{
-    token: Room['token'];
-    ySweetUrl: Room['ySweetUrl'];
-    _deleted: Room['_deleted'];
-    _ttl: Room['_ttl'];
-  }>;
+export type ServerRoom = {
+  id: string;
+  name: string;
+  collectionKey: 'notes' | 'flashcards' | 'profiles';
+  token?: string | null;
+  ySweetUrl?: string | null;
+  publicAccess: 'private' | 'read' | 'write';
+  readAccess: string[];
+  writeAccess: string[];
+  adminAccess: string[];
+  createdAt: string;
+  updatedAt: string | null;
+  _deleted?: boolean;
+  _ttl?: string | null;
+};
 
 export type RegistrySyncRequestBody = {
   rooms: ServerRoom[];

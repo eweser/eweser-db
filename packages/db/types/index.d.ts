@@ -66,19 +66,19 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
         webRtcProvider: null;
         ySweetProvider: import("@y-sweet/client").YSweetProvider | null | undefined;
         ydoc: YDoc<import("@eweser/shared").Note> | YDoc<import("@eweser/shared").Flashcard> | YDoc<import("@eweser/shared").Profile>;
-        _deleted: boolean | null;
-        _ttl: string | null;
         id: string;
         name: string;
         collectionKey: "notes" | "flashcards" | "profiles";
-        token: string | null;
-        ySweetUrl: string | null;
+        token?: string | null | undefined;
+        ySweetUrl?: string | null | undefined;
         publicAccess: "private" | "read" | "write";
         readAccess: string[];
         writeAccess: string[];
         adminAccess: string[];
-        createdAt: string | null;
+        createdAt: string;
         updatedAt: string | null;
+        _deleted?: boolean | undefined;
+        _ttl?: string | null | undefined;
     }>;
     loadRooms: (rooms: Registry) => Promise<void>;
     getDocuments: <T extends Document>(room: Room<T>) => {

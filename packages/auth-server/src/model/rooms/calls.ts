@@ -1,5 +1,5 @@
 import { db } from '../../services/database';
-import { and, arrayOverlaps, eq, inArray, or } from 'drizzle-orm';
+import { and, arrayOverlaps, eq, inArray, isNull, ne, or } from 'drizzle-orm';
 import type { Room } from './schema';
 import { rooms } from './schema';
 import type { RoomInsert, RoomUpdate } from './validation';
@@ -161,7 +161,7 @@ export async function getRoomsFromAccessGrant(
       .where(
         and(
           arrayOverlaps(rooms.writeAccess, [ownerId]),
-          eq(rooms._deleted, false)
+          or(isNull(rooms._deleted), ne(rooms._deleted, true))
         )
       );
   } else {
@@ -171,7 +171,7 @@ export async function getRoomsFromAccessGrant(
       .where(
         and(
           arrayOverlaps(rooms.writeAccess, [ownerId]),
-          eq(rooms._deleted, false),
+          or(isNull(rooms._deleted), ne(rooms._deleted, true)),
           or(
             inArray(rooms.id, grantRoomIds),
             inArray(rooms.collectionKey, collectionsWithoutAll)
