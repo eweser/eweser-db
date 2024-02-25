@@ -8,6 +8,7 @@ import type { LoginQueryParams } from '@eweser/shared';
 import { getSessionUser } from '../modules/account/get-session-user';
 import { validateLoginQueryOptions } from '../shared/utils';
 import { redirect } from 'next/navigation';
+import { AUTH_SERVER_URL } from '../shared/constants';
 
 export const metadata: Metadata = {
   title: siteConfig.pageName('Login'),
@@ -24,7 +25,7 @@ export default async function AuthenticationPage({
     searchParams && validateLoginQueryOptions(searchParams);
 
   if (validLoginQueryOptions && user) {
-    const redirectUrl = new URL('/access-grant/permission');
+    const redirectUrl = new URL(AUTH_SERVER_URL + '/access-grant/permission');
     Object.entries(searchParams).forEach(([key, value]) => {
       redirectUrl.searchParams.append(key, value);
     });
