@@ -1,33 +1,42 @@
 'use client';
+import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { Room } from '../../../model/rooms/schema';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '../library/accordion';
-import { Checkbox } from '../library/checkbox';
-import type { LoginQueryOptions } from '@eweser/shared';
+import { COLLECTION_KEYS, type LoginQueryOptions } from '@eweser/shared';
 import { submitPermissionsChange } from '../../../app/access-grant/permission/actions';
 import { Button } from '../library/button';
+import Small from '../library/typography-small';
+import Muted from '../library/typography-muted';
+import H3 from '../library/typography-h3';
+import { Input } from '../library/input';
+import { PermissionFormAccordion } from './permission-form-accordion';
 
-export default function PermissionForm({
-  redirect,
-  domain,
-  collections,
-  userId,
-}: LoginQueryOptions & {
+const isRequestingAll = (collections: LoginQueryOptions['collections']) =>
+  collections.includes('all');
+
+export type PermissionFormProps = LoginQueryOptions & {
   userId: string;
   rooms: Room[];
-}) {
-  const [selectedCollections, _setSelectedCollections] =
-    useState<LoginQueryOptions['collections']>(collections);
-  const [selectedRoomIds, _setSelectedRoomIds] = useState<string[]>();
-  const [keepAliveDays, _setKeepAliveDays] = useState<number>(1);
+};
 
-  const handleSubmit = async () => {
+export default function PermissionForm(props: PermissionFormProps) {
+  const { redirect, domain, collections, userId, rooms } = props;
+  const [requestingAll, setRequestingAll] = useState<boolean>(
+    isRequestingAll(collections)
+  );
+  const [selectedCollections, setSelectedCollections] = useState<
+    LoginQueryOptions['collections']
+  >(isRequestingAll(collections) ? ['all'] : collections);
+
+  const [selectedRoomIds, setSelectedRoomIds] = useState<string[]>([]);
+  const [keepAliveDays, setKeepAliveDays] = useState<number>(1);
+
+  const collectionKeys = Array.from(
+    new Set(rooms.map((room) => room.collectionKey).concat(COLLECTION_KEYS)) // get the hardcoded ones and ones listed in the db
+  );
+
+  const handleSubmit = useCallback(async () => {
     const redirectUrl = await submitPermissionsChange(
       {
         domain,
@@ -39,20 +48,81 @@ export default function PermissionForm({
       redirect
     );
     window.location.href = redirectUrl;
+  }, [
+    domain,
+    redirect,
+    selectedCollections,
+    selectedRoomIds,
+    userId,
+    keepAliveDays,
+  ]);
+
+  const handleDeny = () => {
+    window.location.href = `${redirect}?error=denied`;
   };
+
   return (
-    <>
-      <Accordion type="single" collapsible>
-        <AccordionItem value="item-1">
-          <AccordionTrigger>
-            <Checkbox></Checkbox>
-          </AccordionTrigger>
-          <AccordionContent>
-            Yes. It adheres to the WAI-ARIA design pattern.
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-      <Button onClick={handleSubmit}>Approve</Button>
-    </>
+    <div>
+      <div className="flex justify-end pb-4 items-center space-x-4">
+        <PermissionFormAccordion
+          {...props}
+          collectionKeys={collectionKeys}
+          requestingAll={requestingAll}
+          setRequestingAll={setRequestingAll}
+          selectedCollections={selectedCollections}
+          setSelectedCollections={setSelectedCollections}
+          selectedRoomIds={selectedRoomIds}
+          setSelectedRoomIds={setSelectedRoomIds}
+        />
+
+        <label htmlFor="keep-alive-days">Cancel grant if inactive for</label>
+        <Input
+          id="keep-alive-days"
+          type="number"
+          value={keepAliveDays}
+          className="w-16"
+          onChange={(e) => setKeepAliveDays(parseInt(e.target.value, 10))}
+        />
+        <Muted className="inline">day(s)</Muted>
+      </div>
+
+      <div className="border border-red-500 dark:border-red-300 rounded p-6 space-y-4">
+        <div className="flex items-baseline text-red-500 dark:text-red-300">
+          <ExclamationTriangleIcon />
+          <H3 className="ml-2">Do you trust this app?</H3>
+        </div>
+        <p>
+          <Small>
+            This app will have full read and write access to the folders
+            you&apos;ve checked above.
+          </Small>
+        </p>
+        <p>
+          <Small>
+            {`When you click 'Approve' you will be redirected back to the app's page. Make sure this redirect URL looks correct: ${redirect}`}
+          </Small>
+        </p>
+        <div className="flex justify-end space-x-4">
+          <Button variant="outline" onClick={handleDeny}>
+            Deny
+          </Button>
+          <Button onClick={handleSubmit}>Approve</Button>
+        </div>
+      </div>
+      <div className="space-y-6 mt-10">
+        <p>
+          <Muted>
+            * Checking &quot;All folders&quot; will also give access to any
+            future created folders in any collection
+          </Muted>
+        </p>
+        <p>
+          <Muted>
+            ** Checking &quot;All Collection&quot; will also give access to any
+            future created folders in that collection
+          </Muted>
+        </p>
+      </div>
+    </div>
   );
 }

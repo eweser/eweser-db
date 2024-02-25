@@ -43,7 +43,13 @@ export default async function GrantPermissionsPage({
             is requesting permission to access these folders in your database
           </Small>
 
-          {validParams && <PermissionForm {...validParams} rooms={rooms} />}
+          {validParams ? (
+            <PermissionForm userId={user.id} {...validParams} rooms={rooms} />
+          ) : (
+            <div className="border border-red-400 p-4">
+              <p>Invalid request</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
