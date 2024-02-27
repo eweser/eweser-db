@@ -13,7 +13,6 @@ export async function POST(request: Request) {
 
   // TODO: add validation
   const { rooms } = (await request.json()) as RegistrySyncRequestBody;
-
   const { rooms: newRooms, token: newToken } = await syncRoomsWithClient(
     token,
     rooms
@@ -22,3 +21,7 @@ export async function POST(request: Request) {
 
   return Response.json(response);
 }
+
+export const OPTIONS = () => {
+  return new Response('ok', { status: 200 });
+};
