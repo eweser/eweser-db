@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import type { Database, Room } from '@eweser/db';
 import { styles } from './styles';
 import { LoginButton } from './LoginButton';
