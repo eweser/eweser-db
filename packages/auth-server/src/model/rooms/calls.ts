@@ -54,6 +54,9 @@ export async function insertRooms(
   instance?: DBInstance
 ) {
   return await db(instance).transaction(async (dbInstance) => {
+    if (inserts.length === 0) {
+      return [];
+    }
     const usersRooms =
       (
         await db()
