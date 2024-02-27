@@ -15,15 +15,13 @@ type UserAuthFormProps = ComponentPropsWithoutRef<'div'> &
     className?: string;
   };
 
-// if LoginQueryOptions are defined, then redirect to the access permissions page after login.
-
 export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const [isSignup, setIsSignup] = useState<boolean>(true);
 
   const toggleSignup = () => setIsSignup((prev) => !prev);
-
+  // if LoginQueryOptions are defined, set the redirect info into the localhost, and then from the /home page, redirect to the access permissions page.
   return (
     <div className={cn('grid gap-6', className)} {...props}>
       <div className="flex flex-col space-y-2 text-center">
