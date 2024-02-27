@@ -7,11 +7,11 @@ export type Options = Omit<RequestInit, 'body'> & {
 export const serverFetch =
   (_db: Database) =>
   async <ReturnType extends object>(path: string, _options?: Options) => {
+    const options = {
+      ..._options,
+    };
     try {
       const token = _db.getToken();
-      const options = {
-        ..._options,
-      };
       if (token) {
         options.headers = {
           ...options.headers,
@@ -24,9 +24,10 @@ export const serverFetch =
           ...options.headers,
           'Content-Type': 'application/json',
         };
+        options.referrer = 'no-referrer';
       }
 
-      const resultRaw = await fetch(`${_db.authServer}${path}`);
+      const resultRaw = await fetch(`${_db.authServer}${path}`, options);
       const data = (await resultRaw.json()) as ReturnType;
       if (!data || typeof data !== 'object') {
         throw new Error('No data returned');
@@ -36,7 +37,7 @@ export const serverFetch =
       }
       return { error: null, data };
     } catch (error) {
-      _db.error('serverFetch error', path, _options, error);
+      _db.error('serverFetch error', path, options, error);
       return { error: error as Error, data: null };
     }
   };
