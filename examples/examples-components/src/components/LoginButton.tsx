@@ -2,8 +2,22 @@ import { EweserIcon } from './EweserIcon';
 import { useHover } from './helpers';
 import { styles } from './styles';
 
-export const LoginButton = ({ loginUrl }: { loginUrl: string }) => {
+export const LoginButton = ({
+  loginUrl,
+  size = 'small',
+}: {
+  loginUrl: string;
+  size?: 'small' | 'large';
+}) => {
   const style = useHover(styles.loginButtonHover, styles.loginButton);
+  const textStyle =
+    size === 'small' ? styles.loginButtonTextSmall : styles.loginButtonText;
+  const logoSize = size === 'small' ? 25 : 35;
+  const logoSizing = {
+    width: logoSize,
+    height: logoSize,
+  };
+  const loginButtonText = size === 'small' ? 'Login' : 'Login with Eweser';
   return (
     <a
       href={loginUrl}
@@ -12,8 +26,8 @@ export const LoginButton = ({ loginUrl }: { loginUrl: string }) => {
       }}
     >
       <button {...style}>
-        <p>Login</p>
-        <EweserIcon width={30} height={40} />
+        <p style={textStyle}>{loginButtonText}</p>
+        <EweserIcon {...logoSizing} />
       </button>
     </a>
   );

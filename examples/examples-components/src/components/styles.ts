@@ -46,6 +46,11 @@ const statusBar: CSSProperties = {
   color: 'rgb(82 82 82)',
   display: 'flex',
   justifyContent: 'space-between',
+  alignContent: 'center',
+};
+const statusBarMessage: CSSProperties = {
+  fontSize: '0.7rem',
+  marginTop: 'auto',
 };
 const modal: CSSProperties = {
   position: 'fixed',
@@ -88,10 +93,23 @@ const loginButton: CSSProperties = {
   color: 'hsl(21.75 34.78% 45.1%)',
   cursor: 'pointer',
   display: 'flex',
+  alignItems: 'center',
 };
 const loginButtonHover: CSSProperties = {
   ...loginButton,
   color: 'hsl(21.75 34.78% 55.1%)',
+};
+
+const loginButtonText: CSSProperties = {
+  fontSize: '1.5rem',
+  fontWeight: 'bold',
+  marginRight: '1rem',
+};
+
+const loginButtonTextSmall: CSSProperties = {
+  fontSize: '1rem',
+  fontWeight: 'bold',
+  marginRight: '.7rem',
 };
 
 export const styles = {
@@ -102,10 +120,13 @@ export const styles = {
   login,
   deleteButton,
   statusBar,
+  statusBarMessage,
   modal,
   modalContent,
   modalCloseButton,
   borderedCard,
   loginButton,
   loginButtonHover,
+  loginButtonText,
+  loginButtonTextSmall,
 };

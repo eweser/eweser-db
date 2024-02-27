@@ -258,6 +258,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
           ySweetProvider = provider;
           ydoc = provider.doc as YDoc<any>;
           provider.on('status', (status: any) => {
+            this.emit('roomConnectionChange', existingRoom, status);
             this.debug('ySweetProvider status', status);
           });
           provider.on('sync', (synced: any) => {
