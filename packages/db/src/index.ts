@@ -192,6 +192,9 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
       token: this.getToken() ?? '',
       rooms: this.registry,
     };
+    if (!body.token) {
+      return false;
+    }
 
     const { data: syncResult } =
       await this.serverFetch<RegistrySyncRequestBody>(
