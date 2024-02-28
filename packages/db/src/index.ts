@@ -15,7 +15,7 @@ import type {
   ServerRoom,
 } from '@eweser/shared';
 
-import { collectionKeys } from '@eweser/shared';
+import { collectionKeys, loginOptionsToQueryParams } from '@eweser/shared';
 import { initializeDocAndLocalProvider } from './utils/connection/initializeDoc';
 import { createYjsProvider } from '@y-sweet/client';
 import type { Doc } from 'yjs';
@@ -101,12 +101,13 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     options: Partial<LoginQueryOptions> & { name: string }
   ): string => {
     const url = new URL(this.authServer);
-    const params: LoginQueryParams = {
+
+    const params: LoginQueryParams = loginOptionsToQueryParams({
       redirect: options?.redirect || window.location.href,
       domain: options?.domain || window.location.host,
-      collections: options?.collections ? options.collections.join('|') : 'all',
+      collections: options?.collections ?? ['all'],
       name: options.name,
-    };
+    });
     Object.entries(params).forEach(([key, value]) => {
       url.searchParams.append(key, value);
     });

@@ -11,6 +11,7 @@ import Muted from '../library/typography-muted';
 import H3 from '../library/typography-h3';
 import { Input } from '../library/input';
 import { PermissionFormAccordion } from './permission-form-accordion';
+import { clearLocalStorageLoginQuery } from '../../utils';
 
 const isRequestingAll = (collections: LoginQueryOptions['collections']) =>
   collections.includes('all');
@@ -37,6 +38,9 @@ export default function PermissionForm(props: PermissionFormProps) {
   );
 
   const handleSubmit = useCallback(async () => {
+    // if the user was redirected to the permissions page, the loginQueryOptions will be set in the localStorage. Clear them so they don't get sent back to this page again on a normal login that isn't from third party app permissions request
+    clearLocalStorageLoginQuery();
+
     const redirectUrl = await submitPermissionsChange(
       {
         domain,

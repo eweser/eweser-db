@@ -389,6 +389,14 @@ var __publicField = (obj, key, value) => {
   }
   const COLLECTION_KEYS = ["notes", "flashcards", "profiles"];
   const collectionKeys = COLLECTION_KEYS.map((key) => key);
+  function loginOptionsToQueryParams({ collections: collections2, ...rest }) {
+    const _collections = collections2.length === 0 ? "all" : collections2.length === 1 ? collections2[0] : collections2.join("|");
+    const params2 = {
+      collections: _collections,
+      ...rest
+    };
+    return params2;
+  }
   const create$6 = () => /* @__PURE__ */ new Map();
   const copy = (m) => {
     const r = create$6();
@@ -9107,11 +9115,11 @@ ${reason}`);
     localStorageSet("access_grant_token", token);
   }
   const serverFetch = (_db) => async (path, _options) => {
+    const options = {
+      ..._options
+    };
     try {
       const token = _db.getToken();
-      const options = {
-        ..._options
-      };
       if (token) {
         options.headers = {
           ...options.headers,
@@ -9124,8 +9132,9 @@ ${reason}`);
           ...options.headers,
           "Content-Type": "application/json"
         };
+        options.referrer = "no-referrer";
       }
-      const resultRaw = await fetch(`${_db.authServer}${path}`);
+      const resultRaw = await fetch(`${_db.authServer}${path}`, options);
       const data = await resultRaw.json();
       if (!data || typeof data !== "object") {
         throw new Error("No data returned");
@@ -9135,7 +9144,7 @@ ${reason}`);
       }
       return { error: null, data };
     } catch (error) {
-      _db.error("serverFetch error", path, _options, error);
+      _db.error("serverFetch error", path, options, error);
       return { error, data: null };
     }
   };
@@ -9184,12 +9193,12 @@ ${reason}`);
        */
       __publicField(this, "generateLoginUrl", (options) => {
         const url = new URL(this.authServer);
-        const params2 = {
+        const params2 = loginOptionsToQueryParams({
           redirect: (options == null ? void 0 : options.redirect) || window.location.href,
           domain: (options == null ? void 0 : options.domain) || window.location.host,
-          collections: (options == null ? void 0 : options.collections) ? options.collections.join("|") : "all",
+          collections: (options == null ? void 0 : options.collections) ?? ["all"],
           name: options.name
-        };
+        });
         Object.entries(params2).forEach(([key, value]) => {
           url.searchParams.append(key, value);
         });
@@ -9263,6 +9272,9 @@ ${reason}`);
           token: this.getToken() ?? "",
           rooms: this.registry
         };
+        if (!body.token) {
+          return false;
+        }
         const { data: syncResult } = await this.serverFetch(
           "/access-grant/sync-registry",
           { method: "POST", body }
@@ -9313,6 +9325,7 @@ ${reason}`);
               ySweetProvider = provider;
               ydoc = provider.doc;
               provider.on("status", (status) => {
+                this.emit("roomConnectionChange", existingRoom, status);
                 this.debug("ySweetProvider status", status);
               });
               provider.on("sync", (synced) => {

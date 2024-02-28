@@ -9,19 +9,30 @@ import OAuthForm from './oauth-form';
 import type { LoginQueryOptions } from '@eweser/shared';
 import type { ComponentPropsWithoutRef } from 'react';
 import { useState } from 'react';
+import { setLocalStorageLoginQuery } from '../../utils';
 
-type UserAuthFormProps = ComponentPropsWithoutRef<'div'> &
-  Partial<LoginQueryOptions> & {
-    className?: string;
-  };
+type UserAuthFormProps = ComponentPropsWithoutRef<'div'> & {
+  className?: string;
+  loginQueryOptions: LoginQueryOptions | null;
+};
 
-export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
+export function UserAuthForm({
+  className,
+  loginQueryOptions,
+  ...props
+}: UserAuthFormProps) {
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const [isSignup, setIsSignup] = useState<boolean>(true);
 
   const toggleSignup = () => setIsSignup((prev) => !prev);
-  // if LoginQueryOptions are defined, set the redirect info into the localhost, and then from the /home page, redirect to the access permissions page.
+  // if LoginQueryOptions are defined, set the redirect info into the localStorage
+  // when login/signup is complete, redirect to the permissions page.
+  // login/signup is completed on the Home page. Or at least that is the first place we can access the frontend to get the localStorage
+  // After submitting the permissions page, clear the localStorage
+  if (loginQueryOptions) {
+    setLocalStorageLoginQuery(loginQueryOptions);
+  }
   return (
     <div className={cn('grid gap-6', className)} {...props}>
       <div className="flex flex-col space-y-2 text-center">

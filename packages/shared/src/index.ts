@@ -1,6 +1,7 @@
 import type { CollectionKey, CollectionKeyOrAll } from './collections';
 
 export * from './collections';
+export * from './utils';
 
 export type LoginQueryOptions = {
   redirect: string;
