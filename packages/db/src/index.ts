@@ -121,6 +121,14 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     if (token && typeof token === 'string') {
       setLocalAccessGrantToken(token);
     }
+    // remove from url
+    if (window?.location?.search) {
+      const url = new URL(window.location.href);
+      for (const key of url.searchParams.keys()) {
+        url.searchParams.delete(key);
+      }
+      window.history.replaceState({}, '', url.toString());
+    }
     return token;
   };
 
@@ -196,7 +204,6 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     if (!body.token) {
       return false;
     }
-
     const { data: syncResult } =
       await this.serverFetch<RegistrySyncRequestBody>(
         '/access-grant/sync-registry',

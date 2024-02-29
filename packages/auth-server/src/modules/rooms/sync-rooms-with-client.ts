@@ -10,6 +10,7 @@ import {
   updateAccessGrant,
 } from '../../model/access_grants';
 import {
+  getRoomById,
   getRoomsFromAccessGrant,
   insertRooms,
   updateRoom,
@@ -17,6 +18,7 @@ import {
 import { db } from '../../services/database';
 import { getOrCreateToken } from '../../services/y-sweet/get-or-create-token';
 import type { RoomInsert } from '../../model/rooms/validation';
+import { AUTH_SERVER_DOMAIN } from '../../shared/constants';
 /**
  * To update:
  * add client created rooms to server `rooms` table. Make a ySweet token for each
@@ -37,6 +39,7 @@ export async function syncRoomsWithClient(token: string, clientRooms: Room[]) {
   if (!userId) {
     throw new Error('Invalid access grant, could not parse user');
   }
+
   const grant = await getAccessGrantById(access_grant_id);
   if (!grant || !grant.isValid) {
     throw new Error('Invalid access grant');
@@ -44,6 +47,8 @@ export async function syncRoomsWithClient(token: string, clientRooms: Room[]) {
 
   const syncResult: { grant: AccessGrant; rooms: Room[] | null } =
     await db().transaction(async (dbInstance) => {
+      // debugger;
+      // bug: room was created but is not showing up here. maybe cause creating the grant failed down the line.
       const serverRooms = await getRoomsFromAccessGrant(grant);
 
       const serverRoomIds = serverRooms.map((r) => r.id);
@@ -56,7 +61,7 @@ export async function syncRoomsWithClient(token: string, clientRooms: Room[]) {
 
       // on the client, but not on the server
       const newClientRoomIds = finalRoomIds.filter(
-        (id) => !clientRoomIds.includes(id)
+        (id) => !serverRoomIds.includes(id)
       );
       const newClientRooms = clientRooms.filter((r) =>
         newClientRoomIds.includes(r.id)
@@ -83,6 +88,39 @@ export async function syncRoomsWithClient(token: string, clientRooms: Room[]) {
       }
       const newClientRoomInserts: RoomInsert[] = [];
       for (const room of newClientRooms) {
+        if (!room.adminAccess.includes(AUTH_SERVER_DOMAIN)) {
+          room.adminAccess.push(AUTH_SERVER_DOMAIN);
+        }
+        if (!room.readAccess.includes(AUTH_SERVER_DOMAIN)) {
+          room.readAccess.push(AUTH_SERVER_DOMAIN);
+        }
+        if (!room.writeAccess.includes(AUTH_SERVER_DOMAIN)) {
+          room.writeAccess.push(AUTH_SERVER_DOMAIN);
+        }
+        if (!room.adminAccess.includes(userId)) {
+          room.adminAccess.push(userId);
+        }
+        if (!room.readAccess.includes(userId)) {
+          room.readAccess.push(userId);
+        }
+        if (!room.writeAccess.includes(userId)) {
+          room.writeAccess.push(userId);
+        }
+        const existingRoom = await getRoomById(room.id);
+        if (existingRoom) {
+          const ySweetToken = existingRoom.token;
+          if (!ySweetToken) {
+            const ySweetToken = await getOrCreateToken(room.id);
+            if (!ySweetToken.token || !ySweetToken.url) {
+              throw new Error(`Could not get token for room ${room.id}`);
+            }
+            await updateRoom(
+              { ...room, token: ySweetToken.token, ySweetUrl: ySweetToken.url },
+              dbInstance
+            );
+          }
+          continue;
+        }
         // generate ySweet tokens for new client rooms to save to server
         const ySweetToken = await getOrCreateToken(room.id);
         if (!ySweetToken.token || !ySweetToken.url) {

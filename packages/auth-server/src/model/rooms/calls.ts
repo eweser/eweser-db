@@ -8,6 +8,11 @@ import type { DBInstance } from '../../services/database/drizzle/init';
 import type { CollectionKey } from '@eweser/db';
 import type { AccessGrant } from '../access_grants';
 
+export async function getRoomById(id: string): Promise<Room | null> {
+  const roomsFound = await db().select().from(rooms).where(eq(rooms.id, id));
+  return roomsFound[0] || null;
+}
+
 export async function getRoomsByIds(ids: string[]): Promise<Room[]> {
   return await db().select().from(rooms).where(inArray(rooms.id, ids));
 }
@@ -69,8 +74,13 @@ export async function insertRooms(
       usersRooms.concat(inserts.map(({ id }) => id)),
       dbInstance
     );
+    const roomInserts = inserts.map(({ id, ...rest }) => ({
+      ...rest,
+      id,
+      _ttl: rest._ttl || null, // provide a default value if _ttl is undefined or an empty string
+    }));
 
-    return dbInstance.insert(rooms).values(inserts).returning();
+    return dbInstance.insert(rooms).values(roomInserts).returning();
   });
 }
 
@@ -157,7 +167,8 @@ export async function getRoomsFromAccessGrant(
   dbInstance?: DBInstance
 ): Promise<Room[]> {
   const { collections, roomIds: grantRoomIds, ownerId } = accessGrant;
-  const allAccess = collections.includes('all');
+  // const allAccess = collections.includes('all');
+  const allAccess = true;
   const collectionsWithoutAll = collections.filter(
     (c) => c !== 'all'
   ) as CollectionKey[];

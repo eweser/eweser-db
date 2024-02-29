@@ -19,16 +19,17 @@ const initialRooms: Registry = [
     collectionKey,
     id: roomId,
     name: 'My Notes on Life and Things',
+    // TODO: helper that fills in this metadata to sensible defaults
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     publicAccess: 'private',
     readAccess: [],
     writeAccess: [],
     adminAccess: [],
-    token: '',
-    ySweetUrl: '',
+    token: null,
+    ySweetUrl: null,
     _deleted: false,
-    _ttl: '',
+    _ttl: null,
   },
 ];
 

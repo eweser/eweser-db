@@ -27,10 +27,8 @@ import {
   SelectValue,
 } from '../library/select';
 import { Badge } from '../library/badge';
-import {
-  getLocalStorageLoginQuery,
-  loginOptionsToPermissionPageUrl,
-} from '../../utils';
+import { loginOptionsToPermissionPageUrl } from '../../utils/frontend-url-utils';
+import { getLocalStorageLoginQuery } from '../../utils/local-storage';
 import { useRouter } from 'next/navigation';
 
 export interface ProfileViewProps {

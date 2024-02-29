@@ -8,7 +8,7 @@ import { getSessionUser } from '../modules/account/get-session-user';
 import { validateLoginQueryOptions } from '../shared/utils';
 import { redirect } from 'next/navigation';
 import LandingPageHero from '../frontend/components/landing-page-hero';
-import { loginOptionsToPermissionPageUrl } from '../frontend/utils';
+import { loginOptionsToPermissionPageUrl } from '../frontend/utils/frontend-url-utils';
 
 export const metadata: Metadata = {
   title: siteConfig.pageName('Login'),

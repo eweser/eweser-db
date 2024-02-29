@@ -9205,11 +9205,18 @@ ${reason}`);
         return url.toString();
       });
       __publicField(this, "getAccessGrantTokenFromUrl", () => {
-        var _a;
+        var _a, _b;
         const query = new URLSearchParams(((_a = window == null ? void 0 : window.location) == null ? void 0 : _a.search) ?? "");
         const token = query.get("token");
         if (token && typeof token === "string") {
           setLocalAccessGrantToken(token);
+        }
+        if ((_b = window == null ? void 0 : window.location) == null ? void 0 : _b.search) {
+          const url = new URL(window.location.href);
+          for (const key of url.searchParams.keys()) {
+            url.searchParams.delete(key);
+          }
+          window.history.replaceState({}, "", url.toString());
         }
         return token;
       });

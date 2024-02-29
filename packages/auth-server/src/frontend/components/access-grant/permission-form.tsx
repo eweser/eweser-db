@@ -11,7 +11,7 @@ import Muted from '../library/typography-muted';
 import H3 from '../library/typography-h3';
 import { Input } from '../library/input';
 import { PermissionFormAccordion } from './permission-form-accordion';
-import { clearLocalStorageLoginQuery } from '../../utils';
+import { clearLocalStorageLoginQuery } from '../../utils/local-storage';
 
 const isRequestingAll = (collections: LoginQueryOptions['collections']) =>
   collections.includes('all');
@@ -103,7 +103,8 @@ export default function PermissionForm(props: PermissionFormProps) {
         </p>
         <p>
           <Small>
-            {`When you click 'Approve' you will be redirected back to the app's page. Make sure this redirect URL looks correct: ${redirect}`}
+            {`When you click 'Approve' you will be redirected back to the app's page. Make sure this redirect URL looks correct: `}{' '}
+            <p className="underline inline">{redirect.split('?')[0]}</p>
           </Small>
         </p>
         <div className="flex justify-end space-x-4">
