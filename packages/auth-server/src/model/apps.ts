@@ -1,4 +1,5 @@
 import { pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { db } from '../services/database';
 
 export const apps = pgTable('apps', {
   id: uuid('id').primaryKey().notNull(),
@@ -10,3 +11,8 @@ export const apps = pgTable('apps', {
     .defaultNow(),
   domain: text('domain').notNull().unique(),
 });
+
+export async function getAllAppDomains(): Promise<string[]> {
+  const allApps = await db().select({ domain: apps.domain }).from(apps);
+  return allApps.map((app) => app.domain);
+}
