@@ -2,15 +2,20 @@
 
 🐑🐑🐑 EweserDB, the user-owned database 🐑🐑🐑
 
-<a href="https://matrix.to/#/#eweser-db:matrix.org"><img alt="Matrix" src="https://img.shields.io/badge/Chat on matrix%20-%23000.svg?&style=for-the-badge&logo=matrix&logoColor=white"/></a>
-
 # A User owned database
 
-`EweserDB`, (pronounced 'user deebee') empowers developers to quickly create a user-owned database that is local-first yet syncs to the cloud
+`EweserDB`, ('Ewe-ser' pronounced 'user') empowers developers to quickly create a user-owned database that is local-first yet syncs to the cloud
 
 > it's like a decentralized 🔥firebase🔥.
 
-It syncs user data to a [Matrix](https://www.matrix.org/) chat room using a [yjs](https://github.com/yjs/yjs) [CRDT](https://crdt.tech/). Builds on the [matrix-crdt](https://github.com/YousefED/Matrix-CRDT) library to provide NoSQL style document database.
+More than that, it lets independent app developers build on top of each other's data and collaborate in real-time.
+
+It syncs user data using a [yjs](https://github.com/yjs/yjs) [CRDT](https://crdt.tech/). Eweser provides the following packages:
+
+- A lightweight database JavaScript client. This is all most developers will need.
+- An authentication server if app developers or power users want to self-host their own homeserver.
+- An 'aggregator' server to provide public data to users. (WIP)
+- A set of example apps that show how to use the database in different ways.
 
 ## Features:
 
@@ -64,39 +69,26 @@ This flipping of the ownership dynamic enables some important features:
 
 `npm install @eweser/db`
 
-Note: You'll probably also need to add some node.js polyfills for the browser, see `packages/example-basic`'s `package.json`, `vite.config.js`, and `index.html` for an example.
-If you encounter an installation error about `@matrix-org/olm`, copy the `.npmrc` file from the root of this repo into your project.
-
 This is a simplified example. For a more use cases and working demos see the example apps like `packages/example-basic/src/App.tsx`
 
 ```tsx
 import { Database } from '@eweser/db';
 import type { Note } from '@eweser/db';
 
-const db = new Database();
+const initialRooms = [
+  {
+    collectionKey: 'notes', // this marks it as a certain schema with strict typing
+    name: 'My Notes on Life and Things',
+  },
+];
 
-const collectionKey = 'notes'; // or use the enum CollectionKey exported from the db package
-const aliasSeed = 'notes-default'; // basically the code-facing 'name' of a room
-const initialRoomConnect = { collectionKey, aliasSeed };
+const db = new Database({ initialRooms });
 
-// If a user has previously logged in, `load` will try to start up the database and connect to the collections provided in the array.
-// If offline, it will open up a local-only database and the user can start interacting with the data immediately. If online, it will also connect the matrix rooms and start syncing.
-db.load([initialRoomConnect]);
-
-db.login({
-  userId: 'user',
-  password: 'password',
-  baseUrl: 'https://matrix.org', // or your own homeserver, or the user's self-hosted homeserver. If using matrix.org, instruct users to signup for an account at https://app.element.io/.
-  initialRoomConnect,
-});
-// ...
-db.on('my-listener', ({ event }) => {
-  if (event === 'started') {
-    // load up the ui and start using the database
-  }
+db.on('roomsLoaded', () => {
+  // .. ready to use in offline mode immediately
 });
 
-const room = db.getRoom<Note>(collectionKey, aliasSeed); // this is a matrix room that stores a collection of note documents which share a `Note` schema.
+const room = db.getRoom<Note>(collectionKey, aliasSeed); // this 'room' is like a folder with a set of access permissions on it and stores a collection of note documents which share a `Note` schema.
 
 // This Notes object provides a set of methods for easily updating the documents in the room. It is a wrapper around the ydoc that is provided by the room.
 const Notes = db.getDocuments(notesRoom);
@@ -106,13 +98,24 @@ Notes.onChange((event) => {
 });
 
 Notes.new({ text: 'hello world' });
+
+// To get data to sync on the cloud, we need to connect to an auth server/homeserver
+const loginUrl = db.generateLoginUrl({ name: 'Basic Example App' }); // use this url to redirect the user to the auth server's login page
+// the user will be sent back with a token in the url
+
+if (
+  db.getToken() // looks for the token in the url or in local storage
+) {
+  db.login();
+}
 ```
 
 That's it! 🚀🚀🚀 You now have a user-owned database that syncs between devices and apps.
 
 Try opening in another browser or device and notice the changes sync.
 Refresh the page and notice the data persists.
-Turn off your internet and notice the data still updates.
+Turn off your internet and notice the data still updates in the browser app.
+Turn it back on and watch the sync propagate to the other device. (TODO: Reimplement log back in on internet connection reestablished)
 
 # Features
 
@@ -122,38 +125,28 @@ See `packages/db/examples/dbShape.ts` for how the data is structured.
 
 Like MongoDB, EweserDB has `document`s and `collection`s. In SQL database terms, collections are like tables and documents like rows. Documents have a strict schema(typescript type). Each collection can have only one schema(document) but as many of those documents as you'd like. See examples of document schemas in the `/collections` folder.
 
-Documents can be linked by reference using the document's `_ref` property. The ref is simply the `<collection>.<roomAlias>.<documentId>` e.g. `flashcards.#roomName~flashcards~@username:matrix.org.doc-id`.
+Documents can be linked by reference using the document's `_ref` property. The ref is simply the `${collection}|${roomId}|${documentId}` e.g. `flashcards.https://eweser.com|uuid.doc-id`.
 Say you wanted to store a reference to a note from a flashcard, you could add the following to the flashcard document:
 
 ```ts
 {
-  note_ref: db.buildRef('notes', 'default', 'note-id'),
+  note_ref: db.buildRef({collectionKey: 'notes', roomId: notesRoom.roomId, docId: noteDocId}),
 }
 ```
 
 ## Rooms
 
-Each `room` corresponds to a Matrix chat room that will be created on the user's Matrix account inside a space called "My Database". Rooms in EweserDB are private (invite-only) and (coming soon) will be fully end to end encrypted by default.
-
-The `registry` is a special collection that stores the addresses(`roomAlias`s) to all of the user's other rooms.
+A `room` could be conceptualized as a 'folder' or 'group' of documents. Each room is a
 
 ## ACL - Access Control, Privacy and Sharing
 
-Building on top of Matrix allows for advanced ACL features right out of the box. All ACL happens on the `room` level. Users can decide which apps or other users have read or write access to which rooms simply by using Matrix's built in privacy control features and by inviting or kicking out other users in the room. This is not entirely implemented yet.
+ACL is handled by the auth server
 
 ## User owned
 
-Matrix is a 'federated' system, working towards 100% user-owned and decentralized. When a user signs up to the DB they must provide a Matrix `homeserver` url. The user's data lives on the home server so at first glance it appears that the server owns the data and this is no different than facebook servers owning/controlling the data.
+First off, the data is local-first, meaning the user always has access to their data even offline, compare this to services like Google Docs where you can't access your data without an internet connection.
 
-The first big difference is that users can sign up using a self-hosted homeserver or a homeserver of their choice that they trust more.
-
-Another key distinction is that with end to end encryption enabled (coming soon), the homeserver cannot read any of the data.
-
-Thirdly, because of Matrix's federated model, users could have a second homeserver that connects to each of their rooms, and their data would be stored on both, decreasing centralized control.
-
-In the future, Matrix has plans to roll out full P2P functionality, which would allow each device to act as its own homeserver.
-
-EweserDB also plans to increase user ownership by making backing up and restoring the user's data easy and automatic. Backups could be through a traditional provider like dropbox or web3 options like IPFS (through [pinata](https://pinata.cloud)) or Ethereum (through [swarm](https://ethersphere.github.io/swarm-home)).
+The cloud persistence of the data is handled by the auth server, so there is a custodial relationship there. However it will be easy for power users to host their own server. Auth servers are federated, meaning a user could share access to their data with another user on a different server.
 
 ## Extending the Database and Collections
 
@@ -176,9 +169,6 @@ This is achieved using 'aggregator' servers. These are public Matrix accounts/se
 ## Limitations
 
 - This project is still in Alpha. It is not ready for production use. Database schema and API are subject to change.
-- [Matrix events size limit](https://github.com/YousefED/Matrix-CRDT/issues/11)
-- [Matrix-crdt e2ee support](https://github.com/YousefED/Matrix-CRDT/pull/17)
-- connecting to rooms can be slow depending on the homeserver, especially the `getRoomIdForAlias` call when the homeserver has many rooms it needs to search through. Because the registry stores the id, the second time a room is connected to it should be faster.
 - Developers should minimize the number of rooms the user has connected to at any given time (current limit is set to 100) and use `db.disconnectRoom()` to disconnect from rooms when they are not needed. Otherwise you might run into an error saying there are too many event listeners.
 
 # Example apps
@@ -186,43 +176,8 @@ This is achieved using 'aggregator' servers. These are public Matrix accounts/se
 ### [Basic Notes App](https://eweser-db-example-basic.netlify.app/)
 
 - dev [url](http://localhost:8000/)
-- view the code at `/packages/example-basic`.
+- view the code at `/examples/example-basic`.
 - E2E test is in `/e2e/cypress/tests/basic.cy.js`
-
-### [Markdown Editor](https://eweser-db-example-editor.netlify.app/)
-
-- This shows how to use a collaborative wysiwyg markdown editor with eweser-db.
-- dev [url](http://localhost:8100/)
-- view the code at `/packages/example-editor`.
-- E2E test is in `/e2e/cypress/tests/editor.cy.js`
-
-### [Multi-room](https://eweser-db-example-editor.netlify.app/)
-
-- This shows how to use eweser-db with multiple Matrix rooms ('folders' or groups of documents).
-- dev [url](http://localhost:8300/)
-- view the code at `/packages/example-multi-room`.
-- E2E test is in `/e2e/cypress/tests/multi-room.cy.js`
-
-### Interoperability - [Notes](https://eweser-db-example-interop-notes.netlify.app/) and [Flashcards](https://eweser-db-example-interop-flashcards.netlify.app/)
-
-- These two apps show how 2 independently developed apps can sync data in the user's database. Use this app to link notes in this app to flashcards in the next flashcards app.
-- dev [url](http://localhost:8400/)
-- dev [url flashcards](http://localhost:8500/)
-- view the code at `/packages/example-interop-notes` and `/packages/example-interop-flashcards`.
-- E2E test is in `/e2e/cypress/tests/interoperability.cy.js`
-
-### Offline first
-
-- This app shows how to let the user first use the app offline without signup up. Then keep their data when the user signs up and connects a Matrix account.
-- dev [url](http://localhost:8600)
-- view the code at `/packages/example-offline-first`.
-- E2E test is in `/e2e/cypress/tests/offline-first.cy.js`
-
-### Public sharing
-
-- This app shows how to share data with a public 'aggregator' that listens to changes in the shared room and serves it publicly. Note that you must also run the aggregator server locally to see the data. See the `packages/aggregator` folder for more info.
-- dev [url](http://localhost:8700)
-- view the code at `/packages/example-public-sharing`.
 
 # Contribute and develop
 
@@ -241,7 +196,7 @@ This is achieved using 'aggregator' servers. These are public Matrix accounts/se
 `npm install`
 `npm run dev`
 
-This will run the example apps in `packages/example-basic` and `packages/example-editor` etc.
+This will run the example apps in `examples/example-basic`
 
 Example apps will be served at the dev urls listed above.
 
@@ -253,13 +208,12 @@ Run e2e tests headless once with `npm run test:e2e`, or with `npm run dev-e2e` t
 
 Priority:
 
-- [ ] **Public data**: set up ‘aggregator’ listeners when a user makes a collection as public. These will be MatrixReader’s that live on a node server and listen for changes to the collection. How to aggregate and serve to public listeners?
-- [ ] **Files:** set up file hosting provider services like Pinata, Dropbox, etc. and give users the option to connect their accounts to the app. Could also try the ‘matrix files’ [library](~https://github.com/matrix-org/matrix-files-sdk~).
-- [ ] **Backups** - user can add storage account (dropbox, pinata, etc) that store snapshots of the database in the file hosting provider.
 - [ ] **Sharing,**: user can invite another to a room and collaborate on the documents within. Can also just be read only
+- [ ] **Public data**: set up ‘aggregator’ listeners when a user makes a collection as public. These will be MatrixReader’s that live on a node server and listen for changes to the collection. How to aggregate and serve to public listeners?
+- [ ] **Files:** set up file hosting provider services like Pinata, Dropbox, etc. and give users the option to connect their accounts to the app.
+- [ ] **Backups** - user can add storage account (dropbox, pinata, etc) that store snapshots of the database in the file hosting provider.
 - [ ] End 2 End **Encryption** — multiple devices?
 - [ ] Versioning strategy for schema/api changes. How to maintain backwards compatibility with older versions of the database.
-- [ ] Per-App **Access control**. Instead of signing in the matrix client as the user, we could instead sign in with a Matrix account provided by the app owner, and then have the use invite that account into each room, specifying read-only or write permissions.
 
 Nice to haves:
 
@@ -268,7 +222,6 @@ Nice to haves:
 - [ ] set up the ‘awareness’ listeners for shared editing.
 - [ ] example of next.js, server-side rendering workarounds
 - [ ] give some instructions on self-hosting.
-- [ ] set up a matrix synapse server so that users can sign up with me instead of matrix.org.
 - [ ] make 2 servers and federate them. Figure out a federation-as-backup strategy for users, for example inviting another of our accounts as a listener to each of your rooms.
 - [ ] “Joins” or aggregation searches across collections. e.g. select all documents in the `notes` collection that have a ref to a document in the `flashcards` collection.
 - [ ] Stress testing. warnings about room or document size limits
