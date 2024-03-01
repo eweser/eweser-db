@@ -33,7 +33,7 @@ export const newDocument = <T extends EweDocument>(
  * @param collection e.g. `'flashcards'` "flashcards"
  * Params must be strings and cannot include `|`
  * @returns `${authServer}|${collectionKey}|${roomId}|${documentId}`
- * @example 'https://eweser.com|flashcards|room-id-uuid|doc-id-uuid'
+ * @example 'https://www.eweser.com|flashcards|room-id-uuid|doc-id-uuid'
  */
 export const buildRef = (params: {
   collectionKey: CollectionKey;

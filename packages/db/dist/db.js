@@ -9226,7 +9226,7 @@ class Database extends TypedEventEmitter {
     var _a, _b;
     super();
     __publicField(this, "userId", "");
-    __publicField(this, "authServer", "https://eweser.com");
+    __publicField(this, "authServer", "https://www.eweser.com");
     __publicField(this, "online", false);
     __publicField(this, "offlineOnly", false);
     /** set to false before `db.loginWithToken()` so that offline-first mode is the default, and it upgrades to online sync after login with token */

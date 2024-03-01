@@ -125,7 +125,7 @@ See `packages/db/examples/dbShape.ts` for how the data is structured.
 
 Like MongoDB, EweserDB has `document`s and `collection`s. In SQL database terms, collections are like tables and documents like rows. Documents have a strict schema(typescript type). Each collection can have only one schema(document) but as many of those documents as you'd like. See examples of document schemas in the `/collections` folder.
 
-Documents can be linked by reference using the document's `_ref` property. The ref is simply the `${collection}|${roomId}|${documentId}` e.g. `flashcards.https://eweser.com|uuid.doc-id`.
+Documents can be linked by reference using the document's `_ref` property. The ref is simply the `${collection}|${roomId}|${documentId}` e.g. `flashcards.https://www.eweser.com|uuid.doc-id`.
 Say you wanted to store a reference to a note from a flashcard, you could add the following to the flashcard document:
 
 ```ts

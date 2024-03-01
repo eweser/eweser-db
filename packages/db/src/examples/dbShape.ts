@@ -16,7 +16,7 @@ const metadata: DocumentBase = {
    * format: <collection_key>.<room_id>.<document_id>
    * room_id includes the auth server url
    */
-  _ref: 'profiles.https://eweser.com|123abc.123abc',
+  _ref: 'profiles.https://www.eweser.com|123abc.123abc',
   _id: '123abc',
   _created: 1653135317729,
   _updated: 1653135317729,
@@ -46,20 +46,20 @@ const myStudyNotesYDoc: { documents: Documents<Note> } = {
     ['0']: {
       text: 'A fact about Typescript',
       ...metadata,
-      _ref: 'notes.https://eweser.com|0.0',
+      _ref: 'notes.https://www.eweser.com|0.0',
       _id: '0',
     },
     ['1']: {
       text: 'Second fact about Typescript',
       ...metadata,
       _id: '0',
-      _ref: 'notes.https://eweser.com|0.1',
+      _ref: 'notes.https://www.eweser.com|0.1',
     },
     ['abc']: {
       text: 'Third fact about Typescript. Uses a string for id',
       ...metadata,
       _id: 'abc',
-      _ref: 'notes.https://eweser.com|0.abc',
+      _ref: 'notes.https://www.eweser.com|0.abc',
     },
   },
 };
@@ -84,13 +84,13 @@ const chineseFlashcardsYDoc: { documents: Documents<Flashcard> } = {
       noteRefs: [
         buildRef({
           collectionKey: 'notes',
-          roomId: 'https://eweser.com|abc123',
+          roomId: 'https://www.eweser.com|abc123',
           documentId: '0',
         }),
       ],
       _ref: buildRef({
         collectionKey: 'flashcards',
-        roomId: 'https://eweser.com|abc123',
+        roomId: 'https://www.eweser.com|abc123',
         documentId: '0',
       }),
       _id: 'noteID',
@@ -107,7 +107,7 @@ export const exampleDb: { collections: Collections } = {
       // Rooms
       ['my_study_notes']: {
         collectionKey: 'notes',
-        roomId: 'https://eweser.com|uuid',
+        roomId: 'https://www.eweser.com|uuid',
         name: 'My Study Notes',
         created: new Date(),
         connectStatus: 'ok',
@@ -120,7 +120,7 @@ export const exampleDb: { collections: Collections } = {
     flashcards: {
       ['typescript_study_cards']: {
         collectionKey: 'flashcards',
-        roomId: 'https://eweser.com|uuid',
+        roomId: 'https://www.eweser.com|uuid',
         name: 'Typescript Study Flashcards',
         connectStatus: 'ok',
         created: new Date(),
@@ -131,7 +131,7 @@ export const exampleDb: { collections: Collections } = {
       },
       ['chinese_flashcards']: {
         collectionKey: 'flashcards',
-        roomId: 'https://eweser.com|uuid',
+        roomId: 'https://www.eweser.com|uuid',
         name: 'Chinese Study Flashcards',
         connectStatus: 'ok',
         created: new Date(),
@@ -144,7 +144,7 @@ export const exampleDb: { collections: Collections } = {
     profiles: {
       ['public']: {
         collectionKey: 'profiles',
-        roomId: 'https://eweser.com|uuid',
+        roomId: 'https://www.eweser.com|uuid',
         name: 'Public Profile',
         connectStatus: 'ok',
         created: new Date(),
@@ -155,7 +155,7 @@ export const exampleDb: { collections: Collections } = {
       },
       ['private']: {
         collectionKey: 'profiles',
-        roomId: 'https://eweser.com|uuid',
+        roomId: 'https://www.eweser.com|uuid',
         name: 'Private Profile',
         connectStatus: 'ok',
         created: new Date(),

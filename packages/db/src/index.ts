@@ -56,7 +56,7 @@ export interface DatabaseOptions {
 
 export class Database extends TypedEventEmitter<DatabaseEvents> {
   userId = '';
-  authServer = 'https://eweser.com';
+  authServer = 'https://www.eweser.com';
   online = false;
   offlineOnly = false;
 
