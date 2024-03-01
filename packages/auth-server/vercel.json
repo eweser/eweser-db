@@ -6,7 +6,7 @@
   },
   "headers": [
     {
-      "source": "/api/(.*)",
+      "source": "/access-grant/(.*)",
       "headers": [
         { "key": "Access-Control-Allow-Credentials", "value": "true" },
         { "key": "Access-Control-Allow-Origin", "value": "*" },
