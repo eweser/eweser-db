@@ -16,7 +16,7 @@ const newNoteButton: CSSProperties = {
   alignSelf: 'flex-start',
   color: 'white',
   background: 'green',
-  boxShadow: '4px 3px 5px 2px darkblue',
+  boxShadow: '5px 2px 5px 2px #2b2b45',
   border: 'none',
   padding: '0.75em',
   marginLeft: '0.5rem',
