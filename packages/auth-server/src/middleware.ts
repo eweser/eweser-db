@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { logger } from './shared/utils';
 import { middlewareClient } from './services/database/supabase/middleware-client-init';
 
@@ -18,6 +19,7 @@ export async function middleware(req: NextRequest) {
       .select('domain');
     if (domains && !error) {
       approvedDomains = domains.map((app) => app.domain);
+      lastFetched = new Date().getTime();
     } else {
       logger(error);
     }
