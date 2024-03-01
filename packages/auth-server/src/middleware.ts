@@ -8,7 +8,9 @@ import { logger } from './shared/utils';
 
 let approvedDomains: string[] = [];
 let lastFetched = new Date().getTime();
-export async function middleware(req: NextRequest, res: NextResponse) {
+export async function middleware(req: NextRequest) {
+  const res = NextResponse.next();
+
   // only refetch the approved domains every 5 minutes
   if (
     approvedDomains.length === 0 ||
@@ -33,8 +35,6 @@ export async function middleware(req: NextRequest, res: NextResponse) {
   const origin = req.headers.get('origin');
   const domain = origin?.split('://')[1];
   const isOriginApproved = domain && approvedDomains.includes(domain);
-
-  const response = NextResponse.next();
 
   if (isOriginApproved) {
     res.headers.set('Access-Control-Allow-Origin', origin);
