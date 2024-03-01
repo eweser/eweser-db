@@ -9499,6 +9499,9 @@ class Database extends TypedEventEmitter {
     }
     this.loadRooms(this.registry);
   }
+  getRooms(collectionKey) {
+    return Object.values(this.collections[collectionKey]);
+  }
 }
 export {
   Database,

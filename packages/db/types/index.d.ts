@@ -1,4 +1,4 @@
-import type { CollectionKey, Collections, DatabaseEvents, EweDocument, ProviderOptions, Registry, Room, YDoc } from './types';
+import type { CollectionKey, Collections, CollectionToDocument, DatabaseEvents, EweDocument, ProviderOptions, Registry, Room, YDoc } from './types';
 import { TypedEventEmitter } from './types';
 import type { LoginQueryOptions, ServerRoom } from '@eweser/shared';
 export * from './utils';
@@ -43,7 +43,10 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
         error: unknown;
         data: null;
     } | {
-        error: null;
+        error: null; /**
+         * 0=debug 1=info, 2=warn, 3=error
+         * @default 2
+         */
         data: ReturnType_1;
     }>;
     /**
@@ -95,6 +98,7 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
         sortByRecent: (docs: import("./types").Documents<T>) => import("./types").Documents<T>;
     };
     getRoom: <T extends EweDocument>(collectionKey: CollectionKey, roomId: string) => Room<T>;
+    getRooms<T extends CollectionKey>(collectionKey: T): Room<CollectionToDocument[T]>[];
     newRoom: <_T extends EweDocument>() => void;
     constructor(optionsPassed?: DatabaseOptions);
 }

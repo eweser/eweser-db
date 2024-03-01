@@ -29,7 +29,7 @@ export type {
 
 export { COLLECTION_KEYS };
 
-type CollectionToDocument = {
+export type CollectionToDocument = {
   notes: Note;
   flashcards: Flashcard;
   profiles: Profile;

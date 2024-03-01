@@ -1,6 +1,7 @@
 import type {
   CollectionKey,
   Collections,
+  CollectionToDocument,
   DatabaseEvents,
   EweDocument,
   ProviderOptions,
@@ -279,6 +280,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
           provider.connect();
         }
       } catch (error) {
+        // TODO: ask the server for a new token
         this.error(error);
       }
     }
@@ -326,6 +328,11 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
   ) => {
     return this.collections[collectionKey][roomId] as Room<T>;
   };
+  getRooms<T extends CollectionKey>(
+    collectionKey: T
+  ): Room<CollectionToDocument[T]>[] {
+    return Object.values(this.collections[collectionKey]);
+  }
   newRoom = <_T extends EweDocument>() => {
     //TODO: implement newRoom
     // remember that new rooms must be added to the registry and then synced with the auth server

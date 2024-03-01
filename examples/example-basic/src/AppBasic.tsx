@@ -12,13 +12,34 @@ import { styles, StatusBar } from '@eweser/examples-components';
 const randomRoomId = uuid();
 const roomId = localStorage.getItem('roomId') || randomRoomId;
 localStorage.setItem('roomId', roomId);
+const userAgent = navigator.userAgent;
+let deviceType = 'Unknown';
+
+if (userAgent.includes('iPhone')) {
+  deviceType = 'iPhone';
+} else if (userAgent.includes('Android')) {
+  deviceType = 'Android';
+} else if (userAgent.includes('Windows')) {
+  deviceType = 'Windows';
+} else if (userAgent.includes('Macintosh')) {
+  deviceType = 'Macintosh';
+}
+
 const collectionKey = 'notes';
 /** A room is a group of documents that all share a common `Collection` type, like Note. Sharing and view permissions can be set on a per room basis */
 const initialRooms: Registry = [
   {
     collectionKey,
     id: roomId,
-    name: 'My Notes on Life and Things',
+    // add something to the room name that will be unique to this device
+    name: `Notes from my ${deviceType} Device, ${new Date().toLocaleString(
+      'en-US',
+      {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      }
+    )}`,
     // TODO: helper that fills in this metadata to sensible defaults
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -77,12 +98,18 @@ const App = () => {
   });
 
   const defaultNotesRoom = db.getRoom<Note>(collectionKey, roomId);
+  const allNotes = db.getRooms('notes').filter((room) => room.id !== roomId);
 
   return (
     <div style={styles.appRoot}>
       {/* You can check that the ydoc exists to make sure the room is connected */}
       {loaded && defaultNotesRoom?.ydoc ? (
-        <NotesInternal notesRoom={defaultNotesRoom} />
+        <>
+          <NotesRoom notesRoom={defaultNotesRoom} />
+          {allNotes.map((notesRoom) => (
+            <NotesRoom key={notesRoom.id} notesRoom={notesRoom} />
+          ))}
+        </>
       ) : (
         // usually loads almost instantaneously, but we need to make sure a yDoc is ready before we can use it
         <>loading...</>
@@ -93,7 +120,7 @@ const App = () => {
   );
 };
 
-const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
+const NotesRoom = ({ notesRoom }: { notesRoom: Room<Note> }) => {
   // This Notes object provides a set of methods for easily updating the documents in the room. It is a wrapper around the ydoc that is provided by the room.
   const Notes = db.getDocuments(notesRoom);
 
@@ -101,9 +128,7 @@ const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
     Notes.sortByRecent(Notes.getUndeleted())
   );
 
-  const [selectedNote, setSelectedNote] = useState(
-    Object.keys(Notes.sortByRecent(Notes.getUndeleted()))[0]
-  );
+  const [selectedNote, setSelectedNote] = useState('');
 
   // listen for changes to the ydoc and update the state
   Notes.onChange((_event) => {
@@ -133,26 +158,31 @@ const NotesInternal = ({ notesRoom }: { notesRoom: Room<Note> }) => {
 
   return (
     <>
-      <h1>Edit</h1>
-      {Object.keys(notes)?.length === 0 ? (
+      <h1>{notesRoom.name}</h1>
+      {Object.keys(notes)?.length === 0 && (
         <div>No notes found. Please create one</div>
-      ) : (
-        <textarea
-          style={styles.editor}
-          name="main-card-editor"
-          value={notes[selectedNote]?.text ?? ''}
-          onChange={(e) => {
-            updateNoteText(e.target.value, notes[selectedNote]);
-          }}
-        />
       )}
-
-      <h1>Notes</h1>
 
       <button onClick={() => createNote()}>New note</button>
 
       <div style={styles.flexWrap}>
         {Object.keys(notes).map((id) => {
+          if (id === selectedNote) {
+            return (
+              <textarea
+                onBlur={() => {
+                  setSelectedNote('');
+                }}
+                key={id}
+                style={styles.card}
+                name="main-card-editor"
+                value={notes[selectedNote]?.text ?? ''}
+                onChange={(e) => {
+                  updateNoteText(e.target.value, notes[selectedNote]);
+                }}
+              />
+            );
+          }
           const note = notes[id];
           if (note && !notes[id]?._deleted)
             return (

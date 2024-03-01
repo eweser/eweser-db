@@ -27,7 +27,6 @@ const flexWrap: CSSProperties = {
   flexWrap: 'wrap',
   columnGap: '1rem',
 };
-const editor: CSSProperties = { width: '90%', minHeight: '150px' };
 const login: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
@@ -116,7 +115,6 @@ export const styles = {
   appRoot,
   card,
   flexWrap,
-  editor,
   login,
   deleteButton,
   statusBar,

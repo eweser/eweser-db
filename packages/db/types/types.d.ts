@@ -8,7 +8,7 @@ import type { YSweetProvider } from '@y-sweet/client';
 export type ProviderOptions = 'WebRTC' | 'YSweet' | 'IndexedDB';
 export type { ServerRoom, EweDocument, CollectionKey, DocumentBase, Note, Flashcard, Profile, };
 export { COLLECTION_KEYS };
-type CollectionToDocument = {
+export type CollectionToDocument = {
     notes: Note;
     flashcards: Flashcard;
     profiles: Profile;

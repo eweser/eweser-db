@@ -9503,6 +9503,9 @@ ${reason}`);
       }
       this.loadRooms(this.registry);
     }
+    getRooms(collectionKey) {
+      return Object.values(this.collections[collectionKey]);
+    }
   }
   exports2.Database = Database;
   exports2.TypedEventEmitter = TypedEventEmitter;
