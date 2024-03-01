@@ -1,5 +1,4 @@
 /// <reference types="vite/client" />
-import nodePolyfills from 'rollup-plugin-polyfill-node';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -9,9 +8,6 @@ export default defineConfig({
 
   build: {
     minify: false,
-    rollupOptions: {
-      plugins: [nodePolyfills()],
-    },
   },
   define: {
     global: 'window',

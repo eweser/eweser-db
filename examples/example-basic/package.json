@@ -1,6 +1,6 @@
 {
   "name": "@eweser/example-basic",
-  "version": "1.8.2",
+  "version": "1.10.0",
   "private": true,
   "description": "eweser-db example mini app using the ydoc directly to make CRUD updates",
   "keywords": [
@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "@eweser/db": "^1.10.0",
-    "@eweser/examples-components": "^1.",
+    "@eweser/examples-components": "^1.10.0",
     "buffer": "^6.0.3",
     "events": "3.3.0",
     "react": "^18.2.0",
@@ -44,10 +44,9 @@
     "@types/react": "^18.0.24",
     "@types/react-dom": "^18.0.8",
     "@types/uuid": "^9.0.8",
-    "@vitejs/plugin-react": "^4.0.0",
+    "@vitejs/plugin-react": "^4.2.1",
     "eslint": "^8.37.0",
-    "rollup-plugin-polyfill-node": "^0.12.0",
     "typescript": "^4.4.4",
-    "vite": "^4.2.0"
+    "vite": "^5.1.4"
   }
 }
