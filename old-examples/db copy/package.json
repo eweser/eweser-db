@@ -1,0 +1,74 @@
+{
+  "name": "@eweser/db-copy",
+  "version": "1.7.0",
+  "description": "eweser-db core database",
+  "keywords": [
+    "user-owned",
+    "crdt",
+    "matrix",
+    "local-first"
+  ],
+  "author": "jacobcoro",
+  "type": "module",
+  "homepage": "https://github.com/jacobcoro/eweserdb",
+  "license": "MIT",
+  "directories": {
+    "src": "src"
+  },
+  "files": [
+    "/dist",
+    "/types"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jacobcoro/eweserdb.git"
+  },
+  "source": "src/index.ts",
+  "types": "types/index.d.ts",
+  "main": "./dist/db.umd.cjs",
+  "module": "./dist/db.js",
+  "exports": {
+    ".": {
+      "import": "./dist/db.js",
+      "require": "./dist/db.umd.cjs",
+      "types": "./types/index.d.ts"
+    }
+  },
+  "scripts": {
+    "test": "vitest --run",
+    "build": "rm -rf dist; rm -rf types; tsc --project tsconfig.build.json && vite build",
+    "typescript-watch": "tsc --watch --project tsconfig.build.json",
+    "vite-build-watch": "vite build --watch",
+    "dev": "run-p vite-build-watch typescript-watch",
+    "clean": "rm -rf dist; rm -rf types",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint --ext .ts,.tsx,.js,.jsx ."
+  },
+  "bugs": {
+    "url": "https://github.com/jacobcoro/eweserdb/issues"
+  },
+  "private": true,
+  "publishConfig": {
+    "access": "restricted"
+  },
+  "devDependencies": {
+    "@eweser/eslint-config-ts": "^1.4.0",
+    "@types/request": "^2.48.8",
+    "eslint": "^8.37.0",
+    "fake-indexeddb": "^4.0.1",
+    "jsdom": "^21.1.1",
+    "npm-run-all": "^4.1.5",
+    "request": "^2.88.2",
+    "typescript": "^4.4.4",
+    "vite": "^4.2.0",
+    "vitest": "^0.29.8"
+  },
+  "gitHead": "6e8c8870a4a7cefbe005a571eb36f2edfcebc6c3",
+  "dependencies": {
+    "y-indexeddb": "^9.0.9",
+    "y-protocols": "^1.0.5",
+    "y-webrtc": "^10.2.5",
+    "yjs": "^13.5.16",
+    "yjs-types": "^0.0.1"
+  }
+}

@@ -1,167 +1,106 @@
-import type { MatrixProvider } from 'matrix-crdt';
-import type { ICreateClientOpts } from 'matrix-js-sdk';
-import type { DocumentBase, Note, Flashcard, Profile } from './collections';
+import { EventEmitter } from 'events';
+import type {
+  DocumentBase,
+  Note,
+  Flashcard,
+  Profile,
+  COLLECTION_KEYS,
+  ServerRoom,
+  EweDocument,
+  CollectionKey,
+} from '@eweser/shared';
 import type { WebrtcProvider } from 'y-webrtc';
 import type { TypedDoc, TypedMap } from 'yjs-types';
-import type { Doc } from 'yjs';
+// import type { Doc } from 'yjs';
 import type { IndexeddbPersistence } from 'y-indexeddb';
+import type { YSweetProvider } from '@y-sweet/client';
 
-export type { DocumentBase, Note, Flashcard as Flashcard, Profile };
+export type ProviderOptions = 'WebRTC' | 'YSweet' | 'IndexedDB';
 
-export enum CollectionKey {
-  notes = 'notes',
-  flashcards = 'flashcards',
-  profiles = 'profiles',
-}
+export type {
+  ServerRoom,
+  EweDocument,
+  CollectionKey,
+  DocumentBase,
+  Note,
+  Flashcard,
+  Profile,
+};
 
-export type UserDocument = Note | Flashcard | Profile;
-export type Document = UserDocument | RegistryData;
+export { COLLECTION_KEYS };
 
-export type DocumentWithoutBase<T extends Document> = Omit<
+type CollectionToDocument = {
+  notes: Note;
+  flashcards: Flashcard;
+  profiles: Profile;
+};
+export const collections: Collections = {
+  notes: {},
+  flashcards: {},
+  profiles: {},
+};
+
+export type DocumentWithoutBase<T extends EweDocument> = Omit<
   T,
   keyof DocumentBase
 >;
 
-export interface Documents<T extends Document> {
+export interface Documents<T extends EweDocument> {
   [documentId: string]: T;
 }
 
-export type YDoc<T extends Document> = TypedDoc<{
+export type YDoc<T extends EweDocument> = TypedDoc<{
   documents: TypedMap<Documents<T>>;
 }>;
 
-export type ConnectStatus =
-  | 'initial'
-  | 'loading'
-  | 'failed'
-  | 'ok'
-  | 'disconnected';
+export type Registry = ServerRoom[];
 
-/** corresponds to a 'room' in Matrix */
-export interface Room<T extends Document> {
-  connectStatus: ConnectStatus;
-  collectionKey: CollectionKey | 'registry';
-  matrixProvider: MatrixProvider | null;
-  webRtcProvider: WebrtcProvider | null;
-  indexeddbProvider: IndexeddbPersistence | null;
-  /** full alias e.g. '#eweser-db_registry_username:matrix.org' */
-  roomAlias: string;
-  /** matrix roomID  */
-  roomId?: string;
-  name?: string;
-  created?: Date;
-  // roomId: string;
+/** adds the ydoc providers ans connection status */
+export interface Room<T extends EweDocument> extends ServerRoom {
+  indexeddbProvider?: IndexeddbPersistence | null;
+  webRtcProvider?: WebrtcProvider | null;
+  ySweetProvider?: YSweetProvider | null;
   ydoc?: YDoc<T>;
-  tempDocs: { [docRef: string]: { doc: Doc; matrixProvider?: MatrixProvider } };
+
+  // connectStatus: ConnectStatus;
+  // tempDocs: { [docRef: string]: { doc: Doc } };
 }
 
-export type Collection<T extends Document> = {
-  [aliasSeed: string]: Room<T>;
+export type Collection<T extends EweDocument> = {
+  [roomId: string]: Room<T>;
 };
 
-export interface RoomMetaData {
-  roomAlias: string;
-  roomName?: string;
-  roomId?: string;
+export type Collections = {
+  [K in CollectionKey]: Collection<CollectionToDocument[K]>;
+};
+
+export type DatabaseEvents = {
+  log: (level: number, ...args: any[]) => void;
+  debug: (...args: any[]) => void;
+  info: (...args: any[]) => void;
+  warn: (...args: any[]) => void;
+  error: (...args: any[]) => void;
+  roomLoaded: (room: Room<any>) => void;
+  roomsLoaded: (rooms: Room<any>[]) => void;
+  roomConnectionChange: (room: Room<any>, status: string) => void;
+};
+
+type EmittedEvents = Record<string | symbol, (...args: any[]) => any>;
+
+export class TypedEventEmitter<
+  Events extends EmittedEvents
+> extends EventEmitter {
+  on<E extends keyof Events>(
+    event: (E & string) | symbol,
+    listener: Events[E]
+  ): this {
+    return super.on(event, listener as any);
+  }
+
+  emit<E extends keyof Events>(
+    event: (E & string) | symbol,
+    ...args: Parameters<Events[E]>
+  ): boolean {
+    return super.emit(event, ...args);
+  }
 }
-
-export type RegistryData = {
-  [key in CollectionKey]: {
-    [roomAlias: string]: RoomMetaData | undefined;
-  };
-};
-
-export type RegistryCollection = {
-  [0]: Room<RegistryData>;
-};
-
-export type OnRoomConnectStatusUpdate = (
-  status: ConnectStatus,
-  collectionKey: CollectionKey,
-  roomId: string
-) => void;
-
-export type OnLoginStatusUpdate = (status: ConnectStatus) => void;
-
-export interface CreateAndConnectRoomOptions<T extends Document> {
-  collectionKey: CollectionKey;
-  /** undecorated alias */
-  aliasSeed: string;
-  name?: string;
-  topic?: string;
-  /** The initial documents can be with or without metadata (_id, _ref, etc.) When loaded, whatever metadata is provided will be filled in */
-  initialValues?: Partial<T>[];
-  doNotAutoReconnect?: boolean;
-  waitForWebRTC?: boolean;
-}
-
-export interface LoginData extends ICreateClientOpts {
-  password?: string;
-  initialRoomConnect?: CreateAndConnectRoomOptions<any>;
-}
-
-export interface Collections {
-  [CollectionKey.notes]: Collection<Note>;
-  [CollectionKey.flashcards]: Collection<Flashcard>;
-  [CollectionKey.profiles]: Collection<Profile>;
-  registry: RegistryCollection;
-}
-
-export type LoginStatus =
-  | 'initial'
-  | 'loading'
-  | 'failed'
-  | 'ok'
-  | 'disconnected';
-
-/**
- * `started` can be for success of login, startup, or load
- *
- * `startFailed` can be for fail of login, startup, or load
- */
-export type DBEventType =
-  | 'login'
-  | 'logout'
-  | 'signup'
-  | 'load'
-  | 'started'
-  | 'startFailed'
-  | 'onlineChange'
-  | 'loginStatus'
-  | 'connectRoom'
-  | 'disconnectRoom'
-  | 'reconnectRoom'
-  | 'createAndConnectRoom'
-  | 'loadRoom'
-  | 'joinRoomIfNotJoined'
-  | 'updateRegistry'
-  | 'connectRegistry'
-  | 'populateRegistry'
-  | 'connectMatrixProvider'
-  | 'getOrCreateSpace'
-  | 'getOrCreateRegistry'
-  | 'getRoomId'
-  | 'createOfflineRoom';
-
-export type DBEvent = {
-  event: DBEventType;
-  level?: 'info' | 'warn' | 'error';
-  message?: string;
-  data?: {
-    collectionKey?: CollectionKey | 'registry';
-    roomId?: string;
-    roomAlias?: string;
-    aliasSeed?: string;
-    id?: string;
-    loginStatus?: LoginStatus;
-    connectStatus?: ConnectStatus;
-    raw?: any;
-    online?: boolean;
-  };
-};
-
-export type DBEventEmitter = (event: DBEvent) => void;
-
-export type DBEventListeners = {
-  [label: string]: DBEventEmitter;
-};

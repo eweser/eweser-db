@@ -21,6 +21,6 @@
     "outDir": "dist",
     "useUnknownInCatchVariables": false
   },
-  "include": ["src"],
+  "include": ["src", "../shared/collections"],
   "exclude": ["src/setupTests.ts"]
 }

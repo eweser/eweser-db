@@ -14,6 +14,7 @@ export default defineConfig({
         //
       ],
     },
+    minify: false, // for now while in development
   },
   test: {
     environment: 'jsdom',

@@ -1,16 +1,16 @@
 import { IndexeddbPersistence } from 'y-indexeddb';
 import { Doc } from 'yjs';
 
-import type { Document, YDoc } from '../../types';
+import type { EweDocument, YDoc } from '../../types';
 
-export const initializeDocAndLocalProvider = async <T extends Document>(
-  aliasSeed: string,
+export const initializeDocAndLocalProvider = async <T extends EweDocument>(
+  roomId: string,
   existingDoc?: YDoc<T>
 ): Promise<{ ydoc: YDoc<T>; localProvider: IndexeddbPersistence }> => {
   const ydoc = existingDoc || (new Doc() as YDoc<T>);
   if (!ydoc) throw new Error('could not create doc');
 
-  const localProvider = new IndexeddbPersistence(aliasSeed, ydoc as Doc);
+  const localProvider = new IndexeddbPersistence(roomId, ydoc as Doc);
   if (localProvider.synced) return { ydoc, localProvider };
 
   const synced = await localProvider.whenSynced;

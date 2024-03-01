@@ -1,0 +1,52 @@
+{
+  "name": "@eweser/example-basic",
+  "version": "1.10.0",
+  "private": true,
+  "description": "eweser-db example mini app using the ydoc directly to make CRUD updates",
+  "keywords": [
+    "user-owned",
+    "crdt",
+    "matrix",
+    "local-first"
+  ],
+  "author": "jacobcoro",
+  "type": "module",
+  "homepage": "https://github.com/jacobcoro/eweserdb",
+  "license": "MIT",
+  "directories": {
+    "src": "src"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jacobcoro/eweserdb.git"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview --host",
+    "clean": "rm -rf dist"
+  },
+  "bugs": {
+    "url": "https://github.com/jacobcoro/eweserdb/issues"
+  },
+  "dependencies": {
+    "@eweser/db": "^1.10.0",
+    "@eweser/examples-components": "^1.10.0",
+    "buffer": "^6.0.3",
+    "events": "3.3.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.10.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@eweser/eslint-config-react-ts": "^1.8.2",
+    "@types/react": "^18.0.24",
+    "@types/react-dom": "^18.0.8",
+    "@types/uuid": "^9.0.8",
+    "@vitejs/plugin-react": "^4.2.1",
+    "eslint": "^8.37.0",
+    "typescript": "^4.4.4",
+    "vite": "^5.1.4"
+  }
+}

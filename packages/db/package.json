@@ -1,16 +1,16 @@
 {
   "name": "@eweser/db",
-  "version": "1.6.2",
+  "version": "1.10.0",
   "description": "eweser-db core database",
   "keywords": [
     "user-owned",
     "crdt",
-    "matrix",
+    "interoperable",
     "local-first"
   ],
   "author": "jacobcoro",
   "type": "module",
-  "homepage": "https://github.com/jacobcoro/eweserdb",
+  "homepage": "https://github.com/eweser/eweserdb",
   "license": "MIT",
   "directories": {
     "src": "src"
@@ -21,7 +21,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jacobcoro/eweserdb.git"
+    "url": "git+https://github.com/eweser/eweserdb.git"
   },
   "source": "src/index.ts",
   "types": "types/index.d.ts",
@@ -36,7 +36,7 @@
   },
   "scripts": {
     "test": "vitest --run",
-    "build": "rm -rf dist; rm -rf types; tsc --project tsconfig.build.json && vite build",
+    "build": "rm -rf dist; rm -rf types; tsc --project tsconfig.build.json && npx vite build",
     "typescript-watch": "tsc --watch --project tsconfig.build.json",
     "vite-build-watch": "vite build --watch",
     "dev": "run-p vite-build-watch typescript-watch",
@@ -45,13 +45,13 @@
     "lint": "eslint --ext .ts,.tsx,.js,.jsx ."
   },
   "bugs": {
-    "url": "https://github.com/jacobcoro/eweserdb/issues"
+    "url": "https://github.com/eweser/eweserdb/issues"
   },
   "publishConfig": {
     "access": "public"
   },
   "devDependencies": {
-    "@eweser/eslint-config-ts": "^1.4.0",
+    "@eweser/eslint-config-ts": "^1.10.0",
     "@types/request": "^2.48.8",
     "eslint": "^8.37.0",
     "fake-indexeddb": "^4.0.1",
@@ -59,18 +59,16 @@
     "npm-run-all": "^4.1.5",
     "request": "^2.88.2",
     "typescript": "^4.4.4",
-    "vite": "^4.2.0",
+    "vite": "^5.1.4",
     "vitest": "^0.29.8"
   },
-  "gitHead": "da7009f0729d7f3e60b30d7d26c85bc67ecb17a5",
+  "gitHead": "d6ee91d84092583f851548fa9ffe8ccf5de5705a",
   "dependencies": {
-    "@matrix-org/olm": "^3.2.14",
-    "matrix-crdt": "0.2.1-alpha.1",
-    "matrix-js-sdk": "^19.4.0",
-    "y-indexeddb": "^9.0.9",
-    "y-protocols": "^1.0.5",
-    "y-webrtc": "^10.2.5",
-    "yjs": "^13.5.16",
+    "@eweser/shared": "^1.10.0",
+    "@y-sweet/client": "^0.1.0",
+    "y-indexeddb": "^9.0.12",
+    "y-webrtc": "^10.3.0",
+    "yjs": "^13.6.12",
     "yjs-types": "^0.0.1"
   }
 }

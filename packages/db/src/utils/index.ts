@@ -3,14 +3,54 @@ import type {
   CollectionKey,
   Room,
   Documents,
-  RegistryData,
-  Document,
+  EweDocument,
+  DocumentWithoutBase,
+  DocumentBase,
 } from '../types';
 import type { Database } from '..';
-import { newEmptyRoom } from './db';
 
-export * from './db';
-export * from './connection';
+/** Sets the metadata like created and updated for the doc */
+export const newDocument = <T extends EweDocument>(
+  _id: string,
+  _ref: string,
+  doc: DocumentWithoutBase<T>
+): T => {
+  const now = new Date().getTime();
+  const base: DocumentBase = {
+    _created: now,
+    _id,
+    _ref,
+    _updated: now,
+    _deleted: false,
+    _ttl: undefined,
+  };
+  // @ts-ignore
+  return { ...base, ...doc };
+};
+
+/**
+ *
+ * @param collection e.g. `'flashcards'` "flashcards"
+ * Params must be strings and cannot include `|`
+ * @returns `${authServer}|${collectionKey}|${roomId}|${documentId}`
+ * @example 'https://eweser.com|flashcards|room-id-uuid|doc-id-uuid'
+ */
+export const buildRef = (params: {
+  collectionKey: CollectionKey;
+  roomId: string;
+  documentId: string | number;
+  authServer: string;
+}) => {
+  Object.entries(params).forEach(([key, param]) => {
+    if (!param) throw new Error(`${key} is required`);
+    if (typeof param !== 'string') throw new Error(`${key} must be a string`);
+    if (param.includes('|')) throw new Error(`${key} cannot include |`);
+  });
+
+  const { collectionKey, roomId, documentId, authServer } = params;
+  // from large to small groupings
+  return `${authServer}|${collectionKey}|${roomId}|${documentId}`;
+};
 
 export const wait = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -20,7 +60,7 @@ export const randomString = (length: number) =>
     .toString(36)
     .substring(2, length + 2);
 
-export function getRoomDocuments<T extends Document>(
+export function getRoomDocuments<T extends EweDocument>(
   room: Room<T>
 ): TypedMap<Documents<T>> {
   if (!room.ydoc) throw new Error('room.ydoc not found');
@@ -28,46 +68,18 @@ export function getRoomDocuments<T extends Document>(
   return registryMap;
 }
 
-/** this in an uneditable version. use getRegistry() then .get('0') for the registry document  */
-export const getCollectionRegistry =
-  (_db: Database) => (collectionKey: CollectionKey) => {
-    const registry = getRegistry(_db);
-    const registryDocument = registry.get('0') as RegistryData;
-    if (!registryDocument) throw new Error('registryDocument not found');
-    const collectionRegistry = registryDocument[collectionKey];
-    if (!collectionRegistry) throw new Error('collectionRegistry not found');
-    return collectionRegistry;
-  };
-
-/** returns an editable YMap of the registry */
-export function getRegistry(_db: Database): TypedMap<Documents<RegistryData>> {
-  const registry = getRoomDocuments<RegistryData>(_db.collections.registry[0]);
-  if (!registry) throw new Error('registry not found');
-  return registry;
-}
-
 export const getRoom =
   (_db: Database) =>
-  <T extends Document>({
+  <T extends EweDocument>({
     collectionKey,
-    aliasSeed,
+    roomId,
   }: {
     collectionKey: CollectionKey;
-    aliasSeed: string;
+    roomId: string;
   }) => {
-    const room = _db.collections[collectionKey][aliasSeed];
+    const room = _db.collections[collectionKey][roomId];
     if (!room) return null;
     return room as Room<T>;
-  };
-
-export const getOrSetRoom =
-  (_db: Database) =>
-  <T extends Document>(collectionKey: CollectionKey, aliasSeed: string) => {
-    const room = _db.getRoom<T>({ collectionKey, aliasSeed });
-    if (room) return room;
-    const newRoom = newEmptyRoom<T>(_db, collectionKey, aliasSeed);
-    _db.collections[collectionKey][aliasSeed] = newRoom as Room<any>;
-    return newRoom;
   };
 
 export const buildFullUserId = (username: string, homeserver: string) => {

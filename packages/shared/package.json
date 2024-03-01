@@ -1,0 +1,42 @@
+{
+  "name": "@eweser/shared",
+  "version": "1.10.0",
+  "description": "shared types and helpers for @eweser/db and other @eweser packages",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "homepage": "https://github.com/eweser/eweserdb",
+  "author": "jacobcoro",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eweser/eweserdb.git"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "/dist",
+    "/types"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./types/index.d.ts"
+    }
+  },
+  "source": "src/index.ts",
+  "types": "./types/index.d.ts",
+  "scripts": {
+    "build": "rm -rf ./dist; rm -rf ./types; tsc",
+    "dev": "tsc -w",
+    "clean": "rm -rf ./dist; rm -rf ./types"
+  },
+  "devDependencies": {
+    "@eweser/eslint-config-ts": "^1.10.0",
+    "request": "^2.88.2",
+    "typescript": "^4.4.4"
+  },
+  "gitHead": "d6ee91d84092583f851548fa9ffe8ccf5de5705a"
+}
