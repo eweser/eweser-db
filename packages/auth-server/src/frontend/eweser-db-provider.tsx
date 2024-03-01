@@ -4,6 +4,7 @@ import type { Room } from '../model/rooms/schema';
 import { Database } from '@eweser/db';
 import React, { createContext, useContext, useMemo, useState } from 'react';
 import { Icons } from './components/library/icons';
+import { AUTH_SERVER_URL } from '../shared/constants';
 
 const DatabaseContext = createContext({ db: {} } as { db: Database });
 
@@ -22,7 +23,7 @@ export const DatabaseProvider = ({
 
   const eweserDB = useMemo(() => {
     return new Database({
-      authServer: 'http://localhost:3000',
+      authServer: AUTH_SERVER_URL,
       logLevel: 0, // log debug events
       initialRooms,
       providers: ['IndexedDB', 'YSweet'],
