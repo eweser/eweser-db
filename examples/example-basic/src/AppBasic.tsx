@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Database } from '@eweser/db';
 import type { Documents, Note, Registry, Room } from '@eweser/db';
 import * as config from './config';
@@ -122,7 +122,7 @@ const App = () => {
 
 const NotesRoom = ({ notesRoom }: { notesRoom: Room<Note> }) => {
   // This Notes object provides a set of methods for easily updating the documents in the room. It is a wrapper around the ydoc that is provided by the room.
-  const Notes = db.getDocuments(notesRoom);
+  const Notes = useMemo(() => db.getDocuments(notesRoom), [notesRoom]);
 
   const [notes, setNotes] = useState<Documents<Note>>(
     Notes.sortByRecent(Notes.getUndeleted())
@@ -130,18 +130,27 @@ const NotesRoom = ({ notesRoom }: { notesRoom: Room<Note> }) => {
 
   const [selectedNote, setSelectedNote] = useState('');
 
+  const newNoteRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    // focus cursor at end of the line when selected
+    if (newNoteRef.current && selectedNote) {
+      newNoteRef.current.focus();
+      const len = newNoteRef.current.value.length;
+      newNoteRef.current.selectionStart = len;
+      newNoteRef.current.selectionEnd = len;
+    }
+  }, [selectedNote]);
+
   // listen for changes to the ydoc and update the state
   Notes.onChange((_event) => {
-    const unDeleted = Notes.sortByRecent(Notes.getUndeleted());
-    setNotes(unDeleted);
-    if (!unDeleted[selectedNote]) {
-      setSelectedNote(Object.keys(unDeleted)[0]);
-    }
+    setNotes(Notes.getUndeleted());
   });
 
   const createNote = () => {
     // Notes.new will fill in the metadata for you, including _id with a random string and _updated with the current timestamp
-    const newNote = Notes.new({ text: 'New Note Body' });
+    const newNote = Notes.new({
+      text: `New note: ${Object.keys(Notes.getUndeleted()).length + 1}`,
+    });
     setSelectedNote(newNote._id);
   };
 
@@ -163,26 +172,12 @@ const NotesRoom = ({ notesRoom }: { notesRoom: Room<Note> }) => {
         <div>No notes found. Please create one</div>
       )}
 
-      <button onClick={() => createNote()}>New note</button>
+      <button style={styles.newNoteButton} onClick={() => createNote()}>
+        New note
+      </button>
 
       <div style={styles.flexWrap}>
         {Object.keys(notes).map((id) => {
-          if (id === selectedNote) {
-            return (
-              <textarea
-                onBlur={() => {
-                  setSelectedNote('');
-                }}
-                key={id}
-                style={styles.card}
-                name="main-card-editor"
-                value={notes[selectedNote]?.text ?? ''}
-                onChange={(e) => {
-                  updateNoteText(e.target.value, notes[selectedNote]);
-                }}
-              />
-            );
-          }
           const note = notes[id];
           if (note && !notes[id]?._deleted)
             return (
@@ -200,7 +195,20 @@ const NotesRoom = ({ notesRoom }: { notesRoom: Room<Note> }) => {
                 >
                   X
                 </button>
-                {note.text}
+                {id === selectedNote ? (
+                  <textarea
+                    style={styles.editor}
+                    onBlur={() => setSelectedNote('')}
+                    ref={newNoteRef}
+                    name="main-card-editor"
+                    value={notes[selectedNote]?.text ?? ''}
+                    onChange={(e) => {
+                      updateNoteText(e.target.value, notes[selectedNote]);
+                    }}
+                  />
+                ) : (
+                  <p style={styles.cardInner}>{note.text}</p>
+                )}
               </div>
             );
         })}

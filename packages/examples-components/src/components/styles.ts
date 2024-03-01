@@ -9,6 +9,17 @@ const appRoot: CSSProperties = {
   color: 'white',
   backgroundColor: '#373d5e',
   minHeight: '100vh',
+  paddingLeft: '1rem',
+  paddingRight: '1rem',
+};
+const newNoteButton: CSSProperties = {
+  alignSelf: 'flex-start',
+  color: 'white',
+  background: 'green',
+  boxShadow: '4px 3px 5px 2px darkblue',
+  border: 'none',
+  padding: '0.75em',
+  marginLeft: '0.5rem',
 };
 const card: CSSProperties = {
   backgroundColor: 'white',
@@ -16,11 +27,17 @@ const card: CSSProperties = {
   width: '400px',
   boxShadow: '4px 3px 5px 2px green',
   margin: '32px auto',
-  padding: '32px',
   cursor: 'pointer',
   position: 'relative',
   display: 'flex',
   flexDirection: 'column',
+};
+const cardInner: CSSProperties = {
+  padding: '1rem',
+};
+const editor: CSSProperties = {
+  padding: '1rem',
+  paddingTop: '2rem',
 };
 const flexWrap: CSSProperties = {
   display: 'flex',
@@ -113,7 +130,10 @@ const loginButtonTextSmall: CSSProperties = {
 
 export const styles = {
   appRoot,
+  newNoteButton,
   card,
+  cardInner,
+  editor,
   flexWrap,
   login,
   deleteButton,
