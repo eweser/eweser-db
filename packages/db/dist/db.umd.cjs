@@ -436,6 +436,75 @@ var __publicField = (obj, key, value) => {
   };
   const from$1 = Array.from;
   const isArray = Array.isArray;
+  class ObservableV2 {
+    constructor() {
+      this._observers = create$6();
+    }
+    /**
+     * @template {keyof EVENTS & string} NAME
+     * @param {NAME} name
+     * @param {EVENTS[NAME]} f
+     */
+    on(name, f) {
+      setIfUndefined$1(
+        this._observers,
+        /** @type {string} */
+        name,
+        create$5
+      ).add(f);
+      return f;
+    }
+    /**
+     * @template {keyof EVENTS & string} NAME
+     * @param {NAME} name
+     * @param {EVENTS[NAME]} f
+     */
+    once(name, f) {
+      const _f = (...args) => {
+        this.off(
+          name,
+          /** @type {any} */
+          _f
+        );
+        f(...args);
+      };
+      this.on(
+        name,
+        /** @type {any} */
+        _f
+      );
+    }
+    /**
+     * @template {keyof EVENTS & string} NAME
+     * @param {NAME} name
+     * @param {EVENTS[NAME]} f
+     */
+    off(name, f) {
+      const observers = this._observers.get(name);
+      if (observers !== void 0) {
+        observers.delete(f);
+        if (observers.size === 0) {
+          this._observers.delete(name);
+        }
+      }
+    }
+    /**
+     * Emit a named event. All registered event listeners that listen to the
+     * specified name will receive the event.
+     *
+     * @todo This should catch exceptions
+     *
+     * @template {keyof EVENTS & string} NAME
+     * @param {NAME} name The event name.
+     * @param {Parameters<EVENTS[NAME]>} args The arguments that are applied to the event listener.
+     */
+    emit(name, args) {
+      return from$1((this._observers.get(name) || create$6()).values()).forEach((f) => f(...args));
+    }
+    destroy() {
+      this._observers = create$6();
+    }
+  }
   let Observable$1 = class Observable {
     constructor() {
       this._observers = create$6();
@@ -1085,7 +1154,7 @@ var __publicField = (obj, key, value) => {
   }
   const getRandomValues = crypto.getRandomValues.bind(crypto);
   const uint32 = () => getRandomValues(new Uint32Array(1))[0];
-  const uuidv4Template = [1e7] + -1e3 + -4e3 + -8e3 + -1e11;
+  const uuidv4Template = "10000000-1000-4000-8000" + -1e11;
   const uuidv4 = () => uuidv4Template.replace(
     /[018]/g,
     /** @param {number} c */
@@ -1312,11 +1381,19 @@ var __publicField = (obj, key, value) => {
   const ORANGE = create$1();
   const UNCOLOR = create$1();
   const computeNoColorLoggingArgs = (args) => {
+    var _a;
+    if (args.length === 1 && ((_a = args[0]) == null ? void 0 : _a.constructor) === Function) {
+      args = /** @type {Array<string|Symbol|Object|number>} */
+      /** @type {[function]} */
+      args[0]();
+    }
     const logArgs = [];
     let i = 0;
     for (; i < args.length; i++) {
       const arg = args[i];
-      if (arg.constructor === String || arg.constructor === Number)
+      if (arg === void 0)
+        ;
+      else if (arg.constructor === String || arg.constructor === Number)
         ;
       else if (arg.constructor === Object) {
         logArgs.push(JSON.stringify(arg));
@@ -1337,6 +1414,12 @@ var __publicField = (obj, key, value) => {
     [UNCOLOR]: create$2("color", "black")
   };
   const computeBrowserLoggingArgs = (args) => {
+    var _a;
+    if (args.length === 1 && ((_a = args[0]) == null ? void 0 : _a.constructor) === Function) {
+      args = /** @type {Array<string|Symbol|Object|number>} */
+      /** @type {[function]} */
+      args[0]();
+    }
     const strBuilder = [];
     const styles = [];
     const currentStyle = create$6();
@@ -1348,6 +1431,9 @@ var __publicField = (obj, key, value) => {
       if (style !== void 0) {
         currentStyle.set(style.left, style.right);
       } else {
+        if (arg === void 0) {
+          break;
+        }
         if (arg.constructor === String || arg.constructor === Number) {
           const style2 = mapToStyleString(currentStyle);
           if (i > 0 || style2.length > 0) {
@@ -1594,7 +1680,7 @@ var __publicField = (obj, key, value) => {
     return null;
   };
   const generateNewClientId = uint32;
-  class Doc extends Observable$1 {
+  class Doc extends ObservableV2 {
     /**
      * @param {DocOpts} opts configuration
      */
@@ -1637,7 +1723,7 @@ var __publicField = (obj, key, value) => {
         }
         this.isSynced = isSynced === void 0 || isSynced === true;
         if (this.isSynced && !this.isLoaded) {
-          this.emit("load", []);
+          this.emit("load", [this]);
         }
       });
       this.whenSynced = provideSyncedPromise();
@@ -1857,20 +1943,6 @@ var __publicField = (obj, key, value) => {
       this.emit("destroyed", [true]);
       this.emit("destroy", [this]);
       super.destroy();
-    }
-    /**
-     * @param {string} eventName
-     * @param {function(...any):any} f
-     */
-    on(eventName, f) {
-      super.on(eventName, f);
-    }
-    /**
-     * @param {string} eventName
-     * @param {function} f
-     */
-    off(eventName, f) {
-      super.off(eventName, f);
     }
   }
   class DSDecoderV1 {
