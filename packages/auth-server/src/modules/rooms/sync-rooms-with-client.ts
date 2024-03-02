@@ -47,8 +47,6 @@ export async function syncRoomsWithClient(token: string, clientRooms: Room[]) {
 
   const syncResult: { grant: AccessGrant; rooms: Room[] | null } =
     await db().transaction(async (dbInstance) => {
-      // debugger;
-      // bug: room was created but is not showing up here. maybe cause creating the grant failed down the line.
       const serverRooms = await getRoomsFromAccessGrant(grant);
 
       const serverRoomIds = serverRooms.map((r) => r.id);
@@ -83,11 +81,12 @@ export async function syncRoomsWithClient(token: string, clientRooms: Room[]) {
       }
 
       if (newClientRoomIds.length === 0) {
-        // if no new client rooms, return the rooms so we dont need to fetch them again
+        // if no new client rooms, return the rooms so we don't need to fetch them again
         return { grant, rooms: serverRooms };
       }
       const newClientRoomInserts: RoomInsert[] = [];
       for (const room of newClientRooms) {
+        // clean up the default accesses if they don't exist
         if (!room.adminAccess.includes(AUTH_SERVER_DOMAIN)) {
           room.adminAccess.push(AUTH_SERVER_DOMAIN);
         }
@@ -120,17 +119,18 @@ export async function syncRoomsWithClient(token: string, clientRooms: Room[]) {
             );
           }
           continue;
+        } else {
+          // generate ySweet tokens for new client rooms to save to server
+          const ySweetToken = await getOrCreateToken(room.id);
+          if (!ySweetToken.token || !ySweetToken.url) {
+            throw new Error(`Could not get token for room ${room.id}`);
+          }
+          newClientRoomInserts.push({
+            ...room,
+            token: ySweetToken.token,
+            ySweetUrl: ySweetToken.url,
+          });
         }
-        // generate ySweet tokens for new client rooms to save to server
-        const ySweetToken = await getOrCreateToken(room.id);
-        if (!ySweetToken.token || !ySweetToken.url) {
-          throw new Error(`Could not get token for room ${room.id}`);
-        }
-        newClientRoomInserts.push({
-          ...room,
-          token: ySweetToken.token,
-          ySweetUrl: ySweetToken.url,
-        });
       }
       // double check tokens made it in inserts
       if (newClientRoomInserts.some((r) => !r.token || !r.ySweetUrl)) {
