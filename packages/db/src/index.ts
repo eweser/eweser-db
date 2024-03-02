@@ -22,6 +22,8 @@ import { createYjsProvider } from '@y-sweet/client';
 import type { Doc } from 'yjs';
 import { getDocuments } from './utils/getDocuments';
 import {
+  clearLocalAccessGrantToken,
+  clearLocalRegistry,
   getLocalAccessGrantToken,
   getLocalRegistry,
   setLocalAccessGrantToken,
@@ -176,7 +178,38 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     this.useYSweet = true;
     this.online = true;
     await this.loadRooms(this.registry); // connects the ySweet providers. Again, could make this more atomic in the future to avoid creating too many connections.
+    this.emit('onLoggedInChange', true);
     return true;
+  };
+  /**
+   * clears the login token from storage and disconnects all ySweet providers. Still leaves the local indexedDB yDocs.
+   */
+  logout = () => {
+    clearLocalAccessGrantToken();
+    this.accessGrantToken = '';
+    this.useYSweet = false;
+    this.online = false;
+    for (const room of this.registry) {
+      const dbRoom = this.getRoom(room.collectionKey, room.id);
+      if (dbRoom.ySweetProvider) {
+        dbRoom.ySweetProvider.disconnect();
+      }
+    }
+    this.emit('onLoggedInChange', false);
+  };
+
+  /**
+   * Logs out and also clears all local data from indexedDB and localStorage.
+   */
+  logoutAndClear = () => {
+    this.logout();
+    for (const collectionKey of this.collectionKeys) {
+      for (const room of this.getRooms(collectionKey)) {
+        room.indexeddbProvider?.destroy();
+      }
+    }
+    this.registry = [];
+    clearLocalRegistry();
   };
 
   getRegistry = () => {

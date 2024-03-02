@@ -43,10 +43,7 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
         error: unknown;
         data: null;
     } | {
-        error: null; /**
-         * 0=debug 1=info, 2=warn, 3=error
-         * @default 2
-         */
+        error: null;
         data: ReturnType_1;
     }>;
     /**
@@ -62,6 +59,14 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
     getAccessGrantTokenFromUrl: () => string | null;
     getToken: () => string | null;
     login: () => Promise<boolean>;
+    /**
+     * clears the login token from storage and disconnects all ySweet providers. Still leaves the local indexedDB yDocs.
+     */
+    logout: () => void;
+    /**
+     * Logs out and also clears all local data from indexedDB and localStorage.
+     */
+    logoutAndClear: () => void;
     getRegistry: () => Registry;
     /** sends the registry to the server to check for additions/subtractions on either side */
     syncRegistry: () => Promise<boolean>;

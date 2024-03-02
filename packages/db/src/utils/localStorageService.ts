@@ -12,6 +12,9 @@ const localStorageGet = <T>(key: LocalStorageKey): T | null => {
   if (!value) return null;
   return JSON.parse(value) as T;
 };
+const localStorageRemove = (key: LocalStorageKey) => {
+  localStorage.removeItem('ewe_' + key);
+};
 
 export function getLocalRegistry() {
   const registry = localStorageGet<Registry>(LocalStorageKey.roomRegistry);
@@ -24,6 +27,9 @@ export function getLocalRegistry() {
 export function setLocalRegistry(registry: Registry) {
   localStorageSet(LocalStorageKey.roomRegistry, registry);
 }
+export function clearLocalRegistry() {
+  localStorageRemove(LocalStorageKey.roomRegistry);
+}
 
 export function getLocalAccessGrantToken() {
   return localStorageGet<string>(LocalStorageKey.accessGrantToken);
@@ -31,4 +37,8 @@ export function getLocalAccessGrantToken() {
 
 export function setLocalAccessGrantToken(token: string) {
   localStorageSet(LocalStorageKey.accessGrantToken, token);
+}
+
+export function clearLocalAccessGrantToken() {
+  localStorageRemove(LocalStorageKey.accessGrantToken);
 }

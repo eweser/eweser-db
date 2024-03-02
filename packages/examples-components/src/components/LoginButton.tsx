@@ -1,6 +1,6 @@
 import { EweserIcon } from './EweserIcon';
 import { useHover } from './helpers';
-import { styles } from './styles';
+import * as styles from './styles';
 
 export const LoginButton = ({
   loginUrl,

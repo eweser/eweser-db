@@ -1,6 +1,6 @@
 import { type CSSProperties } from 'react';
 
-const appRoot: CSSProperties = {
+export const appRoot: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
@@ -13,7 +13,7 @@ const appRoot: CSSProperties = {
   paddingRight: '1rem',
   paddingTop: '3rem',
 };
-const newNoteButton: CSSProperties = {
+export const newNoteButton: CSSProperties = {
   alignSelf: 'flex-start',
   color: 'white',
   background: 'green',
@@ -22,7 +22,7 @@ const newNoteButton: CSSProperties = {
   padding: '0.75em',
   marginLeft: '0.5rem',
 };
-const card: CSSProperties = {
+export const card: CSSProperties = {
   backgroundColor: 'white',
   color: 'black',
   width: '400px',
@@ -33,26 +33,30 @@ const card: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
 };
-const cardInner: CSSProperties = {
+export const cardInner: CSSProperties = {
   padding: '1rem',
 };
-const editor: CSSProperties = {
+export const editor: CSSProperties = {
   padding: '1rem',
   paddingTop: '2rem',
 };
-const flexWrap: CSSProperties = {
+export const flexWrap: CSSProperties = {
   display: 'flex',
   flexWrap: 'wrap',
   columnGap: '1rem',
 };
-const login: CSSProperties = {
+export const login: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   width: '400px',
   rowGap: '0.5rem',
 };
-const deleteButton: CSSProperties = { position: 'absolute', top: 8, right: 8 };
-const statusBar: CSSProperties = {
+export const deleteButton: CSSProperties = {
+  position: 'absolute',
+  top: 8,
+  right: 8,
+};
+export const statusBar: CSSProperties = {
   position: 'fixed',
   backgroundColor: 'rgb(255 255 255 / 95%)',
   top: 0,
@@ -65,11 +69,19 @@ const statusBar: CSSProperties = {
   justifyContent: 'space-between',
   alignContent: 'center',
 };
-const statusBarMessage: CSSProperties = {
-  fontSize: '0.7rem',
-  marginTop: 'auto',
+
+export const statusBarMessageDiv: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'end',
+  paddingTop: '0.5rem',
+  lineHeight: '1rem',
 };
-const modal: CSSProperties = {
+export const statusBarMessage: CSSProperties = {
+  fontSize: '0.7rem',
+  margin: 0,
+};
+export const modal: CSSProperties = {
   position: 'fixed',
   top: 0,
   left: 0,
@@ -83,7 +95,7 @@ const modal: CSSProperties = {
   height: '100%',
   width: '100%',
 };
-const modalContent: CSSProperties = {
+export const modalContent: CSSProperties = {
   position: 'relative',
   padding: '5rem',
   background: 'white',
@@ -92,19 +104,19 @@ const modalContent: CSSProperties = {
   overflowY: 'auto',
   maxHeight: '80vh',
 };
-const modalCloseButton: CSSProperties = {
+export const modalCloseButton: CSSProperties = {
   position: 'absolute',
   top: '1rem',
   right: '1rem',
 };
-const borderedCard: CSSProperties = {
+export const borderedCard: CSSProperties = {
   border: '1px solid black',
   padding: '1rem',
   margin: '1rem',
   cursor: 'pointer',
   color: 'black',
 };
-const loginButton: CSSProperties = {
+export const loginButton: CSSProperties = {
   background: 'transparent',
   border: 'none',
   color: 'hsl(21.75 34.78% 45.1%)',
@@ -112,40 +124,38 @@ const loginButton: CSSProperties = {
   display: 'flex',
   alignItems: 'center',
 };
-const loginButtonHover: CSSProperties = {
+export const loginButtonHover: CSSProperties = {
   ...loginButton,
   color: 'hsl(21.75 34.78% 55.1%)',
 };
 
-const loginButtonText: CSSProperties = {
+export const loginButtonText: CSSProperties = {
   fontSize: '1.5rem',
   fontWeight: 'bold',
   marginRight: '1rem',
 };
 
-const loginButtonTextSmall: CSSProperties = {
+export const loginButtonTextSmall: CSSProperties = {
   fontSize: '1rem',
   fontWeight: 'bold',
   marginRight: '.7rem',
 };
 
-export const styles = {
-  appRoot,
-  newNoteButton,
-  card,
-  cardInner,
-  editor,
-  flexWrap,
-  login,
-  deleteButton,
-  statusBar,
-  statusBarMessage,
-  modal,
-  modalContent,
-  modalCloseButton,
-  borderedCard,
-  loginButton,
-  loginButtonHover,
-  loginButtonText,
-  loginButtonTextSmall,
+export const logoutButtonsDiv: CSSProperties = {
+  display: 'flex',
+  padding: '0rem',
+  margin: 0,
+  alignItems: 'baseline',
+};
+
+export const logoutButton: CSSProperties = {
+  background: 'transparent',
+  border: 'none',
+  color: 'hsl(21.75 34.78% 45.1%)',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  marginBottom: '1rem',
+  textDecoration: 'underline',
+  marginTop: '1rem',
 };

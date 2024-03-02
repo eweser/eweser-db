@@ -9164,6 +9164,9 @@ ${reason}`);
       return null;
     return JSON.parse(value);
   };
+  const localStorageRemove = (key) => {
+    localStorage.removeItem("ewe_" + key);
+  };
   function getLocalRegistry() {
     const registry = localStorageGet(
       "room_registry"
@@ -9177,6 +9180,12 @@ ${reason}`);
   function setLocalRegistry(registry) {
     localStorageSet("room_registry", registry);
   }
+  function clearLocalRegistry() {
+    localStorageRemove(
+      "room_registry"
+      /* roomRegistry */
+    );
+  }
   function getLocalAccessGrantToken() {
     return localStorageGet(
       "access_grant_token"
@@ -9185,6 +9194,12 @@ ${reason}`);
   }
   function setLocalAccessGrantToken(token) {
     localStorageSet("access_grant_token", token);
+  }
+  function clearLocalAccessGrantToken() {
+    localStorageRemove(
+      "access_grant_token"
+      /* accessGrantToken */
+    );
   }
   const serverFetch = (_db) => async (path, _options) => {
     const options = {
@@ -9332,7 +9347,38 @@ ${reason}`);
         this.useYSweet = true;
         this.online = true;
         await this.loadRooms(this.registry);
+        this.emit("onLoggedInChange", true);
         return true;
+      });
+      /**
+       * clears the login token from storage and disconnects all ySweet providers. Still leaves the local indexedDB yDocs.
+       */
+      __publicField(this, "logout", () => {
+        clearLocalAccessGrantToken();
+        this.accessGrantToken = "";
+        this.useYSweet = false;
+        this.online = false;
+        for (const room of this.registry) {
+          const dbRoom = this.getRoom(room.collectionKey, room.id);
+          if (dbRoom.ySweetProvider) {
+            dbRoom.ySweetProvider.disconnect();
+          }
+        }
+        this.emit("onLoggedInChange", false);
+      });
+      /**
+       * Logs out and also clears all local data from indexedDB and localStorage.
+       */
+      __publicField(this, "logoutAndClear", () => {
+        var _a;
+        this.logout();
+        for (const collectionKey of this.collectionKeys) {
+          for (const room of this.getRooms(collectionKey)) {
+            (_a = room.indexeddbProvider) == null ? void 0 : _a.destroy();
+          }
+        }
+        this.registry = [];
+        clearLocalRegistry();
       });
       __publicField(this, "getRegistry", () => {
         if (this.registry.length > 0) {

@@ -17,6 +17,7 @@ export default function SignOutPage() {
       clearLocalStorageLoginQuery();
       // clear indexedDb
       try {
+        // I'm not using indexedDB for anything else here, so this is more convenient, but if you wan tto only delete EweserDB indexedDB databases, instead use the logoutAndClear() method, of call room.indexedDBProvider?.destroy(); on each room
         const dbs = await window.indexedDB.databases();
         dbs.forEach((db) => {
           if (db.name) {

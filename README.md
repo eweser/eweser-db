@@ -226,3 +226,9 @@ Nice to haves:
 - [ ] “Joins” or aggregation searches across collections. e.g. select all documents in the `notes` collection that have a ref to a document in the `flashcards` collection.
 - [ ] Stress testing. warnings about room or document size limits
 - [ ] **offline mode:** offline first - allow interacting with app before ever signed up or logged in. This might just need to be an example, not db feature. Might need to add an 'initialValues' option to create and connect room.
+
+- [ ] regenerate token on failed room connection
+- [ ] newRoom
+- [ ] don't send to permissions page if grant already exists and matches the login request permissions. just redirect back with token.
+- [ ] reimplement server ping, online check, reload when re-online.
+- [ ] track users' active sync hours and charge them for it or limit after a certain amount, based on ySweet pricing model.
