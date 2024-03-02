@@ -13,15 +13,20 @@ export async function middleware(req: NextRequest) {
     approvedDomains.length === 0 ||
     new Date().getTime() - lastFetched > 300000
   ) {
-    const supabase = middlewareClient(req, res);
-    const { data: domains, error } = await supabase
-      .from('apps')
-      .select('domain');
-    if (domains && !error) {
-      approvedDomains = domains.map((app) => app.domain);
+    if (process.env.NODE_ENV === 'development') {
+      approvedDomains = ['localhost:8000'];
       lastFetched = new Date().getTime();
     } else {
-      logger(error);
+      const supabase = middlewareClient(req, res);
+      const { data: domains, error } = await supabase
+        .from('apps')
+        .select('domain');
+      if (domains && !error) {
+        approvedDomains = domains.map((app) => app.domain);
+        lastFetched = new Date().getTime();
+      } else {
+        logger(error);
+      }
     }
   }
   const origin = req.headers.get('origin');
