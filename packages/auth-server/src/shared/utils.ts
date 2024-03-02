@@ -50,6 +50,9 @@ export function authTokenFromHeaders(headers: Headers) {
 export function validateLoginQueryOptions(
   queryOptions: Partial<LoginQueryParams>
 ): LoginQueryOptions | null {
+  if (!queryOptions) {
+    return null;
+  }
   const { redirect, domain, name } = queryOptions;
 
   const validRedirect =
@@ -60,10 +63,11 @@ export function validateLoginQueryOptions(
 
   const validDomain = typeof domain === 'string' && domain.length > 0;
 
-  const collections =
-    queryOptions.collections === 'all'
-      ? ['all']
-      : queryOptions.collections?.split('|');
+  const collections = !queryOptions.collections
+    ? ['all']
+    : queryOptions.collections === 'all'
+    ? ['all']
+    : queryOptions.collections?.split('|');
   const validCollections =
     Array.isArray(collections) &&
     collections.length > 0 &&
