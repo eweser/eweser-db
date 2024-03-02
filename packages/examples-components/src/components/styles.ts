@@ -11,6 +11,7 @@ const appRoot: CSSProperties = {
   minHeight: '100vh',
   paddingLeft: '1rem',
   paddingRight: '1rem',
+  paddingTop: '3rem',
 };
 const newNoteButton: CSSProperties = {
   alignSelf: 'flex-start',
@@ -53,8 +54,8 @@ const login: CSSProperties = {
 const deleteButton: CSSProperties = { position: 'absolute', top: 8, right: 8 };
 const statusBar: CSSProperties = {
   position: 'fixed',
-  backgroundColor: 'rgb(255 255 255 / 90%)',
-  bottom: '0',
+  backgroundColor: 'rgb(255 255 255 / 95%)',
+  top: 0,
   right: 0,
   left: 0,
   zIndex: 2,

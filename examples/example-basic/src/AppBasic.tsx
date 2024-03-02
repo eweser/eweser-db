@@ -102,6 +102,8 @@ const App = () => {
 
   return (
     <div style={styles.appRoot}>
+      <StatusBar db={db} loginUrl={loginUrl} />
+
       {/* You can check that the ydoc exists to make sure the room is connected */}
       {loaded && defaultNotesRoom?.ydoc ? (
         <>
@@ -114,8 +116,6 @@ const App = () => {
         // usually loads almost instantaneously, but we need to make sure a yDoc is ready before we can use it
         <>loading...</>
       )}
-
-      <StatusBar db={db} loginUrl={loginUrl} />
     </div>
   );
 };
