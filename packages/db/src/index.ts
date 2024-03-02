@@ -13,6 +13,7 @@ import { TypedEventEmitter, collections } from './types';
 import type {
   LoginQueryOptions,
   LoginQueryParams,
+  RefreshYSweetTokenRouteResponse,
   ServerRoom,
 } from '@eweser/shared';
 
@@ -22,14 +23,14 @@ import { createYjsProvider } from '@y-sweet/client';
 import type { Doc } from 'yjs';
 import { getDocuments } from './utils/getDocuments';
 import {
-  clearLocalAccessGrantToken,
-  clearLocalRegistry,
   getLocalAccessGrantToken,
   getLocalRegistry,
   setLocalAccessGrantToken,
   setLocalRegistry,
 } from './utils/localStorageService';
 import { serverFetch } from './utils/connection/serverFetch';
+import { logout, logoutAndClear } from './methods.ts/logout';
+import { login } from './methods.ts/login';
 
 export * from './utils';
 export * from './types';
@@ -152,65 +153,23 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     return null;
   };
 
-  // deprecated for now by syncRegistry
-  // getRoomsWithAccessGrantToken = async (token: string) => {
-  //   const { data: rooms } = await this.serverFetch<Registry>(
-  //     '/access-grant/get-rooms',
-  //     { method: 'POST', body: { token } }
-  //   );
+  refreshYSweetToken = async (room: Room<any>): Promise<string | undefined> => {
+    const { data: refresh } =
+      await this.serverFetch<RefreshYSweetTokenRouteResponse>(
+        `/access-grant/refresh-y-sweet-token/${room.id}`
+      );
 
-  //   this.debug('got rooms with access grant token', rooms);
-  //   if (rooms && rooms.length > 0) {
-  //     setLocalRegistry(rooms);
-  //   }
-  //   return rooms;
-  // };
-
-  login = async () => {
-    const token = this.getToken();
-    if (!token) {
-      throw new Error('No token found');
+    if (refresh?.token && refresh.ySweetUrl) {
+      room.ySweetProvider = null; // calling loadRoom with a null ySweetProvider will create a new one
+      await this.loadRoom(room);
+      // this.emit('roomReconnected', loadedRoom);
     }
-    const syncResult = await this.syncRegistry();
-    if (!syncResult) {
-      throw new Error('Failed to sync registry');
-    }
-    this.useYSweet = true;
-    this.online = true;
-    await this.loadRooms(this.registry); // connects the ySweet providers. Again, could make this more atomic in the future to avoid creating too many connections.
-    this.emit('onLoggedInChange', true);
-    return true;
-  };
-  /**
-   * clears the login token from storage and disconnects all ySweet providers. Still leaves the local indexedDB yDocs.
-   */
-  logout = () => {
-    clearLocalAccessGrantToken();
-    this.accessGrantToken = '';
-    this.useYSweet = false;
-    this.online = false;
-    for (const room of this.registry) {
-      const dbRoom = this.getRoom(room.collectionKey, room.id);
-      if (dbRoom.ySweetProvider) {
-        dbRoom.ySweetProvider.disconnect();
-      }
-    }
-    this.emit('onLoggedInChange', false);
+    return refresh?.token;
   };
 
-  /**
-   * Logs out and also clears all local data from indexedDB and localStorage.
-   */
-  logoutAndClear = () => {
-    this.logout();
-    for (const collectionKey of this.collectionKeys) {
-      for (const room of this.getRooms(collectionKey)) {
-        room.indexeddbProvider?.destroy();
-      }
-    }
-    this.registry = [];
-    clearLocalRegistry();
-  };
+  login = login(this);
+  logout = logout(this);
+  logoutAndClear = logoutAndClear(this);
 
   getRegistry = () => {
     if (this.registry.length > 0) {
@@ -273,8 +232,11 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
 
   /** first loads the local indexedDB ydoc for the room. if this.useYSweet is true and ySweetTokens are available will also connect to remote. */
   loadRoom = async (room: ServerRoom) => {
+    if (!room) {
+      throw new Error('room is required');
+    }
     this.info('loading room', room);
-    const { id: roomId, ySweetUrl, token: ySweetToken, collectionKey } = room;
+    const { id: roomId, ySweetUrl, token, collectionKey } = room;
     if (!roomId) {
       throw new Error('roomId is required');
     }
@@ -292,30 +254,35 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     }
 
     let ySweetProvider = existingRoom?.ySweetProvider;
-    if (!ySweetProvider && ySweetToken && ySweetUrl && this.useYSweet) {
-      try {
-        const provider = createYjsProvider(ydoc as Doc, {
-          url: ySweetUrl,
-          token: ySweetToken,
-          docId: roomId,
-        });
-        if (provider) {
-          ySweetProvider = provider;
-          ydoc = provider.doc as YDoc<any>;
-          provider.on('status', (status: any) => {
-            this.emit('roomConnectionChange', existingRoom, status);
-            this.debug('ySweetProvider status', status);
-          });
-          provider.on('sync', (synced: any) => {
-            this.debug('ySweetProvider synced', synced);
-          });
-          this.debug('created ySweetProvider', ySweetProvider);
-          provider.connect();
-        }
-      } catch (error) {
-        // TODO: ask the server for a new token
-        this.error(error);
-      }
+    if (!ySweetProvider && token && ySweetUrl && this.useYSweet) {
+      ySweetProvider = createYjsProvider(ydoc as Doc, {
+        url: ySweetUrl,
+        token,
+        docId: roomId,
+      });
+
+      ydoc = ySweetProvider.doc as YDoc<any>;
+      ySweetProvider.on('status', (status: any) => {
+        this.emit('roomConnectionChange', existingRoom, status);
+        // this.debug('ySweetProvider status', status);
+      });
+      ySweetProvider.on('connection-error', async (error: any) => {
+        this.error('ySweetProvider error', error);
+        this.emit('roomConnectionChange', existingRoom, 'disconnected');
+
+        await this.refreshYSweetToken(this.collections[collectionKey][roomId]);
+      });
+      ySweetProvider.on('sync', (synced: boolean) => {
+        this.emit(
+          'roomConnectionChange',
+          existingRoom,
+          synced ? 'connected' : 'disconnected'
+        );
+
+        this.debug('ySweetProvider synced', synced);
+      });
+      this.debug('created ySweetProvider', ySweetProvider);
+      ySweetProvider.connect();
     }
 
     if (
@@ -323,7 +290,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
       existingRoom.ydoc &&
       existingRoom.indexeddbProvider &&
       existingRoom.ySweetProvider &&
-      existingRoom.token === ySweetToken
+      existingRoom.token === token
     ) {
       this.debug('room already loaded', existingRoom);
       return existingRoom;

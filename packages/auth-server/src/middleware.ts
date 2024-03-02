@@ -22,7 +22,7 @@ export async function middleware(req: NextRequest) {
         .from('apps')
         .select('domain');
       if (domains && !error) {
-        approvedDomains = domains.map((app) => app.domain);
+        approvedDomains = domains.map((app: { domain: string }) => app.domain);
         lastFetched = new Date().getTime();
       } else {
         logger(error);
@@ -49,5 +49,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: '/access-grant/sync-registry',
+  matcher: '/access-grant/(.*)',
 };

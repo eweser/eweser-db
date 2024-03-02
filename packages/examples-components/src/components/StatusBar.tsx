@@ -17,6 +17,7 @@ export const StatusBar = ({
   useEffect(() => {
     const handleConnectionChange = (room: Room<any>, status: string) => {
       // for now just listen to any room's connection status
+      console.log('status', status);
       if (status === 'connected') {
         setConnected(true);
       } else {
