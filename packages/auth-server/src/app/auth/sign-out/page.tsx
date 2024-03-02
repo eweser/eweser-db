@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react';
 import { Icons } from '../../../frontend/components/library/icons';
 import { frontendSupabase } from '../../../services/database/supabase/frontend-client-init';
+import { clearLocalStorageLoginQuery } from '../../../frontend/utils/local-storage';
+import { logger } from '../../../shared/utils';
 
 export default function SignOutPage() {
   const supabase = frontendSupabase();
@@ -12,6 +14,18 @@ export default function SignOutPage() {
   useEffect(() => {
     const signOut = async () => {
       setIsLoading(true);
+      clearLocalStorageLoginQuery();
+      // clear indexedDb
+      try {
+        const dbs = await window.indexedDB.databases();
+        dbs.forEach((db) => {
+          if (db.name) {
+            window.indexedDB.deleteDatabase(db.name);
+          }
+        });
+      } catch (error) {
+        logger(error);
+      }
       const { error } = await supabase.auth.signOut();
       if (error) {
         setError(error);
