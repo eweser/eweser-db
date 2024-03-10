@@ -1,4 +1,3 @@
-import { v4 } from 'uuid';
 import type { AccessGrant, AccessGrantInsert } from '../../model/access_grants';
 import {
   createAccessGrantId,
@@ -31,7 +30,7 @@ export async function createNewUserRoomsAndAuthServerAccess(
     const inserts: RoomInsert[] = [];
 
     if (!publicProfile) {
-      const id = v4();
+      const id = crypto.randomUUID();
       const { token, url } = await getOrCreateToken(id);
       inserts.push({
         id,
@@ -46,7 +45,7 @@ export async function createNewUserRoomsAndAuthServerAccess(
       });
     }
     if (!privateProfile) {
-      const id = v4();
+      const id = crypto.randomUUID();
       const { token, url } = await getOrCreateToken(id);
       inserts.push({
         id,

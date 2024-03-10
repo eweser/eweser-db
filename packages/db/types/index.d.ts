@@ -1,6 +1,7 @@
-import type { CollectionKey, Collections, CollectionToDocument, DatabaseEvents, EweDocument, ProviderOptions, Registry, Room, YDoc } from './types';
-import { TypedEventEmitter } from './types';
-import type { LoginQueryOptions, ServerRoom } from '@eweser/shared';
+import type { CollectionKey, Collections, CollectionToDocument, EweDocument, ProviderOptions, Registry } from './types';
+import { Room } from './room';
+import { TypedEventEmitter } from './events';
+import type { DatabaseEvents } from './events';
 export * from './utils';
 export * from './types';
 export interface DatabaseOptions {
@@ -34,7 +35,7 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
     accessGrantToken: string;
     webRtcPeers: string[];
     logLevel: number;
-    log: DatabaseEvents['log'];
+    log: (level: number, ...args: any[]) => void;
     debug: DatabaseEvents['debug'];
     info: DatabaseEvents['info'];
     warn: DatabaseEvents['warn'];
@@ -46,51 +47,19 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
         error: null;
         data: ReturnType_1;
     }>;
-    /**
-     *
-     * @param redirect default uses window.location
-     * @param appDomain default uses window.location.hostname
-     * @param collections default 'all', which collections your app would like to have write access to
-     * @returns a string you can use to redirect the user to the auth server's login page
-     */
-    generateLoginUrl: (options: Partial<LoginQueryOptions> & {
+    generateLoginUrl: (options: Partial<import("@eweser/shared").LoginQueryOptions> & {
         name: string;
     }) => string;
+    login: (loadAllRooms?: boolean) => Promise<boolean>;
+    logout: () => void;
+    logoutAndClear: () => void;
     getAccessGrantTokenFromUrl: () => string | null;
     getToken: () => string | null;
-    login: () => Promise<boolean>;
-    /**
-     * clears the login token from storage and disconnects all ySweet providers. Still leaves the local indexedDB yDocs.
-     */
-    logout: () => void;
-    /**
-     * Logs out and also clears all local data from indexedDB and localStorage.
-     */
-    logoutAndClear: () => void;
-    getRegistry: () => Registry;
-    /** sends the registry to the server to check for additions/subtractions on either side */
-    syncRegistry: () => Promise<boolean>;
-    /** first loads the local indexedDB ydoc for the room. if this.useYSweet is true and ySweetTokens are available will also connect to remote. */
-    loadRoom: (room: ServerRoom) => Promise<Room<import("@eweser/shared").Note> | Room<import("@eweser/shared").Flashcard> | Room<import("@eweser/shared").Profile> | {
-        indexeddbProvider: import("y-indexeddb").IndexeddbPersistence;
-        webRtcProvider: null;
-        ySweetProvider: import("@y-sweet/client").YSweetProvider | null | undefined;
-        ydoc: YDoc<import("@eweser/shared").Note> | YDoc<import("@eweser/shared").Flashcard> | YDoc<import("@eweser/shared").Profile>;
-        id: string;
-        name: string;
-        collectionKey: "notes" | "flashcards" | "profiles";
-        token: string | null;
-        ySweetUrl: string | null;
-        publicAccess: "private" | "read" | "write";
-        readAccess: string[];
-        writeAccess: string[];
-        adminAccess: string[];
-        createdAt: string | null;
-        updatedAt: string | null;
-        _deleted: boolean | null;
-        _ttl: string | null;
-    }>;
+    refreshYSweetToken: (room: Room<any>) => Promise<string | undefined>;
+    loadRoom: (serverRoom: import("@eweser/shared").ServerRoom) => Promise<Room<any>>;
     loadRooms: (rooms: Registry) => Promise<void>;
+    syncRegistry: () => Promise<boolean>;
+    getRegistry: () => Registry;
     getDocuments: <T extends EweDocument>(room: Room<T>) => {
         documents: import("yjs-types").TypedMap<import("./types").Documents<T>>;
         get: (id: string) => T | undefined;
@@ -104,6 +73,10 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
     };
     getRoom: <T extends EweDocument>(collectionKey: CollectionKey, roomId: string) => Room<T>;
     getRooms<T extends CollectionKey>(collectionKey: T): Room<CollectionToDocument[T]>[];
-    newRoom: <_T extends EweDocument>() => void;
+    /**
+     * new rooms must be added to the registry and then synced with the auth server
+     * Note: If your app does not have access privileges to the collection, the room won't be synced server-side.
+     */
+    newRoom: <T extends EweDocument>(options: Room<T>) => void;
     constructor(optionsPassed?: DatabaseOptions);
 }

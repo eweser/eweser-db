@@ -374,11 +374,6 @@ var __publicField = (obj, key, value) => {
     }
   }
   var eventsExports = events.exports;
-  const collections = {
-    notes: {},
-    flashcards: {},
-    profiles: {}
-  };
   class TypedEventEmitter extends eventsExports.EventEmitter {
     on(event, listener) {
       return super.on(event, listener);
@@ -387,6 +382,85 @@ var __publicField = (obj, key, value) => {
       return super.emit(event, ...args);
     }
   }
+  const setupLogger = (db, logLevel) => {
+    if (logLevel) {
+      db.logLevel = logLevel;
+    }
+    db.on("log", (level, ...message) => {
+      switch (level) {
+        case 0:
+          return console.info(...message);
+        case 1:
+          return console.log(...message);
+        case 2:
+          return console.warn(...message);
+        case 3:
+          return console.error(...message);
+      }
+    });
+  };
+  class Room extends TypedEventEmitter {
+    constructor({
+      indexedDbProvider,
+      webRtcProvider,
+      ySweetProvider,
+      ydoc,
+      ...serverRoom
+    }) {
+      super();
+      __publicField(this, "id");
+      __publicField(this, "name");
+      __publicField(this, "collectionKey");
+      __publicField(this, "token");
+      __publicField(this, "ySweetUrl");
+      __publicField(this, "publicAccess");
+      __publicField(this, "readAccess");
+      __publicField(this, "writeAccess");
+      __publicField(this, "adminAccess");
+      __publicField(this, "createdAt");
+      __publicField(this, "updatedAt");
+      __publicField(this, "_deleted");
+      __publicField(this, "_ttl");
+      __publicField(this, "indexedDbProvider");
+      __publicField(this, "webRtcProvider");
+      __publicField(this, "ySweetProvider");
+      __publicField(this, "ydoc");
+      __publicField(this, "connectionRetries", 0);
+      this.id = serverRoom.id || crypto.randomUUID();
+      this.name = serverRoom.name;
+      this.collectionKey = serverRoom.collectionKey;
+      this.token = serverRoom.token ?? null;
+      this.ySweetUrl = serverRoom.ySweetUrl ?? null;
+      this.publicAccess = serverRoom.publicAccess ?? "private";
+      this.readAccess = serverRoom.readAccess ?? [];
+      this.writeAccess = serverRoom.writeAccess ?? [];
+      this.adminAccess = serverRoom.adminAccess ?? [];
+      this.createdAt = serverRoom.createdAt ?? null;
+      this.updatedAt = serverRoom.updatedAt ?? null;
+      this._deleted = serverRoom._deleted ?? false;
+      this._ttl = serverRoom._ttl ?? null;
+      this.indexedDbProvider = indexedDbProvider;
+      this.webRtcProvider = webRtcProvider;
+      this.ySweetProvider = ySweetProvider;
+      this.ydoc = ydoc;
+    }
+    // tempDocs: { [docRef: string]: { doc: Doc } };
+  }
+  function roomToServerRoom(room) {
+    const {
+      indexedDbProvider: _unused_1,
+      webRtcProvider: _unused_2,
+      ySweetProvider: _unused_3,
+      ydoc: _unused_4,
+      ...serverRoom
+    } = room;
+    return serverRoom;
+  }
+  const collections = {
+    notes: {},
+    flashcards: {},
+    profiles: {}
+  };
   const COLLECTION_KEYS = ["notes", "flashcards", "profiles"];
   const collectionKeys = COLLECTION_KEYS.map((key) => key);
   function loginOptionsToQueryParams({ collections: collections2, ...rest }) {
@@ -397,6 +471,351 @@ var __publicField = (obj, key, value) => {
     };
     return params2;
   }
+  const newDocument = (_id, _ref, doc) => {
+    const now = (/* @__PURE__ */ new Date()).getTime();
+    const base = {
+      _created: now,
+      _id,
+      _ref,
+      _updated: now,
+      _deleted: false,
+      _ttl: void 0
+    };
+    return { ...base, ...doc };
+  };
+  const buildRef = (params2) => {
+    Object.entries(params2).forEach(([key, param]) => {
+      if (!param)
+        throw new Error(`${key} is required`);
+      if (typeof param !== "string")
+        throw new Error(`${key} must be a string`);
+      if (param.includes("|"))
+        throw new Error(`${key} cannot include |`);
+    });
+    const { collectionKey, roomId, documentId, authServer } = params2;
+    return `${authServer}|${collectionKey}|${roomId}|${documentId}`;
+  };
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const randomString = (length2) => Math.random().toString(36).substring(2, length2 + 2);
+  function getRoomDocuments(room) {
+    if (!room.ydoc)
+      throw new Error("room.ydoc not found");
+    const registryMap = room.ydoc.getMap("documents");
+    return registryMap;
+  }
+  const getRoom = (_db) => ({
+    collectionKey,
+    roomId
+  }) => {
+    const room = _db.collections[collectionKey][roomId];
+    if (!room)
+      return null;
+    return room;
+  };
+  const buildFullUserId = (username, homeserver) => {
+    if (!username)
+      throw new Error("username is required");
+    if (!homeserver)
+      throw new Error("homeserver is required");
+    const homeserverParsed = homeserver.includes("http://") || homeserver.includes("https://") ? homeserver.split("://")[1] : homeserver;
+    return `@${username}:${homeserverParsed}`;
+  };
+  const extractUserIdLocalPart = (userId) => {
+    if (!userId)
+      throw new Error("userId is required");
+    if (!userId.includes("@"))
+      throw new Error("userId is invalid");
+    if (!userId.includes(":"))
+      throw new Error("userId is invalid");
+    return userId.split("@")[1].split(":")[0];
+  };
+  const getDocuments = (_db) => (room) => {
+    var _a;
+    if (!room)
+      throw new Error("no room");
+    const documents = (_a = room.ydoc) == null ? void 0 : _a.getMap("documents");
+    if (!documents)
+      throw new Error("no documents");
+    return {
+      documents,
+      get: (id2) => {
+        return documents.get(id2);
+      },
+      set: (doc) => {
+        doc._updated = Date.now();
+        return documents.set(doc._id, doc);
+      },
+      new: (doc, id2) => {
+        if (id2 && documents.get(id2)) {
+          throw new Error("document already exists");
+        }
+        let documentId = id2 || randomString(24);
+        if (documents.get(documentId)) {
+          documentId = randomString(24);
+          if (documents.get(documentId)) {
+            throw new Error("document already exists");
+          }
+        }
+        const ref = buildRef({
+          authServer: _db.authServer,
+          collectionKey: room.collectionKey,
+          roomId: room.id,
+          documentId
+        });
+        const newDoc = newDocument(documentId, ref, doc);
+        documents.set(documentId, newDoc);
+        return newDoc;
+      },
+      delete: (id2, timeToLiveMs) => {
+        const doc = documents.get(id2);
+        if (!doc)
+          throw new Error("document does not exist");
+        const oneMonth = 1e3 * 60 * 60 * 24 * 30;
+        doc._deleted = true;
+        doc._ttl = timeToLiveMs ?? (/* @__PURE__ */ new Date()).getTime() + oneMonth;
+        return documents.set(id2, doc);
+      },
+      getAll: () => {
+        return documents.toJSON();
+      },
+      getUndeleted: () => {
+        const undeleted = {};
+        documents.forEach((doc) => {
+          if (doc && !doc._deleted) {
+            undeleted[doc._id] = doc;
+          }
+        });
+        return undeleted;
+      },
+      onChange: (callback) => {
+        documents.observe(callback);
+      },
+      sortByRecent: (docs) => {
+        const sortedArray = Object.entries(docs).sort(
+          (a, b) => b[1]._updated - a[1]._updated
+        );
+        return Object.fromEntries(sortedArray);
+      }
+    };
+  };
+  const serverFetch = (_db) => async (path, _options) => {
+    const options = {
+      ..._options
+    };
+    try {
+      const token = _db.getToken();
+      if (token) {
+        options.headers = {
+          ...options.headers,
+          Authorization: `Bearer ${token}`
+        };
+      }
+      if (options.method === "POST" && options.body) {
+        options.body = JSON.stringify(options.body);
+        options.headers = {
+          ...options.headers,
+          "Content-Type": "application/json"
+        };
+        options.referrer = "no-referrer";
+      }
+      const resultRaw = await fetch(`${_db.authServer}${path}`, options);
+      const data = await resultRaw.json();
+      if (!data || typeof data !== "object") {
+        throw new Error("No data returned");
+      }
+      if ("error" in data) {
+        return { error: data.error, data: null };
+      }
+      return { error: null, data };
+    } catch (error) {
+      _db.error("serverFetch error", path, options, error);
+      return { error, data: null };
+    }
+  };
+  const localStorageSet = (key, value) => {
+    localStorage.setItem("ewe_" + key, JSON.stringify(value));
+  };
+  const localStorageGet = (key) => {
+    const value = localStorage.getItem("ewe_" + key);
+    if (!value)
+      return null;
+    return JSON.parse(value);
+  };
+  const localStorageRemove = (key) => {
+    localStorage.removeItem("ewe_" + key);
+  };
+  function getLocalRegistry() {
+    const registry = localStorageGet(
+      "room_registry"
+      /* roomRegistry */
+    );
+    if (typeof registry === "object" && Array.isArray(registry)) {
+      return registry;
+    }
+    return [];
+  }
+  function setLocalRegistry(registry) {
+    localStorageSet("room_registry", registry);
+  }
+  function clearLocalRegistry() {
+    localStorageRemove(
+      "room_registry"
+      /* roomRegistry */
+    );
+  }
+  function getLocalAccessGrantToken() {
+    return localStorageGet(
+      "access_grant_token"
+      /* accessGrantToken */
+    );
+  }
+  function setLocalAccessGrantToken(token) {
+    localStorageSet("access_grant_token", token);
+  }
+  function clearLocalAccessGrantToken() {
+    localStorageRemove(
+      "access_grant_token"
+      /* accessGrantToken */
+    );
+  }
+  const logout = (db) => (
+    /**
+     * clears the login token from storage and disconnects all ySweet providers. Still leaves the local indexedDB yDocs.
+     */
+    () => {
+      clearLocalAccessGrantToken();
+      db.accessGrantToken = "";
+      db.useYSweet = false;
+      db.online = false;
+      for (const room of db.registry) {
+        const dbRoom = db.getRoom(room.collectionKey, room.id);
+        if (dbRoom.ySweetProvider) {
+          dbRoom.ySweetProvider.disconnect();
+        }
+      }
+      db.emit("onLoggedInChange", false);
+    }
+  );
+  const logoutAndClear = (db) => (
+    /**
+     * Logs out and also clears all local data from indexedDB and localStorage.
+     */
+    () => {
+      var _a;
+      db.logout();
+      for (const collectionKey of db.collectionKeys) {
+        for (const room of db.getRooms(collectionKey)) {
+          (_a = room.indexedDbProvider) == null ? void 0 : _a.destroy();
+        }
+      }
+      db.registry = [];
+      clearLocalRegistry();
+    }
+  );
+  const login = (db) => (
+    /**
+     * @param loadAllRooms default false. Will load all rooms from the registry and connect to them. Disable this is you have too many rooms and want to load them later individually.
+     * @returns true if successful
+     */
+    async (loadAllRooms = false) => {
+      const token = db.getToken();
+      if (!token) {
+        throw new Error("No token found");
+      }
+      const syncResult = await db.syncRegistry();
+      if (!syncResult) {
+        throw new Error("Failed to sync registry");
+      }
+      db.useYSweet = true;
+      db.online = true;
+      if (loadAllRooms) {
+        await db.loadRooms(db.registry);
+        db.emit("onLoggedInChange", true);
+        return true;
+      }
+      return true;
+    }
+  );
+  const log = (db) => (level, ...message) => {
+    if (level <= db.logLevel) {
+      db.emit("log", level, ...message);
+    }
+  };
+  const generateLoginUrl = (db) => (
+    /**
+     *
+     * @param redirect default uses window.location
+     * @param appDomain default uses window.location.hostname
+     * @param collections default 'all', which collections your app would like to have write access to
+     * @returns a string you can use to redirect the user to the auth server's login page
+     */
+    (options) => {
+      const url = new URL(db.authServer);
+      const params2 = loginOptionsToQueryParams({
+        redirect: (options == null ? void 0 : options.redirect) || window.location.href,
+        domain: (options == null ? void 0 : options.domain) || window.location.host,
+        collections: (options == null ? void 0 : options.collections) ?? ["all"],
+        name: options.name
+      });
+      Object.entries(params2).forEach(([key, value]) => {
+        url.searchParams.append(key, value);
+      });
+      return url.toString();
+    }
+  );
+  const getAccessGrantTokenFromUrl = () => (
+    /**
+     * Pulls the access grant token from the url query params, clears the url query params, and saves the token to local storage
+     */
+    () => {
+      var _a, _b;
+      const query = new URLSearchParams(((_a = window == null ? void 0 : window.location) == null ? void 0 : _a.search) ?? "");
+      const token = query.get("token");
+      if (token && typeof token === "string") {
+        setLocalAccessGrantToken(token);
+      }
+      if ((_b = window == null ? void 0 : window.location) == null ? void 0 : _b.search) {
+        const url = new URL(window.location.href);
+        for (const key of url.searchParams.keys()) {
+          url.searchParams.delete(key);
+        }
+        window.history.replaceState({}, "", url.toString());
+      }
+      return token;
+    }
+  );
+  const getToken = (db) => (
+    /**
+     * Looks for the access grant token first in the DB class, then in local storage, then in the url query params
+     */
+    () => {
+      if (db.accessGrantToken) {
+        return db.accessGrantToken;
+      }
+      const savedToken = getLocalAccessGrantToken();
+      if (savedToken) {
+        db.accessGrantToken = savedToken;
+        return savedToken;
+      }
+      const urlToken = db.getAccessGrantTokenFromUrl();
+      if (urlToken) {
+        db.accessGrantToken = urlToken;
+        return urlToken;
+      }
+      return null;
+    }
+  );
+  const getRegistry = (db) => () => {
+    if (db.registry.length > 0) {
+      return db.registry;
+    } else {
+      const localRegistry = getLocalRegistry();
+      if (localRegistry) {
+        db.registry = localRegistry;
+      }
+      return db.registry;
+    }
+  };
   const create$6 = () => /* @__PURE__ */ new Map();
   const copy = (m) => {
     const r = create$6();
@@ -9028,212 +9447,138 @@ ${reason}`);
     });
     return provider;
   }
-  const newDocument = (_id, _ref, doc) => {
-    const now = (/* @__PURE__ */ new Date()).getTime();
-    const base = {
-      _created: now,
-      _id,
-      _ref,
-      _updated: now,
-      _deleted: false,
-      _ttl: void 0
+  const validate = (room) => {
+    if (!room) {
+      throw new Error("room is required");
+    }
+    const { id: roomId, collectionKey } = room;
+    if (!roomId) {
+      throw new Error("roomId is required");
+    }
+    if (!collectionKey) {
+      throw new Error("collectionKey is required");
+    }
+    return { roomId, collectionKey };
+  };
+  const checkLoadedState = (db) => (room, token) => {
+    const localLoaded = room && room.ydoc && room.indexedDbProvider;
+    const shouldLoadYSweet = db.useYSweet && token && room && room.ySweetUrl;
+    const ySweetLoaded = token && room && room.ySweetProvider && room.token === token;
+    return { localLoaded, ySweetLoaded, shouldLoadYSweet };
+  };
+  const loadRoom = (db) => async (serverRoom) => {
+    const { roomId, collectionKey } = validate(serverRoom);
+    db.info("loading room", serverRoom);
+    const room = db.collections[collectionKey][roomId] ?? {
+      ...serverRoom,
+      ydoc: void 0,
+      indexedDbProvider: null,
+      ySweetProvider: null,
+      webRtcProvider: null
     };
-    return { ...base, ...doc };
-  };
-  const buildRef = (params2) => {
-    Object.entries(params2).forEach(([key, param]) => {
-      if (!param)
-        throw new Error(`${key} is required`);
-      if (typeof param !== "string")
-        throw new Error(`${key} must be a string`);
-      if (param.includes("|"))
-        throw new Error(`${key} cannot include |`);
-    });
-    const { collectionKey, roomId, documentId, authServer } = params2;
-    return `${authServer}|${collectionKey}|${roomId}|${documentId}`;
-  };
-  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-  const randomString = (length2) => Math.random().toString(36).substring(2, length2 + 2);
-  function getRoomDocuments(room) {
-    if (!room.ydoc)
-      throw new Error("room.ydoc not found");
-    const registryMap = room.ydoc.getMap("documents");
-    return registryMap;
-  }
-  const getRoom = (_db) => ({
-    collectionKey,
-    roomId
-  }) => {
-    const room = _db.collections[collectionKey][roomId];
-    if (!room)
-      return null;
+    const emitConnectionChange = (status) => {
+      room.emit("roomConnectionChange", status, room);
+      db.emit("roomConnectionChange", status, room);
+    };
+    const { localLoaded, ySweetLoaded, shouldLoadYSweet } = checkLoadedState(db)(
+      room,
+      serverRoom.token
+    );
+    if (localLoaded && (!shouldLoadYSweet || ySweetLoaded)) {
+      db.debug("room already loaded", room);
+      return room;
+    }
+    if (!localLoaded) {
+      const { ydoc: newYDoc, localProvider } = await initializeDocAndLocalProvider(roomId);
+      room.ydoc = newYDoc;
+      room.indexedDbProvider = localProvider;
+      db.debug(
+        "initialized ydoc and localProvider",
+        room.ydoc,
+        room.indexedDbProvider
+      );
+    }
+    if (shouldLoadYSweet && !ySweetLoaded) {
+      const ySweetProvider = createYjsProvider(room.ydoc, {
+        url: room.ySweetUrl ?? "",
+        // checked in shouldLoadYSweet
+        token: room.token ?? "",
+        // checked in shouldLoadYSweet
+        docId: roomId
+      });
+      room.ydoc = ySweetProvider.doc;
+      room.ySweetProvider = ySweetProvider;
+      ySweetProvider.on("status", (status) => {
+        emitConnectionChange(status);
+      });
+      ySweetProvider.on("connection-error", async (error) => {
+        db.error("ySweetProvider error", error);
+        emitConnectionChange("disconnected");
+        await db.refreshYSweetToken(db.collections[collectionKey][roomId]);
+      });
+      ySweetProvider.on("sync", (synced) => {
+        emitConnectionChange(synced ? "connected" : "disconnected");
+        db.debug("ySweetProvider synced", synced);
+      });
+      db.debug("created ySweetProvider", ySweetProvider);
+      ySweetProvider.connect();
+    }
+    db.collections[collectionKey][roomId] = room;
+    db.emit("roomLoaded", room);
     return room;
   };
-  const buildFullUserId = (username, homeserver) => {
-    if (!username)
-      throw new Error("username is required");
-    if (!homeserver)
-      throw new Error("homeserver is required");
-    const homeserverParsed = homeserver.includes("http://") || homeserver.includes("https://") ? homeserver.split("://")[1] : homeserver;
-    return `@${username}:${homeserverParsed}`;
-  };
-  const extractUserIdLocalPart = (userId) => {
-    if (!userId)
-      throw new Error("userId is required");
-    if (!userId.includes("@"))
-      throw new Error("userId is invalid");
-    if (!userId.includes(":"))
-      throw new Error("userId is invalid");
-    return userId.split("@")[1].split(":")[0];
-  };
-  const getDocuments = (_db) => (room) => {
-    var _a;
-    if (!room)
-      throw new Error("no room");
-    const documents = (_a = room.ydoc) == null ? void 0 : _a.getMap("documents");
-    if (!documents)
-      throw new Error("no documents");
-    return {
-      documents,
-      get: (id2) => {
-        return documents.get(id2);
-      },
-      set: (doc) => {
-        doc._updated = Date.now();
-        return documents.set(doc._id, doc);
-      },
-      new: (doc, id2) => {
-        if (id2 && documents.get(id2)) {
-          throw new Error("document already exists");
-        }
-        let documentId = id2 || randomString(24);
-        if (documents.get(documentId)) {
-          documentId = randomString(24);
-          if (documents.get(documentId)) {
-            throw new Error("document already exists");
-          }
-        }
-        const ref = buildRef({
-          authServer: _db.authServer,
-          collectionKey: room.collectionKey,
-          roomId: room.id,
-          documentId
-        });
-        const newDoc = newDocument(documentId, ref, doc);
-        documents.set(documentId, newDoc);
-        return newDoc;
-      },
-      delete: (id2, timeToLiveMs) => {
-        const doc = documents.get(id2);
-        if (!doc)
-          throw new Error("document does not exist");
-        const oneMonth = 1e3 * 60 * 60 * 24 * 30;
-        doc._deleted = true;
-        doc._ttl = timeToLiveMs ?? (/* @__PURE__ */ new Date()).getTime() + oneMonth;
-        return documents.set(id2, doc);
-      },
-      getAll: () => {
-        return documents.toJSON();
-      },
-      getUndeleted: () => {
-        const undeleted = {};
-        documents.forEach((doc) => {
-          if (doc && !doc._deleted) {
-            undeleted[doc._id] = doc;
-          }
-        });
-        return undeleted;
-      },
-      onChange: (callback) => {
-        documents.observe(callback);
-      },
-      sortByRecent: (docs) => {
-        const sortedArray = Object.entries(docs).sort(
-          (a, b) => b[1]._updated - a[1]._updated
-        );
-        return Object.fromEntries(sortedArray);
-      }
-    };
-  };
-  const localStorageSet = (key, value) => {
-    localStorage.setItem("ewe_" + key, JSON.stringify(value));
-  };
-  const localStorageGet = (key) => {
-    const value = localStorage.getItem("ewe_" + key);
-    if (!value)
-      return null;
-    return JSON.parse(value);
-  };
-  const localStorageRemove = (key) => {
-    localStorage.removeItem("ewe_" + key);
-  };
-  function getLocalRegistry() {
-    const registry = localStorageGet(
-      "room_registry"
-      /* roomRegistry */
+  const refreshYSweetToken = (db) => async (room) => {
+    const { data: refresh } = await db.serverFetch(
+      `/access-grant/refresh-y-sweet-token/${room.id}`
     );
-    if (typeof registry === "object" && Array.isArray(registry)) {
-      return registry;
+    if ((refresh == null ? void 0 : refresh.token) && refresh.ySweetUrl) {
+      room.ySweetProvider = null;
+      await db.loadRoom(room);
     }
-    return [];
-  }
-  function setLocalRegistry(registry) {
-    localStorageSet("room_registry", registry);
-  }
-  function clearLocalRegistry() {
-    localStorageRemove(
-      "room_registry"
-      /* roomRegistry */
-    );
-  }
-  function getLocalAccessGrantToken() {
-    return localStorageGet(
-      "access_grant_token"
-      /* accessGrantToken */
-    );
-  }
-  function setLocalAccessGrantToken(token) {
-    localStorageSet("access_grant_token", token);
-  }
-  function clearLocalAccessGrantToken() {
-    localStorageRemove(
-      "access_grant_token"
-      /* accessGrantToken */
-    );
-  }
-  const serverFetch = (_db) => async (path, _options) => {
-    const options = {
-      ..._options
-    };
-    try {
-      const token = _db.getToken();
-      if (token) {
-        options.headers = {
-          ...options.headers,
-          Authorization: `Bearer ${token}`
-        };
+    return refresh == null ? void 0 : refresh.token;
+  };
+  const syncRegistry = (db) => (
+    /** sends the registry to the server to check for additions/subtractions on either side */
+    async () => {
+      const body = {
+        token: db.getToken() ?? "",
+        rooms: db.registry
+      };
+      if (!body.token) {
+        return false;
       }
-      if (options.method === "POST" && options.body) {
-        options.body = JSON.stringify(options.body);
-        options.headers = {
-          ...options.headers,
-          "Content-Type": "application/json"
-        };
-        options.referrer = "no-referrer";
+      const { data: syncResult } = await db.serverFetch(
+        "/access-grant/sync-registry",
+        { method: "POST", body }
+      );
+      db.info("syncResult", syncResult);
+      const { rooms, token } = syncResult ?? {};
+      if (token && typeof token === "string") {
+        db.debug("setting new token", token);
+        setLocalAccessGrantToken(token);
+        db.accessGrantToken = token;
+      } else {
+        return false;
       }
-      const resultRaw = await fetch(`${_db.authServer}${path}`, options);
-      const data = await resultRaw.json();
-      if (!data || typeof data !== "object") {
-        throw new Error("No data returned");
+      if (rooms && typeof rooms === "object" && Array.isArray(rooms) && rooms.length >= 2) {
+        db.debug("setting new rooms", rooms);
+        setLocalRegistry(rooms);
+        db.registry = rooms;
+      } else {
+        return false;
       }
-      if ("error" in data) {
-        return { error: data.error, data: null };
-      }
-      return { error: null, data };
-    } catch (error) {
-      _db.error("serverFetch error", path, options, error);
-      return { error, data: null };
+      return true;
     }
+  );
+  const loadRooms = (db) => async (rooms) => {
+    const loadedRooms = [];
+    db.debug("loading rooms", rooms);
+    for (const room of rooms) {
+      const loadedRoom = await db.loadRoom(room);
+      loadedRooms.push(loadedRoom);
+    }
+    db.debug("loaded rooms", loadedRooms);
+    db.emit("roomsLoaded", loadedRooms);
   };
   const defaultRtcPeers = [
     "wss://signaling.yjs.debv",
@@ -9257,243 +9602,43 @@ ${reason}`);
       __publicField(this, "registry", []);
       __publicField(this, "accessGrantToken", "");
       __publicField(this, "webRtcPeers", defaultRtcPeers);
-      // methods
+      // METHODS
       // logger/event emitter
       __publicField(this, "logLevel", 2);
-      __publicField(this, "log", (level, ...message) => {
-        if (level <= this.logLevel) {
-          this.emit("log", level, ...message);
-        }
-      });
+      __publicField(this, "log", log(this));
       __publicField(this, "debug", (...message) => this.log(0, ...message));
       __publicField(this, "info", (...message) => this.log(1, ...message));
       __publicField(this, "warn", (...message) => this.log(2, ...message));
       __publicField(this, "error", (...message) => this.log(3, message));
-      // connect methods
+      // CONNECT METHODS
       __publicField(this, "serverFetch", serverFetch(this));
-      /**
-       *
-       * @param redirect default uses window.location
-       * @param appDomain default uses window.location.hostname
-       * @param collections default 'all', which collections your app would like to have write access to
-       * @returns a string you can use to redirect the user to the auth server's login page
-       */
-      __publicField(this, "generateLoginUrl", (options) => {
-        const url = new URL(this.authServer);
-        const params2 = loginOptionsToQueryParams({
-          redirect: (options == null ? void 0 : options.redirect) || window.location.href,
-          domain: (options == null ? void 0 : options.domain) || window.location.host,
-          collections: (options == null ? void 0 : options.collections) ?? ["all"],
-          name: options.name
-        });
-        Object.entries(params2).forEach(([key, value]) => {
-          url.searchParams.append(key, value);
-        });
-        return url.toString();
-      });
-      __publicField(this, "getAccessGrantTokenFromUrl", () => {
-        var _a, _b;
-        const query = new URLSearchParams(((_a = window == null ? void 0 : window.location) == null ? void 0 : _a.search) ?? "");
-        const token = query.get("token");
-        if (token && typeof token === "string") {
-          setLocalAccessGrantToken(token);
-        }
-        if ((_b = window == null ? void 0 : window.location) == null ? void 0 : _b.search) {
-          const url = new URL(window.location.href);
-          for (const key of url.searchParams.keys()) {
-            url.searchParams.delete(key);
-          }
-          window.history.replaceState({}, "", url.toString());
-        }
-        return token;
-      });
-      __publicField(this, "getToken", () => {
-        if (this.accessGrantToken) {
-          return this.accessGrantToken;
-        }
-        const savedToken = getLocalAccessGrantToken();
-        if (savedToken) {
-          this.accessGrantToken = savedToken;
-          return savedToken;
-        }
-        const urlToken = this.getAccessGrantTokenFromUrl();
-        if (urlToken) {
-          this.accessGrantToken = urlToken;
-          return urlToken;
-        }
-        return null;
-      });
-      // deprecated for now by syncRegistry
-      // getRoomsWithAccessGrantToken = async (token: string) => {
-      //   const { data: rooms } = await this.serverFetch<Registry>(
-      //     '/access-grant/get-rooms',
-      //     { method: 'POST', body: { token } }
-      //   );
-      //   this.debug('got rooms with access grant token', rooms);
-      //   if (rooms && rooms.length > 0) {
-      //     setLocalRegistry(rooms);
-      //   }
-      //   return rooms;
-      // };
-      __publicField(this, "login", async () => {
-        const token = this.getToken();
-        if (!token) {
-          throw new Error("No token found");
-        }
-        const syncResult = await this.syncRegistry();
-        if (!syncResult) {
-          throw new Error("Failed to sync registry");
-        }
-        this.useYSweet = true;
-        this.online = true;
-        await this.loadRooms(this.registry);
-        this.emit("onLoggedInChange", true);
-        return true;
-      });
-      /**
-       * clears the login token from storage and disconnects all ySweet providers. Still leaves the local indexedDB yDocs.
-       */
-      __publicField(this, "logout", () => {
-        clearLocalAccessGrantToken();
-        this.accessGrantToken = "";
-        this.useYSweet = false;
-        this.online = false;
-        for (const room of this.registry) {
-          const dbRoom = this.getRoom(room.collectionKey, room.id);
-          if (dbRoom.ySweetProvider) {
-            dbRoom.ySweetProvider.disconnect();
-          }
-        }
-        this.emit("onLoggedInChange", false);
-      });
-      /**
-       * Logs out and also clears all local data from indexedDB and localStorage.
-       */
-      __publicField(this, "logoutAndClear", () => {
-        var _a;
-        this.logout();
-        for (const collectionKey of this.collectionKeys) {
-          for (const room of this.getRooms(collectionKey)) {
-            (_a = room.indexeddbProvider) == null ? void 0 : _a.destroy();
-          }
-        }
-        this.registry = [];
-        clearLocalRegistry();
-      });
-      __publicField(this, "getRegistry", () => {
-        if (this.registry.length > 0) {
-          return this.registry;
-        } else {
-          const localRegistry = getLocalRegistry();
-          if (localRegistry) {
-            this.registry = localRegistry;
-          }
-          return this.registry;
-        }
-      });
-      /** sends the registry to the server to check for additions/subtractions on either side */
-      __publicField(this, "syncRegistry", async () => {
-        const body = {
-          token: this.getToken() ?? "",
-          rooms: this.registry
-        };
-        if (!body.token) {
-          return false;
-        }
-        const { data: syncResult } = await this.serverFetch(
-          "/access-grant/sync-registry",
-          { method: "POST", body }
-        );
-        this.info("syncResult", syncResult);
-        const { rooms, token } = syncResult ?? {};
-        if (token && typeof token === "string") {
-          this.debug("setting new token", token);
-          setLocalAccessGrantToken(token);
-          this.accessGrantToken = token;
-        } else {
-          return false;
-        }
-        if (rooms && typeof rooms === "object" && Array.isArray(rooms) && rooms.length >= 2) {
-          this.debug("setting new rooms", rooms);
-          setLocalRegistry(rooms);
-          this.registry = rooms;
-        } else {
-          return false;
-        }
-        return true;
-      });
-      /** first loads the local indexedDB ydoc for the room. if this.useYSweet is true and ySweetTokens are available will also connect to remote. */
-      __publicField(this, "loadRoom", async (room) => {
-        this.info("loading room", room);
-        const { id: roomId, ySweetUrl, token: ySweetToken, collectionKey } = room;
-        if (!roomId) {
-          throw new Error("roomId is required");
-        }
-        const existingRoom = this.collections[collectionKey][roomId];
-        let ydoc = existingRoom == null ? void 0 : existingRoom.ydoc;
-        let indexeddbProvider = existingRoom == null ? void 0 : existingRoom.indexeddbProvider;
-        if (!ydoc || !indexeddbProvider) {
-          const { ydoc: newYDoc, localProvider } = await initializeDocAndLocalProvider(roomId);
-          ydoc = newYDoc;
-          indexeddbProvider = localProvider;
-          this.debug("initialized ydoc and localProvider", ydoc, indexeddbProvider);
-        }
-        let ySweetProvider = existingRoom == null ? void 0 : existingRoom.ySweetProvider;
-        if (!ySweetProvider && ySweetToken && ySweetUrl && this.useYSweet) {
-          try {
-            const provider = createYjsProvider(ydoc, {
-              url: ySweetUrl,
-              token: ySweetToken,
-              docId: roomId
-            });
-            if (provider) {
-              ySweetProvider = provider;
-              ydoc = provider.doc;
-              provider.on("status", (status) => {
-                this.emit("roomConnectionChange", existingRoom, status);
-                this.debug("ySweetProvider status", status);
-              });
-              provider.on("sync", (synced) => {
-                this.debug("ySweetProvider synced", synced);
-              });
-              this.debug("created ySweetProvider", ySweetProvider);
-              provider.connect();
-            }
-          } catch (error) {
-            this.error(error);
-          }
-        }
-        if (existingRoom && existingRoom.ydoc && existingRoom.indexeddbProvider && existingRoom.ySweetProvider && existingRoom.token === ySweetToken) {
-          this.debug("room already loaded", existingRoom);
-          return existingRoom;
-        }
-        const loadedRoom = this.collections[collectionKey][roomId] = {
-          ...room,
-          indexeddbProvider,
-          webRtcProvider: null,
-          ySweetProvider,
-          ydoc
-        };
-        this.emit("roomLoaded", loadedRoom);
-        return loadedRoom;
-      });
-      __publicField(this, "loadRooms", async (rooms) => {
-        const loadedRooms = [];
-        this.debug("loading rooms", rooms);
-        for (const room of rooms) {
-          const loadedRoom = await this.loadRoom(room);
-          loadedRooms.push(loadedRoom);
-        }
-        this.debug("loaded rooms", loadedRooms);
-        this.emit("roomsLoaded", loadedRooms);
-      });
+      __publicField(this, "generateLoginUrl", generateLoginUrl(this));
+      __publicField(this, "login", login(this));
+      __publicField(this, "logout", logout(this));
+      __publicField(this, "logoutAndClear", logoutAndClear(this));
+      __publicField(this, "getAccessGrantTokenFromUrl", getAccessGrantTokenFromUrl());
+      __publicField(this, "getToken", getToken(this));
+      __publicField(this, "refreshYSweetToken", refreshYSweetToken(this));
+      __publicField(this, "loadRoom", loadRoom(this));
+      __publicField(this, "loadRooms", loadRooms(this));
+      __publicField(this, "syncRegistry", syncRegistry(this));
       // util methods
+      __publicField(this, "getRegistry", getRegistry(this));
       // collection methods
       __publicField(this, "getDocuments", getDocuments(this));
       __publicField(this, "getRoom", (collectionKey, roomId) => {
         return this.collections[collectionKey][roomId];
       });
-      __publicField(this, "newRoom", () => {
+      /**
+       * new rooms must be added to the registry and then synced with the auth server
+       * Note: If your app does not have access privileges to the collection, the room won't be synced server-side.
+       */
+      __publicField(this, "newRoom", (options) => {
+        const room = new Room(options);
+        this.collections[room.collectionKey][room.id] = room;
+        const serverRoom = roomToServerRoom(room);
+        this.registry.push(serverRoom);
+        setLocalRegistry(this.registry);
         if (this.online) {
           this.syncRegistry();
         }
@@ -9521,21 +9666,7 @@ ${reason}`);
           this.webRtcPeers = options == null ? void 0 : options.webRTCPeers;
         }
       }
-      if (options.logLevel) {
-        this.logLevel = options.logLevel;
-      }
-      this.on("log", (level, ...message) => {
-        switch (level) {
-          case 0:
-            return console.info(...message);
-          case 1:
-            return console.log(...message);
-          case 2:
-            return console.warn(...message);
-          case 3:
-            return console.error(...message);
-        }
-      });
+      setupLogger(this, options.logLevel);
       this.debug("Database created with options", options);
       this.registry = this.getRegistry() || [];
       if (options.initialRooms) {
@@ -9554,7 +9685,6 @@ ${reason}`);
     }
   }
   exports2.Database = Database;
-  exports2.TypedEventEmitter = TypedEventEmitter;
   exports2.buildFullUserId = buildFullUserId;
   exports2.buildRef = buildRef;
   exports2.collections = collections;

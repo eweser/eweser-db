@@ -2,14 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Database } from '@eweser/db';
 import type { Documents, Note, Registry, Room } from '@eweser/db';
 import * as config from './config';
-import { v4 as uuid } from 'uuid';
 import { styles, StatusBar } from '@eweser/examples-components';
 
 // This example shows how to implement a basic login/signup form and a basic note-taking app using @eweser/db
 // The CRUD operations are all done directly on the yjs ydoc using the `Documents` object and its methods returned from `db.getDocuments()`
 
-/** to make sure that we only have one default room created, make a new uuid for the default room, but if there is already one in localStorage use that*/
-const randomRoomId = uuid();
+/** to make sure that we only have one default room created, make a new uuid v4 for the default room, but if there is already one in localStorage use that*/
+const randomRoomId = crypto.randomUUID();
 const roomId = localStorage.getItem('roomId') || randomRoomId;
 localStorage.setItem('roomId', roomId);
 const userAgent = navigator.userAgent;
