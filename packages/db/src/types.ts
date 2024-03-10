@@ -1,4 +1,3 @@
-import { EventEmitter } from 'events';
 import type {
   DocumentBase,
   Note,
@@ -9,15 +8,15 @@ import type {
   EweDocument,
   CollectionKey,
 } from '@eweser/shared';
-import type { WebrtcProvider } from 'y-webrtc';
 import type { TypedDoc, TypedMap } from 'yjs-types';
 // import type { Doc } from 'yjs';
-import type { IndexeddbPersistence } from 'y-indexeddb';
-import type { YSweetProvider } from '@y-sweet/client';
+
+import type { Room } from './room';
 
 export type ProviderOptions = 'WebRTC' | 'YSweet' | 'IndexedDB';
 
 export type {
+  Room,
   ServerRoom,
   EweDocument,
   CollectionKey,
@@ -55,17 +54,6 @@ export type YDoc<T extends EweDocument> = TypedDoc<{
 
 export type Registry = ServerRoom[];
 
-/** adds the ydoc providers ans connection status */
-export interface Room<T extends EweDocument> extends ServerRoom {
-  indexeddbProvider?: IndexeddbPersistence | null;
-  webRtcProvider?: WebrtcProvider | null;
-  ySweetProvider?: YSweetProvider | null;
-  ydoc?: YDoc<T>;
-
-  // connectStatus: ConnectStatus;
-  // tempDocs: { [docRef: string]: { doc: Doc } };
-}
-
 export type Collection<T extends EweDocument> = {
   [roomId: string]: Room<T>;
 };
@@ -73,23 +61,3 @@ export type Collection<T extends EweDocument> = {
 export type Collections = {
   [K in CollectionKey]: Collection<CollectionToDocument[K]>;
 };
-
-type EmittedEvents = Record<string | symbol, (...args: any[]) => any>;
-
-export class TypedEventEmitter<
-  Events extends EmittedEvents
-> extends EventEmitter {
-  on<E extends keyof Events>(
-    event: (E & string) | symbol,
-    listener: Events[E]
-  ): this {
-    return super.on(event, listener as any);
-  }
-
-  emit<E extends keyof Events>(
-    event: (E & string) | symbol,
-    ...args: Parameters<Events[E]>
-  ): boolean {
-    return super.emit(event, ...args);
-  }
-}

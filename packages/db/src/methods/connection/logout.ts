@@ -1,8 +1,8 @@
-import type { Database } from '..';
+import type { Database } from '../..';
 import {
   clearLocalAccessGrantToken,
   clearLocalRegistry,
-} from '../utils/localStorageService';
+} from '../../utils/localStorageService';
 export const logout =
   (db: Database) =>
   /**

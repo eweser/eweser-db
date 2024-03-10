@@ -6,32 +6,27 @@ import type {
   ProviderOptions,
   Registry,
   Room,
-  YDoc,
 } from './types';
-import { TypedEventEmitter, collections } from './types';
-import type {
-  LoginQueryOptions,
-  LoginQueryParams,
-  RefreshYSweetTokenRouteResponse,
-  ServerRoom,
-} from '@eweser/shared';
+import { collections } from './types';
+import { TypedEventEmitter } from './events';
+import type { RefreshYSweetTokenRouteResponse } from '@eweser/shared';
 
-import { collectionKeys, loginOptionsToQueryParams } from '@eweser/shared';
-import { initializeDocAndLocalProvider } from './utils/connection/initializeDoc';
-import { createYjsProvider } from '@y-sweet/client';
-import type { Doc } from 'yjs';
+import { collectionKeys } from '@eweser/shared';
 import { getDocuments } from './utils/getDocuments';
 import {
-  getLocalAccessGrantToken,
-  getLocalRegistry,
   setLocalAccessGrantToken,
   setLocalRegistry,
 } from './utils/localStorageService';
 import { serverFetch } from './utils/connection/serverFetch';
-import { logout, logoutAndClear } from './methods/logout';
-import { login } from './methods/login';
-import type { DatabaseEvents } from './methods/log';
+import { logout, logoutAndClear } from './methods/connection/logout';
+import { login } from './methods/connection/login';
+import type { DatabaseEvents } from './events';
 import { log } from './methods/log';
+import { generateLoginUrl } from './methods/connection/generateLoginUrl';
+import { getAccessGrantTokenFromUrl } from './methods/connection/getAccessGrantTokenFromUrl';
+import { getToken } from './methods/connection/getToken';
+import { getRegistry } from './methods/getRegistry';
+import { loadRoom } from './methods/connection/loadRoom';
 
 export * from './utils';
 export * from './types';
@@ -58,7 +53,6 @@ export interface DatabaseOptions {
   webRTCPeers?: string[];
   initialRooms?: Registry;
 }
-
 export class Database extends TypedEventEmitter<DatabaseEvents> {
   userId = '';
   authServer = 'https://www.eweser.com';
@@ -77,7 +71,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
 
   webRtcPeers: string[] = defaultRtcPeers;
 
-  // methods
+  // METHODS
 
   // logger/event emitter
   logLevel = 2;
@@ -87,68 +81,16 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
   warn: DatabaseEvents['warn'] = (...message) => this.log(2, ...message);
   error: DatabaseEvents['error'] = (...message) => this.log(3, message);
 
-  // connect methods
+  // CONNECT METHODS
 
   serverFetch = serverFetch(this);
+  generateLoginUrl = generateLoginUrl(this);
+  login = login(this);
+  logout = logout(this);
+  logoutAndClear = logoutAndClear(this);
 
-  /**
-   *
-   * @param redirect default uses window.location
-   * @param appDomain default uses window.location.hostname
-   * @param collections default 'all', which collections your app would like to have write access to
-   * @returns a string you can use to redirect the user to the auth server's login page
-   */
-  generateLoginUrl = (
-    options: Partial<LoginQueryOptions> & { name: string }
-  ): string => {
-    const url = new URL(this.authServer);
-
-    const params: LoginQueryParams = loginOptionsToQueryParams({
-      redirect: options?.redirect || window.location.href,
-      domain: options?.domain || window.location.host,
-      collections: options?.collections ?? ['all'],
-      name: options.name,
-    });
-    Object.entries(params).forEach(([key, value]) => {
-      url.searchParams.append(key, value);
-    });
-
-    return url.toString();
-  };
-
-  getAccessGrantTokenFromUrl = () => {
-    const query = new URLSearchParams(window?.location?.search ?? '');
-    const token = query.get('token');
-    if (token && typeof token === 'string') {
-      setLocalAccessGrantToken(token);
-    }
-    // remove from url
-    if (window?.location?.search) {
-      const url = new URL(window.location.href);
-      for (const key of url.searchParams.keys()) {
-        url.searchParams.delete(key);
-      }
-      window.history.replaceState({}, '', url.toString());
-    }
-    return token;
-  };
-
-  getToken = () => {
-    if (this.accessGrantToken) {
-      return this.accessGrantToken;
-    }
-    const savedToken = getLocalAccessGrantToken();
-    if (savedToken) {
-      this.accessGrantToken = savedToken;
-      return savedToken;
-    }
-    const urlToken = this.getAccessGrantTokenFromUrl();
-    if (urlToken) {
-      this.accessGrantToken = urlToken;
-      return urlToken;
-    }
-    return null;
-  };
+  getAccessGrantTokenFromUrl = getAccessGrantTokenFromUrl();
+  getToken = getToken(this);
 
   refreshYSweetToken = async (room: Room<any>): Promise<string | undefined> => {
     const { data: refresh } =
@@ -163,23 +105,18 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     }
     return refresh?.token;
   };
+  loadRoom = loadRoom(this);
 
-  login = login(this);
-  logout = logout(this);
-  logoutAndClear = logoutAndClear(this);
-
-  getRegistry = () => {
-    if (this.registry.length > 0) {
-      return this.registry;
-    } else {
-      const localRegistry = getLocalRegistry();
-      if (localRegistry) {
-        this.registry = localRegistry;
-      }
-      return this.registry;
+  loadRooms = async (rooms: Registry) => {
+    const loadedRooms = [];
+    this.debug('loading rooms', rooms);
+    for (const room of rooms) {
+      const loadedRoom = await this.loadRoom(room);
+      loadedRooms.push(loadedRoom);
     }
+    this.debug('loaded rooms', loadedRooms);
+    this.emit('roomsLoaded', loadedRooms);
   };
-
   /** sends the registry to the server to check for additions/subtractions on either side */
   syncRegistry = async () => {
     // packages/auth-server/src/app/access-grant/sync-registry/route.ts
@@ -227,93 +164,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     return true;
   };
 
-  /** first loads the local indexedDB ydoc for the room. if this.useYSweet is true and ySweetTokens are available will also connect to remote. */
-  loadRoom = async (room: ServerRoom) => {
-    if (!room) {
-      throw new Error('room is required');
-    }
-    this.info('loading room', room);
-    const { id: roomId, ySweetUrl, token, collectionKey } = room;
-    if (!roomId) {
-      throw new Error('roomId is required');
-    }
-    const existingRoom = this.collections[collectionKey][roomId];
-    let ydoc = existingRoom?.ydoc;
-    let indexeddbProvider = existingRoom?.indexeddbProvider;
-
-    if (!ydoc || !indexeddbProvider) {
-      const { ydoc: newYDoc, localProvider } =
-        await initializeDocAndLocalProvider(roomId);
-
-      ydoc = newYDoc;
-      indexeddbProvider = localProvider;
-      this.debug('initialized ydoc and localProvider', ydoc, indexeddbProvider);
-    }
-
-    let ySweetProvider = existingRoom?.ySweetProvider;
-    if (!ySweetProvider && token && ySweetUrl && this.useYSweet) {
-      ySweetProvider = createYjsProvider(ydoc as Doc, {
-        url: ySweetUrl,
-        token,
-        docId: roomId,
-      });
-
-      ydoc = ySweetProvider.doc as YDoc<any>;
-      ySweetProvider.on('status', (status: any) => {
-        this.emit('roomConnectionChange', existingRoom, status);
-        // this.debug('ySweetProvider status', status);
-      });
-      ySweetProvider.on('connection-error', async (error: any) => {
-        this.error('ySweetProvider error', error);
-        this.emit('roomConnectionChange', existingRoom, 'disconnected');
-
-        await this.refreshYSweetToken(this.collections[collectionKey][roomId]);
-      });
-      ySweetProvider.on('sync', (synced: boolean) => {
-        this.emit(
-          'roomConnectionChange',
-          existingRoom,
-          synced ? 'connected' : 'disconnected'
-        );
-
-        this.debug('ySweetProvider synced', synced);
-      });
-      this.debug('created ySweetProvider', ySweetProvider);
-      ySweetProvider.connect();
-    }
-
-    if (
-      existingRoom &&
-      existingRoom.ydoc &&
-      existingRoom.indexeddbProvider &&
-      existingRoom.ySweetProvider &&
-      existingRoom.token === token
-    ) {
-      this.debug('room already loaded', existingRoom);
-      return existingRoom;
-    }
-
-    const loadedRoom = (this.collections[collectionKey][roomId] = {
-      ...room,
-      indexeddbProvider,
-      webRtcProvider: null,
-      ySweetProvider,
-      ydoc,
-    });
-    this.emit('roomLoaded', loadedRoom);
-    return loadedRoom;
-  };
-
-  loadRooms = async (rooms: Registry) => {
-    const loadedRooms = [];
-    this.debug('loading rooms', rooms);
-    for (const room of rooms) {
-      const loadedRoom = await this.loadRoom(room);
-      loadedRooms.push(loadedRoom);
-    }
-    this.debug('loaded rooms', loadedRooms);
-    this.emit('roomsLoaded', loadedRooms);
-  };
+  getRegistry = getRegistry(this);
 
   // util methods
 
