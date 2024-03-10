@@ -5,8 +5,8 @@ import type {
   EweDocument,
   ProviderOptions,
   Registry,
-  Room,
 } from './types';
+import { Room, roomToServerRoom } from './room';
 import { collections } from './types';
 import { setupLogger, TypedEventEmitter } from './events';
 
@@ -25,6 +25,7 @@ import { loadRoom } from './methods/connection/loadRoom';
 import { refreshYSweetToken } from './methods/connection/refreshYSweetToken';
 import { syncRegistry } from './methods/connection/syncRegistry';
 import { loadRooms } from './methods/connection/loadRooms';
+import { setLocalRegistry } from './utils/localStorageService';
 
 export * from './utils';
 export * from './types';
@@ -111,12 +112,23 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
   ): Room<CollectionToDocument[T]>[] {
     return Object.values(this.collections[collectionKey]);
   }
-  newRoom = <_T extends EweDocument>() => {
-    // TODO: implement newRoom
-    // remember that new rooms must be added to the registry and then synced with the auth server
+  /**
+   * new rooms must be added to the registry and then synced with the auth server
+   * Note: If your app does not have access privileges to the collection, the room won't be synced server-side.
+   */
+  newRoom = <T extends EweDocument>(options: Room<T>) => {
+    const room = new Room(options);
+    this.collections[room.collectionKey][room.id] = room;
+    const serverRoom = roomToServerRoom(room);
+    this.registry.push(serverRoom);
+    setLocalRegistry(this.registry);
     if (this.online) {
-      this.syncRegistry(); // locally added rooms need to be synced to the auth server.
-      // if currently offline and doesnt sync here, it should sync when the room is connected
+      this.syncRegistry();
+    } else {
+      // const online = checkOnline();
+      // if(online){
+      //   this.syncRegistry()
+      // }
     }
   };
 
