@@ -30,6 +30,8 @@ export class Room<T extends EweDocument>
   ySweetProvider?: YSweetProvider | null;
   ydoc?: YDoc<T> | null;
 
+  connectionRetries = 0;
+
   constructor(
     serverRoom: ServerRoom,
     {

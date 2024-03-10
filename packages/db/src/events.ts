@@ -1,6 +1,7 @@
 import type { EweDocument } from '@eweser/shared';
 import { EventEmitter } from 'events';
 import type { Room } from './types';
+import type { Database } from '.';
 
 type EmittedEvents = Record<string | symbol, (...args: any[]) => any>;
 
@@ -38,4 +39,26 @@ export type DatabaseEvents = {
 
 export type RoomEvents<T extends EweDocument> = {
   roomConnectionChange: (status: RoomConnectionStatus, room: Room<T>) => void;
+};
+
+export const setupLogger = (db: Database, logLevel?: number) => {
+  if (logLevel) {
+    db.logLevel = logLevel;
+  }
+  db.on('log', (level, ...message) => {
+    switch (level) {
+      case 0:
+        // eslint-disable-next-line no-console
+        return console.info(...message);
+      case 1:
+        // eslint-disable-next-line no-console
+        return console.log(...message);
+      case 2:
+        // eslint-disable-next-line no-console
+        return console.warn(...message);
+      case 3:
+        // eslint-disable-next-line no-console
+        return console.error(...message);
+    }
+  });
 };
