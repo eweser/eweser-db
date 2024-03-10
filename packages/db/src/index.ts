@@ -2,7 +2,6 @@ import type {
   CollectionKey,
   Collections,
   CollectionToDocument,
-  DatabaseEvents,
   EweDocument,
   ProviderOptions,
   Registry,
@@ -29,8 +28,10 @@ import {
   setLocalRegistry,
 } from './utils/localStorageService';
 import { serverFetch } from './utils/connection/serverFetch';
-import { logout, logoutAndClear } from './methods.ts/logout';
-import { login } from './methods.ts/login';
+import { logout, logoutAndClear } from './methods/logout';
+import { login } from './methods/login';
+import type { DatabaseEvents } from './methods/log';
+import { log } from './methods/log';
 
 export * from './utils';
 export * from './types';
@@ -75,16 +76,12 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
   accessGrantToken = '';
 
   webRtcPeers: string[] = defaultRtcPeers;
+
   // methods
+
   // logger/event emitter
-
   logLevel = 2;
-  log: DatabaseEvents['log'] = (level, ...message) => {
-    if (level <= this.logLevel) {
-      this.emit('log', level, ...message);
-    }
-  };
-
+  log = log(this);
   debug: DatabaseEvents['debug'] = (...message) => this.log(0, ...message);
   info: DatabaseEvents['info'] = (...message) => this.log(1, ...message);
   warn: DatabaseEvents['warn'] = (...message) => this.log(2, ...message);

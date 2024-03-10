@@ -74,18 +74,6 @@ export type Collections = {
   [K in CollectionKey]: Collection<CollectionToDocument[K]>;
 };
 
-export type DatabaseEvents = {
-  log: (level: number, ...args: any[]) => void;
-  debug: (...args: any[]) => void;
-  info: (...args: any[]) => void;
-  warn: (...args: any[]) => void;
-  error: (...args: any[]) => void;
-  roomLoaded: (room: Room<any>) => void;
-  roomsLoaded: (rooms: Room<any>[]) => void;
-  roomConnectionChange: (room: Room<any>, status: string) => void;
-  onLoggedInChange: (loggedIn: boolean) => void;
-};
-
 type EmittedEvents = Record<string | symbol, (...args: any[]) => any>;
 
 export class TypedEventEmitter<
