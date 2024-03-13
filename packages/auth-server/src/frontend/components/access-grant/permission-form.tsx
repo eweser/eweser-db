@@ -67,18 +67,17 @@ export default function PermissionForm(props: PermissionFormProps) {
 
   return (
     <div>
+      <PermissionFormAccordion
+        {...props}
+        collectionKeys={collectionKeys}
+        requestingAll={requestingAll}
+        setRequestingAll={setRequestingAll}
+        selectedCollections={selectedCollections}
+        setSelectedCollections={setSelectedCollections}
+        selectedRoomIds={selectedRoomIds}
+        setSelectedRoomIds={setSelectedRoomIds}
+      />
       <div className="flex justify-end pb-4 items-center space-x-4">
-        <PermissionFormAccordion
-          {...props}
-          collectionKeys={collectionKeys}
-          requestingAll={requestingAll}
-          setRequestingAll={setRequestingAll}
-          selectedCollections={selectedCollections}
-          setSelectedCollections={setSelectedCollections}
-          selectedRoomIds={selectedRoomIds}
-          setSelectedRoomIds={setSelectedRoomIds}
-        />
-
         <label htmlFor="keep-alive-days">Cancel grant if inactive for</label>
         <Input
           id="keep-alive-days"
