@@ -713,11 +713,12 @@ var __publicField = (obj, key, value) => {
      * Logs out and also clears all local data from indexedDB and localStorage.
      */
     () => {
-      var _a;
+      var _a, _b;
       db.logout();
       for (const collectionKey of db.collectionKeys) {
         for (const room of db.getRooms(collectionKey)) {
-          (_a = room.indexedDbProvider) == null ? void 0 : _a.destroy();
+          (_a = room.indexedDbProvider) == null ? void 0 : _a.clearData();
+          (_b = room.indexedDbProvider) == null ? void 0 : _b.destroy();
         }
       }
       db.registry = [];

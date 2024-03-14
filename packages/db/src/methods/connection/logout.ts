@@ -29,6 +29,7 @@ export const logoutAndClear =
     db.logout();
     for (const collectionKey of db.collectionKeys) {
       for (const room of db.getRooms(collectionKey)) {
+        room.indexedDbProvider?.clearData();
         room.indexedDbProvider?.destroy();
       }
     }
