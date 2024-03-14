@@ -18,4 +18,5 @@ bufferMinutes = 2) => {
     const now = new Date().getTime() + bufferMinutes * 60 * 1000;
     return expiry < now;
 };
+export const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 //# sourceMappingURL=index.js.map

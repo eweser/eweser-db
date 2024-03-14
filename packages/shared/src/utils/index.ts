@@ -27,3 +27,6 @@ export const isTokenExpired = (
   const now = new Date().getTime() + bufferMinutes * 60 * 1000;
   return expiry < now;
 };
+
+export const wait = (ms: number) =>
+  new Promise((resolve) => setTimeout(resolve, ms));
