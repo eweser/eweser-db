@@ -44,7 +44,7 @@ export async function createOrUpdateThirdPartyAppPermissions({
         ownerId: userId,
         requesterId: domain,
         requesterType: 'app',
-        collections: collections,
+        collections,
         roomIds,
         isValid: true,
         keepAliveDays: keepAliveDays ?? 1,
