@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { Database, Room } from '@eweser/db';
+import type { Database } from '@eweser/db';
 import * as styles from './styles';
 import { LoginButton } from './LoginButton';
 
@@ -13,16 +13,11 @@ export const StatusBar = ({
   const [loggedIn, setLoggedIn] = useState(typeof db.getToken() === 'string');
   // listen to various database events and update the status bar at the bottom of the screen.
   // This could be used to show icons like connected/offline or a syncing spinner like in google sheets
-  const [connected, setConnected] = useState(db.online);
+  const [connectionStatus, setConnectionStatus] = useState('disconnected');
   useEffect(() => {
-    const handleConnectionChange = (room: Room<any>, status: string) => {
-      // for now just listen to any room's connection status
-      console.log('status', status);
-      if (status === 'connected') {
-        setConnected(true);
-      } else {
-        setConnected(false);
-      }
+    const handleConnectionChange = (status: string) => {
+      // any room's connection status change
+      setConnectionStatus(status);
     };
     db.on('roomConnectionChange', handleConnectionChange);
 
@@ -59,9 +54,7 @@ export const StatusBar = ({
         <pre style={styles.statusBarMessage}>
           {loggedIn ? 'Logged In' : 'Logged Out'}
         </pre>
-        <pre style={styles.statusBarMessage}>
-          {connected ? 'Connected' : 'Disconnected'}
-        </pre>
+        <pre style={styles.statusBarMessage}>{connectionStatus}</pre>
       </div>
     </div>
   );

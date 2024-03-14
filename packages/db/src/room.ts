@@ -57,6 +57,7 @@ export class Room<T extends EweDocument>
   disconnect = () => {
     this.ySweetProvider?.disconnect();
     this.webRtcProvider?.disconnect();
+    this.emit('roomConnectionChange', 'disconnected', this);
   };
 
   constructor({

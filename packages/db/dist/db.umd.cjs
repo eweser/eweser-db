@@ -431,6 +431,7 @@ var __publicField = (obj, key, value) => {
         var _a, _b;
         (_a = this.ySweetProvider) == null ? void 0 : _a.disconnect();
         (_b = this.webRtcProvider) == null ? void 0 : _b.disconnect();
+        this.emit("roomConnectionChange", "disconnected", this);
       });
       this.id = serverRoom.id || crypto.randomUUID();
       this.name = serverRoom.name;
@@ -702,9 +703,7 @@ var __publicField = (obj, key, value) => {
       db.online = false;
       for (const room of db.registry) {
         const dbRoom = db.getRoom(room.collectionKey, room.id);
-        if (dbRoom.ySweetProvider) {
-          dbRoom.ySweetProvider.disconnect();
-        }
+        dbRoom.disconnect();
       }
       db.emit("onLoggedInChange", false);
     }
@@ -9497,7 +9496,7 @@ ${reason}`);
       room.emit("roomConnectionChange", status, room);
       db.emit("roomConnectionChange", status, room);
     }
-    const handleStatusChange = emitConnectionChange;
+    const handleStatusChange = ({ status }) => emitConnectionChange(status);
     function handleSync(synced) {
       emitConnectionChange(synced ? "connected" : "disconnected");
       db.debug("ySweetProvider synced", synced);
@@ -9512,6 +9511,7 @@ ${reason}`);
       }
     }
     async function checkTokenAndConnectProvider() {
+      emitConnectionChange("connecting");
       if (room.tokenExpiry && isTokenExpired(room.tokenExpiry)) {
         const refreshed = await db.refreshYSweetToken(room);
         db.debug(
@@ -9544,6 +9544,7 @@ ${reason}`);
       (_c = room.ySweetProvider) == null ? void 0 : _c.off("connection-error", handleConnectionError);
       (_d = room.ySweetProvider) == null ? void 0 : _d.disconnect();
       (_e = room.webRtcProvider) == null ? void 0 : _e.disconnect();
+      emitConnectionChange("disconnected");
     };
   }
   const loadRoom = (db) => async (serverRoom) => {

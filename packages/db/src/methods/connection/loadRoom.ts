@@ -56,7 +56,8 @@ async function loadYSweet(db: Database, room: Room<any>) {
     room.emit('roomConnectionChange', status, room);
     db.emit('roomConnectionChange', status, room);
   }
-  const handleStatusChange = emitConnectionChange;
+  const handleStatusChange = ({ status }: { status: RoomConnectionStatus }) =>
+    emitConnectionChange(status);
   function handleSync(synced: boolean) {
     emitConnectionChange(synced ? 'connected' : 'disconnected');
     db.debug('ySweetProvider synced', synced);
@@ -73,6 +74,7 @@ async function loadYSweet(db: Database, room: Room<any>) {
   }
 
   async function checkTokenAndConnectProvider() {
+    emitConnectionChange('connecting');
     if (room.tokenExpiry && isTokenExpired(room.tokenExpiry)) {
       const refreshed = await db.refreshYSweetToken(room);
       db.debug(
@@ -107,6 +109,7 @@ async function loadYSweet(db: Database, room: Room<any>) {
     room.ySweetProvider?.off('connection-error', handleConnectionError);
     room.ySweetProvider?.disconnect();
     room.webRtcProvider?.disconnect();
+    emitConnectionChange('disconnected');
   };
 }
 

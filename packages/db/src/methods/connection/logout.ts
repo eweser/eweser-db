@@ -15,9 +15,7 @@ export const logout =
     db.online = false;
     for (const room of db.registry) {
       const dbRoom = db.getRoom(room.collectionKey, room.id);
-      if (dbRoom.ySweetProvider) {
-        dbRoom.ySweetProvider.disconnect();
-      }
+      dbRoom.disconnect();
     }
     db.emit('onLoggedInChange', false);
   };
