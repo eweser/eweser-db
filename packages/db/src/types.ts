@@ -9,7 +9,6 @@ import type {
   CollectionKey,
 } from '@eweser/shared';
 import type { TypedDoc, TypedMap } from 'yjs-types';
-// import type { Doc } from 'yjs';
 
 import type { Room } from './room';
 

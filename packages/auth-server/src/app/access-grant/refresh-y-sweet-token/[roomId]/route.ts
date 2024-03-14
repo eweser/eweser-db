@@ -2,15 +2,16 @@ import type {
   RefreshYSweetTokenRouteParams,
   RefreshYSweetTokenRouteResponse,
 } from '@eweser/shared';
-import { updateRoom } from '../../../../model/rooms/calls';
+import { getRoomById } from '../../../../model/rooms/calls';
 import type { AccessGrantJWT } from '../../../../modules/account/access-grant/create-token-from-grant';
-import { getOrCreateToken } from '../../../../services/y-sweet/get-or-create-token';
 import { SERVER_SECRET } from '../../../../shared/server-constants';
 import {
   authTokenFromHeaders,
   serverRouteError,
 } from '../../../../shared/utils';
 import jwt from 'jsonwebtoken';
+import { refreshTokenIfNeededAndSaveToRoom } from '../../../../modules/rooms/refresh-token-save-to-room';
+import { db } from '../../../../services/database';
 
 export async function GET(
   request: Request,
@@ -30,16 +31,24 @@ export async function GET(
     return serverRouteError('Invalid room', 401);
   }
 
-  // get token from ysweet, update the room and return token
-  const gotToken = await getOrCreateToken(roomId);
-  const token = gotToken.token;
-  const ySweetUrl = gotToken.url;
-  if (!token || !ySweetUrl) {
+  const refreshed = await db().transaction(async (dbInstance) => {
+    const room = await getRoomById(roomId, dbInstance);
+    if (!room) {
+      return;
+    }
+    return await refreshTokenIfNeededAndSaveToRoom(room, dbInstance);
+  });
+  const { token, ySweetUrl, tokenExpiry } = refreshed || {};
+
+  if (!token || !ySweetUrl || !tokenExpiry) {
     return serverRouteError('Could not get token', 500);
   }
-  await updateRoom({ id: roomId, token, ySweetUrl });
 
-  const response: RefreshYSweetTokenRouteResponse = { token, ySweetUrl };
+  const response: RefreshYSweetTokenRouteResponse = {
+    token,
+    ySweetUrl,
+    tokenExpiry,
+  };
 
   return Response.json(response);
 }

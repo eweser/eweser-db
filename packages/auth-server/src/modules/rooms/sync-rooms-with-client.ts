@@ -19,14 +19,18 @@ import { db } from '../../services/database';
 import { getOrCreateToken } from '../../services/y-sweet/get-or-create-token';
 import type { RoomInsert } from '../../model/rooms/validation';
 import { AUTH_SERVER_DOMAIN } from '../../shared/constants';
+import { refreshTokenIfNeededAndSaveToRoom } from './refresh-token-save-to-room';
 /**
- * To update:
+ * Make sure all requested rooms ySweet tokens are up to date
+ * 
  * add client created rooms to server `rooms` table. Make a ySweet token for each
  * Add those to the app's access grant.
+ * 
  * use all rooms for access grant to re-generate the token.
  * send back all rooms to the client.
 
  * Also check if any rooms have been marked deleted client-side but aren't marked as such in the database.
+ * 
  * TODO: delete (for real) any rooms who's ttl (time to live) has expired. default ttl is 1 month.
  */
 export async function syncRoomsWithClient(token: string, clientRooms: Room[]) {
@@ -48,6 +52,11 @@ export async function syncRoomsWithClient(token: string, clientRooms: Room[]) {
   const syncResult: { grant: AccessGrant; rooms: Room[] | null } =
     await db().transaction(async (dbInstance) => {
       const serverRooms = await getRoomsFromAccessGrant(grant);
+
+      for (const room of serverRooms) {
+        // TODO: If this slows down the sync a lot, consider removing this and relying on the client calling refresh token for each room instead.
+        await refreshTokenIfNeededAndSaveToRoom(room, dbInstance);
+      }
 
       const serverRoomIds = serverRooms.map((r) => r.id);
       const clientRoomIds = clientRooms.map((r) => r.id);
@@ -107,17 +116,7 @@ export async function syncRoomsWithClient(token: string, clientRooms: Room[]) {
         }
         const existingRoom = await getRoomById(room.id);
         if (existingRoom) {
-          const ySweetToken = existingRoom.token;
-          if (!ySweetToken) {
-            const ySweetToken = await getOrCreateToken(room.id);
-            if (!ySweetToken.token || !ySweetToken.url) {
-              throw new Error(`Could not get token for room ${room.id}`);
-            }
-            await updateRoom(
-              { ...room, token: ySweetToken.token, ySweetUrl: ySweetToken.url },
-              dbInstance
-            );
-          }
+          await refreshTokenIfNeededAndSaveToRoom(existingRoom, dbInstance);
           continue;
         } else {
           // generate ySweet tokens for new client rooms to save to server
@@ -129,6 +128,7 @@ export async function syncRoomsWithClient(token: string, clientRooms: Room[]) {
             ...room,
             token: ySweetToken.token,
             ySweetUrl: ySweetToken.url,
+            tokenExpiry: ySweetToken.expiry,
           });
         }
       }

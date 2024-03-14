@@ -8,8 +8,14 @@ import type { DBInstance } from '../../services/database/drizzle/init';
 import type { CollectionKey } from '@eweser/db';
 import type { AccessGrant } from '../access_grants';
 
-export async function getRoomById(id: string): Promise<Room | null> {
-  const roomsFound = await db().select().from(rooms).where(eq(rooms.id, id));
+export async function getRoomById(
+  id: string,
+  dbInstance?: DBInstance
+): Promise<Room | null> {
+  const roomsFound = await db(dbInstance)
+    .select()
+    .from(rooms)
+    .where(eq(rooms.id, id));
   return roomsFound[0] || null;
 }
 

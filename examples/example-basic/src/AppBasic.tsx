@@ -47,6 +47,7 @@ const initialRooms: Registry = [
     writeAccess: [],
     adminAccess: [],
     token: null,
+    tokenExpiry: null,
     ySweetUrl: null,
     _deleted: false,
     _ttl: null,
@@ -84,7 +85,7 @@ const App = () => {
       return;
     }
     async function login() {
-      const loginRes = await db.login();
+      const loginRes = await db.login({ loadAllRooms: true }); // beware this could be way too many if you have a lot of rooms. Better to call db.loadRooms() on the ones you actually need.
       if (loginRes) {
         setLoggedIn(true);
       }

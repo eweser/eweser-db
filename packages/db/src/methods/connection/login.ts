@@ -6,7 +6,7 @@ export const login =
    * @param loadAllRooms default false. Will load all rooms from the registry and connect to them. Disable this is you have too many rooms and want to load them later individually.
    * @returns true if successful
    */
-  async (loadAllRooms = false) => {
+  async (options: { loadAllRooms?: boolean } | undefined) => {
     const token = db.getToken();
     if (!token) {
       throw new Error('No token found');
@@ -17,10 +17,9 @@ export const login =
     }
     db.useYSweet = true;
     db.online = true;
-    if (loadAllRooms) {
+    if (options?.loadAllRooms) {
       await db.loadRooms(db.registry); // connects the ySweet providers. Could make this more atomic in the future to avoid creating too many connections.
-      db.emit('onLoggedInChange', true);
-      return true;
     }
+    db.emit('onLoggedInChange', true);
     return true;
   };

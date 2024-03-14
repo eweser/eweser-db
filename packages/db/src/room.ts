@@ -11,6 +11,7 @@ export type NewRoomOptions<T extends EweDocument> = {
   name: string;
   collectionKey: CollectionKey;
   token?: string | null;
+  tokenExpiry?: string | null;
   ySweetUrl?: string | null;
   publicAccess?: 'private' | 'read' | 'write';
   readAccess?: string[];
@@ -35,6 +36,7 @@ export class Room<T extends EweDocument>
   name: string;
   collectionKey: CollectionKey;
   token: string | null;
+  tokenExpiry: string | null;
   ySweetUrl: string | null;
   publicAccess: 'private' | 'read' | 'write';
   readAccess: string[];
@@ -52,6 +54,11 @@ export class Room<T extends EweDocument>
 
   connectionRetries = 0;
 
+  disconnect = () => {
+    this.ySweetProvider?.disconnect();
+    this.webRtcProvider?.disconnect();
+  };
+
   constructor({
     indexedDbProvider,
     webRtcProvider,
@@ -64,6 +71,7 @@ export class Room<T extends EweDocument>
     this.name = serverRoom.name;
     this.collectionKey = serverRoom.collectionKey;
     this.token = serverRoom.token ?? null;
+    this.tokenExpiry = serverRoom.tokenExpiry ?? null;
     this.ySweetUrl = serverRoom.ySweetUrl ?? null;
     this.publicAccess = serverRoom.publicAccess ?? 'private';
     this.readAccess = serverRoom.readAccess ?? [];

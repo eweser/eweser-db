@@ -10,6 +10,7 @@ export type NewRoomOptions<T extends EweDocument> = {
     name: string;
     collectionKey: CollectionKey;
     token?: string | null;
+    tokenExpiry?: string | null;
     ySweetUrl?: string | null;
     publicAccess?: 'private' | 'read' | 'write';
     readAccess?: string[];
@@ -30,6 +31,7 @@ export declare class Room<T extends EweDocument> extends TypedEventEmitter<RoomE
     name: string;
     collectionKey: CollectionKey;
     token: string | null;
+    tokenExpiry: string | null;
     ySweetUrl: string | null;
     publicAccess: 'private' | 'read' | 'write';
     readAccess: string[];
@@ -44,6 +46,7 @@ export declare class Room<T extends EweDocument> extends TypedEventEmitter<RoomE
     ySweetProvider?: YSweetProvider | null;
     ydoc?: YDoc<T> | null;
     connectionRetries: number;
+    disconnect: () => void;
     constructor({ indexedDbProvider, webRtcProvider, ySweetProvider, ydoc, ...serverRoom }: NewRoomOptions<T>);
 }
 export declare function roomToServerRoom(room: Room<any>): ServerRoom;

@@ -50,12 +50,14 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
     generateLoginUrl: (options: Partial<import("@eweser/shared").LoginQueryOptions> & {
         name: string;
     }) => string;
-    login: (loadAllRooms?: boolean) => Promise<boolean>;
+    login: (options: {
+        loadAllRooms?: boolean | undefined;
+    } | undefined) => Promise<boolean>;
     logout: () => void;
     logoutAndClear: () => void;
     getAccessGrantTokenFromUrl: () => string | null;
     getToken: () => string | null;
-    refreshYSweetToken: (room: Room<any>) => Promise<string | undefined>;
+    refreshYSweetToken: (room: Room<any>) => Promise<import("@eweser/shared").RefreshYSweetTokenRouteResponse | null>;
     loadRoom: (serverRoom: import("@eweser/shared").ServerRoom) => Promise<Room<any>>;
     loadRooms: (rooms: Registry) => Promise<void>;
     syncRegistry: () => Promise<boolean>;
