@@ -22,6 +22,7 @@ export type ServerRoom = {
     name: string;
     collectionKey: CollectionKey;
     token: string | null;
+    tokenExpiry: string | null;
     ySweetUrl: string | null;
     publicAccess: 'private' | 'read' | 'write';
     readAccess: string[];
@@ -45,4 +46,5 @@ export type RefreshYSweetTokenRouteParams = {
 export type RefreshYSweetTokenRouteResponse = {
     token: string;
     ySweetUrl: string;
+    tokenExpiry: string;
 };

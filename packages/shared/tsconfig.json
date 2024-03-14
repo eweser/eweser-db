@@ -21,5 +21,6 @@
     "outDir": "dist",
     "useUnknownInCatchVariables": false
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["**/*.test.ts"]
 }

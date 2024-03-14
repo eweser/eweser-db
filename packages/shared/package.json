@@ -31,12 +31,15 @@
   "scripts": {
     "build": "rm -rf ./dist; rm -rf ./types; tsc",
     "dev": "tsc -w",
-    "clean": "rm -rf ./dist; rm -rf ./types"
+    "clean": "rm -rf ./dist; rm -rf ./types",
+    "test-watch": "vitest",
+    "test": "vitest --run"
   },
   "devDependencies": {
     "@eweser/eslint-config-ts": "^1.10.0",
     "request": "^2.88.2",
-    "typescript": "^4.4.4"
+    "typescript": "^4.4.4",
+    "vitest": "^1.3.1"
   },
   "gitHead": "d6ee91d84092583f851548fa9ffe8ccf5de5705a"
 }

@@ -10,4 +10,12 @@ export function loginOptionsToQueryParams({ collections, ...rest }) {
     };
     return params;
 }
+/** checks if the token is already expired or will be expired within the next (2) minutes */
+export const isTokenExpired = (tokenExpiry, 
+/* mark the token as expired even this many minutes before it actually expires */
+bufferMinutes = 2) => {
+    const expiry = new Date(tokenExpiry).getTime();
+    const now = new Date().getTime() + bufferMinutes * 60 * 1000;
+    return expiry < now;
+};
 //# sourceMappingURL=index.js.map
