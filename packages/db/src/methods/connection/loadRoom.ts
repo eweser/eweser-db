@@ -6,6 +6,7 @@ import { createYjsProvider } from '@y-sweet/client';
 import type { Doc } from 'yjs';
 import type { Database } from '../..';
 import type { RoomConnectionStatus } from '../../events';
+import { wait } from '@eweser/shared';
 
 function validate(room: ServerRoom) {
   if (!room) {
@@ -65,6 +66,7 @@ async function loadYSweet(db: Database, room: Room<any>) {
     emitConnectionChange('disconnected');
     // because this is a change listener, it could be called many times. In order to prevent an infinite loop of retries, we will only allow 3 retries.
     if (room.connectionRetries < 3) {
+      await wait(1000);
       room.connectionRetries++;
       checkTokenAndConnectProvider();
     }
