@@ -12,7 +12,10 @@ export const rooms = pgTable('rooms', {
   }).notNull(),
 
   token: text('token'), // y-sweet access token to sync the document
-
+  tokenExpiry: timestamp('token_expiry', {
+    withTimezone: true,
+    mode: 'string',
+  }), // when the token expires
   ySweetUrl: text('y_sweet_url'), // y-sweet url to sync the document
 
   publicAccess: text('public_access', { enum: PUBLIC_ACCESS_TYPES })
