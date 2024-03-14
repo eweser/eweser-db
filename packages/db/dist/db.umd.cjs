@@ -483,6 +483,7 @@ var __publicField = (obj, key, value) => {
     const now = (/* @__PURE__ */ new Date()).getTime() + bufferMinutes * 60 * 1e3;
     return expiry < now;
   };
+  const wait$1 = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const newDocument = (_id, _ref, doc) => {
     const now = (/* @__PURE__ */ new Date()).getTime();
     const base = {
@@ -8477,15 +8478,15 @@ var __publicField = (obj, key, value) => {
     }
   }
   const initializeDocAndLocalProvider = async (roomId, existingDoc) => {
-    const ydoc = existingDoc || new Doc();
-    if (!ydoc)
+    const yDoc = existingDoc || new Doc();
+    if (!yDoc)
       throw new Error("could not create doc");
-    const localProvider = new IndexeddbPersistence(roomId, ydoc);
+    const localProvider = new IndexeddbPersistence(roomId, yDoc);
     if (localProvider.synced)
-      return { ydoc, localProvider };
+      return { yDoc, localProvider };
     const synced = await localProvider.whenSynced;
     if (synced.synced)
-      return { ydoc, localProvider };
+      return { yDoc, localProvider };
     else
       throw new Error("could not sync doc");
   };
@@ -9458,7 +9459,7 @@ ${reason}`);
     });
     return provider;
   }
-  const validate = (room) => {
+  function validate(room) {
     if (!room) {
       throw new Error("room is required");
     }
@@ -9470,13 +9471,81 @@ ${reason}`);
       throw new Error("collectionKey is required");
     }
     return { roomId, collectionKey };
-  };
-  const checkLoadedState = (db) => (room, token) => {
-    const localLoaded = room && room.ydoc && room.indexedDbProvider;
-    const shouldLoadYSweet = db.useYSweet && token && room && room.ySweetUrl;
-    const ySweetLoaded = token && room && room.ySweetProvider && room.token === token;
-    return { localLoaded, ySweetLoaded, shouldLoadYSweet };
-  };
+  }
+  function checkLoadedState(db) {
+    return (room, token) => {
+      const localLoaded = room && room.ydoc && room.indexedDbProvider;
+      const shouldLoadYSweet = db.useYSweet && token && room && room.ySweetUrl;
+      const ySweetLoaded = token && room && room.ySweetProvider && room.token === token && room.tokenExpiry && !isTokenExpired(room.tokenExpiry);
+      return { localLoaded, ySweetLoaded, shouldLoadYSweet };
+    };
+  }
+  async function loadLocal(db, room) {
+    const { yDoc: ydoc, localProvider } = await initializeDocAndLocalProvider(
+      room.id
+    );
+    room.ydoc = ydoc;
+    room.indexedDbProvider = localProvider;
+    db.debug(
+      "initialized ydoc and localProvider",
+      room.ydoc,
+      room.indexedDbProvider
+    );
+  }
+  async function loadYSweet(db, room) {
+    function emitConnectionChange(status) {
+      room.emit("roomConnectionChange", status, room);
+      db.emit("roomConnectionChange", status, room);
+    }
+    const handleStatusChange = emitConnectionChange;
+    function handleSync(synced) {
+      emitConnectionChange(synced ? "connected" : "disconnected");
+      db.debug("ySweetProvider synced", synced);
+    }
+    async function handleConnectionError(error) {
+      db.error("ySweetProvider error", error);
+      emitConnectionChange("disconnected");
+      if (room.connectionRetries < 3) {
+        await wait$1(1e3);
+        room.connectionRetries++;
+        checkTokenAndConnectProvider();
+      }
+    }
+    async function checkTokenAndConnectProvider() {
+      if (room.tokenExpiry && isTokenExpired(room.tokenExpiry)) {
+        const refreshed = await db.refreshYSweetToken(room);
+        db.debug(
+          "refreshed token. success: ",
+          (refreshed == null ? void 0 : refreshed.token) && refreshed.ySweetUrl && refreshed.tokenExpiry
+        );
+        if ((refreshed == null ? void 0 : refreshed.token) && refreshed.ySweetUrl && refreshed.tokenExpiry) {
+          room.token = refreshed.token;
+          room.tokenExpiry = refreshed.tokenExpiry;
+          room.ySweetUrl = refreshed.ySweetUrl;
+        }
+      }
+      room.ySweetProvider = createYjsProvider(room.ydoc, {
+        url: room.ySweetUrl ?? "",
+        token: room.token ?? "",
+        docId: room.id
+      });
+      room.ydoc = room.ySweetProvider.doc;
+      room.ySweetProvider.on("status", handleStatusChange);
+      room.ySweetProvider.on("sync", handleSync);
+      room.ySweetProvider.on("connection-error", handleConnectionError);
+      room.ySweetProvider.connect();
+    }
+    await checkTokenAndConnectProvider();
+    db.debug("created ySweetProvider", room.ySweetProvider);
+    room.disconnect = () => {
+      var _a, _b, _c, _d, _e;
+      (_a = room.ySweetProvider) == null ? void 0 : _a.off("status", handleStatusChange);
+      (_b = room.ySweetProvider) == null ? void 0 : _b.off("sync", handleSync);
+      (_c = room.ySweetProvider) == null ? void 0 : _c.off("connection-error", handleConnectionError);
+      (_d = room.ySweetProvider) == null ? void 0 : _d.disconnect();
+      (_e = room.webRtcProvider) == null ? void 0 : _e.disconnect();
+    };
+  }
   const loadRoom = (db) => async (serverRoom) => {
     const { roomId, collectionKey } = validate(serverRoom);
     db.info("loading room", serverRoom);
@@ -9490,72 +9559,10 @@ ${reason}`);
       return room;
     }
     if (!localLoaded) {
-      const { ydoc: newYDoc, localProvider } = await initializeDocAndLocalProvider(roomId);
-      room.ydoc = newYDoc;
-      room.indexedDbProvider = localProvider;
-      db.debug(
-        "initialized ydoc and localProvider",
-        room.ydoc,
-        room.indexedDbProvider
-      );
+      await loadLocal(db, room);
     }
     if (shouldLoadYSweet && !ySweetLoaded) {
-      const checkTokenAndConnectProvider = async (forceRefresh = false) => {
-        if (forceRefresh || room.tokenExpiry && isTokenExpired(room.tokenExpiry)) {
-          const refreshed = await db.refreshYSweetToken(
-            db.collections[collectionKey][roomId]
-          );
-          db.debug(
-            "refreshed token. success: ",
-            (refreshed == null ? void 0 : refreshed.token) && refreshed.ySweetUrl && refreshed.tokenExpiry
-          );
-          if ((refreshed == null ? void 0 : refreshed.token) && refreshed.ySweetUrl && refreshed.tokenExpiry) {
-            room.token = refreshed.token;
-            room.tokenExpiry = refreshed.tokenExpiry;
-            room.ySweetUrl = refreshed.ySweetUrl;
-          }
-        }
-        room.ySweetProvider = createYjsProvider(room.ydoc, {
-          url: room.ySweetUrl ?? "",
-          token: room.token ?? "",
-          docId: roomId
-        });
-        room.ydoc = room.ySweetProvider.doc;
-        room.ySweetProvider.connect();
-      };
-      await checkTokenAndConnectProvider();
-      const emitConnectionChange = (status) => {
-        room.emit("roomConnectionChange", status, room);
-        db.emit("roomConnectionChange", status, room);
-      };
-      const handleStatusChange = emitConnectionChange;
-      const handleSync = (synced) => {
-        emitConnectionChange(synced ? "connected" : "disconnected");
-        db.debug("ySweetProvider synced", synced);
-      };
-      const handleConnectionError = async (error) => {
-        db.error("ySweetProvider error", error);
-        emitConnectionChange("disconnected");
-        if (room.connectionRetries < 3) {
-          room.connectionRetries++;
-          checkTokenAndConnectProvider(true);
-        }
-      };
-      if (!room.ySweetProvider) {
-        throw new Error("failed to load ySweetProvider");
-      }
-      room.ySweetProvider.on("status", handleStatusChange);
-      room.ySweetProvider.on("sync", handleSync);
-      room.ySweetProvider.on("connection-error", handleConnectionError);
-      db.debug("created ySweetProvider", room.ySweetProvider);
-      room.disconnect = () => {
-        var _a, _b, _c, _d, _e;
-        (_a = room.ySweetProvider) == null ? void 0 : _a.off("status", handleStatusChange);
-        (_b = room.ySweetProvider) == null ? void 0 : _b.off("sync", handleSync);
-        (_c = room.ySweetProvider) == null ? void 0 : _c.off("connection-error", handleConnectionError);
-        (_d = room.ySweetProvider) == null ? void 0 : _d.disconnect();
-        (_e = room.webRtcProvider) == null ? void 0 : _e.disconnect();
-      };
+      await loadYSweet(db, room);
     }
     db.collections[collectionKey][roomId] = room;
     db.emit("roomLoaded", room);
