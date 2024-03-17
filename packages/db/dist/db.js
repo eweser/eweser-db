@@ -9490,6 +9490,9 @@ async function loadLocal(db, room) {
 }
 async function loadYSweet(db, room) {
   function emitConnectionChange(status) {
+    if (status === "connected") {
+      room.connectionRetries = 0;
+    }
     room.emit("roomConnectionChange", status, room);
     db.emit("roomConnectionChange", status, room);
   }

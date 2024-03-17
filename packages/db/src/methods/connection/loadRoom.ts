@@ -53,6 +53,9 @@ async function loadLocal(db: Database, room: Room<any>) {
 
 async function loadYSweet(db: Database, room: Room<any>) {
   function emitConnectionChange(status: RoomConnectionStatus) {
+    if (status === 'connected') {
+      room.connectionRetries = 0;
+    }
     room.emit('roomConnectionChange', status, room);
     db.emit('roomConnectionChange', status, room);
   }
