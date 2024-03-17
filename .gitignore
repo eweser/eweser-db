@@ -17,6 +17,8 @@ types
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
 .idea
 .DS_Store
 *.suo

@@ -1,0 +1,61 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run DB Dev",
+      "type": "shell",
+      "command": "cd packages/db && npm run dev",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "Run Shared Dev",
+      "type": "shell",
+      "command": "cd packages/shared && npm run dev",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "Run auth-server Dev",
+      "type": "shell",
+      "command": "cd packages/auth-server && npm run dev",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "Run Example-basic Dev",
+      "type": "shell",
+      "command": "cd examples/example-basic && npm run dev",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "Run Example-components Dev",
+      "type": "shell",
+      "command": "cd packages/examples-components && npm run dev",
+      "presentation": { "reveal": "always", "panel": "new" }
+    },
+    {
+      "label": "Run All Dev",
+      "dependsOn": [
+        "Run DB Dev",
+        "Run Shared Dev",
+        "Run auth-server Dev",
+        "Run Example-basic Dev",
+        "Run Example-components Dev"
+      ],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    }
+  ]
+}
