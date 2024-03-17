@@ -41,7 +41,10 @@
       "label": "Run Example-components Dev",
       "type": "shell",
       "command": "cd packages/examples-components && npm run dev",
-      "presentation": { "reveal": "always", "panel": "new" }
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
     },
     {
       "label": "Run All Dev",
@@ -55,7 +58,8 @@
       "presentation": {
         "reveal": "always",
         "panel": "new"
-      }
+      },
+      "problemMatcher": []
     }
   ]
 }
