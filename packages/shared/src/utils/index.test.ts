@@ -3,10 +3,10 @@ import { isTokenExpired } from './';
 
 describe('isTokenExpired', () => {
   it('should return true when expiry date is before 2 minute buffer', () => {
-    const tokenExpiry = new Date(
+    const slightlyMorThan2Minutes = new Date(
       new Date().getTime() - 1000 * 60 * 2 - 100
     ).toISOString();
-    const expired = isTokenExpired(tokenExpiry);
+    const expired = isTokenExpired(slightlyMorThan2Minutes);
     expect(expired).toBe(true);
   });
   it('should return false if expiry is after default 2 minute buffer', () => {
