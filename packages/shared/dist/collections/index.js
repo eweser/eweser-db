@@ -6,5 +6,6 @@ export * from './documentBase';
 export const COLLECTION_KEYS = ['notes', 'flashcards', 'profiles'];
 export const COLLECTION_KEYS_OR_ALL = [...COLLECTION_KEYS, 'all'];
 export const PUBLIC_ACCESS_TYPES = ['private', 'read', 'write'];
+export const ROOM_ACCESS_TYPES = ['read', 'write', 'admin'];
 export const collectionKeys = COLLECTION_KEYS.map((key) => key);
 //# sourceMappingURL=index.js.map

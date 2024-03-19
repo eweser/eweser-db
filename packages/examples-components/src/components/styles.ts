@@ -1,32 +1,57 @@
 import { type CSSProperties } from 'react';
 
+const background = '#373d5e';
+const backgroundDark = '#2b3148';
+const highlight = 'green';
+const secondary = 'hsl(21.75 34.78% 45.1%)';
+const secondaryDark = 'hsl(21.75 34.78% 35.1%)';
+const white = '#ffffff';
+
 export const appRoot: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'center',
   margin: '0',
-  color: 'white',
-  backgroundColor: '#373d5e',
+  color: white,
+  backgroundColor: background,
   minHeight: '100vh',
   paddingLeft: '1rem',
   paddingRight: '1rem',
   paddingTop: '3rem',
 };
+export const roomBar: CSSProperties = {
+  display: 'flex',
+  alignContent: 'center',
+  width: '100%',
+};
 export const newNoteButton: CSSProperties = {
-  alignSelf: 'flex-start',
-  color: 'white',
-  background: 'green',
-  boxShadow: '5px 2px 5px 2px #2b2b45',
+  color: white,
+  background: highlight,
+  boxShadow: `5px 2px 5px 2px ${backgroundDark}`,
   border: 'none',
   padding: '0.75em',
-  marginLeft: '0.5rem',
+  margin: 'auto',
+  marginRight: '0',
+  marginLeft: 'auto',
+  cursor: 'pointer',
+};
+export const shareButton: CSSProperties = {
+  color: white,
+  background: secondary,
+  boxShadow: `5px 2px 5px 2px ${backgroundDark}`,
+  border: 'none',
+  padding: '0.75em',
+  margin: 'auto',
+  marginRight: '0',
+  marginLeft: '2rem',
+  cursor: 'pointer',
 };
 export const card: CSSProperties = {
-  backgroundColor: 'white',
+  backgroundColor: white,
   color: 'black',
   width: '400px',
-  boxShadow: '4px 3px 5px 2px green',
+  boxShadow: `4px 3px 5px 2px ${highlight}`,
   margin: '32px auto',
   cursor: 'pointer',
   position: 'relative',
@@ -58,13 +83,13 @@ export const deleteButton: CSSProperties = {
 };
 export const statusBar: CSSProperties = {
   position: 'fixed',
-  backgroundColor: 'rgb(255 255 255 / 95%)',
+  backgroundColor: white,
   top: 0,
   right: 0,
   left: 0,
   zIndex: 2,
   padding: '0 1rem',
-  color: 'rgb(82 82 82)',
+  color: background,
   display: 'flex',
   justifyContent: 'space-between',
   alignContent: 'center',
@@ -98,16 +123,21 @@ export const modal: CSSProperties = {
 export const modalContent: CSSProperties = {
   position: 'relative',
   padding: '5rem',
-  background: 'white',
+  background: white,
+  color: 'black',
   display: 'flex',
   flexWrap: 'wrap',
   overflowY: 'auto',
   maxHeight: '80vh',
+  zIndex: 1001,
 };
 export const modalCloseButton: CSSProperties = {
   position: 'absolute',
   top: '1rem',
   right: '1rem',
+  border: 'none',
+  padding: '0.5rem',
+  cursor: 'pointer',
 };
 export const borderedCard: CSSProperties = {
   border: '1px solid black',
@@ -119,14 +149,14 @@ export const borderedCard: CSSProperties = {
 export const loginButton: CSSProperties = {
   background: 'transparent',
   border: 'none',
-  color: 'hsl(21.75 34.78% 45.1%)',
+  color: secondary,
   cursor: 'pointer',
   display: 'flex',
   alignItems: 'center',
 };
 export const loginButtonHover: CSSProperties = {
   ...loginButton,
-  color: 'hsl(21.75 34.78% 55.1%)',
+  color: secondaryDark,
 };
 
 export const loginButtonText: CSSProperties = {
@@ -151,7 +181,7 @@ export const logoutButtonsDiv: CSSProperties = {
 export const logoutButton: CSSProperties = {
   background: 'transparent',
   border: 'none',
-  color: 'hsl(21.75 34.78% 45.1%)',
+  color: secondary,
   cursor: 'pointer',
   display: 'flex',
   alignItems: 'center',

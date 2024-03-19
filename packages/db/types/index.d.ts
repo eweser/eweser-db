@@ -1,6 +1,7 @@
 import type { CollectionKey, Collections, CollectionToDocument, EweDocument, ProviderOptions, Registry } from './types';
 import { Room } from './room';
 import { TypedEventEmitter } from './events';
+import type { RoomAccessType } from '@eweser/shared';
 import type { DatabaseEvents } from './events';
 export * from './utils';
 export * from './types';
@@ -80,5 +81,13 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
      * Note: If your app does not have access privileges to the collection, the room won't be synced server-side.
      */
     newRoom: <T extends EweDocument>(options: Room<T>) => void;
+    generateShareRoomLink: ({ roomId, invitees, redirectUrl, redirectQueries, expiry, accessType, }: {
+        roomId: string;
+        invitees?: string[] | undefined;
+        redirectUrl?: string | undefined;
+        redirectQueries?: Record<string, string> | undefined;
+        expiry?: string | undefined;
+        accessType: RoomAccessType;
+    }) => Promise<string>;
     constructor(optionsPassed?: DatabaseOptions);
 }

@@ -1,21 +1,7 @@
-import type { CollectionKey, CollectionKeyOrAll } from './collections';
+import type { CollectionKey, PublicAccessType } from './collections';
 export * from './collections';
 export * from './utils';
-export type LoginQueryOptions = {
-    redirect: string;
-    domain: string;
-    collections: CollectionKeyOrAll[];
-    /** app name */
-    name: string;
-};
-export type LoginQueryParams = {
-    redirect: string;
-    domain: string;
-    /** CollectionOrAll array string joined with '|' */
-    collections: string;
-    /** app name */
-    name: string;
-};
+export * from './api';
 /** Should match the rooms schema in the auth-server. Unfortunately we can't see the null values as undefined or else drizzle types will be out of sync. */
 export type ServerRoom = {
     id: string;
@@ -24,7 +10,7 @@ export type ServerRoom = {
     token: string | null;
     tokenExpiry: string | null;
     ySweetUrl: string | null;
-    publicAccess: 'private' | 'read' | 'write';
+    publicAccess: PublicAccessType;
     readAccess: string[];
     writeAccess: string[];
     adminAccess: string[];
@@ -32,19 +18,4 @@ export type ServerRoom = {
     updatedAt: string | null;
     _deleted: boolean | null;
     _ttl: string | null;
-};
-export type RegistrySyncRequestBody = {
-    rooms: ServerRoom[];
-};
-export type RegistrySyncResponse = {
-    rooms: ServerRoom[];
-    token: string;
-};
-export type RefreshYSweetTokenRouteParams = {
-    roomId: string;
-};
-export type RefreshYSweetTokenRouteResponse = {
-    token: string;
-    ySweetUrl: string;
-    tokenExpiry: string;
 };

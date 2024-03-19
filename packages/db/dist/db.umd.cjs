@@ -9685,6 +9685,38 @@ ${reason}`);
           this.syncRegistry();
         }
       });
+      __publicField(this, "generateShareRoomLink", async ({
+        roomId,
+        invitees,
+        redirectUrl,
+        redirectQueries,
+        expiry,
+        accessType
+      }) => {
+        const body = {
+          roomId,
+          invitees: invitees || [],
+          redirect: redirectUrl || window.location.href.split("?")[0],
+          redirectQueries,
+          expiry: expiry || new Date(Date.now() + 1e3 * 60 * 60 * 24).toISOString(),
+          accessType
+        };
+        const { error, data } = await this.serverFetch(
+          "/access-grant/create-room-invite",
+          {
+            body,
+            method: "POST"
+          }
+        );
+        if (error) {
+          this.error("Error creating room invite", error);
+          return JSON.stringify(error);
+        }
+        if (!(data == null ? void 0 : data.link)) {
+          return "Error creating room invite";
+        }
+        return data.link;
+      });
       const options = optionsPassed || {};
       if (options.authServer) {
         this.authServer = options.authServer;

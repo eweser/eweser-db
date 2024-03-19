@@ -13,6 +13,10 @@ export const COLLECTION_KEYS = ['notes', 'flashcards', 'profiles'] as const;
 export const COLLECTION_KEYS_OR_ALL = [...COLLECTION_KEYS, 'all'] as const;
 
 export const PUBLIC_ACCESS_TYPES = ['private', 'read', 'write'] as const;
+export type PublicAccessType = (typeof PUBLIC_ACCESS_TYPES)[number];
+
+export const ROOM_ACCESS_TYPES = ['read', 'write', 'admin'] as const;
+export type RoomAccessType = (typeof ROOM_ACCESS_TYPES)[number];
 
 export const collectionKeys = COLLECTION_KEYS.map((key) => key);
 export type EweDocument = Note | Flashcard | Profile;

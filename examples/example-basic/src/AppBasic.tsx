@@ -167,16 +167,18 @@ const NotesRoom = ({ notesRoom }: { notesRoom: Room<Note> }) => {
 
   return (
     <>
-      <h1>{notesRoom.name}</h1>
-      {Object.keys(notes)?.length === 0 && (
-        <div>No notes found. Please create one</div>
-      )}
-
-      <button style={styles.newNoteButton} onClick={() => createNote()}>
-        New note
-      </button>
+      <div style={styles.roomBar}>
+        <h1>{notesRoom.name}</h1>
+        <button style={styles.newNoteButton} onClick={() => createNote()}>
+          New note
+        </button>
+        <ShareButton db={db} room={notesRoom} />
+      </div>
 
       <div style={styles.flexWrap}>
+        {Object.keys(notes)?.length === 0 && (
+          <div>No notes found. Please create one</div>
+        )}
         {Object.keys(notes).map((id) => {
           const note = notes[id];
           if (note && !notes[id]?._deleted)
@@ -213,6 +215,73 @@ const NotesRoom = ({ notesRoom }: { notesRoom: Room<Note> }) => {
             );
         })}
       </div>
+    </>
+  );
+};
+
+const ShareButton = ({ db, room }: { db: Database; room: Room<any> }) => {
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareLink, setShareLink] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (showShareModal) {
+      db.generateShareRoomLink({ roomId: room.id, accessType: 'write' })
+        .then((link) => setShareLink(link))
+        // eslint-disable-next-line no-console
+        .catch((e) => console.error(e));
+    } else {
+      setShareLink('Unable to get share link');
+    }
+  }, [db, room, showShareModal]);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(shareLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 3000); // Reset copied state after 3 seconds
+  };
+
+  const handleModalClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
+  return (
+    <>
+      {showShareModal && (
+        <div onClick={() => setShowShareModal(false)} style={styles.modal}>
+          <div onClick={handleModalClick} style={styles.modalContent}>
+            <button
+              onClick={() => setShowShareModal(false)}
+              style={styles.modalCloseButton}
+            >
+              X
+            </button>
+            <div>
+              <p>
+                Anyone with this link will have edit permissions for this folder
+              </p>
+              <div>
+                <span
+                  onClick={handleCopy}
+                  title={shareLink}
+                  style={{ cursor: 'pointer' }}
+                >
+                  {shareLink.slice(0, 10)}...{shareLink.slice(-10)}
+                </span>
+                <button onClick={handleCopy} style={styles.shareButton}>
+                  {copied ? 'Copied!' : 'Copy Link'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      <button
+        onClick={() => setShowShareModal(true)}
+        style={styles.shareButton}
+      >
+        Share
+      </button>
     </>
   );
 };
