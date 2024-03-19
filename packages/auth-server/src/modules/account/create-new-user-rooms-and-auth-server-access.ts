@@ -39,7 +39,7 @@ export async function createNewUserRoomsAndAuthServerAccess(
         publicAccess: 'read',
         readAccess: [userId, AUTH_SERVER_DOMAIN],
         writeAccess: [userId, AUTH_SERVER_DOMAIN],
-        adminAccess: [userId, AUTH_SERVER_DOMAIN],
+        adminAccess: [userId],
         token,
         ySweetUrl: url,
       });
@@ -54,7 +54,7 @@ export async function createNewUserRoomsAndAuthServerAccess(
         publicAccess: 'private',
         readAccess: [userId, AUTH_SERVER_DOMAIN],
         writeAccess: [userId, AUTH_SERVER_DOMAIN],
-        adminAccess: [userId, AUTH_SERVER_DOMAIN],
+        adminAccess: [userId],
         token,
         ySweetUrl: url,
       });

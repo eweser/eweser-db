@@ -96,9 +96,6 @@ export async function syncRoomsWithClient(token: string, clientRooms: Room[]) {
       const newClientRoomInserts: RoomInsert[] = [];
       for (const room of newClientRooms) {
         // clean up the default accesses if they don't exist
-        if (!room.adminAccess.includes(AUTH_SERVER_DOMAIN)) {
-          room.adminAccess.push(AUTH_SERVER_DOMAIN);
-        }
         if (!room.readAccess.includes(AUTH_SERVER_DOMAIN)) {
           room.readAccess.push(AUTH_SERVER_DOMAIN);
         }
