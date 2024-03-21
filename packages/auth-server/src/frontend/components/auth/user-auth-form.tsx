@@ -13,11 +13,13 @@ import { setLocalStorageLoginQuery } from '../../utils/local-storage';
 type UserAuthFormProps = ComponentPropsWithoutRef<'div'> & {
   className?: string;
   loginQueryOptions: LoginQueryOptions | null;
+  isShareInviteRedirect?: boolean;
 };
 
 export function UserAuthForm({
   className,
   loginQueryOptions,
+  isShareInviteRedirect,
   ...props
 }: UserAuthFormProps) {
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -42,7 +44,9 @@ export function UserAuthForm({
           {isSignup ? 'Create an account' : 'Welcome back'}
         </h1>
         <p className="text-sm text-muted-foreground">
-          {isSignup
+          {isShareInviteRedirect
+            ? 'You have been invited to share data. Please log in or create an account to accept the invite.'
+            : isSignup
             ? 'And take control of your data today'
             : 'Log in to provision and manage your data'}
         </p>

@@ -26,6 +26,9 @@ export default async function AuthenticationPage({
   if (validLoginQueryOptions && user) {
     redirect(loginOptionsToPermissionPageUrl(validLoginQueryOptions));
   }
+
+  const isShareInviteRedirect =
+    searchParams.redirect?.includes('accept-room-invite');
   return (
     <div className="flex flex-col lg:flex-row flex-1" suppressHydrationWarning>
       <div className="flex flex-col flex-shrink-2 p-10 lg:w-1/2 justify-center items-center bg-primary order-2 lg:order-1">
@@ -33,7 +36,10 @@ export default async function AuthenticationPage({
       </div>
       <div className="p-8 flex items-center flex-1 justify-center  lg:w-1/2 order-1 lg:order-2">
         <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
-          <UserAuthForm loginQueryOptions={validLoginQueryOptions} />
+          <UserAuthForm
+            loginQueryOptions={validLoginQueryOptions}
+            isShareInviteRedirect={isShareInviteRedirect}
+          />
           <p className="px-8 text-center text-sm text-muted-foreground">
             By clicking continue, you agree to our{' '}
             <Link

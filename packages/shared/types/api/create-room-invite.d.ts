@@ -1,10 +1,10 @@
 import type { RoomAccessType } from '../collections';
-export type CreateRoomInviteBody = {
+import type { LoginQueryParams } from './login-queries';
+export type CreateRoomInviteBody = LoginQueryParams & {
     inviterId?: string;
     invitees: string[];
     roomId: string;
     accessType: RoomAccessType;
-    redirect: string;
     redirectQueries?: Record<string, string>;
     expiry?: string;
 };

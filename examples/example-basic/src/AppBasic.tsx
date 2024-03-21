@@ -226,7 +226,11 @@ const ShareButton = ({ db, room }: { db: Database; room: Room<any> }) => {
 
   useEffect(() => {
     if (showShareModal) {
-      db.generateShareRoomLink({ roomId: room.id, accessType: 'write' })
+      db.generateShareRoomLink({
+        roomId: room.id,
+        accessType: 'write',
+        appName: 'Basic Example App',
+      })
         .then((link) => setShareLink(link))
         // eslint-disable-next-line no-console
         .catch((e) => console.error(e));

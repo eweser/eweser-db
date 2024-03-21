@@ -760,7 +760,7 @@ const generateLoginUrl = (db) => (
   (options) => {
     const url = new URL(db.authServer);
     const params2 = loginOptionsToQueryParams({
-      redirect: (options == null ? void 0 : options.redirect) || window.location.href,
+      redirect: (options == null ? void 0 : options.redirect) || window.location.href.split("?")[0],
       domain: (options == null ? void 0 : options.domain) || window.location.host,
       collections: (options == null ? void 0 : options.collections) ?? ["all"],
       name: options.name
@@ -9687,15 +9687,23 @@ class Database extends TypedEventEmitter {
       redirectUrl,
       redirectQueries,
       expiry,
-      accessType
+      accessType,
+      appName,
+      domain,
+      collections: collections2
     }) => {
       const body = {
         roomId,
         invitees: invitees || [],
-        redirect: redirectUrl || window.location.href.split("?")[0],
         redirectQueries,
         expiry: expiry || new Date(Date.now() + 1e3 * 60 * 60 * 24).toISOString(),
-        accessType
+        accessType,
+        ...loginOptionsToQueryParams({
+          name: appName,
+          domain: domain || window.location.host,
+          collections: collections2 ?? ["all"],
+          redirect: redirectUrl || window.location.href.split("?")[0]
+        })
       };
       const { error, data } = await this.serverFetch(
         "/access-grant/create-room-invite",
