@@ -1,7 +1,6 @@
 import type { CollectionKey, Collections, CollectionToDocument, EweDocument, ProviderOptions, Registry } from './types';
 import { Room } from './room';
 import { TypedEventEmitter } from './events';
-import type { LoginQueryOptions, RoomAccessType } from '@eweser/shared';
 import type { DatabaseEvents } from './events';
 export * from './utils';
 export * from './types';
@@ -48,7 +47,7 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
         error: null;
         data: ReturnType_1;
     }>;
-    generateLoginUrl: (options: Partial<LoginQueryOptions> & {
+    generateLoginUrl: (options: Partial<import("@eweser/shared").LoginQueryOptions> & {
         name: string;
     }) => string;
     login: (options: {
@@ -81,13 +80,14 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
      * Note: If your app does not have access privileges to the collection, the room won't be synced server-side.
      */
     newRoom: <T extends EweDocument>(options: Room<T>) => void;
-    generateShareRoomLink: ({ roomId, invitees, redirectUrl, redirectQueries, expiry, accessType, appName, domain, collections, }: Partial<LoginQueryOptions> & {
+    renameRoom: (room: Room<any>, newName: string) => Promise<import("@eweser/shared").ServerRoom | null>;
+    generateShareRoomLink: ({ roomId, invitees, redirectUrl, redirectQueries, expiry, accessType, appName, domain, collections, }: Partial<import("@eweser/shared").LoginQueryOptions> & {
         roomId: string;
         invitees?: string[] | undefined;
         redirectUrl?: string | undefined;
         redirectQueries?: Record<string, string> | undefined;
         expiry?: string | undefined;
-        accessType: RoomAccessType;
+        accessType: "read" | "write" | "admin";
         appName: string;
     }) => Promise<string>;
     constructor(optionsPassed?: DatabaseOptions);

@@ -120,7 +120,15 @@ export async function updateRoom(
   { id, ...update }: RoomUpdate,
   dbInstance?: DBInstance
 ) {
-  return await db(dbInstance).update(rooms).set(update).where(eq(rooms.id, id));
+  const result = await db(dbInstance)
+    .update(rooms)
+    .set(update)
+    .where(eq(rooms.id, id))
+    .returning();
+  if (result.length !== 1) {
+    throw new Error('Room not found');
+  }
+  return result[0];
 }
 
 /**

@@ -168,7 +168,7 @@ const NotesRoom = ({ notesRoom }: { notesRoom: Room<Note> }) => {
   return (
     <>
       <div style={styles.roomBar}>
-        <h1>{notesRoom.name}</h1>
+        <RoomName db={db} room={notesRoom} />{' '}
         <button style={styles.newNoteButton} onClick={() => createNote()}>
           New note
         </button>
@@ -215,6 +215,40 @@ const NotesRoom = ({ notesRoom }: { notesRoom: Room<Note> }) => {
             );
         })}
       </div>
+    </>
+  );
+};
+
+const RoomName = ({ db, room }: { db: Database; room: Room<any> }) => {
+  const [editing, setEditing] = useState(false);
+  const [newName, setNewName] = useState(room.name);
+  const [submitting, setSubmitting] = useState(false);
+  const submit = async () => {
+    setSubmitting(true);
+    await db.renameRoom(room, newName);
+    setSubmitting(false);
+    setEditing(false);
+  };
+  return (
+    <>
+      {editing ? (
+        <input
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
+          onBlur={submit}
+          autoFocus
+          disabled={submitting}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              submit();
+            }
+          }}
+        />
+      ) : (
+        <h1 style={{ cursor: 'pointer' }} onClick={() => setEditing(true)}>
+          {room.name}
+        </h1>
+      )}
     </>
   );
 };

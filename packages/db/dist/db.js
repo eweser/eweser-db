@@ -9618,6 +9618,46 @@ const loadRooms = (db) => async (rooms) => {
   db.debug("loaded rooms", loadedRooms);
   db.emit("roomsLoaded", loadedRooms);
 };
+const generateShareRoomLink = (db) => async ({
+  roomId,
+  invitees,
+  redirectUrl,
+  redirectQueries,
+  expiry,
+  accessType,
+  appName,
+  domain,
+  collections: collections2
+}) => {
+  const body = {
+    roomId,
+    invitees: invitees || [],
+    redirectQueries,
+    expiry: expiry || new Date(Date.now() + 1e3 * 60 * 60 * 24).toISOString(),
+    accessType,
+    ...loginOptionsToQueryParams({
+      name: appName,
+      domain: domain || window.location.host,
+      collections: collections2 ?? ["all"],
+      redirect: redirectUrl || window.location.href.split("?")[0]
+    })
+  };
+  const { error, data } = await db.serverFetch(
+    "/access-grant/create-room-invite",
+    {
+      body,
+      method: "POST"
+    }
+  );
+  if (error) {
+    db.error("Error creating room invite", error);
+    return JSON.stringify(error);
+  }
+  if (!(data == null ? void 0 : data.link)) {
+    return "Error creating room invite";
+  }
+  return data.link;
+};
 const defaultRtcPeers = [
   "wss://signaling.yjs.debv",
   "wss://y-webrtc-signaling-eu.herokuapp.com",
@@ -9681,46 +9721,33 @@ class Database extends TypedEventEmitter {
         this.syncRegistry();
       }
     });
-    __publicField(this, "generateShareRoomLink", async ({
-      roomId,
-      invitees,
-      redirectUrl,
-      redirectQueries,
-      expiry,
-      accessType,
-      appName,
-      domain,
-      collections: collections2
-    }) => {
+    __publicField(this, "renameRoom", async (room, newName) => {
       const body = {
-        roomId,
-        invitees: invitees || [],
-        redirectQueries,
-        expiry: expiry || new Date(Date.now() + 1e3 * 60 * 60 * 24).toISOString(),
-        accessType,
-        ...loginOptionsToQueryParams({
-          name: appName,
-          domain: domain || window.location.host,
-          collections: collections2 ?? ["all"],
-          redirect: redirectUrl || window.location.href.split("?")[0]
-        })
+        newName
       };
-      const { error, data } = await this.serverFetch(
-        "/access-grant/create-room-invite",
+      const { data, error } = await this.serverFetch(
+        `/access-grant/update-room/${room.id}`,
         {
-          body,
-          method: "POST"
+          method: "POST",
+          body
         }
       );
       if (error) {
-        this.error("Error creating room invite", error);
-        return JSON.stringify(error);
+        this.error("Error renaming room", error);
+      } else if (data == null ? void 0 : data.name) {
+        room.name = data.name;
+        this.debug("Room renamed", data);
+        const registryEntry = this.registry.find((r) => r.id === room.id);
+        if (registryEntry) {
+          registryEntry.name = data.name;
+          setLocalRegistry(this.registry);
+        } else {
+          this.error("Error renaming room, registry entry not found");
+        }
       }
-      if (!(data == null ? void 0 : data.link)) {
-        return "Error creating room invite";
-      }
-      return data.link;
+      return data;
     });
+    __publicField(this, "generateShareRoomLink", generateShareRoomLink(this));
     const options = optionsPassed || {};
     if (options.authServer) {
       this.authServer = options.authServer;

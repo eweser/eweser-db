@@ -10,6 +10,7 @@ import { Room, roomToServerRoom } from './room';
 import { collections } from './types';
 import { setupLogger, TypedEventEmitter } from './events';
 
+import type { UpdateRoomPostBody, UpdateRoomResponse } from '@eweser/shared';
 import { collectionKeys } from '@eweser/shared';
 import { getDocuments } from './utils/getDocuments';
 import { serverFetch } from './utils/connection/serverFetch';
@@ -131,6 +132,34 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
       //   this.syncRegistry()
       // }
     }
+  };
+
+  renameRoom = async (room: Room<any>, newName: string) => {
+    const body: UpdateRoomPostBody = {
+      newName,
+    };
+    const { data, error } = await this.serverFetch<UpdateRoomResponse>(
+      `/access-grant/update-room/${room.id}`,
+      {
+        method: 'POST',
+        body,
+      }
+    );
+    if (error) {
+      this.error('Error renaming room', error);
+    } else if (data?.name) {
+      room.name = data.name;
+      this.debug('Room renamed', data);
+      const registryEntry = this.registry.find((r) => r.id === room.id);
+      if (registryEntry) {
+        registryEntry.name = data.name;
+        setLocalRegistry(this.registry);
+      } else {
+        this.error('Error renaming room, registry entry not found');
+      }
+    }
+
+    return data;
   };
 
   generateShareRoomLink = generateShareRoomLink(this);
