@@ -23,8 +23,3 @@ export declare const getRoom: (_db: Database) => <T extends EweDocument>({ colle
     collectionKey: CollectionKey;
     roomId: string;
 }) => Room<T> | null;
-export declare const buildFullUserId: (username: string, homeserver: string) => string;
-/** returns the local part of a userId.
- * @example extractUserIdLocalPart('@username:matrix.org') => 'username'
- */
-export declare const extractUserIdLocalPart: (userId: string) => string;

@@ -81,24 +81,3 @@ export const getRoom =
     if (!room) return null;
     return room as Room<T>;
   };
-
-export const buildFullUserId = (username: string, homeserver: string) => {
-  if (!username) throw new Error('username is required');
-  if (!homeserver) throw new Error('homeserver is required');
-  const homeserverParsed =
-    homeserver.includes('http://') || homeserver.includes('https://')
-      ? homeserver.split('://')[1]
-      : homeserver;
-
-  return `@${username}:${homeserverParsed}`;
-};
-
-/** returns the local part of a userId.
- * @example extractUserIdLocalPart('@username:matrix.org') => 'username'
- */
-export const extractUserIdLocalPart = (userId: string) => {
-  if (!userId) throw new Error('userId is required');
-  if (!userId.includes('@')) throw new Error('userId is invalid');
-  if (!userId.includes(':')) throw new Error('userId is invalid');
-  return userId.split('@')[1].split(':')[0];
-};

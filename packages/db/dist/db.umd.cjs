@@ -526,23 +526,6 @@ var __publicField = (obj, key, value) => {
       return null;
     return room;
   };
-  const buildFullUserId = (username, homeserver) => {
-    if (!username)
-      throw new Error("username is required");
-    if (!homeserver)
-      throw new Error("homeserver is required");
-    const homeserverParsed = homeserver.includes("http://") || homeserver.includes("https://") ? homeserver.split("://")[1] : homeserver;
-    return `@${username}:${homeserverParsed}`;
-  };
-  const extractUserIdLocalPart = (userId) => {
-    if (!userId)
-      throw new Error("userId is required");
-    if (!userId.includes("@"))
-      throw new Error("userId is invalid");
-    if (!userId.includes(":"))
-      throw new Error("userId is invalid");
-    return userId.split("@")[1].split(":")[0];
-  };
   const getDocuments = (_db) => (room) => {
     var _a;
     if (!room)
@@ -9794,10 +9777,8 @@ ${reason}`);
     }
   }
   exports2.Database = Database;
-  exports2.buildFullUserId = buildFullUserId;
   exports2.buildRef = buildRef;
   exports2.collections = collections;
-  exports2.extractUserIdLocalPart = extractUserIdLocalPart;
   exports2.getRoom = getRoom;
   exports2.getRoomDocuments = getRoomDocuments;
   exports2.newDocument = newDocument;

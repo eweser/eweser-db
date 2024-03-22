@@ -164,7 +164,7 @@ As it is designed now, when the user signs in, the app will have read/write acce
 
 Because user-owned data flips the current data storage paradigm on its head, app developers might be wondering how to share public data between users.
 
-This is achieved using 'aggregator' servers. These are public Matrix accounts/servers which the user can invite to the room that they wish to make public. The aggregator server will listen to changes in the room and update a local database. Apps can query the aggregators to search public data.
+This is achieved using 'aggregator' servers. These are Node.js servers which the user can invite to the room that they wish to make public. The aggregator server will listen to changes in the room and update a local database. Apps can query the aggregators to search public data.
 
 ## Limitations
 
@@ -208,8 +208,8 @@ Run e2e tests headless once with `npm run test:e2e`, or with `npm run dev-e2e` t
 
 Priority:
 
-- [ ] **Sharing,**: user can invite another to a room and collaborate on the documents within. Can also just be read only
-- [ ] **Public data**: set up ‘aggregator’ listeners when a user makes a collection as public. These will be MatrixReader’s that live on a node server and listen for changes to the collection. How to aggregate and serve to public listeners?
+- [ ] **Federated Sharing,**: user can invite someone from a different auth server to a room.
+- [ ] **Public data**: set up ‘aggregator’ listeners when a user marks a collection as public. These will be node servers invited to the room that listen for changes to the collection. How to aggregate and serve to public listeners?
 - [ ] **Files:** set up file hosting provider services like Pinata, Dropbox, etc. and give users the option to connect their accounts to the app.
 - [ ] **Backups** - user can add storage account (dropbox, pinata, etc) that store snapshots of the database in the file hosting provider.
 - [ ] End 2 End **Encryption** — multiple devices?

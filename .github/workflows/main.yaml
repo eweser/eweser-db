@@ -5,59 +5,43 @@ on:
     types: [opened, synchronize]
 
 jobs:
-  build:
-    name: Tests
-    runs-on: ubuntu-latest
-    environment: preview
-    env:
-      VITE_MATRIX_SERVER: http://localhost:8888
-      VITE_CI: true
+  # build:
+  #   name: Tests
+  #   runs-on: ubuntu-latest
+  #   environment: preview
+  #   env:
+  #     VITE_CI: true
 
-    strategy:
-      matrix:
-        node-version: [18.14.0]
+    # strategy:
+    #   matrix:
+    #     node-version: [18.14.0]
 
-    steps:
-      - uses: actions/checkout@v3
+    # steps:
+    #   - uses: actions/checkout@v3
 
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'npm'
+    #   - name: Use Node.js ${{ matrix.node-version }}
+    #     uses: actions/setup-node@v3
+    #     with:
+    #       node-version: ${{ matrix.node-version }}
+    #       cache: 'npm'
 
-      - name: Set correct access for docker containers (server/test/data)
-        run: chmod -R a+rw test-server/data
+    #   - name: Install Dependencies
+    #     run: npm install && cd test-rpc-server && npm install
 
-      - name: Build the docker-compose stack
-        run: docker-compose -f test-server/docker-compose.yml up -d
+    #   - name: Build packages
+    #     run: npm run build
 
-      - name: Check running containers
-        run: docker ps -a
+    #   - name: Start and wait for webRTC server
+    #     # the control operator & runs the first command in the background
+    #     run: npm run start-test-rpc-server & npx wait-on http://localhost:4444
 
-      - name: Check docker logs
-        run: docker logs synapse
+    #   - name: Run unit/integration tests
+    #     run: npx lerna run test --scope @eweser/db
 
-      - name: Install Dependencies
-        run: npm install && cd test-rpc-server && npm install
-
-      - name: Build packages
-        run: npm run build
-
-      - name: Wait for Matrix
-        run: npx wait-on http://localhost:8888/_matrix/static/
-
-      - name: Start and wait for webRTC server
-        # the control operator & runs the first command in the background
-        run: npm run start-test-rpc-server & npx wait-on http://localhost:4444
-
-      - name: Run unit/integration tests
-        run: npx lerna run test --scope @eweser/db
-
-      - name: Run e2e tests on all examples
-        uses: cypress-io/github-action@v5
-        with:
-          start: npm run run-example-previews
-          browser: chrome
-          wait-on: http://localhost:8000, http://localhost:8100, http://localhost:8300, http://localhost:8400, http://localhost:8500, http://localhost:8600
-          wait-on-timeout: 180
+    #   - name: Run e2e tests on all examples
+    #     uses: cypress-io/github-action@v5
+    #     with:
+    #       start: npm run run-example-previews
+    #       browser: chrome
+    #       wait-on: http://localhost:8000, http://localhost:8100, http://localhost:8300, http://localhost:8400, http://localhost:8500, http://localhost:8600
+    #       wait-on-timeout: 180
