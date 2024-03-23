@@ -124,6 +124,10 @@ const NotesRoom = ({ notesRoom }: { notesRoom: Room<Note> }) => {
   // This Notes object provides a set of methods for easily updating the documents in the room. It is a wrapper around the ydoc that is provided by the room.
   const Notes = useMemo(() => db.getDocuments(notesRoom), [notesRoom]);
 
+  const [connectionStatus, setConnectionStatus] = useState('disconnected');
+
+  notesRoom.on('roomConnectionChange', setConnectionStatus);
+
   const [notes, setNotes] = useState<Documents<Note>>(
     Notes.sortByRecent(Notes.getUndeleted())
   );
@@ -173,6 +177,7 @@ const NotesRoom = ({ notesRoom }: { notesRoom: Room<Note> }) => {
           New note
         </button>
         <ShareButton db={db} room={notesRoom} />
+        {connectionStatus}
       </div>
 
       <div style={styles.flexWrap}>

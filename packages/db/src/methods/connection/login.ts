@@ -7,6 +7,8 @@ export const login =
    * @returns true if successful
    */
   async (options: { loadAllRooms?: boolean } | undefined) => {
+    //TODO: better event?
+    db.emit('roomConnectionChange', 'connecting', {} as any);
     const token = db.getToken();
     if (!token) {
       throw new Error('No token found');
