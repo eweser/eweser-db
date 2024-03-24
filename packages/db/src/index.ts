@@ -28,6 +28,8 @@ import { syncRegistry } from './methods/connection/syncRegistry';
 import { loadRooms } from './methods/connection/loadRooms';
 import { setLocalRegistry } from './utils/localStorageService';
 import { generateShareRoomLink } from './methods/connection/generateShareRoomLink';
+import { pingServer } from './utils/connection/pingServer';
+import { pollConnection } from './utils/connection/pollConnection';
 
 export * from './utils';
 export * from './types';
@@ -58,6 +60,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
   userId = '';
   authServer = 'https://www.eweser.com';
   online = false;
+  isPolling = false;
   offlineOnly = false;
 
   /** set to false before `db.loginWithToken()` so that offline-first mode is the default, and it upgrades to online sync after login with token */
@@ -163,6 +166,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
   };
 
   generateShareRoomLink = generateShareRoomLink(this);
+  pingServer = pingServer(this);
 
   constructor(optionsPassed?: DatabaseOptions) {
     super();
@@ -192,7 +196,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     ) {
       this.offlineOnly = true;
     } else {
-      // pollConnection(this); // start polling for auth server connection status
+      pollConnection(this); // start polling for auth server connection status
       if (options?.webRTCPeers) {
         // note that webRtc is only for tempDocs because they are not secure/encrypted yet so we dont want to sync all our long lived yDocs (rooms) with the webRTC peers.
         this.webRtcPeers = options?.webRTCPeers;

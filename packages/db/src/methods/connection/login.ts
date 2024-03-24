@@ -1,4 +1,5 @@
 import type { Database } from '../..';
+import { pollConnection } from '../../utils/connection/pollConnection';
 
 export const login =
   (db: Database) =>
@@ -18,7 +19,7 @@ export const login =
       throw new Error('Failed to sync registry');
     }
     db.useYSweet = true;
-    db.online = true;
+    pollConnection(db); // start polling for auth server connection status if db was started in offline mode previously
     if (options?.loadAllRooms) {
       await db.loadRooms(db.registry); // connects the ySweet providers. Could make this more atomic in the future to avoid creating too many connections.
     }

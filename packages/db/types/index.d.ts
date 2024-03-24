@@ -24,6 +24,7 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
     userId: string;
     authServer: string;
     online: boolean;
+    isPolling: boolean;
     offlineOnly: boolean;
     /** set to false before `db.loginWithToken()` so that offline-first mode is the default, and it upgrades to online sync after login with token */
     useYSweet: boolean;
@@ -68,7 +69,10 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
         set: (doc: T) => T;
         new: (doc: import("./types").DocumentWithoutBase<T>, id?: string | undefined) => T;
         delete: (id: string, timeToLiveMs?: number | undefined) => T;
-        getAll: () => import("./types").Documents<T>;
+        getAll: () => import("./types").Documents<T>; /** Which providers to use. By default uses all.
+         * Currently indexedDB is required and webRTC and YSweet are optional
+         * Setting only indexedDB will make the database offline only
+         */
         getUndeleted: () => import("./types").Documents<T>;
         onChange: (callback: (event: import("yjs").YMapEvent<any>, transaction: import("yjs").Transaction) => void) => void;
         sortByRecent: (docs: import("./types").Documents<T>) => import("./types").Documents<T>;
@@ -90,5 +94,6 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
         accessType: "read" | "write" | "admin";
         appName: string;
     }) => Promise<string>;
+    pingServer: () => Promise<boolean | "" | undefined>;
     constructor(optionsPassed?: DatabaseOptions);
 }

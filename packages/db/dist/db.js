@@ -704,12 +704,48 @@ const logoutAndClear = (db) => (
     clearLocalRegistry();
   }
 );
+const checkServerConnection = async (db) => {
+  const success = await db.pingServer();
+  if (success) {
+    if (db.online) {
+      return;
+    }
+    db.debug("Server is online");
+    db.online = true;
+    db.emit("onlineChange", true);
+  } else {
+    if (!db.online) {
+      return;
+    }
+    db.error("Server is offline");
+    db.online = false;
+    db.emit("onlineChange", false);
+  }
+};
+const pollConnection = (db, offlineInterval = 2e3, onlineInterval = 1e4) => {
+  if (db.isPolling) {
+    db.info("Already polling connection");
+    return;
+  }
+  db.isPolling = true;
+  setInterval(() => {
+    if (!db.online) {
+      checkServerConnection(db);
+    }
+  }, offlineInterval);
+  setInterval(() => {
+    if (db.online) {
+      checkServerConnection(db);
+    }
+  }, onlineInterval);
+};
 const login = (db) => (
   /**
    * @param loadAllRooms default false. Will load all rooms from the registry and connect to them. Disable this is you have too many rooms and want to load them later individually.
    * @returns true if successful
    */
   async (options) => {
+    db.emit("roomConnectionChange", "connecting", {});
     const token = db.getToken();
     if (!token) {
       throw new Error("No token found");
@@ -719,7 +755,7 @@ const login = (db) => (
       throw new Error("Failed to sync registry");
     }
     db.useYSweet = true;
-    db.online = true;
+    pollConnection(db);
     if (options == null ? void 0 : options.loadAllRooms) {
       await db.loadRooms(db.registry);
     }
@@ -9641,6 +9677,18 @@ const generateShareRoomLink = (db) => async ({
   }
   return data.link;
 };
+const pingServer = (db) => async () => {
+  const { data, error } = await db.serverFetch(
+    "/access-grant/ping"
+  );
+  if (error) {
+    db.error("Error pinging server", error);
+    return false;
+  } else {
+    db.debug("Server pinged", data);
+    return (data == null ? void 0 : data.reply) && data.reply === "pong";
+  }
+};
 const defaultRtcPeers = [
   "wss://signaling.yjs.debv",
   "wss://y-webrtc-signaling-eu.herokuapp.com",
@@ -9653,6 +9701,7 @@ class Database extends TypedEventEmitter {
     __publicField(this, "userId", "");
     __publicField(this, "authServer", "https://www.eweser.com");
     __publicField(this, "online", false);
+    __publicField(this, "isPolling", false);
     __publicField(this, "offlineOnly", false);
     /** set to false before `db.loginWithToken()` so that offline-first mode is the default, and it upgrades to online sync after login with token */
     __publicField(this, "useYSweet", false);
@@ -9731,6 +9780,7 @@ class Database extends TypedEventEmitter {
       return data;
     });
     __publicField(this, "generateShareRoomLink", generateShareRoomLink(this));
+    __publicField(this, "pingServer", pingServer(this));
     const options = optionsPassed || {};
     if (options.authServer) {
       this.authServer = options.authServer;
@@ -9750,6 +9800,7 @@ class Database extends TypedEventEmitter {
     if (((_a = options.providers) == null ? void 0 : _a.length) && ((_b = options.providers) == null ? void 0 : _b.length) === 1 && options.providers[0] === "IndexedDB") {
       this.offlineOnly = true;
     } else {
+      pollConnection(this);
       if (options == null ? void 0 : options.webRTCPeers) {
         this.webRtcPeers = options == null ? void 0 : options.webRTCPeers;
       }

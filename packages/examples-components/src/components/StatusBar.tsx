@@ -13,20 +13,20 @@ export const StatusBar = ({
   const [loggedIn, setLoggedIn] = useState(typeof db.getToken() === 'string');
   // listen to various database events and update the status bar at the bottom of the screen.
   // This could be used to show icons like connected/offline or a syncing spinner like in google sheets
-  const [connectionStatus, setConnectionStatus] = useState('disconnected');
+  const [online, setOnline] = useState(db.online);
   useEffect(() => {
-    const handleConnectionChange = (status: string) => {
+    const handleOnlineChange = (status: boolean) => {
       // any room's connection status change
-      setConnectionStatus(status);
+      setOnline(status);
     };
-    db.on('roomConnectionChange', handleConnectionChange);
+    db.on('onlineChange', handleOnlineChange);
 
     const handleLoggedInChange = (loggedInStatus: boolean) => {
       setLoggedIn(loggedInStatus);
     };
     db.on('onLoggedInChange', handleLoggedInChange);
     return () => {
-      db.removeListener('roomConnectionChange', handleConnectionChange);
+      db.removeListener('roomConnectionChange', handleOnlineChange);
       db.removeListener('logout', handleLoggedInChange);
     };
   }, [db, setLoggedIn]);
@@ -54,7 +54,9 @@ export const StatusBar = ({
         <pre style={styles.statusBarMessage}>
           {loggedIn ? 'Logged In' : 'Logged Out'}
         </pre>
-        <pre style={styles.statusBarMessage}>{connectionStatus}</pre>
+        <pre style={styles.statusBarMessage}>
+          {online ? 'online' : 'offline'}
+        </pre>
       </div>
     </div>
   );
