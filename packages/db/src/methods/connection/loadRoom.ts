@@ -24,7 +24,7 @@ function validate(room: ServerRoom) {
 
 function checkLoadedState(db: Database) {
   return (room: Room<any>, token: string | null) => {
-    const localLoaded = room && room.ydoc && room.indexedDbProvider;
+    const localLoaded = !!room && !!room.ydoc && !!room.indexedDbProvider;
     const shouldLoadYSweet = db.useYSweet && token && room && room.ySweetUrl;
     const ySweetLoaded =
       token &&
@@ -119,10 +119,10 @@ async function loadYSweet(db: Database, room: Room<any>) {
 /** first loads the local indexedDB ydoc for the room. if this.useYSweet is true and ySweetTokens are available will also connect to remote. IF a connection error, will  */
 export const loadRoom = (db: Database) => async (serverRoom: ServerRoom) => {
   const { roomId, collectionKey } = validate(serverRoom);
-  db.info('loading room', serverRoom);
 
   const room: Room<any> =
     db.collections[collectionKey][roomId] ?? new Room(serverRoom);
+  db.info('loading room', { room, serverRoom });
 
   const { localLoaded, ySweetLoaded, shouldLoadYSweet } = checkLoadedState(db)(
     room,
