@@ -1,6 +1,6 @@
 {
   "name": "@eweser/shared",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "description": "shared types and helpers for @eweser/db and other @eweser packages",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -36,7 +36,7 @@
     "test": "vitest --run"
   },
   "devDependencies": {
-    "@eweser/eslint-config-ts": "^1.10.0",
+    "@eweser/eslint-config-ts": "^1.11.0",
     "request": "^2.88.2",
     "typescript": "^4.4.4",
     "vitest": "^1.3.1"
