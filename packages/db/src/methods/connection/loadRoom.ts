@@ -128,7 +128,11 @@ export const loadRoom = (db: Database) => async (serverRoom: ServerRoom) => {
     room,
     serverRoom.token
   );
-
+  db.debug('loadedState', {
+    localLoaded,
+    ySweetLoaded,
+    shouldLoadYSweet,
+  });
   if (localLoaded && (!shouldLoadYSweet || ySweetLoaded)) {
     db.debug('room already loaded', room);
     return room;
