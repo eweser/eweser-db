@@ -93,10 +93,17 @@ const App = () => {
     login();
   }, [loggedIn, hasToken]);
 
-  db.on('roomsLoaded', () => {
-    setLoaded(true);
-  });
+  useEffect(() => {
+    db.on('roomsLoaded', () => {
+      setLoaded(true);
+    });
 
+    return () => {
+      db.off('roomsLoaded', () => {
+        setLoaded(true);
+      });
+    };
+  }, []);
   const defaultNotesRoom = db.getRoom<Note>(collectionKey, roomId);
   const allNotes = db.getRooms('notes').filter((room) => room.id !== roomId);
 
@@ -126,7 +133,12 @@ const NotesRoom = ({ notesRoom }: { notesRoom: Room<Note> }) => {
 
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
 
-  notesRoom.on('roomConnectionChange', setConnectionStatus);
+  useEffect(() => {
+    notesRoom.on('roomConnectionChange', setConnectionStatus);
+    return () => {
+      notesRoom.off('roomConnectionChange', setConnectionStatus);
+    };
+  }, [notesRoom, setConnectionStatus]);
 
   const [notes, setNotes] = useState<Documents<Note>>(
     Notes.sortByRecent(Notes.getUndeleted())
