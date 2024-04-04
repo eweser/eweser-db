@@ -5,8 +5,8 @@ export declare enum LocalStorageKey {
     accessGrantToken = "access_grant_token"
 }
 export type LocalStorageService = {
-    getItem: (key: LocalStorageKey) => string | null;
-    setItem: (key: LocalStorageKey, value: string) => void;
+    getItem: <T = any>(key: LocalStorageKey) => T | null;
+    setItem: <T = any>(key: LocalStorageKey, value: T) => void;
     removeItem: (key: LocalStorageKey) => void;
 };
 export declare const localStorageSet: (key: LocalStorageKey, value: any) => void;

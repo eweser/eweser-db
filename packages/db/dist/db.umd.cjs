@@ -9811,6 +9811,9 @@ ${reason}`);
           throw new Error("IndexedDB provider is required");
         }
       }
+      if (options.localStoragePolyfill) {
+        this.localStorageService = options.localStoragePolyfill;
+      }
       if (((_a = options.providers) == null ? void 0 : _a.length) && ((_b = options.providers) == null ? void 0 : _b.length) === 1 && options.providers[0] === "IndexedDB") {
         this.offlineOnly = true;
       } else {

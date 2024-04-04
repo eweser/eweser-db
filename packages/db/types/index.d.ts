@@ -66,11 +66,7 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
     loadRooms: (rooms: Registry) => Promise<void>;
     syncRegistry: () => Promise<boolean>;
     getRegistry: () => Registry;
-    localStorageService: {
-        setItem: (key: import("./utils/localStorageService").LocalStorageKey, value: any) => void;
-        getItem: <T>(key: import("./utils/localStorageService").LocalStorageKey) => T | null;
-        removeItem: (key: import("./utils/localStorageService").LocalStorageKey) => void;
-    };
+    localStorageService: LocalStorageService;
     getDocuments: <T extends EweDocument>(room: Room<T>) => {
         documents: import("yjs-types").TypedMap<import("./types").Documents<T>>;
         get: (id: string) => T | undefined;
