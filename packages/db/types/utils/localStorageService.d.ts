@@ -1,7 +1,20 @@
+import type { Database } from '..';
 import type { Registry } from '../types';
-export declare function getLocalRegistry(): Registry;
-export declare function setLocalRegistry(registry: Registry): void;
-export declare function clearLocalRegistry(): void;
-export declare function getLocalAccessGrantToken(): string | null;
-export declare function setLocalAccessGrantToken(token: string): void;
-export declare function clearLocalAccessGrantToken(): void;
+export declare enum LocalStorageKey {
+    roomRegistry = "room_registry",
+    accessGrantToken = "access_grant_token"
+}
+export type LocalStorageService = {
+    getItem: (key: LocalStorageKey) => string | null;
+    setItem: (key: LocalStorageKey, value: string) => void;
+    removeItem: (key: LocalStorageKey) => void;
+};
+export declare const localStorageSet: (key: LocalStorageKey, value: any) => void;
+export declare const localStorageGet: <T>(key: LocalStorageKey) => T | null;
+export declare const localStorageRemove: (key: LocalStorageKey) => void;
+export declare const getLocalRegistry: (db: Database) => () => Registry;
+export declare const setLocalRegistry: (db: Database) => (registry: Registry) => void;
+export declare const clearLocalRegistry: (db: Database) => () => void;
+export declare const getLocalAccessGrantToken: (db: Database) => () => string | null;
+export declare const setLocalAccessGrantToken: (db: Database) => (token: string) => void;
+export declare const clearLocalAccessGrantToken: (db: Database) => () => void;

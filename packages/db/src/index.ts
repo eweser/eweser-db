@@ -26,7 +26,13 @@ import { loadRoom } from './methods/connection/loadRoom';
 import { refreshYSweetToken } from './methods/connection/refreshYSweetToken';
 import { syncRegistry } from './methods/connection/syncRegistry';
 import { loadRooms } from './methods/connection/loadRooms';
-import { setLocalRegistry } from './utils/localStorageService';
+import type { LocalStorageService } from './utils/localStorageService';
+import {
+  localStorageGet,
+  localStorageRemove,
+  localStorageSet,
+  setLocalRegistry,
+} from './utils/localStorageService';
 import { generateShareRoomLink } from './methods/connection/generateShareRoomLink';
 import { pingServer } from './utils/connection/pingServer';
 import { pollConnection } from './utils/connection/pollConnection';
@@ -54,6 +60,8 @@ export interface DatabaseOptions {
   /** provide a list of peers to use instead of the default */
   webRTCPeers?: string[];
   initialRooms?: Registry;
+  /** a polyfill for localStorage for react native apps */
+  localStoragePolyfill?: LocalStorageService;
 }
 
 export class Database extends TypedEventEmitter<DatabaseEvents> {
@@ -93,7 +101,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
   logout = logout(this);
   logoutAndClear = logoutAndClear(this);
 
-  getAccessGrantTokenFromUrl = getAccessGrantTokenFromUrl();
+  getAccessGrantTokenFromUrl = getAccessGrantTokenFromUrl(this);
   getToken = getToken(this);
 
   refreshYSweetToken = refreshYSweetToken(this);
@@ -103,6 +111,11 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
 
   // util methods
   getRegistry = getRegistry(this);
+  localStorageService = {
+    setItem: localStorageSet,
+    getItem: localStorageGet,
+    removeItem: localStorageRemove,
+  };
 
   // collection methods
   getDocuments = getDocuments(this);
@@ -126,7 +139,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     this.collections[room.collectionKey][room.id] = room;
     const serverRoom = roomToServerRoom(room);
     this.registry.push(serverRoom);
-    setLocalRegistry(this.registry);
+    setLocalRegistry(this)(this.registry);
     if (this.online) {
       this.syncRegistry();
     } else {
@@ -156,7 +169,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
       const registryEntry = this.registry.find((r) => r.id === room.id);
       if (registryEntry) {
         registryEntry.name = data.name;
-        setLocalRegistry(this.registry);
+        setLocalRegistry(this)(this.registry);
       } else {
         this.error('Error renaming room, registry entry not found');
       }

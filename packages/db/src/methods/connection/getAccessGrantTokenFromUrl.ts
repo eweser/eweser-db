@@ -1,7 +1,8 @@
+import type { Database } from '../..';
 import { setLocalAccessGrantToken } from '../../utils/localStorageService';
 
 export const getAccessGrantTokenFromUrl =
-  () =>
+  (db: Database) =>
   /**
    * Pulls the access grant token from the url query params, clears the url query params, and saves the token to local storage
    */
@@ -9,7 +10,7 @@ export const getAccessGrantTokenFromUrl =
     const query = new URLSearchParams(window?.location?.search ?? '');
     const token = query.get('token');
     if (token && typeof token === 'string') {
-      setLocalAccessGrantToken(token);
+      setLocalAccessGrantToken(db)(token);
     }
     // remove from url
     if (window?.location?.search) {

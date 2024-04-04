@@ -641,8 +641,8 @@ var __publicField = (obj, key, value) => {
   const localStorageRemove = (key) => {
     localStorage.removeItem("ewe_" + key);
   };
-  function getLocalRegistry() {
-    const registry = localStorageGet(
+  const getLocalRegistry = (db) => () => {
+    const registry = db.localStorageService.getItem(
       "room_registry"
       /* roomRegistry */
     );
@@ -650,37 +650,37 @@ var __publicField = (obj, key, value) => {
       return registry;
     }
     return [];
-  }
-  function setLocalRegistry(registry) {
-    localStorageSet("room_registry", registry);
-  }
-  function clearLocalRegistry() {
-    localStorageRemove(
+  };
+  const setLocalRegistry = (db) => (registry) => {
+    db.localStorageService.setItem("room_registry", registry);
+  };
+  const clearLocalRegistry = (db) => () => {
+    db.localStorageService.removeItem(
       "room_registry"
       /* roomRegistry */
     );
-  }
-  function getLocalAccessGrantToken() {
-    return localStorageGet(
+  };
+  const getLocalAccessGrantToken = (db) => () => {
+    return db.localStorageService.getItem(
       "access_grant_token"
       /* accessGrantToken */
     );
-  }
-  function setLocalAccessGrantToken(token) {
-    localStorageSet("access_grant_token", token);
-  }
-  function clearLocalAccessGrantToken() {
-    localStorageRemove(
+  };
+  const setLocalAccessGrantToken = (db) => (token) => {
+    db.localStorageService.setItem("access_grant_token", token);
+  };
+  const clearLocalAccessGrantToken = (db) => () => {
+    db.localStorageService.removeItem(
       "access_grant_token"
       /* accessGrantToken */
     );
-  }
+  };
   const logout = (db) => (
     /**
      * clears the login token from storage and disconnects all ySweet providers. Still leaves the local indexedDB yDocs.
      */
     () => {
-      clearLocalAccessGrantToken();
+      clearLocalAccessGrantToken(db)();
       db.accessGrantToken = "";
       db.useYSweet = false;
       db.online = false;
@@ -705,7 +705,7 @@ var __publicField = (obj, key, value) => {
         }
       }
       db.registry = [];
-      clearLocalRegistry();
+      clearLocalRegistry(db)();
     }
   );
   const checkServerConnection = async (db) => {
@@ -794,7 +794,7 @@ var __publicField = (obj, key, value) => {
       return url.toString();
     }
   );
-  const getAccessGrantTokenFromUrl = () => (
+  const getAccessGrantTokenFromUrl = (db) => (
     /**
      * Pulls the access grant token from the url query params, clears the url query params, and saves the token to local storage
      */
@@ -803,7 +803,7 @@ var __publicField = (obj, key, value) => {
       const query = new URLSearchParams(((_a = window == null ? void 0 : window.location) == null ? void 0 : _a.search) ?? "");
       const token = query.get("token");
       if (token && typeof token === "string") {
-        setLocalAccessGrantToken(token);
+        setLocalAccessGrantToken(db)(token);
       }
       if ((_b = window == null ? void 0 : window.location) == null ? void 0 : _b.search) {
         const url = new URL(window.location.href);
@@ -823,7 +823,7 @@ var __publicField = (obj, key, value) => {
       if (db.accessGrantToken) {
         return db.accessGrantToken;
       }
-      const savedToken = getLocalAccessGrantToken();
+      const savedToken = getLocalAccessGrantToken(db)();
       if (savedToken) {
         db.accessGrantToken = savedToken;
         return savedToken;
@@ -840,7 +840,7 @@ var __publicField = (obj, key, value) => {
     if (db.registry.length > 0) {
       return db.registry;
     } else {
-      const localRegistry = getLocalRegistry();
+      const localRegistry = getLocalRegistry(db)();
       if (localRegistry) {
         db.registry = localRegistry;
       }
@@ -9493,7 +9493,7 @@ ${reason}`);
   }
   function checkLoadedState(db) {
     return (room, token) => {
-      const localLoaded = room && room.ydoc && room.indexedDbProvider;
+      const localLoaded = !!room && !!room.ydoc && !!room.indexedDbProvider;
       const shouldLoadYSweet = db.useYSweet && token && room && room.ySweetUrl;
       const ySweetLoaded = token && room && room.ySweetProvider && room.token === token && room.tokenExpiry && !isTokenExpired(room.tokenExpiry);
       return { localLoaded, ySweetLoaded, shouldLoadYSweet };
@@ -9572,12 +9572,17 @@ ${reason}`);
   }
   const loadRoom = (db) => async (serverRoom) => {
     const { roomId, collectionKey } = validate(serverRoom);
-    db.info("loading room", serverRoom);
     const room = db.collections[collectionKey][roomId] ?? new Room(serverRoom);
+    db.info("loading room", { room, serverRoom });
     const { localLoaded, ySweetLoaded, shouldLoadYSweet } = checkLoadedState(db)(
       room,
       serverRoom.token
     );
+    db.debug("loadedState", {
+      localLoaded,
+      ySweetLoaded,
+      shouldLoadYSweet
+    });
     if (localLoaded && (!shouldLoadYSweet || ySweetLoaded)) {
       db.debug("room already loaded", room);
       return room;
@@ -9616,14 +9621,14 @@ ${reason}`);
       const { rooms, token } = syncResult ?? {};
       if (token && typeof token === "string") {
         db.debug("setting new token", token);
-        setLocalAccessGrantToken(token);
+        setLocalAccessGrantToken(db)(token);
         db.accessGrantToken = token;
       } else {
         return false;
       }
       if (rooms && typeof rooms === "object" && Array.isArray(rooms) && rooms.length >= 2) {
         db.debug("setting new rooms", rooms);
-        setLocalRegistry(rooms);
+        setLocalRegistry(db)(rooms);
         db.registry = rooms;
       } else {
         return false;
@@ -9730,7 +9735,7 @@ ${reason}`);
       __publicField(this, "login", login(this));
       __publicField(this, "logout", logout(this));
       __publicField(this, "logoutAndClear", logoutAndClear(this));
-      __publicField(this, "getAccessGrantTokenFromUrl", getAccessGrantTokenFromUrl());
+      __publicField(this, "getAccessGrantTokenFromUrl", getAccessGrantTokenFromUrl(this));
       __publicField(this, "getToken", getToken(this));
       __publicField(this, "refreshYSweetToken", refreshYSweetToken(this));
       __publicField(this, "loadRoom", loadRoom(this));
@@ -9738,6 +9743,11 @@ ${reason}`);
       __publicField(this, "syncRegistry", syncRegistry(this));
       // util methods
       __publicField(this, "getRegistry", getRegistry(this));
+      __publicField(this, "localStorageService", {
+        setItem: localStorageSet,
+        getItem: localStorageGet,
+        removeItem: localStorageRemove
+      });
       // collection methods
       __publicField(this, "getDocuments", getDocuments(this));
       __publicField(this, "getRoom", (collectionKey, roomId) => {
@@ -9752,7 +9762,7 @@ ${reason}`);
         this.collections[room.collectionKey][room.id] = room;
         const serverRoom = roomToServerRoom(room);
         this.registry.push(serverRoom);
-        setLocalRegistry(this.registry);
+        setLocalRegistry(this)(this.registry);
         if (this.online) {
           this.syncRegistry();
         }
@@ -9776,7 +9786,7 @@ ${reason}`);
           const registryEntry = this.registry.find((r) => r.id === room.id);
           if (registryEntry) {
             registryEntry.name = data.name;
-            setLocalRegistry(this.registry);
+            setLocalRegistry(this)(this.registry);
           } else {
             this.error("Error renaming room, registry entry not found");
           }

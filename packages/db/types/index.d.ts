@@ -2,6 +2,7 @@ import type { CollectionKey, Collections, CollectionToDocument, EweDocument, Pro
 import { Room } from './room';
 import { TypedEventEmitter } from './events';
 import type { DatabaseEvents } from './events';
+import type { LocalStorageService } from './utils/localStorageService';
 export * from './utils';
 export * from './types';
 export interface DatabaseOptions {
@@ -19,6 +20,8 @@ export interface DatabaseOptions {
     /** provide a list of peers to use instead of the default */
     webRTCPeers?: string[];
     initialRooms?: Registry;
+    /** a polyfill for localStorage for react native apps */
+    localStoragePolyfill?: LocalStorageService;
 }
 export declare class Database extends TypedEventEmitter<DatabaseEvents> {
     userId: string;
@@ -63,16 +66,18 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
     loadRooms: (rooms: Registry) => Promise<void>;
     syncRegistry: () => Promise<boolean>;
     getRegistry: () => Registry;
+    localStorageService: {
+        setItem: (key: import("./utils/localStorageService").LocalStorageKey, value: any) => void;
+        getItem: <T>(key: import("./utils/localStorageService").LocalStorageKey) => T | null;
+        removeItem: (key: import("./utils/localStorageService").LocalStorageKey) => void;
+    };
     getDocuments: <T extends EweDocument>(room: Room<T>) => {
         documents: import("yjs-types").TypedMap<import("./types").Documents<T>>;
         get: (id: string) => T | undefined;
         set: (doc: T) => T;
         new: (doc: import("./types").DocumentWithoutBase<T>, id?: string | undefined) => T;
         delete: (id: string, timeToLiveMs?: number | undefined) => T;
-        getAll: () => import("./types").Documents<T>; /** Which providers to use. By default uses all.
-         * Currently indexedDB is required and webRTC and YSweet are optional
-         * Setting only indexedDB will make the database offline only
-         */
+        getAll: () => import("./types").Documents<T>;
         getUndeleted: () => import("./types").Documents<T>;
         onChange: (callback: (event: import("yjs").YMapEvent<any>, transaction: import("yjs").Transaction) => void) => void;
         sortByRecent: (docs: import("./types").Documents<T>) => import("./types").Documents<T>;

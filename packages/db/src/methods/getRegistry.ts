@@ -5,7 +5,7 @@ export const getRegistry = (db: Database) => () => {
   if (db.registry.length > 0) {
     return db.registry;
   } else {
-    const localRegistry = getLocalRegistry();
+    const localRegistry = getLocalRegistry(db)();
     if (localRegistry) {
       db.registry = localRegistry;
     }

@@ -31,7 +31,7 @@ export const syncRegistry =
     const { rooms, token } = syncResult ?? {};
     if (token && typeof token === 'string') {
       db.debug('setting new token', token);
-      setLocalAccessGrantToken(token);
+      setLocalAccessGrantToken(db)(token);
       db.accessGrantToken = token;
     } else {
       return false;
@@ -44,7 +44,7 @@ export const syncRegistry =
       rooms.length >= 2
     ) {
       db.debug('setting new rooms', rooms);
-      setLocalRegistry(rooms);
+      setLocalRegistry(db)(rooms);
       db.registry = rooms;
     } else {
       return false;

@@ -10,7 +10,7 @@ export const getToken =
     if (db.accessGrantToken) {
       return db.accessGrantToken;
     }
-    const savedToken = getLocalAccessGrantToken();
+    const savedToken = getLocalAccessGrantToken(db)();
     if (savedToken) {
       db.accessGrantToken = savedToken;
       return savedToken;

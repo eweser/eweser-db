@@ -1,44 +1,56 @@
+import type { Database } from '..';
 import type { Registry } from '../types';
 
-enum LocalStorageKey {
+export enum LocalStorageKey {
   roomRegistry = 'room_registry',
   accessGrantToken = 'access_grant_token',
 }
-const localStorageSet = (key: LocalStorageKey, value: any) => {
+export type LocalStorageService = {
+  getItem: (key: LocalStorageKey) => string | null;
+  setItem: (key: LocalStorageKey, value: string) => void;
+  removeItem: (key: LocalStorageKey) => void;
+};
+export const localStorageSet = (key: LocalStorageKey, value: any) => {
   localStorage.setItem('ewe_' + key, JSON.stringify(value));
 };
-const localStorageGet = <T>(key: LocalStorageKey): T | null => {
+export const localStorageGet = <T>(key: LocalStorageKey): T | null => {
   const value = localStorage.getItem('ewe_' + key);
   if (!value) return null;
   return JSON.parse(value) as T;
 };
-const localStorageRemove = (key: LocalStorageKey) => {
+export const localStorageRemove = (key: LocalStorageKey) => {
   localStorage.removeItem('ewe_' + key);
 };
 
-export function getLocalRegistry() {
-  const registry = localStorageGet<Registry>(LocalStorageKey.roomRegistry);
+// Helpers
+
+export const getLocalRegistry = (db: Database) => () => {
+  const registry = db.localStorageService.getItem<Registry>(
+    LocalStorageKey.roomRegistry
+  );
   if (typeof registry === 'object' && Array.isArray(registry)) {
     return registry;
   }
   return [];
-}
+};
 
-export function setLocalRegistry(registry: Registry) {
-  localStorageSet(LocalStorageKey.roomRegistry, registry);
-}
-export function clearLocalRegistry() {
-  localStorageRemove(LocalStorageKey.roomRegistry);
-}
+export const setLocalRegistry = (db: Database) => (registry: Registry) => {
+  db.localStorageService.setItem(LocalStorageKey.roomRegistry, registry);
+};
+export const clearLocalRegistry = (db: Database) => () => {
+  db.localStorageService.removeItem(LocalStorageKey.roomRegistry);
+};
 
-export function getLocalAccessGrantToken() {
-  return localStorageGet<string>(LocalStorageKey.accessGrantToken);
-}
+export const getLocalAccessGrantToken = (db: Database) => () => {
+  return db.localStorageService.getItem<string>(
+    LocalStorageKey.accessGrantToken
+  );
+};
 
-export function setLocalAccessGrantToken(token: string) {
-  localStorageSet(LocalStorageKey.accessGrantToken, token);
-}
+export const setLocalAccessGrantToken = (db: Database) => (token: string) => {
+  db.localStorageService.setItem(LocalStorageKey.accessGrantToken, token);
+};
 
-export function clearLocalAccessGrantToken() {
-  localStorageRemove(LocalStorageKey.accessGrantToken);
-}
+export const clearLocalAccessGrantToken = (db: Database) => () => {
+  db.localStorageService.removeItem(LocalStorageKey.accessGrantToken);
+};

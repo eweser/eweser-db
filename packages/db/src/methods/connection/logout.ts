@@ -9,7 +9,7 @@ export const logout =
    * clears the login token from storage and disconnects all ySweet providers. Still leaves the local indexedDB yDocs.
    */
   () => {
-    clearLocalAccessGrantToken();
+    clearLocalAccessGrantToken(db)();
     db.accessGrantToken = '';
     db.useYSweet = false;
     db.online = false;
@@ -34,5 +34,5 @@ export const logoutAndClear =
       }
     }
     db.registry = [];
-    clearLocalRegistry();
+    clearLocalRegistry(db)();
   };
