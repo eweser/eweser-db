@@ -8,10 +8,12 @@
   ],
   "license": "MIT",
   "scripts": {
-    "release": "npm run clean && npm install && npm run build && npm run copy-readme && npx lerna publish --force-publish -y",
+    "release": "run-s reinstall build copy-readme lerna-publish",
     "test": "lerna run test",
     "test:e2e": "cypress run",
+    "lerna-publish": "npx lerna publish --force-publish -y",
     "clean": "npx lerna clean -y && npx lerna run clean && rm -rf node_modules",
+    "reinstall": "npm run clean && npm install",
     "copy-readme": "cp README.md packages/db/README.md",
     "build-components": "cd packages/examples-components && npm run build; cd ../../",
     "build-db": "cd packages/db && npm run build; cd ../../",
