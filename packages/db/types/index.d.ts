@@ -2,7 +2,7 @@ import type { CollectionKey, Collections, CollectionToDocument, EweDocument, Pro
 import { Room } from './room';
 import { TypedEventEmitter } from './events';
 import type { DatabaseEvents } from './events';
-import type { LocalStorageService } from './utils/localStorageService';
+import type { LocalStoragePolyfill, LocalStorageService } from './utils/localStorageService';
 export * from './utils';
 export * from './types';
 export interface DatabaseOptions {
@@ -21,7 +21,7 @@ export interface DatabaseOptions {
     webRTCPeers?: string[];
     initialRooms?: Registry;
     /** a polyfill for localStorage for react native apps */
-    localStoragePolyfill?: LocalStorageService;
+    localStoragePolyfill?: LocalStoragePolyfill;
 }
 export declare class Database extends TypedEventEmitter<DatabaseEvents> {
     userId: string;
@@ -66,6 +66,7 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
     loadRooms: (rooms: Registry) => Promise<void>;
     syncRegistry: () => Promise<boolean>;
     getRegistry: () => Registry;
+    localStoragePolyfill: LocalStoragePolyfill;
     localStorageService: LocalStorageService;
     getDocuments: <T extends EweDocument>(room: Room<T>) => {
         documents: import("yjs-types").TypedMap<import("./types").Documents<T>>;

@@ -629,17 +629,17 @@ var __publicField = (obj, key, value) => {
       return { error, data: null };
     }
   };
-  const localStorageSet = (key, value) => {
-    localStorage.setItem("ewe_" + key, JSON.stringify(value));
+  const localStorageSet = (db) => (key, value) => {
+    db.localStoragePolyfill.setItem("ewe_" + key, JSON.stringify(value));
   };
-  const localStorageGet = (key) => {
-    const value = localStorage.getItem("ewe_" + key);
+  const localStorageGet = (db) => (key) => {
+    const value = db.localStoragePolyfill.getItem("ewe_" + key);
     if (!value)
       return null;
     return JSON.parse(value);
   };
-  const localStorageRemove = (key) => {
-    localStorage.removeItem("ewe_" + key);
+  const localStorageRemove = (db) => (key) => {
+    db.localStoragePolyfill.removeItem("ewe_" + key);
   };
   const getLocalRegistry = (db) => () => {
     const registry = db.localStorageService.getItem(
@@ -9743,10 +9743,11 @@ ${reason}`);
       __publicField(this, "syncRegistry", syncRegistry(this));
       // util methods
       __publicField(this, "getRegistry", getRegistry(this));
+      __publicField(this, "localStoragePolyfill");
       __publicField(this, "localStorageService", {
-        setItem: localStorageSet,
-        getItem: localStorageGet,
-        removeItem: localStorageRemove
+        setItem: localStorageSet(this),
+        getItem: localStorageGet(this),
+        removeItem: localStorageRemove(this)
       });
       // collection methods
       __publicField(this, "getDocuments", getDocuments(this));
@@ -9796,6 +9797,7 @@ ${reason}`);
       __publicField(this, "generateShareRoomLink", generateShareRoomLink(this));
       __publicField(this, "pingServer", pingServer(this));
       const options = optionsPassed || {};
+      this.localStoragePolyfill = options.localStoragePolyfill || localStorage;
       if (options.authServer) {
         this.authServer = options.authServer;
       }
@@ -9810,9 +9812,6 @@ ${reason}`);
         if (!options.providers.includes("IndexedDB")) {
           throw new Error("IndexedDB provider is required");
         }
-      }
-      if (options.localStoragePolyfill) {
-        this.localStorageService = options.localStoragePolyfill;
       }
       if (((_a = options.providers) == null ? void 0 : _a.length) && ((_b = options.providers) == null ? void 0 : _b.length) === 1 && options.providers[0] === "IndexedDB") {
         this.offlineOnly = true;
