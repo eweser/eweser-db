@@ -5,21 +5,27 @@ export enum LocalStorageKey {
   roomRegistry = 'room_registry',
   accessGrantToken = 'access_grant_token',
 }
+
+export type LocalStoragePolyfill = Storage;
+
 export type LocalStorageService = {
   getItem: <T = any>(key: LocalStorageKey) => T | null;
   setItem: <T = any>(key: LocalStorageKey, value: T) => void;
   removeItem: (key: LocalStorageKey) => void;
 };
-export const localStorageSet = (key: LocalStorageKey, value: any) => {
-  localStorage.setItem('ewe_' + key, JSON.stringify(value));
-};
-export const localStorageGet = <T>(key: LocalStorageKey): T | null => {
-  const value = localStorage.getItem('ewe_' + key);
-  if (!value) return null;
-  return JSON.parse(value) as T;
-};
-export const localStorageRemove = (key: LocalStorageKey) => {
-  localStorage.removeItem('ewe_' + key);
+export const localStorageSet =
+  (db: Database) => (key: LocalStorageKey, value: any) => {
+    db.localStoragePolyfill.setItem('ewe_' + key, JSON.stringify(value));
+  };
+export const localStorageGet =
+  (db: Database) =>
+  <T>(key: LocalStorageKey): T | null => {
+    const value = db.localStoragePolyfill.getItem('ewe_' + key);
+    if (!value) return null;
+    return JSON.parse(value) as T;
+  };
+export const localStorageRemove = (db: Database) => (key: LocalStorageKey) => {
+  db.localStoragePolyfill.removeItem('ewe_' + key);
 };
 
 // Helpers

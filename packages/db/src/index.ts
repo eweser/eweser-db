@@ -26,7 +26,10 @@ import { loadRoom } from './methods/connection/loadRoom';
 import { refreshYSweetToken } from './methods/connection/refreshYSweetToken';
 import { syncRegistry } from './methods/connection/syncRegistry';
 import { loadRooms } from './methods/connection/loadRooms';
-import type { LocalStorageService } from './utils/localStorageService';
+import type {
+  LocalStoragePolyfill,
+  LocalStorageService,
+} from './utils/localStorageService';
 import {
   localStorageGet,
   localStorageRemove,
@@ -61,7 +64,7 @@ export interface DatabaseOptions {
   webRTCPeers?: string[];
   initialRooms?: Registry;
   /** a polyfill for localStorage for react native apps */
-  localStoragePolyfill?: LocalStorageService;
+  localStoragePolyfill?: LocalStoragePolyfill;
 }
 
 export class Database extends TypedEventEmitter<DatabaseEvents> {
@@ -111,10 +114,11 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
 
   // util methods
   getRegistry = getRegistry(this);
+  localStoragePolyfill: LocalStoragePolyfill;
   localStorageService: LocalStorageService = {
-    setItem: localStorageSet,
-    getItem: localStorageGet,
-    removeItem: localStorageRemove,
+    setItem: localStorageSet(this),
+    getItem: localStorageGet(this),
+    removeItem: localStorageRemove(this),
   };
 
   // collection methods
@@ -184,6 +188,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
   constructor(optionsPassed?: DatabaseOptions) {
     super();
     const options = optionsPassed || {};
+    this.localStoragePolyfill = options.localStoragePolyfill || localStorage;
     if (options.authServer) {
       this.authServer = options.authServer;
     }
@@ -201,9 +206,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
         // this.useIndexedDB = false;
       }
     }
-    if (options.localStoragePolyfill) {
-      this.localStorageService = options.localStoragePolyfill;
-    }
+
     if (
       options.providers?.length &&
       options.providers?.length === 1 &&
