@@ -111,7 +111,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
 
   // util methods
   getRegistry = getRegistry(this);
-  localStorageService = {
+  localStorageService: LocalStorageService = {
     setItem: localStorageSet,
     getItem: localStorageGet,
     removeItem: localStorageRemove,
@@ -201,7 +201,9 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
         // this.useIndexedDB = false;
       }
     }
-
+    if (options.localStoragePolyfill) {
+      this.localStorageService = options.localStoragePolyfill;
+    }
     if (
       options.providers?.length &&
       options.providers?.length === 1 &&
