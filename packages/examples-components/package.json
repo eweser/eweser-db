@@ -1,7 +1,7 @@
 {
   "name": "@eweser/examples-components",
   "private": true,
-  "version": "1.11.2",
+  "version": "1.11.3",
   "type": "module",
   "scripts": {
     "typescript-watch": "tsc --watch",
@@ -24,7 +24,7 @@
   "module": "./dist/examples-components.es.js",
   "types": "./dist/index.d.ts",
   "dependencies": {
-    "@eweser/db": "^1.11.2",
+    "@eweser/db": "^1.11.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
@@ -34,7 +34,7 @@
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@eweser/eslint-config-react-ts": "^1.11.2",
+    "@eweser/eslint-config-react-ts": "^1.11.3",
     "@types/react": "^18.0.28",
     "@types/react-dom": "^18.0.11",
     "@vitejs/plugin-react": "^4.2.1",
