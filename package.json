@@ -1,11 +1,17 @@
 {
   "name": "root",
   "private": true,
-  "workspaces": [
-    "packages/*",
-    "e2e/example",
-    "examples/*"
-  ],
+  "workspaces": {
+    "packages": [
+      "packages/*",
+      "e2e/example",
+      "examples/*"
+    ],
+    "nohoist": [
+      "**/expo",
+      "**/expo/**"
+    ]
+  },
   "license": "MIT",
   "scripts": {
     "release": "run-s reinstall build copy-readme lerna-publish",
@@ -53,5 +59,8 @@
   },
   "volta": {
     "node": "20.11.0"
+  },
+  "dependencies": {
+    "react-native-uuid": "^2.0.2"
   }
 }

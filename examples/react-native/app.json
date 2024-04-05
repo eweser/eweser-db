@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "packagerOpts": {
+      "sourceExts": ["js", "json", "ts", "tsx", "cjs"]
+    },
+    "name": "ewe-note-native",
+    "slug": "ewe-note-native",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.jacobcoro.ewenotenativey"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.jacobcoro.ewenotenative"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "7d8d1b5c-17f9-428e-9c35-29d3b332f5a5"
+      }
+    },
+    "owner": "jacobcoro"
+  }
+}
