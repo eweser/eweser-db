@@ -1,6 +1,6 @@
 {
   "name": "@eweser/examples-components",
-  "private": true,
+  "private": false,
   "version": "1.11.3",
   "type": "module",
   "scripts": {
