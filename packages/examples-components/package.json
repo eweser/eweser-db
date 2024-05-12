@@ -1,6 +1,9 @@
 {
   "name": "@eweser/examples-components",
   "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "version": "1.11.3",
   "type": "module",
   "scripts": {
