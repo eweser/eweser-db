@@ -1,6 +1,6 @@
 {
   "name": "@eweser/db",
-  "version": "1.11.3",
+  "version": "1.12.0",
   "description": "eweser-db core database",
   "keywords": [
     "user-owned",
@@ -51,7 +51,7 @@
     "access": "public"
   },
   "devDependencies": {
-    "@eweser/eslint-config-ts": "^1.11.3",
+    "@eweser/eslint-config-ts": "^1.12.0",
     "@types/request": "^2.48.8",
     "eslint": "^8.37.0",
     "fake-indexeddb": "^4.0.1",
@@ -64,7 +64,7 @@
   },
   "gitHead": "d6ee91d84092583f851548fa9ffe8ccf5de5705a",
   "dependencies": {
-    "@eweser/shared": "^1.11.3",
+    "@eweser/shared": "^1.12.0",
     "@y-sweet/client": "^0.1.0",
     "y-indexeddb": "^9.0.12",
     "y-webrtc": "^10.3.0",
