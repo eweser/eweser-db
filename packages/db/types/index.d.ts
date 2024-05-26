@@ -1,4 +1,4 @@
-import type { CollectionKey, Collections, CollectionToDocument, EweDocument, ProviderOptions, Registry } from './types';
+import type { CollectionKey, Collections, CollectionToDocument, EweDocument, indexedDBProviderPolyfill, ProviderOptions, Registry } from './types';
 import { Room } from './room';
 import { TypedEventEmitter } from './events';
 import type { DatabaseEvents } from './events';
@@ -17,6 +17,7 @@ export interface DatabaseOptions {
      * Setting only indexedDB will make the database offline only
      */
     providers?: ProviderOptions[];
+    indexedDBProviderPolyfill?: indexedDBProviderPolyfill;
     /** provide a list of peers to use instead of the default */
     webRTCPeers?: string[];
     initialRooms?: Registry;
@@ -33,6 +34,7 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
     useYSweet: boolean;
     useWebRTC: boolean;
     useIndexedDB: boolean;
+    indexedDBProviderPolyfill?: indexedDBProviderPolyfill;
     collectionKeys: CollectionKey[];
     collections: Collections;
     registry: Registry;

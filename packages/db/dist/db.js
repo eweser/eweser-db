@@ -626,12 +626,12 @@ const serverFetch = (_db) => async (path, _options) => {
   }
 };
 const localStorageSet = (db) => (key, value) => {
-  console.log("#### localStorageSet", key, value);
+  db.debug("#### localStorageSet", key, value);
   db.localStoragePolyfill.setItem("ewe_" + key, JSON.stringify(value));
 };
 const localStorageGet = (db) => (key) => {
   const value = db.localStoragePolyfill.getItem("ewe_" + key);
-  console.log("localStorageGet", key, value);
+  db.debug("localStorageGet", key, value);
   if (!value)
     return null;
   return JSON.parse(value);
@@ -8494,11 +8494,11 @@ class IndexeddbPersistence extends Observable$1 {
     });
   }
 }
-const initializeDocAndLocalProvider = async (roomId, existingDoc) => {
+const initializeDocAndLocalProvider = async (roomId, existingDoc, provider) => {
   const yDoc = existingDoc || new Doc();
   if (!yDoc)
     throw new Error("could not create doc");
-  const localProvider = new IndexeddbPersistence(roomId, yDoc);
+  const localProvider = provider ? provider(roomId, yDoc) : new IndexeddbPersistence(roomId, yDoc);
   if (localProvider.synced)
     return { yDoc, localProvider };
   const synced = await localProvider.whenSynced;
@@ -9492,14 +9492,16 @@ function validate(room) {
 function checkLoadedState(db) {
   return (room, token) => {
     const localLoaded = !!room && !!room.ydoc && !!room.indexedDbProvider;
-    const shouldLoadYSweet = db.useYSweet && token && room && room.ySweetUrl;
-    const ySweetLoaded = token && room && room.ySweetProvider && room.token === token && room.tokenExpiry && !isTokenExpired(room.tokenExpiry);
+    const shouldLoadYSweet = db.useYSweet && token && (room == null ? void 0 : room.ySweetUrl);
+    const ySweetLoaded = token && (room == null ? void 0 : room.ySweetProvider) && room.token === token && room.tokenExpiry && !isTokenExpired(room.tokenExpiry);
     return { localLoaded, ySweetLoaded, shouldLoadYSweet };
   };
 }
 async function loadLocal(db, room) {
   const { yDoc: ydoc, localProvider } = await initializeDocAndLocalProvider(
-    room.id
+    room.id,
+    room.ydoc,
+    db.indexedDBProviderPolyfill
   );
   room.ydoc = ydoc;
   room.indexedDbProvider = localProvider;
@@ -9714,6 +9716,7 @@ class Database extends TypedEventEmitter {
     __publicField(this, "useYSweet", false);
     __publicField(this, "useWebRTC", true);
     __publicField(this, "useIndexedDB", true);
+    __publicField(this, "indexedDBProviderPolyfill");
     __publicField(this, "collectionKeys", collectionKeys);
     __publicField(this, "collections", collections);
     __publicField(this, "registry", []);

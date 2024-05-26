@@ -1,7 +1,10 @@
 import type { DocumentBase, Note, Flashcard, Profile, COLLECTION_KEYS, ServerRoom, EweDocument, CollectionKey } from '@eweser/shared';
 import type { TypedDoc, TypedMap } from 'yjs-types';
 import type { Room } from './room';
+import type { IndexeddbPersistence } from 'y-indexeddb';
+import type { Doc } from 'yjs';
 export type ProviderOptions = 'WebRTC' | 'YSweet' | 'IndexedDB';
+export type indexedDBProviderPolyfill = (roomId: string, yDoc: Doc) => IndexeddbPersistence;
 export type { Room, ServerRoom, EweDocument, CollectionKey, DocumentBase, Note, Flashcard, Profile, };
 export { COLLECTION_KEYS };
 export type CollectionToDocument = {
