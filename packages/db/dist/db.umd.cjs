@@ -630,10 +630,12 @@ var __publicField = (obj, key, value) => {
     }
   };
   const localStorageSet = (db) => (key, value) => {
+    console.log("#### localStorageSet", key, value);
     db.localStoragePolyfill.setItem("ewe_" + key, JSON.stringify(value));
   };
   const localStorageGet = (db) => (key) => {
     const value = db.localStoragePolyfill.getItem("ewe_" + key);
+    console.log("localStorageGet", key, value);
     if (!value)
       return null;
     return JSON.parse(value);
@@ -5251,7 +5253,7 @@ var __publicField = (obj, key, value) => {
         attributes[
           /** @type {ContentFormat} */
           currPos.right.content.key
-        ] || null,
+        ] ?? null,
         /** @type {ContentFormat} */
         currPos.right.content.value
       ))
@@ -5268,7 +5270,7 @@ var __publicField = (obj, key, value) => {
     const negatedAttributes = /* @__PURE__ */ new Map();
     for (const key in attributes) {
       const val = attributes[key];
-      const currentVal = currPos.currentAttributes.get(key) || null;
+      const currentVal = currPos.currentAttributes.get(key) ?? null;
       if (!equalAttrs(currentVal, val)) {
         negatedAttributes.set(key, currentVal);
         const { left, right } = currPos;
@@ -5382,11 +5384,11 @@ var __publicField = (obj, key, value) => {
               /** @type {ContentFormat} */
               content
             );
-            const startAttrValue = startAttributes.get(key) || null;
+            const startAttrValue = startAttributes.get(key) ?? null;
             if (endFormats.get(key) !== content || startAttrValue === value) {
               start.delete(transaction);
               cleanups++;
-              if (!reachedCurr && (currAttributes.get(key) || null) === value && startAttrValue !== value) {
+              if (!reachedCurr && (currAttributes.get(key) ?? null) === value && startAttrValue !== value) {
                 if (startAttrValue === null) {
                   currAttributes.delete(key);
                 } else {
@@ -5703,12 +5705,12 @@ var __publicField = (obj, key, value) => {
                 );
                 if (this.adds(item)) {
                   if (!this.deletes(item)) {
-                    const curVal = currentAttributes.get(key) || null;
+                    const curVal = currentAttributes.get(key) ?? null;
                     if (!equalAttrs(curVal, value)) {
                       if (action === "retain") {
                         addOp();
                       }
-                      if (equalAttrs(value, oldAttributes.get(key) || null)) {
+                      if (equalAttrs(value, oldAttributes.get(key) ?? null)) {
                         delete attributes[key];
                       } else {
                         attributes[key] = value;
@@ -5719,7 +5721,7 @@ var __publicField = (obj, key, value) => {
                   }
                 } else if (this.deletes(item)) {
                   oldAttributes.set(key, value);
-                  const curVal = currentAttributes.get(key) || null;
+                  const curVal = currentAttributes.get(key) ?? null;
                   if (!equalAttrs(curVal, value)) {
                     if (action === "retain") {
                       addOp();

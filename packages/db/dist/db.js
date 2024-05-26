@@ -626,10 +626,12 @@ const serverFetch = (_db) => async (path, _options) => {
   }
 };
 const localStorageSet = (db) => (key, value) => {
+  console.log("#### localStorageSet", key, value);
   db.localStoragePolyfill.setItem("ewe_" + key, JSON.stringify(value));
 };
 const localStorageGet = (db) => (key) => {
   const value = db.localStoragePolyfill.getItem("ewe_" + key);
+  console.log("localStorageGet", key, value);
   if (!value)
     return null;
   return JSON.parse(value);
@@ -5247,7 +5249,7 @@ const minimizeAttributeChanges = (currPos, attributes) => {
       attributes[
         /** @type {ContentFormat} */
         currPos.right.content.key
-      ] || null,
+      ] ?? null,
       /** @type {ContentFormat} */
       currPos.right.content.value
     ))
@@ -5264,7 +5266,7 @@ const insertAttributes = (transaction, parent, currPos, attributes) => {
   const negatedAttributes = /* @__PURE__ */ new Map();
   for (const key in attributes) {
     const val = attributes[key];
-    const currentVal = currPos.currentAttributes.get(key) || null;
+    const currentVal = currPos.currentAttributes.get(key) ?? null;
     if (!equalAttrs(currentVal, val)) {
       negatedAttributes.set(key, currentVal);
       const { left, right } = currPos;
@@ -5378,11 +5380,11 @@ const cleanupFormattingGap = (transaction, start, curr, startAttributes, currAtt
             /** @type {ContentFormat} */
             content
           );
-          const startAttrValue = startAttributes.get(key) || null;
+          const startAttrValue = startAttributes.get(key) ?? null;
           if (endFormats.get(key) !== content || startAttrValue === value) {
             start.delete(transaction);
             cleanups++;
-            if (!reachedCurr && (currAttributes.get(key) || null) === value && startAttrValue !== value) {
+            if (!reachedCurr && (currAttributes.get(key) ?? null) === value && startAttrValue !== value) {
               if (startAttrValue === null) {
                 currAttributes.delete(key);
               } else {
@@ -5699,12 +5701,12 @@ class YTextEvent extends YEvent {
               );
               if (this.adds(item)) {
                 if (!this.deletes(item)) {
-                  const curVal = currentAttributes.get(key) || null;
+                  const curVal = currentAttributes.get(key) ?? null;
                   if (!equalAttrs(curVal, value)) {
                     if (action === "retain") {
                       addOp();
                     }
-                    if (equalAttrs(value, oldAttributes.get(key) || null)) {
+                    if (equalAttrs(value, oldAttributes.get(key) ?? null)) {
                       delete attributes[key];
                     } else {
                       attributes[key] = value;
@@ -5715,7 +5717,7 @@ class YTextEvent extends YEvent {
                 }
               } else if (this.deletes(item)) {
                 oldAttributes.set(key, value);
-                const curVal = currentAttributes.get(key) || null;
+                const curVal = currentAttributes.get(key) ?? null;
                 if (!equalAttrs(curVal, value)) {
                   if (action === "retain") {
                     addOp();

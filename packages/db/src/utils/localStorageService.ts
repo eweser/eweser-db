@@ -15,12 +15,14 @@ export type LocalStorageService = {
 };
 export const localStorageSet =
   (db: Database) => (key: LocalStorageKey, value: any) => {
+    db.debug('#### localStorageSet', key, value);
     db.localStoragePolyfill.setItem('ewe_' + key, JSON.stringify(value));
   };
 export const localStorageGet =
   (db: Database) =>
   <T>(key: LocalStorageKey): T | null => {
     const value = db.localStoragePolyfill.getItem('ewe_' + key);
+    db.debug('localStorageGet', key, value);
     if (!value) return null;
     return JSON.parse(value) as T;
   };

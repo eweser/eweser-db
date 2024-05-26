@@ -25,11 +25,10 @@ function validate(room: ServerRoom) {
 function checkLoadedState(db: Database) {
   return (room: Room<any>, token: string | null) => {
     const localLoaded = !!room && !!room.ydoc && !!room.indexedDbProvider;
-    const shouldLoadYSweet = db.useYSweet && token && room && room.ySweetUrl;
+    const shouldLoadYSweet = db.useYSweet && token && room?.ySweetUrl;
     const ySweetLoaded =
       token &&
-      room &&
-      room.ySweetProvider &&
+      room?.ySweetProvider &&
       room.token === token &&
       room.tokenExpiry &&
       !isTokenExpired(room.tokenExpiry);
@@ -39,7 +38,9 @@ function checkLoadedState(db: Database) {
 }
 async function loadLocal(db: Database, room: Room<any>) {
   const { yDoc: ydoc, localProvider } = await initializeDocAndLocalProvider(
-    room.id
+    room.id,
+    room.ydoc,
+    db.indexedDBProviderPolyfill
   );
 
   room.ydoc = ydoc;

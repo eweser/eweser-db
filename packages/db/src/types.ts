@@ -11,8 +11,14 @@ import type {
 import type { TypedDoc, TypedMap } from 'yjs-types';
 
 import type { Room } from './room';
+import type { IndexeddbPersistence } from 'y-indexeddb';
+import type { Doc } from 'yjs';
 
 export type ProviderOptions = 'WebRTC' | 'YSweet' | 'IndexedDB';
+export type indexedDBProviderPolyfill = (
+  roomId: string,
+  yDoc: Doc
+) => IndexeddbPersistence;
 
 export type {
   Room,
