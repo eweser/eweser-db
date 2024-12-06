@@ -88,8 +88,6 @@ export class Room<T extends EweDocument>
     this.ySweetProvider = ySweetProvider;
     this.ydoc = ydoc;
   }
-
-  // tempDocs: { [docRef: string]: { doc: Doc } };
 }
 
 export function roomToServerRoom(room: Room<any>): ServerRoom {

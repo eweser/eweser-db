@@ -40,6 +40,9 @@ import {
 import { generateShareRoomLink } from './methods/connection/generateShareRoomLink';
 import { pingServer } from './utils/connection/pingServer';
 import { pollConnection } from './utils/connection/pollConnection';
+import type { Doc } from 'yjs';
+import type { YSweetProvider } from '@y-sweet/client';
+import type { WebrtcProvider } from 'y-webrtc';
 
 export * from './utils';
 export * from './types';
@@ -187,6 +190,15 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
 
   generateShareRoomLink = generateShareRoomLink(this);
   pingServer = pingServer(this);
+
+  // Temp docs. These are used for collaborative editing, or for rich-text editors that require a full yDoc passed to the editor. It is recommended in these cases to use a temporary yDoc only used for the session (if that document is open in both apps), then have debounced updates to the actual (ex. Notes) document, saved in cross platform compatible markdown.
+  tempDocs: {
+    [eweserDocRef: string]: {
+      yDoc: Doc;
+      webRtcProvider?: WebrtcProvider;
+      ySweetProvider?: YSweetProvider;
+    };
+  } = {};
 
   constructor(optionsPassed?: DatabaseOptions) {
     super();

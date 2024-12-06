@@ -452,7 +452,6 @@ var __publicField = (obj, key, value) => {
       this.ySweetProvider = ySweetProvider;
       this.ydoc = ydoc;
     }
-    // tempDocs: { [docRef: string]: { doc: Doc } };
   }
   function roomToServerRoom(room) {
     const {
@@ -2227,22 +2226,22 @@ var __publicField = (obj, key, value) => {
     /**
      * Define a shared data type.
      *
-     * Multiple calls of `y.get(name, TypeConstructor)` yield the same result
+     * Multiple calls of `ydoc.get(name, TypeConstructor)` yield the same result
      * and do not overwrite each other. I.e.
-     * `y.define(name, Y.Array) === y.define(name, Y.Array)`
+     * `ydoc.get(name, Y.Array) === ydoc.get(name, Y.Array)`
      *
-     * After this method is called, the type is also available on `y.share.get(name)`.
+     * After this method is called, the type is also available on `ydoc.share.get(name)`.
      *
      * *Best Practices:*
-     * Define all types right after the Yjs instance is created and store them in a separate object.
+     * Define all types right after the Y.Doc instance is created and store them in a separate object.
      * Also use the typed methods `getText(name)`, `getArray(name)`, ..
      *
      * @template {typeof AbstractType<any>} Type
      * @example
-     *   const y = new Y(..)
+     *   const ydoc = new Y.Doc(..)
      *   const appState = {
-     *     document: y.getText('document')
-     *     comments: y.getArray('comments')
+     *     document: ydoc.getText('document')
+     *     comments: ydoc.getArray('comments')
      *   }
      *
      * @param {string} name
@@ -4263,6 +4262,10 @@ var __publicField = (obj, key, value) => {
       throw methodUnimplemented();
     }
     /**
+     * Makes a copy of this data type that can be included somewhere else.
+     *
+     * Note that the content is only readable _after_ it has been included somewhere in the Ydoc.
+     *
      * @return {AbstractType<EventType>}
      */
     clone() {
@@ -4724,6 +4727,10 @@ var __publicField = (obj, key, value) => {
       return new YArray();
     }
     /**
+     * Makes a copy of this data type that can be included somewhere else.
+     *
+     * Note that the content is only readable _after_ it has been included somewhere in the Ydoc.
+     *
      * @return {YArray<T>}
      */
     clone() {
@@ -4876,7 +4883,7 @@ var __publicField = (obj, key, value) => {
       );
     }
     /**
-     * Executes a provided function once on overy element of this YArray.
+     * Executes a provided function once on every element of this YArray.
      *
      * @param {function(T,number,YArray<T>):void} f A function to execute on every element of this YArray.
      */
@@ -4946,6 +4953,10 @@ var __publicField = (obj, key, value) => {
       return new YMap();
     }
     /**
+     * Makes a copy of this data type that can be included somewhere else.
+     *
+     * Note that the content is only readable _after_ it has been included somewhere in the Ydoc.
+     *
      * @return {YMap<MapType>}
      */
     clone() {
@@ -5814,6 +5825,10 @@ var __publicField = (obj, key, value) => {
       return new YText();
     }
     /**
+     * Makes a copy of this data type that can be included somewhere else.
+     *
+     * Note that the content is only readable _after_ it has been included somewhere in the Ydoc.
+     *
      * @return {YText}
      */
     clone() {
@@ -6271,6 +6286,10 @@ var __publicField = (obj, key, value) => {
       return new YXmlFragment();
     }
     /**
+     * Makes a copy of this data type that can be included somewhere else.
+     *
+     * Note that the content is only readable _after_ it has been included somewhere in the Ydoc.
+     *
      * @return {YXmlFragment}
      */
     clone() {
@@ -6495,7 +6514,7 @@ var __publicField = (obj, key, value) => {
       return typeListSlice(this, start, end);
     }
     /**
-     * Executes a provided function on once on overy child element.
+     * Executes a provided function on once on every child element.
      *
      * @param {function(YXmlElement|YXmlText,number, typeof self):void} f A function to execute on every element of this YArray.
      */
@@ -6570,6 +6589,10 @@ var __publicField = (obj, key, value) => {
       return new YXmlElement(this.nodeName);
     }
     /**
+     * Makes a copy of this data type that can be included somewhere else.
+     *
+     * Note that the content is only readable _after_ it has been included somewhere in the Ydoc.
+     *
      * @return {YXmlElement<KV>}
      */
     clone() {
@@ -6771,6 +6794,10 @@ var __publicField = (obj, key, value) => {
       return new YXmlHook(this.hookName);
     }
     /**
+     * Makes a copy of this data type that can be included somewhere else.
+     *
+     * Note that the content is only readable _after_ it has been included somewhere in the Ydoc.
+     *
      * @return {YXmlHook}
      */
     clone() {
@@ -6850,6 +6877,10 @@ var __publicField = (obj, key, value) => {
       return new YXmlText();
     }
     /**
+     * Makes a copy of this data type that can be included somewhere else.
+     *
+     * Note that the content is only readable _after_ it has been included somewhere in the Ydoc.
+     *
      * @return {YXmlText}
      */
     clone() {
@@ -9801,6 +9832,8 @@ ${reason}`);
       });
       __publicField(this, "generateShareRoomLink", generateShareRoomLink(this));
       __publicField(this, "pingServer", pingServer(this));
+      // Temp docs. These are used for collaborative editing, or for rich-text editors that require a full yDoc passed to the editor. It is recommended in these cases to use a temporary yDoc only used for the session (if that document is open in both apps), then have debounced updates to the actual (ex. Notes) document, saved in cross platform compatible markdown.
+      __publicField(this, "tempDocs", {});
       const options = optionsPassed || {};
       this.localStoragePolyfill = options.localStoragePolyfill || localStorage;
       if (options.authServer) {

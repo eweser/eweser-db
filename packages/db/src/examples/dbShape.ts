@@ -1,11 +1,7 @@
-import type {
-  Flashcard,
-  Note,
-  Profile,
-} from '@eweser/shared/node_modules/collections';
-import type { DocumentBase } from '@eweser/shared/node_modules/collections/documentBase';
+import type { Flashcard, Note, Profile, DocumentBase } from '@eweser/shared';
 import type { Collections, Documents } from '../types';
 import { buildRef } from '../utils';
+import { Room } from '../room';
 
 /**
  * some metadata that exists on each document
@@ -86,12 +82,14 @@ const chineseFlashcardsYDoc: { documents: Documents<Flashcard> } = {
           collectionKey: 'notes',
           roomId: 'https://www.eweser.com|abc123',
           documentId: '0',
+          authServer: 'https://www.eweser.com',
         }),
       ],
       _ref: buildRef({
         collectionKey: 'flashcards',
         roomId: 'https://www.eweser.com|abc123',
         documentId: '0',
+        authServer: 'https://www.eweser.com',
       }),
       _id: 'noteID',
       _created: 1653135317729,
@@ -101,69 +99,39 @@ const chineseFlashcardsYDoc: { documents: Documents<Flashcard> } = {
 };
 
 //** to conceptualize DB shape */
-export const exampleDb: { collections: Collections } = {
+const _exampleDb: { collections: Collections } = {
   collections: {
     notes: {
       // Rooms
-      ['my_study_notes']: {
+      ['my_study_notes']: new Room({
         collectionKey: 'notes',
-        roomId: 'https://www.eweser.com|uuid',
         name: 'My Study Notes',
-        created: new Date(),
-        connectStatus: 'ok',
         ydoc: myStudyNotesYDoc as any,
-        tempDocs: {},
-        webRtcProvider: null,
-        indexeddbProvider: null,
-      },
+      }),
     },
     flashcards: {
-      ['typescript_study_cards']: {
+      ['typescript_study_cards']: new Room({
         collectionKey: 'flashcards',
-        roomId: 'https://www.eweser.com|uuid',
         name: 'Typescript Study Flashcards',
-        connectStatus: 'ok',
-        created: new Date(),
         ydoc: typescriptFlashcardsYDoc as any,
-        tempDocs: {},
-        webRtcProvider: null,
-        indexeddbProvider: null,
-      },
-      ['chinese_flashcards']: {
+      }),
+      ['chinese_flashcards']: new Room({
         collectionKey: 'flashcards',
-        roomId: 'https://www.eweser.com|uuid',
         name: 'Chinese Study Flashcards',
-        connectStatus: 'ok',
-        created: new Date(),
         ydoc: chineseFlashcardsYDoc as any,
-        tempDocs: {},
-        webRtcProvider: null,
-        indexeddbProvider: null,
-      },
+      }),
     },
     profiles: {
-      ['public']: {
+      ['public']: new Room({
         collectionKey: 'profiles',
-        roomId: 'https://www.eweser.com|uuid',
         name: 'Public Profile',
-        connectStatus: 'ok',
-        created: new Date(),
         ydoc: profileYDoc as any,
-        tempDocs: {},
-        webRtcProvider: null,
-        indexeddbProvider: null,
-      },
-      ['private']: {
+      }),
+      ['private']: new Room({
         collectionKey: 'profiles',
-        roomId: 'https://www.eweser.com|uuid',
         name: 'Private Profile',
-        connectStatus: 'ok',
-        created: new Date(),
         ydoc: profilePrivateYDoc as any,
-        tempDocs: {},
-        webRtcProvider: null,
-        indexeddbProvider: null,
-      },
+      }),
     },
   },
 };
@@ -175,23 +143,29 @@ export const exampleDb: { collections: Collections } = {
 /**
  * A room is a folder or a collection of documents. It is a place where documents are stored. access permissions are set at the room level.
  */
-export const room = {
-  id: 'room_id', // <authserver-url>|<uuid>
+const _room = new Room({
+  id: 'uuid',
   name: 'room_name',
-  collection_key: 'enum CollectionKey',
-  token: 'string', // y-sweet access token to sync the document
-  doc_id: 'string', // y-sweet document id. <user_id>|<collection_key>|<room_id>
-  public: 'boolean', // if true, anyone can access the room. will invite all aggregators.
+  collectionKey: 'flashcards', // CollectionKey
+  token: 'uuid', // y-sweet access token to sync the document
+  tokenExpiry: '12-12-12',
+  ySweetUrl: 'https://url-from-ysweet',
+  publicAccess: 'private', //"private" | "read" | "write" // if read or write will invite all aggregators.
+  readAccess: ['userId', 'AUTH_SERVER_DOMAIN'], // auth server if just for personal use, more (aggregators) if public
+  writeAccess: ['userId', 'AUTH_SERVER_DOMAIN'], // auth server if just for personal use, more (other users) if shared writable
+  adminAccess: ['userId'], // generally only user has admin but could give uring sharing
+  createdAt: '12-12-12',
+  updatedAt: '12-12-12',
+  _deleted: false,
+  _ttl: null, // '12-12-12' if deleted,
 
-  read_access: 'array user_id[]', // can read
-  write_access: 'array user_id[]', // can write
-  admin_access: 'array user_id[]', // can change access
+  indexedDbProvider: null,
+  webRtcProvider: null,
+  ySweetProvider: null,
+  ydoc: null,
+});
 
-  created: 'date',
-  updated: 'date',
-};
-
-export const jwt = {
+export const _jwt = {
   id: 'jwt_id',
   access_record_id: '<user_id>|<requester_id>',
 
