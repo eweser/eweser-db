@@ -14,23 +14,55 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Deploy and connect Supabase
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Create a new default settings project on Supabase.
+Add these environment variables to your project as per the example-env file.
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+```bash
+NEXT_PUBLIC_SUPABASE_URL="https://asdf.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="asdf.asdf.asdf"
+SUPABASE_CONNECTION_URL='postgres://postgres.asdf:asdf@aws-0-us-west-1.pooler.supabase.com:5432/postgres'
+SUPABASE_SERVICE_ROLE_KEY='asdf.asdf.asdf'
+```
 
-## Learn More
+## Sign up for and connect Y-Sweet
 
-To learn more about Next.js, take a look at the following resources:
+You can also self host a y-sweet instance, or use hosted y-sweet with self storage.
+[Quick start guide](https://docs.jamsocket.com/y-sweet/quickstart)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+follow their guide to generate a connection string and set it into
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+Add this environment variables to your project as per the example-env file.
+
+```bash
+Y_SWEET_CONNECTION_STRING=yss://asdf.asdf-asdf@y-sweet.net/p/asdf--asdf/
+```
+
+## deploy settings
+
+Make sure to set your domain and url in the .env.local file
+
+```bash
+# prod site url/domain
+NEXT_PUBLIC_AUTH_SERVER_URL='https://eweser.com'
+NEXT_PUBLIC_AUTH_SERVER_DOMAIN='eweser.com'
+```
+
+And if you want to use the github actions to deploy, you will need to set these environment variables in your github secrets.
+
+```bash
+# deploy (only used on github in the .github/workflows/auth-sever-sdb-deploy.yaml file)
+PRODUCTION_PROJECT_ID=asdf # supabase project id
+SUPABASE_ACCESS_TOKEN=asdf # supabase access token
+PRODUCTION_DB_PASSWORD=asdf # supabase db password
+WORKFLOW_TOKEN=asdf # github token
+```
 
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+Check out the [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+
+Copy the contents of your env into vercel.
