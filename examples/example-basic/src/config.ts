@@ -2,7 +2,7 @@ const dummyUserName = 'dummy-user123';
 const dummyUserPass = 'dumdum';
 
 export const AUTH_SERVER =
-  import.meta.env.VITE_AUTH_SERVER ?? 'http://172.31.42.92:3000';
+  import.meta.env.VITE_AUTH_SERVER ?? 'http://172.31.42.92:3000'; // 'https://eweser.com';
 
 export const env =
   import.meta.env.VITE_CI === 'true'
