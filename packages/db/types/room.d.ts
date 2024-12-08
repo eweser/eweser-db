@@ -51,7 +51,7 @@ export declare class Room<T extends EweDocument> extends TypedEventEmitter<RoomE
     connectionRetries: number;
     disconnect: () => void;
     getDocuments: () => GetDocuments<T>;
-    tempDoc: () => {
+    tempDoc: (docId: string) => {
         doc: Doc;
         provider?: WebrtcProvider | undefined;
         awareness?: any;

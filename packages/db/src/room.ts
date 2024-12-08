@@ -63,13 +63,17 @@ export class Room<T extends EweDocument>
     this.ySweetProvider?.disconnect();
     this.webRtcProvider?.disconnect();
     this.emit('roomConnectionChange', 'disconnected', this);
-    delete this.db.tempDocs[this.id];
+
+    const Docs = this.getDocuments().getAllToArray();
+    Docs.forEach((doc) => {
+      delete this.db.tempDocs[doc._id];
+    });
   };
 
   getDocuments: () => GetDocuments<T>;
 
-  tempDoc = () => {
-    const existing = this.db.tempDocs[this.id];
+  tempDoc = (docId: string) => {
+    const existing = this.db.tempDocs[docId];
     if (existing) {
       if (existing.provider?.connected) {
         return existing;
@@ -82,13 +86,13 @@ export class Room<T extends EweDocument>
     /* could consider improving this security */
     const password = this.id;
 
-    const provider = new WebrtcProvider(this.name, doc, {
+    const provider = new WebrtcProvider(docId, doc, {
       password,
       signaling: servers,
       awareness,
     });
 
-    this.db.tempDocs[this.id] = { doc, provider, awareness };
+    this.db.tempDocs[docId] = { doc, provider, awareness };
     return { doc, provider, awareness };
   };
 

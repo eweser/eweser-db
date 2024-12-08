@@ -12028,12 +12028,15 @@ var __publicField = (obj, key, value) => {
         (_a = this.ySweetProvider) == null ? void 0 : _a.disconnect();
         (_b = this.webRtcProvider) == null ? void 0 : _b.disconnect();
         this.emit("roomConnectionChange", "disconnected", this);
-        delete this.db.tempDocs[this.id];
+        const Docs = this.getDocuments().getAllToArray();
+        Docs.forEach((doc) => {
+          delete this.db.tempDocs[doc._id];
+        });
       });
       __publicField(this, "getDocuments");
-      __publicField(this, "tempDoc", () => {
+      __publicField(this, "tempDoc", (docId) => {
         var _a;
-        const existing = this.db.tempDocs[this.id];
+        const existing = this.db.tempDocs[docId];
         if (existing) {
           if ((_a = existing.provider) == null ? void 0 : _a.connected) {
             return existing;
@@ -12043,12 +12046,12 @@ var __publicField = (obj, key, value) => {
         const awareness = new Awareness(doc);
         const servers = this.db.webRtcPeers;
         const password = this.id;
-        const provider = new WebrtcProvider(this.name, doc, {
+        const provider = new WebrtcProvider(docId, doc, {
           password,
           signaling: servers,
           awareness
         });
-        this.db.tempDocs[this.id] = { doc, provider, awareness };
+        this.db.tempDocs[docId] = { doc, provider, awareness };
         return { doc, provider, awareness };
       });
       this.db = db;
