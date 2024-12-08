@@ -1,6 +1,11 @@
 import type { YMapEvent, Transaction } from 'yjs';
 import type { Database } from '..';
-import type {  EweDocument, DocumentWithoutBase, Room, Documents } from '../types';
+import type {
+  EweDocument,
+  DocumentWithoutBase,
+  Room,
+  Documents,
+} from '../types';
 import { randomString, buildRef, newDocument } from '../utils';
 
 export const getDocuments =

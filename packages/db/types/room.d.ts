@@ -1,11 +1,12 @@
-import type { CollectionKey, EweDocument } from '@eweser/shared';
+import type { CollectionKey, EweDocument, ServerRoom } from '@eweser/shared';
 import type { YSweetProvider } from '@y-sweet/client';
 import type { IndexeddbPersistence } from 'y-indexeddb';
 import type { WebrtcProvider } from 'y-webrtc';
 import type { RoomEvents } from './events';
 import { TypedEventEmitter } from './events';
-import type { YDoc, ServerRoom } from './types';
+import type { Database, YDoc } from '.';
 export type NewRoomOptions<T extends EweDocument> = {
+    db: Database;
     id?: string;
     name: string;
     collectionKey: CollectionKey;
@@ -27,6 +28,7 @@ export type NewRoomOptions<T extends EweDocument> = {
 };
 /** is an event listener, and adds the ydoc providers ands connection status to a ServerRoom/Registry entry */
 export declare class Room<T extends EweDocument> extends TypedEventEmitter<RoomEvents<T>> implements ServerRoom {
+    db: Database;
     id: string;
     name: string;
     collectionKey: CollectionKey;
@@ -47,6 +49,7 @@ export declare class Room<T extends EweDocument> extends TypedEventEmitter<RoomE
     ydoc?: YDoc<T> | null;
     connectionRetries: number;
     disconnect: () => void;
-    constructor({ indexedDbProvider, webRtcProvider, ySweetProvider, ydoc, ...serverRoom }: NewRoomOptions<T>);
+    getDocuments: any;
+    constructor({ db, indexedDbProvider, webRtcProvider, ySweetProvider, ydoc, ...serverRoom }: NewRoomOptions<T>);
 }
 export declare function roomToServerRoom(room: Room<any>): ServerRoom;

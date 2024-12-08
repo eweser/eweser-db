@@ -90,7 +90,7 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
      * new rooms must be added to the registry and then synced with the auth server
      * Note: If your app does not have access privileges to the collection, the room won't be synced server-side.
      */
-    newRoom: <T extends EweDocument>(options: Room<T>) => void;
+    newRoom: <T extends EweDocument>(options: Room<T>) => Room<T>;
     renameRoom: (room: Room<any>, newName: string) => Promise<import("@eweser/shared").ServerRoom | null>;
     generateShareRoomLink: ({ roomId, invitees, redirectUrl, redirectQueries, expiry, accessType, appName, domain, collections, }: Partial<import("@eweser/shared").LoginQueryOptions> & {
         roomId: string;

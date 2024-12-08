@@ -401,6 +401,7 @@ var __publicField = (obj, key, value) => {
   };
   class Room extends TypedEventEmitter {
     constructor({
+      db,
       indexedDbProvider,
       webRtcProvider,
       ySweetProvider,
@@ -408,6 +409,7 @@ var __publicField = (obj, key, value) => {
       ...serverRoom
     }) {
       super();
+      __publicField(this, "db");
       __publicField(this, "id");
       __publicField(this, "name");
       __publicField(this, "collectionKey");
@@ -433,6 +435,8 @@ var __publicField = (obj, key, value) => {
         (_b = this.webRtcProvider) == null ? void 0 : _b.disconnect();
         this.emit("roomConnectionChange", "disconnected", this);
       });
+      __publicField(this, "getDocuments");
+      this.db = db;
       this.id = serverRoom.id || crypto.randomUUID();
       this.name = serverRoom.name;
       this.collectionKey = serverRoom.collectionKey;
@@ -451,6 +455,7 @@ var __publicField = (obj, key, value) => {
       this.webRtcProvider = webRtcProvider;
       this.ySweetProvider = ySweetProvider;
       this.ydoc = ydoc;
+      this.getDocuments = this.db.getDocuments(this);
     }
   }
   function roomToServerRoom(room) {
@@ -9607,7 +9612,7 @@ ${reason}`);
   }
   const loadRoom = (db) => async (serverRoom) => {
     const { roomId, collectionKey } = validate(serverRoom);
-    const room = db.collections[collectionKey][roomId] ?? new Room(serverRoom);
+    const room = db.collections[collectionKey][roomId] ?? new Room({ db, ...serverRoom });
     db.info("loading room", { room, serverRoom });
     const { localLoaded, ySweetLoaded, shouldLoadYSweet } = checkLoadedState(db)(
       room,
@@ -9743,6 +9748,7 @@ ${reason}`);
       var _a, _b;
       super();
       __publicField(this, "userId", "");
+      /* default to the eweser auth server https://www.eweser.com */
       __publicField(this, "authServer", "https://www.eweser.com");
       __publicField(this, "online", false);
       __publicField(this, "isPolling", false);
@@ -9803,6 +9809,7 @@ ${reason}`);
         if (this.online) {
           this.syncRegistry();
         }
+        return room;
       });
       __publicField(this, "renameRoom", async (room, newName) => {
         const body = {

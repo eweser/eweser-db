@@ -2,6 +2,9 @@ import type { Flashcard, Note, Profile, DocumentBase } from '@eweser/shared';
 import type { Collections, Documents } from '../types';
 import { buildRef } from '../utils';
 import { Room } from '../room';
+import { Database } from '..';
+
+const db = new Database();
 
 /**
  * some metadata that exists on each document
@@ -104,6 +107,7 @@ const _exampleDb: { collections: Collections } = {
     notes: {
       // Rooms
       ['my_study_notes']: new Room({
+        db,
         collectionKey: 'notes',
         name: 'My Study Notes',
         ydoc: myStudyNotesYDoc as any,
@@ -111,11 +115,13 @@ const _exampleDb: { collections: Collections } = {
     },
     flashcards: {
       ['typescript_study_cards']: new Room({
+        db,
         collectionKey: 'flashcards',
         name: 'Typescript Study Flashcards',
         ydoc: typescriptFlashcardsYDoc as any,
       }),
       ['chinese_flashcards']: new Room({
+        db,
         collectionKey: 'flashcards',
         name: 'Chinese Study Flashcards',
         ydoc: chineseFlashcardsYDoc as any,
@@ -123,11 +129,13 @@ const _exampleDb: { collections: Collections } = {
     },
     profiles: {
       ['public']: new Room({
+        db,
         collectionKey: 'profiles',
         name: 'Public Profile',
         ydoc: profileYDoc as any,
       }),
       ['private']: new Room({
+        db,
         collectionKey: 'profiles',
         name: 'Private Profile',
         ydoc: profilePrivateYDoc as any,
@@ -138,12 +146,13 @@ const _exampleDb: { collections: Collections } = {
 
 /** V2, drafts for y-sweet control flow: */
 
-/**A UTH SERVER MODEL */
+/**AUTH SERVER MODEL */
 
 /**
  * A room is a folder or a collection of documents. It is a place where documents are stored. access permissions are set at the room level.
  */
 const _room = new Room({
+  db,
   id: 'uuid',
   name: 'room_name',
   collectionKey: 'flashcards', // CollectionKey

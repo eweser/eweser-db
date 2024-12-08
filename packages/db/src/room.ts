@@ -1,12 +1,13 @@
-import type { CollectionKey, EweDocument } from '@eweser/shared';
+import type { CollectionKey, EweDocument, ServerRoom } from '@eweser/shared';
 import type { YSweetProvider } from '@y-sweet/client';
 import type { IndexeddbPersistence } from 'y-indexeddb';
 import type { WebrtcProvider } from 'y-webrtc';
 import type { RoomEvents } from './events';
 import { TypedEventEmitter } from './events';
-import type { YDoc, ServerRoom } from './types';
+import type { Database, YDoc } from '.';
 
 export type NewRoomOptions<T extends EweDocument> = {
+  db: Database;
   id?: string;
   name: string;
   collectionKey: CollectionKey;
@@ -32,6 +33,7 @@ export class Room<T extends EweDocument>
   extends TypedEventEmitter<RoomEvents<T>>
   implements ServerRoom
 {
+  db: Database;
   id: string;
   name: string;
   collectionKey: CollectionKey;
@@ -60,7 +62,10 @@ export class Room<T extends EweDocument>
     this.emit('roomConnectionChange', 'disconnected', this);
   };
 
+  getDocuments;
+
   constructor({
+    db,
     indexedDbProvider,
     webRtcProvider,
     ySweetProvider,
@@ -68,6 +73,7 @@ export class Room<T extends EweDocument>
     ...serverRoom
   }: NewRoomOptions<T>) {
     super();
+    this.db = db;
     this.id = serverRoom.id || crypto.randomUUID();
     this.name = serverRoom.name;
     this.collectionKey = serverRoom.collectionKey;
@@ -87,6 +93,8 @@ export class Room<T extends EweDocument>
     this.webRtcProvider = webRtcProvider;
     this.ySweetProvider = ySweetProvider;
     this.ydoc = ydoc;
+
+    this.getDocuments = this.db.getDocuments(this);
   }
 }
 

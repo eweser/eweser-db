@@ -74,6 +74,7 @@ export interface DatabaseOptions {
 
 export class Database extends TypedEventEmitter<DatabaseEvents> {
   userId = '';
+  /* default to the eweser auth server https://www.eweser.com */
   authServer = 'https://www.eweser.com';
   online = false;
   isPolling = false;
@@ -133,7 +134,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     collectionKey: CollectionKey,
     roomId: string
   ) => {
-    return this.collections[collectionKey][roomId] as Room<T>;
+    return this.collections[collectionKey][roomId] as unknown as Room<T>;
   };
   getRooms<T extends CollectionKey>(
     collectionKey: T
@@ -145,8 +146,8 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
    * Note: If your app does not have access privileges to the collection, the room won't be synced server-side.
    */
   newRoom = <T extends EweDocument>(options: Room<T>) => {
-    const room = new Room(options);
-    this.collections[room.collectionKey][room.id] = room;
+    const room = new Room<T>(options);
+    this.collections[room.collectionKey][room.id] = room as any;
     const serverRoom = roomToServerRoom(room);
     this.registry.push(serverRoom);
     setLocalRegistry(this)(this.registry);
@@ -158,6 +159,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
       //   this.syncRegistry()
       // }
     }
+    return room;
   };
 
   renameRoom = async (room: Room<any>, newName: string) => {

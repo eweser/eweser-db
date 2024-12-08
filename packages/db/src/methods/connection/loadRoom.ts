@@ -122,7 +122,7 @@ export const loadRoom = (db: Database) => async (serverRoom: ServerRoom) => {
   const { roomId, collectionKey } = validate(serverRoom);
 
   const room: Room<any> =
-    db.collections[collectionKey][roomId] ?? new Room(serverRoom);
+    db.collections[collectionKey][roomId] ?? new Room({ db, ...serverRoom });
   db.info('loading room', { room, serverRoom });
 
   const { localLoaded, ySweetLoaded, shouldLoadYSweet } = checkLoadedState(db)(
