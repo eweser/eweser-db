@@ -73,17 +73,7 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
     getRegistry: () => Registry;
     localStoragePolyfill: LocalStoragePolyfill;
     localStorageService: LocalStorageService;
-    getDocuments: <T extends EweDocument>(room: Room<T>) => {
-        documents: import("yjs-types").TypedMap<import("./types").Documents<T>>;
-        get: (id: string) => T | undefined;
-        set: (doc: T) => T;
-        new: (doc: import("./types").DocumentWithoutBase<T>, id?: string | undefined) => T;
-        delete: (id: string, timeToLiveMs?: number | undefined) => T;
-        getAll: () => import("./types").Documents<T>;
-        getUndeleted: () => import("./types").Documents<T>;
-        onChange: (callback: (event: import("yjs").YMapEvent<any>, transaction: import("yjs").Transaction) => void) => void;
-        sortByRecent: (docs: import("./types").Documents<T>) => import("./types").Documents<T>;
-    };
+    getDocuments: <T extends EweDocument>(room: Room<T>) => import("./utils/getDocuments").GetDocuments<T>;
     getRoom: <T extends EweDocument>(collectionKey: CollectionKey, roomId: string) => Room<T>;
     getRooms<T extends CollectionKey>(collectionKey: T): Room<CollectionToDocument[T]>[];
     /**

@@ -5,6 +5,8 @@ import type { WebrtcProvider } from 'y-webrtc';
 import type { RoomEvents } from './events';
 import { TypedEventEmitter } from './events';
 import type { Database, YDoc } from '.';
+import type { GetDocuments } from './utils/getDocuments';
+import { getDocuments } from './utils/getDocuments';
 
 export type NewRoomOptions<T extends EweDocument> = {
   db: Database;
@@ -28,7 +30,6 @@ export type NewRoomOptions<T extends EweDocument> = {
   ydoc?: YDoc<T> | null;
 };
 
-/** is an event listener, and adds the ydoc providers ands connection status to a ServerRoom/Registry entry */
 export class Room<T extends EweDocument>
   extends TypedEventEmitter<RoomEvents<T>>
   implements ServerRoom
@@ -62,7 +63,7 @@ export class Room<T extends EweDocument>
     this.emit('roomConnectionChange', 'disconnected', this);
   };
 
-  getDocuments;
+  getDocuments: () => GetDocuments<T>;
 
   constructor({
     db,
@@ -94,7 +95,7 @@ export class Room<T extends EweDocument>
     this.ySweetProvider = ySweetProvider;
     this.ydoc = ydoc;
 
-    this.getDocuments = this.db.getDocuments(this);
+    this.getDocuments = () => getDocuments(this.db)(this);
   }
 }
 

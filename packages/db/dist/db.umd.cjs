@@ -399,96 +399,6 @@ var __publicField = (obj, key, value) => {
       }
     });
   };
-  class Room extends TypedEventEmitter {
-    constructor({
-      db,
-      indexedDbProvider,
-      webRtcProvider,
-      ySweetProvider,
-      ydoc,
-      ...serverRoom
-    }) {
-      super();
-      __publicField(this, "db");
-      __publicField(this, "id");
-      __publicField(this, "name");
-      __publicField(this, "collectionKey");
-      __publicField(this, "token");
-      __publicField(this, "tokenExpiry");
-      __publicField(this, "ySweetUrl");
-      __publicField(this, "publicAccess");
-      __publicField(this, "readAccess");
-      __publicField(this, "writeAccess");
-      __publicField(this, "adminAccess");
-      __publicField(this, "createdAt");
-      __publicField(this, "updatedAt");
-      __publicField(this, "_deleted");
-      __publicField(this, "_ttl");
-      __publicField(this, "indexedDbProvider");
-      __publicField(this, "webRtcProvider");
-      __publicField(this, "ySweetProvider");
-      __publicField(this, "ydoc");
-      __publicField(this, "connectionRetries", 0);
-      __publicField(this, "disconnect", () => {
-        var _a, _b;
-        (_a = this.ySweetProvider) == null ? void 0 : _a.disconnect();
-        (_b = this.webRtcProvider) == null ? void 0 : _b.disconnect();
-        this.emit("roomConnectionChange", "disconnected", this);
-      });
-      __publicField(this, "getDocuments");
-      this.db = db;
-      this.id = serverRoom.id || crypto.randomUUID();
-      this.name = serverRoom.name;
-      this.collectionKey = serverRoom.collectionKey;
-      this.token = serverRoom.token ?? null;
-      this.tokenExpiry = serverRoom.tokenExpiry ?? null;
-      this.ySweetUrl = serverRoom.ySweetUrl ?? null;
-      this.publicAccess = serverRoom.publicAccess ?? "private";
-      this.readAccess = serverRoom.readAccess ?? [];
-      this.writeAccess = serverRoom.writeAccess ?? [];
-      this.adminAccess = serverRoom.adminAccess ?? [];
-      this.createdAt = serverRoom.createdAt ?? null;
-      this.updatedAt = serverRoom.updatedAt ?? null;
-      this._deleted = serverRoom._deleted ?? false;
-      this._ttl = serverRoom._ttl ?? null;
-      this.indexedDbProvider = indexedDbProvider;
-      this.webRtcProvider = webRtcProvider;
-      this.ySweetProvider = ySweetProvider;
-      this.ydoc = ydoc;
-      this.getDocuments = this.db.getDocuments(this);
-    }
-  }
-  function roomToServerRoom(room) {
-    const {
-      indexedDbProvider: _unused_1,
-      webRtcProvider: _unused_2,
-      ySweetProvider: _unused_3,
-      ydoc: _unused_4,
-      ...serverRoom
-    } = room;
-    return serverRoom;
-  }
-  const collections = {
-    notes: {},
-    flashcards: {},
-    profiles: {}
-  };
-  const COLLECTION_KEYS = ["notes", "flashcards", "profiles"];
-  const collectionKeys = COLLECTION_KEYS.map((key) => key);
-  function loginOptionsToQueryParams({ collections: collections2, ...rest }) {
-    const _collections = collections2.length === 0 ? "all" : collections2.length === 1 ? collections2[0] : collections2.join("|");
-    const params2 = {
-      collections: _collections,
-      ...rest
-    };
-    return params2;
-  }
-  const isTokenExpired = (tokenExpiry, bufferMinutes = 2) => {
-    const expiry = new Date(tokenExpiry).getTime();
-    const now = (/* @__PURE__ */ new Date()).getTime() + bufferMinutes * 60 * 1e3;
-    return expiry < now;
-  };
-  const wait$1 = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const newDocument = (_id, _ref, doc) => {
     const now = (/* @__PURE__ */ new Date()).getTime();
     const base = {
@@ -513,7 +423,7 @@ var __publicField = (obj, key, value) => {
     const { collectionKey, roomId, documentId, authServer } = params2;
     return `${authServer}|${collectionKey}|${roomId}|${documentId}`;
   };
-  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const wait$1 = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const randomString = (length2) => Math.random().toString(36).substring(2, length2 + 2);
   function getRoomDocuments(room) {
     if (!room.ydoc)
@@ -579,6 +489,9 @@ var __publicField = (obj, key, value) => {
       getAll: () => {
         return documents.toJSON();
       },
+      getAllToArray: () => {
+        return Object.values(documents.toJSON());
+      },
       getUndeleted: () => {
         const undeleted = {};
         documents.forEach((doc) => {
@@ -587,6 +500,18 @@ var __publicField = (obj, key, value) => {
           }
         });
         return undeleted;
+      },
+      getUndeletedToArray: () => {
+        const undeleted = [];
+        documents.forEach((doc) => {
+          if (doc && !doc._deleted) {
+            undeleted.push(doc);
+          }
+        });
+        return undeleted;
+      },
+      toArray: (docs) => {
+        return Object.values(docs);
       },
       onChange: (callback) => {
         documents.observe(callback);
@@ -599,6 +524,96 @@ var __publicField = (obj, key, value) => {
       }
     };
   };
+  class Room extends TypedEventEmitter {
+    constructor({
+      db,
+      indexedDbProvider,
+      webRtcProvider,
+      ySweetProvider,
+      ydoc,
+      ...serverRoom
+    }) {
+      super();
+      __publicField(this, "db");
+      __publicField(this, "id");
+      __publicField(this, "name");
+      __publicField(this, "collectionKey");
+      __publicField(this, "token");
+      __publicField(this, "tokenExpiry");
+      __publicField(this, "ySweetUrl");
+      __publicField(this, "publicAccess");
+      __publicField(this, "readAccess");
+      __publicField(this, "writeAccess");
+      __publicField(this, "adminAccess");
+      __publicField(this, "createdAt");
+      __publicField(this, "updatedAt");
+      __publicField(this, "_deleted");
+      __publicField(this, "_ttl");
+      __publicField(this, "indexedDbProvider");
+      __publicField(this, "webRtcProvider");
+      __publicField(this, "ySweetProvider");
+      __publicField(this, "ydoc");
+      __publicField(this, "connectionRetries", 0);
+      __publicField(this, "disconnect", () => {
+        var _a, _b;
+        (_a = this.ySweetProvider) == null ? void 0 : _a.disconnect();
+        (_b = this.webRtcProvider) == null ? void 0 : _b.disconnect();
+        this.emit("roomConnectionChange", "disconnected", this);
+      });
+      __publicField(this, "getDocuments");
+      this.db = db;
+      this.id = serverRoom.id || crypto.randomUUID();
+      this.name = serverRoom.name;
+      this.collectionKey = serverRoom.collectionKey;
+      this.token = serverRoom.token ?? null;
+      this.tokenExpiry = serverRoom.tokenExpiry ?? null;
+      this.ySweetUrl = serverRoom.ySweetUrl ?? null;
+      this.publicAccess = serverRoom.publicAccess ?? "private";
+      this.readAccess = serverRoom.readAccess ?? [];
+      this.writeAccess = serverRoom.writeAccess ?? [];
+      this.adminAccess = serverRoom.adminAccess ?? [];
+      this.createdAt = serverRoom.createdAt ?? null;
+      this.updatedAt = serverRoom.updatedAt ?? null;
+      this._deleted = serverRoom._deleted ?? false;
+      this._ttl = serverRoom._ttl ?? null;
+      this.indexedDbProvider = indexedDbProvider;
+      this.webRtcProvider = webRtcProvider;
+      this.ySweetProvider = ySweetProvider;
+      this.ydoc = ydoc;
+      this.getDocuments = () => getDocuments(this.db)(this);
+    }
+  }
+  function roomToServerRoom(room) {
+    const {
+      indexedDbProvider: _unused_1,
+      webRtcProvider: _unused_2,
+      ySweetProvider: _unused_3,
+      ydoc: _unused_4,
+      ...serverRoom
+    } = room;
+    return serverRoom;
+  }
+  const collections = {
+    notes: {},
+    flashcards: {},
+    profiles: {}
+  };
+  const COLLECTION_KEYS = ["notes", "flashcards", "profiles"];
+  const collectionKeys = COLLECTION_KEYS.map((key) => key);
+  function loginOptionsToQueryParams({ collections: collections2, ...rest }) {
+    const _collections = collections2.length === 0 ? "all" : collections2.length === 1 ? collections2[0] : collections2.join("|");
+    const params2 = {
+      collections: _collections,
+      ...rest
+    };
+    return params2;
+  }
+  const isTokenExpired = (tokenExpiry, bufferMinutes = 2) => {
+    const expiry = new Date(tokenExpiry).getTime();
+    const now = (/* @__PURE__ */ new Date()).getTime() + bufferMinutes * 60 * 1e3;
+    return expiry < now;
+  };
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const serverFetch = (_db) => async (path, _options) => {
     const options = {
       ..._options
@@ -9568,7 +9583,7 @@ ${reason}`);
       db.error("ySweetProvider error", error);
       emitConnectionChange("disconnected");
       if (room.connectionRetries < 3) {
-        await wait$1(1e3);
+        await wait(1e3);
         room.connectionRetries++;
         checkTokenAndConnectProvider();
       }
@@ -9891,6 +9906,6 @@ ${reason}`);
   exports2.getRoomDocuments = getRoomDocuments;
   exports2.newDocument = newDocument;
   exports2.randomString = randomString;
-  exports2.wait = wait;
+  exports2.wait = wait$1;
   Object.defineProperty(exports2, Symbol.toStringTag, { value: "Module" });
 });

@@ -7,10 +7,28 @@ import type {
   Documents,
 } from '../types';
 import { randomString, buildRef, newDocument } from '../utils';
+import type { TypedMap } from 'yjs-types';
+
+export interface GetDocuments<T extends EweDocument> {
+  documents: TypedMap<Documents<T>>;
+  get: (id: string) => T | undefined;
+  set: (doc: T) => T;
+  new: (doc: DocumentWithoutBase<T>, id?: string) => T;
+  delete: (id: string, timeToLiveMs?: number) => T;
+  getAll: () => Documents<T>;
+  getAllToArray: () => T[];
+  getUndeleted: () => Documents<T>;
+  getUndeletedToArray: () => T[];
+  toArray: (docs: Documents<T>) => T[];
+  onChange: (
+    callback: (event: YMapEvent<any>, transaction: Transaction) => void
+  ) => void;
+  sortByRecent: (docs: Documents<T>) => Documents<T>;
+}
 
 export const getDocuments =
   (_db: Database) =>
-  <T extends EweDocument>(room: Room<T>) => {
+  <T extends EweDocument>(room: Room<T>): GetDocuments<T> => {
     if (!room) throw new Error('no room');
     const documents = room.ydoc?.getMap('documents');
     if (!documents) throw new Error('no documents');
@@ -56,6 +74,9 @@ export const getDocuments =
       getAll: () => {
         return documents.toJSON() as Documents<T>;
       },
+      getAllToArray: () => {
+        return Object.values(documents.toJSON());
+      },
       getUndeleted: () => {
         const undeleted: Documents<T> = {};
         documents.forEach((doc) => {
@@ -64,6 +85,18 @@ export const getDocuments =
           }
         });
         return undeleted;
+      },
+      getUndeletedToArray: () => {
+        const undeleted: T[] = [];
+        documents.forEach((doc) => {
+          if (doc && !doc._deleted) {
+            undeleted.push(doc);
+          }
+        });
+        return undeleted;
+      },
+      toArray: (docs: Documents<T>) => {
+        return Object.values(docs);
       },
       onChange: (
         callback: (event: YMapEvent<any>, transaction: Transaction) => void
