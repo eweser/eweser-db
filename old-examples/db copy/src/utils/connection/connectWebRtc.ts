@@ -10,7 +10,7 @@ export const connectWebRtcProvider = (
   _db: Database,
   name: string,
   doc: Doc,
-  password?: string
+  password = name
 ) => {
   const awareness = new Awareness(doc);
   const servers = _db.webRtcPeers;

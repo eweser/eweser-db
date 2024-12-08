@@ -1,12 +1,14 @@
 import type { CollectionKey, EweDocument, ServerRoom } from '@eweser/shared';
 import type { YSweetProvider } from '@y-sweet/client';
 import type { IndexeddbPersistence } from 'y-indexeddb';
-import type { WebrtcProvider } from 'y-webrtc';
+import { WebrtcProvider } from 'y-webrtc';
 import type { RoomEvents } from './events';
 import { TypedEventEmitter } from './events';
 import type { Database, YDoc } from '.';
 import type { GetDocuments } from './utils/getDocuments';
 import { getDocuments } from './utils/getDocuments';
+import { Awareness } from 'y-protocols/awareness.js';
+import { Doc } from 'yjs';
 
 export type NewRoomOptions<T extends EweDocument> = {
   db: Database;
@@ -61,9 +63,34 @@ export class Room<T extends EweDocument>
     this.ySweetProvider?.disconnect();
     this.webRtcProvider?.disconnect();
     this.emit('roomConnectionChange', 'disconnected', this);
+    delete this.db.tempDocs[this.id];
   };
 
   getDocuments: () => GetDocuments<T>;
+
+  tempDoc = () => {
+    const existing = this.db.tempDocs[this.id];
+    if (existing) {
+      if (existing.provider?.connected) {
+        return existing;
+      }
+    }
+
+    const doc = new Doc();
+    const awareness = new Awareness(doc);
+    const servers = this.db.webRtcPeers;
+    /* could consider improving this security */
+    const password = this.id;
+
+    const provider = new WebrtcProvider(this.name, doc, {
+      password,
+      signaling: servers,
+      awareness,
+    });
+
+    this.db.tempDocs[this.id] = { doc, provider, awareness };
+    return { doc, provider, awareness };
+  };
 
   constructor({
     db,

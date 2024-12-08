@@ -3,8 +3,7 @@ import { Room } from './room';
 import { TypedEventEmitter } from './events';
 import type { DatabaseEvents } from './events';
 import type { LocalStoragePolyfill, LocalStorageService } from './utils/localStorageService';
-import type { Doc } from 'yjs';
-import type { YSweetProvider } from '@y-sweet/client';
+import { Doc } from 'yjs';
 import type { WebrtcProvider } from 'y-webrtc';
 export * from './utils';
 export * from './types';
@@ -94,9 +93,9 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
     pingServer: () => Promise<boolean | "" | undefined>;
     tempDocs: {
         [eweserDocRef: string]: {
-            yDoc: Doc;
-            webRtcProvider?: WebrtcProvider;
-            ySweetProvider?: YSweetProvider;
+            doc: Doc;
+            provider?: WebrtcProvider;
+            awareness?: any;
         };
     };
     constructor(optionsPassed?: DatabaseOptions);
