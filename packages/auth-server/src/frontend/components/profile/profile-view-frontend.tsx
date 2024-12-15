@@ -28,7 +28,10 @@ import {
 } from '../library/select';
 import { Badge } from '../library/badge';
 import { loginOptionsToPermissionPageUrl } from '../../utils/frontend-url-utils';
-import { getLocalStorageLoginQuery } from '../../utils/local-storage';
+import {
+  clearLocalStorageLoginQuery,
+  getLocalStorageLoginQuery,
+} from '../../utils/local-storage';
 import { useRouter } from 'next/navigation';
 
 export interface ProfileViewProps {
@@ -261,6 +264,8 @@ export function ProfileViewFrontend({
   const router = useRouter();
   useEffect(() => {
     if (loginQueryOptions && router) {
+      clearLocalStorageLoginQuery();
+
       router.replace(loginOptionsToPermissionPageUrl(loginQueryOptions));
     }
   }, [loginQueryOptions, router]);
