@@ -118,7 +118,7 @@ export async function syncRoomsWithClient(token: string, clientRooms: Room[]) {
         } else {
           // generate ySweet tokens for new client rooms to save to server
           const ySweetToken = await getOrCreateToken(room.id);
-          if (!ySweetToken.token || !ySweetToken.url) {
+          if (!ySweetToken.url) {
             throw new Error(`Could not get token for room ${room.id}`);
           }
           newClientRoomInserts.push({
@@ -130,7 +130,7 @@ export async function syncRoomsWithClient(token: string, clientRooms: Room[]) {
         }
       }
       // double check tokens made it in inserts
-      if (newClientRoomInserts.some((r) => !r.token || !r.ySweetUrl)) {
+      if (newClientRoomInserts.some((r) => !r.ySweetUrl)) {
         throw new Error('Failed to get ySweet tokens');
       }
       // add new client rooms to server

@@ -7,6 +7,7 @@ import { cookies } from 'next/headers';
 export async function getLoginStatus() {
   try {
     const supabase = backendSupabase(cookies());
+    supabase.auth.getUser();
     const { data } = await supabase.auth.getSession();
     const loggedIn = !!data?.session?.user.id;
     return loggedIn;

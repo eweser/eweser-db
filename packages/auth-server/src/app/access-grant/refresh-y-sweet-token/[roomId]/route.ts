@@ -38,14 +38,13 @@ export async function GET(
     }
     return await refreshTokenIfNeededAndSaveToRoom(room, dbInstance);
   });
-  const { token, ySweetUrl, tokenExpiry } = refreshed || {};
+  const { ySweetUrl, tokenExpiry } = refreshed || {};
 
-  if (!token || !ySweetUrl || !tokenExpiry) {
+  if (!ySweetUrl || !tokenExpiry) {
     return serverRouteError('Could not get token', 500);
   }
 
   const response: RefreshYSweetTokenRouteResponse = {
-    token,
     ySweetUrl,
     tokenExpiry,
   };

@@ -2434,10 +2434,9 @@ async function loadYSweet(db, room, withAwareness = true) {
       const refreshed = await db.refreshYSweetToken(room);
       db.debug(
         "refreshed token. success: ",
-        (refreshed == null ? void 0 : refreshed.token) && refreshed.ySweetUrl && refreshed.tokenExpiry
+        (refreshed == null ? void 0 : refreshed.ySweetUrl) && refreshed.tokenExpiry
       );
-      if ((refreshed == null ? void 0 : refreshed.token) && refreshed.ySweetUrl && refreshed.tokenExpiry) {
-        room.token = refreshed.token;
+      if ((refreshed == null ? void 0 : refreshed.ySweetUrl) && refreshed.tokenExpiry) {
         room.tokenExpiry = refreshed.tokenExpiry;
         room.ySweetUrl = refreshed.ySweetUrl;
       }

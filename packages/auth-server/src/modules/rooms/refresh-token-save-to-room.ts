@@ -7,25 +7,28 @@ import type { DBInstance } from '../../services/database/drizzle/init';
 export async function refreshTokenIfNeededAndSaveToRoom(
   room: Room,
   dbInstance: DBInstance
-): Promise<{ token: string; ySweetUrl: string; tokenExpiry: string }> {
-  const { token, ySweetUrl, tokenExpiry } = room;
+): Promise<{ ySweetUrl: string; tokenExpiry: string }> {
+  const { ySweetUrl, tokenExpiry } = room;
   if (
-    !token ||
     !ySweetUrl ||
     !tokenExpiry ||
     (tokenExpiry && isTokenExpired(tokenExpiry))
   ) {
     const refreshed = await getOrCreateToken(room.id);
-    if (!refreshed.token || !refreshed.url) {
+    console.log({ refreshed });
+    if (
+      // !refreshed.token ||
+      !refreshed.url
+    ) {
       throw new Error(`Could not get token for room ${room.id}`);
     }
     const updated = {
-      token: refreshed.token,
+      // token: refreshed.token,
       ySweetUrl: refreshed.url,
       tokenExpiry: refreshed.expiry,
     };
     await updateRoom({ ...room, ...updated }, dbInstance);
     return updated;
   }
-  return { token, ySweetUrl, tokenExpiry };
+  return { ySweetUrl, tokenExpiry };
 }
