@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import type { ComponentPropsWithoutRef } from 'react';
 
 import { cn } from '../../../shared/utils';
-import { login, signup } from '../../../app/actions';
+import { checkEmailExists, login, signup } from '../../../app/actions';
 import PasswordForm from './password-form';
 import OAuthForm from './oauth-form';
 import type { LoginQueryOptions } from '@eweser/shared';
@@ -25,8 +25,8 @@ export function UserAuthForm({
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const [isSignup, setIsSignup] = useState<boolean>(true);
+  const [isCheckEmail, setIsCheckEmail] = useState<boolean>(true);
 
-  const toggleSignup = () => setIsSignup((prev) => !prev);
   // if LoginQueryOptions are defined, set the redirect info into the localStorage
   // when login/signup is complete, redirect to the permissions page.
   // login/signup is completed on the Home page. Or at least that is the first place we can access the frontend to get the localStorage
@@ -52,12 +52,14 @@ export function UserAuthForm({
         </p>
       </div>
       <form
-        action={isSignup ? signup : login}
+        action={isCheckEmail ? checkEmailExists : isSignup ? signup : login}
         className="flex flex-col space-y-2"
       >
         <PasswordForm
+          isCheckEmail={isCheckEmail}
+          setIsCheckEmail={setIsCheckEmail}
           isSignup={isSignup}
-          toggleSignup={toggleSignup}
+          setIsSignup={setIsSignup}
           setIsLoading={setIsLoading}
         />
       </form>

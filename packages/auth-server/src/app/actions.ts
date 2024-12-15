@@ -1,4 +1,5 @@
 'use server';
+import { checkEmail } from '../modules/account/password/check-email';
 import { passwordSignIn } from '../modules/account/password/sign-in';
 import { passwordSignUp } from '../modules/account/password/sign-up';
 import { logger } from '../shared/utils';
@@ -27,4 +28,11 @@ export async function signup(formData: FormData) {
 
   revalidatePath('/', 'layout');
   redirect('/auth/await-confirm');
+}
+
+export async function checkEmailExists(formData: FormData) {
+  const email = formData.get('email') as string;
+  const hasEmail = await checkEmail(email);
+
+  return { userExists: hasEmail };
 }

@@ -1,23 +1,72 @@
-import React from 'react';
+import type { ChangeEvent } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useFormStatus } from 'react-dom';
 import { Button } from '../library/button';
 import { Input } from '../library/input';
-import { Icons } from '../library/icons';
 import { Label } from '../library/label';
+import { debounce } from '../../utils/debounce';
+import { checkEmailExists } from '../../../app/actions';
 
 export default function PasswordForm({
   isSignup,
-  toggleSignup,
+  setIsSignup,
   setIsLoading,
+  isCheckEmail,
+  setIsCheckEmail,
 }: {
   isSignup: boolean;
-  toggleSignup: () => void;
+  setIsSignup: (isSignup: boolean) => void;
   setIsLoading: (loading: boolean) => void;
+  isCheckEmail: boolean;
+  setIsCheckEmail: (checkEmail: boolean) => void;
 }) {
   const { pending } = useFormStatus(); // only works when it is INSIDE a <form>
-  React.useEffect(() => {
+  useEffect(() => {
     setIsLoading(pending);
   }, [pending, setIsLoading]);
+  const emailInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (emailInputRef.current) {
+      emailInputRef.current.focus();
+    }
+  }, []);
+  const [email, setEmail] = useState<string>('');
+
+  const searchForUserEmail = useCallback(
+    async (email: string) => {
+      if (email.length > 0) {
+        const formData = new FormData();
+        formData.append('email', email);
+        const response = await checkEmailExists(formData);
+        setIsSignup(!response.userExists);
+        setIsCheckEmail(false);
+        setIsLoading(false);
+      }
+    },
+    [setIsCheckEmail, setIsLoading, setIsSignup]
+  );
+
+  const emailSearchDebounced = useMemo(
+    () => debounce(searchForUserEmail, 500),
+    [searchForUserEmail]
+  );
+
+  useEffect(() => {
+    return () => {
+      emailSearchDebounced.cancel();
+    };
+  }, [emailSearchDebounced]);
+
+  const onChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+    emailSearchDebounced(e.target.value);
+  };
 
   const isLoading = pending;
   return (
@@ -34,63 +83,30 @@ export default function PasswordForm({
         autoCorrect="off"
         disabled={isLoading}
         name="email"
+        onChange={onChange}
+        value={email}
+        ref={emailInputRef}
       />
-      <Label className="sr-only" htmlFor="password">
-        Password
-      </Label>
-      <Input
-        id="password"
-        placeholder="Password"
-        type="password"
-        autoCapitalize="none"
-        autoComplete="current-password"
-        autoCorrect="off"
-        disabled={isLoading}
-        name="password"
-      />
-      <div className="flex w-full justify-between">
-        {isSignup ? (
-          <>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading && (
-                <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              Sign Up with Email
-            </Button>
-            <Button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                toggleSignup();
-              }}
-              variant="outline"
-              disabled={isLoading}
-            >
-              Sign In
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                toggleSignup();
-              }}
-              variant="outline"
-              disabled={isLoading}
-            >
-              Sign Up
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading && (
-                <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              Sign In with Email
-            </Button>
-          </>
-        )}
-      </div>
+      {!isCheckEmail && (
+        <>
+          <Label className="sr-only" htmlFor="password">
+            Password
+          </Label>
+          <Input
+            id="password"
+            placeholder="Password"
+            type="password"
+            autoCapitalize="none"
+            autoComplete="current-password"
+            autoCorrect="off"
+            disabled={isLoading}
+            name="password"
+          />
+        </>
+      )}
+      <Button type="submit" disabled={isLoading}>
+        {isCheckEmail ? 'Continue with Email' : isSignup ? 'Sign Up' : 'Log In'}
+      </Button>
     </>
   );
 }

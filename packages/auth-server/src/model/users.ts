@@ -20,6 +20,14 @@ export const users = pgTable('users', {
   updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' }),
 });
 
+export async function getUserByEmail(email: string) {
+  const results = await db().select().from(users).where(eq(users.email, email));
+  if (results.length !== 1) {
+    throw new Error('User not found');
+  }
+  return results[0];
+}
+
 // insert helper is not needed because it is handled by the database function `public.handle_new_user()` and `on_auth_user_created` trigger on the auth.users table.
 
 export async function getUserCount() {
