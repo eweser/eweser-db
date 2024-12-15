@@ -40,8 +40,7 @@ import {
 import { generateShareRoomLink } from './methods/connection/generateShareRoomLink';
 import { pingServer } from './utils/connection/pingServer';
 import { pollConnection } from './utils/connection/pollConnection';
-import { Doc } from 'yjs';
-import type { YSweetProvider } from '@y-sweet/client';
+import type { Doc } from 'yjs';
 import type { WebrtcProvider } from 'y-webrtc';
 
 export * from './utils';

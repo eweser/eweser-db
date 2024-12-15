@@ -3,9 +3,10 @@ import type { TypedDoc, TypedMap } from 'yjs-types';
 import type { Room } from './room';
 import type { IndexeddbPersistence } from 'y-indexeddb';
 import type { Doc } from 'yjs';
+import type { GetDocuments } from './utils/getDocuments';
 export type ProviderOptions = 'WebRTC' | 'YSweet' | 'IndexedDB';
 export type indexedDBProviderPolyfill = (roomId: string, yDoc: Doc) => IndexeddbPersistence;
-export type { Room, ServerRoom, EweDocument, CollectionKey, DocumentBase, Note, Flashcard, Profile, };
+export type { Room, ServerRoom, EweDocument, CollectionKey, DocumentBase, Note, Flashcard, Profile, GetDocuments, };
 export { COLLECTION_KEYS };
 export type CollectionToDocument = {
     notes: Note;

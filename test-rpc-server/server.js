@@ -18,6 +18,7 @@ const wss = new WebSocketServer({ noServer: true });
 const server = http.createServer((request, response) => {
   response.writeHead(200, { 'Content-Type': 'text/plain' });
   response.end('okay');
+  // console.log('HTTP request received:', { request, response });
 });
 
 /**
@@ -49,6 +50,7 @@ const send = (conn, message) => {
  * @param {any} conn
  */
 const onconnection = (conn) => {
+  console.log('New WebSocket connection');
   /**
    * @type {Set<string>}
    */
@@ -82,12 +84,14 @@ const onconnection = (conn) => {
     });
     subscribedTopics.clear();
     closed = true;
+    console.log('WebSocket connection closed');
   });
   conn.on(
     'message',
     /** @param {object} message */ (message) => {
       if (typeof message === 'string') {
         message = JSON.parse(message);
+        console.log('received', message);
       }
       if (message && message.type && !closed) {
         switch (message.type) {
@@ -137,6 +141,7 @@ const onconnection = (conn) => {
 wss.on('connection', onconnection);
 
 server.on('upgrade', (request, socket, head) => {
+  console.log('HTTP upgrade request received');
   // You may check auth of request here..
   /**
    * @param {any} ws
@@ -147,6 +152,6 @@ server.on('upgrade', (request, socket, head) => {
   wss.handleUpgrade(request, socket, head, handleAuth);
 });
 
-server.listen(port);
-
-console.log('Signaling server running on localhost:', port);
+server.listen(port, () => {
+  console.log(`Server is listening on port ${port}`);
+});

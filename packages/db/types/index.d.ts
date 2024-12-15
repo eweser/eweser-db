@@ -3,7 +3,7 @@ import { Room } from './room';
 import { TypedEventEmitter } from './events';
 import type { DatabaseEvents } from './events';
 import type { LocalStoragePolyfill, LocalStorageService } from './utils/localStorageService';
-import { Doc } from 'yjs';
+import type { Doc } from 'yjs';
 import type { WebrtcProvider } from 'y-webrtc';
 export * from './utils';
 export * from './types';
@@ -72,7 +72,7 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
     getRegistry: () => Registry;
     localStoragePolyfill: LocalStoragePolyfill;
     localStorageService: LocalStorageService;
-    getDocuments: <T extends EweDocument>(room: Room<T>) => import("./utils/getDocuments").GetDocuments<T>;
+    getDocuments: <T extends EweDocument>(room: Room<T>) => import("./types").GetDocuments<T>;
     getRoom: <T extends EweDocument>(collectionKey: CollectionKey, roomId: string) => Room<T>;
     getRooms<T extends CollectionKey>(collectionKey: T): Room<CollectionToDocument[T]>[];
     /**

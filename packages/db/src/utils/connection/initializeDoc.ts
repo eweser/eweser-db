@@ -1,6 +1,6 @@
 import { IndexeddbPersistence } from 'y-indexeddb';
-import { Doc } from 'yjs';
-
+import { Doc } from '../../utils/yjsWrapper';
+import type { Doc as YDocType } from 'yjs';
 import type { EweDocument, YDoc, indexedDBProviderPolyfill } from '../../types';
 
 export const initializeDocAndLocalProvider = async <T extends EweDocument>(
@@ -12,8 +12,8 @@ export const initializeDocAndLocalProvider = async <T extends EweDocument>(
   if (!yDoc) throw new Error('could not create doc');
 
   const localProvider = provider
-    ? provider(roomId, yDoc as Doc)
-    : new IndexeddbPersistence(roomId, yDoc as Doc);
+    ? provider(roomId, yDoc as YDocType)
+    : new IndexeddbPersistence(roomId, yDoc as YDocType);
   if (localProvider.synced) return { yDoc: yDoc, localProvider };
 
   const synced = await localProvider.whenSynced;

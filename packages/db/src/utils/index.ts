@@ -79,5 +79,5 @@ export const getRoom =
   }) => {
     const room = _db.collections[collectionKey][roomId];
     if (!room) return null;
-    return room as Room<T>;
+    return room as unknown as Room<T>;
   };

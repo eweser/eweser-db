@@ -14,7 +14,12 @@ export async function middleware(req: NextRequest) {
     new Date().getTime() - lastFetched > 300000
   ) {
     if (process.env.NODE_ENV === 'development') {
-      approvedDomains = ['localhost:8000', '172.31.42.92:8081'];
+      approvedDomains = [
+        'localhost:8000',
+        '172.31.42.92:8081',
+        '172.31.42.92:5173',
+        'localhost:5173',
+      ];
       lastFetched = new Date().getTime();
     } else {
       const supabase = middlewareClient(req, res);

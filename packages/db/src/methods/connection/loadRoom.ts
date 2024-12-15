@@ -7,6 +7,7 @@ import type { Doc } from 'yjs';
 import type { Database } from '../..';
 import type { RoomConnectionStatus } from '../../events';
 import { wait } from '@eweser/shared';
+import { Awareness } from 'y-protocols/awareness';
 
 function validate(room: ServerRoom) {
   if (!room) {
@@ -52,7 +53,7 @@ async function loadLocal(db: Database, room: Room<any>) {
   );
 }
 
-async function loadYSweet(db: Database, room: Room<any>) {
+async function loadYSweet(db: Database, room: Room<any>, withAwareness = true) {
   function emitConnectionChange(status: RoomConnectionStatus) {
     if (status === 'connected') {
       room.connectionRetries = 0;
@@ -73,11 +74,11 @@ async function loadYSweet(db: Database, room: Room<any>) {
     if (room.connectionRetries < 3) {
       await wait(1000);
       room.connectionRetries++;
-      checkTokenAndConnectProvider();
+      checkTokenAndConnectProvider(withAwareness);
     }
   }
 
-  async function checkTokenAndConnectProvider() {
+  async function checkTokenAndConnectProvider(withAwareness = true) {
     emitConnectionChange('connecting');
     if (room.tokenExpiry && isTokenExpired(room.tokenExpiry)) {
       const refreshed = await db.refreshYSweetToken(room);
@@ -91,11 +92,17 @@ async function loadYSweet(db: Database, room: Room<any>) {
         room.ySweetUrl = refreshed.ySweetUrl;
       }
     }
-    room.ySweetProvider = createYjsProvider(room.ydoc as Doc, {
-      url: room.ySweetUrl ?? '',
-      token: room.token ?? '',
-      docId: room.id,
-    });
+    const awareness = new Awareness(room.ydoc as Doc);
+
+    room.ySweetProvider = createYjsProvider(
+      room.ydoc as Doc,
+      {
+        url: room.ySweetUrl ?? '',
+        token: room.token ?? '',
+        docId: room.id,
+      },
+      withAwareness ? { awareness } : {}
+    );
     // update the room's ydoc with the new provider attached
     room.ydoc = room.ySweetProvider.doc as YDoc<any>;
     room.ySweetProvider.on('status', handleStatusChange);

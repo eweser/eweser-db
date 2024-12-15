@@ -10,9 +10,7 @@ export default defineConfig({
     rollupOptions: {
       // make sure to externalize deps that shouldn't be bundled
       // into your library
-      external: [
-        //
-      ],
+      external: ['yjs'],
     },
     minify: false, // for now while in development
   },
