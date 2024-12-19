@@ -1,6 +1,6 @@
 {
   "name": "@eweser/aggregator",
-  "version": "1.12.0",
+  "version": "1.13.0",
   "type": "module",
   "private": true,
   "description": "Listens to changes in eweser database rooms marked as public, and serves changes over an API",
@@ -29,7 +29,7 @@
   },
   "homepage": "https://github.com/eweser/eweser-db#readme",
   "devDependencies": {
-    "@eweser/eslint-config-ts": "^1.12.0",
+    "@eweser/eslint-config-ts": "^1.13.0",
     "@types/express": "^4.17.18",
     "@types/node": "^20.8.2",
     "@types/request": "^2.48.9",
@@ -41,7 +41,7 @@
     "vitest": "^0.34.6"
   },
   "dependencies": {
-    "@eweser/db": "^1.12.0",
+    "@eweser/db": "^1.13.0",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "mongodb": "^6.1.0",
