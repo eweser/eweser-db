@@ -80,14 +80,14 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
     getRoom: <T extends EweDocument>(collectionKey: CollectionKey, roomId: string) => Room<T>;
     getRooms<T extends CollectionKey>(collectionKey: T): Room<CollectionToDocument[T]>[];
     newRoom: <T extends EweDocument>(options: {
-        id?: string | undefined;
+        _deleted?: boolean | null | undefined;
+        _ttl?: string | null | undefined;
         collectionKey: "notes" | "flashcards" | "profiles";
+        name: string;
+        id?: string | undefined;
         ySweetUrl?: string | null | undefined;
         tokenExpiry?: string | null | undefined;
         ySweetBaseUrl?: string | null | undefined;
-        _deleted?: boolean | null | undefined;
-        _ttl?: string | null | undefined;
-        name: string;
         publicAccess?: "private" | "read" | "write" | undefined;
         readAccess?: string[] | undefined;
         writeAccess?: string[] | undefined;
