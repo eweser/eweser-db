@@ -1,7 +1,8 @@
 export type RefreshYSweetTokenRouteParams = {
-  roomId: string;
+    roomId: string;
 };
 export type RefreshYSweetTokenRouteResponse = {
-  ySweetUrl: string;
-  tokenExpiry: string;
+    ySweetBaseUrl: string;
+    ySweetUrl: string;
+    tokenExpiry: string;
 };

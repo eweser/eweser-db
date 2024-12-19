@@ -1,5 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Database, Documents, Note, Registry, Room } from '@eweser/db';
+import {
+  CollectionKey,
+  Database,
+  Documents,
+  Note,
+  Registry,
+  Room,
+} from '@eweser/db';
 import * as config from './config';
 import { Button, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { localStoragePolyfill } from '../polyfills';
@@ -27,9 +34,9 @@ if (userAgent.includes('iPhone')) {
   deviceType = 'Macintosh';
 }
 
-const collectionKey = 'notes';
+const collectionKey: CollectionKey = 'notes';
 /** A room is a group of documents that all share a common `Collection` type, like Note. Sharing and view permissions can be set on a per room basis */
-const initialRooms: Registry = [
+const initialRooms = [
   {
     collectionKey,
     id: roomId,
@@ -42,18 +49,6 @@ const initialRooms: Registry = [
         year: 'numeric',
       }
     )}`,
-    // TODO: helper that fills in this metadata to sensible defaults
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    publicAccess: 'private',
-    readAccess: [],
-    writeAccess: [],
-    adminAccess: [],
-    token: null,
-    tokenExpiry: null,
-    ySweetUrl: null,
-    _deleted: false,
-    _ttl: null,
   },
 ];
 

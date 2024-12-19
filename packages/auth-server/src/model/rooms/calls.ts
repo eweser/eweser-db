@@ -5,7 +5,6 @@ import { rooms } from './schema';
 import type { RoomInsert, RoomUpdate } from './validation';
 import { updateUserRooms, users } from '../users';
 import type { DBInstance } from '../../services/database/drizzle/init';
-import type { CollectionKey } from '@eweser/db';
 import type { AccessGrant } from '../access_grants';
 
 export async function getRoomById(
@@ -45,7 +44,8 @@ export async function getProfileRoomsByUserIdForUpdate(
     }
     return await db(dbInstance)
       .select({
-        token: rooms.token,
+        ySweetBaseUrl: rooms.ySweetBaseUrl,
+        ySweetUrl: rooms.ySweetUrl,
         id: rooms.id,
         name: rooms.name,
       })
@@ -140,9 +140,7 @@ export async function getRoomIdsFromAccessGrant(
 ): Promise<string[]> {
   const { collections, roomIds: grantRoomIds, ownerId } = accessGrant;
   const allAccess = collections.includes('all');
-  const collectionsWithoutAll = collections.filter(
-    (c) => c !== 'all'
-  ) as CollectionKey[];
+  const collectionsWithoutAll = collections.filter((c) => c !== 'all');
 
   const roomIds = allAccess
     ? await db(dbInstance)
@@ -181,11 +179,8 @@ export async function getRoomsFromAccessGrant(
   dbInstance?: DBInstance
 ): Promise<Room[]> {
   const { collections, roomIds: grantRoomIds, ownerId } = accessGrant;
-  // const allAccess = collections.includes('all');
-  const allAccess = true;
-  const collectionsWithoutAll = collections.filter(
-    (c) => c !== 'all'
-  ) as CollectionKey[];
+  const allAccess = collections.includes('all');
+  const collectionsWithoutAll = collections.filter((c) => c !== 'all');
   if (allAccess) {
     return await db(dbInstance)
       .select()

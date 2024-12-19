@@ -31,7 +31,7 @@ export default function PermissionForm(props: PermissionFormProps) {
   >(isRequestingAll(collections) ? ['all'] : collections);
 
   const [selectedRoomIds, setSelectedRoomIds] = useState<string[]>([]);
-  const [keepAliveDays, setKeepAliveDays] = useState<number>(1);
+  const [keepAliveDays, setKeepAliveDays] = useState<number>(3);
 
   const collectionKeys = Array.from(
     new Set(rooms.map((room) => room.collectionKey).concat(COLLECTION_KEYS)) // get the hardcoded ones and ones listed in the db

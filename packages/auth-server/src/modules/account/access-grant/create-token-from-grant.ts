@@ -37,6 +37,6 @@ export async function createTokenFromAccessGrant(
   };
 
   return jwt.sign(accessGrantJwt, SERVER_SECRET, {
-    expiresIn: `${keepAliveDays}d`,
+    expiresIn: `${keepAliveDays * 24}h`,
   });
 }

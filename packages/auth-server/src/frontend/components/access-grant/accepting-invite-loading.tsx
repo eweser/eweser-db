@@ -30,7 +30,7 @@ export function AcceptingInviteLoading({
       if (acceptRoomInviteParams && redirect && domain) {
         try {
           const result = await acceptRoomInvite(acceptRoomInviteParams);
-          if (!result.token) {
+          if (!result.ySweetUrl) {
             throw new Error('Failed to accept room invite');
           }
           const successUrl = new URL(

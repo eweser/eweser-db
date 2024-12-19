@@ -1,7 +1,8 @@
 import type { CollectionKey, Collections, CollectionToDocument, EweDocument, indexedDBProviderPolyfill, ProviderOptions, Registry } from './types';
-import { Room } from './room';
+import type { NewRoomOptions, Room } from './room';
 import { TypedEventEmitter } from './events';
 import type { DatabaseEvents } from './events';
+import { RemoteLoadOptions } from './methods/connection/loadRoom';
 import type { LocalStoragePolyfill, LocalStorageService } from './utils/localStorageService';
 import type { Doc } from 'yjs';
 import type { WebrtcProvider } from 'y-webrtc';
@@ -22,7 +23,7 @@ export interface DatabaseOptions {
     indexedDBProviderPolyfill?: indexedDBProviderPolyfill;
     /** provide a list of peers to use instead of the default */
     webRTCPeers?: string[];
-    initialRooms?: Registry;
+    initialRooms?: Omit<NewRoomOptions<EweDocument>, 'db'>[];
     /** a polyfill for localStorage for react native apps */
     localStoragePolyfill?: LocalStoragePolyfill;
 }
@@ -66,8 +67,11 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
     getAccessGrantTokenFromUrl: () => string | null;
     getToken: () => string | null;
     refreshYSweetToken: (room: Room<any>) => Promise<import("@eweser/shared").RefreshYSweetTokenRouteResponse | null>;
-    loadRoom: (serverRoom: import("@eweser/shared").ServerRoom) => Promise<Room<any>>;
-    loadRooms: (rooms: Registry) => Promise<void>;
+    /** first loads the local indexedDB ydoc for the room. if this.useYSweet is true and ySweetTokens are available will also connect to remote.
+     * @param {RemoteLoadOptions} RemoteLoadOptions - options for loading the remote ydoc
+     */
+    loadRoom: (serverRoom: import("@eweser/shared").ServerRoom, remoteLoadOptions?: RemoteLoadOptions | undefined) => Promise<Room<any>>;
+    loadRooms: (rooms: Registry, staggerMs?: number) => Promise<void>;
     syncRegistry: () => Promise<boolean>;
     getRegistry: () => Registry;
     localStoragePolyfill: LocalStoragePolyfill;
@@ -75,11 +79,26 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
     getDocuments: <T extends EweDocument>(room: Room<T>) => import("./types").GetDocuments<T>;
     getRoom: <T extends EweDocument>(collectionKey: CollectionKey, roomId: string) => Room<T>;
     getRooms<T extends CollectionKey>(collectionKey: T): Room<CollectionToDocument[T]>[];
-    /**
-     * new rooms must be added to the registry and then synced with the auth server
-     * Note: If your app does not have access privileges to the collection, the room won't be synced server-side.
-     */
-    newRoom: <T extends EweDocument>(options: Room<T>) => Room<T>;
+    newRoom: <T extends EweDocument>(options: {
+        id?: string | undefined;
+        collectionKey: "notes" | "flashcards" | "profiles";
+        ySweetUrl?: string | null | undefined;
+        tokenExpiry?: string | null | undefined;
+        ySweetBaseUrl?: string | null | undefined;
+        _deleted?: boolean | null | undefined;
+        _ttl?: string | null | undefined;
+        name: string;
+        publicAccess?: "private" | "read" | "write" | undefined;
+        readAccess?: string[] | undefined;
+        writeAccess?: string[] | undefined;
+        adminAccess?: string[] | undefined;
+        createdAt?: string | null | undefined;
+        updatedAt?: string | null | undefined;
+        indexedDbProvider?: import("y-indexeddb").IndexeddbPersistence | null | undefined;
+        webRtcProvider?: WebrtcProvider | null | undefined;
+        ySweetProvider?: import("@y-sweet/client").YSweetProvider | null | undefined;
+        ydoc?: import("./types").YDoc<T> | null | undefined;
+    }) => Room<T>;
     renameRoom: (room: Room<any>, newName: string) => Promise<import("@eweser/shared").ServerRoom | null>;
     generateShareRoomLink: ({ roomId, invitees, redirectUrl, redirectQueries, expiry, accessType, appName, domain, collections, }: Partial<import("@eweser/shared").LoginQueryOptions> & {
         roomId: string;

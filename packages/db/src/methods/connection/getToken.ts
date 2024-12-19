@@ -7,6 +7,11 @@ export const getToken =
    * Looks for the access grant token first in the DB class, then in local storage, then in the url query params
    */
   () => {
+    const urlToken = db.getAccessGrantTokenFromUrl();
+    if (urlToken) {
+      db.accessGrantToken = urlToken;
+      return urlToken;
+    }
     if (db.accessGrantToken) {
       return db.accessGrantToken;
     }
@@ -14,11 +19,6 @@ export const getToken =
     if (savedToken) {
       db.accessGrantToken = savedToken;
       return savedToken;
-    }
-    const urlToken = db.getAccessGrantTokenFromUrl();
-    if (urlToken) {
-      db.accessGrantToken = urlToken;
-      return urlToken;
     }
     return null;
   };

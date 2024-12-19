@@ -7,7 +7,8 @@ import type {
   ProviderOptions,
   Registry,
 } from './types';
-import { Room, roomToServerRoom } from './room';
+import type { NewRoomOptions, Room } from './room';
+import { roomToServerRoom } from './room';
 import { collections } from './types';
 import { setupLogger, TypedEventEmitter } from './events';
 
@@ -23,7 +24,7 @@ import { generateLoginUrl } from './methods/connection/generateLoginUrl';
 import { getAccessGrantTokenFromUrl } from './methods/connection/getAccessGrantTokenFromUrl';
 import { getToken } from './methods/connection/getToken';
 import { getRegistry } from './methods/getRegistry';
-import { loadRoom } from './methods/connection/loadRoom';
+import { loadRoom, RemoteLoadOptions } from './methods/connection/loadRoom';
 import { refreshYSweetToken } from './methods/connection/refreshYSweetToken';
 import { syncRegistry } from './methods/connection/syncRegistry';
 import { loadRooms } from './methods/connection/loadRooms';
@@ -42,6 +43,7 @@ import { pingServer } from './utils/connection/pingServer';
 import { pollConnection } from './utils/connection/pollConnection';
 import type { Doc } from 'yjs';
 import type { WebrtcProvider } from 'y-webrtc';
+import { newRoom } from './methods/newRoom';
 
 export * from './utils';
 export * from './types';
@@ -66,7 +68,7 @@ export interface DatabaseOptions {
   indexedDBProviderPolyfill?: indexedDBProviderPolyfill;
   /** provide a list of peers to use instead of the default */
   webRTCPeers?: string[];
-  initialRooms?: Registry;
+  initialRooms?: Omit<NewRoomOptions<EweDocument>, 'db'>[];
   /** a polyfill for localStorage for react native apps */
   localStoragePolyfill?: LocalStoragePolyfill;
 }
@@ -114,6 +116,9 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
   getToken = getToken(this);
 
   refreshYSweetToken = refreshYSweetToken(this);
+  /** first loads the local indexedDB ydoc for the room. if this.useYSweet is true and ySweetTokens are available will also connect to remote.
+   * @param {RemoteLoadOptions} RemoteLoadOptions - options for loading the remote ydoc
+   */
   loadRoom = loadRoom(this);
   loadRooms = loadRooms(this);
   syncRegistry = syncRegistry(this);
@@ -140,26 +145,8 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
   ): Room<CollectionToDocument[T]>[] {
     return Object.values(this.collections[collectionKey]);
   }
-  /**
-   * new rooms must be added to the registry and then synced with the auth server
-   * Note: If your app does not have access privileges to the collection, the room won't be synced server-side.
-   */
-  newRoom = <T extends EweDocument>(options: Room<T>) => {
-    const room = new Room<T>(options);
-    this.collections[room.collectionKey][room.id] = room as any;
-    const serverRoom = roomToServerRoom(room);
-    this.registry.push(serverRoom);
-    setLocalRegistry(this)(this.registry);
-    if (this.online) {
-      this.syncRegistry();
-    } else {
-      // const online = checkOnline();
-      // if(online){
-      //   this.syncRegistry()
-      // }
-    }
-    return room;
-  };
+
+  newRoom = newRoom(this);
 
   renameRoom = async (room: Room<any>, newName: string) => {
     const body: UpdateRoomPostBody = {
@@ -245,10 +232,11 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     if (options.initialRooms) {
       const registryRoomIds = this.registry.map((r) => r.id);
       for (const room of options.initialRooms) {
-        if (registryRoomIds.includes(room.id)) {
+        if (room.id && registryRoomIds.includes(room.id)) {
           continue;
         }
-        this.registry.push(room);
+        const registryRoom = roomToServerRoom(this.newRoom<any>(room));
+        this.registry.push(registryRoom);
       }
     }
 

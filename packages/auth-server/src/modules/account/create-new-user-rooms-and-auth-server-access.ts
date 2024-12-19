@@ -31,7 +31,7 @@ export async function createNewUserRoomsAndAuthServerAccess(
 
     if (!publicProfile) {
       const id = crypto.randomUUID();
-      const { token, url } = await getOrCreateToken(id);
+      const { url, baseUrl } = await getOrCreateToken(id);
       inserts.push({
         id,
         collectionKey: 'profiles',
@@ -40,13 +40,13 @@ export async function createNewUserRoomsAndAuthServerAccess(
         readAccess: [userId, AUTH_SERVER_DOMAIN],
         writeAccess: [userId, AUTH_SERVER_DOMAIN],
         adminAccess: [userId],
-        token,
         ySweetUrl: url,
+        ySweetBaseUrl: baseUrl,
       });
     }
     if (!privateProfile) {
       const id = crypto.randomUUID();
-      const { token, url } = await getOrCreateToken(id);
+      const { url, baseUrl } = await getOrCreateToken(id);
       inserts.push({
         id,
         collectionKey: 'profiles',
@@ -55,8 +55,8 @@ export async function createNewUserRoomsAndAuthServerAccess(
         readAccess: [userId, AUTH_SERVER_DOMAIN],
         writeAccess: [userId, AUTH_SERVER_DOMAIN],
         adminAccess: [userId],
-        token,
         ySweetUrl: url,
+        ySweetBaseUrl: baseUrl,
       });
     }
 

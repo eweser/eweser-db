@@ -45,14 +45,13 @@ export async function syncRoomsWithClient(token: string, clientRooms: Room[]) {
   }
 
   const grant = await getAccessGrantById(access_grant_id);
-  if (!grant || !grant.isValid) {
+  if (!grant?.isValid) {
     throw new Error('Invalid access grant');
   }
 
   const syncResult: { grant: AccessGrant; rooms: Room[] | null } =
     await db().transaction(async (dbInstance) => {
       const serverRooms = await getRoomsFromAccessGrant(grant);
-
       for (const room of serverRooms) {
         // TODO: If this slows down the sync a lot, consider removing this and relying on the client calling refresh token for each room instead.
         await refreshTokenIfNeededAndSaveToRoom(room, dbInstance);
@@ -91,10 +90,18 @@ export async function syncRoomsWithClient(token: string, clientRooms: Room[]) {
 
       if (newClientRoomIds.length === 0) {
         // if no new client rooms, return the rooms so we don't need to fetch them again
-        return { grant, rooms: serverRooms };
+        return { grant, rooms: serverRooms, userId };
       }
       const newClientRoomInserts: RoomInsert[] = [];
-      for (const room of newClientRooms) {
+      for (const aRoom of newClientRooms) {
+        let room: Room = aRoom;
+        const existingRoom = await getRoomById(room.id);
+        if (existingRoom) {
+          room = {
+            ...existingRoom,
+            ...room,
+          };
+        }
         // clean up the default accesses if they don't exist
         if (!room.readAccess.includes(AUTH_SERVER_DOMAIN)) {
           room.readAccess.push(AUTH_SERVER_DOMAIN);
@@ -111,10 +118,10 @@ export async function syncRoomsWithClient(token: string, clientRooms: Room[]) {
         if (!room.writeAccess.includes(userId)) {
           room.writeAccess.push(userId);
         }
-        const existingRoom = await getRoomById(room.id);
+
         if (existingRoom) {
+          await updateRoom(room, dbInstance);
           await refreshTokenIfNeededAndSaveToRoom(existingRoom, dbInstance);
-          continue;
         } else {
           // generate ySweet tokens for new client rooms to save to server
           const ySweetToken = await getOrCreateToken(room.id);
@@ -123,8 +130,8 @@ export async function syncRoomsWithClient(token: string, clientRooms: Room[]) {
           }
           newClientRoomInserts.push({
             ...room,
-            token: ySweetToken.token,
             ySweetUrl: ySweetToken.url,
+            ySweetBaseUrl: ySweetToken.baseUrl,
             tokenExpiry: ySweetToken.expiry,
           });
         }
@@ -140,7 +147,7 @@ export async function syncRoomsWithClient(token: string, clientRooms: Room[]) {
         { ...grant, roomIds: finalRoomIds },
         dbInstance
       );
-      return { grant: newGrant, rooms: null };
+      return { grant: newGrant, rooms: null, userId };
     });
 
   // if new grant, refetch the room. new client side rooms should have been added by now, and deleted rooms updated
@@ -160,6 +167,5 @@ export async function syncRoomsWithClient(token: string, clientRooms: Room[]) {
   const newToken = jwt.sign(accessGrantJwt, SERVER_SECRET, {
     expiresIn: `${syncResult.grant.keepAliveDays}d`,
   });
-
-  return { rooms, token: newToken };
+  return { rooms, token: newToken, userId };
 }

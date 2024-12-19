@@ -65,7 +65,7 @@
   "gitHead": "d6ee91d84092583f851548fa9ffe8ccf5de5705a",
   "dependencies": {
     "@eweser/shared": "^1.12.0",
-    "@y-sweet/client": "^0.1.0",
+    "@y-sweet/client": "^0.6.4",
     "y-indexeddb": "^9.0.12",
     "y-webrtc": "^10.3.0",
     "yjs": "^13.6.20",

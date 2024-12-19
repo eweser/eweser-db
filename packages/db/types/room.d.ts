@@ -8,12 +8,12 @@ import type { Database, YDoc } from '.';
 import type { GetDocuments } from './utils/getDocuments';
 export type NewRoomOptions<T extends EweDocument> = {
     db: Database;
-    id?: string;
     name: string;
     collectionKey: CollectionKey;
-    token?: string | null;
+    id?: string;
     tokenExpiry?: string | null;
     ySweetUrl?: string | null;
+    ySweetBaseUrl?: string | null;
     publicAccess?: 'private' | 'read' | 'write';
     readAccess?: string[];
     writeAccess?: string[];
@@ -29,12 +29,12 @@ export type NewRoomOptions<T extends EweDocument> = {
 };
 export declare class Room<T extends EweDocument> extends TypedEventEmitter<RoomEvents<T>> implements ServerRoom {
     db: Database;
-    id: string;
     name: string;
     collectionKey: CollectionKey;
-    token: string | null;
+    id: string;
     tokenExpiry: string | null;
     ySweetUrl: string | null;
+    ySweetBaseUrl: string | null;
     publicAccess: 'private' | 'read' | 'write';
     readAccess: string[];
     writeAccess: string[];
@@ -50,6 +50,9 @@ export declare class Room<T extends EweDocument> extends TypedEventEmitter<RoomE
     connectionRetries: number;
     disconnect: () => void;
     getDocuments: () => GetDocuments<T>;
-    constructor({ db, indexedDbProvider, webRtcProvider, ySweetProvider, ydoc, ...serverRoom }: NewRoomOptions<T>);
+    load: () => Promise<Room<T>>;
+    /** disconnect and reconnect the existing ySweetProvider, this time with awareness on */
+    addAwareness: () => Promise<void>;
+    constructor(options: NewRoomOptions<T>);
 }
 export declare function roomToServerRoom(room: Room<any>): ServerRoom;

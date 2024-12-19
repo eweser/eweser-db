@@ -14,6 +14,7 @@ export const syncRegistry =
       token: string;
       rooms: Registry;
     };
+    type RegistrySyncResponse = RegistrySyncRequestBody & { userId: string };
     const body: RegistrySyncRequestBody = {
       token: db.getToken() ?? '',
       rooms: db.registry,
@@ -21,14 +22,18 @@ export const syncRegistry =
     if (!body.token) {
       return false;
     }
-    const { data: syncResult } = await db.serverFetch<RegistrySyncRequestBody>(
+    const { data: syncResult } = await db.serverFetch<RegistrySyncResponse>(
       '/access-grant/sync-registry',
       { method: 'POST', body }
     );
 
     db.info('syncResult', syncResult);
 
-    const { rooms, token } = syncResult ?? {};
+    const { rooms, token, userId } = syncResult ?? {};
+    if (userId && typeof userId === 'string') {
+      db.debug('setting new userId', userId);
+      db.userId = userId;
+    }
     if (token && typeof token === 'string') {
       db.debug('setting new token', token);
       setLocalAccessGrantToken(db)(token);

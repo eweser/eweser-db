@@ -409,8 +409,8 @@ const newDocument = (_id, _ref, doc) => {
   };
   return { ...base, ...doc };
 };
-const buildRef = (params2) => {
-  Object.entries(params2).forEach(([key, param]) => {
+const buildRef = (params) => {
+  Object.entries(params).forEach(([key, param]) => {
     if (!param)
       throw new Error(`${key} is required`);
     if (typeof param !== "string")
@@ -418,7 +418,7 @@ const buildRef = (params2) => {
     if (param.includes("|"))
       throw new Error(`${key} cannot include |`);
   });
-  const { collectionKey, roomId, documentId, authServer } = params2;
+  const { collectionKey, roomId, documentId, authServer } = params;
   return `${authServer}|${collectionKey}|${roomId}|${documentId}`;
 };
 const wait$1 = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -522,354 +522,10 @@ const getDocuments = (_db) => (room) => {
     }
   };
 };
-class Room extends TypedEventEmitter {
-  constructor({
-    db,
-    indexedDbProvider,
-    webRtcProvider,
-    ySweetProvider,
-    ydoc,
-    ...serverRoom
-  }) {
-    super();
-    __publicField(this, "db");
-    __publicField(this, "id");
-    __publicField(this, "name");
-    __publicField(this, "collectionKey");
-    __publicField(this, "token");
-    __publicField(this, "tokenExpiry");
-    __publicField(this, "ySweetUrl");
-    __publicField(this, "publicAccess");
-    __publicField(this, "readAccess");
-    __publicField(this, "writeAccess");
-    __publicField(this, "adminAccess");
-    __publicField(this, "createdAt");
-    __publicField(this, "updatedAt");
-    __publicField(this, "_deleted");
-    __publicField(this, "_ttl");
-    __publicField(this, "indexedDbProvider");
-    __publicField(this, "webRtcProvider");
-    __publicField(this, "ySweetProvider");
-    __publicField(this, "ydoc");
-    __publicField(this, "connectionRetries", 0);
-    __publicField(this, "disconnect", () => {
-      var _a, _b;
-      (_a = this.ySweetProvider) == null ? void 0 : _a.disconnect();
-      (_b = this.webRtcProvider) == null ? void 0 : _b.disconnect();
-      this.emit("roomConnectionChange", "disconnected", this);
-    });
-    __publicField(this, "getDocuments");
-    this.db = db;
-    this.id = serverRoom.id || crypto.randomUUID();
-    this.name = serverRoom.name;
-    this.collectionKey = serverRoom.collectionKey;
-    this.token = serverRoom.token ?? null;
-    this.tokenExpiry = serverRoom.tokenExpiry ?? null;
-    this.ySweetUrl = serverRoom.ySweetUrl ?? null;
-    this.publicAccess = serverRoom.publicAccess ?? "private";
-    this.readAccess = serverRoom.readAccess ?? [];
-    this.writeAccess = serverRoom.writeAccess ?? [];
-    this.adminAccess = serverRoom.adminAccess ?? [];
-    this.createdAt = serverRoom.createdAt ?? null;
-    this.updatedAt = serverRoom.updatedAt ?? null;
-    this._deleted = serverRoom._deleted ?? false;
-    this._ttl = serverRoom._ttl ?? null;
-    this.indexedDbProvider = indexedDbProvider;
-    this.webRtcProvider = webRtcProvider;
-    this.ySweetProvider = ySweetProvider;
-    this.ydoc = ydoc;
-    this.getDocuments = () => getDocuments(this.db)(this);
-  }
-}
-function roomToServerRoom(room) {
-  const {
-    indexedDbProvider: _unused_1,
-    webRtcProvider: _unused_2,
-    ySweetProvider: _unused_3,
-    ydoc: _unused_4,
-    ...serverRoom
-  } = room;
-  return serverRoom;
-}
-const collections = {
-  notes: {},
-  flashcards: {},
-  profiles: {}
-};
-const COLLECTION_KEYS = ["notes", "flashcards", "profiles"];
-const collectionKeys = COLLECTION_KEYS.map((key) => key);
-function loginOptionsToQueryParams({ collections: collections2, ...rest }) {
-  const _collections = collections2.length === 0 ? "all" : collections2.length === 1 ? collections2[0] : collections2.join("|");
-  const params2 = {
-    collections: _collections,
-    ...rest
-  };
-  return params2;
-}
-const isTokenExpired = (tokenExpiry, bufferMinutes = 2) => {
-  const expiry = new Date(tokenExpiry).getTime();
-  const now = (/* @__PURE__ */ new Date()).getTime() + bufferMinutes * 60 * 1e3;
-  return expiry < now;
-};
-const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-const serverFetch = (_db) => async (path, _options) => {
-  const options = {
-    ..._options
-  };
-  try {
-    const token = _db.getToken();
-    if (token) {
-      options.headers = {
-        ...options.headers,
-        Authorization: `Bearer ${token}`
-      };
-    }
-    if (options.method === "POST" && options.body) {
-      options.body = JSON.stringify(options.body);
-      options.headers = {
-        ...options.headers,
-        "Content-Type": "application/json"
-      };
-      options.referrer = "no-referrer";
-    }
-    const resultRaw = await fetch(`${_db.authServer}${path}`, options);
-    const data = await resultRaw.json();
-    if (!data || typeof data !== "object") {
-      throw new Error("No data returned");
-    }
-    if ("error" in data) {
-      return { error: data.error, data: null };
-    }
-    return { error: null, data };
-  } catch (error) {
-    _db.error("serverFetch error", path, options, error);
-    return { error, data: null };
-  }
-};
-const localStorageSet = (db) => (key, value) => {
-  db.debug("#### localStorageSet", key, value);
-  db.localStoragePolyfill.setItem("ewe_" + key, JSON.stringify(value));
-};
-const localStorageGet = (db) => (key) => {
-  const value = db.localStoragePolyfill.getItem("ewe_" + key);
-  db.debug("localStorageGet", key, value);
-  if (!value)
-    return null;
-  return JSON.parse(value);
-};
-const localStorageRemove = (db) => (key) => {
-  db.localStoragePolyfill.removeItem("ewe_" + key);
-};
-const getLocalRegistry = (db) => () => {
-  const registry = db.localStorageService.getItem(
-    "room_registry"
-    /* roomRegistry */
-  );
-  if (typeof registry === "object" && Array.isArray(registry)) {
-    return registry;
-  }
-  return [];
-};
-const setLocalRegistry = (db) => (registry) => {
-  db.localStorageService.setItem("room_registry", registry);
-};
-const clearLocalRegistry = (db) => () => {
-  db.localStorageService.removeItem(
-    "room_registry"
-    /* roomRegistry */
-  );
-};
-const getLocalAccessGrantToken = (db) => () => {
-  return db.localStorageService.getItem(
-    "access_grant_token"
-    /* accessGrantToken */
-  );
-};
-const setLocalAccessGrantToken = (db) => (token) => {
-  db.localStorageService.setItem("access_grant_token", token);
-};
-const clearLocalAccessGrantToken = (db) => () => {
-  db.localStorageService.removeItem(
-    "access_grant_token"
-    /* accessGrantToken */
-  );
-};
-const logout = (db) => (
-  /**
-   * clears the login token from storage and disconnects all ySweet providers. Still leaves the local indexedDB yDocs.
-   */
-  () => {
-    clearLocalAccessGrantToken(db)();
-    db.accessGrantToken = "";
-    db.useYSweet = false;
-    db.online = false;
-    for (const room of db.registry) {
-      const dbRoom = db.getRoom(room.collectionKey, room.id);
-      dbRoom.disconnect();
-    }
-    db.emit("onLoggedInChange", false);
-  }
-);
-const logoutAndClear = (db) => (
-  /**
-   * Logs out and also clears all local data from indexedDB and localStorage.
-   */
-  () => {
-    var _a, _b;
-    db.logout();
-    for (const collectionKey of db.collectionKeys) {
-      for (const room of db.getRooms(collectionKey)) {
-        (_a = room.indexedDbProvider) == null ? void 0 : _a.clearData();
-        (_b = room.indexedDbProvider) == null ? void 0 : _b.destroy();
-      }
-    }
-    db.registry = [];
-    clearLocalRegistry(db)();
-  }
-);
-const checkServerConnection = async (db) => {
-  const success = await db.pingServer();
-  if (success) {
-    if (db.online) {
-      return;
-    }
-    db.debug("Server is online");
-    db.online = true;
-    db.emit("onlineChange", true);
-  } else {
-    if (!db.online) {
-      return;
-    }
-    db.error("Server is offline");
-    db.online = false;
-    db.emit("onlineChange", false);
-  }
-};
-const pollConnection = (db, offlineInterval = 2e3, onlineInterval = 1e4) => {
-  if (db.isPolling) {
-    db.info("Already polling connection");
-    return;
-  }
-  db.isPolling = true;
-  setInterval(() => {
-    if (!db.online) {
-      checkServerConnection(db);
-    }
-  }, offlineInterval);
-  setInterval(() => {
-    if (db.online) {
-      checkServerConnection(db);
-    }
-  }, onlineInterval);
-};
-const login = (db) => (
-  /**
-   * @param loadAllRooms default false. Will load all rooms from the registry and connect to them. Disable this is you have too many rooms and want to load them later individually.
-   * @returns true if successful
-   */
-  async (options) => {
-    db.emit("roomConnectionChange", "connecting", {});
-    const token = db.getToken();
-    if (!token) {
-      throw new Error("No token found");
-    }
-    const syncResult = await db.syncRegistry();
-    if (!syncResult) {
-      throw new Error("Failed to sync registry");
-    }
-    db.useYSweet = true;
-    pollConnection(db);
-    if (options == null ? void 0 : options.loadAllRooms) {
-      await db.loadRooms(db.registry);
-    }
-    db.emit("onLoggedInChange", true);
-    return true;
-  }
-);
-const log = (db) => (level, ...message) => {
-  if (level <= db.logLevel) {
-    db.emit("log", level, ...message);
-  }
-};
-const generateLoginUrl = (db) => (
-  /**
-   *
-   * @param redirect default uses window.location
-   * @param appDomain default uses window.location.hostname
-   * @param collections default 'all', which collections your app would like to have write access to
-   * @returns a string you can use to redirect the user to the auth server's login page
-   */
-  (options) => {
-    const url = new URL(db.authServer);
-    const params2 = loginOptionsToQueryParams({
-      redirect: (options == null ? void 0 : options.redirect) || window.location.href.split("?")[0],
-      domain: (options == null ? void 0 : options.domain) || window.location.host,
-      collections: (options == null ? void 0 : options.collections) ?? ["all"],
-      name: options.name
-    });
-    Object.entries(params2).forEach(([key, value]) => {
-      url.searchParams.append(key, value);
-    });
-    return url.toString();
-  }
-);
-const getAccessGrantTokenFromUrl = (db) => (
-  /**
-   * Pulls the access grant token from the url query params, clears the url query params, and saves the token to local storage
-   */
-  () => {
-    var _a, _b;
-    const query = new URLSearchParams(((_a = window == null ? void 0 : window.location) == null ? void 0 : _a.search) ?? "");
-    const token = query.get("token");
-    if (token && typeof token === "string") {
-      setLocalAccessGrantToken(db)(token);
-    }
-    if ((_b = window == null ? void 0 : window.location) == null ? void 0 : _b.search) {
-      const url = new URL(window.location.href);
-      for (const key of url.searchParams.keys()) {
-        url.searchParams.delete(key);
-      }
-      window.history.replaceState({}, "", url.toString());
-    }
-    return token;
-  }
-);
-const getToken = (db) => (
-  /**
-   * Looks for the access grant token first in the DB class, then in local storage, then in the url query params
-   */
-  () => {
-    if (db.accessGrantToken) {
-      return db.accessGrantToken;
-    }
-    const savedToken = getLocalAccessGrantToken(db)();
-    if (savedToken) {
-      db.accessGrantToken = savedToken;
-      return savedToken;
-    }
-    const urlToken = db.getAccessGrantTokenFromUrl();
-    if (urlToken) {
-      db.accessGrantToken = urlToken;
-      return urlToken;
-    }
-    return null;
-  }
-);
-const getRegistry = (db) => () => {
-  if (db.registry.length > 0) {
-    return db.registry;
-  } else {
-    const localRegistry = getLocalRegistry(db)();
-    if (localRegistry) {
-      db.registry = localRegistry;
-    }
-    return db.registry;
-  }
-};
 const floor$1 = Math.floor;
 const min$1 = (a, b) => a < b ? a : b;
 const max$1 = (a, b) => a > b ? a : b;
-const getUnixTime$1 = Date.now;
+const getUnixTime = Date.now;
 const create$4 = (f) => (
   /** @type {Promise<T>} */
   new Promise(f)
@@ -932,16 +588,16 @@ const getStore = (t, store) => t.objectStore(store);
 const createIDBKeyRangeUpperBound = (upper, upperOpen) => IDBKeyRange.upperBound(upper, upperOpen);
 const createIDBKeyRangeLowerBound = (lower, lowerOpen) => IDBKeyRange.lowerBound(lower, lowerOpen);
 const create$2 = () => /* @__PURE__ */ new Map();
-const setIfUndefined$1 = (map2, key, createT) => {
-  let set = map2.get(key);
+const setIfUndefined = (map, key, createT) => {
+  let set = map.get(key);
   if (set === void 0) {
-    map2.set(key, set = createT());
+    map.set(key, set = createT());
   }
   return set;
 };
 const create$1 = () => /* @__PURE__ */ new Set();
-const from$1 = Array.from;
-let Observable$1 = class Observable {
+const from = Array.from;
+class Observable {
   constructor() {
     this._observers = create$2();
   }
@@ -950,7 +606,7 @@ let Observable$1 = class Observable {
    * @param {function} f
    */
   on(name, f) {
-    setIfUndefined$1(this._observers, name, create$1).add(f);
+    setIfUndefined(this._observers, name, create$1).add(f);
   }
   /**
    * @param {N} name
@@ -986,12 +642,12 @@ let Observable$1 = class Observable {
    * @param {Array<any>} args The arguments that are applied to the event listener.
    */
   emit(name, args) {
-    return from$1((this._observers.get(name) || create$2()).values()).forEach((f) => f(...args));
+    return from((this._observers.get(name) || create$2()).values()).forEach((f) => f(...args));
   }
   destroy() {
     this._observers = create$2();
   }
-};
+}
 const customStoreName = "custom";
 const updatesStoreName = "updates";
 const PREFERRED_TRIM_SIZE = 500;
@@ -1024,7 +680,7 @@ const storeState = (idbPersistence, forceStore = true) => fetchUpdates(idbPersis
     }));
   }
 });
-class IndexeddbPersistence extends Observable$1 {
+class IndexeddbPersistence extends Observable {
   /**
    * @param {string} name
    * @param {Y.Doc} doc
@@ -1326,55 +982,6 @@ const _readVarStringNative = (decoder) => (
   utf8TextDecoder$1.decode(readVarUint8Array$1(decoder))
 );
 const readVarString = utf8TextDecoder$1 ? _readVarStringNative : _readVarStringPolyfill;
-const messageYjsSyncStep1 = 0;
-const messageYjsSyncStep2 = 1;
-const messageYjsUpdate = 2;
-const writeSyncStep1 = (encoder, doc) => {
-  writeVarUint$1(encoder, messageYjsSyncStep1);
-  const sv = Y.encodeStateVector(doc);
-  writeVarUint8Array$1(encoder, sv);
-};
-const writeSyncStep2 = (encoder, doc, encodedStateVector) => {
-  writeVarUint$1(encoder, messageYjsSyncStep2);
-  writeVarUint8Array$1(encoder, Y.encodeStateAsUpdate(doc, encodedStateVector));
-};
-const readSyncStep1 = (decoder, encoder, doc) => writeSyncStep2(encoder, doc, readVarUint8Array$1(decoder));
-const readSyncStep2 = (decoder, doc, transactionOrigin) => {
-  try {
-    Y.applyUpdate(doc, readVarUint8Array$1(decoder), transactionOrigin);
-  } catch (error) {
-    console.error("Caught error while handling a Yjs update", error);
-  }
-};
-const writeUpdate = (encoder, update) => {
-  writeVarUint$1(encoder, messageYjsUpdate);
-  writeVarUint8Array$1(encoder, update);
-};
-const readUpdate = readSyncStep2;
-const readSyncMessage = (decoder, encoder, doc, transactionOrigin) => {
-  const messageType = readVarUint$1(decoder);
-  switch (messageType) {
-    case messageYjsSyncStep1:
-      readSyncStep1(decoder, encoder, doc);
-      break;
-    case messageYjsSyncStep2:
-      readSyncStep2(decoder, doc, transactionOrigin);
-      break;
-    case messageYjsUpdate:
-      readUpdate(decoder, doc, transactionOrigin);
-      break;
-    default:
-      throw new Error("Unknown message type");
-  }
-  return messageType;
-};
-const messagePermissionDenied = 0;
-const readAuthMessage = (decoder, y, permissionDeniedHandler2) => {
-  switch (readVarUint$1(decoder)) {
-    case messagePermissionDenied:
-      permissionDeniedHandler2(y, readVarString(decoder));
-  }
-};
 const keys = Object.keys;
 const length$1 = (obj) => keys(obj).length;
 const hasProperty = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
@@ -1452,7 +1059,7 @@ const equalityDeep = (a, b) => {
   return true;
 };
 const outdatedTimeout = 3e4;
-class Awareness extends Observable$1 {
+class Awareness extends Observable {
   /**
    * @param {Y.Doc} doc
    */
@@ -1464,7 +1071,7 @@ class Awareness extends Observable$1 {
     this.meta = /* @__PURE__ */ new Map();
     this._checkInterval = /** @type {any} */
     setInterval(() => {
-      const now = getUnixTime$1();
+      const now = getUnixTime();
       if (this.getLocalState() !== null && outdatedTimeout / 2 <= now - /** @type {{lastUpdated:number}} */
       this.meta.get(this.clientID).lastUpdated) {
         this.setLocalState(this.getLocalState());
@@ -1511,7 +1118,7 @@ class Awareness extends Observable$1 {
     }
     this.meta.set(clientID, {
       clock,
-      lastUpdated: getUnixTime$1()
+      lastUpdated: getUnixTime()
     });
     const added = [];
     const updated = [];
@@ -1567,7 +1174,7 @@ const removeAwarenessStates = (awareness, clients, origin) => {
         );
         awareness.meta.set(clientID, {
           clock: curMeta.clock + 1,
-          lastUpdated: getUnixTime$1()
+          lastUpdated: getUnixTime()
         });
       }
       removed.push(clientID);
@@ -1597,7 +1204,7 @@ const encodeAwarenessUpdate = (awareness, clients, states = awareness.states) =>
 };
 const applyAwarenessUpdate = (awareness, update, origin) => {
   const decoder = createDecoder$1(update);
-  const timestamp = getUnixTime$1();
+  const timestamp = getUnixTime();
   const added = [];
   const updated = [];
   const filteredUpdated = [];
@@ -1651,22 +1258,54 @@ const applyAwarenessUpdate = (awareness, update, origin) => {
     }, origin]);
   }
 };
-var create = () => /* @__PURE__ */ new Map();
-var setIfUndefined = (map2, key, createT) => {
-  let set = map2.get(key);
-  if (set === void 0) {
-    map2.set(key, set = createT());
-  }
-  return set;
+const messageYjsSyncStep1 = 0;
+const messageYjsSyncStep2 = 1;
+const messageYjsUpdate = 2;
+const writeSyncStep1 = (encoder, doc) => {
+  writeVarUint$1(encoder, messageYjsSyncStep1);
+  const sv = Y.encodeStateVector(doc);
+  writeVarUint8Array$1(encoder, sv);
 };
-var create2 = () => /* @__PURE__ */ new Set();
-var from = Array.from;
-var fromCharCode = String.fromCharCode;
-var toLowerCase = (s) => s.toLowerCase();
-var trimLeftRegex = /^\s*/g;
-var trimLeft = (s) => s.replace(trimLeftRegex, "");
-var fromCamelCaseRegex = /([A-Z])/g;
-var fromCamelCase = (s, separator) => trimLeft(s.replace(fromCamelCaseRegex, (match) => `${separator}${toLowerCase(match)}`));
+const writeSyncStep2 = (encoder, doc, encodedStateVector) => {
+  writeVarUint$1(encoder, messageYjsSyncStep2);
+  writeVarUint8Array$1(encoder, Y.encodeStateAsUpdate(doc, encodedStateVector));
+};
+const readSyncStep1 = (decoder, encoder, doc) => writeSyncStep2(encoder, doc, readVarUint8Array$1(decoder));
+const readSyncStep2 = (decoder, doc, transactionOrigin) => {
+  try {
+    Y.applyUpdate(doc, readVarUint8Array$1(decoder), transactionOrigin);
+  } catch (error) {
+    console.error("Caught error while handling a Yjs update", error);
+  }
+};
+const writeUpdate = (encoder, update) => {
+  writeVarUint$1(encoder, messageYjsUpdate);
+  writeVarUint8Array$1(encoder, update);
+};
+const readUpdate = readSyncStep2;
+const readSyncMessage = (decoder, encoder, doc, transactionOrigin) => {
+  const messageType = readVarUint$1(decoder);
+  switch (messageType) {
+    case messageYjsSyncStep1:
+      readSyncStep1(decoder, encoder, doc);
+      break;
+    case messageYjsSyncStep2:
+      readSyncStep2(decoder, doc, transactionOrigin);
+      break;
+    case messageYjsUpdate:
+      readUpdate(decoder, doc, transactionOrigin);
+      break;
+    default:
+      throw new Error("Unknown message type");
+  }
+  return messageType;
+};
+var BIT8 = 128;
+var BITS7 = 127;
+var floor = Math.floor;
+var min = (a, b) => a < b ? a : b;
+var max = (a, b) => a > b ? a : b;
+var MAX_SAFE_INTEGER = Number.MAX_SAFE_INTEGER;
 var _encodeUtf8Polyfill = (str) => {
   const encodedString = unescape(encodeURIComponent(str));
   const len = encodedString.length;
@@ -1687,107 +1326,7 @@ var utf8TextDecoder = typeof TextDecoder === "undefined" ? null : new TextDecode
 if (utf8TextDecoder && utf8TextDecoder.decode(new Uint8Array()).length === 1) {
   utf8TextDecoder = null;
 }
-var undefinedToNull = (v) => v === void 0 ? null : v;
-var VarStoragePolyfill = class {
-  constructor() {
-    this.map = /* @__PURE__ */ new Map();
-  }
-  /**
-   * @param {string} key
-   * @param {any} newValue
-   */
-  setItem(key, newValue) {
-    this.map.set(key, newValue);
-  }
-  /**
-   * @param {string} key
-   */
-  getItem(key) {
-    return this.map.get(key);
-  }
-};
-var _localStorage = new VarStoragePolyfill();
-var usePolyfill = true;
-try {
-  if (typeof localStorage !== "undefined" && localStorage) {
-    _localStorage = localStorage;
-    usePolyfill = false;
-  }
-} catch (e) {
-}
-var varStorage = _localStorage;
-var onChange = (eventHandler) => usePolyfill || addEventListener(
-  "storage",
-  /** @type {any} */
-  eventHandler
-);
-var offChange = (eventHandler) => usePolyfill || removeEventListener(
-  "storage",
-  /** @type {any} */
-  eventHandler
-);
-var map = (obj, f) => {
-  const results = [];
-  for (const key in obj) {
-    results.push(f(obj[key], key));
-  }
-  return results;
-};
-var isOneOf = (value, options) => options.includes(value);
-var isNode = typeof process !== "undefined" && process.release && /node|io\.js/.test(process.release.name) && Object.prototype.toString.call(typeof process !== "undefined" ? process : 0) === "[object process]";
-var isBrowser = typeof window !== "undefined" && typeof document !== "undefined" && !isNode;
-var params;
-var computeParams = () => {
-  if (params === void 0) {
-    if (isNode) {
-      params = create();
-      const pargs = process.argv;
-      let currParamName = null;
-      for (let i = 0; i < pargs.length; i++) {
-        const parg = pargs[i];
-        if (parg[0] === "-") {
-          if (currParamName !== null) {
-            params.set(currParamName, "");
-          }
-          currParamName = parg;
-        } else {
-          if (currParamName !== null) {
-            params.set(currParamName, parg);
-            currParamName = null;
-          }
-        }
-      }
-      if (currParamName !== null) {
-        params.set(currParamName, "");
-      }
-    } else if (typeof location === "object") {
-      params = create();
-      (location.search || "?").slice(1).split("&").forEach((kv) => {
-        if (kv.length !== 0) {
-          const [key, value] = kv.split("=");
-          params.set(`--${fromCamelCase(key, "-")}`, value);
-          params.set(`-${fromCamelCase(key, "-")}`, value);
-        }
-      });
-    } else {
-      params = create();
-    }
-  }
-  return params;
-};
-var hasParam = (name) => computeParams().has(name);
-var getVariable = (name) => isNode ? undefinedToNull(process.env[name.toUpperCase().replaceAll("-", "_")]) : undefinedToNull(varStorage.getItem(name));
-var hasConf = (name) => hasParam("--" + name) || getVariable(name) !== null;
-hasConf("production");
-var forceColor = isNode && isOneOf(process.env.FORCE_COLOR, ["true", "1", "2"]);
-!hasParam("no-colors") && (!isNode || process.stdout.isTTY || forceColor) && (!isNode || hasParam("color") || forceColor || getVariable("COLORTERM") !== null || (getVariable("TERM") || "").includes("color"));
-var floor = Math.floor;
-var min = (a, b) => a < b ? a : b;
-var max = (a, b) => a > b ? a : b;
-var pow = Math.pow;
-var BIT8 = 128;
-var BITS7 = 127;
-var MAX_SAFE_INTEGER = Number.MAX_SAFE_INTEGER;
+var create = (s) => new Error(s);
 var Encoder2 = class {
   constructor() {
     this.cpos = 0;
@@ -1875,9 +1414,8 @@ var writeVarUint8Array = (encoder, uint8Array) => {
   writeVarUint(encoder, uint8Array.byteLength);
   writeUint8Array(encoder, uint8Array);
 };
-var create3 = (s) => new Error(s);
-var errorUnexpectedEndOfArray = create3("Unexpected end of array");
-var errorIntegerOutOfRange = create3("Integer out of Range");
+var errorUnexpectedEndOfArray = create("Unexpected end of array");
+var errorIntegerOutOfRange = create("Integer out of Range");
 var Decoder2 = class {
   /**
    * @param {Uint8Array} uint8Array Binary data to decode
@@ -1911,466 +1449,428 @@ var readVarUint = (decoder) => {
   }
   throw errorUnexpectedEndOfArray;
 };
-var createUint8ArrayFromLen = (len) => new Uint8Array(len);
-var createUint8ArrayViewFromArrayBuffer = (buffer, byteOffset, length2) => new Uint8Array(buffer, byteOffset, length2);
-var createUint8ArrayFromArrayBuffer = (buffer) => new Uint8Array(buffer);
-var toBase64Browser = (bytes) => {
-  let s = "";
-  for (let i = 0; i < bytes.byteLength; i++) {
-    s += fromCharCode(bytes[i]);
-  }
-  return btoa(s);
-};
-var toBase64Node = (bytes) => Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength).toString("base64");
-var fromBase64Browser = (s) => {
-  const a = atob(s);
-  const bytes = createUint8ArrayFromLen(a.length);
-  for (let i = 0; i < a.length; i++) {
-    bytes[i] = a.charCodeAt(i);
-  }
-  return bytes;
-};
-var fromBase64Node = (s) => {
-  const buf = Buffer.from(s, "base64");
-  return createUint8ArrayViewFromArrayBuffer(buf.buffer, buf.byteOffset, buf.byteLength);
-};
-var toBase64 = isBrowser ? toBase64Browser : toBase64Node;
-var fromBase64 = isBrowser ? fromBase64Browser : fromBase64Node;
-var channels = /* @__PURE__ */ new Map();
-var LocalStoragePolyfill = class {
-  /**
-   * @param {string} room
-   */
-  constructor(room) {
-    this.room = room;
-    this.onmessage = null;
-    this._onChange = (e) => e.key === room && this.onmessage !== null && this.onmessage({ data: fromBase64(e.newValue || "") });
-    onChange(this._onChange);
-  }
-  /**
-   * @param {ArrayBuffer} buf
-   */
-  postMessage(buf) {
-    varStorage.setItem(this.room, toBase64(createUint8ArrayFromArrayBuffer(buf)));
-  }
-  close() {
-    offChange(this._onChange);
-  }
-};
-var BC = typeof BroadcastChannel === "undefined" ? LocalStoragePolyfill : BroadcastChannel;
-var getChannel = (room) => setIfUndefined(channels, room, () => {
-  const subs = create2();
-  const bc = new BC(room);
-  bc.onmessage = (e) => subs.forEach((sub) => sub(e.data, "broadcastchannel"));
-  return {
-    bc,
-    subs
-  };
-});
-var subscribe = (room, f) => {
-  getChannel(room).subs.add(f);
-  return f;
-};
-var unsubscribe = (room, f) => {
-  const channel = getChannel(room);
-  const unsubscribed = channel.subs.delete(f);
-  if (unsubscribed && channel.subs.size === 0) {
-    channel.bc.close();
-    channels.delete(room);
-  }
-  return unsubscribed;
-};
-var publish = (room, data, origin = null) => {
-  const c = getChannel(room);
-  c.bc.postMessage(data);
-  c.subs.forEach((sub) => sub(data, origin));
-};
-var getUnixTime = Date.now;
-var Observable2 = class {
-  constructor() {
-    this._observers = create();
-  }
-  /**
-   * @param {N} name
-   * @param {function} f
-   */
-  on(name, f) {
-    setIfUndefined(this._observers, name, create2).add(f);
-  }
-  /**
-   * @param {N} name
-   * @param {function} f
-   */
-  once(name, f) {
-    const _f = (...args2) => {
-      this.off(name, _f);
-      f(...args2);
-    };
-    this.on(name, _f);
-  }
-  /**
-   * @param {N} name
-   * @param {function} f
-   */
-  off(name, f) {
-    const observers = this._observers.get(name);
-    if (observers !== void 0) {
-      observers.delete(f);
-      if (observers.size === 0) {
-        this._observers.delete(name);
-      }
-    }
-  }
-  /**
-   * Emit a named event. All registered event listeners that listen to the
-   * specified name will receive the event.
-   *
-   * @todo This should catch exceptions
-   *
-   * @param {N} name The event name.
-   * @param {Array<any>} args The arguments that are applied to the event listener.
-   */
-  emit(name, args2) {
-    return from((this._observers.get(name) || create()).values()).forEach((f) => f(...args2));
-  }
-  destroy() {
-    this._observers = create();
-  }
-};
-var encodeQueryParams = (params2) => map(params2, (val, key) => `${encodeURIComponent(key)}=${encodeURIComponent(val)}`).join("&");
-var messageSync = 0;
-var messageQueryAwareness = 3;
-var messageAwareness = 1;
-var messageAuth = 2;
-var messageHandlers = [];
-messageHandlers[messageSync] = (encoder, decoder, provider, emitSynced, _messageType) => {
-  writeVarUint(encoder, messageSync);
-  const syncMessageType = readSyncMessage(decoder, encoder, provider.doc, provider);
-  if (emitSynced && syncMessageType === messageYjsSyncStep2 && !provider.synced) {
-    provider.synced = true;
-  }
-};
-messageHandlers[messageQueryAwareness] = (encoder, _decoder, provider, _emitSynced, _messageType) => {
-  writeVarUint(encoder, messageAwareness);
-  writeVarUint8Array(
-    encoder,
-    encodeAwarenessUpdate(
-      provider.awareness,
-      Array.from(provider.awareness.getStates().keys())
-    )
-  );
-};
-messageHandlers[messageAwareness] = (_encoder, decoder, provider, _emitSynced, _messageType) => {
-  applyAwarenessUpdate(
-    provider.awareness,
-    readVarUint8Array(decoder),
-    provider
-  );
-};
-messageHandlers[messageAuth] = (_encoder, decoder, provider, _emitSynced, _messageType) => {
-  readAuthMessage(
-    decoder,
-    provider.doc,
-    (_ydoc, reason) => permissionDeniedHandler(provider, reason)
-  );
-};
-var messageReconnectTimeout = 3e4;
-var permissionDeniedHandler = (provider, reason) => console.warn(`Permission denied to access ${provider.url}.
-${reason}`);
-var readMessage = (provider, buf, emitSynced) => {
-  const decoder = createDecoder(buf);
-  const encoder = createEncoder();
-  const messageType = readVarUint(decoder);
-  const messageHandler = provider.messageHandlers[messageType];
-  if (
-    /** @type {any} */
-    messageHandler
-  ) {
-    messageHandler(encoder, decoder, provider, emitSynced, messageType);
+var EVENT_STATUS = "status";
+var EVENT_SYNC = "sync";
+var EVENT_CONNECTION_CLOSE = "connection-close";
+var EVENT_CONNECTION_ERROR = "connection-error";
+var EVENT_SYNCED = "synced";
+var WEBSOCKET_STATUS_CONNECTED = "connected";
+var WEBSOCKET_STATUS_DISCONNECTED = "disconnected";
+var WEBSOCKET_STATUS_CONNECTING = "connecting";
+function translateStatus(status) {
+  if (status === STATUS_CONNECTED) {
+    return WEBSOCKET_STATUS_CONNECTED;
+  } else if ([STATUS_CONNECTING, STATUS_HANDSHAKING].includes(status)) {
+    return WEBSOCKET_STATUS_CONNECTING;
   } else {
-    console.error("Unable to compute message");
+    return WEBSOCKET_STATUS_DISCONNECTED;
   }
-  return encoder;
-};
-var setupWS = (provider) => {
-  if (provider.shouldConnect && provider.ws === null) {
-    const websocket = new provider._WS(provider.url);
-    websocket.binaryType = "arraybuffer";
-    provider.ws = websocket;
-    provider.wsconnecting = true;
-    provider.wsconnected = false;
-    provider.synced = false;
-    websocket.onmessage = (event) => {
-      provider.wsLastMessageReceived = getUnixTime();
-      const encoder = readMessage(provider, new Uint8Array(event.data), true);
-      if (length(encoder) > 1) {
-        websocket.send(toUint8Array(encoder));
-      }
-    };
-    websocket.onerror = (event) => {
-      provider.emit("connection-error", [event, provider]);
-    };
-    websocket.onclose = (event) => {
-      provider.emit("connection-close", [event, provider]);
-      provider.ws = null;
-      provider.wsconnecting = false;
-      if (provider.wsconnected) {
-        provider.wsconnected = false;
-        provider.synced = false;
-        removeAwarenessStates(
-          provider.awareness,
-          Array.from(provider.awareness.getStates().keys()).filter(
-            (client) => client !== provider.doc.clientID
-          ),
-          provider
-        );
-        provider.emit("status", [
-          {
-            status: "disconnected"
-          }
-        ]);
-      } else {
-        provider.wsUnsuccessfulReconnects++;
-      }
-      setTimeout(
-        setupWS,
-        min(pow(2, provider.wsUnsuccessfulReconnects) * 100, provider.maxBackoffTime),
-        provider
-      );
-    };
-    websocket.onopen = () => {
-      provider.wsLastMessageReceived = getUnixTime();
-      provider.wsconnecting = false;
-      provider.wsconnected = true;
-      provider.wsUnsuccessfulReconnects = 0;
-      provider.emit("status", [
-        {
-          status: "connected"
-        }
-      ]);
-      const encoder = createEncoder();
-      writeVarUint(encoder, messageSync);
-      writeSyncStep1(encoder, provider.doc);
-      websocket.send(toUint8Array(encoder));
-      if (provider.awareness.getLocalState() !== null) {
-        const encoderAwarenessState = createEncoder();
-        writeVarUint(encoderAwarenessState, messageAwareness);
-        writeVarUint8Array(
-          encoderAwarenessState,
-          encodeAwarenessUpdate(provider.awareness, [provider.doc.clientID])
-        );
-        websocket.send(toUint8Array(encoderAwarenessState));
-      }
-    };
-    provider.emit("status", [
-      {
-        status: "connecting"
-      }
-    ]);
+}
+var WebSocketCompatLayer = class {
+  constructor(provider) {
+    this.provider = provider;
+    this.lastStatus = WEBSOCKET_STATUS_DISCONNECTED;
+    this.lastSyncStatus = false;
+    this.provider.on(EVENT_CONNECTION_STATUS, this.updateStatus.bind(this));
   }
-};
-var broadcastMessage = (provider, buf) => {
-  const ws = provider.ws;
-  if (provider.wsconnected && ws && ws.readyState === ws.OPEN) {
-    ws.send(buf);
-  }
-  if (provider.bcconnected) {
-    publish(provider.bcChannel, buf, provider);
-  }
-};
-var YSweetProvider = class extends Observable2 {
-  /**
-   * @param serverUrl - server url
-   * @param roomname - room name
-   * @param doc - Y.Doc instance
-   * @param opts - options
-   * @param opts.connect - connect option
-   * @param opts.awareness - awareness protocol instance
-   * @param opts.params - parameters
-   * @param opts.WebSocketPolyfill - WebSocket polyfill
-   * @param opts.resyncInterval - resync interval
-   * @param opts.maxBackoffTime - maximum backoff time
-   * @param opts.disableBc - disable broadcast channel
-   */
-  constructor(serverUrl, roomname, doc, {
-    connect = true,
-    awareness = new Awareness(doc),
-    params: params2 = {},
-    WebSocketPolyfill = WebSocket,
-    resyncInterval = -1,
-    maxBackoffTime = 2500,
-    disableBc = false
-  } = {}) {
-    super();
-    while (serverUrl[serverUrl.length - 1] === "/") {
-      serverUrl = serverUrl.slice(0, serverUrl.length - 1);
+  updateStatus(status) {
+    const newStatus = translateStatus(status);
+    const syncStatus = status === STATUS_CONNECTED;
+    if (this.lastSyncStatus !== syncStatus) {
+      this.lastSyncStatus = syncStatus;
+      this.provider.emit(EVENT_SYNC, syncStatus);
+      this.provider.emit(EVENT_SYNCED, syncStatus);
     }
-    const encodedParams = encodeQueryParams(params2);
-    this.maxBackoffTime = maxBackoffTime;
-    this.bcChannel = serverUrl + "/" + roomname;
-    this.url = serverUrl + "/" + roomname + (encodedParams.length === 0 ? "" : "?" + encodedParams);
-    this.roomname = roomname;
+    if (this.lastStatus !== newStatus) {
+      this.lastStatus = newStatus;
+      this.provider.emit(EVENT_STATUS, { status: newStatus });
+    }
+  }
+};
+var MESSAGE_SYNC = 0;
+var MESSAGE_QUERY_AWARENESS = 3;
+var MESSAGE_AWARENESS = 1;
+var MESSAGE_SYNC_STATUS = 102;
+var RETRIES_BEFORE_TOKEN_REFRESH = 3;
+var DELAY_MS_BEFORE_RECONNECT = 500;
+var DELAY_MS_BEFORE_RETRY_TOKEN_REFRESH = 3e3;
+var EVENT_LOCAL_CHANGES = "local-changes";
+var EVENT_CONNECTION_STATUS = "connection-status";
+var STATUS_OFFLINE = "offline";
+var STATUS_CONNECTING = "connecting";
+var STATUS_ERROR = "error";
+var STATUS_HANDSHAKING = "handshaking";
+var STATUS_CONNECTED = "connected";
+async function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+async function getClientToken(authEndpoint, roomname) {
+  if (typeof authEndpoint === "function") {
+    return await authEndpoint();
+  }
+  const body = JSON.stringify({ docId: roomname });
+  const res = await fetch(authEndpoint, {
+    method: "POST",
+    body,
+    headers: { "Content-Type": "application/json" }
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to get client token: ${res.status} ${res.statusText}`);
+  }
+  const clientToken = await res.json();
+  if (clientToken.docId !== roomname) {
+    throw new Error(
+      `Client token docId does not match roomname: ${clientToken.docId} !== ${roomname}`
+    );
+  }
+  return clientToken;
+}
+var YSweetProvider2 = class {
+  constructor(authEndpoint, docId, doc, extraOptions = {}) {
+    this.authEndpoint = authEndpoint;
+    this.docId = docId;
     this.doc = doc;
-    this._WS = WebSocketPolyfill;
-    this.awareness = awareness;
-    this.wsconnected = false;
-    this.wsconnecting = false;
-    this.bcconnected = false;
-    this.disableBc = disableBc;
-    this.wsUnsuccessfulReconnects = 0;
-    this.messageHandlers = messageHandlers.slice();
-    this._synced = false;
-    this.ws = null;
-    this.wsLastMessageReceived = 0;
-    this.shouldConnect = connect;
-    this._resyncInterval = 0;
-    if (resyncInterval > 0) {
-      this._resyncInterval = setInterval(() => {
-        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-          const encoder = createEncoder();
-          writeVarUint(encoder, messageSync);
-          writeSyncStep1(encoder, doc);
-          this.ws.send(toUint8Array(encoder));
-        }
-      }, resyncInterval);
+    this.clientToken = null;
+    this.hasLocalChanges = true;
+    this.status = STATUS_OFFLINE;
+    this.websocket = null;
+    this.listeners = /* @__PURE__ */ new Map();
+    this.lastSyncSent = 0;
+    this.lastSyncAcked = -1;
+    this.isConnecting = false;
+    if (extraOptions.initialClientToken) {
+      this.clientToken = extraOptions.initialClientToken;
     }
-    this._bcSubscriber = (data, origin) => {
-      if (origin !== this) {
-        const encoder = readMessage(this, new Uint8Array(data), false);
-        if (length(encoder) > 1) {
-          publish(this.bcChannel, toUint8Array(encoder), this);
-        }
-      }
-    };
-    this._updateHandler = (update, origin) => {
-      if (origin !== this) {
-        const encoder = createEncoder();
-        writeVarUint(encoder, messageSync);
-        writeUpdate(encoder, update);
-        broadcastMessage(this, toUint8Array(encoder));
-      }
-    };
-    this.doc.on("update", this._updateHandler);
-    this._awarenessUpdateHandler = ({ added, updated, removed }, _origin) => {
-      const changedClients = added.concat(updated).concat(removed);
-      const encoder = createEncoder();
-      writeVarUint(encoder, messageAwareness);
-      writeVarUint8Array(
-        encoder,
-        encodeAwarenessUpdate(awareness, changedClients)
-      );
-      broadcastMessage(this, toUint8Array(encoder));
-    };
-    this._unloadHandler = () => {
-      removeAwarenessStates(this.awareness, [doc.clientID], "window unload");
-    };
-    if (typeof window !== "undefined") {
-      window.addEventListener("unload", this._unloadHandler);
-    } else if (typeof process !== "undefined") {
-      process.on("exit", this._unloadHandler);
-    }
-    awareness.on("update", this._awarenessUpdateHandler);
-    this._checkInterval = setInterval(() => {
-      var _a;
-      if (this.wsconnected && messageReconnectTimeout < getUnixTime() - this.wsLastMessageReceived) {
-        (_a = this.ws) == null ? void 0 : _a.close();
-      }
-    }, messageReconnectTimeout / 10);
-    if (connect) {
+    new WebSocketCompatLayer(this);
+    this.awareness = extraOptions.awareness ?? new Awareness(doc);
+    this.awareness.on("update", this.handleAwarenessUpdate.bind(this));
+    this.WebSocketPolyfill = extraOptions.WebSocketPolyfill || WebSocket;
+    doc.on("update", this.update.bind(this));
+    if (extraOptions.connect !== false) {
       this.connect();
     }
   }
-  /**
-   * @type {boolean}
-   */
-  get synced() {
-    return this._synced;
-  }
-  set synced(state) {
-    if (this._synced !== state) {
-      this._synced = state;
-      this.emit("synced", [state]);
-      this.emit("sync", [state]);
+  send(message) {
+    var _a;
+    if (((_a = this.websocket) == null ? void 0 : _a.readyState) === this.WebSocketPolyfill.OPEN) {
+      this.websocket.send(message);
     }
   }
-  destroy() {
-    if (this._resyncInterval !== 0) {
-      clearInterval(this._resyncInterval);
-    }
-    clearInterval(this._checkInterval);
-    this.disconnect();
-    if (typeof window !== "undefined") {
-      window.removeEventListener("unload", this._unloadHandler);
-    } else if (typeof process !== "undefined") {
-      process.off("exit", this._unloadHandler);
-    }
-    this.awareness.off("update", this._awarenessUpdateHandler);
-    this.doc.off("update", this._updateHandler);
-    super.destroy();
-  }
-  connectBc() {
-    if (this.disableBc) {
+  updateSyncedState() {
+    let hasLocalChanges = this.lastSyncAcked !== this.lastSyncSent;
+    if (hasLocalChanges === this.hasLocalChanges) {
       return;
     }
-    if (!this.bcconnected) {
-      subscribe(this.bcChannel, this._bcSubscriber);
-      this.bcconnected = true;
-    }
-    const encoderSync = createEncoder();
-    writeVarUint(encoderSync, messageSync);
-    writeSyncStep1(encoderSync, this.doc);
-    publish(this.bcChannel, toUint8Array(encoderSync), this);
-    const encoderState = createEncoder();
-    writeVarUint(encoderState, messageSync);
-    writeSyncStep2(encoderState, this.doc);
-    publish(this.bcChannel, toUint8Array(encoderState), this);
-    const encoderAwarenessQuery = createEncoder();
-    writeVarUint(encoderAwarenessQuery, messageQueryAwareness);
-    publish(this.bcChannel, toUint8Array(encoderAwarenessQuery), this);
-    const encoderAwarenessState = createEncoder();
-    writeVarUint(encoderAwarenessState, messageAwareness);
-    writeVarUint8Array(
-      encoderAwarenessState,
-      encodeAwarenessUpdate(this.awareness, [this.doc.clientID])
-    );
-    publish(this.bcChannel, toUint8Array(encoderAwarenessState), this);
+    this.hasLocalChanges = hasLocalChanges;
+    this.emit(EVENT_LOCAL_CHANGES, hasLocalChanges);
   }
-  disconnectBc() {
-    const encoder = createEncoder();
-    writeVarUint(encoder, messageAwareness);
-    writeVarUint8Array(
-      encoder,
-      encodeAwarenessUpdate(this.awareness, [this.doc.clientID], /* @__PURE__ */ new Map())
-    );
-    broadcastMessage(this, toUint8Array(encoder));
-    if (this.bcconnected) {
-      unsubscribe(this.bcChannel, this._bcSubscriber);
-      this.bcconnected = false;
+  setStatus(status) {
+    if (this.status === status) {
+      return;
     }
+    this.status = status;
+    this.emit(EVENT_CONNECTION_STATUS, status);
+  }
+  update(update, origin) {
+    if (origin !== this) {
+      const encoder = createEncoder();
+      writeVarUint(encoder, MESSAGE_SYNC);
+      writeUpdate(encoder, update);
+      this.send(toUint8Array(encoder));
+      this.checkSync();
+    }
+  }
+  checkSync() {
+    this.lastSyncSent += 1;
+    const encoder = createEncoder();
+    writeVarUint(encoder, MESSAGE_SYNC_STATUS);
+    const versionEncoder = createEncoder();
+    writeVarUint(versionEncoder, this.lastSyncSent);
+    writeVarUint8Array(encoder, toUint8Array(versionEncoder));
+    this.send(toUint8Array(encoder));
+    this.updateSyncedState();
+  }
+  async ensureClientToken() {
+    if (this.clientToken) {
+      return this.clientToken;
+    }
+    if (typeof this.authEndpoint === "string") {
+      this.clientToken = await getClientToken(this.authEndpoint, this.docId);
+      return this.clientToken;
+    } else {
+      this.clientToken = await this.authEndpoint();
+      return this.clientToken;
+    }
+  }
+  /**
+   * Attempts to connect to the websocket.
+   * Returns a promise that resolves to true if the connection was successful, or false if the connection failed.
+   */
+  attemptToConnect(clientToken) {
+    let promise = new Promise((resolve) => {
+      let statusListener = (event) => {
+        if (event === STATUS_CONNECTED) {
+          this.off(EVENT_CONNECTION_STATUS, statusListener);
+          resolve(true);
+        } else if (event === STATUS_ERROR) {
+          this.off(EVENT_CONNECTION_STATUS, statusListener);
+          resolve(false);
+        }
+      };
+      this.on(EVENT_CONNECTION_STATUS, statusListener);
+    });
+    let url = this.generateUrl(clientToken);
+    this.setStatus(STATUS_CONNECTING);
+    const websocket = new (this.WebSocketPolyfill || WebSocket)(url);
+    this.bindWebsocket(websocket);
+    return promise;
+  }
+  async connect() {
+    if (this.isConnecting) {
+      console.warn("connect() called while a connect loop is already running.");
+      return;
+    }
+    this.isConnecting = true;
+    this.setStatus(STATUS_CONNECTING);
+    while (![STATUS_OFFLINE, STATUS_CONNECTED].includes(this.status)) {
+      this.setStatus(STATUS_CONNECTING);
+      let clientToken;
+      try {
+        clientToken = await this.ensureClientToken();
+      } catch (e) {
+        console.warn("Failed to get client token", e);
+        this.setStatus(STATUS_ERROR);
+        await sleep(DELAY_MS_BEFORE_RETRY_TOKEN_REFRESH);
+        continue;
+      }
+      for (let i = 0; i < RETRIES_BEFORE_TOKEN_REFRESH; i++) {
+        if (await this.attemptToConnect(clientToken)) {
+          break;
+        }
+        await sleep(DELAY_MS_BEFORE_RECONNECT);
+      }
+      this.clientToken = null;
+    }
+    this.isConnecting = false;
   }
   disconnect() {
-    this.shouldConnect = false;
-    this.disconnectBc();
-    if (this.ws !== null) {
-      this.ws.close();
+    if (this.websocket) {
+      this.websocket.close();
+    }
+    this.setStatus(STATUS_OFFLINE);
+  }
+  bindWebsocket(websocket) {
+    if (this.websocket) {
+      this.websocket.close();
+      this.websocket.onopen = null;
+      this.websocket.onmessage = null;
+      this.websocket.onclose = null;
+      this.websocket.onerror = null;
+    }
+    this.websocket = websocket;
+    this.websocket.binaryType = "arraybuffer";
+    this.websocket.onopen = this.websocketOpen.bind(this);
+    this.websocket.onmessage = this.receiveMessage.bind(this);
+    this.websocket.onclose = this.websocketClose.bind(this);
+    this.websocket.onerror = this.websocketError.bind(this);
+  }
+  generateUrl(clientToken) {
+    const url = clientToken.url + `/${clientToken.docId}`;
+    if (clientToken.token) {
+      return `${url}?token=${clientToken.token}`;
+    }
+    return url;
+  }
+  syncStep1() {
+    const encoder = createEncoder();
+    writeVarUint(encoder, MESSAGE_SYNC);
+    writeSyncStep1(encoder, this.doc);
+    this.send(toUint8Array(encoder));
+  }
+  receiveSyncMessage(decoder) {
+    const encoder = createEncoder();
+    writeVarUint(encoder, MESSAGE_SYNC);
+    const syncMessageType = readSyncMessage(decoder, encoder, this.doc, this);
+    if (syncMessageType === messageYjsSyncStep2) {
+      this.setStatus(STATUS_CONNECTED);
+    }
+    if (length(encoder) > 1) {
+      this.send(toUint8Array(encoder));
     }
   }
-  connect() {
-    this.shouldConnect = true;
-    if (!this.wsconnected && this.ws === null) {
-      setupWS(this);
-      this.connectBc();
+  queryAwareness() {
+    const encoder = createEncoder();
+    writeVarUint(encoder, MESSAGE_QUERY_AWARENESS);
+    writeVarUint8Array(
+      encoder,
+      encodeAwarenessUpdate(
+        this.awareness,
+        Array.from(this.awareness.getStates().keys())
+      )
+    );
+    this.send(toUint8Array(encoder));
+  }
+  broadcastAwareness() {
+    if (this.awareness.getLocalState() !== null) {
+      const encoderAwarenessState = createEncoder();
+      writeVarUint(encoderAwarenessState, MESSAGE_AWARENESS);
+      writeVarUint8Array(
+        encoderAwarenessState,
+        encodeAwarenessUpdate(this.awareness, [this.doc.clientID])
+      );
+      this.send(toUint8Array(encoderAwarenessState));
     }
+  }
+  updateAwareness(decoder) {
+    applyAwarenessUpdate(
+      this.awareness,
+      readVarUint8Array(decoder),
+      this
+    );
+  }
+  websocketOpen() {
+    this.setStatus(STATUS_HANDSHAKING);
+    this.syncStep1();
+    this.checkSync();
+    this.broadcastAwareness();
+  }
+  receiveMessage(event) {
+    let message = new Uint8Array(event.data);
+    const decoder = createDecoder(message);
+    const messageType = readVarUint(decoder);
+    switch (messageType) {
+      case MESSAGE_SYNC:
+        this.receiveSyncMessage(decoder);
+        break;
+      case MESSAGE_AWARENESS:
+        this.updateAwareness(decoder);
+        break;
+      case MESSAGE_QUERY_AWARENESS:
+        this.queryAwareness();
+        break;
+      case MESSAGE_SYNC_STATUS:
+        let lastSyncBytes = readVarUint8Array(decoder);
+        let d2 = createDecoder(lastSyncBytes);
+        this.lastSyncAcked = readVarUint(d2);
+        this.updateSyncedState();
+        break;
+    }
+  }
+  websocketClose(event) {
+    this.emit(EVENT_CONNECTION_CLOSE, event);
+    this.setStatus(STATUS_ERROR);
+    this.connect();
+    removeAwarenessStates(
+      this.awareness,
+      Array.from(this.awareness.getStates().keys()).filter(
+        (client) => client !== this.doc.clientID
+      ),
+      this
+    );
+  }
+  websocketError(event) {
+    this.emit(EVENT_CONNECTION_ERROR, event);
+    this.setStatus(STATUS_ERROR);
+    this.connect();
+  }
+  emit(eventName, data = null) {
+    const listeners2 = this.listeners.get(eventName) || /* @__PURE__ */ new Set();
+    for (const listener of listeners2) {
+      listener(data);
+    }
+  }
+  handleAwarenessUpdate({ added, updated, removed }, _origin) {
+    var _a;
+    const changedClients = added.concat(updated).concat(removed);
+    const encoder = createEncoder();
+    writeVarUint(encoder, MESSAGE_AWARENESS);
+    writeVarUint8Array(
+      encoder,
+      encodeAwarenessUpdate(this.awareness, changedClients)
+    );
+    (_a = this.websocket) == null ? void 0 : _a.send(toUint8Array(encoder));
+  }
+  destroy() {
+    if (this.websocket) {
+      this.websocket.close();
+    }
+    removeAwarenessStates(this.awareness, [this.doc.clientID], "window unload");
+  }
+  _on(type, listener, once3) {
+    var _a, _b;
+    if (!this.listeners.has(type)) {
+      this.listeners.set(type, /* @__PURE__ */ new Set());
+    }
+    if (once3) {
+      let listenerOnce = (d) => {
+        var _a2;
+        listener(d);
+        (_a2 = this.listeners.get(type)) == null ? void 0 : _a2.delete(listenerOnce);
+      };
+      (_a = this.listeners.get(type)) == null ? void 0 : _a.add(listenerOnce);
+    } else {
+      (_b = this.listeners.get(type)) == null ? void 0 : _b.add(listener);
+    }
+  }
+  on(type, listener) {
+    this._on(type, listener);
+  }
+  once(type, listener) {
+    this._on(type, listener, true);
+  }
+  off(type, listener) {
+    const listeners2 = this.listeners.get(type);
+    if (listeners2) {
+      listeners2.delete(listener);
+    }
+  }
+  /**
+   * Whether the provider should attempt to connect.
+   *
+   * @deprecated use provider.status !== 'offline' instead, or call `provider.connect()` / `provider.disconnect()` to set.
+   */
+  get shouldConnect() {
+    return this.status !== STATUS_OFFLINE;
+  }
+  /**
+   * Whether the underlying websocket is connected.
+   *
+   * @deprecated use provider.status === 'connected' || provider.status === 'handshaking' instead.
+   */
+  get wsconnected() {
+    return this.status === STATUS_CONNECTED || this.status === STATUS_HANDSHAKING;
+  }
+  /**
+   * Whether the underlying websocket is connecting.
+   *
+   * @deprecated use provider.status === 'connecting' instead.
+   */
+  get wsconnecting() {
+    return this.status === STATUS_CONNECTING;
+  }
+  /**
+   * Whether the document is synced. (For compatibility with y-websocket.)
+   *
+   * @deprecated use provider.status === 'connected' instead.
+   * */
+  get synced() {
+    return this.status === STATUS_CONNECTED;
   }
 };
-function createYjsProvider(doc, clientToken, extraOptions = {}) {
-  const params2 = clientToken.token ? { token: clientToken.token } : void 0;
-  const provider = new YSweetProvider(clientToken.url, clientToken.docId, doc, {
-    params: params2,
-    ...extraOptions
-  });
-  return provider;
+function createYjsProvider(doc, docId, authEndpoint, extraOptions = {}) {
+  return new YSweetProvider2(authEndpoint, docId, doc, extraOptions);
 }
+const COLLECTION_KEYS = ["notes", "flashcards", "profiles"];
+const collectionKeys = COLLECTION_KEYS.map((key) => key);
+function loginOptionsToQueryParams({ collections: collections2, ...rest }) {
+  const _collections = collections2.length === 0 ? "all" : collections2.length === 1 ? collections2[0] : collections2.join("|");
+  const params = {
+    collections: _collections,
+    ...rest
+  };
+  return params;
+}
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 function validate(room) {
   if (!room) {
     throw new Error("room is required");
@@ -2385,10 +1885,11 @@ function validate(room) {
   return { roomId, collectionKey };
 }
 function checkLoadedState(db) {
-  return (room, token) => {
+  return (room, ySweetUrl) => {
     const localLoaded = !!room && !!room.ydoc && !!room.indexedDbProvider;
-    const shouldLoadYSweet = db.useYSweet && token && (room == null ? void 0 : room.ySweetUrl);
-    const ySweetLoaded = token && (room == null ? void 0 : room.ySweetProvider) && room.token === token && room.tokenExpiry && !isTokenExpired(room.tokenExpiry);
+    const ySweet = room.ySweetProvider;
+    const shouldLoadYSweet = db.useYSweet && (room == null ? void 0 : room.ySweetUrl) && (ySweet == null ? void 0 : ySweet.status) !== "connecting" && (ySweet == null ? void 0 : ySweet.status) !== "handshaking";
+    const ySweetLoaded = ySweetUrl && ySweet && room.ySweetUrl === ySweetUrl && ySweet.status === "connected";
     return { localLoaded, ySweetLoaded, shouldLoadYSweet };
   };
 }
@@ -2406,7 +1907,7 @@ async function loadLocal(db, room) {
     room.indexedDbProvider
   );
 }
-async function loadYSweet(db, room, withAwareness = true) {
+async function loadYSweet(db, room, withAwareness = true, awaitConnection = false, maxWait = 1e4) {
   function emitConnectionChange(status) {
     if (status === "connected") {
       room.connectionRetries = 0;
@@ -2428,34 +1929,53 @@ async function loadYSweet(db, room, withAwareness = true) {
       checkTokenAndConnectProvider(withAwareness);
     }
   }
+  async function pollForYSweetConnectionAndAwait() {
+    let waited = 0;
+    return new Promise((resolve, reject) => {
+      const poll = setInterval(() => {
+        var _a;
+        if (((_a = room.ySweetProvider) == null ? void 0 : _a.status) === "connected") {
+          clearInterval(poll);
+          resolve();
+        } else {
+          waited += 1e3;
+          if (waited >= maxWait) {
+            clearInterval(poll);
+            reject(new Error("timed out waiting for ySweet connection"));
+          }
+        }
+      }, 1e3);
+    });
+  }
   async function checkTokenAndConnectProvider(withAwareness2 = true) {
     emitConnectionChange("connecting");
-    if (room.tokenExpiry && isTokenExpired(room.tokenExpiry)) {
-      const refreshed = await db.refreshYSweetToken(room);
-      db.debug(
-        "refreshed token. success: ",
-        (refreshed == null ? void 0 : refreshed.ySweetUrl) && refreshed.tokenExpiry
-      );
-      if ((refreshed == null ? void 0 : refreshed.ySweetUrl) && refreshed.tokenExpiry) {
-        room.tokenExpiry = refreshed.tokenExpiry;
-        room.ySweetUrl = refreshed.ySweetUrl;
-      }
-    }
-    const awareness = new Awareness(room.ydoc);
     room.ySweetProvider = createYjsProvider(
       room.ydoc,
-      {
-        url: room.ySweetUrl ?? "",
-        token: room.token ?? "",
-        docId: room.id
+      room.id,
+      async () => {
+        const refreshed = await db.refreshYSweetToken(room);
+        db.debug(
+          "refreshed token. success: ",
+          (refreshed == null ? void 0 : refreshed.ySweetUrl) && refreshed.tokenExpiry
+        );
+        if ((refreshed == null ? void 0 : refreshed.ySweetUrl) && refreshed.tokenExpiry && refreshed.ySweetBaseUrl) {
+          room.tokenExpiry = refreshed.tokenExpiry;
+          room.ySweetUrl = refreshed.ySweetUrl;
+          room.ySweetBaseUrl = refreshed.ySweetBaseUrl;
+          return {
+            url: refreshed.ySweetUrl,
+            baseUrl: refreshed.ySweetBaseUrl,
+            docId: room.id
+          };
+        } else {
+          throw new Error("No ySweetUrl found");
+        }
       },
-      withAwareness2 ? { awareness } : {}
+      withAwareness2 ? { awareness: new Awareness(room.ydoc) } : {}
     );
-    room.ydoc = room.ySweetProvider.doc;
     room.ySweetProvider.on("status", handleStatusChange);
     room.ySweetProvider.on("sync", handleSync);
     room.ySweetProvider.on("connection-error", handleConnectionError);
-    room.ySweetProvider.connect();
   }
   await checkTokenAndConnectProvider();
   db.debug("created ySweetProvider", room.ySweetProvider);
@@ -2468,15 +1988,26 @@ async function loadYSweet(db, room, withAwareness = true) {
     (_e = room.webRtcProvider) == null ? void 0 : _e.disconnect();
     emitConnectionChange("disconnected");
   };
+  if (awaitConnection) {
+    try {
+      await pollForYSweetConnectionAndAwait();
+    } catch (e) {
+      db.error(e);
+    }
+  }
+  db.emit("roomRemoteLoaded", room);
 }
-const loadRoom = (db) => async (serverRoom) => {
+const loadRoom = (db) => async (serverRoom, remoteLoadOptions) => {
+  const loadRemote = (remoteLoadOptions == null ? void 0 : remoteLoadOptions.loadRemote) ?? true;
+  const awaitLoadRemote = (remoteLoadOptions == null ? void 0 : remoteLoadOptions.awaitLoadRemote) ?? true;
+  const loadRemoteMaxWait = (remoteLoadOptions == null ? void 0 : remoteLoadOptions.loadRemoteMaxWait) ?? 1e4;
+  const withAwareness = (remoteLoadOptions == null ? void 0 : remoteLoadOptions.withAwareness) ?? false;
   const { roomId, collectionKey } = validate(serverRoom);
   const room = db.collections[collectionKey][roomId] ?? new Room({ db, ...serverRoom });
   db.info("loading room", { room, serverRoom });
-  const { localLoaded, ySweetLoaded, shouldLoadYSweet } = checkLoadedState(db)(
-    room,
-    serverRoom.token
-  );
+  const { localLoaded, ySweetLoaded, shouldLoadYSweet } = checkLoadedState(
+    db
+  )(room, serverRoom.ySweetUrl);
   db.debug("loadedState", {
     localLoaded,
     ySweetLoaded,
@@ -2489,12 +2020,366 @@ const loadRoom = (db) => async (serverRoom) => {
   if (!localLoaded) {
     await loadLocal(db, room);
   }
-  if (shouldLoadYSweet && !ySweetLoaded) {
-    await loadYSweet(db, room);
+  if (loadRemote && shouldLoadYSweet && !ySweetLoaded) {
+    if (awaitLoadRemote) {
+      await loadYSweet(db, room, withAwareness, true, loadRemoteMaxWait);
+    } else {
+      loadYSweet(db, room, withAwareness, false);
+    }
   }
   db.collections[collectionKey][roomId] = room;
   db.emit("roomLoaded", room);
   return room;
+};
+class Room extends TypedEventEmitter {
+  constructor(options) {
+    super();
+    __publicField(this, "db");
+    __publicField(this, "name");
+    __publicField(this, "collectionKey");
+    __publicField(this, "id");
+    __publicField(this, "tokenExpiry");
+    __publicField(this, "ySweetUrl");
+    __publicField(this, "ySweetBaseUrl");
+    __publicField(this, "publicAccess");
+    __publicField(this, "readAccess");
+    __publicField(this, "writeAccess");
+    __publicField(this, "adminAccess");
+    __publicField(this, "createdAt");
+    __publicField(this, "updatedAt");
+    __publicField(this, "_deleted");
+    __publicField(this, "_ttl");
+    __publicField(this, "indexedDbProvider");
+    __publicField(this, "webRtcProvider");
+    __publicField(this, "ySweetProvider");
+    __publicField(this, "ydoc");
+    __publicField(this, "connectionRetries", 0);
+    __publicField(this, "disconnect", () => {
+      var _a, _b;
+      (_a = this.ySweetProvider) == null ? void 0 : _a.disconnect();
+      (_b = this.webRtcProvider) == null ? void 0 : _b.disconnect();
+      this.emit("roomConnectionChange", "disconnected", this);
+    });
+    __publicField(this, "getDocuments");
+    __publicField(this, "load");
+    /** disconnect and reconnect the existing ySweetProvider, this time with awareness on */
+    __publicField(this, "addAwareness", async () => {
+      var _a, _b, _c;
+      if ((_a = this.ySweetProvider) == null ? void 0 : _a.awareness) {
+        return;
+      }
+      (_b = this.ySweetProvider) == null ? void 0 : _b.disconnect();
+      (_c = this.ySweetProvider) == null ? void 0 : _c.destroy();
+      this.ySweetProvider = null;
+      await loadYSweet(this.db, this, true, true);
+    });
+    this.db = options.db;
+    this.name = options.name;
+    this.collectionKey = options.collectionKey;
+    this.id = options.id || crypto.randomUUID();
+    this.tokenExpiry = options.tokenExpiry ?? null;
+    this.ySweetUrl = options.ySweetUrl ?? null;
+    this.ySweetBaseUrl = options.ySweetBaseUrl ?? null;
+    this.publicAccess = options.publicAccess ?? "private";
+    this.readAccess = options.readAccess ?? [];
+    this.writeAccess = options.writeAccess ?? [];
+    this.adminAccess = options.adminAccess ?? [];
+    this.createdAt = options.createdAt ?? (/* @__PURE__ */ new Date()).toISOString();
+    this.updatedAt = options.updatedAt ?? (/* @__PURE__ */ new Date()).toISOString();
+    this._deleted = options._deleted ?? false;
+    this._ttl = options._ttl ?? null;
+    if (options.indexedDbProvider) {
+      this.indexedDbProvider = options.indexedDbProvider;
+    }
+    if (options.webRtcProvider) {
+      this.webRtcProvider = options.webRtcProvider;
+    }
+    if (options.ySweetProvider) {
+      this.ySweetProvider = options.ySweetProvider;
+    }
+    if (options.ydoc) {
+      this.ydoc = options.ydoc;
+    }
+    this.getDocuments = () => getDocuments(this.db)(this);
+    this.load = () => this.db.loadRoom(this);
+  }
+}
+function roomToServerRoom(room) {
+  return {
+    id: room.id,
+    name: room.name,
+    collectionKey: room.collectionKey,
+    tokenExpiry: room.tokenExpiry,
+    ySweetUrl: room.ySweetUrl,
+    ySweetBaseUrl: room.ySweetBaseUrl,
+    publicAccess: room.publicAccess,
+    readAccess: room.readAccess,
+    writeAccess: room.writeAccess,
+    adminAccess: room.adminAccess,
+    createdAt: room.createdAt,
+    updatedAt: room.updatedAt,
+    _deleted: room._deleted,
+    _ttl: room._ttl
+  };
+}
+const collections = {
+  notes: {},
+  flashcards: {},
+  profiles: {}
+};
+const serverFetch = (_db) => async (path, _options) => {
+  const options = {
+    ..._options
+  };
+  try {
+    const token = _db.getToken();
+    if (token) {
+      options.headers = {
+        ...options.headers,
+        Authorization: `Bearer ${token}`
+      };
+    }
+    if (options.method === "POST" && options.body) {
+      options.body = JSON.stringify(options.body);
+      options.headers = {
+        ...options.headers,
+        "Content-Type": "application/json"
+      };
+      options.referrer = "no-referrer";
+    }
+    const resultRaw = await fetch(`${_db.authServer}${path}`, options);
+    const data = await resultRaw.json();
+    if (!data || typeof data !== "object") {
+      throw new Error("No data returned");
+    }
+    if ("error" in data) {
+      return { error: data.error, data: null };
+    }
+    return { error: null, data };
+  } catch (error) {
+    _db.error("serverFetch error", path, options, error);
+    return { error, data: null };
+  }
+};
+const localStorageSet = (db) => (key, value) => {
+  db.debug("#### localStorageSet", key, value);
+  db.localStoragePolyfill.setItem("ewe_" + key, JSON.stringify(value));
+};
+const localStorageGet = (db) => (key) => {
+  const value = db.localStoragePolyfill.getItem("ewe_" + key);
+  db.debug("localStorageGet", key, value);
+  if (!value)
+    return null;
+  return JSON.parse(value);
+};
+const localStorageRemove = (db) => (key) => {
+  db.localStoragePolyfill.removeItem("ewe_" + key);
+};
+const getLocalRegistry = (db) => () => {
+  const registry = db.localStorageService.getItem(
+    "room_registry"
+    /* roomRegistry */
+  );
+  if (typeof registry === "object" && Array.isArray(registry)) {
+    return registry;
+  }
+  return [];
+};
+const setLocalRegistry = (db) => (registry) => {
+  db.localStorageService.setItem("room_registry", registry);
+};
+const clearLocalRegistry = (db) => () => {
+  db.localStorageService.removeItem(
+    "room_registry"
+    /* roomRegistry */
+  );
+};
+const getLocalAccessGrantToken = (db) => () => {
+  return db.localStorageService.getItem(
+    "access_grant_token"
+    /* accessGrantToken */
+  );
+};
+const setLocalAccessGrantToken = (db) => (token) => {
+  db.localStorageService.setItem("access_grant_token", token);
+};
+const clearLocalAccessGrantToken = (db) => () => {
+  db.localStorageService.removeItem(
+    "access_grant_token"
+    /* accessGrantToken */
+  );
+};
+const logout = (db) => (
+  /**
+   * clears the login token from storage and disconnects all ySweet providers. Still leaves the local indexedDB yDocs.
+   */
+  () => {
+    clearLocalAccessGrantToken(db)();
+    db.accessGrantToken = "";
+    db.useYSweet = false;
+    db.online = false;
+    for (const room of db.registry) {
+      const dbRoom = db.getRoom(room.collectionKey, room.id);
+      dbRoom.disconnect();
+    }
+    db.emit("onLoggedInChange", false);
+  }
+);
+const logoutAndClear = (db) => (
+  /**
+   * Logs out and also clears all local data from indexedDB and localStorage.
+   */
+  () => {
+    var _a, _b;
+    db.logout();
+    for (const collectionKey of db.collectionKeys) {
+      for (const room of db.getRooms(collectionKey)) {
+        (_a = room.indexedDbProvider) == null ? void 0 : _a.clearData();
+        (_b = room.indexedDbProvider) == null ? void 0 : _b.destroy();
+      }
+    }
+    db.registry = [];
+    clearLocalRegistry(db)();
+  }
+);
+const checkServerConnection = async (db) => {
+  const success = await db.pingServer();
+  if (success) {
+    if (db.online) {
+      return;
+    }
+    db.debug("Server is online");
+    db.online = true;
+    db.emit("onlineChange", true);
+  } else {
+    if (!db.online) {
+      return;
+    }
+    db.error("Server is offline");
+    db.online = false;
+    db.emit("onlineChange", false);
+  }
+};
+const pollConnection = (db, offlineInterval = 2e3, onlineInterval = 1e4) => {
+  if (db.isPolling) {
+    db.info("Already polling connection");
+    return;
+  }
+  db.isPolling = true;
+  setInterval(() => {
+    if (!db.online) {
+      checkServerConnection(db);
+    }
+  }, offlineInterval);
+  setInterval(() => {
+    if (db.online) {
+      checkServerConnection(db);
+    }
+  }, onlineInterval);
+};
+const login = (db) => (
+  /**
+   * @param loadAllRooms default false. Will load all rooms from the registry and connect to them. Disable this is you have too many rooms and want to load them later individually.
+   * @returns true if successful
+   */
+  async (options) => {
+    db.emit("roomConnectionChange", "connecting", {});
+    const token = db.getToken();
+    if (!token) {
+      throw new Error("No token found");
+    }
+    const syncResult = await db.syncRegistry();
+    if (!syncResult) {
+      throw new Error("Failed to sync registry");
+    }
+    db.useYSweet = true;
+    pollConnection(db);
+    if (options == null ? void 0 : options.loadAllRooms) {
+      await db.loadRooms(db.registry);
+    }
+    db.emit("onLoggedInChange", true);
+    return true;
+  }
+);
+const log = (db) => (level, ...message) => {
+  if (level >= db.logLevel) {
+    db.emit("log", level, ...message);
+  }
+};
+const generateLoginUrl = (db) => (
+  /**
+   *
+   * @param redirect default uses window.location
+   * @param appDomain default uses window.location.hostname
+   * @param collections default 'all', which collections your app would like to have write access to
+   * @returns a string you can use to redirect the user to the auth server's login page
+   */
+  (options) => {
+    const url = new URL(db.authServer);
+    const params = loginOptionsToQueryParams({
+      redirect: (options == null ? void 0 : options.redirect) || window.location.href.split("?")[0],
+      domain: (options == null ? void 0 : options.domain) || window.location.host,
+      collections: (options == null ? void 0 : options.collections) ?? ["all"],
+      name: options.name
+    });
+    Object.entries(params).forEach(([key, value]) => {
+      url.searchParams.append(key, value);
+    });
+    return url.toString();
+  }
+);
+const getAccessGrantTokenFromUrl = (db) => (
+  /**
+   * Pulls the access grant token from the url query params, clears the url query params, and saves the token to local storage
+   */
+  () => {
+    var _a, _b;
+    const query = new URLSearchParams(((_a = window == null ? void 0 : window.location) == null ? void 0 : _a.search) ?? "");
+    const token = query.get("token");
+    if (token && typeof token === "string") {
+      setLocalAccessGrantToken(db)(token);
+    }
+    if ((_b = window == null ? void 0 : window.location) == null ? void 0 : _b.search) {
+      const url = new URL(window.location.href);
+      for (const key of url.searchParams.keys()) {
+        url.searchParams.delete(key);
+      }
+      window.history.replaceState({}, "", url.toString());
+    }
+    return token;
+  }
+);
+const getToken = (db) => (
+  /**
+   * Looks for the access grant token first in the DB class, then in local storage, then in the url query params
+   */
+  () => {
+    const urlToken = db.getAccessGrantTokenFromUrl();
+    if (urlToken) {
+      db.accessGrantToken = urlToken;
+      return urlToken;
+    }
+    if (db.accessGrantToken) {
+      return db.accessGrantToken;
+    }
+    const savedToken = getLocalAccessGrantToken(db)();
+    if (savedToken) {
+      db.accessGrantToken = savedToken;
+      return savedToken;
+    }
+    return null;
+  }
+);
+const getRegistry = (db) => () => {
+  if (db.registry.length > 0) {
+    return db.registry;
+  } else {
+    const localRegistry = getLocalRegistry(db)();
+    if (localRegistry) {
+      db.registry = localRegistry;
+    }
+    return db.registry;
+  }
 };
 const refreshYSweetToken = (db) => async (room) => {
   const { data: refreshed } = await db.serverFetch(
@@ -2517,7 +2402,11 @@ const syncRegistry = (db) => (
       { method: "POST", body }
     );
     db.info("syncResult", syncResult);
-    const { rooms, token } = syncResult ?? {};
+    const { rooms, token, userId } = syncResult ?? {};
+    if (userId && typeof userId === "string") {
+      db.debug("setting new userId", userId);
+      db.userId = userId;
+    }
     if (token && typeof token === "string") {
       db.debug("setting new token", token);
       setLocalAccessGrantToken(db)(token);
@@ -2535,15 +2424,23 @@ const syncRegistry = (db) => (
     return true;
   }
 );
-const loadRooms = (db) => async (rooms) => {
+const loadRooms = (db) => async (rooms, staggerMs = 1e3) => {
   const loadedRooms = [];
   db.debug("loading rooms", rooms);
   for (const room of rooms) {
-    const loadedRoom = await db.loadRoom(room);
+    const loadedRoom = await db.loadRoom(room, { loadRemote: false });
     loadedRooms.push(loadedRoom);
   }
   db.debug("loaded rooms", loadedRooms);
   db.emit("roomsLoaded", loadedRooms);
+  const remoteLoadedRooms = [];
+  for (const room of rooms) {
+    await new Promise((resolve) => setTimeout(resolve, staggerMs));
+    const remoteLoadedRoom = await db.loadRoom(room, { loadRemote: true });
+    remoteLoadedRooms.push(remoteLoadedRoom);
+  }
+  db.debug("loaded remotes for rooms", remoteLoadedRooms);
+  db.emit("roomsRemotesLoaded", remoteLoadedRooms);
 };
 const generateShareRoomLink = (db) => async ({
   roomId,
@@ -2597,6 +2494,25 @@ const pingServer = (db) => async () => {
     return (data == null ? void 0 : data.reply) && data.reply === "pong";
   }
 };
+const newRoom = (db) => (
+  /**
+   * new rooms must be added to the registry and then synced with the auth server
+   * Note: If your app does not have access privileges to the collection, the room won't be synced server-side.
+   */
+  (options) => {
+    const room = new Room({ db, ...options });
+    db.debug("new room", room);
+    db.collections[options.collectionKey][room.id] = room;
+    const registryRoom = roomToServerRoom(room);
+    db.registry.push(registryRoom);
+    setLocalRegistry(db)(db.registry);
+    db.loadRoom(room);
+    if (db.online) {
+      db.syncRegistry();
+    }
+    return room;
+  }
+);
 const defaultRtcPeers = [
   "wss://signaling.yjs.debv",
   "wss://y-webrtc-signaling-eu.herokuapp.com",
@@ -2639,6 +2555,9 @@ class Database extends TypedEventEmitter {
     __publicField(this, "getAccessGrantTokenFromUrl", getAccessGrantTokenFromUrl(this));
     __publicField(this, "getToken", getToken(this));
     __publicField(this, "refreshYSweetToken", refreshYSweetToken(this));
+    /** first loads the local indexedDB ydoc for the room. if this.useYSweet is true and ySweetTokens are available will also connect to remote.
+     * @param {RemoteLoadOptions} RemoteLoadOptions - options for loading the remote ydoc
+     */
     __publicField(this, "loadRoom", loadRoom(this));
     __publicField(this, "loadRooms", loadRooms(this));
     __publicField(this, "syncRegistry", syncRegistry(this));
@@ -2655,21 +2574,7 @@ class Database extends TypedEventEmitter {
     __publicField(this, "getRoom", (collectionKey, roomId) => {
       return this.collections[collectionKey][roomId];
     });
-    /**
-     * new rooms must be added to the registry and then synced with the auth server
-     * Note: If your app does not have access privileges to the collection, the room won't be synced server-side.
-     */
-    __publicField(this, "newRoom", (options) => {
-      const room = new Room(options);
-      this.collections[room.collectionKey][room.id] = room;
-      const serverRoom = roomToServerRoom(room);
-      this.registry.push(serverRoom);
-      setLocalRegistry(this)(this.registry);
-      if (this.online) {
-        this.syncRegistry();
-      }
-      return room;
-    });
+    __publicField(this, "newRoom", newRoom(this));
     __publicField(this, "renameRoom", async (room, newName) => {
       const body = {
         newName
@@ -2731,10 +2636,11 @@ class Database extends TypedEventEmitter {
     if (options.initialRooms) {
       const registryRoomIds = this.registry.map((r) => r.id);
       for (const room of options.initialRooms) {
-        if (registryRoomIds.includes(room.id)) {
+        if (room.id && registryRoomIds.includes(room.id)) {
           continue;
         }
-        this.registry.push(room);
+        const registryRoom = roomToServerRoom(this.newRoom(room));
+        this.registry.push(registryRoom);
       }
     }
     this.loadRooms(this.registry);

@@ -3,6 +3,7 @@ import {
   clearLocalAccessGrantToken,
   clearLocalRegistry,
 } from '../../utils/localStorageService';
+
 export const logout =
   (db: Database) =>
   /**

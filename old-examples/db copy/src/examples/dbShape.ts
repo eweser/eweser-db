@@ -204,7 +204,7 @@ export const jwt = {
  * generate on signup (give db access to an app). used to create the access token jwt
  * can only update from the auth server website.
  * basically what is inside the jwt... except for the room_ids array which might be a bit too large for a jwt.
- * after an app is permissioned by the user, they use the jwt to quickly access this access_grant from the db, and make a join call for all the room.tokens, room.names, and room.collection_keys for any room_ids in the access_grant.
+ * after an app is permissioned by the user, they use the jwt to quickly access this access_grant from the db, and make a join call for all the room.ySweetUrls, room.names, and room.collection_keys for any room_ids in the access_grant.
  * The access grant has some duplicate data from the room table, but it is necessary to have it in one place for quick access.
  * make helper functions that update the access_grant and room tables at the same time.
  */

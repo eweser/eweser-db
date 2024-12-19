@@ -9,9 +9,9 @@ export type ServerRoom = {
   id: string;
   name: string;
   collectionKey: CollectionKey;
-  token: string | null;
   tokenExpiry: string | null;
   ySweetUrl: string | null;
+  ySweetBaseUrl: string | null;
   publicAccess: PublicAccessType;
   readAccess: string[];
   writeAccess: string[];

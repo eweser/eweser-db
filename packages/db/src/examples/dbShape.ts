@@ -156,9 +156,9 @@ const _room = new Room({
   id: 'uuid',
   name: 'room_name',
   collectionKey: 'flashcards', // CollectionKey
-  token: 'uuid', // y-sweet access token to sync the document
   tokenExpiry: '12-12-12',
-  ySweetUrl: 'https://url-from-ysweet',
+  ySweetUrl: 'https://url-from-ysweet', // acts as a token
+  ySweetBaseUrl: 'https://base-url-from-ysweet', // acts as a token
   publicAccess: 'private', //"private" | "read" | "write" // if read or write will invite all aggregators.
   readAccess: ['userId', 'AUTH_SERVER_DOMAIN'], // auth server if just for personal use, more (aggregators) if public
   writeAccess: ['userId', 'AUTH_SERVER_DOMAIN'], // auth server if just for personal use, more (other users) if shared writable

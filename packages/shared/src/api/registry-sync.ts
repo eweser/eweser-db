@@ -7,4 +7,5 @@ export type RegistrySyncRequestBody = {
 export type RegistrySyncResponse = {
   rooms: ServerRoom[];
   token: string;
+  userId: string;
 };
