@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest, NextResponse } from 'next/server';
 import {
   SUPABASE_CONNECTION_URL,
   SUPABASE_SERVICE_ROLE_KEY,
