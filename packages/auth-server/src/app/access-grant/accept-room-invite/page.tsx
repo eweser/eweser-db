@@ -16,13 +16,12 @@ import { AcceptingInviteLoading } from '../../../frontend/components/access-gran
 export default async function AcceptRoomInvitePage({
   searchParams,
 }: {
-  searchParams: Promise<AcceptRoomInviteQueries>;
+  searchParams: AcceptRoomInviteQueries;
 }) {
   let error = '';
   let options: CreateRoomInviteBody | undefined;
   let acceptRoomInviteParams: AcceptRoomInviteParams | undefined;
-
-  const token = (await searchParams)?.token;
+  const token = searchParams?.token;
   if (!token) {
     error = 'No token provided';
   } else {
