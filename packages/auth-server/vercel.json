@@ -1,6 +1,5 @@
 {
   "build": {
-    "trailingSlash": false,
     "env": {
       "NPM_ONLY_PRODUCTION": "false"
     }
