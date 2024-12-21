@@ -7,7 +7,6 @@ let lastFetched = Date.now();
 
 export async function middleware(req: NextRequest) {
   const supabaseResponse = NextResponse.next();
-
   // Create Supabase server client
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,6 +22,7 @@ export async function middleware(req: NextRequest) {
       },
     }
   );
+  console.log('supabase created', supabase);
 
   // Refetch approved domains every 5 minutes
   if (approvedDomains.length === 0 || Date.now() - lastFetched > 300000) {
@@ -47,10 +47,10 @@ export async function middleware(req: NextRequest) {
       }
     }
   }
-
   const origin = req.headers.get('origin');
   const domain = origin?.split('://')[1];
   const isOriginApproved = domain && approvedDomains.includes(domain);
+  console.log('isOriginApproved', isOriginApproved, domain, approvedDomains);
 
   if (isOriginApproved) {
     supabaseResponse.headers.set('Access-Control-Allow-Origin', origin!);
