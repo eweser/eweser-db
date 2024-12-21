@@ -24,7 +24,7 @@ import { generateLoginUrl } from './methods/connection/generateLoginUrl';
 import { getAccessGrantTokenFromUrl } from './methods/connection/getAccessGrantTokenFromUrl';
 import { getToken } from './methods/connection/getToken';
 import { getRegistry } from './methods/getRegistry';
-import { loadRoom, RemoteLoadOptions } from './methods/connection/loadRoom';
+import { loadRoom } from './methods/connection/loadRoom';
 import { refreshYSweetToken } from './methods/connection/refreshYSweetToken';
 import { syncRegistry } from './methods/connection/syncRegistry';
 import { loadRooms } from './methods/connection/loadRooms';

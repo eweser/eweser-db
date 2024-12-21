@@ -67,7 +67,9 @@ This flipping of the ownership dynamic enables some important features:
 
 # Get Started
 
-`npm install @eweser/db`
+```bash
+npm install @eweser/db yjs
+```
 
 This is a simplified example. For a more use cases and working demos see the example apps like `packages/example-basic/src/App.tsx`
 
