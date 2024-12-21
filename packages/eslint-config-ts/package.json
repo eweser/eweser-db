@@ -20,10 +20,10 @@
     "url": "https://github.com/eweser/eweser-db/issues"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^5.57.1",
-    "eslint": "^8.37.0",
-    "eslint-config-prettier": "^8.8.0",
-    "eslint-plugin-prettier": "^4.2.1",
-    "prettier": "^2.8.7"
+    "@typescript-eslint/eslint-plugin": "^8.18.1",
+    "eslint": "^9.17.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "prettier": "^3.4.2"
   }
 }
