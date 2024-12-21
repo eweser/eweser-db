@@ -28,8 +28,9 @@ function checkLoadedState(db: Database) {
     const localLoaded = !!room && !!room.ydoc && !!room.indexedDbProvider;
     const ySweet = room.ySweetProvider;
     const shouldLoadYSweet =
+      !!db.getToken() &&
       db.useYSweet &&
-      room?.ySweetUrl &&
+      !!room?.ySweetUrl &&
       ySweet?.status !== 'connecting' &&
       ySweet?.status !== 'handshaking';
     const ySweetLoaded =
