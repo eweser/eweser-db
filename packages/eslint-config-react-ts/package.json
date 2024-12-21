@@ -1,6 +1,6 @@
 {
   "name": "@eweser/eslint-config-react-ts",
-  "version": "1.13.0",
+  "version": "1.13.1",
   "description": "> TODO: description",
   "author": "jacobcoro",
   "homepage": "https://github.com/eweser/eweser-db#readme",
@@ -17,7 +17,7 @@
     "url": "git+https://github.com/eweser/eweser-db.git"
   },
   "dependencies": {
-    "@eweser/eslint-config-ts": "^1.13.0",
+    "@eweser/eslint-config-ts": "^1.13.1",
     "@typescript-eslint/eslint-plugin": "^5.57.1",
     "@typescript-eslint/parser": "^5.57.1",
     "eslint": "^8.38.0",
