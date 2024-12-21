@@ -11,7 +11,7 @@ export async function middleware(req: NextRequest) {
   if (/\/access-grant\/(.*)/.exec(path)) {
     return response;
   }
-
+  console.log('middleware', path);
   // Create Supabase server client
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
