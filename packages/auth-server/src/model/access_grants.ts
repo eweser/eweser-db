@@ -99,10 +99,7 @@ export async function insertAccessGrants(
   inserts: AccessGrantInsert[],
   dbInstance?: DBInstance
 ) {
-  return await db(dbInstance)
-    .insert(accessGrants)
-    .values(inserts as any)
-    .returning();
+  return await db(dbInstance).insert(accessGrants).values(inserts).returning();
 }
 
 export async function updateAccessGrant(
@@ -111,7 +108,7 @@ export async function updateAccessGrant(
 ) {
   const updated = await db(dbInstance)
     .update(accessGrants)
-    .set(update as any)
+    .set(update)
     .where(eq(accessGrants.id, id))
     .returning();
   if (updated.length !== 1) {
