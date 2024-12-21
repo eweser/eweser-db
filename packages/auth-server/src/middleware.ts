@@ -9,7 +9,8 @@ export async function middleware(req: NextRequest) {
   const response = NextResponse.next();
   const path = req.nextUrl.pathname;
   if (/\/access-grant\/(.*)/.exec(path)) {
-    return response;
+    console.log('access-grant path', path);
+    // return response;
   }
   console.log('middleware', path);
   // Create Supabase server client
