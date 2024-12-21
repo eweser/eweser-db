@@ -1,6 +1,6 @@
 {
   "name": "auth-server",
-  "version": "1.13.0",
+  "version": "1.13.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -10,9 +10,9 @@
     "clean": "rm -rf .next"
   },
   "dependencies": {
-    "@eweser/db": "^1.13.0",
-    "@eweser/eslint-config-react-ts": "^1.13.0",
-    "@eweser/shared": "^1.13.0",
+    "@eweser/db": "^1.13.1",
+    "@eweser/eslint-config-react-ts": "^1.13.1",
+    "@eweser/shared": "^1.13.1",
     "@radix-ui/react-accordion": "^1.2.2",
     "@radix-ui/react-checkbox": "^1.1.3",
     "@radix-ui/react-icons": "^1.3.2",
