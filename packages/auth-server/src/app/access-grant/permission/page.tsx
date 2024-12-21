@@ -25,7 +25,7 @@ export const metadata: Metadata = {
 export default async function GrantPermissionsPage({
   searchParams,
 }: {
-  searchParams: LoginQueryParams;
+  searchParams: Promise<LoginQueryParams>;
 }) {
   const user = await protectPage();
   const { authServerAccessGrant } = await createNewUserRoomsAndAuthServerAccess(
@@ -33,7 +33,7 @@ export default async function GrantPermissionsPage({
   );
   /** will be all rooms. Use this to list out all the options */
   const rooms = await getRoomsFromAccessGrant(authServerAccessGrant);
-  const validParams = validateLoginQueryOptions(searchParams);
+  const validParams = validateLoginQueryOptions(await searchParams);
   const { domain, name, collections, redirect } = validParams ?? {};
   let redirectUrl: URL | null = null;
   if (domain && redirect) {
