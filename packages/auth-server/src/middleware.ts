@@ -2,10 +2,8 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { logger } from './shared/utils';
 
-let approvedDomains: string[] = [];
-let lastFetched = Date.now();
-
 export async function middleware(req: NextRequest) {
+  let approvedDomains: string[] = [];
   const response = NextResponse.next();
   const path = req.nextUrl.pathname;
   if (/\/access-grant\/(.*)/.exec(path)) {
@@ -31,8 +29,7 @@ export async function middleware(req: NextRequest) {
   );
   console.log('supabase created', supabase);
 
-  // Refetch approved domains every 5 minutes
-  if (approvedDomains.length === 0 || Date.now() - lastFetched > 300000) {
+  if (approvedDomains.length === 0) {
     if (process.env.NODE_ENV === 'development') {
       approvedDomains = [
         'localhost:8000',
@@ -40,15 +37,14 @@ export async function middleware(req: NextRequest) {
         '172.31.42.92:5173',
         'localhost:5173',
       ];
-      lastFetched = Date.now();
     } else {
       const { data: domains, error } = await supabase
         .from('apps')
         .select('domain');
+      logger('domains', domains, error);
 
       if (domains && !error) {
         approvedDomains = domains.map((app: { domain: string }) => app.domain);
-        lastFetched = Date.now();
       } else {
         logger(error);
       }
