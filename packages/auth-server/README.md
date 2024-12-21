@@ -66,3 +66,11 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 Check out the [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
 
 Copy the contents of your env into vercel.
+
+## Connect Oauth providers
+
+Currently we are using Github and Google as our Oauth providers.
+You will need to create a new Oauth app on both of these platforms and set the callback urls to your domain.
+
+In supabase, enable them here ![provider](./docs/images/enable-provider.png) https://supabase.com/dashboard/project/-your-project-id/auth/providers
+And set the redirect url here ![Site url](./docs/images/site-url.png)
