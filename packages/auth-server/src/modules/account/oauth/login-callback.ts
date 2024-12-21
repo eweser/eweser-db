@@ -1,4 +1,3 @@
-import type { CookieOptions } from '@supabase/ssr';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { SUPABASE_SERVICE_ROLE_KEY } from '../../../services/database/supabase/backend-config';
@@ -15,14 +14,11 @@ export async function oAuthLoginCallback({ code }: { code?: string | null }) {
     SUPABASE_SERVICE_ROLE_KEY,
     {
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          cookieStore.set({ name, value, ...options });
-        },
-        remove(name: string, options: CookieOptions) {
-          cookieStore.delete({ name, ...options });
+        getAll: () => cookieStore.getAll(),
+        setAll: (cookiesToSet) => {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set({ name, value, ...options })
+          );
         },
       },
     }
