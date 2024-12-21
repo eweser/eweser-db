@@ -6,7 +6,12 @@ let approvedDomains: string[] = [];
 let lastFetched = Date.now();
 
 export async function middleware(req: NextRequest) {
-  const supabaseResponse = NextResponse.next();
+  const response = NextResponse.next();
+  const path = req.nextUrl.pathname;
+  if (/\/access-grant\/(.*)/.exec(path)) {
+    return response;
+  }
+
   // Create Supabase server client
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -15,8 +20,9 @@ export async function middleware(req: NextRequest) {
       cookies: {
         getAll: () => req.cookies.getAll(),
         setAll: (cookiesToSet) => {
+          console.log('setting cookies', cookiesToSet);
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+            response.cookies.set(name, value, options)
           );
         },
       },
@@ -53,19 +59,19 @@ export async function middleware(req: NextRequest) {
   console.log('isOriginApproved', isOriginApproved, domain, approvedDomains);
 
   if (isOriginApproved) {
-    supabaseResponse.headers.set('Access-Control-Allow-Origin', origin!);
-    supabaseResponse.headers.set(
+    response.headers.set('Access-Control-Allow-Origin', origin!);
+    response.headers.set(
       'Access-Control-Allow-Methods',
       'GET,DELETE,PATCH,POST,PUT,OPTIONS'
     );
-    supabaseResponse.headers.set(
+    response.headers.set(
       'Access-Control-Allow-Headers',
       'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, Dnt, Referer, User-Agent'
     );
   }
 
   // Return the response to keep session consistency
-  return supabaseResponse;
+  return response;
 }
 
 export const config = {
