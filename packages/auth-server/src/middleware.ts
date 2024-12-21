@@ -2,10 +2,25 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { logger } from './shared/utils';
 
-export async function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest, res: NextResponse) {
   let approvedDomains: string[] = [];
   const response = NextResponse.next();
   const path = req.nextUrl.pathname;
+  if (req.method === 'OPTIONS') {
+    response.headers.set(
+      'Access-Control-Allow-Origin',
+      req.headers.get('origin') || '*'
+    );
+    response.headers.set(
+      'Access-Control-Allow-Methods',
+      'GET,DELETE,PATCH,POST,PUT,OPTIONS'
+    );
+    response.headers.set(
+      'Access-Control-Allow-Headers',
+      'authorization,content-type'
+    );
+    return response;
+  }
 
   console.log('middleware', path);
   // Create Supabase server client
