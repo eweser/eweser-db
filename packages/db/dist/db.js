@@ -1888,7 +1888,7 @@ function checkLoadedState(db) {
   return (room, ySweetUrl) => {
     const localLoaded = !!room && !!room.ydoc && !!room.indexedDbProvider;
     const ySweet = room.ySweetProvider;
-    const shouldLoadYSweet = db.useYSweet && (room == null ? void 0 : room.ySweetUrl) && (ySweet == null ? void 0 : ySweet.status) !== "connecting" && (ySweet == null ? void 0 : ySweet.status) !== "handshaking";
+    const shouldLoadYSweet = !!db.getToken() && db.useYSweet && !!(room == null ? void 0 : room.ySweetUrl) && (ySweet == null ? void 0 : ySweet.status) !== "connecting" && (ySweet == null ? void 0 : ySweet.status) !== "handshaking";
     const ySweetLoaded = ySweetUrl && ySweet && room.ySweetUrl === ySweetUrl && ySweet.status === "connected";
     return { localLoaded, ySweetLoaded, shouldLoadYSweet };
   };

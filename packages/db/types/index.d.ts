@@ -2,7 +2,6 @@ import type { CollectionKey, Collections, CollectionToDocument, EweDocument, ind
 import type { NewRoomOptions, Room } from './room';
 import { TypedEventEmitter } from './events';
 import type { DatabaseEvents } from './events';
-import { RemoteLoadOptions } from './methods/connection/loadRoom';
 import type { LocalStoragePolyfill, LocalStorageService } from './utils/localStorageService';
 import type { Doc } from 'yjs';
 import type { WebrtcProvider } from 'y-webrtc';
@@ -70,7 +69,7 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
     /** first loads the local indexedDB ydoc for the room. if this.useYSweet is true and ySweetTokens are available will also connect to remote.
      * @param {RemoteLoadOptions} RemoteLoadOptions - options for loading the remote ydoc
      */
-    loadRoom: (serverRoom: import("@eweser/shared").ServerRoom, remoteLoadOptions?: RemoteLoadOptions | undefined) => Promise<Room<any>>;
+    loadRoom: (serverRoom: import("@eweser/shared").ServerRoom, remoteLoadOptions?: import("./methods/connection/loadRoom").RemoteLoadOptions | undefined) => Promise<Room<any>>;
     loadRooms: (rooms: Registry, staggerMs?: number) => Promise<void>;
     syncRegistry: () => Promise<boolean>;
     getRegistry: () => Registry;
