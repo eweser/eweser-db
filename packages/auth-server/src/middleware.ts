@@ -37,7 +37,7 @@ export async function middleware(req: NextRequest) {
   const origin = req.headers.get('origin');
   const domain = origin?.split('://')[1];
   const isOriginApproved = domain && approvedDomains.includes(domain);
-
+  logger({ origin, domain, isOriginApproved });
   if (isOriginApproved) {
     res.headers.set('Access-Control-Allow-Origin', origin);
     res.headers.set(
