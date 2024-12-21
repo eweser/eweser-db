@@ -6,10 +6,7 @@ export async function middleware(req: NextRequest) {
   let approvedDomains: string[] = [];
   const response = NextResponse.next();
   const path = req.nextUrl.pathname;
-  if (/\/access-grant\/(.*)/.exec(path)) {
-    console.log('access-grant path', path);
-    // return response;
-  }
+
   console.log('middleware', path);
   // Create Supabase server client
   const supabase = createServerClient(
@@ -29,25 +26,23 @@ export async function middleware(req: NextRequest) {
   );
   console.log('supabase created', supabase);
 
-  if (approvedDomains.length === 0) {
-    if (process.env.NODE_ENV === 'development') {
-      approvedDomains = [
-        'localhost:8000',
-        '172.31.42.92:8081',
-        '172.31.42.92:5173',
-        'localhost:5173',
-      ];
-    } else {
-      const { data: domains, error } = await supabase
-        .from('apps')
-        .select('domain');
-      logger('domains', domains, error);
+  if (process.env.NODE_ENV === 'development') {
+    approvedDomains = [
+      'localhost:8000',
+      '172.31.42.92:8081',
+      '172.31.42.92:5173',
+      'localhost:5173',
+    ];
+  } else {
+    const { data: domains, error } = await supabase
+      .from('apps')
+      .select('domain');
+    logger('domains', domains, error);
 
-      if (domains && !error) {
-        approvedDomains = domains.map((app: { domain: string }) => app.domain);
-      } else {
-        logger(error);
-      }
+    if (domains && !error) {
+      approvedDomains = domains.map((app: { domain: string }) => app.domain);
+    } else {
+      logger(error);
     }
   }
   const origin = req.headers.get('origin');
