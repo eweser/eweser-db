@@ -78,7 +78,7 @@ export async function insertRooms(
       )[0]?.rooms || [];
     await updateUserRooms(
       userId,
-      usersRooms.concat(inserts.map(({ id }) => id)),
+      usersRooms.concat(inserts.map(({ id }) => id) as any),
       dbInstance
     );
     const roomInserts = inserts.map(({ id, ...rest }) => ({
@@ -87,7 +87,10 @@ export async function insertRooms(
       _ttl: rest._ttl || null, // provide a default value if _ttl is undefined or an empty string
     }));
 
-    return dbInstance.insert(rooms).values(roomInserts).returning();
+    return dbInstance
+      .insert(rooms)
+      .values(roomInserts as any)
+      .returning();
   });
 }
 
@@ -123,7 +126,7 @@ export async function updateRoom(
 ) {
   const result = await db(dbInstance)
     .update(rooms)
-    .set(update)
+    .set(update as any)
     .where(eq(rooms.id, id))
     .returning();
   if (result.length !== 1) {

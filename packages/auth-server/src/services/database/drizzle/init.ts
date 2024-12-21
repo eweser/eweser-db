@@ -1,8 +1,16 @@
 import postgres from 'postgres';
-import { drizzle } from 'drizzle-orm/postgres-js';
+import { drizzle, PostgresJsQueryResultHKT } from 'drizzle-orm/postgres-js';
 import { SUPABASE_CONNECTION_URL } from '../../../services/database/supabase/backend-config';
+import { PgTransaction } from 'drizzle-orm/pg-core';
+import { ExtractTablesWithRelations } from 'drizzle-orm';
 
-export type DBInstance = ReturnType<typeof drizzle>;
+export type DBInstance =
+  | ReturnType<typeof drizzle>
+  | PgTransaction<
+      PostgresJsQueryResultHKT,
+      Record<string, unknown>,
+      ExtractTablesWithRelations<Record<string, unknown>>
+    >;
 export type DBQuery<T> = (dbInstance?: DBInstance) => T;
 
 export const DB_CONNECTION: {
