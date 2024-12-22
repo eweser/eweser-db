@@ -13,8 +13,10 @@ export async function middleware(req: NextRequest) {
     if (!userAuthed) {
       const url = req.nextUrl.clone();
       url.pathname = '/';
-      if (req.nextUrl.pathname !== '/') {
-        return NextResponse.redirect(url);
+      // don't redirect options requests
+      if (req.nextUrl.pathname !== '/' && req.method !== 'OPTIONS') {
+        console.log('redirecting to / from', path);
+        return NextResponse.redirect(url.toString(), { status: 302 });
       }
       return response;
     }
