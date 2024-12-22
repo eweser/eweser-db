@@ -8,7 +8,7 @@ const corsOptions = {
 };
 
 const publicEndpoints = [/access-grant/];
-const publicPages = [/statement/];
+const publicPages = [/statement/, /robots/];
 export async function middleware(req: NextRequest) {
   let approvedDomains: string[] = [];
   const path = req.nextUrl.pathname;
