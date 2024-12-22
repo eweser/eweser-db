@@ -2081,16 +2081,19 @@ var __publicField = (obj, key, value) => {
       });
       __publicField(this, "getDocuments");
       __publicField(this, "load");
+      __publicField(this, "addingAwareness", false);
       /** disconnect and reconnect the existing ySweetProvider, this time with awareness on */
       __publicField(this, "addAwareness", async () => {
         var _a, _b, _c;
-        if ((_a = this.ySweetProvider) == null ? void 0 : _a.awareness) {
+        if (this.addingAwareness || ((_a = this.ySweetProvider) == null ? void 0 : _a.awareness)) {
           return;
         }
+        this.addingAwareness = true;
         (_b = this.ySweetProvider) == null ? void 0 : _b.disconnect();
         (_c = this.ySweetProvider) == null ? void 0 : _c.destroy();
         this.ySweetProvider = null;
         await loadYSweet(this.db, this, true, true);
+        this.addingAwareness = false;
       });
       this.db = options.db;
       this.name = options.name;

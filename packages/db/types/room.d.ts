@@ -51,6 +51,7 @@ export declare class Room<T extends EweDocument> extends TypedEventEmitter<RoomE
     disconnect: () => void;
     getDocuments: () => GetDocuments<T>;
     load: () => Promise<Room<T>>;
+    addingAwareness: boolean;
     /** disconnect and reconnect the existing ySweetProvider, this time with awareness on */
     addAwareness: () => Promise<void>;
     constructor(options: NewRoomOptions<T>);

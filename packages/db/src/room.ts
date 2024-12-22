@@ -66,15 +66,19 @@ export class Room<T extends EweDocument>
 
   getDocuments: () => GetDocuments<T>;
   load: () => Promise<Room<T>>;
+
+  addingAwareness = false;
   /** disconnect and reconnect the existing ySweetProvider, this time with awareness on */
   addAwareness = async () => {
-    if (this.ySweetProvider?.awareness) {
+    if (this.addingAwareness || this.ySweetProvider?.awareness) {
       return;
     }
+    this.addingAwareness = true;
     this.ySweetProvider?.disconnect();
     this.ySweetProvider?.destroy();
     this.ySweetProvider = null;
     await loadYSweet(this.db, this, true, true);
+    this.addingAwareness = false;
   };
 
   constructor(options: NewRoomOptions<T>) {
