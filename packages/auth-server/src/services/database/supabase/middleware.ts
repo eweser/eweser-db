@@ -45,16 +45,13 @@ export async function updateSession(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
+  let userAuthed = !!user;
   if (
     !user &&
     !request.nextUrl.pathname.startsWith('/login') &&
     !request.nextUrl.pathname.startsWith('/auth')
   ) {
-    // no user, potentially respond by redirecting the user to the login page
-    const url = request.nextUrl.clone();
-    url.pathname = '/login';
-    return NextResponse.redirect(url);
+    userAuthed = false;
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.
@@ -70,5 +67,5 @@ export async function updateSession(request: NextRequest) {
   // If this is not done, you may be causing the browser and server to go out
   // of sync and terminate the user's session prematurely!
 
-  return response;
+  return { supabase, response, userAuthed };
 }

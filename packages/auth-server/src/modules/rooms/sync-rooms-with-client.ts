@@ -53,10 +53,13 @@ export async function syncRoomsWithClient(token: string, clientRooms: Room[]) {
   const syncResult: { grant: AccessGrant; rooms: Room[] | null } =
     await db().transaction(async (dbInstance) => {
       const serverRooms = await getRoomsFromAccessGrant(grant);
-      for (const room of serverRooms) {
+      for (let i: number = 0; i < serverRooms.length; i++) {
+        const room = serverRooms[i];
+        if (i !== 0) {
+          await wait(334); //ysweet will complain if we make too many requests at once
+        }
         // TODO: If this slows down the sync a lot, consider removing this and relying on the client calling refresh token for each room instead.
         await refreshTokenIfNeededAndSaveToRoom(room, dbInstance);
-        await wait(200); //ysweet will complain if we make too many requests at once
       }
 
       const serverRoomIds = serverRooms.map((r) => r.id);

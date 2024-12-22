@@ -1,28 +1,28 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { logger } from './shared/utils';
-import {
-  createMiddlewareSupabaseClient,
-  updateSession,
-} from './services/database/supabase/middleware';
+import { updateSession } from './services/database/supabase/middleware';
 const publicEndpoints = [/access-grant/];
 /** basically any endpoint that uses supabase, so check the imports of the backendClient */
-const needsSupabaseEndpoints = [/access-grant/, /auth/, /home/];
 export async function middleware(req: NextRequest) {
   let approvedDomains: string[] = [];
   const path = req.nextUrl.pathname;
   console.log('path', path);
-  if (publicEndpoints.every((endpoint) => !endpoint.test(path))) {
-    // for non public endpoints, don't need to set cors and check origin
-    if (needsSupabaseEndpoints.some((endpoint) => endpoint.test(path))) {
-      // if the endpoint needs supabase, update the session
-      console.log('updating session');
-      return updateSession(req);
-    }
-    console.log('no need to update session');
-    return NextResponse.next();
-  }
 
-  const { supabase, response } = createMiddlewareSupabaseClient(req);
+  const { supabase, response, userAuthed } = await updateSession(req);
+  if (publicEndpoints.every((endpoint) => !endpoint.test(path))) {
+    if (!userAuthed) {
+      const url = req.nextUrl.clone();
+      url.pathname = '/';
+      if (req.nextUrl.pathname !== '/') {
+        return NextResponse.redirect(url);
+      }
+      return response;
+    }
+    // for non public endpoints, don't need to set cors and check origin
+    // if the endpoint needs supabase, update the session
+    console.log('private endpoint');
+    return response;
+  }
 
   if (process.env.NODE_ENV === 'development') {
     approvedDomains = [
@@ -66,3 +66,15 @@ export async function middleware(req: NextRequest) {
   // Return the response to keep session consistency
   return response;
 }
+
+export const config = {
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
+};
