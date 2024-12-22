@@ -1,9 +1,14 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { logger } from './shared/utils';
 import { updateSession } from './services/database/supabase/middleware';
+const corsOptions = {
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers':
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, Dnt, Referer, User-Agent',
+};
+
 const publicEndpoints = [/access-grant/];
 const publicPages = [/statement/];
-/** basically any endpoint that uses supabase, so check the imports of the backendClient */
 export async function middleware(req: NextRequest) {
   let approvedDomains: string[] = [];
   const path = req.nextUrl.pathname;
@@ -18,7 +23,7 @@ export async function middleware(req: NextRequest) {
       const url = req.nextUrl.clone();
       url.pathname = '/';
       // don't redirect options requests
-      if (req.nextUrl.pathname !== '/' && req.method !== 'OPTIONS') {
+      if (req.nextUrl.pathname !== '/') {
         console.log('redirecting to / from', path);
         return NextResponse.redirect(url.toString(), { status: 302 });
       }
@@ -57,19 +62,23 @@ export async function middleware(req: NextRequest) {
   const isOriginApproved = domain && approvedDomains.includes(domain);
   console.log('isOriginApproved', isOriginApproved, domain, approvedDomains);
 
+  const isPreflight = req.method === 'OPTIONS';
+
+  if (isPreflight) {
+    const preflightHeaders = {
+      ...(isOriginApproved && { 'Access-Control-Allow-Origin': origin }),
+      ...corsOptions,
+    };
+    return NextResponse.json({}, { headers: preflightHeaders });
+  }
   if (isOriginApproved) {
-    response.headers.set('Access-Control-Allow-Origin', origin!);
-    response.headers.set(
-      'Access-Control-Allow-Methods',
-      'GET,DELETE,PATCH,POST,PUT,OPTIONS'
-    );
-    response.headers.set(
-      'Access-Control-Allow-Headers',
-      'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, Dnt, Referer, User-Agent'
-    );
+    response.headers.set('Access-Control-Allow-Origin', origin);
   }
 
-  // Return the response to keep session consistency
+  Object.entries(corsOptions).forEach(([key, value]) => {
+    response.headers.set(key, value);
+  });
+
   return response;
 }
 
