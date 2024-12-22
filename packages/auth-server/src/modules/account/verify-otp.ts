@@ -1,7 +1,6 @@
 'use server';
 
 import type { EmailOtpType } from '@supabase/supabase-js';
-import { cookies } from 'next/headers';
 import { createNewUserRoomsAndAuthServerAccess } from './create-new-user-rooms-and-auth-server-access';
 import { backendSupabase } from '../../services/database/supabase/backend-client-init';
 import { logger } from '../../shared/utils';
@@ -16,7 +15,7 @@ export async function verifyOtp({
   if (!token_hash || !type) {
     return { error: new Error('Invalid token_hash or type') };
   }
-  const supabase = backendSupabase(cookies());
+  const supabase = await backendSupabase();
 
   const { error, data } = await supabase.auth.verifyOtp({
     type,

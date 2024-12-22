@@ -20,6 +20,7 @@ import { getOrCreateToken } from '../../services/y-sweet/get-or-create-token';
 import type { RoomInsert } from '../../model/rooms/validation';
 import { AUTH_SERVER_DOMAIN } from '../../shared/constants';
 import { refreshTokenIfNeededAndSaveToRoom } from './refresh-token-save-to-room';
+import { wait } from '@eweser/shared';
 /**
  * Make sure all requested rooms ySweet tokens are up to date
  * 
@@ -55,6 +56,7 @@ export async function syncRoomsWithClient(token: string, clientRooms: Room[]) {
       for (const room of serverRooms) {
         // TODO: If this slows down the sync a lot, consider removing this and relying on the client calling refresh token for each room instead.
         await refreshTokenIfNeededAndSaveToRoom(room, dbInstance);
+        await wait(200); //ysweet will complain if we make too many requests at once
       }
 
       const serverRoomIds = serverRooms.map((r) => r.id);

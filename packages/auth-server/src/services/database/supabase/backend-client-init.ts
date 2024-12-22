@@ -1,39 +1,28 @@
-import { NEXT_PUBLIC_SUPABASE_URL } from '../../../services/database/supabase/frontend-config';
-import { SUPABASE_SERVICE_ROLE_KEY } from '../../../services/database/supabase/backend-config';
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import type { cookies } from 'next/headers';
+import {
+  NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  NEXT_PUBLIC_SUPABASE_URL,
+} from '../../../services/database/supabase/frontend-config';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 
-export function backendSupabase(cookieStore: ReturnType<typeof cookies>) {
+export async function backendSupabase() {
+  const cookieStore = await cookies();
+
   return createServerClient(
     NEXT_PUBLIC_SUPABASE_URL,
-    SUPABASE_SERVICE_ROLE_KEY,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
+        getAll() {
+          return cookieStore.getAll();
         },
-        set(name: string, value: string, options: CookieOptions) {
+        setAll(cookiesToSet) {
           try {
-            cookieStore.set({
-              name,
-              value,
-              ...options,
-            });
-          } catch (error) {
-            // The `set` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
-          }
-        },
-        remove(name: string, options: CookieOptions) {
-          try {
-            cookieStore.set({
-              name,
-              value: '',
-              ...options,
-            });
-          } catch (error) {
-            // The `delete` method was called from a Server Component.
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {
+            // The `setAll` method was called from a Server Component.
             // This can be ignored if you have middleware refreshing
             // user sessions.
           }

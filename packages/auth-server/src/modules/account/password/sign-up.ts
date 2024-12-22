@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import { backendSupabase } from '../../../services/database/supabase/backend-client-init';
 
 export async function passwordSignUp(formData: FormData) {
-  const supabase = backendSupabase(cookies());
+  const supabase = await backendSupabase();
 
   // type-casting here for convenience
   // in practice, you should validate your inputs

@@ -1,45 +1,28 @@
-import { type NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
+import { NextResponse, type NextRequest } from 'next/server';
 import { logger } from './shared/utils';
-
-export async function middleware(req: NextRequest, res: NextResponse) {
+import {
+  createMiddlewareSupabaseClient,
+  updateSession,
+} from './services/database/supabase/middleware';
+const publicEndpoints = [/access-grant/];
+/** basically any endpoint that uses supabase, so check the imports of the backendClient */
+const needsSupabaseEndpoints = [/access-grant/, /auth/, /home/];
+export async function middleware(req: NextRequest) {
   let approvedDomains: string[] = [];
-  const response = NextResponse.next();
   const path = req.nextUrl.pathname;
-  if (req.method === 'OPTIONS') {
-    response.headers.set(
-      'Access-Control-Allow-Origin',
-      req.headers.get('origin') || '*'
-    );
-    response.headers.set(
-      'Access-Control-Allow-Methods',
-      'GET,DELETE,PATCH,POST,PUT,OPTIONS'
-    );
-    response.headers.set(
-      'Access-Control-Allow-Headers',
-      'authorization,content-type'
-    );
-    return response;
+  console.log('path', path);
+  if (publicEndpoints.every((endpoint) => !endpoint.test(path))) {
+    // for non public endpoints, don't need to set cors and check origin
+    if (needsSupabaseEndpoints.some((endpoint) => endpoint.test(path))) {
+      // if the endpoint needs supabase, update the session
+      console.log('updating session');
+      return updateSession(req);
+    }
+    console.log('no need to update session');
+    return NextResponse.next();
   }
 
-  console.log('middleware', path);
-  // Create Supabase server client
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll: () => req.cookies.getAll(),
-        setAll: (cookiesToSet) => {
-          console.log('setting cookies', cookiesToSet);
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
-  console.log('supabase created', supabase);
+  const { supabase, response } = createMiddlewareSupabaseClient(req);
 
   if (process.env.NODE_ENV === 'development') {
     approvedDomains = [
@@ -61,12 +44,10 @@ export async function middleware(req: NextRequest, res: NextResponse) {
     }
   }
   const origin = req.headers.get('origin');
-  console.log('origin', origin);
   if (!origin) {
     console.log('no origin', req.headers.entries());
   }
   const domain = origin?.split('://')[1];
-  console.log('domain', domain);
   const isOriginApproved = domain && approvedDomains.includes(domain);
   console.log('isOriginApproved', isOriginApproved, domain, approvedDomains);
 
@@ -85,7 +66,3 @@ export async function middleware(req: NextRequest, res: NextResponse) {
   // Return the response to keep session consistency
   return response;
 }
-
-export const config = {
-  matcher: '/access-grant/(.*)',
-};

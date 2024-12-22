@@ -43,7 +43,6 @@ export async function GET(
   if (!ySweetUrl || !ySweetBaseUrl || !tokenExpiry) {
     return serverRouteError('Could not get token', 500);
   }
-
   const response: RefreshYSweetTokenRouteResponse = {
     ySweetUrl,
     ySweetBaseUrl,
