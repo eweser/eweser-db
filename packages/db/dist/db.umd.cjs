@@ -3,10 +3,7 @@
 })(this, function(exports2, Y) {
   "use strict";var __defProp = Object.defineProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __publicField = (obj, key, value) => {
-  __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
-  return value;
-};
+var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 
   function _interopNamespaceDefault(e) {
     const n = Object.create(null, { [Symbol.toStringTag]: { value: "Module" } });
@@ -26,371 +23,374 @@ var __publicField = (obj, key, value) => {
   }
   const Y__namespace = /* @__PURE__ */ _interopNamespaceDefault(Y);
   var events = { exports: {} };
-  var R = typeof Reflect === "object" ? Reflect : null;
-  var ReflectApply = R && typeof R.apply === "function" ? R.apply : function ReflectApply2(target, receiver, args) {
-    return Function.prototype.apply.call(target, receiver, args);
-  };
-  var ReflectOwnKeys;
-  if (R && typeof R.ownKeys === "function") {
-    ReflectOwnKeys = R.ownKeys;
-  } else if (Object.getOwnPropertySymbols) {
-    ReflectOwnKeys = function ReflectOwnKeys2(target) {
-      return Object.getOwnPropertyNames(target).concat(Object.getOwnPropertySymbols(target));
+  var hasRequiredEvents;
+  function requireEvents() {
+    if (hasRequiredEvents) return events.exports;
+    hasRequiredEvents = 1;
+    var R = typeof Reflect === "object" ? Reflect : null;
+    var ReflectApply = R && typeof R.apply === "function" ? R.apply : function ReflectApply2(target, receiver, args) {
+      return Function.prototype.apply.call(target, receiver, args);
     };
-  } else {
-    ReflectOwnKeys = function ReflectOwnKeys2(target) {
-      return Object.getOwnPropertyNames(target);
+    var ReflectOwnKeys;
+    if (R && typeof R.ownKeys === "function") {
+      ReflectOwnKeys = R.ownKeys;
+    } else if (Object.getOwnPropertySymbols) {
+      ReflectOwnKeys = function ReflectOwnKeys2(target) {
+        return Object.getOwnPropertyNames(target).concat(Object.getOwnPropertySymbols(target));
+      };
+    } else {
+      ReflectOwnKeys = function ReflectOwnKeys2(target) {
+        return Object.getOwnPropertyNames(target);
+      };
+    }
+    function ProcessEmitWarning(warning) {
+      if (console && console.warn) console.warn(warning);
+    }
+    var NumberIsNaN = Number.isNaN || function NumberIsNaN2(value) {
+      return value !== value;
     };
-  }
-  function ProcessEmitWarning(warning) {
-    if (console && console.warn)
-      console.warn(warning);
-  }
-  var NumberIsNaN = Number.isNaN || function NumberIsNaN2(value) {
-    return value !== value;
-  };
-  function EventEmitter() {
-    EventEmitter.init.call(this);
-  }
-  events.exports = EventEmitter;
-  events.exports.once = once;
-  EventEmitter.EventEmitter = EventEmitter;
-  EventEmitter.prototype._events = void 0;
-  EventEmitter.prototype._eventsCount = 0;
-  EventEmitter.prototype._maxListeners = void 0;
-  var defaultMaxListeners = 10;
-  function checkListener(listener) {
-    if (typeof listener !== "function") {
-      throw new TypeError('The "listener" argument must be of type Function. Received type ' + typeof listener);
+    function EventEmitter() {
+      EventEmitter.init.call(this);
     }
-  }
-  Object.defineProperty(EventEmitter, "defaultMaxListeners", {
-    enumerable: true,
-    get: function() {
-      return defaultMaxListeners;
-    },
-    set: function(arg) {
-      if (typeof arg !== "number" || arg < 0 || NumberIsNaN(arg)) {
-        throw new RangeError('The value of "defaultMaxListeners" is out of range. It must be a non-negative number. Received ' + arg + ".");
-      }
-      defaultMaxListeners = arg;
-    }
-  });
-  EventEmitter.init = function() {
-    if (this._events === void 0 || this._events === Object.getPrototypeOf(this)._events) {
-      this._events = /* @__PURE__ */ Object.create(null);
-      this._eventsCount = 0;
-    }
-    this._maxListeners = this._maxListeners || void 0;
-  };
-  EventEmitter.prototype.setMaxListeners = function setMaxListeners(n) {
-    if (typeof n !== "number" || n < 0 || NumberIsNaN(n)) {
-      throw new RangeError('The value of "n" is out of range. It must be a non-negative number. Received ' + n + ".");
-    }
-    this._maxListeners = n;
-    return this;
-  };
-  function _getMaxListeners(that) {
-    if (that._maxListeners === void 0)
-      return EventEmitter.defaultMaxListeners;
-    return that._maxListeners;
-  }
-  EventEmitter.prototype.getMaxListeners = function getMaxListeners() {
-    return _getMaxListeners(this);
-  };
-  EventEmitter.prototype.emit = function emit(type) {
-    var args = [];
-    for (var i = 1; i < arguments.length; i++)
-      args.push(arguments[i]);
-    var doError = type === "error";
-    var events2 = this._events;
-    if (events2 !== void 0)
-      doError = doError && events2.error === void 0;
-    else if (!doError)
-      return false;
-    if (doError) {
-      var er;
-      if (args.length > 0)
-        er = args[0];
-      if (er instanceof Error) {
-        throw er;
-      }
-      var err = new Error("Unhandled error." + (er ? " (" + er.message + ")" : ""));
-      err.context = er;
-      throw err;
-    }
-    var handler = events2[type];
-    if (handler === void 0)
-      return false;
-    if (typeof handler === "function") {
-      ReflectApply(handler, this, args);
-    } else {
-      var len = handler.length;
-      var listeners = arrayClone(handler, len);
-      for (var i = 0; i < len; ++i)
-        ReflectApply(listeners[i], this, args);
-    }
-    return true;
-  };
-  function _addListener(target, type, listener, prepend) {
-    var m;
-    var events2;
-    var existing;
-    checkListener(listener);
-    events2 = target._events;
-    if (events2 === void 0) {
-      events2 = target._events = /* @__PURE__ */ Object.create(null);
-      target._eventsCount = 0;
-    } else {
-      if (events2.newListener !== void 0) {
-        target.emit(
-          "newListener",
-          type,
-          listener.listener ? listener.listener : listener
-        );
-        events2 = target._events;
-      }
-      existing = events2[type];
-    }
-    if (existing === void 0) {
-      existing = events2[type] = listener;
-      ++target._eventsCount;
-    } else {
-      if (typeof existing === "function") {
-        existing = events2[type] = prepend ? [listener, existing] : [existing, listener];
-      } else if (prepend) {
-        existing.unshift(listener);
-      } else {
-        existing.push(listener);
-      }
-      m = _getMaxListeners(target);
-      if (m > 0 && existing.length > m && !existing.warned) {
-        existing.warned = true;
-        var w = new Error("Possible EventEmitter memory leak detected. " + existing.length + " " + String(type) + " listeners added. Use emitter.setMaxListeners() to increase limit");
-        w.name = "MaxListenersExceededWarning";
-        w.emitter = target;
-        w.type = type;
-        w.count = existing.length;
-        ProcessEmitWarning(w);
+    events.exports = EventEmitter;
+    events.exports.once = once;
+    EventEmitter.EventEmitter = EventEmitter;
+    EventEmitter.prototype._events = void 0;
+    EventEmitter.prototype._eventsCount = 0;
+    EventEmitter.prototype._maxListeners = void 0;
+    var defaultMaxListeners = 10;
+    function checkListener(listener) {
+      if (typeof listener !== "function") {
+        throw new TypeError('The "listener" argument must be of type Function. Received type ' + typeof listener);
       }
     }
-    return target;
-  }
-  EventEmitter.prototype.addListener = function addListener(type, listener) {
-    return _addListener(this, type, listener, false);
-  };
-  EventEmitter.prototype.on = EventEmitter.prototype.addListener;
-  EventEmitter.prototype.prependListener = function prependListener(type, listener) {
-    return _addListener(this, type, listener, true);
-  };
-  function onceWrapper() {
-    if (!this.fired) {
-      this.target.removeListener(this.type, this.wrapFn);
-      this.fired = true;
-      if (arguments.length === 0)
-        return this.listener.call(this.target);
-      return this.listener.apply(this.target, arguments);
-    }
-  }
-  function _onceWrap(target, type, listener) {
-    var state = { fired: false, wrapFn: void 0, target, type, listener };
-    var wrapped = onceWrapper.bind(state);
-    wrapped.listener = listener;
-    state.wrapFn = wrapped;
-    return wrapped;
-  }
-  EventEmitter.prototype.once = function once2(type, listener) {
-    checkListener(listener);
-    this.on(type, _onceWrap(this, type, listener));
-    return this;
-  };
-  EventEmitter.prototype.prependOnceListener = function prependOnceListener(type, listener) {
-    checkListener(listener);
-    this.prependListener(type, _onceWrap(this, type, listener));
-    return this;
-  };
-  EventEmitter.prototype.removeListener = function removeListener(type, listener) {
-    var list, events2, position, i, originalListener;
-    checkListener(listener);
-    events2 = this._events;
-    if (events2 === void 0)
-      return this;
-    list = events2[type];
-    if (list === void 0)
-      return this;
-    if (list === listener || list.listener === listener) {
-      if (--this._eventsCount === 0)
-        this._events = /* @__PURE__ */ Object.create(null);
-      else {
-        delete events2[type];
-        if (events2.removeListener)
-          this.emit("removeListener", type, list.listener || listener);
-      }
-    } else if (typeof list !== "function") {
-      position = -1;
-      for (i = list.length - 1; i >= 0; i--) {
-        if (list[i] === listener || list[i].listener === listener) {
-          originalListener = list[i].listener;
-          position = i;
-          break;
+    Object.defineProperty(EventEmitter, "defaultMaxListeners", {
+      enumerable: true,
+      get: function() {
+        return defaultMaxListeners;
+      },
+      set: function(arg) {
+        if (typeof arg !== "number" || arg < 0 || NumberIsNaN(arg)) {
+          throw new RangeError('The value of "defaultMaxListeners" is out of range. It must be a non-negative number. Received ' + arg + ".");
         }
-      }
-      if (position < 0)
-        return this;
-      if (position === 0)
-        list.shift();
-      else {
-        spliceOne(list, position);
-      }
-      if (list.length === 1)
-        events2[type] = list[0];
-      if (events2.removeListener !== void 0)
-        this.emit("removeListener", type, originalListener || listener);
-    }
-    return this;
-  };
-  EventEmitter.prototype.off = EventEmitter.prototype.removeListener;
-  EventEmitter.prototype.removeAllListeners = function removeAllListeners(type) {
-    var listeners, events2, i;
-    events2 = this._events;
-    if (events2 === void 0)
-      return this;
-    if (events2.removeListener === void 0) {
-      if (arguments.length === 0) {
-        this._events = /* @__PURE__ */ Object.create(null);
-        this._eventsCount = 0;
-      } else if (events2[type] !== void 0) {
-        if (--this._eventsCount === 0)
-          this._events = /* @__PURE__ */ Object.create(null);
-        else
-          delete events2[type];
-      }
-      return this;
-    }
-    if (arguments.length === 0) {
-      var keys2 = Object.keys(events2);
-      var key;
-      for (i = 0; i < keys2.length; ++i) {
-        key = keys2[i];
-        if (key === "removeListener")
-          continue;
-        this.removeAllListeners(key);
-      }
-      this.removeAllListeners("removeListener");
-      this._events = /* @__PURE__ */ Object.create(null);
-      this._eventsCount = 0;
-      return this;
-    }
-    listeners = events2[type];
-    if (typeof listeners === "function") {
-      this.removeListener(type, listeners);
-    } else if (listeners !== void 0) {
-      for (i = listeners.length - 1; i >= 0; i--) {
-        this.removeListener(type, listeners[i]);
-      }
-    }
-    return this;
-  };
-  function _listeners(target, type, unwrap) {
-    var events2 = target._events;
-    if (events2 === void 0)
-      return [];
-    var evlistener = events2[type];
-    if (evlistener === void 0)
-      return [];
-    if (typeof evlistener === "function")
-      return unwrap ? [evlistener.listener || evlistener] : [evlistener];
-    return unwrap ? unwrapListeners(evlistener) : arrayClone(evlistener, evlistener.length);
-  }
-  EventEmitter.prototype.listeners = function listeners(type) {
-    return _listeners(this, type, true);
-  };
-  EventEmitter.prototype.rawListeners = function rawListeners(type) {
-    return _listeners(this, type, false);
-  };
-  EventEmitter.listenerCount = function(emitter, type) {
-    if (typeof emitter.listenerCount === "function") {
-      return emitter.listenerCount(type);
-    } else {
-      return listenerCount.call(emitter, type);
-    }
-  };
-  EventEmitter.prototype.listenerCount = listenerCount;
-  function listenerCount(type) {
-    var events2 = this._events;
-    if (events2 !== void 0) {
-      var evlistener = events2[type];
-      if (typeof evlistener === "function") {
-        return 1;
-      } else if (evlistener !== void 0) {
-        return evlistener.length;
-      }
-    }
-    return 0;
-  }
-  EventEmitter.prototype.eventNames = function eventNames() {
-    return this._eventsCount > 0 ? ReflectOwnKeys(this._events) : [];
-  };
-  function arrayClone(arr, n) {
-    var copy = new Array(n);
-    for (var i = 0; i < n; ++i)
-      copy[i] = arr[i];
-    return copy;
-  }
-  function spliceOne(list, index) {
-    for (; index + 1 < list.length; index++)
-      list[index] = list[index + 1];
-    list.pop();
-  }
-  function unwrapListeners(arr) {
-    var ret = new Array(arr.length);
-    for (var i = 0; i < ret.length; ++i) {
-      ret[i] = arr[i].listener || arr[i];
-    }
-    return ret;
-  }
-  function once(emitter, name) {
-    return new Promise(function(resolve, reject) {
-      function errorListener(err) {
-        emitter.removeListener(name, resolver);
-        reject(err);
-      }
-      function resolver() {
-        if (typeof emitter.removeListener === "function") {
-          emitter.removeListener("error", errorListener);
-        }
-        resolve([].slice.call(arguments));
-      }
-      eventTargetAgnosticAddListener(emitter, name, resolver, { once: true });
-      if (name !== "error") {
-        addErrorHandlerIfEventEmitter(emitter, errorListener, { once: true });
+        defaultMaxListeners = arg;
       }
     });
-  }
-  function addErrorHandlerIfEventEmitter(emitter, handler, flags) {
-    if (typeof emitter.on === "function") {
-      eventTargetAgnosticAddListener(emitter, "error", handler, flags);
-    }
-  }
-  function eventTargetAgnosticAddListener(emitter, name, listener, flags) {
-    if (typeof emitter.on === "function") {
-      if (flags.once) {
-        emitter.once(name, listener);
-      } else {
-        emitter.on(name, listener);
+    EventEmitter.init = function() {
+      if (this._events === void 0 || this._events === Object.getPrototypeOf(this)._events) {
+        this._events = /* @__PURE__ */ Object.create(null);
+        this._eventsCount = 0;
       }
-    } else if (typeof emitter.addEventListener === "function") {
-      emitter.addEventListener(name, function wrapListener(arg) {
-        if (flags.once) {
-          emitter.removeEventListener(name, wrapListener);
-        }
-        listener(arg);
-      });
-    } else {
-      throw new TypeError('The "emitter" argument must be of type EventEmitter. Received type ' + typeof emitter);
+      this._maxListeners = this._maxListeners || void 0;
+    };
+    EventEmitter.prototype.setMaxListeners = function setMaxListeners(n) {
+      if (typeof n !== "number" || n < 0 || NumberIsNaN(n)) {
+        throw new RangeError('The value of "n" is out of range. It must be a non-negative number. Received ' + n + ".");
+      }
+      this._maxListeners = n;
+      return this;
+    };
+    function _getMaxListeners(that) {
+      if (that._maxListeners === void 0)
+        return EventEmitter.defaultMaxListeners;
+      return that._maxListeners;
     }
+    EventEmitter.prototype.getMaxListeners = function getMaxListeners() {
+      return _getMaxListeners(this);
+    };
+    EventEmitter.prototype.emit = function emit(type) {
+      var args = [];
+      for (var i = 1; i < arguments.length; i++) args.push(arguments[i]);
+      var doError = type === "error";
+      var events2 = this._events;
+      if (events2 !== void 0)
+        doError = doError && events2.error === void 0;
+      else if (!doError)
+        return false;
+      if (doError) {
+        var er;
+        if (args.length > 0)
+          er = args[0];
+        if (er instanceof Error) {
+          throw er;
+        }
+        var err = new Error("Unhandled error." + (er ? " (" + er.message + ")" : ""));
+        err.context = er;
+        throw err;
+      }
+      var handler = events2[type];
+      if (handler === void 0)
+        return false;
+      if (typeof handler === "function") {
+        ReflectApply(handler, this, args);
+      } else {
+        var len = handler.length;
+        var listeners = arrayClone(handler, len);
+        for (var i = 0; i < len; ++i)
+          ReflectApply(listeners[i], this, args);
+      }
+      return true;
+    };
+    function _addListener(target, type, listener, prepend) {
+      var m;
+      var events2;
+      var existing;
+      checkListener(listener);
+      events2 = target._events;
+      if (events2 === void 0) {
+        events2 = target._events = /* @__PURE__ */ Object.create(null);
+        target._eventsCount = 0;
+      } else {
+        if (events2.newListener !== void 0) {
+          target.emit(
+            "newListener",
+            type,
+            listener.listener ? listener.listener : listener
+          );
+          events2 = target._events;
+        }
+        existing = events2[type];
+      }
+      if (existing === void 0) {
+        existing = events2[type] = listener;
+        ++target._eventsCount;
+      } else {
+        if (typeof existing === "function") {
+          existing = events2[type] = prepend ? [listener, existing] : [existing, listener];
+        } else if (prepend) {
+          existing.unshift(listener);
+        } else {
+          existing.push(listener);
+        }
+        m = _getMaxListeners(target);
+        if (m > 0 && existing.length > m && !existing.warned) {
+          existing.warned = true;
+          var w = new Error("Possible EventEmitter memory leak detected. " + existing.length + " " + String(type) + " listeners added. Use emitter.setMaxListeners() to increase limit");
+          w.name = "MaxListenersExceededWarning";
+          w.emitter = target;
+          w.type = type;
+          w.count = existing.length;
+          ProcessEmitWarning(w);
+        }
+      }
+      return target;
+    }
+    EventEmitter.prototype.addListener = function addListener(type, listener) {
+      return _addListener(this, type, listener, false);
+    };
+    EventEmitter.prototype.on = EventEmitter.prototype.addListener;
+    EventEmitter.prototype.prependListener = function prependListener(type, listener) {
+      return _addListener(this, type, listener, true);
+    };
+    function onceWrapper() {
+      if (!this.fired) {
+        this.target.removeListener(this.type, this.wrapFn);
+        this.fired = true;
+        if (arguments.length === 0)
+          return this.listener.call(this.target);
+        return this.listener.apply(this.target, arguments);
+      }
+    }
+    function _onceWrap(target, type, listener) {
+      var state = { fired: false, wrapFn: void 0, target, type, listener };
+      var wrapped = onceWrapper.bind(state);
+      wrapped.listener = listener;
+      state.wrapFn = wrapped;
+      return wrapped;
+    }
+    EventEmitter.prototype.once = function once2(type, listener) {
+      checkListener(listener);
+      this.on(type, _onceWrap(this, type, listener));
+      return this;
+    };
+    EventEmitter.prototype.prependOnceListener = function prependOnceListener(type, listener) {
+      checkListener(listener);
+      this.prependListener(type, _onceWrap(this, type, listener));
+      return this;
+    };
+    EventEmitter.prototype.removeListener = function removeListener(type, listener) {
+      var list, events2, position, i, originalListener;
+      checkListener(listener);
+      events2 = this._events;
+      if (events2 === void 0)
+        return this;
+      list = events2[type];
+      if (list === void 0)
+        return this;
+      if (list === listener || list.listener === listener) {
+        if (--this._eventsCount === 0)
+          this._events = /* @__PURE__ */ Object.create(null);
+        else {
+          delete events2[type];
+          if (events2.removeListener)
+            this.emit("removeListener", type, list.listener || listener);
+        }
+      } else if (typeof list !== "function") {
+        position = -1;
+        for (i = list.length - 1; i >= 0; i--) {
+          if (list[i] === listener || list[i].listener === listener) {
+            originalListener = list[i].listener;
+            position = i;
+            break;
+          }
+        }
+        if (position < 0)
+          return this;
+        if (position === 0)
+          list.shift();
+        else {
+          spliceOne(list, position);
+        }
+        if (list.length === 1)
+          events2[type] = list[0];
+        if (events2.removeListener !== void 0)
+          this.emit("removeListener", type, originalListener || listener);
+      }
+      return this;
+    };
+    EventEmitter.prototype.off = EventEmitter.prototype.removeListener;
+    EventEmitter.prototype.removeAllListeners = function removeAllListeners(type) {
+      var listeners, events2, i;
+      events2 = this._events;
+      if (events2 === void 0)
+        return this;
+      if (events2.removeListener === void 0) {
+        if (arguments.length === 0) {
+          this._events = /* @__PURE__ */ Object.create(null);
+          this._eventsCount = 0;
+        } else if (events2[type] !== void 0) {
+          if (--this._eventsCount === 0)
+            this._events = /* @__PURE__ */ Object.create(null);
+          else
+            delete events2[type];
+        }
+        return this;
+      }
+      if (arguments.length === 0) {
+        var keys2 = Object.keys(events2);
+        var key;
+        for (i = 0; i < keys2.length; ++i) {
+          key = keys2[i];
+          if (key === "removeListener") continue;
+          this.removeAllListeners(key);
+        }
+        this.removeAllListeners("removeListener");
+        this._events = /* @__PURE__ */ Object.create(null);
+        this._eventsCount = 0;
+        return this;
+      }
+      listeners = events2[type];
+      if (typeof listeners === "function") {
+        this.removeListener(type, listeners);
+      } else if (listeners !== void 0) {
+        for (i = listeners.length - 1; i >= 0; i--) {
+          this.removeListener(type, listeners[i]);
+        }
+      }
+      return this;
+    };
+    function _listeners(target, type, unwrap) {
+      var events2 = target._events;
+      if (events2 === void 0)
+        return [];
+      var evlistener = events2[type];
+      if (evlistener === void 0)
+        return [];
+      if (typeof evlistener === "function")
+        return unwrap ? [evlistener.listener || evlistener] : [evlistener];
+      return unwrap ? unwrapListeners(evlistener) : arrayClone(evlistener, evlistener.length);
+    }
+    EventEmitter.prototype.listeners = function listeners(type) {
+      return _listeners(this, type, true);
+    };
+    EventEmitter.prototype.rawListeners = function rawListeners(type) {
+      return _listeners(this, type, false);
+    };
+    EventEmitter.listenerCount = function(emitter, type) {
+      if (typeof emitter.listenerCount === "function") {
+        return emitter.listenerCount(type);
+      } else {
+        return listenerCount.call(emitter, type);
+      }
+    };
+    EventEmitter.prototype.listenerCount = listenerCount;
+    function listenerCount(type) {
+      var events2 = this._events;
+      if (events2 !== void 0) {
+        var evlistener = events2[type];
+        if (typeof evlistener === "function") {
+          return 1;
+        } else if (evlistener !== void 0) {
+          return evlistener.length;
+        }
+      }
+      return 0;
+    }
+    EventEmitter.prototype.eventNames = function eventNames() {
+      return this._eventsCount > 0 ? ReflectOwnKeys(this._events) : [];
+    };
+    function arrayClone(arr, n) {
+      var copy = new Array(n);
+      for (var i = 0; i < n; ++i)
+        copy[i] = arr[i];
+      return copy;
+    }
+    function spliceOne(list, index) {
+      for (; index + 1 < list.length; index++)
+        list[index] = list[index + 1];
+      list.pop();
+    }
+    function unwrapListeners(arr) {
+      var ret = new Array(arr.length);
+      for (var i = 0; i < ret.length; ++i) {
+        ret[i] = arr[i].listener || arr[i];
+      }
+      return ret;
+    }
+    function once(emitter, name) {
+      return new Promise(function(resolve, reject) {
+        function errorListener(err) {
+          emitter.removeListener(name, resolver);
+          reject(err);
+        }
+        function resolver() {
+          if (typeof emitter.removeListener === "function") {
+            emitter.removeListener("error", errorListener);
+          }
+          resolve([].slice.call(arguments));
+        }
+        eventTargetAgnosticAddListener(emitter, name, resolver, { once: true });
+        if (name !== "error") {
+          addErrorHandlerIfEventEmitter(emitter, errorListener, { once: true });
+        }
+      });
+    }
+    function addErrorHandlerIfEventEmitter(emitter, handler, flags) {
+      if (typeof emitter.on === "function") {
+        eventTargetAgnosticAddListener(emitter, "error", handler, flags);
+      }
+    }
+    function eventTargetAgnosticAddListener(emitter, name, listener, flags) {
+      if (typeof emitter.on === "function") {
+        if (flags.once) {
+          emitter.once(name, listener);
+        } else {
+          emitter.on(name, listener);
+        }
+      } else if (typeof emitter.addEventListener === "function") {
+        emitter.addEventListener(name, function wrapListener(arg) {
+          if (flags.once) {
+            emitter.removeEventListener(name, wrapListener);
+          }
+          listener(arg);
+        });
+      } else {
+        throw new TypeError('The "emitter" argument must be of type EventEmitter. Received type ' + typeof emitter);
+      }
+    }
+    return events.exports;
   }
-  var eventsExports = events.exports;
+  var eventsExports = requireEvents();
   class TypedEventEmitter extends eventsExports.EventEmitter {
     on(event, listener) {
       return super.on(event, listener);
@@ -430,12 +430,9 @@ var __publicField = (obj, key, value) => {
   };
   const buildRef = (params) => {
     Object.entries(params).forEach(([key, param]) => {
-      if (!param)
-        throw new Error(`${key} is required`);
-      if (typeof param !== "string")
-        throw new Error(`${key} must be a string`);
-      if (param.includes("|"))
-        throw new Error(`${key} cannot include |`);
+      if (!param) throw new Error(`${key} is required`);
+      if (typeof param !== "string") throw new Error(`${key} must be a string`);
+      if (param.includes("|")) throw new Error(`${key} cannot include |`);
     });
     const { collectionKey, roomId, documentId, authServer } = params;
     return `${authServer}|${collectionKey}|${roomId}|${documentId}`;
@@ -443,8 +440,7 @@ var __publicField = (obj, key, value) => {
   const wait$1 = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const randomString = (length2) => Math.random().toString(36).substring(2, length2 + 2);
   function getRoomDocuments(room) {
-    if (!room.ydoc)
-      throw new Error("room.ydoc not found");
+    if (!room.ydoc) throw new Error("room.ydoc not found");
     const registryMap = room.ydoc.getMap("documents");
     return registryMap;
   }
@@ -453,17 +449,14 @@ var __publicField = (obj, key, value) => {
     roomId
   }) => {
     const room = _db.collections[collectionKey][roomId];
-    if (!room)
-      return null;
+    if (!room) return null;
     return room;
   };
   const getDocuments = (_db) => (room) => {
     var _a;
-    if (!room)
-      throw new Error("no room");
+    if (!room) throw new Error("no room");
     const documents = (_a = room.ydoc) == null ? void 0 : _a.getMap("documents");
-    if (!documents)
-      throw new Error("no documents");
+    if (!documents) throw new Error("no documents");
     return {
       documents,
       get: (id) => {
@@ -496,8 +489,7 @@ var __publicField = (obj, key, value) => {
       },
       delete: (id, timeToLiveMs) => {
         const doc = documents.get(id);
-        if (!doc)
-          throw new Error("document does not exist");
+        if (!doc) throw new Error("document does not exist");
         const oneMonth = 1e3 * 60 * 60 * 24 * 30;
         doc._deleted = true;
         doc._ttl = timeToLiveMs ?? (/* @__PURE__ */ new Date()).getTime() + oneMonth;
@@ -725,8 +717,7 @@ var __publicField = (obj, key, value) => {
         this.db = db;
         const beforeApplyUpdatesCallback = (updatesStore) => addAutoKey(updatesStore, Y__namespace.encodeStateAsUpdate(doc));
         const afterApplyUpdatesCallback = () => {
-          if (this._destroyed)
-            return this;
+          if (this._destroyed) return this;
           this.synced = true;
           this.emit("synced", [this]);
         };
@@ -813,16 +804,12 @@ var __publicField = (obj, key, value) => {
   const Doc = Y.Doc;
   const initializeDocAndLocalProvider = async (roomId, existingDoc, provider) => {
     const yDoc = existingDoc || new Doc();
-    if (!yDoc)
-      throw new Error("could not create doc");
+    if (!yDoc) throw new Error("could not create doc");
     const localProvider = provider ? provider(roomId, yDoc) : new IndexeddbPersistence(roomId, yDoc);
-    if (localProvider.synced)
-      return { yDoc, localProvider };
+    if (localProvider.synced) return { yDoc, localProvider };
     const synced = await localProvider.whenSynced;
-    if (synced.synced)
-      return { yDoc, localProvider };
-    else
-      throw new Error("could not sync doc");
+    if (synced.synced) return { yDoc, localProvider };
+    else throw new Error("could not sync doc");
   };
   const BIT8$1 = 128;
   const BITS7$1 = 127;
@@ -1019,6 +1006,7 @@ var __publicField = (obj, key, value) => {
       case ArrayBuffer:
         a = new Uint8Array(a);
         b = new Uint8Array(b);
+      // eslint-disable-next-line no-fallthrough
       case Uint8Array: {
         if (a.byteLength !== b.byteLength) {
           return false;
@@ -1468,6 +1456,29 @@ var __publicField = (obj, key, value) => {
     }
     throw errorUnexpectedEndOfArray;
   };
+  var Sleeper = class {
+    constructor(timeout) {
+      this.promise = new Promise((resolve, reject) => {
+        setTimeout(() => {
+          resolve();
+        }, timeout);
+        this.resolve = resolve;
+        this.reject = reject;
+      });
+    }
+    /**
+     * Sleeps until the timeout has completed (or has been woken).
+     */
+    async sleep() {
+      await this.promise;
+    }
+    /**
+     * Wakes up the timeout if it has not completed yet.
+     */
+    wake() {
+      this.resolve && this.resolve();
+    }
+  };
   var EVENT_STATUS = "status";
   var EVENT_SYNC = "sync";
   var EVENT_CONNECTION_CLOSE = "connection-close";
@@ -1506,6 +1517,213 @@ var __publicField = (obj, key, value) => {
       }
     }
   };
+  var ALGORITHM = {
+    name: "AES-GCM",
+    length: 256
+  };
+  var KEY_USAGE = ["encrypt", "decrypt"];
+  var NONCE_LENGTH = 12;
+  function arrayBufferToBase64(buffer) {
+    return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+  }
+  function base64ToArrayBuffer(base64) {
+    const binaryString = atob(base64);
+    const bytes = Uint8Array.from(binaryString, (c) => c.charCodeAt(0));
+    return bytes.buffer;
+  }
+  async function importKey(key) {
+    const rawKey = base64ToArrayBuffer(key);
+    return await crypto.subtle.importKey("raw", rawKey, ALGORITHM, true, KEY_USAGE);
+  }
+  async function exportKey(key) {
+    const rawKey = await crypto.subtle.exportKey("raw", key);
+    return arrayBufferToBase64(rawKey);
+  }
+  function generateEncryptionKey() {
+    return crypto.subtle.generateKey(ALGORITHM, true, KEY_USAGE);
+  }
+  async function encryptData(data, key) {
+    const iv = crypto.getRandomValues(new Uint8Array(NONCE_LENGTH));
+    const encrypted = await crypto.subtle.encrypt({ name: ALGORITHM.name, iv }, key, data);
+    const result = new Uint8Array(iv.length + encrypted.byteLength);
+    result.set(iv);
+    result.set(new Uint8Array(encrypted), iv.length);
+    return result;
+  }
+  async function decryptData(encryptedData, key) {
+    const iv = encryptedData.slice(0, NONCE_LENGTH);
+    const data = encryptedData.slice(NONCE_LENGTH);
+    const decrypted = await crypto.subtle.decrypt({ name: ALGORITHM.name, iv }, key, data);
+    return new Uint8Array(decrypted);
+  }
+  var COOKIE_NAME = "YSWEET_OFFLINE_KEY";
+  function getCookie(name) {
+    var _a;
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2)
+      return ((_a = parts.pop()) == null ? void 0 : _a.split(";").shift()) || null;
+    return null;
+  }
+  function setCookie(name, value) {
+    document.cookie = `${name}=${value};path=/;expires=Fri, 31 Dec 9999 23:59:59 GMT;secure`;
+  }
+  async function getOrCreateKey() {
+    const cookieKey = getCookie(COOKIE_NAME);
+    if (cookieKey) {
+      return await importKey(cookieKey);
+    } else {
+      const rawKey = await generateEncryptionKey();
+      const key = await exportKey(rawKey);
+      setCookie(COOKIE_NAME, key);
+      return rawKey;
+    }
+  }
+  var DB_PREFIX = "y-sweet-";
+  var OBJECT_STORE_NAME = "updates";
+  var MAX_UPDATES_IN_STORE = 50;
+  function openIndexedDB(name) {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(name, 4);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        db.createObjectStore(OBJECT_STORE_NAME, { keyPath: "key" });
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = reject;
+    });
+  }
+  async function createIndexedDBProvider(doc, docId) {
+    const db = await openIndexedDB(DB_PREFIX + docId);
+    const encryptionKey = await getOrCreateKey();
+    let provider = new IndexedDBProvider(doc, docId, db, encryptionKey);
+    return provider;
+  }
+  var IndexedDBProvider = class {
+    constructor(doc, docId, db, encryptionKey) {
+      this.doc = doc;
+      this.db = db;
+      this.encryptionKey = encryptionKey;
+      this.lastUpdateKey = -1;
+      this.handleUpdate = this.handleUpdate.bind(this);
+      doc.on("update", this.handleUpdate);
+      this.broadcastChannel = new BroadcastChannel(`y-sweet-${docId}`);
+      this.broadcastChannel.onmessage = (event) => {
+        if (event.data > this.lastUpdateKey) {
+          this.loadFromDb();
+        }
+      };
+      this.loadFromDb();
+    }
+    updateKey() {
+      this.lastUpdateKey += 1;
+      return this.lastUpdateKey;
+    }
+    async loadFromDb() {
+      let range = IDBKeyRange.lowerBound(this.lastUpdateKey, true);
+      const updates = await this.getAllValues(range);
+      this.doc.transact(() => {
+        for (const update of updates) {
+          Y__namespace.applyUpdate(this.doc, update.value);
+          this.lastUpdateKey = update.key;
+        }
+      }, this);
+    }
+    destroy() {
+      this.doc.off("update", this.handleUpdate);
+      this.broadcastChannel.close();
+    }
+    async handleUpdate(update, origin) {
+      if (origin === this) {
+        return;
+      }
+      while (true) {
+        await this.loadFromDb();
+        let key = this.updateKey();
+        let newCount = await this.insertValue(key, update);
+        if (newCount === null) {
+          continue;
+        }
+        if (newCount > MAX_UPDATES_IN_STORE) {
+          key = this.updateKey();
+          if (!await this.saveWholeState(key)) {
+            continue;
+          }
+        }
+        break;
+      }
+      this.broadcastChannel.postMessage(this.lastUpdateKey);
+    }
+    async getAllValues(range) {
+      let transaction = this.db.transaction(OBJECT_STORE_NAME);
+      let objectStore = transaction.objectStore(OBJECT_STORE_NAME);
+      const request = objectStore.getAll(range);
+      let result = await new Promise((resolve, reject) => {
+        request.onsuccess = () => {
+          resolve(request.result);
+        };
+        request.onerror = reject;
+      });
+      return await Promise.all(
+        result.map(async (data) => {
+          let value = await decryptData(data.value, this.encryptionKey);
+          return {
+            key: data.key,
+            value
+          };
+        })
+      );
+    }
+    async saveWholeState(key) {
+      const update = Y__namespace.encodeStateAsUpdate(this.doc);
+      const encryptedUpdate = await encryptData(update, this.encryptionKey);
+      let transaction = this.db.transaction(OBJECT_STORE_NAME, "readwrite");
+      let objectStore = transaction.objectStore(OBJECT_STORE_NAME);
+      if (await this.hasValue(objectStore, key)) {
+        return false;
+      }
+      let range = IDBKeyRange.upperBound(key, false);
+      objectStore.delete(range);
+      objectStore.add({
+        key,
+        value: encryptedUpdate
+      });
+      return true;
+    }
+    async hasValue(objectStore, key) {
+      const request = objectStore.get(key);
+      await new Promise((resolve, reject) => {
+        request.onsuccess = () => resolve();
+        request.onerror = reject;
+      });
+      return request.result !== void 0;
+    }
+    /**
+     * Insert a value into IndexedDB. Return the new count of updates in the store if the value was inserted,
+     * or null if the desired key already exists.
+     **/
+    async insertValue(key, value) {
+      const encryptedValue = await encryptData(value, this.encryptionKey);
+      let objectStore = this.db.transaction(OBJECT_STORE_NAME, "readwrite").objectStore(OBJECT_STORE_NAME);
+      if (await this.hasValue(objectStore, key)) {
+        return null;
+      }
+      const request = objectStore.put({
+        key,
+        value: encryptedValue
+      });
+      await new Promise((resolve, reject) => {
+        request.onsuccess = () => resolve();
+        request.onerror = reject;
+      });
+      let countRequest = objectStore.count();
+      let count2 = await new Promise((resolve, reject) => {
+        countRequest.onsuccess = () => resolve(countRequest.result);
+        countRequest.onerror = reject;
+      });
+      return count2;
+    }
+  };
   var MESSAGE_SYNC = 0;
   var MESSAGE_QUERY_AWARENESS = 3;
   var MESSAGE_AWARENESS = 1;
@@ -1513,6 +1731,10 @@ var __publicField = (obj, key, value) => {
   var RETRIES_BEFORE_TOKEN_REFRESH = 3;
   var DELAY_MS_BEFORE_RECONNECT = 500;
   var DELAY_MS_BEFORE_RETRY_TOKEN_REFRESH = 3e3;
+  var BACKOFF_BASE = 1.1;
+  var MAX_BACKOFF_COEFFICIENT = 10;
+  var MAX_TIMEOUT_BETWEEN_HEARTBEATS = 2e3;
+  var MAX_TIMEOUT_WITHOUT_RECEIVING_HEARTBEAT = 3e3;
   var EVENT_LOCAL_CHANGES = "local-changes";
   var EVENT_CONNECTION_STATUS = "connection-status";
   var STATUS_OFFLINE = "offline";
@@ -1520,9 +1742,6 @@ var __publicField = (obj, key, value) => {
   var STATUS_ERROR = "error";
   var STATUS_HANDSHAKING = "handshaking";
   var STATUS_CONNECTED = "connected";
-  async function sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
   async function getClientToken(authEndpoint, roomname) {
     if (typeof authEndpoint === "function") {
       return await authEndpoint();
@@ -1550,13 +1769,18 @@ var __publicField = (obj, key, value) => {
       this.docId = docId;
       this.doc = doc;
       this.clientToken = null;
-      this.hasLocalChanges = true;
       this.status = STATUS_OFFLINE;
       this.websocket = null;
       this.listeners = /* @__PURE__ */ new Map();
-      this.lastSyncSent = 0;
-      this.lastSyncAcked = -1;
+      this.localVersion = 0;
+      this.ackedVersion = -1;
       this.isConnecting = false;
+      this.heartbeatHandle = null;
+      this.connectionTimeoutHandle = null;
+      this.reconnectSleeper = null;
+      this.indexedDBProvider = null;
+      this.retries = 0;
+      this.receivedAtLeastOneSyncResponse = false;
       if (extraOptions.initialClientToken) {
         this.clientToken = extraOptions.initialClientToken;
       }
@@ -1564,10 +1788,64 @@ var __publicField = (obj, key, value) => {
       this.awareness = extraOptions.awareness ?? new Awareness(doc);
       this.awareness.on("update", this.handleAwarenessUpdate.bind(this));
       this.WebSocketPolyfill = extraOptions.WebSocketPolyfill || WebSocket;
+      this.online = this.online.bind(this);
+      this.offline = this.offline.bind(this);
+      if (typeof window !== "undefined") {
+        window.addEventListener("offline", this.offline);
+        window.addEventListener("online", this.online);
+      }
+      if (extraOptions.offlineSupport === true && typeof indexedDB !== "undefined") {
+        (async () => {
+          this.indexedDBProvider = await createIndexedDBProvider(doc, docId);
+        })();
+      }
       doc.on("update", this.update.bind(this));
       if (extraOptions.connect !== false) {
         this.connect();
       }
+    }
+    offline() {
+      this.checkSync();
+    }
+    online() {
+      if (this.reconnectSleeper) {
+        this.reconnectSleeper.wake();
+      }
+    }
+    clearHeartbeat() {
+      if (this.heartbeatHandle) {
+        clearTimeout(this.heartbeatHandle);
+        this.heartbeatHandle = null;
+      }
+    }
+    resetHeartbeat() {
+      this.clearHeartbeat();
+      this.heartbeatHandle = setTimeout(() => {
+        this.checkSync();
+        this.heartbeatHandle = null;
+      }, MAX_TIMEOUT_BETWEEN_HEARTBEATS);
+    }
+    clearConnectionTimeout() {
+      if (this.connectionTimeoutHandle) {
+        clearTimeout(this.connectionTimeoutHandle);
+        this.connectionTimeoutHandle = null;
+      }
+    }
+    setConnectionTimeout() {
+      if (this.connectionTimeoutHandle) {
+        return;
+      }
+      if (!this.receivedAtLeastOneSyncResponse) {
+        return;
+      }
+      this.connectionTimeoutHandle = setTimeout(() => {
+        if (this.websocket) {
+          this.websocket.close();
+          this.setStatus(STATUS_ERROR);
+          this.connect();
+        }
+        this.connectionTimeoutHandle = null;
+      }, MAX_TIMEOUT_WITHOUT_RECEIVING_HEARTBEAT);
     }
     send(message) {
       var _a;
@@ -1575,13 +1853,21 @@ var __publicField = (obj, key, value) => {
         this.websocket.send(message);
       }
     }
-    updateSyncedState() {
-      let hasLocalChanges = this.lastSyncAcked !== this.lastSyncSent;
-      if (hasLocalChanges === this.hasLocalChanges) {
-        return;
+    incrementLocalVersion() {
+      let emit = !this.hasLocalChanges;
+      this.localVersion += 1;
+      if (emit) {
+        this.emit(EVENT_LOCAL_CHANGES, true);
       }
-      this.hasLocalChanges = hasLocalChanges;
-      this.emit(EVENT_LOCAL_CHANGES, hasLocalChanges);
+    }
+    updateAckedVersion(version) {
+      version = Math.max(version, this.ackedVersion);
+      let emit = this.hasLocalChanges && version === this.localVersion;
+      this.ackedVersion = version;
+      if (emit) {
+        this.emit(EVENT_LOCAL_CHANGES, false);
+      }
+      this.receivedAtLeastOneSyncResponse = true;
     }
     setStatus(status) {
       if (this.status === status) {
@@ -1591,35 +1877,33 @@ var __publicField = (obj, key, value) => {
       this.emit(EVENT_CONNECTION_STATUS, status);
     }
     update(update, origin) {
-      if (origin !== this) {
-        const encoder = createEncoder();
-        writeVarUint(encoder, MESSAGE_SYNC);
-        writeUpdate(encoder, update);
-        this.send(toUint8Array(encoder));
-        this.checkSync();
+      if (origin === this) {
+        return;
       }
+      if (this.indexedDBProvider && origin === this.indexedDBProvider) {
+        return;
+      }
+      const encoder = createEncoder();
+      writeVarUint(encoder, MESSAGE_SYNC);
+      writeUpdate(encoder, update);
+      this.send(toUint8Array(encoder));
+      this.incrementLocalVersion();
+      this.checkSync();
     }
     checkSync() {
-      this.lastSyncSent += 1;
       const encoder = createEncoder();
       writeVarUint(encoder, MESSAGE_SYNC_STATUS);
       const versionEncoder = createEncoder();
-      writeVarUint(versionEncoder, this.lastSyncSent);
+      writeVarUint(versionEncoder, this.localVersion);
       writeVarUint8Array(encoder, toUint8Array(versionEncoder));
       this.send(toUint8Array(encoder));
-      this.updateSyncedState();
+      this.setConnectionTimeout();
     }
     async ensureClientToken() {
-      if (this.clientToken) {
-        return this.clientToken;
-      }
-      if (typeof this.authEndpoint === "string") {
+      if (this.clientToken === null) {
         this.clientToken = await getClientToken(this.authEndpoint, this.docId);
-        return this.clientToken;
-      } else {
-        this.clientToken = await this.authEndpoint();
-        return this.clientToken;
       }
+      return this.clientToken;
     }
     /**
      * Attempts to connect to the websocket.
@@ -1659,14 +1943,21 @@ var __publicField = (obj, key, value) => {
         } catch (e) {
           console.warn("Failed to get client token", e);
           this.setStatus(STATUS_ERROR);
-          await sleep(DELAY_MS_BEFORE_RETRY_TOKEN_REFRESH);
+          let timeout = DELAY_MS_BEFORE_RETRY_TOKEN_REFRESH * Math.min(MAX_BACKOFF_COEFFICIENT, Math.pow(BACKOFF_BASE, this.retries));
+          this.retries += 1;
+          this.reconnectSleeper = new Sleeper(timeout);
+          await this.reconnectSleeper.sleep();
           continue;
         }
         for (let i = 0; i < RETRIES_BEFORE_TOKEN_REFRESH; i++) {
           if (await this.attemptToConnect(clientToken)) {
+            this.retries = 0;
             break;
           }
-          await sleep(DELAY_MS_BEFORE_RECONNECT);
+          let timeout = DELAY_MS_BEFORE_RECONNECT * Math.min(MAX_BACKOFF_COEFFICIENT, Math.pow(BACKOFF_BASE, this.retries));
+          this.retries += 1;
+          this.reconnectSleeper = new Sleeper(timeout);
+          await this.reconnectSleeper.sleep();
         }
         this.clientToken = null;
       }
@@ -1752,8 +2043,12 @@ var __publicField = (obj, key, value) => {
       this.syncStep1();
       this.checkSync();
       this.broadcastAwareness();
+      this.resetHeartbeat();
+      this.receivedAtLeastOneSyncResponse = false;
     }
     receiveMessage(event) {
+      this.clearConnectionTimeout();
+      this.resetHeartbeat();
       let message = new Uint8Array(event.data);
       const decoder = createDecoder(message);
       const messageType = readVarUint(decoder);
@@ -1770,14 +2065,16 @@ var __publicField = (obj, key, value) => {
         case MESSAGE_SYNC_STATUS:
           let lastSyncBytes = readVarUint8Array(decoder);
           let d2 = createDecoder(lastSyncBytes);
-          this.lastSyncAcked = readVarUint(d2);
-          this.updateSyncedState();
+          let ackedVersion = readVarUint(d2);
+          this.updateAckedVersion(ackedVersion);
           break;
       }
     }
     websocketClose(event) {
       this.emit(EVENT_CONNECTION_CLOSE, event);
       this.setStatus(STATUS_ERROR);
+      this.clearHeartbeat();
+      this.clearConnectionTimeout();
       this.connect();
       removeAwarenessStates(
         this.awareness,
@@ -1790,6 +2087,8 @@ var __publicField = (obj, key, value) => {
     websocketError(event) {
       this.emit(EVENT_CONNECTION_ERROR, event);
       this.setStatus(STATUS_ERROR);
+      this.clearHeartbeat();
+      this.clearConnectionTimeout();
       this.connect();
     }
     emit(eventName, data = null) {
@@ -1799,7 +2098,6 @@ var __publicField = (obj, key, value) => {
       }
     }
     handleAwarenessUpdate({ added, updated, removed }, _origin) {
-      var _a;
       const changedClients = added.concat(updated).concat(removed);
       const encoder = createEncoder();
       writeVarUint(encoder, MESSAGE_AWARENESS);
@@ -1807,20 +2105,27 @@ var __publicField = (obj, key, value) => {
         encoder,
         encodeAwarenessUpdate(this.awareness, changedClients)
       );
-      (_a = this.websocket) == null ? void 0 : _a.send(toUint8Array(encoder));
+      this.send(toUint8Array(encoder));
     }
     destroy() {
       if (this.websocket) {
         this.websocket.close();
       }
+      if (this.indexedDBProvider) {
+        this.indexedDBProvider.destroy();
+      }
       removeAwarenessStates(this.awareness, [this.doc.clientID], "window unload");
+      if (typeof window !== "undefined") {
+        window.removeEventListener("offline", this.offline);
+        window.removeEventListener("online", this.online);
+      }
     }
-    _on(type, listener, once2) {
+    _on(type, listener, once) {
       var _a, _b;
       if (!this.listeners.has(type)) {
         this.listeners.set(type, /* @__PURE__ */ new Set());
       }
-      if (once2) {
+      if (once) {
         let listenerOnce = (d) => {
           var _a2;
           listener(d);
@@ -1842,6 +2147,12 @@ var __publicField = (obj, key, value) => {
       if (listeners) {
         listeners.delete(listener);
       }
+    }
+    /**
+     * Whether the document has local changes.
+     */
+    get hasLocalChanges() {
+      return this.ackedVersion !== this.localVersion;
     }
     /**
      * Whether the provider should attempt to connect.
@@ -2190,8 +2501,7 @@ var __publicField = (obj, key, value) => {
   const localStorageGet = (db) => (key) => {
     const value = db.localStoragePolyfill.getItem("ewe_" + key);
     db.debug("localStorageGet", key, value);
-    if (!value)
-      return null;
+    if (!value) return null;
     return JSON.parse(value);
   };
   const localStorageRemove = (db) => (key) => {

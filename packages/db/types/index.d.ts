@@ -48,18 +48,18 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
     info: DatabaseEvents['info'];
     warn: DatabaseEvents['warn'];
     error: DatabaseEvents['error'];
-    serverFetch: <ReturnType_1 extends object>(path: string, _options?: import("./utils/connection/serverFetch").Options | undefined) => Promise<{
+    serverFetch: <ReturnType extends object>(path: string, _options?: import("./utils/connection/serverFetch").Options) => Promise<{
         error: unknown;
         data: null;
     } | {
         error: null;
-        data: ReturnType_1;
+        data: ReturnType;
     }>;
     generateLoginUrl: (options: Partial<import("@eweser/shared").LoginQueryOptions> & {
         name: string;
     }) => string;
     login: (options: {
-        loadAllRooms?: boolean | undefined;
+        loadAllRooms?: boolean;
     } | undefined) => Promise<boolean>;
     logout: () => void;
     logoutAndClear: () => void;
@@ -69,7 +69,7 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
     /** first loads the local indexedDB ydoc for the room. if this.useYSweet is true and ySweetTokens are available will also connect to remote.
      * @param {RemoteLoadOptions} RemoteLoadOptions - options for loading the remote ydoc
      */
-    loadRoom: (serverRoom: import("@eweser/shared").ServerRoom, remoteLoadOptions?: import("./methods/connection/loadRoom").RemoteLoadOptions | undefined) => Promise<Room<any>>;
+    loadRoom: (serverRoom: import("@eweser/shared").ServerRoom, remoteLoadOptions?: import("./methods/connection/loadRoom").RemoteLoadOptions) => Promise<Room<any>>;
     loadRooms: (rooms: Registry, staggerMs?: number) => Promise<void>;
     syncRegistry: () => Promise<boolean>;
     getRegistry: () => Registry;
@@ -81,7 +81,7 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
     newRoom: <T extends EweDocument>(options: {
         _deleted?: boolean | null | undefined;
         _ttl?: string | null | undefined;
-        collectionKey: "notes" | "flashcards" | "profiles";
+        collectionKey: CollectionKey;
         name: string;
         id?: string | undefined;
         ySweetUrl?: string | null | undefined;
@@ -93,19 +93,19 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
         adminAccess?: string[] | undefined;
         createdAt?: string | null | undefined;
         updatedAt?: string | null | undefined;
-        indexedDbProvider?: import("y-indexeddb").IndexeddbPersistence | null | undefined;
-        webRtcProvider?: WebrtcProvider | null | undefined;
-        ySweetProvider?: import("@y-sweet/client").YSweetProvider | null | undefined;
+        indexedDbProvider?: (import("y-indexeddb").IndexeddbPersistence | null) | undefined;
+        webRtcProvider?: (WebrtcProvider | null) | undefined;
+        ySweetProvider?: (import("@y-sweet/client").YSweetProvider | null) | undefined;
         ydoc?: import("./types").YDoc<T> | null | undefined;
     }) => Room<T>;
     renameRoom: (room: Room<any>, newName: string) => Promise<import("@eweser/shared").ServerRoom | null>;
     generateShareRoomLink: ({ roomId, invitees, redirectUrl, redirectQueries, expiry, accessType, appName, domain, collections, }: Partial<import("@eweser/shared").LoginQueryOptions> & {
         roomId: string;
-        invitees?: string[] | undefined;
-        redirectUrl?: string | undefined;
-        redirectQueries?: Record<string, string> | undefined;
-        expiry?: string | undefined;
-        accessType: "read" | "write" | "admin";
+        invitees?: string[];
+        redirectUrl?: string;
+        redirectQueries?: Record<string, string>;
+        expiry?: string;
+        accessType: import("@eweser/shared").RoomAccessType;
         appName: string;
     }) => Promise<string>;
     pingServer: () => Promise<boolean | "" | undefined>;

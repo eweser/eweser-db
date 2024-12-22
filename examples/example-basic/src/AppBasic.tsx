@@ -1,12 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Database } from '@eweser/db';
-import type {
-  CollectionKey,
-  Documents,
-  Note,
-  Registry,
-  Room,
-} from '@eweser/db';
+import type { CollectionKey, Documents, Note, Room } from '@eweser/db';
 import * as config from './config';
 import { styles, StatusBar } from '@eweser/examples-components';
 

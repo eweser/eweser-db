@@ -29,9 +29,9 @@
   "module": "./dist/db.js",
   "exports": {
     ".": {
+      "types": "./types/index.d.ts",
       "import": "./dist/db.js",
-      "require": "./dist/db.umd.cjs",
-      "types": "./types/index.d.ts"
+      "require": "./dist/db.umd.cjs"
     }
   },
   "scripts": {
@@ -52,23 +52,23 @@
   },
   "devDependencies": {
     "@eweser/eslint-config-ts": "^1.13.2",
-    "@types/request": "^2.48.8",
-    "eslint": "^8.37.0",
-    "fake-indexeddb": "^4.0.1",
-    "jsdom": "^21.1.1",
+    "@types/request": "^2.48.12",
+    "eslint": "^9.17.0",
+    "fake-indexeddb": "^6.0.0",
+    "jsdom": "^25.0.1",
     "npm-run-all": "^4.1.5",
     "request": "^2.88.2",
-    "typescript": "^4.4.4",
-    "vite": "^5.1.4",
-    "vitest": "^0.29.8"
+    "typescript": "^5.7.2",
+    "vite": "^6.0.5",
+    "vitest": "^2.1.8"
   },
   "gitHead": "d6ee91d84092583f851548fa9ffe8ccf5de5705a",
   "dependencies": {
     "@eweser/shared": "^1.13.2",
-    "@y-sweet/client": "^0.6.4",
+    "@y-sweet/client": "^0.7.0",
     "y-indexeddb": "^9.0.12",
     "y-webrtc": "^10.3.0",
-    "yjs": "^13.6.20",
+    "yjs": "^13.6.21",
     "yjs-types": "^0.0.1"
   }
 }

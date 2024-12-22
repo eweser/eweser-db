@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import type { EweDocument } from '@eweser/shared';
 import { EventEmitter } from 'events';
 import type { Room } from './types';

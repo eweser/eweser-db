@@ -26,7 +26,9 @@ export const StatusBar = ({
     };
     db.on('onLoggedInChange', handleLoggedInChange);
     return () => {
+      // @ts-ignore // for some reason the EventEmitter type is not working
       db.removeListener('roomConnectionChange', handleOnlineChange);
+      // @ts-ignore
       db.removeListener('logout', handleLoggedInChange);
     };
   }, [db, setLoggedIn]);
