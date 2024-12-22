@@ -49,7 +49,7 @@ export async function middleware(req: NextRequest) {
       logger(error);
     }
   }
-  const origin = req.headers.get('origin');
+  const origin = req.headers.get('Origin') ?? req.headers.get('origin');
   if (!origin) {
     console.log('no origin', req.headers.entries());
   }
