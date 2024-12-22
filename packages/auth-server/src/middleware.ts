@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { logger } from './shared/utils';
 import { updateSession } from './services/database/supabase/middleware';
 const publicEndpoints = [/access-grant/];
+const publicPages = [/statement/];
 /** basically any endpoint that uses supabase, so check the imports of the backendClient */
 export async function middleware(req: NextRequest) {
   let approvedDomains: string[] = [];
@@ -11,6 +12,9 @@ export async function middleware(req: NextRequest) {
   const { supabase, response, userAuthed } = await updateSession(req);
   if (publicEndpoints.every((endpoint) => !endpoint.test(path))) {
     if (!userAuthed) {
+      if (publicPages.some((page) => page.test(path))) {
+        return response;
+      }
       const url = req.nextUrl.clone();
       url.pathname = '/';
       // don't redirect options requests
