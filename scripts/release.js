@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const inquirer = require('inquirer');
 
-const runCommand = (cmd, cwd) => {
+const runCommand = (cmd, cwd = process.cwd()) => {
   try {
     execSync(cmd, { stdio: 'inherit', cwd });
   } catch (error) {
@@ -35,8 +35,12 @@ const updateDependencyInOtherProject = (
   projectPath
 ) => {
   const packageJsonPath = path.join(projectPath, 'package.json');
-  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+  if (!fs.existsSync(packageJsonPath)) {
+    console.error(`Error: package.json not found at ${packageJsonPath}`);
+    return;
+  }
 
+  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
   if (packageJson.dependencies && packageJson.dependencies[packageName]) {
     packageJson.dependencies[packageName] = `^${newVersion}`;
     fs.writeFileSync(
@@ -53,7 +57,15 @@ const updateDependencyInOtherProject = (
     );
   }
 };
-
+const commitAndPushChanges = (projectPath, packageName, newVersion) => {
+  console.log('Committing and pushing changes to the other project...');
+  runCommand('git add package.json package-lock.json', projectPath);
+  runCommand(
+    `git commit -m "chore: update ${packageName} to version ^${newVersion}"`,
+    projectPath
+  );
+  runCommand('git push', projectPath);
+};
 (async () => {
   const bump = bumpType || (process.env.CI ? 'patch' : await promptForBump());
 
@@ -67,21 +79,29 @@ const updateDependencyInOtherProject = (
   console.log('Publishing packages...');
   runCommand('npx changeset publish');
 
-  if (!process.env.CI) {
-    // Update @eweser/db in the other project
-
-    // Get the new version of @eweser/db
-    const packageJson = JSON.parse(
-      fs.readFileSync(path.join(__dirname, 'packages/db/package.json'), 'utf-8')
-    );
-    const newVersion = packageJson.version;
-
-    const otherProjectPath = '/home/jacob/ewe-note';
-    updateDependencyInOtherProject('@eweser/db', newVersion, otherProjectPath);
-    // Install updated dependencies in the other project
-    console.log('Installing updated dependencies in the other project...');
-    runCommand('npm install', otherProjectPath);
-
-    console.log('Dependency update completed.');
+  // Get the new version of @eweser/db
+  const packageJsonPath = path.resolve(
+    __dirname,
+    '../packages/db/package.json'
+  );
+  if (!fs.existsSync(packageJsonPath)) {
+    console.error(`Error: package.json not found at ${packageJsonPath}`);
+    process.exit(1);
   }
+  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+  const newVersion = packageJson.version;
+
+  console.log(`New version of @eweser/db: ${newVersion}`);
+
+  // Update @eweser/db in the other project
+  const otherProjectPath = '/home/jacob/ewe-note';
+  updateDependencyInOtherProject('@eweser/db', newVersion, otherProjectPath);
+
+  // Install updated dependencies in the other project
+  console.log('Installing updated dependencies in the other project...');
+  runCommand('npm install', otherProjectPath);
+
+  commitAndPushChanges(otherProjectPath, '@eweser/db', newVersion);
+
+  console.log('Dependency update completed.');
 })();
