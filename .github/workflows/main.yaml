@@ -36,7 +36,7 @@ jobs:
     #     run: npm run start-test-rpc-server & npx wait-on http://localhost:4444
 
     #   - name: Run unit/integration tests
-    #     run: npx lerna run test --scope @eweser/db
+    #     run: cd ./packages/db; npm run test
 
     #   - name: Run e2e tests on all examples
     #     uses: cypress-io/github-action@v5
