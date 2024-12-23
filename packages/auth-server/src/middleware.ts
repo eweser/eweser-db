@@ -12,7 +12,7 @@ const publicPages = [/statement/, /robots/];
 export async function middleware(req: NextRequest) {
   let approvedDomains: string[] = [];
   const path = req.nextUrl.pathname;
-  console.log('path', path);
+  // console.log('path', path);
 
   const { supabase, response, userAuthed } = await updateSession(req);
   if (publicEndpoints.every((endpoint) => !endpoint.test(path))) {
@@ -24,14 +24,14 @@ export async function middleware(req: NextRequest) {
       url.pathname = '/';
       // don't redirect options requests
       if (req.nextUrl.pathname !== '/') {
-        console.log('redirecting to / from', path);
+        // console.log('redirecting to / from', path);
         return NextResponse.redirect(url.toString(), { status: 302 });
       }
       return response;
     }
     // for non public endpoints, don't need to set cors and check origin
     // if the endpoint needs supabase, update the session
-    console.log('private endpoint');
+    // console.log('private endpoint');
     return response;
   }
 
@@ -46,7 +46,7 @@ export async function middleware(req: NextRequest) {
     const { data: domains, error } = await supabase
       .from('apps')
       .select('domain');
-    logger('domains', domains, error);
+    // logger('domains', domains, error);
 
     if (domains && !error) {
       approvedDomains = domains.map((app: { domain: string }) => app.domain);
@@ -60,7 +60,7 @@ export async function middleware(req: NextRequest) {
   }
   const domain = origin?.split('://')[1];
   const isOriginApproved = domain && approvedDomains.includes(domain);
-  console.log('isOriginApproved', isOriginApproved, domain, approvedDomains);
+  // console.log('isOriginApproved', isOriginApproved, domain, approvedDomains);
 
   const isPreflight = req.method === 'OPTIONS';
 
