@@ -55,8 +55,8 @@ export async function middleware(req: NextRequest) {
     }
   }
   const origin = req.headers.get('Origin') ?? req.headers.get('origin');
-  if (!origin) {
-    console.log('no origin', req.headers.entries());
+  if (!origin && process.env.NODE_ENV !== 'development') {
+    console.log('no origin', req.headers.entries(), req.nextUrl.toString());
   }
   const domain = origin?.split('://')[1];
   const isOriginApproved = domain && approvedDomains.includes(domain);

@@ -399,10 +399,7 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
       return super.emit(event, ...args);
     }
   }
-  const setupLogger = (db, logLevel) => {
-    if (logLevel) {
-      db.logLevel = logLevel;
-    }
+  const setupLogger = (db) => {
     db.on("log", (level, ...message) => {
       switch (level) {
         case 0:
@@ -2218,8 +2215,15 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
     return (room, ySweetUrl) => {
       const localLoaded = !!room && !!room.ydoc && !!room.indexedDbProvider;
       const ySweet = room.ySweetProvider;
-      const shouldLoadYSweet = !!db.getToken() && db.useYSweet && !!(room == null ? void 0 : room.ySweetUrl) && (ySweet == null ? void 0 : ySweet.status) !== "connecting" && (ySweet == null ? void 0 : ySweet.status) !== "handshaking";
-      const ySweetLoaded = ySweetUrl && ySweet && room.ySweetUrl === ySweetUrl && ySweet.status === "connected";
+      const shouldLoadYSweet = room.connectionStatus === "disconnected" && !!db.getToken() && db.useYSweet && !!(room == null ? void 0 : room.ySweetUrl) && (ySweet == null ? void 0 : ySweet.status) !== "connecting" && (ySweet == null ? void 0 : ySweet.status) !== "handshaking";
+      const ySweetLoaded = room.connectionStatus === "connected" && ySweetUrl && ySweet && room.ySweetUrl === ySweetUrl && ySweet.status === "connected";
+      db.info("checkLoadedState", {
+        room: room.name,
+        localLoaded,
+        ySweetLoaded,
+        shouldLoadYSweet,
+        status: ySweet == null ? void 0 : ySweet.status
+      });
       return { localLoaded, ySweetLoaded, shouldLoadYSweet };
     };
   }
@@ -2237,26 +2241,37 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
       room.indexedDbProvider
     );
   }
-  async function loadYSweet(db, room, withAwareness = true, awaitConnection = false, maxWait = 1e4) {
+  async function loadYSweet(db, room, withAwareness = true, awaitConnection = false, maxWait = 3e4) {
+    if (!room.connectAbortController) {
+      room.connectAbortController = new AbortController();
+    }
     function emitConnectionChange(status) {
+      room.connectionStatus = status;
       if (status === "connected") {
         room.connectionRetries = 0;
       }
       room.emit("roomConnectionChange", status, room);
       db.emit("roomConnectionChange", status, room);
     }
-    const handleStatusChange = ({ status }) => emitConnectionChange(status);
+    const handleStatusChange = ({ status }) => {
+      var _a;
+      if (status === "connected") {
+        room.connectionRetries = 0;
+        (_a = room.connectAbortController) == null ? void 0 : _a.abort();
+      }
+      emitConnectionChange(status);
+    };
     function handleSync(synced) {
       emitConnectionChange(synced ? "connected" : "disconnected");
       db.debug("ySweetProvider synced", synced);
     }
     async function handleConnectionError(error) {
-      db.error("ySweetProvider error", error);
+      db.error("ySweetProvider error", room.name, error);
       emitConnectionChange("disconnected");
       if (room.connectionRetries < 3) {
         await wait(1e3);
         room.connectionRetries++;
-        checkTokenAndConnectProvider(withAwareness);
+        checkTokenAndConnectProvider();
       }
     }
     async function pollForYSweetConnectionAndAwait() {
@@ -2270,23 +2285,73 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
           } else {
             waited += 1e3;
             if (waited >= maxWait) {
+              console.log(
+                "timed out waiting for ySweet connection",
+                room.name,
+                waited,
+                maxWait,
+                room.ySweetProvider
+              );
               clearInterval(poll);
-              reject(new Error("timed out waiting for ySweet connection"));
+              reject(
+                new Error("timed out waiting for ySweet connection " + room.name)
+              );
             }
           }
-        }, 1e3);
+        }, 300);
       });
     }
-    async function checkTokenAndConnectProvider(withAwareness2 = true) {
+    async function checkTokenAndConnectProvider() {
+      var _a;
+      if (room.ySweetProvider) {
+        console.log(
+          "----- provider exsits",
+          (_a = room.ySweetProvider) == null ? void 0 : _a.status,
+          room.name
+        );
+        if (awaitConnection) {
+          try {
+            await pollForYSweetConnectionAndAwait();
+          } catch (e) {
+            db.error(e);
+          }
+          db.emit("roomRemoteLoaded", room);
+        }
+        return;
+      }
       emitConnectionChange("connecting");
       room.ySweetProvider = createYjsProvider(
         room.ydoc,
         room.id,
         async () => {
+          var _a2, _b;
+          db.debug(
+            "----- createYjsProvider token refresh",
+            (_a2 = room.ySweetProvider) == null ? void 0 : _a2.status,
+            room.name
+          );
+          const status = (_b = room.ySweetProvider) == null ? void 0 : _b.status;
+          if (room.ySweetUrl && room.ySweetBaseUrl && room.tokenExpiry && new Date(room.tokenExpiry) > new Date(Date.now() + 5 * 60 * 1e3)) {
+            db.debug("returning existing token", room.name);
+            return {
+              url: room.ySweetUrl,
+              baseUrl: room.ySweetBaseUrl,
+              docId: room.id
+            };
+          }
+          if ((status === "connecting" || status === "handshaking") && room.ySweetUrl && room.ySweetBaseUrl && room.tokenExpiry) {
+            db.debug("already connecting, returning existing token", room.name);
+            return {
+              url: room.ySweetUrl,
+              baseUrl: room.ySweetBaseUrl,
+              docId: room.id
+            };
+          }
           const refreshed = await db.refreshYSweetToken(room);
           db.debug(
             "refreshed token. success: ",
-            (refreshed == null ? void 0 : refreshed.ySweetUrl) && refreshed.tokenExpiry
+            (refreshed == null ? void 0 : refreshed.ySweetUrl) && refreshed.tokenExpiry,
+            room.name
           );
           if ((refreshed == null ? void 0 : refreshed.ySweetUrl) && refreshed.tokenExpiry && refreshed.ySweetBaseUrl) {
             room.tokenExpiry = refreshed.tokenExpiry;
@@ -2298,10 +2363,10 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
               docId: room.id
             };
           } else {
-            throw new Error("No ySweetUrl found");
+            throw new Error("No ySweetUrl found: " + room.name);
           }
         },
-        withAwareness2 ? { awareness: new Awareness(room.ydoc) } : {}
+        withAwareness ? { awareness: new Awareness(room.ydoc) } : {}
       );
       room.ySweetProvider.on("status", handleStatusChange);
       room.ySweetProvider.on("sync", handleSync);
@@ -2330,7 +2395,7 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
   const loadRoom = (db) => async (serverRoom, remoteLoadOptions) => {
     const loadRemote = (remoteLoadOptions == null ? void 0 : remoteLoadOptions.loadRemote) ?? true;
     const awaitLoadRemote = (remoteLoadOptions == null ? void 0 : remoteLoadOptions.awaitLoadRemote) ?? true;
-    const loadRemoteMaxWait = (remoteLoadOptions == null ? void 0 : remoteLoadOptions.loadRemoteMaxWait) ?? 1e4;
+    const loadRemoteMaxWait = (remoteLoadOptions == null ? void 0 : remoteLoadOptions.loadRemoteMaxWait) ?? 3e4;
     const withAwareness = (remoteLoadOptions == null ? void 0 : remoteLoadOptions.withAwareness) ?? false;
     const { roomId, collectionKey } = validate(serverRoom);
     const room = db.collections[collectionKey][roomId] ?? new Room({ db, ...serverRoom });
@@ -2384,6 +2449,8 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
       __publicField(this, "ySweetProvider");
       __publicField(this, "ydoc");
       __publicField(this, "connectionRetries", 0);
+      __publicField(this, "connectionStatus", "disconnected");
+      __publicField(this, "connectAbortController");
       __publicField(this, "disconnect", () => {
         var _a, _b;
         (_a = this.ySweetProvider) == null ? void 0 : _a.disconnect();
@@ -2460,9 +2527,10 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
     flashcards: {},
     profiles: {}
   };
-  const serverFetch = (_db) => async (path, _options) => {
+  const serverFetch = (_db) => async (path, _options, abortController) => {
     const options = {
-      ..._options
+      ..._options,
+      signal: abortController == null ? void 0 : abortController.signal
     };
     try {
       const token = _db.getToken();
@@ -2715,7 +2783,9 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
   };
   const refreshYSweetToken = (db) => async (room) => {
     const { data: refreshed } = await db.serverFetch(
-      `/access-grant/refresh-y-sweet-token/${room.id}`
+      `/access-grant/refresh-y-sweet-token/${room.id}`,
+      void 0,
+      room.connectAbortController
     );
     return refreshed;
   };
@@ -2757,6 +2827,7 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
     }
   );
   const loadRooms = (db) => async (rooms, staggerMs = 1e3) => {
+    var _a, _b;
     const loadedRooms = [];
     db.debug("loading rooms", rooms);
     for (const room of rooms) {
@@ -2766,10 +2837,17 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
     db.debug("loaded rooms", loadedRooms);
     db.emit("roomsLoaded", loadedRooms);
     const remoteLoadedRooms = [];
+    let isFirstRoom = true;
     for (const room of rooms) {
-      await new Promise((resolve) => setTimeout(resolve, staggerMs));
+      if (!isFirstRoom) {
+        await new Promise((resolve) => setTimeout(resolve, staggerMs));
+      } else {
+        isFirstRoom = false;
+      }
       const remoteLoadedRoom = await db.loadRoom(room, { loadRemote: true });
-      remoteLoadedRooms.push(remoteLoadedRoom);
+      if (remoteLoadedRoom.ySweetProvider && ((_a = remoteLoadedRoom.ySweetProvider) == null ? void 0 : _a.status) !== "error" && ((_b = remoteLoadedRoom.ySweetProvider) == null ? void 0 : _b.status) !== "offline") {
+        remoteLoadedRooms.push(remoteLoadedRoom);
+      }
     }
     db.debug("loaded remotes for rooms", remoteLoadedRooms);
     db.emit("roomsRemotesLoaded", remoteLoadedRooms);
@@ -2962,7 +3040,10 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
           this.webRtcPeers = options == null ? void 0 : options.webRTCPeers;
         }
       }
-      setupLogger(this, options.logLevel);
+      if (typeof options.logLevel === "number") {
+        this.logLevel = options.logLevel;
+      }
+      setupLogger(this);
       this.debug("Database created with options", options);
       this.registry = this.getRegistry() || [];
       if (options.initialRooms) {

@@ -25,5 +25,5 @@ export type DatabaseEvents = {
 export type RoomEvents<T extends EweDocument> = {
     roomConnectionChange: (status: RoomConnectionStatus, room: Room<T>) => void;
 };
-export declare const setupLogger: (db: Database, logLevel?: number) => void;
+export declare const setupLogger: (db: Database) => void;
 export {};

@@ -2,7 +2,7 @@ import type { CollectionKey, EweDocument, ServerRoom } from '@eweser/shared';
 import type { YSweetProvider } from '@y-sweet/client';
 import type { IndexeddbPersistence } from 'y-indexeddb';
 import type { WebrtcProvider } from 'y-webrtc';
-import type { RoomEvents } from './events';
+import type { RoomConnectionStatus, RoomEvents } from './events';
 import { TypedEventEmitter } from './events';
 import type { Database, YDoc } from '.';
 import type { GetDocuments } from './utils/getDocuments';
@@ -57,6 +57,8 @@ export class Room<T extends EweDocument>
   ydoc?: YDoc<T> | null;
 
   connectionRetries = 0;
+  connectionStatus: RoomConnectionStatus = 'disconnected';
+  connectAbortController?: AbortController;
 
   disconnect = () => {
     this.ySweetProvider?.disconnect();

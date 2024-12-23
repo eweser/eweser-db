@@ -28,16 +28,25 @@ function checkLoadedState(db: Database) {
     const localLoaded = !!room && !!room.ydoc && !!room.indexedDbProvider;
     const ySweet = room.ySweetProvider;
     const shouldLoadYSweet =
+      room.connectionStatus === 'disconnected' &&
       !!db.getToken() &&
       db.useYSweet &&
       !!room?.ySweetUrl &&
       ySweet?.status !== 'connecting' &&
       ySweet?.status !== 'handshaking';
     const ySweetLoaded =
+      room.connectionStatus === 'connected' &&
       ySweetUrl &&
       ySweet &&
       room.ySweetUrl === ySweetUrl &&
       ySweet.status === 'connected';
+    db.info('checkLoadedState', {
+      room: room.name,
+      localLoaded,
+      ySweetLoaded,
+      shouldLoadYSweet,
+      status: ySweet?.status,
+    });
 
     return { localLoaded, ySweetLoaded, shouldLoadYSweet };
   };
@@ -63,29 +72,38 @@ export async function loadYSweet(
   room: Room<any>,
   withAwareness = true,
   awaitConnection = false,
-  maxWait = 10000
+  maxWait = 30000
 ) {
+  if (!room.connectAbortController) {
+    room.connectAbortController = new AbortController();
+  }
   function emitConnectionChange(status: RoomConnectionStatus) {
+    room.connectionStatus = status;
     if (status === 'connected') {
       room.connectionRetries = 0;
     }
     room.emit('roomConnectionChange', status, room);
     db.emit('roomConnectionChange', status, room);
   }
-  const handleStatusChange = ({ status }: { status: RoomConnectionStatus }) =>
+  const handleStatusChange = ({ status }: { status: RoomConnectionStatus }) => {
+    if (status === 'connected') {
+      room.connectionRetries = 0;
+      room.connectAbortController?.abort();
+    }
     emitConnectionChange(status);
+  };
   function handleSync(synced: boolean) {
     emitConnectionChange(synced ? 'connected' : 'disconnected');
     db.debug('ySweetProvider synced', synced);
   }
   async function handleConnectionError(error: any) {
-    db.error('ySweetProvider error', error);
+    db.error('ySweetProvider error', room.name, error);
     emitConnectionChange('disconnected');
     // because this is a change listener, it could be called many times. In order to prevent an infinite loop of retries, we will only allow 3 retries.
     if (room.connectionRetries < 3) {
       await wait(1000);
       room.connectionRetries++;
-      checkTokenAndConnectProvider(withAwareness);
+      checkTokenAndConnectProvider();
     }
   }
   async function pollForYSweetConnectionAndAwait() {
@@ -98,24 +116,82 @@ export async function loadYSweet(
         } else {
           waited += 1000;
           if (waited >= maxWait) {
+            console.log(
+              'timed out waiting for ySweet connection',
+              room.name,
+              waited,
+              maxWait,
+              room.ySweetProvider
+            );
             clearInterval(poll);
-            reject(new Error('timed out waiting for ySweet connection'));
+            reject(
+              new Error('timed out waiting for ySweet connection ' + room.name)
+            );
           }
         }
-      }, 1000);
+      }, 300);
     });
   }
-  async function checkTokenAndConnectProvider(withAwareness = true) {
+  async function checkTokenAndConnectProvider() {
+    if (room.ySweetProvider) {
+      console.log(
+        '----- provider exsits',
+        room.ySweetProvider?.status,
+        room.name
+      );
+      if (awaitConnection) {
+        try {
+          await pollForYSweetConnectionAndAwait();
+        } catch (e) {
+          db.error(e);
+        }
+        db.emit('roomRemoteLoaded', room);
+      }
+      return;
+    }
     emitConnectionChange('connecting');
-
     room.ySweetProvider = createYjsProvider(
       room.ydoc as Doc,
       room.id,
       async () => {
+        db.debug(
+          '----- createYjsProvider token refresh',
+          room.ySweetProvider?.status,
+          room.name
+        );
+        const status = room.ySweetProvider?.status;
+        // if have at least 5 minutes left ignore
+        if (
+          room.ySweetUrl &&
+          room.ySweetBaseUrl &&
+          room.tokenExpiry &&
+          new Date(room.tokenExpiry) > new Date(Date.now() + 5 * 60 * 1000)
+        ) {
+          db.debug('returning existing token', room.name);
+          return {
+            url: room.ySweetUrl,
+            baseUrl: room.ySweetBaseUrl,
+            docId: room.id,
+          };
+        }
+        if (
+          (status === 'connecting' || status === 'handshaking') &&
+          room.ySweetUrl &&
+          room.ySweetBaseUrl &&
+          room.tokenExpiry
+        ) {
+          db.debug('already connecting, returning existing token', room.name);
+          return {
+            url: room.ySweetUrl,
+            baseUrl: room.ySweetBaseUrl,
+            docId: room.id,
+          };
+        }
         const refreshed = await db.refreshYSweetToken(room);
         db.debug(
           'refreshed token. success: ',
-          refreshed?.ySweetUrl && refreshed.tokenExpiry
+          refreshed?.ySweetUrl && refreshed.tokenExpiry,
+          room.name
         );
         if (
           refreshed?.ySweetUrl &&
@@ -131,7 +207,7 @@ export async function loadYSweet(
             docId: room.id,
           };
         } else {
-          throw new Error('No ySweetUrl found');
+          throw new Error('No ySweetUrl found: ' + room.name);
         }
       },
       withAwareness ? { awareness: new Awareness(room.ydoc as Doc) } : {}
@@ -169,7 +245,7 @@ export type RemoteLoadOptions = {
   awaitLoadRemote?: boolean;
   /* whether to await the remote ySweet connection. Default is true*/
   loadRemote?: boolean;
-  /* the maximum time to wait for the remote ySweet connection. Default is 10000ms */
+  /* the maximum time to wait for the remote ySweet connection. Default is 30000ms */
   loadRemoteMaxWait?: number;
   /** use Awareness, false by default */
   withAwareness?: boolean;
@@ -180,7 +256,7 @@ export const loadRoom =
   async (serverRoom: ServerRoom, remoteLoadOptions?: RemoteLoadOptions) => {
     const loadRemote = remoteLoadOptions?.loadRemote ?? true;
     const awaitLoadRemote = remoteLoadOptions?.awaitLoadRemote ?? true;
-    const loadRemoteMaxWait = remoteLoadOptions?.loadRemoteMaxWait ?? 10000;
+    const loadRemoteMaxWait = remoteLoadOptions?.loadRemoteMaxWait ?? 30000;
     const withAwareness = remoteLoadOptions?.withAwareness ?? false;
 
     const { roomId, collectionKey } = validate(serverRoom);

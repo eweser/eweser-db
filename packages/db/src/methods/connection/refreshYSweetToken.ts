@@ -7,7 +7,9 @@ export const refreshYSweetToken =
   async (room: Room<any>): Promise<RefreshYSweetTokenRouteResponse | null> => {
     const { data: refreshed } =
       await db.serverFetch<RefreshYSweetTokenRouteResponse>(
-        `/access-grant/refresh-y-sweet-token/${room.id}`
+        `/access-grant/refresh-y-sweet-token/${room.id}`,
+        undefined,
+        room.connectAbortController
       );
 
     return refreshed;

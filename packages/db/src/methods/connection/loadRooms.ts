@@ -14,10 +14,21 @@ export const loadRooms =
     db.debug('loaded rooms', loadedRooms);
     db.emit('roomsLoaded', loadedRooms);
     const remoteLoadedRooms = [];
+    let isFirstRoom = true;
     for (const room of rooms) {
-      await new Promise((resolve) => setTimeout(resolve, staggerMs));
+      if (!isFirstRoom) {
+        await new Promise((resolve) => setTimeout(resolve, staggerMs));
+      } else {
+        isFirstRoom = false;
+      }
       const remoteLoadedRoom = await db.loadRoom(room, { loadRemote: true });
-      remoteLoadedRooms.push(remoteLoadedRoom);
+      if (
+        remoteLoadedRoom.ySweetProvider &&
+        remoteLoadedRoom.ySweetProvider?.status !== 'error' &&
+        remoteLoadedRoom.ySweetProvider?.status !== 'offline'
+      ) {
+        remoteLoadedRooms.push(remoteLoadedRoom);
+      }
     }
     db.debug('loaded remotes for rooms', remoteLoadedRooms);
     db.emit('roomsRemotesLoaded', remoteLoadedRooms);

@@ -6,9 +6,14 @@ export type Options = Omit<RequestInit, 'body'> & {
 
 export const serverFetch =
   (_db: Database) =>
-  async <ReturnType extends object>(path: string, _options?: Options) => {
+  async <ReturnType extends object>(
+    path: string,
+    _options?: Options,
+    abortController?: AbortController
+  ) => {
     const options = {
       ..._options,
+      signal: abortController?.signal,
     };
     try {
       const token = _db.getToken();

@@ -48,7 +48,7 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
     info: DatabaseEvents['info'];
     warn: DatabaseEvents['warn'];
     error: DatabaseEvents['error'];
-    serverFetch: <ReturnType extends object>(path: string, _options?: import("./utils/connection/serverFetch").Options) => Promise<{
+    serverFetch: <ReturnType extends object>(path: string, _options?: import("./utils/connection/serverFetch").Options, abortController?: AbortController) => Promise<{
         error: unknown;
         data: null;
     } | {

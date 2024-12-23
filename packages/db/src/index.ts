@@ -223,8 +223,10 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
         this.webRtcPeers = options?.webRTCPeers;
       }
     }
-
-    setupLogger(this, options.logLevel);
+    if (typeof options.logLevel === 'number') {
+      this.logLevel = options.logLevel;
+    }
+    setupLogger(this);
     this.debug('Database created with options', options);
 
     this.registry = this.getRegistry() || [];

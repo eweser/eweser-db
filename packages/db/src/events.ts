@@ -44,10 +44,7 @@ export type RoomEvents<T extends EweDocument> = {
   roomConnectionChange: (status: RoomConnectionStatus, room: Room<T>) => void;
 };
 
-export const setupLogger = (db: Database, logLevel?: number) => {
-  if (logLevel) {
-    db.logLevel = logLevel;
-  }
+export const setupLogger = (db: Database) => {
   db.on('log', (level, ...message) => {
     switch (level) {
       case 0:

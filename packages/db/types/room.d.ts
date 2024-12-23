@@ -2,7 +2,7 @@ import type { CollectionKey, EweDocument, ServerRoom } from '@eweser/shared';
 import type { YSweetProvider } from '@y-sweet/client';
 import type { IndexeddbPersistence } from 'y-indexeddb';
 import type { WebrtcProvider } from 'y-webrtc';
-import type { RoomEvents } from './events';
+import type { RoomConnectionStatus, RoomEvents } from './events';
 import { TypedEventEmitter } from './events';
 import type { Database, YDoc } from '.';
 import type { GetDocuments } from './utils/getDocuments';
@@ -48,6 +48,8 @@ export declare class Room<T extends EweDocument> extends TypedEventEmitter<RoomE
     ySweetProvider?: YSweetProvider | null;
     ydoc?: YDoc<T> | null;
     connectionRetries: number;
+    connectionStatus: RoomConnectionStatus;
+    connectAbortController?: AbortController;
     disconnect: () => void;
     getDocuments: () => GetDocuments<T>;
     load: () => Promise<Room<T>>;
