@@ -28,15 +28,16 @@ const promptForBump = async () => {
 };
 
 (async () => {
-  // Determine bump type: provided via CLI, CI default, or manual prompt
+  // Default to "patch" in CI or use provided bump type
   const bump = bumpType || (process.env.CI ? 'patch' : await promptForBump());
 
   console.log(`Bumping version with a ${bump} release...`);
 
-  // Skip creating an empty changeset, since it's already handled
+  // Apply changeset version bump
   console.log('Applying version changes...');
   runCommand('npx changeset version');
 
+  // Publish updated packages
   console.log('Publishing packages...');
   runCommand('npx changeset publish');
 })();

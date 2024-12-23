@@ -1,47 +1,37 @@
-name: build
+name: Release Workflow
 
 on:
-  pull_request:
-    types: [opened, synchronize]
+  push:
+    branches:
+      - main
 
 jobs:
-  # build:
-  #   name: Tests
-  #   runs-on: ubuntu-latest
-  #   environment: preview
-  #   env:
-  #     VITE_CI: true
+  release:
+    name: Create and Publish Release
+    runs-on: ubuntu-latest
 
-    # strategy:
-    #   matrix:
-    #     node-version: [18.14.0]
+    steps:
+      # Step 1: Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    # steps:
-    #   - uses: actions/checkout@v3
+      # Step 2: Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: npm
 
-    #   - name: Use Node.js ${{ matrix.node-version }}
-    #     uses: actions/setup-node@v3
-    #     with:
-    #       node-version: ${{ matrix.node-version }}
-    #       cache: 'npm'
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: npm ci
 
-    #   - name: Install Dependencies
-    #     run: npm install && cd test-rpc-server && npm install
+      # Step 4: Create a default changeset if none exists
+      - name: Create default changeset (if needed)
+        run: npm run default-changeset
 
-    #   - name: Build packages
-    #     run: npm run build
-
-    #   - name: Start and wait for webRTC server
-    #     # the control operator & runs the first command in the background
-    #     run: npm run start-test-rpc-server & npx wait-on http://localhost:4444
-
-    #   - name: Run unit/integration tests
-    #     run: cd ./packages/db; npm run test
-
-    #   - name: Run e2e tests on all examples
-    #     uses: cypress-io/github-action@v5
-    #     with:
-    #       start: npm run run-example-previews
-    #       browser: chrome
-    #       wait-on: http://localhost:8000, http://localhost:8100, http://localhost:8300, http://localhost:8400, http://localhost:8500, http://localhost:8600
-    #       wait-on-timeout: 180
+      # Step 5: Run the release script
+      - name: Run release script
+        env:
+          CI: true
+        run: npm run release
