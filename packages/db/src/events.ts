@@ -38,6 +38,15 @@ export type DatabaseEvents = {
   roomConnectionChange: (status: RoomConnectionStatus, room: Room<any>) => void;
   onLoggedInChange: (loggedIn: boolean) => void;
   onlineChange: (online: boolean) => void;
+  status: (status: {
+    online: boolean;
+    hasToken: boolean;
+    allRoomsCount: number;
+    connectedRoomsCount: number;
+    connectedRooms: string[];
+    connectingRoomsCount: number;
+    connectingRooms: string[];
+  }) => void;
 };
 
 export type RoomEvents<T extends EweDocument> = {

@@ -1,4 +1,5 @@
 import type {
+  Collection,
   CollectionKey,
   Collections,
   CollectionToDocument,
@@ -72,6 +73,7 @@ export interface DatabaseOptions {
   initialRooms?: Omit<NewRoomOptions<EweDocument>, 'db'>[];
   /** a polyfill for localStorage for react native apps */
   localStoragePolyfill?: LocalStoragePolyfill;
+  pollForStatus?: boolean;
 }
 
 export class Database extends TypedEventEmitter<DatabaseEvents> {
@@ -209,8 +211,42 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     };
   } = {};
 
+  allRooms() {
+    return Object.values(this.collections).flatMap(
+      (collection: Collection<any>) => Object.values(collection)
+    );
+  }
+
+  statusListener() {
+    this.emit('status', {
+      online: this.online,
+      hasToken: !!this.accessGrantToken,
+      allRoomsCount: this.allRooms().length,
+      connectedRoomsCount: this.allRooms().filter(
+        (r) => r.connectionStatus === 'connected'
+      ).length,
+      connectedRooms: this.allRooms()
+        .filter((r) => r.connectionStatus === 'connected')
+        .map((r) => r.id),
+      connectingRoomsCount: this.allRooms().filter(
+        (r) => r.connectionStatus === 'connecting'
+      ).length,
+      connectingRooms: this.allRooms()
+        .filter((r) => r.connectionStatus === 'connecting')
+        .map((r) => r.id),
+    });
+  }
+  /** useful for debugging or less granular event listening */
+  pollForStatus(intervalMs = 1000) {
+    setInterval(() => {
+      this.statusListener();
+    }, intervalMs);
+  }
   constructor(optionsPassed?: DatabaseOptions) {
     super();
+    if (optionsPassed?.pollForStatus) {
+      this.pollForStatus();
+    }
     const options = optionsPassed || {};
     this.localStoragePolyfill = options.localStoragePolyfill || localStorage;
     if (options.authServer) {
