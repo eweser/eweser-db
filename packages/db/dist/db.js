@@ -3036,11 +3036,33 @@ class Database extends TypedEventEmitter {
         const registryRoom = roomToServerRoom(this.newRoom(room));
         this.registry.push(registryRoom);
       }
+      this.loadRooms(this.registry);
     }
-    this.loadRooms(this.registry);
+    this.rollingSync({ roomsToSync: this.registry.map((r) => r.id) });
   }
   getRooms(collectionKey) {
     return Object.values(this.collections[collectionKey]);
+  }
+  // Because we don't want to have more than a few rooms open at one time, we can do a rollingSync of all rooms
+  async rollingSync({
+    collectionsToSync,
+    roomsToSync
+  } = {}) {
+    for (const key of collectionsToSync ?? Object.keys(this.collections)) {
+      const collection = this.collections[key];
+      for (const roomId of roomsToSync ?? Object.keys(this.collections)) {
+        if (!collection[roomId]) {
+          continue;
+        }
+        const room = collection[roomId];
+        if (room.connectionStatus !== "disconnected") {
+          continue;
+        }
+        await room.load();
+        wait(1e3);
+        room.disconnect();
+      }
+    }
   }
 }
 export {

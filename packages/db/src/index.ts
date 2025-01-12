@@ -13,7 +13,7 @@ import { collections } from './types';
 import { setupLogger, TypedEventEmitter } from './events';
 
 import type { UpdateRoomPostBody, UpdateRoomResponse } from '@eweser/shared';
-import { collectionKeys } from '@eweser/shared';
+import { collectionKeys, wait } from '@eweser/shared';
 import { getDocuments } from './utils/getDocuments';
 import { serverFetch } from './utils/connection/serverFetch';
 import { logout, logoutAndClear } from './methods/connection/logout';
@@ -44,6 +44,7 @@ import { pollConnection } from './utils/connection/pollConnection';
 import type { Doc } from 'yjs';
 import type { WebrtcProvider } from 'y-webrtc';
 import { newRoom } from './methods/newRoom';
+import { isReadable } from 'stream';
 
 export * from './utils';
 export * from './types';
@@ -179,7 +180,27 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
   generateShareRoomLink = generateShareRoomLink(this);
   pingServer = pingServer(this);
 
-  // Temp docs. These are used for collaborative editing, or for rich-text editors that require a full yDoc passed to the editor. It is recommended in these cases to use a temporary yDoc only used for the session (if that document is open in both apps), then have debounced updates to the actual (ex. Notes) document, saved in cross platform compatible markdown.
+  // Because we don't want to have more than a few rooms open at one time, we can do a rollingSync of all rooms
+  async rollingSync({
+    collectionsToSync,
+    roomsToSync,
+  }: { collectionsToSync?: CollectionKey[]; roomsToSync?: string[] } = {}) {
+    for (const key of collectionsToSync ?? Object.keys(this.collections)) {
+      const collection = this.collections[key as CollectionKey];
+      for (const roomId of roomsToSync ?? Object.keys(this.collections)) {
+        if (!collection[roomId]) {
+          continue;
+        }
+        const room = collection[roomId];
+        if (room.connectionStatus !== 'disconnected') {
+          continue;
+        }
+        await room.load();
+        wait(1000);
+        room.disconnect();
+      }
+    }
+  } // Temp docs. These are used for collaborative editing, or for rich-text editors that require a full yDoc passed to the editor. It is recommended in these cases to use a temporary yDoc only used for the session (if that document is open in both apps), then have debounced updates to the actual (ex. Notes) document, saved in cross platform compatible markdown.
   tempDocs: {
     [eweserDocRef: string]: {
       doc: Doc;
@@ -231,6 +252,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
 
     this.registry = this.getRegistry() || [];
 
+    let initializedRooms = [];
     if (options.initialRooms) {
       const registryRoomIds = this.registry.map((r) => r.id);
       for (const room of options.initialRooms) {
@@ -239,10 +261,15 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
         }
         const registryRoom = roomToServerRoom(this.newRoom<any>(room));
         this.registry.push(registryRoom);
+        initializedRooms.push(registryRoom);
       }
+      this.loadRooms(initializedRooms);
     }
 
-    // For now load all registry rooms on start, but in the future might need to change this to limit how many ySweet connections are created on start.
-    this.loadRooms(this.registry);
+    this.rollingSync({
+      roomsToSync: this.registry
+        .map((r) => r.id)
+        .filter((initR) => !!initializedRooms.find((r) => r.id === initR)),
+    });
   }
 }

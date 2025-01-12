@@ -79,13 +79,11 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
     getRoom: <T extends EweDocument>(collectionKey: CollectionKey, roomId: string) => Room<T>;
     getRooms<T extends CollectionKey>(collectionKey: T): Room<CollectionToDocument[T]>[];
     newRoom: <T extends EweDocument>(options: {
-        _deleted?: boolean | null | undefined;
-        _ttl?: string | null | undefined;
-        collectionKey: CollectionKey;
         name: string;
+        collectionKey: CollectionKey;
         id?: string | undefined;
-        ySweetUrl?: string | null | undefined;
         tokenExpiry?: string | null | undefined;
+        ySweetUrl?: string | null | undefined;
         ySweetBaseUrl?: string | null | undefined;
         publicAccess?: "private" | "read" | "write" | undefined;
         readAccess?: string[] | undefined;
@@ -93,6 +91,8 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
         adminAccess?: string[] | undefined;
         createdAt?: string | null | undefined;
         updatedAt?: string | null | undefined;
+        _deleted?: boolean | null | undefined;
+        _ttl?: string | null | undefined;
         indexedDbProvider?: (import("y-indexeddb").IndexeddbPersistence | null) | undefined;
         webRtcProvider?: (WebrtcProvider | null) | undefined;
         ySweetProvider?: (import("@y-sweet/client").YSweetProvider | null) | undefined;
@@ -109,6 +109,10 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
         appName: string;
     }) => Promise<string>;
     pingServer: () => Promise<boolean | "" | undefined>;
+    rollingSync({ collectionsToSync, roomsToSync, }?: {
+        collectionsToSync?: CollectionKey[];
+        roomsToSync?: string[];
+    }): Promise<void>;
     tempDocs: {
         [eweserDocRef: string]: {
             doc: Doc;
