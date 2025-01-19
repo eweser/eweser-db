@@ -1,5 +1,13 @@
 # @eweser/examples-components
 
+## 1.13.5
+
+### Patch Changes
+
+- registry sync
+- Updated dependencies
+  - @eweser/db@1.13.5
+
 ## 1.13.4
 
 ### Patch Changes

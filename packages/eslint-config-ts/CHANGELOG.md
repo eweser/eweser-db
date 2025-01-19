@@ -1,5 +1,11 @@
 # @eweser/eslint-config-ts
 
+## 1.13.5
+
+### Patch Changes
+
+- registry sync
+
 ## 1.13.4
 
 ### Patch Changes
