@@ -177,6 +177,12 @@ class Database extends events_1.TypedEventEmitter {
             this.statusListener();
         }, intervalMs);
     }
+    registrySyncIntervalMs = 10000;
+    pollForRegistrySync() {
+        setInterval(() => {
+            this.syncRegistry();
+        }, this.registrySyncIntervalMs);
+    }
     constructor(optionsPassed) {
         super();
         if (optionsPassed?.pollForStatus) {
@@ -223,17 +229,18 @@ class Database extends events_1.TypedEventEmitter {
         if (options.initialRooms) {
             const registryRoomIds = this.registry.map((r) => r.id);
             for (const room of options.initialRooms) {
-                if (room.id && registryRoomIds.includes(room.id)) {
-                    continue;
-                }
                 const registryRoom = (0, room_1.roomToServerRoom)(this.newRoom(room));
-                this.registry.push(registryRoom);
+                if (room.id && !registryRoomIds.includes(room.id)) {
+                    this.registry.push(registryRoom);
+                }
                 initializedRooms.push(registryRoom);
             }
             console.log('initializedRooms', initializedRooms);
             this.loadRooms(initializedRooms);
         }
+        this.pollForRegistrySync();
         this.rollingSync();
+        this.emit('initialized');
     }
 }
 exports.Database = Database;

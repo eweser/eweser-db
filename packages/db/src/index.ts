@@ -42,10 +42,7 @@ import {
 import { generateShareRoomLink } from './methods/connection/generateShareRoomLink';
 import { pingServer } from './utils/connection/pingServer';
 import { pollConnection } from './utils/connection/pollConnection';
-import type { Doc } from 'yjs';
-import type { WebrtcProvider } from 'y-webrtc';
 import { newRoom } from './methods/newRoom';
-import { isReadable } from 'stream';
 
 export * from './utils';
 export * from './types';
@@ -243,6 +240,13 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     }, intervalMs);
   }
 
+  registrySyncIntervalMs = 10000;
+  pollForRegistrySync() {
+    setInterval(() => {
+      this.syncRegistry();
+    }, this.registrySyncIntervalMs);
+  }
+
   constructor(optionsPassed?: DatabaseOptions) {
     super();
     if (optionsPassed?.pollForStatus) {
@@ -293,16 +297,17 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     if (options.initialRooms) {
       const registryRoomIds = this.registry.map((r) => r.id);
       for (const room of options.initialRooms) {
-        if (room.id && registryRoomIds.includes(room.id)) {
-          continue;
-        }
         const registryRoom = roomToServerRoom(this.newRoom<any>(room));
-        this.registry.push(registryRoom);
+        if (room.id && !registryRoomIds.includes(room.id)) {
+          this.registry.push(registryRoom);
+        }
         initializedRooms.push(registryRoom);
       }
       console.log('initializedRooms', initializedRooms);
       this.loadRooms(initializedRooms);
     }
+    this.pollForRegistrySync();
     this.rollingSync();
+    this.emit('initialized');
   }
 }

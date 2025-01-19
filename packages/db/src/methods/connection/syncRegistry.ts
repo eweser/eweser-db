@@ -9,6 +9,7 @@ export const syncRegistry =
   (db: Database) =>
   /** sends the registry to the server to check for additions/subtractions on either side */
   async () => {
+    db.emit('registrySync', 'syncing');
     // packages/auth-server/src/app/access-grant/sync-registry/route.ts
     type RegistrySyncRequestBody = {
       token: string;
@@ -22,11 +23,16 @@ export const syncRegistry =
     if (!body.token) {
       return false;
     }
-    const { data: syncResult } = await db.serverFetch<RegistrySyncResponse>(
-      '/access-grant/sync-registry',
-      { method: 'POST', body }
-    );
-
+    const { data: syncResult, error } =
+      await db.serverFetch<RegistrySyncResponse>(
+        '/access-grant/sync-registry',
+        { method: 'POST', body }
+      );
+    if (error) {
+      db.emit('registrySync', 'error', error);
+      return false;
+    }
+    db.emit('registrySync', 'success');
     db.info('syncResult', syncResult);
 
     const { rooms, token, userId } = syncResult ?? {};
@@ -49,6 +55,7 @@ export const syncRegistry =
       rooms.length >= 2
     ) {
       db.debug('setting new rooms', rooms);
+      // TODO: if a new room was created locally before the sync finishes, this might overwrite it
       setLocalRegistry(db)(rooms);
       db.registry = rooms;
     } else {

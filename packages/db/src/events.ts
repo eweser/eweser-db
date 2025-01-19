@@ -48,6 +48,8 @@ export type DatabaseEvents = {
     connectingRoomsCount: number;
     connectingRooms: string[];
   }) => void;
+  registrySync: (status: 'syncing' | 'success' | 'error', error?: any) => void;
+  initialized: () => void;
 };
 
 export type RoomEvents<T extends EweDocument> = {

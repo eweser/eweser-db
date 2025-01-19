@@ -2828,6 +2828,7 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
   const syncRegistry = (db) => (
     /** sends the registry to the server to check for additions/subtractions on either side */
     async () => {
+      db.emit("registrySync", "syncing");
       const body = {
         token: db.getToken() ?? "",
         rooms: db.registry
@@ -2835,10 +2836,15 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
       if (!body.token) {
         return false;
       }
-      const { data: syncResult } = await db.serverFetch(
+      const { data: syncResult, error } = await db.serverFetch(
         "/access-grant/sync-registry",
         { method: "POST", body }
       );
+      if (error) {
+        db.emit("registrySync", "error", error);
+        return false;
+      }
+      db.emit("registrySync", "success");
       db.info("syncResult", syncResult);
       const { rooms, token, userId } = syncResult ?? {};
       if (userId && typeof userId === "string") {
@@ -3051,6 +3057,7 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
       });
       __publicField(this, "generateShareRoomLink", generateShareRoomLink(this));
       __publicField(this, "pingServer", pingServer(this));
+      __publicField(this, "registrySyncIntervalMs", 1e4);
       if (optionsPassed == null ? void 0 : optionsPassed.pollForStatus) {
         this.pollForStatus();
       }
@@ -3089,17 +3096,18 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
       if (options.initialRooms) {
         const registryRoomIds = this.registry.map((r) => r.id);
         for (const room of options.initialRooms) {
-          if (room.id && registryRoomIds.includes(room.id)) {
-            continue;
-          }
           const registryRoom = roomToServerRoom(this.newRoom(room));
-          this.registry.push(registryRoom);
+          if (room.id && !registryRoomIds.includes(room.id)) {
+            this.registry.push(registryRoom);
+          }
           initializedRooms.push(registryRoom);
         }
         console.log("initializedRooms", initializedRooms);
         this.loadRooms(initializedRooms);
       }
+      this.pollForRegistrySync();
       this.rollingSync();
+      this.emit("initialized");
     }
     getRooms(collectionKey) {
       return Object.values(this.collections[collectionKey]);
@@ -3154,6 +3162,11 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
       setInterval(() => {
         this.statusListener();
       }, intervalMs);
+    }
+    pollForRegistrySync() {
+      setInterval(() => {
+        this.syncRegistry();
+      }, this.registrySyncIntervalMs);
     }
   }
   exports2.Database = Database;
