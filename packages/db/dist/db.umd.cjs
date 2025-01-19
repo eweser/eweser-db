@@ -808,6 +808,21 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
     if (synced.synced) return { yDoc, localProvider };
     else throw new Error("could not sync doc");
   };
+  function stringToBase64(input) {
+    if (typeof window !== "undefined" && window.btoa) {
+      return window.btoa(input);
+    } else if (typeof Buffer !== "undefined") {
+      return Buffer.from(input).toString("base64");
+    } else {
+      throw new Error("Unable to encode to Base64");
+    }
+  }
+  function encodeClientToken(token) {
+    const jsonString = JSON.stringify(token);
+    let base64 = stringToBase64(jsonString);
+    base64 = base64.replace("+", "-").replace("/", "_").replace(/=+$/, "");
+    return base64;
+  }
   const BIT8$1 = 128;
   const BITS7$1 = 127;
   const MAX_SAFE_INTEGER$1 = Number.MAX_SAFE_INTEGER;
@@ -1775,12 +1790,14 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
       this.heartbeatHandle = null;
       this.connectionTimeoutHandle = null;
       this.reconnectSleeper = null;
+      this.showDebuggerLink = true;
       this.indexedDBProvider = null;
       this.retries = 0;
       this.receivedAtLeastOneSyncResponse = false;
       if (extraOptions.initialClientToken) {
         this.clientToken = extraOptions.initialClientToken;
       }
+      this.showDebuggerLink = extraOptions.showDebuggerLink !== false;
       new WebSocketCompatLayer(this);
       this.awareness = extraOptions.awareness ?? new Awareness(doc);
       this.awareness.on("update", this.handleAwarenessUpdate.bind(this));
@@ -1800,6 +1817,13 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
       if (extraOptions.connect !== false) {
         this.connect();
       }
+    }
+    /** @deprecated */
+    get debugUrl() {
+      if (!this.clientToken)
+        return null;
+      const payload = encodeClientToken(this.clientToken);
+      return `https://debugger.y-sweet.dev/?payload=${payload}`;
     }
     offline() {
       this.checkSync();
@@ -1932,33 +1956,45 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
       }
       this.isConnecting = true;
       this.setStatus(STATUS_CONNECTING);
-      while (![STATUS_OFFLINE, STATUS_CONNECTED].includes(this.status)) {
-        this.setStatus(STATUS_CONNECTING);
-        let clientToken;
-        try {
-          clientToken = await this.ensureClientToken();
-        } catch (e) {
-          console.warn("Failed to get client token", e);
-          this.setStatus(STATUS_ERROR);
-          let timeout = DELAY_MS_BEFORE_RETRY_TOKEN_REFRESH * Math.min(MAX_BACKOFF_COEFFICIENT, Math.pow(BACKOFF_BASE, this.retries));
-          this.retries += 1;
-          this.reconnectSleeper = new Sleeper(timeout);
-          await this.reconnectSleeper.sleep();
-          continue;
-        }
-        for (let i = 0; i < RETRIES_BEFORE_TOKEN_REFRESH; i++) {
-          if (await this.attemptToConnect(clientToken)) {
-            this.retries = 0;
-            break;
+      const lastDebugUrl = this.debugUrl;
+      connecting:
+        while (![STATUS_OFFLINE, STATUS_CONNECTED].includes(this.status)) {
+          this.setStatus(STATUS_CONNECTING);
+          let clientToken;
+          try {
+            clientToken = await this.ensureClientToken();
+          } catch (e) {
+            console.warn("Failed to get client token", e);
+            this.setStatus(STATUS_ERROR);
+            let timeout = DELAY_MS_BEFORE_RETRY_TOKEN_REFRESH * Math.min(MAX_BACKOFF_COEFFICIENT, Math.pow(BACKOFF_BASE, this.retries));
+            this.retries += 1;
+            this.reconnectSleeper = new Sleeper(timeout);
+            await this.reconnectSleeper.sleep();
+            continue;
           }
-          let timeout = DELAY_MS_BEFORE_RECONNECT * Math.min(MAX_BACKOFF_COEFFICIENT, Math.pow(BACKOFF_BASE, this.retries));
-          this.retries += 1;
-          this.reconnectSleeper = new Sleeper(timeout);
-          await this.reconnectSleeper.sleep();
+          for (let i = 0; i < RETRIES_BEFORE_TOKEN_REFRESH; i++) {
+            if (await this.attemptToConnect(clientToken)) {
+              this.retries = 0;
+              break connecting;
+            }
+            let timeout = DELAY_MS_BEFORE_RECONNECT * Math.min(MAX_BACKOFF_COEFFICIENT, Math.pow(BACKOFF_BASE, this.retries));
+            this.retries += 1;
+            this.reconnectSleeper = new Sleeper(timeout);
+            await this.reconnectSleeper.sleep();
+          }
+          this.clientToken = null;
         }
-        this.clientToken = null;
-      }
       this.isConnecting = false;
+      if (this.showDebuggerLink && lastDebugUrl !== this.debugUrl) {
+        console.log(
+          `%cOpen this in Y-Sweet Debugger ⮕ ${this.debugUrl}`,
+          "font-size: 1.5em; display: block; padding: 10px;"
+        );
+        console.log(
+          "%cTo hide the debugger link, set the showDebuggerLink option to false when creating the provider",
+          "font-style: italic;"
+        );
+      }
     }
     disconnect() {
       if (this.websocket) {

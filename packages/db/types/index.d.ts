@@ -82,11 +82,13 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
     getRooms<T extends CollectionKey>(collectionKey: T): Room<CollectionToDocument[T]>[];
     allRooms(): Room<any>[];
     newRoom: <T extends EweDocument>(options: {
-        name: string;
+        _deleted?: boolean | null | undefined;
+        _ttl?: string | null | undefined;
         collectionKey: CollectionKey;
+        name: string;
         id?: string | undefined;
-        tokenExpiry?: string | null | undefined;
         ySweetUrl?: string | null | undefined;
+        tokenExpiry?: string | null | undefined;
         ySweetBaseUrl?: string | null | undefined;
         publicAccess?: "private" | "read" | "write" | undefined;
         readAccess?: string[] | undefined;
@@ -94,8 +96,6 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
         adminAccess?: string[] | undefined;
         createdAt?: string | null | undefined;
         updatedAt?: string | null | undefined;
-        _deleted?: boolean | null | undefined;
-        _ttl?: string | null | undefined;
         indexedDbProvider?: (import("y-indexeddb").IndexeddbPersistence | null) | undefined;
         webRtcProvider?: (WebrtcProvider | null) | undefined;
         ySweetProvider?: (import("@y-sweet/client").YSweetProvider | null) | undefined;
