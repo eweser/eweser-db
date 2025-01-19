@@ -51,6 +51,8 @@ class Database extends events_1.TypedEventEmitter {
     online = false;
     isPolling = false;
     offlineOnly = false;
+    /** these rooms will be synced for one second and then disconnected sequentially. Remove the id from this array and the next iteration will not sync that room when it reaches it*/
+    collectionKeysForRollingSync = [];
     /** set to false before `db.loginWithToken()` so that offline-first mode is the default, and it upgrades to online sync after login with token */
     useYSweet = false;
     useWebRTC = true;
@@ -100,6 +102,9 @@ class Database extends events_1.TypedEventEmitter {
     getRooms(collectionKey) {
         return Object.values(this.collections[collectionKey]);
     }
+    allRooms() {
+        return Object.values(this.collections).flatMap((collection) => Object.values(collection));
+    }
     newRoom = (0, newRoom_1.newRoom)(this);
     renameRoom = async (room, newName) => {
         const body = {
@@ -128,27 +133,55 @@ class Database extends events_1.TypedEventEmitter {
     };
     generateShareRoomLink = (0, generateShareRoomLink_1.generateShareRoomLink)(this);
     pingServer = (0, pingServer_1.pingServer)(this);
-    // Because we don't want to have more than a few rooms open at one time, we can do a rollingSync of all rooms
-    async rollingSync({ collectionsToSync, roomsToSync, } = {}) {
-        for (const key of collectionsToSync ?? Object.keys(this.collections)) {
-            const collection = this.collections[key];
-            for (const roomId of roomsToSync ?? Object.keys(this.collections)) {
-                if (!collection[roomId]) {
-                    continue;
+    /** Because we can't have more than 10 rooms open (connected to ySweet) at one time, we can do a rollingSync of all rooms where we briefly connect them, one at a time, let them sync and then disconnect */
+    async rollingSync() {
+        while (true) {
+            console.log('rollingSync', this.collectionKeysForRollingSync);
+            for (const key of this.collectionKeysForRollingSync) {
+                for (const room of this.getRooms(key)) {
+                    if (room.connectionStatus !== 'disconnected') {
+                        this.debug('rollingSync skipping room', key, room.name, room.name, room.id);
+                        continue;
+                    }
+                    this.debug('rollingSync syncing room', key, room.name, room.id);
+                    await room.load();
+                    await (0, shared_1.wait)(5000);
+                    room.disconnect();
                 }
-                const room = collection[roomId];
-                if (room.connectionStatus !== 'disconnected') {
-                    continue;
-                }
-                await room.load();
-                (0, shared_1.wait)(1000);
-                room.disconnect();
             }
+            await (0, shared_1.wait)(5000);
         }
-    } // Temp docs. These are used for collaborative editing, or for rich-text editors that require a full yDoc passed to the editor. It is recommended in these cases to use a temporary yDoc only used for the session (if that document is open in both apps), then have debounced updates to the actual (ex. Notes) document, saved in cross platform compatible markdown.
-    tempDocs = {};
+    }
+    statusListener() {
+        const allRooms = this.allRooms();
+        const connectedRooms = allRooms
+            .filter((r) => r.connectionStatus === 'connected')
+            .map((r) => r.id);
+        const connectingRooms = allRooms
+            .filter((r) => r.connectionStatus === 'connecting')
+            .map((r) => r.id);
+        this.emit('status', {
+            db: this,
+            online: this.online,
+            hasToken: !!this.accessGrantToken,
+            allRoomsCount: allRooms.length,
+            connectedRoomsCount: connectedRooms.length,
+            connectedRooms,
+            connectingRooms,
+            connectingRoomsCount: connectingRooms.length,
+        });
+    }
+    /** useful for debugging or less granular event listening */
+    pollForStatus(intervalMs = 1000) {
+        setInterval(() => {
+            this.statusListener();
+        }, intervalMs);
+    }
     constructor(optionsPassed) {
         super();
+        if (optionsPassed?.pollForStatus) {
+            this.pollForStatus();
+        }
         const options = optionsPassed || {};
         this.localStoragePolyfill = options.localStoragePolyfill || localStorage;
         if (options.authServer) {
@@ -186,6 +219,7 @@ class Database extends events_1.TypedEventEmitter {
         (0, events_1.setupLogger)(this);
         this.debug('Database created with options', options);
         this.registry = this.getRegistry() || [];
+        let initializedRooms = [];
         if (options.initialRooms) {
             const registryRoomIds = this.registry.map((r) => r.id);
             for (const room of options.initialRooms) {
@@ -194,10 +228,12 @@ class Database extends events_1.TypedEventEmitter {
                 }
                 const registryRoom = (0, room_1.roomToServerRoom)(this.newRoom(room));
                 this.registry.push(registryRoom);
+                initializedRooms.push(registryRoom);
             }
-            this.loadRooms(this.registry);
+            console.log('initializedRooms', initializedRooms);
+            this.loadRooms(initializedRooms);
         }
-        this.rollingSync({ roomsToSync: this.registry.map((r) => r.id) });
+        this.rollingSync();
     }
 }
 exports.Database = Database;

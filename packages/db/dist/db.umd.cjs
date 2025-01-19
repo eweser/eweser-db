@@ -2938,6 +2938,8 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
       __publicField(this, "online", false);
       __publicField(this, "isPolling", false);
       __publicField(this, "offlineOnly", false);
+      /** these rooms will be synced for one second and then disconnected sequentially. Remove the id from this array and the next iteration will not sync that room when it reaches it*/
+      __publicField(this, "collectionKeysForRollingSync", []);
       /** set to false before `db.loginWithToken()` so that offline-first mode is the default, and it upgrades to online sync after login with token */
       __publicField(this, "useYSweet", false);
       __publicField(this, "useWebRTC", true);
@@ -3013,8 +3015,9 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
       });
       __publicField(this, "generateShareRoomLink", generateShareRoomLink(this));
       __publicField(this, "pingServer", pingServer(this));
-      // Temp docs. These are used for collaborative editing, or for rich-text editors that require a full yDoc passed to the editor. It is recommended in these cases to use a temporary yDoc only used for the session (if that document is open in both apps), then have debounced updates to the actual (ex. Notes) document, saved in cross platform compatible markdown.
-      __publicField(this, "tempDocs", {});
+      if (optionsPassed == null ? void 0 : optionsPassed.pollForStatus) {
+        this.pollForStatus();
+      }
       const options = optionsPassed || {};
       this.localStoragePolyfill = options.localStoragePolyfill || localStorage;
       if (options.authServer) {
@@ -3046,6 +3049,7 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
       setupLogger(this);
       this.debug("Database created with options", options);
       this.registry = this.getRegistry() || [];
+      let initializedRooms = [];
       if (options.initialRooms) {
         const registryRoomIds = this.registry.map((r) => r.id);
         for (const room of options.initialRooms) {
@@ -3054,34 +3058,66 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
           }
           const registryRoom = roomToServerRoom(this.newRoom(room));
           this.registry.push(registryRoom);
+          initializedRooms.push(registryRoom);
         }
-        this.loadRooms(this.registry);
+        console.log("initializedRooms", initializedRooms);
+        this.loadRooms(initializedRooms);
       }
-      this.rollingSync({ roomsToSync: this.registry.map((r) => r.id) });
+      this.rollingSync();
     }
     getRooms(collectionKey) {
       return Object.values(this.collections[collectionKey]);
     }
-    // Because we don't want to have more than a few rooms open at one time, we can do a rollingSync of all rooms
-    async rollingSync({
-      collectionsToSync,
-      roomsToSync
-    } = {}) {
-      for (const key of collectionsToSync ?? Object.keys(this.collections)) {
-        const collection = this.collections[key];
-        for (const roomId of roomsToSync ?? Object.keys(this.collections)) {
-          if (!collection[roomId]) {
-            continue;
+    allRooms() {
+      return Object.values(this.collections).flatMap(
+        (collection) => Object.values(collection)
+      );
+    }
+    /** Because we can't have more than 10 rooms open (connected to ySweet) at one time, we can do a rollingSync of all rooms where we briefly connect them, one at a time, let them sync and then disconnect */
+    async rollingSync() {
+      while (true) {
+        console.log("rollingSync", this.collectionKeysForRollingSync);
+        for (const key of this.collectionKeysForRollingSync) {
+          for (const room of this.getRooms(key)) {
+            if (room.connectionStatus !== "disconnected") {
+              this.debug(
+                "rollingSync skipping room",
+                key,
+                room.name,
+                room.name,
+                room.id
+              );
+              continue;
+            }
+            this.debug("rollingSync syncing room", key, room.name, room.id);
+            await room.load();
+            await wait(5e3);
+            room.disconnect();
           }
-          const room = collection[roomId];
-          if (room.connectionStatus !== "disconnected") {
-            continue;
-          }
-          await room.load();
-          wait(1e3);
-          room.disconnect();
         }
+        await wait(5e3);
       }
+    }
+    statusListener() {
+      const allRooms = this.allRooms();
+      const connectedRooms = allRooms.filter((r) => r.connectionStatus === "connected").map((r) => r.id);
+      const connectingRooms = allRooms.filter((r) => r.connectionStatus === "connecting").map((r) => r.id);
+      this.emit("status", {
+        db: this,
+        online: this.online,
+        hasToken: !!this.accessGrantToken,
+        allRoomsCount: allRooms.length,
+        connectedRoomsCount: connectedRooms.length,
+        connectedRooms,
+        connectingRooms,
+        connectingRoomsCount: connectingRooms.length
+      });
+    }
+    /** useful for debugging or less granular event listening */
+    pollForStatus(intervalMs = 1e3) {
+      setInterval(() => {
+        this.statusListener();
+      }, intervalMs);
     }
   }
   exports2.Database = Database;

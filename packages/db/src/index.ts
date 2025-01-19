@@ -83,6 +83,8 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
   online = false;
   isPolling = false;
   offlineOnly = false;
+  /** these rooms will be synced for one second and then disconnected sequentially. Remove the id from this array and the next iteration will not sync that room when it reaches it*/
+  collectionKeysForRollingSync: CollectionKey[] = [];
 
   /** set to false before `db.loginWithToken()` so that offline-first mode is the default, and it upgrades to online sync after login with token */
   useYSweet = false;
@@ -149,6 +151,12 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     return Object.values(this.collections[collectionKey]);
   }
 
+  allRooms() {
+    return Object.values(this.collections).flatMap(
+      (collection: Collection<any>) => Object.values(collection)
+    );
+  }
+
   newRoom = newRoom(this);
 
   renameRoom = async (room: Room<any>, newName: string) => {
@@ -182,58 +190,50 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
   generateShareRoomLink = generateShareRoomLink(this);
   pingServer = pingServer(this);
 
-  // Because we don't want to have more than a few rooms open at one time, we can do a rollingSync of all rooms
-  async rollingSync({
-    collectionsToSync,
-    roomsToSync,
-  }: { collectionsToSync?: CollectionKey[]; roomsToSync?: string[] } = {}) {
-    for (const key of collectionsToSync ?? Object.keys(this.collections)) {
-      const collection = this.collections[key as CollectionKey];
-      for (const roomId of roomsToSync ?? Object.keys(this.collections)) {
-        if (!collection[roomId]) {
-          continue;
-        }
-        const room = collection[roomId];
-        if (room.connectionStatus !== 'disconnected') {
-          continue;
-        }
-        await room.load();
-        wait(1000);
-        room.disconnect();
-      }
-    }
-  } // Temp docs. These are used for collaborative editing, or for rich-text editors that require a full yDoc passed to the editor. It is recommended in these cases to use a temporary yDoc only used for the session (if that document is open in both apps), then have debounced updates to the actual (ex. Notes) document, saved in cross platform compatible markdown.
-  tempDocs: {
-    [eweserDocRef: string]: {
-      doc: Doc;
-      provider?: WebrtcProvider;
-      awareness?: any;
-    };
-  } = {};
+  /** Because we can't have more than 10 rooms open (connected to ySweet) at one time, we can do a rollingSync of all rooms where we briefly connect them, one at a time, let them sync and then disconnect */
+  async rollingSync() {
+    while (true) {
+      console.log('rollingSync', this.collectionKeysForRollingSync);
 
-  allRooms() {
-    return Object.values(this.collections).flatMap(
-      (collection: Collection<any>) => Object.values(collection)
-    );
+      for (const key of this.collectionKeysForRollingSync) {
+        for (const room of this.getRooms(key)) {
+          if (room.connectionStatus !== 'disconnected') {
+            this.debug(
+              'rollingSync skipping room',
+              key,
+              room.name,
+              room.name,
+              room.id
+            );
+            continue;
+          }
+          this.debug('rollingSync syncing room', key, room.name, room.id);
+          await room.load();
+          await wait(5000);
+          room.disconnect();
+        }
+      }
+      await wait(5000);
+    }
   }
 
   statusListener() {
+    const allRooms = this.allRooms();
+    const connectedRooms = allRooms
+      .filter((r) => r.connectionStatus === 'connected')
+      .map((r) => r.id);
+    const connectingRooms = allRooms
+      .filter((r) => r.connectionStatus === 'connecting')
+      .map((r) => r.id);
     this.emit('status', {
+      db: this,
       online: this.online,
       hasToken: !!this.accessGrantToken,
-      allRoomsCount: this.allRooms().length,
-      connectedRoomsCount: this.allRooms().filter(
-        (r) => r.connectionStatus === 'connected'
-      ).length,
-      connectedRooms: this.allRooms()
-        .filter((r) => r.connectionStatus === 'connected')
-        .map((r) => r.id),
-      connectingRoomsCount: this.allRooms().filter(
-        (r) => r.connectionStatus === 'connecting'
-      ).length,
-      connectingRooms: this.allRooms()
-        .filter((r) => r.connectionStatus === 'connecting')
-        .map((r) => r.id),
+      allRoomsCount: allRooms.length,
+      connectedRoomsCount: connectedRooms.length,
+      connectedRooms,
+      connectingRooms,
+      connectingRoomsCount: connectingRooms.length,
     });
   }
   /** useful for debugging or less granular event listening */
@@ -242,6 +242,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
       this.statusListener();
     }, intervalMs);
   }
+
   constructor(optionsPassed?: DatabaseOptions) {
     super();
     if (optionsPassed?.pollForStatus) {
@@ -299,13 +300,9 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
         this.registry.push(registryRoom);
         initializedRooms.push(registryRoom);
       }
+      console.log('initializedRooms', initializedRooms);
       this.loadRooms(initializedRooms);
     }
-
-    this.rollingSync({
-      roomsToSync: this.registry
-        .map((r) => r.id)
-        .filter((initR) => !!initializedRooms.find((r) => r.id === initR)),
-    });
+    this.rollingSync();
   }
 }

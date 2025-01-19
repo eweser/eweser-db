@@ -76,18 +76,26 @@ export async function insertRooms(
           .from(users)
           .where(eq(users.id, userId))
       )[0]?.rooms || [];
+
     await updateUserRooms(
       userId,
       usersRooms.concat(inserts.map(({ id }) => id)),
       dbInstance
     );
-    const roomInserts = inserts.map(({ id, ...rest }) => ({
-      ...rest,
-      id,
-      _ttl: rest._ttl || null, // provide a default value if _ttl is undefined or an empty string
-    }));
 
-    return dbInstance.insert(rooms).values(roomInserts).returning();
+    for (const insert of inserts) {
+      const existing = await getRoomById(insert.id, dbInstance);
+      if (!existing) {
+        await dbInstance.insert(rooms).values({
+          ...insert,
+          _ttl: insert._ttl || null,
+        });
+      } else {
+        // Optional: update or skip
+      }
+    }
+
+    return inserts;
   });
 }
 

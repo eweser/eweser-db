@@ -39,6 +39,7 @@ export type DatabaseEvents = {
   onLoggedInChange: (loggedIn: boolean) => void;
   onlineChange: (online: boolean) => void;
   status: (status: {
+    db: Database;
     online: boolean;
     hasToken: boolean;
     allRoomsCount: number;
