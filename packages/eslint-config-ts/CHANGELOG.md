@@ -1,5 +1,11 @@
 # @eweser/eslint-config-ts
 
+## 1.13.6
+
+### Patch Changes
+
+- bump
+
 ## 1.13.5
 
 ### Patch Changes

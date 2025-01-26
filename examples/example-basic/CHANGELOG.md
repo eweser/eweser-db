@@ -1,5 +1,14 @@
 # @eweser/example-basic
 
+## 1.13.5
+
+### Patch Changes
+
+- bump
+- Updated dependencies
+  - @eweser/db@1.13.6
+  - @eweser/examples-components@1.13.6
+
 ## 1.13.4
 
 ### Patch Changes

@@ -1,5 +1,13 @@
 # @eweser/eslint-config-react-ts
 
+## 1.13.6
+
+### Patch Changes
+
+- bump
+- Updated dependencies
+  - @eweser/eslint-config-ts@1.13.6
+
 ## 1.13.5
 
 ### Patch Changes
