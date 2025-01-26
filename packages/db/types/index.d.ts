@@ -71,7 +71,7 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
      * @param {RemoteLoadOptions} RemoteLoadOptions - options for loading the remote ydoc
      */
     loadRoom: (serverRoom: import("@eweser/shared").ServerRoom, remoteLoadOptions?: import("./methods/connection/loadRoom").RemoteLoadOptions) => Promise<Room<any>>;
-    loadRooms: (rooms: Registry, staggerMs?: number) => Promise<void>;
+    loadRooms: (rooms: Registry, loadRemotes?: boolean, staggerMs?: number) => Promise<void>;
     syncRegistry: () => Promise<boolean>;
     getRegistry: () => Registry;
     localStoragePolyfill: LocalStoragePolyfill;

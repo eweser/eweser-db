@@ -2868,7 +2868,7 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
       return true;
     }
   );
-  const loadRooms = (db) => async (rooms, staggerMs = 1e3) => {
+  const loadRooms = (db) => async (rooms, loadRemotes = false, staggerMs = 1e3) => {
     var _a, _b;
     const loadedRooms = [];
     db.debug("loading rooms", rooms);
@@ -2878,6 +2878,9 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
     }
     db.debug("loaded rooms", loadedRooms);
     db.emit("roomsLoaded", loadedRooms);
+    if (!loadRemotes) {
+      return;
+    }
     const remoteLoadedRooms = [];
     let isFirstRoom = true;
     for (const room of rooms) {
@@ -3102,9 +3105,9 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
           }
           initializedRooms.push(registryRoom);
         }
-        console.log("initializedRooms", initializedRooms);
-        this.loadRooms(initializedRooms);
+        this.loadRooms(initializedRooms, true);
       }
+      this.loadRooms(this.registry);
       this.pollForRegistrySync();
       this.rollingSync();
       this.emit("initialized");
