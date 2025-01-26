@@ -7,7 +7,7 @@ import { TypedEventEmitter } from './events';
 import type { Database, YDoc } from '.';
 import type { GetDocuments } from './utils/getDocuments';
 import { getDocuments } from './utils/getDocuments';
-import { loadYSweet } from './methods/connection/loadRoom';
+import { loadYSweet, RemoteLoadOptions } from './methods/connection/loadRoom';
 
 export type NewRoomOptions<T extends EweDocument> = {
   db: Database;
@@ -67,7 +67,7 @@ export class Room<T extends EweDocument>
   };
 
   getDocuments: () => GetDocuments<T>;
-  load: () => Promise<Room<T>>;
+  load: (remoteLoadOptions?: RemoteLoadOptions) => Promise<Room<T>>;
 
   addingAwareness = false;
   /** disconnect and reconnect the existing ySweetProvider, this time with awareness on */
@@ -115,7 +115,8 @@ export class Room<T extends EweDocument>
     }
 
     this.getDocuments = () => getDocuments(this.db)(this);
-    this.load = () => this.db.loadRoom(this);
+    this.load = (remoteLoadOptions?: RemoteLoadOptions) =>
+      this.db.loadRoom(this, remoteLoadOptions);
   }
 }
 

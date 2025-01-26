@@ -6,6 +6,7 @@ import type { RoomConnectionStatus, RoomEvents } from './events';
 import { TypedEventEmitter } from './events';
 import type { Database, YDoc } from '.';
 import type { GetDocuments } from './utils/getDocuments';
+import { RemoteLoadOptions } from './methods/connection/loadRoom';
 export type NewRoomOptions<T extends EweDocument> = {
     db: Database;
     name: string;
@@ -52,7 +53,7 @@ export declare class Room<T extends EweDocument> extends TypedEventEmitter<RoomE
     connectAbortController?: AbortController;
     disconnect: () => void;
     getDocuments: () => GetDocuments<T>;
-    load: () => Promise<Room<T>>;
+    load: (remoteLoadOptions?: RemoteLoadOptions) => Promise<Room<T>>;
     addingAwareness: boolean;
     /** disconnect and reconnect the existing ySweetProvider, this time with awareness on */
     addAwareness: () => Promise<void>;

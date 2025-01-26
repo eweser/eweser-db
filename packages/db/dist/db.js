@@ -2518,7 +2518,7 @@ class Room extends TypedEventEmitter {
       this.ydoc = options.ydoc;
     }
     this.getDocuments = () => getDocuments(this.db)(this);
-    this.load = () => this.db.loadRoom(this);
+    this.load = (remoteLoadOptions) => this.db.loadRoom(this, remoteLoadOptions);
   }
 }
 function roomToServerRoom(room) {
