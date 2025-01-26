@@ -1,5 +1,18 @@
 # auth-server
 
+## 1.14.0
+
+### Minor Changes
+
+- align versions
+
+### Patch Changes
+
+- Updated dependencies
+  - @eweser/db@1.14.0
+  - @eweser/eslint-config-react-ts@1.14.0
+  - @eweser/shared@1.14.0
+
 ## 1.13.5
 
 ### Patch Changes
