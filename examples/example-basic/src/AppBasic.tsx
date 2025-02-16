@@ -225,6 +225,8 @@ const NotesRoom = ({ notesRoom }: { notesRoom: Room<Note> }) => {
 };
 
 const RoomName = ({ db, room }: { db: Database; room: Room<any> }) => {
+  const unused = '';
+  console.log('asdfasd');
   const [editing, setEditing] = useState(false);
   const [newName, setNewName] = useState(room.name);
   const [submitting, setSubmitting] = useState(false);
