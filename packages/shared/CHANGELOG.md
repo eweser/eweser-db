@@ -1,5 +1,11 @@
 # @eweser/shared
 
+## 1.15.0
+
+### Minor Changes
+
+- bump eslint
+
 ## 1.14.0
 
 ### Minor Changes

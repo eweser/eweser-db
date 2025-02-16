@@ -1,5 +1,16 @@
 # @eweser/db
 
+## 1.15.0
+
+### Minor Changes
+
+- bump eslint
+
+### Patch Changes
+
+- Updated dependencies
+  - @eweser/shared@1.15.0
+
 ## 1.14.0
 
 ### Minor Changes

@@ -1,6 +1,6 @@
 {
   "name": "@eweser/example-basic",
-  "version": "1.14.0",
+  "version": "1.15.0",
   "private": true,
   "description": "eweser-db example mini app using the ydoc directly to make CRUD updates",
   "keywords": [
@@ -31,8 +31,8 @@
     "url": "https://github.com/jacobcoro/eweserdb/issues"
   },
   "dependencies": {
-    "@eweser/db": "^1.14.1",
-    "@eweser/examples-components": "^2.0.1",
+    "@eweser/db": "^1.15.0",
+    "@eweser/examples-components": "^3.0.0",
     "buffer": "^6.0.3",
     "events": "3.3.0",
     "react": "^18.2.0",
@@ -40,7 +40,7 @@
     "react-router-dom": "^6.10.0"
   },
   "devDependencies": {
-    "@eweser/eslint-config-react-ts": "^1.14.1",
+    "@eweser/eslint-config-react-ts": "^1.15.0",
     "@types/react": "^18.0.24",
     "@types/react-dom": "^18.0.8",
     "@types/uuid": "^10.0.0",

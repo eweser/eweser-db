@@ -1,5 +1,17 @@
 # @eweser/example-basic
 
+## 1.15.0
+
+### Minor Changes
+
+- bump eslint
+
+### Patch Changes
+
+- Updated dependencies
+  - @eweser/db@1.15.0
+  - @eweser/examples-components@3.0.0
+
 ## 1.14.0
 
 ### Minor Changes
