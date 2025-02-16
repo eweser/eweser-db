@@ -2310,44 +2310,30 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
         checkTokenAndConnectProvider();
       }
     }
-    async function pollForYSweetConnectionAndAwait() {
+    async function pollForYSweetConnectionAndAwait(maxWait2) {
+      var _a;
       let waited = 0;
-      return new Promise((resolve, reject) => {
-        const poll = setInterval(() => {
-          var _a;
-          if (((_a = room.ySweetProvider) == null ? void 0 : _a.status) === "connected") {
-            clearInterval(poll);
-            resolve();
-          } else {
-            waited += 1e3;
-            if (waited >= maxWait) {
-              console.log(
-                "timed out waiting for ySweet connection",
-                room.name,
-                waited,
-                maxWait,
-                room.ySweetProvider
-              );
-              clearInterval(poll);
-              reject(
-                new Error("timed out waiting for ySweet connection " + room.name)
-              );
-            }
-          }
-        }, 300);
-      });
+      while (((_a = room.ySweetProvider) == null ? void 0 : _a.status) !== "connected") {
+        await wait(300);
+        waited += 300;
+        if (waited >= maxWait2) {
+          db.debug(
+            "timed out waiting for ySweet connection",
+            room.name,
+            waited,
+            maxWait2,
+            room.ySweetProvider
+          );
+          throw new Error("timed out waiting for ySweet connection " + room.name);
+        }
+      }
     }
     async function checkTokenAndConnectProvider() {
-      var _a;
       if (room.ySweetProvider) {
-        console.log(
-          "----- provider exsits",
-          (_a = room.ySweetProvider) == null ? void 0 : _a.status,
-          room.name
-        );
-        if (awaitConnection) {
+        console.log("checkTokenAndConnectProvider", room.ySweetProvider);
+        if (awaitConnection && room.ySweetProvider.status !== "connected" && room.ySweetProvider.status !== "connecting") {
           try {
-            await pollForYSweetConnectionAndAwait();
+            await pollForYSweetConnectionAndAwait(maxWait);
           } catch (e) {
             db.error(e);
           }
@@ -2360,10 +2346,10 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
         room.ydoc,
         room.id,
         async () => {
-          var _a2, _b;
+          var _a, _b;
           db.debug(
             "----- createYjsProvider token refresh",
-            (_a2 = room.ySweetProvider) == null ? void 0 : _a2.status,
+            (_a = room.ySweetProvider) == null ? void 0 : _a.status,
             room.name
           );
           const status = (_b = room.ySweetProvider) == null ? void 0 : _b.status;
@@ -2421,7 +2407,7 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
     };
     if (awaitConnection) {
       try {
-        await pollForYSweetConnectionAndAwait();
+        await pollForYSweetConnectionAndAwait(maxWait);
       } catch (e) {
         db.error(e);
       }
@@ -2537,7 +2523,7 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
         this.ydoc = options.ydoc;
       }
       this.getDocuments = () => getDocuments(this.db)(this);
-      this.load = (remoteLoadOptions) => this.db.loadRoom(this, remoteLoadOptions);
+      this.load = async (remoteLoadOptions) => await this.db.loadRoom(this, remoteLoadOptions);
     }
   }
   function roomToServerRoom(room) {
@@ -2885,11 +2871,14 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
     let isFirstRoom = true;
     for (const room of rooms) {
       if (!isFirstRoom) {
-        await new Promise((resolve) => setTimeout(resolve, staggerMs));
+        await wait(staggerMs);
       } else {
         isFirstRoom = false;
       }
-      const remoteLoadedRoom = await db.loadRoom(room, { loadRemote: true });
+      const remoteLoadedRoom = await db.loadRoom(room, {
+        loadRemote: true,
+        awaitLoadRemote: true
+      });
       if (remoteLoadedRoom.ySweetProvider && ((_a = remoteLoadedRoom.ySweetProvider) == null ? void 0 : _a.status) !== "error" && ((_b = remoteLoadedRoom.ySweetProvider) == null ? void 0 : _b.status) !== "offline") {
         remoteLoadedRooms.push(remoteLoadedRoom);
       }
@@ -3123,23 +3112,32 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
     /** Because we can't have more than 10 rooms open (connected to ySweet) at one time, we can do a rollingSync of all rooms where we briefly connect them, one at a time, let them sync and then disconnect */
     async rollingSync() {
       while (true) {
-        console.log("rollingSync", this.collectionKeysForRollingSync);
-        for (const key of this.collectionKeysForRollingSync) {
-          for (const room of this.getRooms(key)) {
-            if (room.connectionStatus !== "disconnected") {
-              this.debug(
-                "rollingSync skipping room",
+        console.log("--- rollingSync ---");
+        if (this.online) {
+          for (const key of this.collectionKeysForRollingSync) {
+            for (const room of this.getRooms(key)) {
+              console.log("rollingSync room", room.name, room.connectionStatus);
+              if (room.connectionStatus !== "disconnected") {
+                console.log(
+                  "rollingSync skipping room",
+                  key,
+                  room.name,
+                  room.connectionStatus
+                );
+                continue;
+              }
+              console.log(
+                "rollingSync syncing room",
                 key,
                 room.name,
-                room.name,
-                room.id
+                room.connectionStatus
               );
-              continue;
+              room.disconnect();
+              await room.load({ loadRemote: true, awaitLoadRemote: true });
+              console.log("rollingSync room", room.name, room.connectionStatus);
+              await wait(5e3);
+              room.disconnect();
             }
-            this.debug("rollingSync syncing room", key, room.name, room.id);
-            await room.load();
-            await wait(5e3);
-            room.disconnect();
           }
         }
         await wait(5e3);

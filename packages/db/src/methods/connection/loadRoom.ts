@@ -106,42 +106,32 @@ export async function loadYSweet(
       checkTokenAndConnectProvider();
     }
   }
-  async function pollForYSweetConnectionAndAwait() {
+  async function pollForYSweetConnectionAndAwait(maxWait: number) {
     let waited = 0;
-    return new Promise<void>((resolve, reject) => {
-      const poll = setInterval(() => {
-        if (room.ySweetProvider?.status === 'connected') {
-          clearInterval(poll);
-          resolve();
-        } else {
-          waited += 1000;
-          if (waited >= maxWait) {
-            console.log(
-              'timed out waiting for ySweet connection',
-              room.name,
-              waited,
-              maxWait,
-              room.ySweetProvider
-            );
-            clearInterval(poll);
-            reject(
-              new Error('timed out waiting for ySweet connection ' + room.name)
-            );
-          }
-        }
-      }, 300);
-    });
+    while (room.ySweetProvider?.status !== 'connected') {
+      await wait(300);
+      waited += 300;
+      if (waited >= maxWait) {
+        db.debug(
+          'timed out waiting for ySweet connection',
+          room.name,
+          waited,
+          maxWait,
+          room.ySweetProvider
+        );
+        throw new Error('timed out waiting for ySweet connection ' + room.name);
+      }
+    }
   }
   async function checkTokenAndConnectProvider() {
     if (room.ySweetProvider) {
-      console.log(
-        '----- provider exsits',
-        room.ySweetProvider?.status,
-        room.name
-      );
-      if (awaitConnection) {
+      if (
+        awaitConnection &&
+        room.ySweetProvider.status !== 'connected' &&
+        room.ySweetProvider.status !== 'connecting'
+      ) {
         try {
-          await pollForYSweetConnectionAndAwait();
+          await pollForYSweetConnectionAndAwait(maxWait);
         } catch (e) {
           db.error(e);
         }
@@ -233,7 +223,7 @@ export async function loadYSweet(
   };
   if (awaitConnection) {
     try {
-      await pollForYSweetConnectionAndAwait();
+      await pollForYSweetConnectionAndAwait(maxWait);
     } catch (e) {
       db.error(e);
     }

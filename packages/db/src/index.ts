@@ -190,24 +190,32 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
   /** Because we can't have more than 10 rooms open (connected to ySweet) at one time, we can do a rollingSync of all rooms where we briefly connect them, one at a time, let them sync and then disconnect */
   async rollingSync() {
     while (true) {
-      console.log('rollingSync', this.collectionKeysForRollingSync);
-
-      for (const key of this.collectionKeysForRollingSync) {
-        for (const room of this.getRooms(key)) {
-          if (room.connectionStatus !== 'disconnected') {
+      this.debug('--- rollingSync ---');
+      if (this.online) {
+        for (const key of this.collectionKeysForRollingSync) {
+          for (const room of this.getRooms(key)) {
+            this.debug('rollingSync room', room.name, room.connectionStatus);
+            if (room.connectionStatus !== 'disconnected') {
+              this.debug(
+                'rollingSync skipping room',
+                key,
+                room.name,
+                room.connectionStatus
+              );
+              continue;
+            }
             this.debug(
-              'rollingSync skipping room',
+              'rollingSync syncing room',
               key,
               room.name,
-              room.name,
-              room.id
+              room.connectionStatus
             );
-            continue;
+            room.disconnect();
+            await room.load({ loadRemote: true, awaitLoadRemote: true });
+            this.debug('rollingSync room', room.name, room.connectionStatus);
+            await wait(5000);
+            room.disconnect();
           }
-          this.debug('rollingSync syncing room', key, room.name, room.id);
-          await room.load();
-          await wait(5000);
-          room.disconnect();
         }
       }
       await wait(5000);
@@ -292,7 +300,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     this.debug('Database created with options', options);
 
     this.registry = this.getRegistry() || [];
-    let initializedRooms = [];
+    const initializedRooms = [];
     if (options.initialRooms) {
       const registryRoomIds = this.registry.map((r) => r.id);
       for (const room of options.initialRooms) {

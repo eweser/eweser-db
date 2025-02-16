@@ -7,7 +7,8 @@ import { TypedEventEmitter } from './events';
 import type { Database, YDoc } from '.';
 import type { GetDocuments } from './utils/getDocuments';
 import { getDocuments } from './utils/getDocuments';
-import { loadYSweet, RemoteLoadOptions } from './methods/connection/loadRoom';
+import type { RemoteLoadOptions } from './methods/connection/loadRoom';
+import { loadYSweet } from './methods/connection/loadRoom';
 
 export type NewRoomOptions<T extends EweDocument> = {
   db: Database;
@@ -115,8 +116,8 @@ export class Room<T extends EweDocument>
     }
 
     this.getDocuments = () => getDocuments(this.db)(this);
-    this.load = (remoteLoadOptions?: RemoteLoadOptions) =>
-      this.db.loadRoom(this, remoteLoadOptions);
+    this.load = async (remoteLoadOptions?: RemoteLoadOptions) =>
+      await this.db.loadRoom(this, remoteLoadOptions);
   }
 }
 
