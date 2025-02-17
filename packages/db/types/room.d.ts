@@ -6,7 +6,7 @@ import type { RoomConnectionStatus, RoomEvents } from './events';
 import { TypedEventEmitter } from './events';
 import type { Database, YDoc } from '.';
 import type { GetDocuments } from './utils/getDocuments';
-import { RemoteLoadOptions } from './methods/connection/loadRoom';
+import type { RemoteLoadOptions } from './methods/connection/loadRoom';
 export type NewRoomOptions<T extends EweDocument> = {
     db: Database;
     name: string;
