@@ -25,7 +25,10 @@ describeFull('multi-room toy app', () => {
 
     cy.contains('button', roomName).click();
     cy.get('button[data-cy^="multi-room-new-note-"]').first().click();
-    cy.get('textarea[data-cy^="multi-room-note-editor-"]').first().clear().type(roomNote);
+    cy.get('textarea[data-cy^="multi-room-note-editor-"]')
+      .first()
+      .clear()
+      .type(roomNote);
 
     cy.contains('button', 'Default Notes Room').click();
     cy.contains(roomNote).should('not.exist');

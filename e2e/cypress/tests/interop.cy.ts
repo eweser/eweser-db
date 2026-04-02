@@ -21,7 +21,10 @@ describeFull('interop app pair', () => {
 
     cy.getBySel('interop-notes-app-root').should('exist');
     cy.getBySel('interop-notes-new-note').click();
-    cy.get('textarea[data-cy^="interop-notes-editor-"]').first().clear().type(noteText);
+    cy.get('textarea[data-cy^="interop-notes-editor-"]')
+      .first()
+      .clear()
+      .type(noteText);
     cy.get('button[data-cy^="interop-notes-link-flashcard-"]').first().click();
 
     cy.visit(flashcardsBaseUrl);

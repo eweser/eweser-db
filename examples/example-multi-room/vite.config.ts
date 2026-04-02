@@ -11,7 +11,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@eweser/examples-components':
-        '../../../packages/examples-components/src/components/index.ts',
+        '../../packages/examples-components/src/components/index.ts',
     },
   },
 

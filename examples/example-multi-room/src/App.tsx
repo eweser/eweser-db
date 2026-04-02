@@ -204,7 +204,10 @@ const NotesPanel = ({ room }: { room: Room<Note> }) => {
                   onBlur={() => setSelectedNoteId('')}
                 />
               ) : (
-                <p style={styles.cardInner} data-cy={`multi-room-note-text-${note._id}`}>
+                <p
+                  style={styles.cardInner}
+                  data-cy={`multi-room-note-text-${note._id}`}
+                >
                   {note.text}
                 </p>
               )}

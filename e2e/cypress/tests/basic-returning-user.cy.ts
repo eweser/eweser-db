@@ -8,7 +8,10 @@ describe('basic returning user', () => {
     cy.getBySel('basic-app-root').should('exist');
 
     cy.get('button[data-cy^="basic-new-note-"]').first().click();
-    cy.get('textarea[data-cy^="basic-note-editor-"]').first().clear().type(noteText);
+    cy.get('textarea[data-cy^="basic-note-editor-"]')
+      .first()
+      .clear()
+      .type(noteText);
 
     cy.reload();
     cy.getBySel('basic-app-root').should('exist');

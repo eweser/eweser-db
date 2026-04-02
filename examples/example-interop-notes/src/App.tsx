@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Database } from '@eweser/db';
-import type { CollectionKey, Documents, Flashcard, Note, Room } from '@eweser/db';
+import type {
+  CollectionKey,
+  Documents,
+  Flashcard,
+  Note,
+  Room,
+} from '@eweser/db';
 import { StatusBar, styles } from '@eweser/examples-components';
 import * as config from './config';
 
@@ -167,7 +173,10 @@ const App = () => {
                       onChange={(event) => updateNote(note, event.target.value)}
                     />
                   ) : (
-                    <p style={styles.cardInner} data-cy={`interop-notes-text-${note._id}`}>
+                    <p
+                      style={styles.cardInner}
+                      data-cy={`interop-notes-text-${note._id}`}
+                    >
                       {note.text}
                     </p>
                   )}

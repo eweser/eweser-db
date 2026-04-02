@@ -231,7 +231,10 @@ const NotesRoom = ({ notesRoom }: { notesRoom: Room<Note> }) => {
                     data-cy={`basic-note-editor-${note._id}`}
                   />
                 ) : (
-                  <p style={styles.cardInner} data-cy={`basic-note-text-${note._id}`}>
+                  <p
+                    style={styles.cardInner}
+                    data-cy={`basic-note-text-${note._id}`}
+                  >
                     {note.text}
                   </p>
                 )}
