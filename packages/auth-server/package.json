@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "PORT=${AUTH_SERVER_PORT:-38100} next dev",
-    "build": "next build --webpack",
+    "build": "next build",
     "start": "PORT=${AUTH_SERVER_PORT:-38100} next start",
     "lint": "next lint",
     "clean": "rm -rf .next"

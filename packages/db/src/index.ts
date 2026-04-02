@@ -12,7 +12,6 @@ import { roomToServerRoom } from './room';
 import { collections } from './types';
 import { setupLogger, TypedEventEmitter } from './events';
 
-import type { UpdateRoomPostBody, UpdateRoomResponse } from '@eweser/shared';
 import { collectionKeys, wait } from '@eweser/shared';
 import { getDocuments } from './utils/getDocuments';
 import { serverFetch } from './utils/connection/serverFetch';
@@ -36,12 +35,12 @@ import {
   localStorageGet,
   localStorageRemove,
   localStorageSet,
-  setLocalRegistry,
 } from './utils/localStorageService';
 import { generateShareRoomLink } from './methods/connection/generateShareRoomLink';
 import { pingServer } from './utils/connection/pingServer';
 import { pollConnection } from './utils/connection/pollConnection';
 import { newRoom } from './methods/newRoom';
+import { renameRoom } from './methods/renameRoom';
 
 export * from './utils';
 export * from './types';
@@ -154,34 +153,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
   }
 
   newRoom = newRoom(this);
-
-  renameRoom = async (room: Room<EweDocument>, newName: string) => {
-    const body: UpdateRoomPostBody = {
-      newName,
-    };
-    const { data, error } = await this.serverFetch<UpdateRoomResponse>(
-      `/api/access-grant/update-room/${room.id}`,
-      {
-        method: 'POST',
-        body,
-      }
-    );
-    if (error) {
-      this.error('Error renaming room', error);
-    } else if (data?.name) {
-      room.name = data.name;
-      this.debug('Room renamed', data);
-      const registryEntry = this.registry.find((r) => r.id === room.id);
-      if (registryEntry) {
-        registryEntry.name = data.name;
-        setLocalRegistry(this)(this.registry);
-      } else {
-        this.error('Error renaming room, registry entry not found');
-      }
-    }
-
-    return data;
-  };
+  renameRoom = renameRoom(this);
 
   generateShareRoomLink = generateShareRoomLink(this);
   pingServer = pingServer(this);

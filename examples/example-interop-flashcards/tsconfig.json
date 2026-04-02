@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "useDefineForClassFields": true,
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "esModuleInterop": false,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "useUnknownInCatchVariables": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "types": ["vite/client"],
+    "baseUrl": "./src",
+    "paths": {
+      "@eweser/examples-components": [
+        "../../../packages/examples-components/src/components/index.ts"
+      ]
+    }
+  },
+
+  "include": ["vite.config.ts", "eslint.config.cjs", "src", "vite-env.d.ts"],
+  "exclude": ["vite.config.ts"],
+  "references": [{ "path": "./tsconfig.node.json" }]
+}

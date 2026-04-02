@@ -2,7 +2,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-const port = Number(process.env.EXAMPLE_BASIC_PORT ?? '38110');
+const port = Number(process.env.EXAMPLE_INTEROP_NOTES_PORT ?? '38130');
 
 // https://vitejs.dev/config/
 export default defineConfig({

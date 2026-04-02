@@ -137,17 +137,17 @@ Phase 5:  5.1 → 5.2 → 5.3             ← starts after 2.3
 
 ## What to Keep from old-code/
 
-| Source                                     | Keep                            | Action                          |
-| ------------------------------------------ | ------------------------------- | ------------------------------- |
-| `old-code/aggregator/src/rooms.ts`         | ✅ Yjs observe → upsert pattern | Port to Run 3.1                 |
-| `old-code/aggregator/src/mongo-helpers.ts` | ✅ Upsert logic structure       | Adapt for Drizzle/Postgres      |
-| `old-code/aggregator/src/server.ts`        | ✅ API skeleton                 | Reference for Hono aggregator   |
-| `old-code/*.cy.js` (Cypress tests)         | ✅ Test scenarios               | Port after Phase 2              |
-| `old-code/example-synced-store/`           | ❌ @syncedstore unmaintained    | Archive                         |
-| `old-code/db copy/`                        | ❌ Superseded                   | Archive                         |
-| `old-code/example-editor/`                 | ❌ Replaced by ewe-note         | Archive                         |
-| `old-code/example-interop-*/`              | ⚠️ Test patterns                | Reference only                  |
-| `old-code/example-multi-room/`             | ⚠️ Multi-room UI                | Reference for ewe-note features |
+| Source                                     | Keep                            | Action                                                                |
+| ------------------------------------------ | ------------------------------- | --------------------------------------------------------------------- |
+| `old-code/aggregator/src/rooms.ts`         | ✅ Yjs observe → upsert pattern | Port to Run 3.1                                                       |
+| `old-code/aggregator/src/mongo-helpers.ts` | ✅ Upsert logic structure       | Adapt for Drizzle/Postgres                                            |
+| `old-code/aggregator/src/server.ts`        | ✅ API skeleton                 | Reference for Hono aggregator                                         |
+| `old-code/*.cy.js` (Cypress tests)         | ✅ Test scenarios               | Port after rewritten example apps land on the new db                  |
+| `old-code/example-synced-store/`           | ❌ @syncedstore unmaintained    | Archive                                                               |
+| `old-code/db copy/`                        | ❌ Superseded                   | Archive                                                               |
+| `old-code/example-editor/`                 | ⚠️ Editor scenario patterns     | Rewrite as a new-stack toy example if editor coverage is still needed |
+| `old-code/example-interop-*/`              | ✅ Interop scenario patterns    | Rewrite as new-stack toy examples for teaching and E2E coverage       |
+| `old-code/example-multi-room/`             | ✅ Multi-room scenario patterns | Rewrite as a new-stack toy example for teaching and E2E coverage      |
 
 ---
 

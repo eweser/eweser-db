@@ -102,7 +102,7 @@ const App = () => {
   const allNotes = db.getRooms('notes').filter((room) => room.id !== roomId);
 
   return (
-    <div style={styles.appRoot} data-cy="basic-app-root">
+    <div style={styles.appRoot}>
       <StatusBar db={db} loginUrl={loginUrl} />
 
       {/* You can check that the ydoc exists to make sure the room is connected */}
@@ -177,26 +177,18 @@ const NotesRoom = ({ notesRoom }: { notesRoom: Room<Note> }) => {
 
   return (
     <>
-      <div style={styles.roomBar} data-cy={`basic-room-${notesRoom.id}`}>
+      <div style={styles.roomBar}>
         <RoomName db={db} room={notesRoom as unknown as Room<EweDocument>} />{' '}
-        <button
-          style={styles.newNoteButton}
-          onClick={() => createNote()}
-          data-cy={`basic-new-note-${notesRoom.id}`}
-        >
+        <button style={styles.newNoteButton} onClick={() => createNote()}>
           New note
         </button>
         <ShareButton db={db} room={notesRoom as unknown as Room<EweDocument>} />
-        <span data-cy={`basic-connection-status-${notesRoom.id}`}>
-          {connectionStatus}
-        </span>
+        {connectionStatus}
       </div>
 
-      <div style={styles.flexWrap} data-cy={`basic-notes-grid-${notesRoom.id}`}>
+      <div style={styles.flexWrap}>
         {Object.keys(notes)?.length === 0 && (
-          <div data-cy={`basic-empty-state-${notesRoom.id}`}>
-            No notes found. Please create one
-          </div>
+          <div>No notes found. Please create one</div>
         )}
         {Object.keys(notes).map((id) => {
           const note = notes[id];
@@ -206,7 +198,6 @@ const NotesRoom = ({ notesRoom }: { notesRoom: Room<Note> }) => {
                 onClick={() => setSelectedNote(note._id)}
                 style={styles.card}
                 key={note._id}
-                data-cy={`basic-note-card-${note._id}`}
               >
                 <button
                   onClick={(e) => {
@@ -214,7 +205,6 @@ const NotesRoom = ({ notesRoom }: { notesRoom: Room<Note> }) => {
                     deleteNote(note);
                   }}
                   style={styles.deleteButton}
-                  data-cy={`basic-delete-note-${note._id}`}
                 >
                   X
                 </button>
@@ -228,12 +218,9 @@ const NotesRoom = ({ notesRoom }: { notesRoom: Room<Note> }) => {
                     onChange={(e) => {
                       updateNoteText(e.target.value, notes[selectedNote]);
                     }}
-                    data-cy={`basic-note-editor-${note._id}`}
                   />
                 ) : (
-                  <p style={styles.cardInner} data-cy={`basic-note-text-${note._id}`}>
-                    {note.text}
-                  </p>
+                  <p style={styles.cardInner}>{note.text}</p>
                 )}
               </div>
             );
@@ -262,7 +249,6 @@ const RoomName = ({ db, room }: { db: Database; room: Room<EweDocument> }) => {
           onBlur={submit}
           autoFocus
           disabled={submitting}
-          data-cy={`basic-room-name-input-${room.id}`}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               submit();
@@ -270,11 +256,7 @@ const RoomName = ({ db, room }: { db: Database; room: Room<EweDocument> }) => {
           }}
         />
       ) : (
-        <h1
-          style={{ cursor: 'pointer' }}
-          onClick={() => setEditing(true)}
-          data-cy={`basic-room-name-${room.id}`}
-        >
+        <h1 style={{ cursor: 'pointer' }} onClick={() => setEditing(true)}>
           {room.name}
         </h1>
       )}
@@ -321,20 +303,11 @@ const ShareButton = ({
   return (
     <>
       {showShareModal && (
-        <div
-          onClick={() => setShowShareModal(false)}
-          style={styles.modal}
-          data-cy={`basic-share-modal-${room.id}`}
-        >
-          <div
-            onClick={handleModalClick}
-            style={styles.modalContent}
-            data-cy={`basic-share-modal-content-${room.id}`}
-          >
+        <div onClick={() => setShowShareModal(false)} style={styles.modal}>
+          <div onClick={handleModalClick} style={styles.modalContent}>
             <button
               onClick={() => setShowShareModal(false)}
               style={styles.modalCloseButton}
-              data-cy={`basic-share-close-${room.id}`}
             >
               X
             </button>
@@ -347,15 +320,10 @@ const ShareButton = ({
                   onClick={handleCopy}
                   title={shareLink}
                   style={{ cursor: 'pointer' }}
-                  data-cy={`basic-share-link-${room.id}`}
                 >
                   {shareLink.slice(0, 10)}...{shareLink.slice(-10)}
                 </span>
-                <button
-                  onClick={handleCopy}
-                  style={styles.shareButton}
-                  data-cy={`basic-share-copy-${room.id}`}
-                >
+                <button onClick={handleCopy} style={styles.shareButton}>
                   {copied ? 'Copied!' : 'Copy Link'}
                 </button>
               </div>
@@ -366,7 +334,6 @@ const ShareButton = ({
       <button
         onClick={() => setShowShareModal(true)}
         style={styles.shareButton}
-        data-cy={`basic-share-button-${room.id}`}
       >
         Share
       </button>
