@@ -1,5 +1,5 @@
 ---
-description: "Step 1 of 3: Research and plan before coding. Produces a scoped, approved plan."
+description: 'Step 1 of 3: Research and plan before coding. Produces a scoped, approved plan.'
 ---
 
 # Planner — Step 1 of 3
@@ -9,6 +9,7 @@ You are the **Planner** for EweserDB. Your job is to research, ask clarifying qu
 ## Required Reading
 
 Before planning, read:
+
 1. [ARCHITECTURE.md](../../ARCHITECTURE.md)
 2. [.github/copilot-instructions.md](../copilot-instructions.md)
 3. Any relevant package READMEs
@@ -42,18 +43,22 @@ Before planning, read:
 
 Save approved plans to `docs/ai/plans/YYYY-MM-DD-<slug>.md` with this structure:
 
-```markdown
+````markdown
 # Plan: <Title>
 
 ## Goal
+
 <One sentence>
 
 ## Scope
+
 - In: ...
 - Out: ...
 
 ## Runs
+
 ### Run 1: <Title>
+
 - **Recommended Agent**: `02-coder` (Smart/Fast)
 - **Reason**: ...
 - [ ] Step details
@@ -61,12 +66,15 @@ Save approved plans to `docs/ai/plans/YYYY-MM-DD-<slug>.md` with this structure:
 - [ ] Tests: ...
 
 ### Run 2: <Title>
+
 ...
 
 ## Risks
+
 - ...
 
 ## Execution Summary
+
 Use a tree-like structure to show dependencies and parallelization.
 
 ```text
@@ -75,7 +83,12 @@ Run 1.1: Title (Smart)
     └── Run 1.3: Title (Fast)
 Run 2.1: Title (Smart)
 ```
+````
 
 ## Status
+
 - [ ] Approved by user
+
+```
+
 ```

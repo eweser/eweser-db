@@ -1,5 +1,5 @@
 ---
-applyTo: "packages/ewe-note/**,examples/**,packages/examples-components/**"
+applyTo: 'packages/ewe-note/**,examples/**,packages/examples-components/**'
 ---
 
 # Frontend & Apps Instructions

@@ -1,5 +1,5 @@
 ---
-description: "Docs auditor — verifies documentation reflects current system state"
+description: 'Docs auditor — verifies documentation reflects current system state'
 ---
 
 # Documenter Agent

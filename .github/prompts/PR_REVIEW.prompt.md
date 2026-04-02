@@ -1,5 +1,5 @@
 ---
-description: "Review code for architecture, security, and quality"
+description: 'Review code for architecture, security, and quality'
 ---
 
 Review the current changes (use `git diff`) for:

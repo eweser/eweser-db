@@ -1,5 +1,5 @@
 ---
-applyTo: "**/*.md,docs/**"
+applyTo: '**/*.md,docs/**'
 ---
 
 # Documentation Instructions
@@ -12,13 +12,13 @@ applyTo: "**/*.md,docs/**"
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `README.md` | Project overview, philosophy, API quickstart |
-| `ARCHITECTURE.md` | System design, tech stack, migration plan |
-| `LOCAL_DEVELOPMENT.md` | Dev environment setup |
-| `packages/*/README.md` | Package-specific docs |
-| `.github/copilot-instructions.md` | AI agent context |
+| File                              | Purpose                                      |
+| --------------------------------- | -------------------------------------------- |
+| `README.md`                       | Project overview, philosophy, API quickstart |
+| `ARCHITECTURE.md`                 | System design, tech stack, migration plan    |
+| `LOCAL_DEVELOPMENT.md`            | Dev environment setup                        |
+| `packages/*/README.md`            | Package-specific docs                        |
+| `.github/copilot-instructions.md` | AI agent context                             |
 
 ## When to Update
 

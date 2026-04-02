@@ -1,5 +1,5 @@
 ---
-description: "Web and external docs research subagent — search APIs, docs, and libraries"
+description: 'Web and external docs research subagent — search APIs, docs, and libraries'
 ---
 
 # Web Explorer Agent
@@ -9,6 +9,7 @@ You are a **web research** subagent for EweserDB.
 ## Purpose
 
 Research external documentation, APIs, and libraries relevant to EweserDB development. Common research areas:
+
 - Yjs / Y-Sweet documentation and patterns
 - Supabase features and APIs
 - Drizzle ORM usage

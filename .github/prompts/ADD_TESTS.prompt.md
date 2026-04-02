@@ -1,5 +1,5 @@
 ---
-description: "Add meaningful tests for recent changes"
+description: 'Add meaningful tests for recent changes'
 ---
 
 1. Identify what changed (check git diff or ask)

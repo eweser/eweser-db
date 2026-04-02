@@ -22,6 +22,7 @@ EweserDB is a local-first, user-owned database SDK built on Yjs CRDTs. Users own
 ## Current State: Migration In Progress
 
 The project is undergoing a major migration:
+
 - **Removing:** Next.js from auth-server
 - **Adding:** Docker Compose for all services (auth API, auth pages, ewe-note, example app, Hocuspocus, Caddy, Postgres, aggregator)
 - **Auth backend replacement:** Hono + better-auth (decided)
@@ -32,16 +33,16 @@ When working on auth-server code, be aware it's being migrated away from Next.js
 
 ## Tech Stack
 
-| Layer | Tech |
-|-------|------|
-| **Core SDK** | TypeScript, Yjs, y-indexeddb, @hocuspocus/provider |
-| **Auth** | better-auth + Drizzle ORM + PostgreSQL (migrating from Supabase) |
-| **Sync Server** | Hocuspocus (TypeScript, SQLite/Postgres persistence) |
-| **Frontend** | React 18-19, Vite, Tailwind CSS, Radix UI |
-| **Editor** | BlockNote (in ewe-note) |
-| **Testing** | Vitest (unit), Cypress (E2E) |
-| **Build** | Vite, tsc, npm workspaces |
-| **CI/CD** | GitHub Actions |
+| Layer           | Tech                                                             |
+| --------------- | ---------------------------------------------------------------- |
+| **Core SDK**    | TypeScript, Yjs, y-indexeddb, @hocuspocus/provider               |
+| **Auth**        | better-auth + Drizzle ORM + PostgreSQL (migrating from Supabase) |
+| **Sync Server** | Hocuspocus (TypeScript, SQLite/Postgres persistence)             |
+| **Frontend**    | React 18-19, Vite, Tailwind CSS, Radix UI                        |
+| **Editor**      | BlockNote (in ewe-note)                                          |
+| **Testing**     | Vitest (unit), Cypress (E2E)                                     |
+| **Build**       | Vite, tsc, npm workspaces                                        |
+| **CI/CD**       | GitHub Actions                                                   |
 
 ## Working Rules
 
@@ -62,7 +63,7 @@ When working on auth-server code, be aware it's being migrated away from Next.js
 @eweser/examples-components  ← UI components (depends on db)
     ↑
 example-basic / ewe-note     ← apps (depend on db, components)
-    
+
 auth-server             ← independent (Supabase, Drizzle, JWT)
 ```
 
@@ -81,6 +82,7 @@ npm run release          # Publish changed packages to npm
 ## Agent Architecture
 
 This repo uses a three-phase agent workflow:
+
 1. **@planner** — Research, ask questions, produce a scoped plan
 2. **@coder** — Implement the approved plan with tests
 3. **@qa** — Run tests, review code, verify quality

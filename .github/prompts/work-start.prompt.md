@@ -1,5 +1,5 @@
 ---
-description: "Orient at session start — read current state and priorities"
+description: 'Orient at session start — read current state and priorities'
 ---
 
 1. Read `ARCHITECTURE.md` for system context

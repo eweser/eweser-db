@@ -1,5 +1,5 @@
 ---
-description: "Plan a feature — turn a vague request into a scoped implementation plan"
+description: 'Plan a feature — turn a vague request into a scoped implementation plan'
 ---
 
 Read `ARCHITECTURE.md` and `.github/copilot-instructions.md` first.

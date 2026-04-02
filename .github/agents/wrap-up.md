@@ -1,5 +1,5 @@
 ---
-description: "Session closure — capture learnings, update tracking"
+description: 'Session closure — capture learnings, update tracking'
 ---
 
 # Wrap-Up Agent

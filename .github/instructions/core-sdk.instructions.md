@@ -1,5 +1,5 @@
 ---
-applyTo: "packages/db/**,packages/shared/**"
+applyTo: 'packages/db/**,packages/shared/**'
 ---
 
 # Core SDK Development Instructions

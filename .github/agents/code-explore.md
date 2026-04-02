@@ -1,5 +1,5 @@
 ---
-description: "Fast read-only codebase exploration subagent — search files, read code, summarize findings"
+description: 'Fast read-only codebase exploration subagent — search files, read code, summarize findings'
 ---
 
 # Code Explorer Agent
@@ -15,6 +15,7 @@ You are a **read-only** codebase exploration subagent for EweserDB.
 ## Monorepo Navigation
 
 Key locations:
+
 - `packages/db/src/` — Core SDK
 - `packages/shared/src/` — Shared types & schemas
 - `packages/auth-server/` — Auth server (Next.js, migrating)

@@ -1,5 +1,5 @@
 ---
-applyTo: "**/*.test.ts,**/*.test.tsx,**/*.spec.ts,e2e/**,cypress/**"
+applyTo: '**/*.test.ts,**/*.test.tsx,**/*.spec.ts,e2e/**,cypress/**'
 ---
 
 # Testing Instructions
@@ -11,11 +11,13 @@ applyTo: "**/*.test.ts,**/*.test.tsx,**/*.spec.ts,e2e/**,cypress/**"
 - Run package: `cd packages/db && npm test`
 
 ### Testing Yjs Code
+
 - Use real `Y.Doc` instances, not mocks
 - Use `fake-indexeddb` for IndexedDB (import at top of test files)
 - Test concurrent edits by creating multiple Y.Doc instances and syncing
 
 ### Testing Auth
+
 - Mock Supabase client for unit tests
 - Mock Y-Sweet for connection tests
 - Use real Drizzle queries against test database when possible

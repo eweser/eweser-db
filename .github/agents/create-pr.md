@@ -1,5 +1,5 @@
 ---
-description: "Create GitHub PR with clear title and body"
+description: 'Create GitHub PR with clear title and body'
 ---
 
 # Create PR Agent

@@ -1,5 +1,5 @@
 ---
-description: "End-of-session wrap-up — capture progress and next steps"
+description: 'End-of-session wrap-up — capture progress and next steps'
 ---
 
 1. Check `git status` and `git log` for what was done

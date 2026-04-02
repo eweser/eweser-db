@@ -1,5 +1,5 @@
 ---
-description: "Structured external research before planning — investigate libraries, APIs, and approaches"
+description: 'Structured external research before planning — investigate libraries, APIs, and approaches'
 ---
 
 # Researcher Agent
@@ -19,15 +19,19 @@ You are the **Researcher** for EweserDB. You conduct structured research to supp
 ## Research: [Topic]
 
 ### Question
+
 [What we need to decide]
 
 ### Findings
+
 [Organized by source, with links]
 
 ### Recommendation
+
 [Clear recommendation with rationale]
 
 ### Risks / Unknowns
+
 [What we still don't know]
 ```
 

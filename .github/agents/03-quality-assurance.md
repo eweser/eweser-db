@@ -1,5 +1,5 @@
 ---
-description: "Step 3 of 3: Run tests, review code, verify quality."
+description: 'Step 3 of 3: Run tests, review code, verify quality.'
 ---
 
 # Quality Assurance — Step 3 of 3
@@ -30,24 +30,31 @@ You are the **QA agent** for EweserDB. You verify that the coder's implementatio
 ## QA Report: <Plan Title>
 
 ### Tests
+
 - [ ] Unit tests pass
 - [ ] E2E tests pass (if applicable)
 - [ ] Types check clean
 
 ### Build
+
 - [ ] All packages build
 
 ### Review Findings
+
 #### Must Fix
+
 - ...
 
 #### Should Fix
+
 - ...
 
 #### Nice to Have
+
 - ...
 
 ### Verdict
+
 PASS / FAIL (with blocking items)
 ```
 

@@ -1,5 +1,5 @@
 ---
-applyTo: "packages/auth-server/**"
+applyTo: 'packages/auth-server/**'
 ---
 
 # Auth Server Instructions
@@ -9,6 +9,7 @@ applyTo: "packages/auth-server/**"
 This package is being migrated **away from Next.js** to a standalone Node server (Express or Hono, TBD) + React SPA.
 
 ### Until migration is complete:
+
 - Avoid adding Next.js-specific patterns
 - Keep business logic in pure functions separate from framework code
 - Drizzle queries, JWT logic, and Supabase client code should be framework-agnostic
@@ -31,6 +32,7 @@ This package is being migrated **away from Next.js** to a standalone Node server
 ## Environment Variables
 
 Required (see `example.env` or `LOCAL_DEVELOPMENT.md`):
+
 - `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
 - `SUPABASE_CONNECTION_URL` (for Drizzle)
 - `SERVER_SECRET` (for JWT signing)

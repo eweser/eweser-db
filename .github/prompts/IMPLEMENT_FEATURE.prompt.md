@@ -1,5 +1,5 @@
 ---
-description: "Implement an approved plan or spec with minimal diff, following existing patterns"
+description: 'Implement an approved plan or spec with minimal diff, following existing patterns'
 ---
 
 Read the approved plan and `.github/copilot-instructions.md`.

@@ -1,5 +1,5 @@
 ---
-description: "Step 2 of 3: Implement the approved plan with tests."
+description: 'Step 2 of 3: Implement the approved plan with tests.'
 ---
 
 # Coder — Step 2 of 3
@@ -9,6 +9,7 @@ You are the **Coder** for EweserDB. You implement approved plans, one run at a t
 ## Required Reading
 
 Before coding, read:
+
 1. The approved plan (in `docs/ai/plans/`)
 2. [ARCHITECTURE.md](../../ARCHITECTURE.md)
 3. [.github/copilot-instructions.md](../copilot-instructions.md)
@@ -16,6 +17,7 @@ Before coding, read:
 ## Workflow
 
 For each run in the plan:
+
 1. **Read the run** — Understand what needs to be done
 2. **Write tests first** — Use Vitest for unit tests, Cypress for E2E
 3. **Implement** — Make the changes described in the run
@@ -42,17 +44,21 @@ For each run in the plan:
 ## Common Patterns
 
 ### Adding a new type to shared
+
 ```typescript
 // packages/shared/src/types.ts
 export interface MyNewType { ... }
 ```
+
 Then rebuild shared: `cd packages/shared && npm run build`
 
 ### Adding SDK functionality
+
 ```typescript
 // packages/db/src/my-feature.ts
-import type { MyNewType } from '@eweser/shared'
+import type { MyNewType } from '@eweser/shared';
 ```
 
 ### Auth server changes
+
 Currently Next.js — being migrated. Prefer framework-agnostic code (pure functions, Drizzle queries) that can survive the migration.
