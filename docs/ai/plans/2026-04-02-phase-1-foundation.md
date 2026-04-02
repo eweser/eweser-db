@@ -10,13 +10,14 @@
 - [x] Run 1.3 — Port database schema + migrations
 - [x] Run 1.4 — Integrate better-auth
 - [x] Run 1.5 — Port API routes from Next.js to Hono
-- [ ] Run 1.6 — Update SDK — replace Y-Sweet client with Hocuspocus provider
+- [x] Run 1.6 — Update SDK — replace Y-Sweet client with Hocuspocus provider
 
 ## Agent Scratchpad
 
 > Use this section to track decisions, blockers, and notes during implementation.
 
 - 2026-04-02 decision: hard cutover. App is not live, so no backwards compatibility layer and no legacy user-data migration path are required.
+- 2026-04-02 result: Run 1.6 completed. `@eweser/db` now uses `@hocuspocus/provider`, shared room and refresh-token contracts use `syncUrl` and `syncToken`, db tests passed, and `packages/shared`, `packages/db`, and `packages/auth-server-hono` builds were verified.
 
 ---
 

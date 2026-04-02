@@ -26,12 +26,30 @@ Establish strict, useful, and consistently enforced linting, formatting, type-ch
 
 - **Recommended Agent**: `02-coder` (Smart)
 - **Reason**: Shared config changes affect multiple packages and can cause high churn if not scoped correctly.
-- [ ] Tighten `@eweser/eslint-config-ts` and `@eweser/eslint-config-react-ts` to prioritize bug-catching rules.
-- [ ] Promote key rules from warning to error (for active code) and add focused exceptions only where justified.
-- [ ] Add a root Prettier config and ignore file; keep ESLint+Prettier behavior consistent.
-- [ ] Add root scripts: `lint`, `lint:fix`, `format`, `format:check`.
-- [ ] Files: `packages/eslint-config-ts/index.js`, `packages/eslint-config-react-ts/index.js`, `.prettierrc.json` (new), `.prettierignore` (new), root `package.json`.
-- [ ] Tests: Run `npm run lint` and `npm run format:check`.
+- [x] Tighten `@eweser/eslint-config-ts` and `@eweser/eslint-config-react-ts` to prioritize bug-catching rules.
+- [x] Promote key rules from warning to error (for active code) and add focused exceptions only where justified.
+- [x] Add a root Prettier config and ignore file; keep ESLint+Prettier behavior consistent.
+- [x] Add root scripts: `lint`, `lint:fix`, `format`, `format:check`.
+- [x] Files: `packages/eslint-config-ts/index.js`, `packages/eslint-config-react-ts/index.js`, `.prettierrc.json` (new), `.prettierignore` (new), root `package.json`.
+- [x] Tests: Run `npm run lint` and `npm run format:check`.
+
+**Status**: ✅ **COMPLETE**
+
+**What was done**:
+
+1. ESLint configs: Upgraded `tseslint.configs.strict` for React, promoted `@typescript-eslint/no-explicit-any` to error, promoted `@typescript-eslint/ban-ts-comment` to error (with description requirement), promoted prettier to error.
+2. Prettier: Created `.prettierrc.json` (root) and `.prettierignore` with sensible defaults (node_modules, dist, .next, etc.).
+3. Root scripts: Added `lint`, `lint:fix`, `format`, `format:check`, `check` (orchestrator) to root package.json.
+4. Dependencies: Installed Prettier and ESLint at root for centralized enforcement.
+
+**Baseline findings**:
+
+- Prettier detects formatting issues across ~150+ files (expected; will be fixed in Run 3).
+- ESLint on `packages/db` yields 39 errors (mostly `any` types, 1 ts-ignore without description) — rules are working as intended.
+- **Critical**: Many files now violate stricter rules; this is the expected baseline that Run 3 will address.
+
+**Handoff to Run 3**:
+Workspaces now have failing lint/format gates. Run 3 will normalize scripts, fix violations, and ensure all workspaces can pass quality checks before activating CI gates in Run 5.
 
 ### Run 3: Workspace Script Normalization
 
@@ -108,4 +126,20 @@ Run 1: Baseline and Gate Design (Smart)
 
 ## Status
 
-- [ ] Approved by user
+- [x] Approved by user
+- [x] Run 1: Baseline and Gate Design — **COMPLETE** (docs/ai/quality-gates-matrix.md created)
+- [x] Run 2: Lint and Format Foundation — **COMPLETE** (stricter rules in place, root config established, violations baseline identified)
+- [ ] Run 3: Workspace Script Normalization — **READY FOR CODER**
+- [ ] Run 4: TypeScript Strictness Hardening — pending Run 3
+- [ ] Run 5: CI Enforcement Repair and Tightening — pending Run 3-4
+- [ ] Run 6: Test Strategy Tightening for Agent Era — pending Run 5
+- [ ] Run 7: Optional Pre-Commit Fast Feedback — pending Run 5
+
+## Progress Notes
+
+**As of 2026-04-02**:
+
+- Run 1 established comprehensive quality gates matrix with per-workspace phase-by-phase rollout.
+- Run 2 successfully tightened shared lint config + added Prettier standardization at root.
+- Baseline violations identified (~150 formatting issues, ~39 lint errors in core SDK).
+- Next: Run 3 will normalize workspace scripts and fix violations to enable full CI gates in Run 5.
