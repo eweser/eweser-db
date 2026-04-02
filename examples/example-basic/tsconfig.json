@@ -19,7 +19,12 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "types": ["vite/client"],
-    "baseUrl": "./src"
+    "baseUrl": "./src",
+    "paths": {
+      "@eweser/examples-components": [
+        "../../../packages/examples-components/src/components/index.ts"
+      ]
+    }
   },
 
   "include": ["vite.config.ts", "eslint.config.cjs", "src", "vite-env.d.ts"],
