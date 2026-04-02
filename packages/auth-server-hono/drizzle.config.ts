@@ -1,8 +1,12 @@
 import { defineConfig } from 'drizzle-kit';
+import { fileURLToPath } from 'node:url';
+
+const schemaPath = fileURLToPath(new URL('./src/db/schema/index.ts', import.meta.url));
+const migrationsPath = fileURLToPath(new URL('./drizzle', import.meta.url));
 
 export default defineConfig({
-  schema: './src/db/schema/index.ts',
-  out: './drizzle',
+  schema: schemaPath,
+  out: migrationsPath,
   dialect: 'postgresql',
   dbCredentials: {
     url:

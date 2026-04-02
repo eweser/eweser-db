@@ -1,9 +1,65 @@
-/**
- * Run the auth server from eweser-db project, cd ./packages/auth-server; npm run dev
- * If you are running on WSl, localhost:4444 might not work. Use ip addr show eth0 to find the local ip
- */
-export const AUTH_SERVER =
-  import.meta.env.VITE_AUTH_SERVER ?? 'http://172.31.42.92:3000';
+const fallbackOrigin = 'http://localhost';
+
+export const APP_NAME = 'Ewe Note';
+export const PWA_THEME_COLOR = '#e6b45c';
+export const PWA_BACKGROUND_COLOR = '#fff7eb';
+
+export function normalizeBase(base: string) {
+  if (!base || base === '/') {
+    return '/';
+  }
+
+  const withLeadingSlash = base.startsWith('/') ? base : `/${base}`;
+
+  return withLeadingSlash.endsWith('/')
+    ? withLeadingSlash.slice(0, -1)
+    : withLeadingSlash;
+}
+
+export function resolveUrl(
+  path: string,
+  origin = typeof window === 'undefined'
+    ? fallbackOrigin
+    : window.location.origin
+) {
+  return new URL(path, origin).toString();
+}
+
+export function stripTrailingSlash(value: string) {
+  return value.endsWith('/') && value !== '/' ? value.slice(0, -1) : value;
+}
+
+export function resolveAuthServerUrl(
+  authServer = import.meta.env.VITE_AUTH_SERVER,
+  origin?: string
+) {
+  return stripTrailingSlash(
+    authServer ? resolveUrl(authServer, origin) : resolveUrl('/', origin)
+  );
+}
+
+export function buildAppPath(base: string, path = '/') {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const normalizedBase = normalizeBase(base);
+
+  if (normalizedBase === '/') {
+    return normalizedPath;
+  }
+
+  return `${normalizedBase}${normalizedPath}`;
+}
+
+export const routerBase = normalizeBase(import.meta.env.BASE_URL ?? '/');
+
+export const AUTH_SERVER = resolveAuthServerUrl();
+
+export function appPath(path = '/') {
+  return buildAppPath(routerBase, path);
+}
+
+export function appAbsoluteUrl(path = '/') {
+  return resolveUrl(appPath(path));
+}
 
 export const env =
   import.meta.env.VITE_CI === 'true'

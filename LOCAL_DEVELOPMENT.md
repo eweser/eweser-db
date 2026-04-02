@@ -82,8 +82,8 @@ SUPABASE_CONNECTION_URL='postgresql://postgres:postgres@127.0.0.1:54322/postgres
 SUPABASE_SERVICE_ROLE_KEY='<your-service-role-key-from-supabase-start>'
 
 # Local auth server
-NEXT_PUBLIC_AUTH_SERVER_URL='http://localhost:3000'
-NEXT_PUBLIC_AUTH_SERVER_DOMAIN='localhost:3000'
+NEXT_PUBLIC_AUTH_SERVER_URL='http://localhost:38100'
+NEXT_PUBLIC_AUTH_SERVER_DOMAIN='localhost:38100'
 
 # Server secret (can be any random string)
 SERVER_SECRET='any-random-string-for-local-dev'
@@ -139,11 +139,21 @@ This will start:
 
 - `packages/db` - The core database library (watch mode)
 - `packages/shared` - Shared utilities (watch mode)
-- `packages/auth-server` - Auth server at `http://localhost:3000`
-- `examples/example-basic` - Example app at `http://localhost:8000`
+- `packages/auth-server` - Auth server at `http://localhost:38100`
+- `examples/example-basic` - Example app at `http://localhost:38110`
 - `packages/examples-components` - UI components (watch mode)
 
 Alternatively, use the VS Code tasks (Command Palette → "Tasks: Run Task" → "Run All Dev")
+
+The Docker Compose stack is served behind Caddy at `http://localhost:38180`.
+
+You can override the defaults with environment variables:
+
+- `AUTH_SERVER_PORT` — legacy Next auth server dev/start port. Default: `38100`
+- `AUTH_API_PORT` — standalone Hono auth API port. Default: `38101`
+- `EXAMPLE_BASIC_PORT` — example-basic Vite dev/preview port and Cypress default target. Default: `38110`
+- `CADDY_HOST_PORT` — Docker Compose host port for the full stack. Default: `38180`
+- `AUTH_PUBLIC_URL`, `AUTH_PUBLIC_DOMAIN`, `SYNC_PUBLIC_URL` — full-stack public URLs used by Docker Compose
 
 ### Run Individual Packages
 
@@ -252,7 +262,7 @@ npm run dev-e2e
 
 If you see port conflict errors:
 
-- Check if another service is using ports 3000, 8000, 54321, 54322, or 54323
+- Check if another service is using ports 38100, 38110, 54321, 54322, or 54323
 - Stop the conflicting service or change the port in the configuration
 
 ### Supabase Won't Start

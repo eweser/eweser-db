@@ -6,7 +6,7 @@ export function createRoomInviteLink(options: CreateRoomInviteBody): string {
   const inviteToken = jwt.sign(options, env.SERVER_SECRET);
   const protocol = env.AUTH_SERVER_URL.startsWith('https') ? 'https' : 'http';
   const url = new URL(
-    '/access-grant/accept-room-invite',
+    '/auth/access-grant/accept-room-invite',
     `${protocol}://${env.AUTH_SERVER_DOMAIN}`
   );
   url.searchParams.set('token', inviteToken);

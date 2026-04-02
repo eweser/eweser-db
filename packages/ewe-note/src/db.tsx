@@ -63,7 +63,10 @@ export const db = new Database({
 // run the rolling sync on the notes collection. This will cycle through all the rooms in the collectionKeysForRollingSync array and sync them for one second each.
 db.collectionKeysForRollingSync = [collectionKey];
 
-export const loginUrl = db.generateLoginUrl({ name: 'EweNote' });
+export const loginUrl = db.generateLoginUrl({
+  name: config.APP_NAME,
+  redirect: config.appAbsoluteUrl('/'),
+});
 
 export type DbContextType = {
   db: Database;
@@ -148,12 +151,13 @@ export const DbProvider = ({ children }: { children: ReactNode }) => {
     if (hasToken) {
       return;
     }
+
     const foundToken = db.getToken(); // will pull token from the query string or from localStorage
+
     if (foundToken) {
       setHasToken(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasToken, window.location.search]); // token will be in the query string after login redirect
+  }, [hasToken]);
 
   useEffect(() => {
     if (loggedIn || !hasToken) {
@@ -169,22 +173,21 @@ export const DbProvider = ({ children }: { children: ReactNode }) => {
   }, [loggedIn, hasToken]);
 
   useEffect(() => {
-    db.on('roomsLoaded', () => {
+    const handleRoomsLoaded = () => {
       setLoaded(true);
       setAllRooms(db.getRooms('notes'));
-    });
-    db.on('registrySync', (status) => {
+    };
+
+    const handleRegistrySync = (status: string) => {
       if (status === 'success') setAllRooms(db.getRooms('notes'));
-    });
+    };
+
+    db.on('roomsLoaded', handleRoomsLoaded);
+    db.on('registrySync', handleRegistrySync);
 
     return () => {
-      db.off('roomsLoaded', () => {
-        setLoaded(true);
-        setAllRooms(db.getRooms('notes'));
-      });
-      db.off('registrySync', (status) => {
-        if (status === 'success') setAllRooms(db.getRooms('notes'));
-      });
+      db.off('roomsLoaded', handleRoomsLoaded);
+      db.off('registrySync', handleRegistrySync);
     };
   }, []);
 

@@ -33,6 +33,9 @@ types
 e2e/cypress/videos
 e2e/cypress/screenshots
 
+# personal planning docs
+docs/personal/
+
 # builds
 vite.config.ts.timestamp*.mjs
 .expo/devices.json

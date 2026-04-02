@@ -1,10 +1,21 @@
 import { Hono } from 'hono';
 import { requireJwtAuth } from '../middleware/jwt-auth.js';
+import { requireAuth } from '../middleware/auth.js';
 import { syncRoomsWithClient } from '../services/rooms/sync-rooms-with-client.js';
 import { getRoomsByIds, updateRoom } from '../model/rooms/calls.js';
 import { createRoomInviteLink } from '../services/access-grant/create-room-invite-link.js';
+import { verifyRoomInviteToken } from '../services/access-grant/create-room-invite-link.js';
 import { generateSyncToken } from '../services/sync-token.js';
 import { env } from '../env.js';
+import {
+  acceptRoomInvite,
+  notAdminOfRoomError,
+  roomNotFoundError,
+} from '../services/access-grant/accept-room-invite.js';
+import {
+  createOrUpdateThirdPartyAppPermissions,
+  type ThirdPartyAppPermissions,
+} from '../services/access-grant/create-third-party-app-permissions.js';
 import type {
   RegistrySyncRequestBody,
   CreateRoomInviteBody,
@@ -52,6 +63,111 @@ accessGrantRouter.post('/create-room-invite', requireJwtAuth, async (c) => {
 
   const link = createRoomInviteLink(body);
   return c.json({ link });
+});
+
+/**
+ * POST /api/access-grant/permissions
+ * Creates or updates a third-party app grant for the signed-in user.
+ */
+accessGrantRouter.post('/permissions', requireAuth, async (c) => {
+  const user = c.get('user');
+  const body = (await c.req.json()) as ThirdPartyAppPermissions & {
+    redirect?: string;
+  };
+
+  if (!body.domain || !body.redirect) {
+    return c.json({ error: 'Invalid request' }, 400);
+  }
+
+  const token = await createOrUpdateThirdPartyAppPermissions({
+    collections: body.collections,
+    domain: body.domain,
+    keepAliveDays: body.keepAliveDays,
+    roomIds: body.roomIds,
+    userId: user.id,
+  });
+
+  const redirectUrl = new URL(body.redirect);
+  redirectUrl.searchParams.set('token', token);
+
+  return c.json({ redirectUrl: redirectUrl.toString() });
+});
+
+/**
+ * POST /api/access-grant/accept-room-invite
+ * Accepts a room invite for the signed-in user.
+ */
+accessGrantRouter.post('/accept-room-invite', requireAuth, async (c) => {
+  const user = c.get('user');
+  const body = (await c.req.json()) as { token?: string };
+
+  if (!body.token) {
+    return c.json({ error: 'No token provided' }, 400);
+  }
+
+  let invite;
+  try {
+    invite = verifyRoomInviteToken(body.token);
+  } catch {
+    return c.json({ error: 'Invalid invite token' }, 400);
+  }
+
+  const {
+    accessType,
+    domain,
+    expiry,
+    invitees,
+    inviterId,
+    redirect,
+    redirectQueries,
+    roomId,
+  } = invite;
+
+  if (!inviterId || !roomId || !accessType || !redirect || !domain) {
+    return c.json({ error: 'Invalid invite' }, 400);
+  }
+
+  if (inviterId === user.id) {
+    return c.json({ error: 'You cannot invite yourself' }, 400);
+  }
+
+  if (invitees.length > 0 && !invitees.includes(user.id)) {
+    return c.json({ error: 'You are not invited to this room' }, 403);
+  }
+
+  if (expiry && new Date(expiry) < new Date()) {
+    return c.json({ error: 'Invite has expired' }, 400);
+  }
+
+  try {
+    await acceptRoomInvite({
+      accessType,
+      inviterId,
+      roomId,
+      userId: user.id,
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === roomNotFoundError) {
+        return c.json({ error: roomNotFoundError }, 404);
+      }
+      if (error.message === notAdminOfRoomError) {
+        return c.json({ error: notAdminOfRoomError }, 403);
+      }
+      return c.json({ error: error.message }, 400);
+    }
+    return c.json({ error: 'Failed to accept invite' }, 500);
+  }
+
+  const protocol = env.AUTH_SERVER_URL.startsWith('https') ? 'https' : 'http';
+  const redirectUrl = new URL(redirect, `${protocol}://${domain}`);
+  if (redirectQueries) {
+    Object.entries(redirectQueries).forEach(([key, value]) => {
+      redirectUrl.searchParams.set(key, value);
+    });
+  }
+
+  return c.json({ redirectUrl: redirectUrl.toString() });
 });
 
 /**

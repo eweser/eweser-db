@@ -19,24 +19,50 @@ services:
     build: packages/sync-server
     volumes:
       - sync-data:/data
-    ports:
-      - '8080:8080'
+    expose:
+      - '8080'
     environment:
       SYNC_PORT: 8080
       SYNC_DB_PATH: /data/sync.sqlite
       SYNC_AUTH_SECRET: ${SYNC_AUTH_SECRET:-dev-secret}
 
   auth-api:
-    build: packages/auth-server-hono
+    build:
+      context: .
+      dockerfile: packages/auth-server-hono/Dockerfile
     depends_on:
       postgres:
         condition: service_healthy
-    ports:
-      - '3000:3000'
+    expose:
+      - '3000'
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-eweser}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-eweser}
       SERVER_SECRET: ${SERVER_SECRET:-dev-secret}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-change-me-in-production}
+      BETTER_AUTH_BASE_URL: ${AUTH_PUBLIC_URL:-http://localhost:38180}
+      AUTH_SERVER_DOMAIN: ${AUTH_PUBLIC_DOMAIN:-localhost:38180}
+      AUTH_SERVER_URL: ${AUTH_PUBLIC_URL:-http://localhost:38180}
+      SYNC_SERVER_URL: ${SYNC_PUBLIC_URL:-ws://localhost:38180/sync}
+      SYNC_AUTH_SECRET: ${SYNC_AUTH_SECRET:-dev-secret}
       PORT: 3000
+
+  caddy:
+    build:
+      context: .
+      dockerfile: docker/caddy/Dockerfile
+      args:
+        PUBLIC_ORIGIN: ${AUTH_PUBLIC_URL:-http://localhost:38180}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth-api:
+        condition: service_started
+      sync-server:
+        condition: service_started
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    ports:
+      - '${CADDY_HOST_PORT:-38180}:80'
 
 volumes:
   pgdata:

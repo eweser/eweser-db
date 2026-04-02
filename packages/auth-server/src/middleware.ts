@@ -37,7 +37,7 @@ export async function middleware(req: NextRequest) {
 
   if (process.env.NODE_ENV === 'development') {
     approvedDomains = [
-      'localhost:8000',
+      'localhost:38110',
       '172.31.42.92:8081',
       '172.31.42.92:5173',
       'localhost:5173',

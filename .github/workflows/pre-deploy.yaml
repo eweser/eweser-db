@@ -33,7 +33,7 @@ jobs:
       # Step 5: Wait for auth-server to be ready
       - name: Wait for auth-server
         run: |
-          until curl -s http://localhost:8000/health; do
+          until curl -sf http://localhost:38100/ > /dev/null; do
             echo "Waiting for auth-server..."
             sleep 5
           done

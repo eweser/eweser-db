@@ -2,7 +2,7 @@ const dummyUserName = 'dummy-user123';
 const dummyUserPass = 'dumdum';
 
 export const AUTH_SERVER =
-  process.env.VITE_AUTH_SERVER ?? 'http://172.31.42.92:3000';
+  process.env.VITE_AUTH_SERVER ?? 'http://localhost:38100';
 
 export const env =
   process.env.VITE_CI === 'true' ? 'ci' : process.env.DEV ? 'dev' : 'prod';
