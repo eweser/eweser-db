@@ -7,20 +7,21 @@ import {
   authTokenFromHeaders,
   serverRouteError,
 } from '../../../../shared/utils';
+import type { NextRequest } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { SERVER_SECRET } from '../../../../shared/server-constants';
 import type { AccessGrantJWT } from '../../../../modules/account/access-grant/create-token-from-grant';
 import { updateRoom } from '../../../../model/rooms/calls';
 
 export async function POST(
-  request: Request,
-  { params }: { params: UpdateRoomRouteParams }
+  request: NextRequest,
+  { params }: { params: Promise<UpdateRoomRouteParams> }
 ) {
   const authToken = authTokenFromHeaders(request.headers);
   if (!authToken) {
     return serverRouteError('No token provided', 401);
   }
-  const { roomId } = params;
+  const { roomId } = await params;
   if (!roomId) {
     return serverRouteError('No roomId provided', 400);
   }

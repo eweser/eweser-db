@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Database } from '@eweser/db';
 import type { CollectionKey, Documents, Note, Room } from '@eweser/db';
-import { StatusBar, styles } from '@eweser/examples-components';
+import { styles } from '@eweser/examples-components';
 import * as config from './config';
 
 const collectionKey: CollectionKey = 'notes';
@@ -74,7 +74,7 @@ const App = () => {
 
   return (
     <div style={styles.appRoot} data-cy="multi-room-app-root">
-      <StatusBar db={db} loginUrl={loginUrl} />
+      <AppHeader />
       {loaded ? (
         <>
           <div style={styles.roomBar} data-cy="multi-room-toolbar">
@@ -116,6 +116,32 @@ const App = () => {
       ) : (
         <div data-cy="multi-room-loading">loading...</div>
       )}
+    </div>
+  );
+};
+
+const AppHeader = () => {
+  return (
+    <div style={styles.statusBar} data-cy="multi-room-header">
+      <div style={styles.logoutButtonsDiv}>
+        <a href={loginUrl} style={{ textDecoration: 'none' }}>
+          <button style={styles.logoutButton}>Login</button>
+        </a>
+        <button
+          style={styles.logoutButton}
+          onClick={() => {
+            db.logoutAndClear();
+            window.location.reload();
+          }}
+        >
+          Clear storage
+        </button>
+      </div>
+      <div style={styles.statusBarMessageDiv}>
+        <pre style={styles.statusBarMessage}>
+          {db.getToken() ? 'Logged In' : 'Logged Out'}
+        </pre>
+      </div>
     </div>
   );
 };

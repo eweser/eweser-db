@@ -116,29 +116,65 @@ Run 3 implementation notes:
 
 - **Recommended Agent**: `02-coder` (Smart)
 - **Reason**: Requires product-shaping decisions and selective rebuild of outdated examples to align with the new db/auth stack.
-- [ ] Decide minimal toy example set for teaching + regression:
-- [ ] Keep `example-basic` as core notes flow.
-- [ ] Recreate `multi-room` toy app on new stack.
-- [ ] Recreate `interop` toy app pair on new stack.
-- [ ] Optional: recreate `editor` toy app only if collaborative editor behavior is still a target.
-- [ ] Document each toy example’s teaching objective and its E2E responsibilities.
-- [ ] Files: `examples/` new app folders as approved, plus `examples/*/README.md`.
-- [ ] Tests: each example must run locally and expose deterministic selectors for E2E.
+- [x] Decide minimal toy example set for teaching + regression:
+- [x] Keep `example-basic` as core notes flow.
+- [x] Recreate `multi-room` toy app on new stack.
+- [x] Recreate `interop` toy app pair on new stack.
+- [x] Optional: recreate `editor` toy app only if collaborative editor behavior is still a target. (deferred)
+- [x] Document each toy example’s teaching objective and its E2E responsibilities.
+- [x] Files: `examples/` new app folders as approved, plus `examples/*/README.md`.
+- [x] Tests: each example must run locally and expose deterministic selectors for E2E.
+
+Run 4 status: complete.
+
+Run 4 implementation notes:
+
+- Added new-stack toy apps: `examples/example-multi-room`, `examples/example-interop-notes`, `examples/example-interop-flashcards`.
+- Added deterministic `data-cy` selectors in `examples/example-basic/src/AppBasic.tsx` and in all new toy apps.
+- Added per-example teaching/E2E docs in `examples/example-basic/README.md`, `examples/example-multi-room/README.md`, `examples/example-interop-notes/README.md`, and `examples/example-interop-flashcards/README.md`.
+- Added root scripts for new toy apps in `package.json` (`build-example:*`, `dev:example-*`, `run-example-preview:*`).
+- Verified fixture app compilation/build via:
+  - `npm run type-check --workspace=@eweser/example-basic`
+  - `npm run type-check --workspace=@eweser/example-multi-room`
+  - `npm run type-check --workspace=@eweser/example-interop-notes`
+  - `npm run type-check --workspace=@eweser/example-interop-flashcards`
+  - `npm run build-example:basic`
+  - `npm run build-example:multi-room`
+  - `npm run build-example:interop-notes`
+  - `npm run build-example:interop-flashcards`
 
 ### Run 5: E2E User Journey Suite (Examples + Auth + DB)
 
 - **Recommended Agent**: `02-coder` (Smart)
 - **Reason**: End-to-end reliability requires careful setup/teardown, data isolation, and anti-flake strategies.
-- [ ] Replace legacy Matrix-era assertions with new-stack assertions and routes.
-- [ ] Build journey specs:
-- [ ] `basic-auth-and-crud.cy.ts`.
-- [ ] `basic-returning-user.cy.ts`.
-- [ ] `share-invite-flow.cy.ts`.
-- [ ] `multi-room.cy.ts` (new toy app).
-- [ ] `interop.cy.ts` (new toy app pair).
-- [ ] Add stable selectors in example UIs to avoid text-fragile tests.
-- [ ] Files: `e2e/cypress/tests/*.cy.ts`, `e2e/cypress/support/**`, plus small UI selector updates in `examples/**`.
-- [ ] Tests: `npm run test:e2e` with documented service prerequisites.
+- [x] Replace legacy Matrix-era assertions with new-stack assertions and routes.
+- [x] Build journey specs:
+- [x] `basic-auth-and-crud.cy.ts`.
+- [x] `basic-returning-user.cy.ts`.
+- [x] `share-invite-flow.cy.ts`.
+- [x] `multi-room.cy.ts` (new toy app).
+- [x] `interop.cy.ts` (new toy app pair).
+- [x] Add stable selectors in example UIs to avoid text-fragile tests.
+- [x] Files: `e2e/cypress/tests/*.cy.ts`, `e2e/cypress/support/**`, plus small UI selector updates in `examples/**`.
+- [x] Tests: `npm run test:e2e` with documented service prerequisites.
+
+Run 5 status: complete.
+
+Run 5 implementation notes:
+
+- Replaced legacy spec `e2e/cypress/tests/basic.cy.js` with new TypeScript journey specs:
+  - `e2e/cypress/tests/basic-auth-and-crud.cy.ts`
+  - `e2e/cypress/tests/basic-returning-user.cy.ts`
+  - `e2e/cypress/tests/share-invite-flow.cy.ts`
+  - `e2e/cypress/tests/multi-room.cy.ts`
+  - `e2e/cypress/tests/interop.cy.ts`
+- Added selector helper command and typings:
+  - `e2e/cypress/support/commands.js`
+  - `e2e/cypress/support/index.d.ts`
+- Multi-app journeys (`multi-room.cy.ts`, `interop.cy.ts`) are opt-in and gated behind `Cypress.env('FULL_E2E')` to keep smoke runs fast.
+- Validated basic smoke journey specs locally:
+  - Start app preview: `npm run run-example-preview:basic`
+  - Run smoke specs: `npm run test:e2e -- --spec "e2e/cypress/tests/basic-auth-and-crud.cy.ts,e2e/cypress/tests/basic-returning-user.cy.ts,e2e/cypress/tests/share-invite-flow.cy.ts"`
 
 ### Run 6: CI Test Pipeline and Reliability Hardening
 
@@ -172,6 +208,31 @@ Run 1.1: Build test matrix (Fast)
 
 - [x] Approved by user
 
+## Post-Run 5 Enhancements: Kitchen-Sink Consolidation
+
+After completing Run 5, a comprehensive audit revealed major SDK feature gaps in the example apps. The following changes were made:
+
+### Kitchen-sink app (`examples/example-basic`)
+
+Transformed `example-basic` from a simple notes app into a tabbed kitchen-sink app demonstrating all core EweserDB features:
+
+- **Notes tab**: Multi-room (room creation via `db.newRoom()`, switching, rename via `db.renameRoom()`), note CRUD, share link via `db.generateShareRoomLink()`, connection status per room, cross-collection flashcard linking.
+- **Flashcards tab**: Flashcard CRUD, reveal/hide pattern, linked notes display via cross-collection refs.
+- **Profile tab**: Profile collection creation/editing (firstName, lastName).
+- **Status tab**: System dashboard — auth state, online/offline, all rooms with connection status and doc counts, feature checklist.
+
+### Bug fixes
+
+- **`getDocIdFromRef` off-by-one (CRITICAL)**: All 3 example apps used `ref.split('|')[2]` which returned `roomId` instead of `documentId`. Ref format is `authServer|collectionKey|roomId|documentId` (4 parts), so index `[3]` is correct. Fixed in `AppBasic.tsx`, `interop-notes/App.tsx`, `interop-flashcards/App.tsx`.
+- **README ref format docs**: Corrected from 3-part to 4-part format (`${authServer}|${collectionKey}|${roomId}|${documentId}`).
+- **ydoc guard**: Added `selectedRoom?.ydoc` guard before rendering `NotesRoom` to prevent crash on newly created rooms.
+
+### E2E test updates
+
+- Updated `basic-auth-and-crud.cy.ts`, `basic-returning-user.cy.ts`, `share-invite-flow.cy.ts` for tabbed layout.
+- Created `kitchen-sink-features.cy.ts` with 7 tests: multi-room, flashcards, cross-collection linking, profile CRUD, profile persistence, status tab.
+- All 11 E2E tests pass.
+
 ## Handoff
 
 Current completion:
@@ -179,14 +240,17 @@ Current completion:
 - Run 1 complete.
 - Run 2 complete.
 - Run 3 complete.
+- Run 4 complete.
+- Run 5 complete.
+- Post-Run 5 kitchen-sink consolidation complete.
 
 Ready next:
 
-- Run 4 (rewrite toy example fixtures on new stack): define exact app set (`example-basic`, `multi-room`, `interop`, optional `editor`) and add deterministic selectors.
-- Run 5 (E2E suite buildout): implement new-stack Cypress journeys against rewritten toy examples.
+- Run 6 (CI test pipeline and reliability hardening): smoke/full split, retries/artifacts, and deterministic seed/reset strategy.
 
 Key artifacts for next owner:
 
 - Coverage matrix: `docs/ai/testing/examples-db-auth-matrix.md`.
 - New auth test files: `packages/auth-server-hono/src/index.test.ts`, `packages/auth-server-hono/src/routes/access-grant.test.ts`.
 - New db test files: `packages/db/src/methods/connection/generateLoginUrl.test.ts`, `packages/db/src/methods/connection/login.test.ts`, `packages/db/src/methods/connection/syncRegistry.test.ts`, `packages/db/src/methods/connection/loadRooms.test.ts`, `packages/db/src/methods/connection/generateShareRoomLink.test.ts`, `packages/db/src/methods/newRoom.test.ts`, `packages/db/src/methods/renameRoom.test.ts`.
+- Kitchen-sink E2E: `e2e/cypress/tests/kitchen-sink-features.cy.ts`.

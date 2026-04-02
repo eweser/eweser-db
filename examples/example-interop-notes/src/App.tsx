@@ -24,7 +24,7 @@ const db = new Database({
 
 const loginUrl = db.generateLoginUrl({ name: 'Interop Notes Example App' });
 
-const getDocIdFromRef = (ref: string) => ref.split('|')[2] ?? '';
+const getDocIdFromRef = (ref: string) => ref.split('|')[3] ?? '';
 
 const App = () => {
   const [loaded, setLoaded] = useState(false);

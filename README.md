@@ -127,7 +127,7 @@ See `packages/db/examples/dbShape.ts` for how the data is structured.
 
 Like MongoDB, EweserDB has `document`s and `collection`s. In SQL database terms, collections are like tables and documents like rows. Documents have a strict schema(typescript type). Each collection can have only one schema(document) but as many of those documents as you'd like. See examples of document schemas in the `/collections` folder.
 
-Documents can be linked by reference using the document's `_ref` property. The ref is simply the `${collection}|${roomId}|${documentId}` e.g. `flashcards.https://www.eweser.com|uuid.doc-id`.
+Documents can be linked by reference using the document's `_ref` property. The ref format is `${authServer}|${collectionKey}|${roomId}|${documentId}` e.g. `https://www.eweser.com|flashcards|uuid|doc-id`.
 Say you wanted to store a reference to a note from a flashcard, you could add the following to the flashcard document:
 
 ```ts
@@ -175,11 +175,23 @@ This is achieved using 'aggregator' servers. These are Node.js servers which the
 
 # Example apps
 
-### [Basic Notes App](https://eweser-db-example-basic.netlify.app/)
+### [Kitchen Sink (All Features)](https://eweser-db-example-basic.netlify.app/)
 
 - dev [url](http://localhost:38110/)
 - view the code at `/examples/example-basic`.
-- E2E test is in `/e2e/cypress/tests/basic.cy.js`
+- Demonstrates: multi-room notes, flashcards, profiles, cross-collection linking, sharing, room rename, connection status, auth flow, offline-first loading
+- E2E tests in `/e2e/cypress/tests/`
+
+### Multi-Room Notes
+
+- dev [url](http://localhost:38120/)
+- view the code at `/examples/example-multi-room`
+
+### Interop Notes + Flashcards
+
+- Notes app: dev [url](http://localhost:38130/)
+- Flashcards app: dev [url](http://localhost:38140/)
+- view the code at `/examples/example-interop-notes` and `/examples/example-interop-flashcards`
 
 # Code Quality & Development Standards
 

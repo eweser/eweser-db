@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Database } from '@eweser/db';
 import type { CollectionKey, Documents, Flashcard, Note } from '@eweser/db';
-import { StatusBar, styles } from '@eweser/examples-components';
+import { styles } from '@eweser/examples-components';
 import * as config from './config';
 
 const notesCollection: CollectionKey = 'notes';
@@ -26,7 +26,7 @@ const loginUrl = db.generateLoginUrl({
   name: 'Interop Flashcards Example App',
 });
 
-const getDocIdFromRef = (ref: string) => ref.split('|')[2] ?? '';
+const getDocIdFromRef = (ref: string) => ref.split('|')[3] ?? '';
 
 const App = () => {
   const [loaded, setLoaded] = useState(false);
@@ -97,7 +97,7 @@ const App = () => {
 
   return (
     <div style={styles.appRoot} data-cy="interop-flashcards-app-root">
-      <StatusBar db={db} loginUrl={loginUrl} />
+      <AppHeader />
       {loaded && flashcardsApi ? (
         <>
           <div style={styles.roomBar} data-cy="interop-flashcards-toolbar">
@@ -184,6 +184,27 @@ const App = () => {
       ) : (
         <div data-cy="interop-flashcards-loading">loading...</div>
       )}
+    </div>
+  );
+};
+
+const AppHeader = () => {
+  return (
+    <div style={styles.statusBar} data-cy="interop-flashcards-header">
+      <div style={styles.logoutButtonsDiv}>
+        <a href={loginUrl} style={{ textDecoration: 'none' }}>
+          <button style={styles.logoutButton}>Login</button>
+        </a>
+        <button
+          style={styles.logoutButton}
+          onClick={() => {
+            db.logoutAndClear();
+            window.location.reload();
+          }}
+        >
+          Clear storage
+        </button>
+      </div>
     </div>
   );
 };
