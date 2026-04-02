@@ -81,8 +81,8 @@ Services in the compose:
 
 1. **Auth API** — Hono server + better-auth replacing Next.js backend
 2. **Auth Pages** — React SPA served statically (login, signup, account management)
-3. **Ewe Note** — React SPA (the polished note-taking app)
-4. **Example App** — React SPA (basic demo)
+3. **Ewe Note** — React SPA + PWA (the polished note-taking app, installable)
+4. **Example App** — React SPA (basic demo, no PWA needed)
 5. **Hocuspocus** — CRDT sync server (TypeScript, SQLite/Postgres persistence)
 6. **PostgreSQL** — Self-hosted (no Supabase dependency)
 7. **Aggregator** — Server-side data indexing via Hocuspocus webhooks (revived from old-code)

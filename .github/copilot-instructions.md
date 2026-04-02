@@ -50,6 +50,7 @@ When working on auth-server code, be aware it's being migrated away from Next.js
 3. **Changesets** — Any change to a published package (`@eweser/db`, `@eweser/shared`, `@eweser/examples-components`) needs a changeset.
 4. **Tests** — Run `npm test` before committing. E2E tests via `npm run test:e2e`.
 5. **Yjs patterns** — Understand Yjs documents, Y.Map, Y.Array, Y.Text before modifying `packages/db`. Changes are CRDT operations, not direct mutations.
+6. **Library Versions** — Always use the latest stable versions of libraries. Ensure versions are unified across all workspace packages to prevent duplicate bundles and type mismatches.
 
 ## Package Relationships
 
