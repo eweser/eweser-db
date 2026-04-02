@@ -50,6 +50,9 @@ export default [
       'packages/ewe-note/src/**/*.{ts,tsx}',
       'packages/examples-components/src/**/*.{ts,tsx}',
       'examples/example-basic/src/**/*.{ts,tsx}',
+      'examples/example-multi-room/src/**/*.{ts,tsx}',
+      'examples/example-interop-notes/src/**/*.{ts,tsx}',
+      'examples/example-interop-flashcards/src/**/*.{ts,tsx}',
     ],
   })),
 ];

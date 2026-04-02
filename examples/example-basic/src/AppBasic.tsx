@@ -8,7 +8,7 @@ import type {
   Room,
 } from '@eweser/db';
 import * as config from './config';
-import { styles, StatusBar } from '@eweser/examples-components';
+import { styles } from '@eweser/examples-components';
 
 // This example shows how to implement a basic login/signup form and a basic note-taking app using @eweser/db
 // The CRUD operations are all done directly on the yjs ydoc using the `Documents` object and its methods returned from `db.getDocuments()`
@@ -103,7 +103,7 @@ const App = () => {
 
   return (
     <div style={styles.appRoot} data-cy="basic-app-root">
-      <StatusBar db={db} loginUrl={loginUrl} />
+      <AppHeader />
 
       {/* You can check that the ydoc exists to make sure the room is connected */}
       {loaded && defaultNotesRoom?.ydoc ? (
@@ -117,6 +117,35 @@ const App = () => {
         // usually loads almost instantaneously, but we need to make sure a yDoc is ready before we can use it
         <>loading...</>
       )}
+    </div>
+  );
+};
+
+const AppHeader = () => {
+  return (
+    <div style={styles.statusBar} data-cy="basic-header">
+      <div style={styles.logoutButtonsDiv}>
+        <a href={loginUrl} style={{ textDecoration: 'none' }}>
+          <button style={styles.logoutButton}>Login</button>
+        </a>
+        <button
+          style={styles.logoutButton}
+          onClick={() => {
+            db.logoutAndClear();
+            window.location.reload();
+          }}
+        >
+          Clear storage
+        </button>
+      </div>
+      <div style={styles.statusBarMessageDiv}>
+        <pre style={styles.statusBarMessage}>
+          {db.getToken() ? 'Logged In' : 'Logged Out'}
+        </pre>
+        <pre style={styles.statusBarMessage}>
+          {db.online ? 'online' : 'offline'}
+        </pre>
+      </div>
     </div>
   );
 };
