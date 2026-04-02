@@ -4,13 +4,16 @@ export const pingServer = (db: Database) => async () => {
   const token = db.getToken();
 
   try {
-    const response = await fetch(`${db.authServer}/ping`, {
-      headers: token
+    const response = await fetch(
+      `${db.authServer}/ping`,
+      token
         ? {
-            Authorization: `Bearer ${token}`,
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           }
-        : undefined,
-    });
+        : undefined
+    );
 
     if (!response.ok) {
       throw new Error(`Ping failed with status ${response.status}`);

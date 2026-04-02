@@ -13,7 +13,7 @@ export const serverFetch =
   ) => {
     const options: Options = {
       ..._options,
-      signal: abortController?.signal,
+      ...(abortController ? { signal: abortController.signal } : {}),
     };
     try {
       const token = _db.getToken();
@@ -32,10 +32,31 @@ export const serverFetch =
         options.referrer = 'no-referrer';
       }
 
-      const resultRaw = await fetch(`${_db.authServer}${path}`, {
-        ...options,
-        body: options.body as BodyInit | null | undefined,
-      });
+      let requestBody: BodyInit | null | undefined;
+      if (options.body === undefined) {
+        requestBody = undefined;
+      } else if (options.body === null) {
+        requestBody = null;
+      } else if (
+        typeof options.body === 'string' ||
+        options.body instanceof Blob ||
+        options.body instanceof FormData ||
+        options.body instanceof URLSearchParams ||
+        options.body instanceof ReadableStream ||
+        options.body instanceof ArrayBuffer ||
+        ArrayBuffer.isView(options.body)
+      ) {
+        requestBody = options.body as BodyInit;
+      } else {
+        requestBody = JSON.stringify(options.body);
+      }
+
+      const { body: _body, ...initWithoutBody } = options;
+      const init: RequestInit = { ...initWithoutBody };
+      if (requestBody !== undefined) {
+        init.body = requestBody;
+      }
+      const resultRaw = await fetch(`${_db.authServer}${path}`, init);
       const data = (await resultRaw.json()) as ReturnType;
       if (!data || typeof data !== 'object') {
         throw new Error('No data returned');

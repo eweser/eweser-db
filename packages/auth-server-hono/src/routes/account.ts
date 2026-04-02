@@ -22,6 +22,9 @@ accountRouter.get('/bootstrap', requireAuth, async (c) => {
   }
 
   const accessGrant = await getAccessGrantById(grantId);
+  if (!accessGrant) {
+    return c.json({ error: 'Access grant not found' }, 404);
+  }
   const rooms = await getRoomsFromAccessGrant(accessGrant);
   const profileRooms = rooms.filter(
     (room) => room.collectionKey === 'profiles'

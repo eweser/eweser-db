@@ -115,9 +115,7 @@ describe('auth-pages app', () => {
 
     await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
     await userEvent.type(screen.getByLabelText(/password/i), 'password123');
-    await userEvent.click(
-      screen.getAllByRole('button', { name: /sign in/i })[0]
-    );
+    await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
     await waitFor(() => {
       expect(authMocks.signInEmail).toHaveBeenCalledOnce();

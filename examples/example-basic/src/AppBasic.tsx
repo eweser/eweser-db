@@ -53,7 +53,7 @@ const db = new Database({
   // set `logLevel` to 0 to see debug messages in the console
   logLevel: 0,
   // use this to sync webRTC locally with the test-rpc-server started with `npm run start-test-rpc-server`
-  webRTCPeers: config.WEB_RTC_PEERS,
+  ...(config.WEB_RTC_PEERS ? { webRTCPeers: config.WEB_RTC_PEERS } : {}),
   initialRooms,
 });
 const loginUrl = db.generateLoginUrl({ name: 'Basic Example App' });

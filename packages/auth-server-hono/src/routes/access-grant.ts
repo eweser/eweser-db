@@ -82,9 +82,11 @@ accessGrantRouter.post('/permissions', requireAuth, async (c) => {
   const token = await createOrUpdateThirdPartyAppPermissions({
     collections: body.collections,
     domain: body.domain,
-    keepAliveDays: body.keepAliveDays,
     roomIds: body.roomIds,
     userId: user.id,
+    ...(typeof body.keepAliveDays === 'number'
+      ? { keepAliveDays: body.keepAliveDays }
+      : {}),
   });
 
   const redirectUrl = new URL(body.redirect);

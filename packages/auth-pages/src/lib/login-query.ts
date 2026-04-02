@@ -49,12 +49,18 @@ export function validateLoginQueryOptions(
 }
 
 export function getLoginQueryFromSearch(searchParams: URLSearchParams) {
-  return validateLoginQueryOptions({
-    collections: searchParams.get('collections') ?? undefined,
-    domain: searchParams.get('domain') ?? undefined,
-    name: searchParams.get('name') ?? undefined,
-    redirect: searchParams.get('redirect') ?? undefined,
-  });
+  const params: Partial<LoginQueryParams> = {};
+  const collections = searchParams.get('collections');
+  const domain = searchParams.get('domain');
+  const name = searchParams.get('name');
+  const redirect = searchParams.get('redirect');
+
+  if (collections) params.collections = collections;
+  if (domain) params.domain = domain;
+  if (name) params.name = name;
+  if (redirect) params.redirect = redirect;
+
+  return validateLoginQueryOptions(params);
 }
 
 export function setStoredLoginQuery(query: LoginQueryOptions) {

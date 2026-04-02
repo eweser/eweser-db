@@ -8,7 +8,7 @@ export function loginOptionsToQueryParams({
     collections.length === 0
       ? 'all'
       : collections.length === 1
-        ? collections[0]
+        ? (collections[0] ?? 'all')
         : collections.join('|');
   const params: LoginQueryParams = {
     collections: _collections,

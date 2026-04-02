@@ -8,10 +8,10 @@ Add missing `lint`, `type-check`, and `test` scripts to all active workspaces, v
 
 - ✅ Root quality scripts exist: `lint`, `lint:fix`, `format`, `format:check`, `check`
 - ✅ Stricter ESLint rules active (any + ts-ignore + prettier are now errors)
-- ❌ Many files fail format check (Prettier violations)
-- ❌ Many source files fail lint check (mostly `any` types and ts-ignore comments)
-- ❌ Some workspaces lack required `lint` script (shared, sync-server, examples-components)
-- ❌ No workspace has unified `type-check` or `check` scripts yet
+- ✅ Root `check` now runs lint, format check, workspace type-check, and workspace tests in deterministic order
+- ✅ Active workspaces now expose normalized quality scripts (`lint`, `type-check`, `test`) where applicable
+- ✅ Root ESLint coverage now includes migrated `packages/auth-pages` source
+- ✅ Root `npm run check` passes end-to-end
 
 ## Workspace-by-Workspace Repairs
 
@@ -19,73 +19,82 @@ Add missing `lint`, `type-check`, and `test` scripts to all active workspaces, v
 
 **`packages/shared`**
 
-- [ ] Add `lint` script to package.json
-- [ ] Run `npm run lint:fix` to fix format violations
-- [ ] Verify `npm run type-check` passes
-- [ ] Verify `npm test` passes (if tests exist)
-- [ ] Root `npm run check` must pass for this package
+- [x] Add `lint` script to package.json
+- [x] Run `npm run lint:fix` to fix format violations
+- [x] Verify `npm run type-check` passes
+- [x] Verify `npm test` passes (if tests exist)
+- [x] Root `npm run check` must pass for this package
 
 **`packages/db`**
 
-- [ ] Run `npm run lint:fix` to fix Prettier violations (1 error already identified)
-- [ ] Fix `@typescript-eslint/no-explicit-any` violations (39 errors):
+- [x] Run `npm run lint:fix` to fix Prettier violations (1 error already identified)
+- [x] Fix `@typescript-eslint/no-explicit-any` violations (39 errors):
   - Most in `events.ts`: Use proper event type definitions instead of `any`
   - In `examples/dbShape.ts`: Document example types more clearly
   - In `index.ts`, `loadRoom.ts`, `login.ts`, etc.: Replace with union types or proper generics
-- [ ] Fix `@typescript-eslint/ban-ts-comment` violations: Add justification comments to ts-ignore directives
-- [ ] Verify `npm run lint` passes
-- [ ] Verify `npm run type-check` passes
-- [ ] Verify `npm test` passes
+- [x] Fix `@typescript-eslint/ban-ts-comment` violations: Add justification comments to ts-ignore directives
+- [x] Verify `npm run lint` passes
+- [x] Verify `npm run type-check` passes
+- [x] Verify `npm test` passes
 
 ### Tier 2: Active Backends
 
 **`packages/auth-server-hono`**
 
-- [ ] Add `lint` script to package.json (use eslint-config-ts)
-- [ ] Run `npm run lint:fix` to fix format violations
-- [ ] Fix any `any` type violations
-- [ ] Verify `npm run lint` passes
-- [ ] Verify `npm run type-check` passes
-- [ ] Verify `npm test` passes
+- [x] Add `lint` script to package.json (use eslint-config-ts)
+- [x] Run `npm run lint:fix` to fix format violations
+- [x] Fix any `any` type violations
+- [x] Verify `npm run lint` passes
+- [x] Verify `npm run type-check` passes
+- [x] Verify `npm test` passes
 
 **`packages/sync-server`**
 
-- [ ] Add `lint` script to package.json (use eslint-config-ts)
-- [ ] Run `npm run lint:fix` to fix format violations
-- [ ] Fix any `any` type violations (low volume expected)
-- [ ] Verify `npm run lint` passes
-- [ ] Verify `npm run type-check` passes
-- [ ] Consider adding basic tests (optional for Phase 1, warn-level)
+- [x] Add `lint` script to package.json (use eslint-config-ts)
+- [x] Run `npm run lint:fix` to fix format violations
+- [x] Fix any `any` type violations (low volume expected)
+- [x] Verify `npm run lint` passes
+- [x] Verify `npm run type-check` passes
+- [x] Consider adding basic tests (optional for Phase 1, warn-level)
 
 ### Tier 3: Applications & Components
 
 **`packages/ewe-note`**
 
-- [ ] Run `npm run lint:fix` to fix Prettier violations
-- [ ] Verify `npm run lint` passes (already configured, should be strict)
-- [ ] Verify `npm run type-check` passes (already configured)
+- [x] Run `npm run lint:fix` to fix Prettier violations
+- [x] Verify `npm run lint` passes (already configured, should be strict)
+- [x] Verify `npm run type-check` passes (already configured)
 
 **`packages/examples-components`**
 
-- [ ] Add `lint` script to package.json (use eslint-config-react-ts)
-- [ ] Run `npm run lint:fix` to fix format violations
-- [ ] Fix any `any` type violations
-- [ ] Verify `npm run lint` passes
-- [ ] Verify `npm run type-check` passes
+- [x] Add `lint` script to package.json (use eslint-config-react-ts)
+- [x] Run `npm run lint:fix` to fix format violations
+- [x] Fix any `any` type violations
+- [x] Verify `npm run lint` passes
+- [x] Verify `npm run type-check` passes
 
 **`examples/example-basic`**
 
-- [ ] Run `npm run lint:fix` to fix Prettier violations
-- [ ] Verify `npm run lint` passes (already configured)
-- [ ] Verify `npm run type-check` passes (already configured)
+- [x] Run `npm run lint:fix` to fix Prettier violations
+- [x] Verify `npm run lint` passes (already configured)
+- [x] Verify `npm run type-check` passes (already configured)
 
 ### Tier 4: Migration Exemption
 
 **`packages/auth-server` (Next.js, Keep Permissive)**
 
-- [ ] Run `npm run format:check` locally; note any violations but defer fixes to post-migration
-- [ ] Keep lint as warn (do NOT promote to error during Next.js migration)
-- [ ] Verify `npm run type-check` passes (Next.js built-in)
+- [x] Run `npm run format:check` locally; note any violations but defer fixes to post-migration
+- [x] Keep lint as warn (do NOT promote to error during Next.js migration)
+- [x] Verify `npm run type-check` passes (Next.js built-in)
+
+## Completion Summary (2026-04-03)
+
+- Root `check` now enforces lint, formatting, workspace type-check, and workspace tests.
+- Added missing workspace `test` scripts in `packages/sync-server`, `packages/examples-components`, and `examples/example-basic`.
+- Added missing `lint` script for `packages/auth-pages` and included `auth-pages` in root ESLint React TS file targeting.
+- Fixed strict-lint blockers in `packages/auth-pages/src/pages.tsx` and `packages/ewe-note/src/pwa.ts`.
+- Applied targeted Prettier fixes for the remaining failing files reported by `format:check`.
+- Verified success with root `npm run check`.
 
 ---
 

@@ -55,11 +55,20 @@ Workspaces now have failing lint/format gates. Run 3 will normalize scripts, fix
 
 - **Recommended Agent**: `02-coder` (Fast)
 - **Reason**: Mostly repetitive package.json updates with low architectural complexity.
-- [ ] Add missing scripts in active workspaces: `lint`, `type-check`, and `test` where absent.
-- [ ] Ensure workspace commands can be orchestrated from root without ad-hoc cd chaining.
-- [ ] Add a root `check` script that runs lint, format check, type-check, and tests in deterministic order.
+- [x] Add missing scripts in active workspaces: `lint`, `type-check`, and `test` where absent.
+- [x] Ensure workspace commands can be orchestrated from root without ad-hoc cd chaining.
+- [x] Add a root `check` script that runs lint, format check, type-check, and tests in deterministic order.
 - [ ] Files: root `package.json`, `packages/shared/package.json`, `packages/examples-components/package.json`, `packages/sync-server/package.json`, `packages/auth-server-hono/package.json`, `examples/example-basic/package.json`, `packages/ewe-note/package.json`, `packages/auth-server/package.json`.
-- [ ] Tests: Execute root `npm run check` and resolve script failures.
+- [x] Tests: Execute root `npm run check` and resolve script failures.
+
+**Status**: ✅ **COMPLETE**
+
+**What was done**:
+
+1. Normalized scripts across active workspaces so `lint`, `type-check`, and `test` are consistently available, including migrated `auth-pages`.
+2. Updated root quality orchestration so `npm run check` now runs lint, format check, workspace type-check, and workspace tests in deterministic order.
+3. Extended root ESLint file targeting to include `packages/auth-pages/src/**/*.{ts,tsx}` so strict TypeScript linting applies to all active SPAs.
+4. Fixed remaining lint/format blockers and verified `npm run check` passes at repo root.
 
 ### Run 4: TypeScript Strictness Hardening (Incremental)
 
@@ -129,17 +138,18 @@ Run 1: Baseline and Gate Design (Smart)
 - [x] Approved by user
 - [x] Run 1: Baseline and Gate Design — **COMPLETE** (docs/ai/quality-gates-matrix.md created)
 - [x] Run 2: Lint and Format Foundation — **COMPLETE** (stricter rules in place, root config established, violations baseline identified)
-- [ ] Run 3: Workspace Script Normalization — **READY FOR CODER**
-- [ ] Run 4: TypeScript Strictness Hardening — pending Run 3
+- [x] Run 3: Workspace Script Normalization — **COMPLETE** (root `npm run check` passes)
+- [ ] Run 4: TypeScript Strictness Hardening — **READY FOR CODER**
 - [ ] Run 5: CI Enforcement Repair and Tightening — pending Run 3-4
 - [ ] Run 6: Test Strategy Tightening for Agent Era — pending Run 5
 - [ ] Run 7: Optional Pre-Commit Fast Feedback — pending Run 5
 
 ## Progress Notes
 
-**As of 2026-04-02**:
+**As of 2026-04-03**:
 
 - Run 1 established comprehensive quality gates matrix with per-workspace phase-by-phase rollout.
 - Run 2 successfully tightened shared lint config + added Prettier standardization at root.
 - Baseline violations identified (~150 formatting issues, ~39 lint errors in core SDK).
-- Next: Run 3 will normalize workspace scripts and fix violations to enable full CI gates in Run 5.
+- Run 3 completed: workspace scripts normalized, root `check` includes type-check, auth-pages included in strict lint coverage, and root `npm run check` is now green.
+- Next: Run 4 (TypeScript strictness hardening) and then Run 5 (CI enforcement).

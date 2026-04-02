@@ -122,6 +122,10 @@ describe('loadRoom', () => {
     expect(providerInstances).toHaveLength(1);
 
     const provider = providerInstances[0];
+    expect(provider).toBeDefined();
+    if (!provider) {
+      throw new Error('Expected provider to be created');
+    }
     expect(provider.configuration.url).toBe('ws://localhost:8080');
     expect(provider.configuration.name).toBe('room-1');
     expect(provider.configuration.document).toBe(room.ydoc);

@@ -46,6 +46,7 @@ export default [
     ...config,
     files: [
       ...(config.files ?? []),
+      'packages/auth-pages/src/**/*.{ts,tsx}',
       'packages/ewe-note/src/**/*.{ts,tsx}',
       'packages/examples-components/src/**/*.{ts,tsx}',
       'examples/example-basic/src/**/*.{ts,tsx}',

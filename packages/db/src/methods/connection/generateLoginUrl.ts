@@ -15,7 +15,10 @@ export const generateLoginUrl =
     const url = new URL(db.authServer);
 
     const params: LoginQueryParams = loginOptionsToQueryParams({
-      redirect: options?.redirect || window.location.href.split('?')[0],
+      redirect:
+        options?.redirect ||
+        window.location.href.split('?')[0] ||
+        window.location.href,
       domain: options?.domain || window.location.host,
       collections: options?.collections ?? ['all'],
       name: options.name,

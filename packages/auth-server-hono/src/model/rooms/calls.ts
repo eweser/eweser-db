@@ -114,7 +114,11 @@ export async function updateRoom(
   if (result.length !== 1) {
     throw new Error('Room not found');
   }
-  return result[0];
+  const updatedRoom = result[0];
+  if (!updatedRoom) {
+    throw new Error('Room not found');
+  }
+  return updatedRoom;
 }
 
 /**

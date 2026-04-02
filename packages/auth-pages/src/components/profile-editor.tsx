@@ -17,16 +17,18 @@ function ProfileEditorInner({
   userCount: number;
 }) {
   const { db } = useDatabase();
-  const privateDocuments = db.getDocuments(
-    db.collections.profiles[privateProfileRoom.id]
-  );
-  const publicDocuments = db.getDocuments(
-    db.collections.profiles[publicProfileRoom.id]
-  );
+  const privateRoom = db.collections.profiles[privateProfileRoom.id];
+  const publicRoom = db.collections.profiles[publicProfileRoom.id];
+  const privateDocuments = privateRoom ? db.getDocuments(privateRoom) : null;
+  const publicDocuments = publicRoom ? db.getDocuments(publicRoom) : null;
   const [privateProfile, setPrivateProfile] = useState<Profile | undefined>();
   const [publicProfile, setPublicProfile] = useState<Profile | undefined>();
 
   useEffect(() => {
+    if (!privateDocuments || !publicDocuments) {
+      return;
+    }
+
     function syncPrivate() {
       setPrivateProfile(privateDocuments.get('default'));
     }
@@ -47,12 +49,20 @@ function ProfileEditorInner({
   }, [privateDocuments, publicDocuments]);
 
   useEffect(() => {
+    if (!privateDocuments) {
+      return;
+    }
+
     if (!privateDocuments.get('default')) {
       privateDocuments.new({ firstName: '', lastName: '' }, 'default');
     }
   }, [privateDocuments]);
 
   useEffect(() => {
+    if (!privateDocuments || !publicDocuments) {
+      return;
+    }
+
     const defaultName = `${new URL(authServerUrl).host} user #${userCount}`;
     const existing = publicDocuments.get('default');
 
@@ -76,6 +86,10 @@ function ProfileEditorInner({
     : (privateProfile?.lastName ?? '');
 
   function updateField(field: 'firstName' | 'lastName', value: string) {
+    if (!privateDocuments || !publicDocuments) {
+      return;
+    }
+
     const currentPrivate = privateDocuments.get('default');
     const currentPublic = publicDocuments.get('default');
     if (!currentPrivate || !currentPublic) {
@@ -99,6 +113,10 @@ function ProfileEditorInner({
     field: 'firstName' | 'lastName',
     visibility: 'public' | 'private'
   ) {
+    if (!privateDocuments || !publicDocuments) {
+      return;
+    }
+
     const currentPrivate = privateDocuments.get('default');
     const currentPublic = publicDocuments.get('default');
     if (!currentPrivate || !currentPublic) {
@@ -115,6 +133,10 @@ function ProfileEditorInner({
 
     publicDocuments.set({ ...currentPublic, [field]: '' });
     privateDocuments.set({ ...currentPrivate, [field]: currentValue });
+  }
+
+  if (!privateDocuments || !publicDocuments) {
+    return null;
   }
 
   return (

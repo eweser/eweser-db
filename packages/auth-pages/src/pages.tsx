@@ -1,5 +1,5 @@
-import { collectionKeys, type LoginQueryOptions } from '@eweser/shared';
-import { Github, LogOut, Moon, Shield, Sun } from 'lucide-react';
+import { collectionKeys, type LoginQueryParams } from '@eweser/shared';
+import { Github, Moon, Sun } from 'lucide-react';
 import { ThemeProvider, useTheme } from 'next-themes';
 import { useEffect, useState, type FormEvent } from 'react';
 import {
@@ -526,12 +526,18 @@ function HomePage() {
 
 function PermissionPage() {
   const [searchParams] = useSearchParams();
-  const loginQuery = validateLoginQueryOptions({
-    collections: searchParams.get('collections') ?? undefined,
-    domain: searchParams.get('domain') ?? undefined,
-    name: searchParams.get('name') ?? undefined,
-    redirect: searchParams.get('redirect') ?? undefined,
-  });
+  const loginQueryParams: Partial<LoginQueryParams> = {};
+  const collections = searchParams.get('collections');
+  const domain = searchParams.get('domain');
+  const name = searchParams.get('name');
+  const redirect = searchParams.get('redirect');
+
+  if (collections) loginQueryParams.collections = collections;
+  if (domain) loginQueryParams.domain = domain;
+  if (name) loginQueryParams.name = name;
+  if (redirect) loginQueryParams.redirect = redirect;
+
+  const loginQuery = validateLoginQueryOptions(loginQueryParams);
   const [bootstrap, setBootstrap] = useState<AccountBootstrapResponse | null>(
     null
   );

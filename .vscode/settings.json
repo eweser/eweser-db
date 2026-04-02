@@ -1,4 +1,5 @@
 {
+  "markdown.styles": [".vscode/preview-style.css"],
   "cSpell.words": ["supabase"],
   "cSpell.customDictionaries": {
     "custom-dictionary-workspace": {

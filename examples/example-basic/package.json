@@ -26,7 +26,8 @@
     "preview": "vite preview --host",
     "clean": "rm -rf dist",
     "lint": "eslint .",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "vitest --run --passWithNoTests"
   },
   "bugs": {
     "url": "https://github.com/jacobcoro/eweserdb/issues"

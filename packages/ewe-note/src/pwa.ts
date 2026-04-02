@@ -40,10 +40,12 @@ export function registerPwa() {
       updateServiceWorker(reloadPage)
     ),
     onOfflineReady() {
-      console.info('Ewe Note is ready to work offline.');
+      window.dispatchEvent(new CustomEvent('eweser:pwa-offline-ready'));
     },
     onRegisterError(error: unknown) {
-      console.error('Failed to register the Ewe Note service worker.', error);
+      window.dispatchEvent(
+        new CustomEvent('eweser:pwa-register-error', { detail: error })
+      );
     },
   });
 

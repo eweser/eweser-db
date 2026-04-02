@@ -31,15 +31,18 @@ export const generateShareRoomLink =
     const body: CreateRoomInviteBody = {
       roomId,
       invitees: invitees || [],
-      redirectQueries,
       expiry:
         expiry || new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
       accessType,
+      ...(redirectQueries ? { redirectQueries } : {}),
       ...loginOptionsToQueryParams({
         name: appName,
         domain: domain || window.location.host,
         collections: collections ?? ['all'],
-        redirect: redirectUrl || window.location.href.split('?')[0],
+        redirect:
+          redirectUrl ||
+          window.location.href.split('?')[0] ||
+          window.location.href,
       }),
     };
     const { error, data } = await db.serverFetch<CreateRoomInviteResponse>(

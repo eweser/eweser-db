@@ -5,7 +5,7 @@ import './index.css';
 import { routerBase } from './lib/config';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
-  <BrowserRouter basename={routerBase === '/' ? undefined : routerBase}>
+  <BrowserRouter {...(routerBase === '/' ? {} : { basename: routerBase })}>
     <App />
   </BrowserRouter>
 );

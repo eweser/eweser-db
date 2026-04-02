@@ -26,9 +26,7 @@ const envSchema = z.object({
     .min(1)
     .default(`localhost:${defaultAuthApiPort}`),
   /** Full URL of this auth server, e.g. "https://auth.example.com" */
-  AUTH_SERVER_URL: z
-    .string()
-    .default(`http://localhost:${defaultAuthApiPort}`),
+  AUTH_SERVER_URL: z.string().default(`http://localhost:${defaultAuthApiPort}`),
   /** WebSocket URL of the Hocuspocus sync server, e.g. "ws://localhost:8080" */
   SYNC_SERVER_URL: z.string().default('ws://localhost:8080'),
   /** Secret for signing Hocuspocus auth JWTs — defaults to SERVER_SECRET if not set */

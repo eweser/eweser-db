@@ -13,6 +13,7 @@
     "build": "tsc && vite build",
     "lint": "eslint .",
     "type-check": "tsc --noEmit",
+    "test": "vitest --run --passWithNoTests",
     "preview": "vite preview"
   },
   "files": [
