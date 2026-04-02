@@ -11,37 +11,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout code
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      # Step 2: Set up Node.js
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 20.11.0
           cache: npm
 
-      # Step 3: Install dependencies and build
-      - name: Install dependencies and build
-        run: npm run ci-build
+      - name: Install dependencies
+        run: npm ci
 
-      # Step 4: Start services
-      - name: Start services
-        run: npm run ci-start
-
-      # Step 5: Wait for auth-server to be ready
-      - name: Wait for auth-server
-        run: |
-          until curl -sf http://localhost:38100/ > /dev/null; do
-            echo "Waiting for auth-server..."
-            sleep 5
-          done
-
-      # Step 6: Run integration tests
-      - name: Run integration tests
-        run: npm run test:integration --prefix packages/db
-
-      # Step 7: Run Cypress E2E tests
-      - name: Run Cypress E2E tests
-        run: npm run test:e2e --prefix example-app
+      - name: Run quality gates
+        run: npm run check

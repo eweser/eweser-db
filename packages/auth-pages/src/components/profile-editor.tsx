@@ -29,22 +29,25 @@ function ProfileEditorInner({
       return;
     }
 
+    const privateDocs = privateDocuments;
+    const publicDocs = publicDocuments;
+
     function syncPrivate() {
-      setPrivateProfile(privateDocuments.get('default'));
+      setPrivateProfile(privateDocs.get('default'));
     }
 
     function syncPublic() {
-      setPublicProfile(publicDocuments.get('default'));
+      setPublicProfile(publicDocs.get('default'));
     }
 
     syncPrivate();
     syncPublic();
-    privateDocuments.documents.observe(syncPrivate);
-    publicDocuments.documents.observe(syncPublic);
+    privateDocs.documents.observe(syncPrivate);
+    publicDocs.documents.observe(syncPublic);
 
     return () => {
-      privateDocuments.documents.unobserve(syncPrivate);
-      publicDocuments.documents.unobserve(syncPublic);
+      privateDocs.documents.unobserve(syncPrivate);
+      publicDocs.documents.unobserve(syncPublic);
     };
   }, [privateDocuments, publicDocuments]);
 

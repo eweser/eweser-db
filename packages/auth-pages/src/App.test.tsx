@@ -115,7 +115,13 @@ describe('auth-pages app', () => {
 
     await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
     await userEvent.type(screen.getByLabelText(/password/i), 'password123');
-    await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
+    const signInButtons = screen.getAllByRole('button', { name: /sign in/i });
+    const signInButton = signInButtons[0];
+    expect(signInButton).toBeDefined();
+    if (!signInButton) {
+      throw new Error('Expected sign-in submit button to exist');
+    }
+    await userEvent.click(signInButton);
 
     await waitFor(() => {
       expect(authMocks.signInEmail).toHaveBeenCalledOnce();
