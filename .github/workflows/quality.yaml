@@ -105,16 +105,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build auth-server and example-basic
+      - name: Build example-basic
         run: |
-          npm run build-auth-server
           npm run build-example:basic
 
       - name: Start services and run Cypress
         run: |
           set -euo pipefail
 
-          npm run run-auth-server > auth-server.log 2>&1 &
+          npm run dev:auth-server > auth-server.log 2>&1 &
           AUTH_PID=$!
 
           npm run run-example-preview:basic > example-basic.log 2>&1 &
