@@ -1,14 +1,33 @@
 import type { Database } from '../..';
 
 export const pingServer = (db: Database) => async () => {
-  const { data, error } = await db.serverFetch<{ reply: string }>(
-    '/access-grant/ping'
-  );
-  if (error) {
+  const token = db.getToken();
+
+  try {
+    const response = await fetch(`${db.authServer}/ping`, {
+      headers: token
+        ? {
+            Authorization: `Bearer ${token}`,
+          }
+        : undefined,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Ping failed with status ${response.status}`);
+    }
+
+    const contentType = response.headers.get('content-type') ?? '';
+    if (contentType.includes('application/json')) {
+      const data = (await response.json()) as { reply?: string };
+      db.debug('Server pinged', data);
+      return data.reply === 'pong';
+    }
+
+    const reply = (await response.text()).trim();
+    db.debug('Server pinged', reply);
+    return reply === 'pong';
+  } catch (error) {
     db.error('Error pinging server', error);
     return false;
-  } else {
-    db.debug('Server pinged', data);
-    return data?.reply && data.reply === 'pong';
   }
 };

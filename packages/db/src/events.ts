@@ -3,39 +3,28 @@ import { EventEmitter } from 'events';
 import type { Room } from './types';
 import type { Database } from '.';
 
-type EmittedEvents = Record<string | symbol, (...args: any[]) => any>;
+type EmittedEvents = Record<string | symbol, (...args: never[]) => void>;
 
 export class TypedEventEmitter<
-  Events extends EmittedEvents
-> extends EventEmitter {
-  on<E extends keyof Events>(
-    event: (E & string) | symbol,
-    listener: Events[E]
-  ): this {
-    return super.on(event, listener as any);
-  }
-
-  emit<E extends keyof Events>(
-    event: (E & string) | symbol,
-    ...args: Parameters<Events[E]>
-  ): boolean {
-    return super.emit(event, ...args);
-  }
-}
+  _Events extends EmittedEvents,
+> extends EventEmitter {}
 
 export type RoomConnectionStatus = 'connected' | 'disconnected' | 'connecting';
 
 export type DatabaseEvents = {
-  log: (level: number, ...args: any[]) => void;
-  debug: (...args: any[]) => void;
-  info: (...args: any[]) => void;
-  warn: (...args: any[]) => void;
-  error: (...args: any[]) => void;
-  roomLoaded: (room: Room<any>) => void;
-  roomRemoteLoaded: (room: Room<any>) => void;
-  roomsLoaded: (rooms: Room<any>[]) => void;
-  roomsRemotesLoaded: (rooms: Room<any>[]) => void;
-  roomConnectionChange: (status: RoomConnectionStatus, room: Room<any>) => void;
+  log: (level: number, ...args: unknown[]) => void;
+  debug: (...args: unknown[]) => void;
+  info: (...args: unknown[]) => void;
+  warn: (...args: unknown[]) => void;
+  error: (...args: unknown[]) => void;
+  roomLoaded: (room: Room<EweDocument>) => void;
+  roomRemoteLoaded: (room: Room<EweDocument>) => void;
+  roomsLoaded: (rooms: Room<EweDocument>[]) => void;
+  roomsRemotesLoaded: (rooms: Room<EweDocument>[]) => void;
+  roomConnectionChange: (
+    status: RoomConnectionStatus,
+    room: Room<EweDocument>
+  ) => void;
   onLoggedInChange: (loggedIn: boolean) => void;
   onlineChange: (online: boolean) => void;
   status: (status: {
@@ -48,7 +37,10 @@ export type DatabaseEvents = {
     connectingRoomsCount: number;
     connectingRooms: string[];
   }) => void;
-  registrySync: (status: 'syncing' | 'success' | 'error', error?: any) => void;
+  registrySync: (
+    status: 'syncing' | 'success' | 'error',
+    error?: unknown
+  ) => void;
   initialized: () => void;
 };
 

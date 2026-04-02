@@ -24,8 +24,7 @@ export const newDocument = <T extends EweDocument>(
     _deleted: false,
     _ttl: undefined,
   };
-  // @ts-ignore
-  return { ...base, ...doc };
+  return { ...base, ...doc } as T;
 };
 
 /**

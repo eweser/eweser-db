@@ -43,7 +43,7 @@ export const generateShareRoomLink =
       }),
     };
     const { error, data } = await db.serverFetch<CreateRoomInviteResponse>(
-      '/access-grant/create-room-invite',
+      '/api/access-grant/create-room-invite',
       {
         body,
         method: 'POST',

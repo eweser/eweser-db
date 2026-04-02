@@ -37,7 +37,7 @@ export const DatabaseProvider = ({
     <DatabaseContext.Provider value={{ db: eweserDB }}>
       {loaded
         ? children
-        : loadingComponent ?? <Icons.spinner className="animate-spin" />}
+        : (loadingComponent ?? <Icons.spinner className="animate-spin" />)}
     </DatabaseContext.Provider>
   );
 };

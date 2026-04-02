@@ -1,4 +1,5 @@
 import type { Database } from '../..';
+import type { EweDocument, Room } from '../../types';
 import { pollConnection } from '../../utils/connection/pollConnection';
 
 export const login =
@@ -9,7 +10,11 @@ export const login =
    */
   async (options: { loadAllRooms?: boolean } | undefined) => {
     //TODO: better event?
-    db.emit('roomConnectionChange', 'connecting', {} as any);
+    db.emit(
+      'roomConnectionChange',
+      'connecting',
+      {} as unknown as Room<EweDocument>
+    );
     const token = db.getToken();
     if (!token) {
       throw new Error('No token found');
@@ -18,10 +23,10 @@ export const login =
     if (!syncResult) {
       throw new Error('Failed to sync registry');
     }
-    db.useYSweet = true;
+    db.useSync = true;
     pollConnection(db); // start polling for auth server connection status if db was started in offline mode previously
     if (options?.loadAllRooms) {
-      await db.loadRooms(db.registry); // connects the ySweet providers. Could make this more atomic in the future to avoid creating too many connections.
+      await db.loadRooms(db.registry); // connects the sync providers. Could make this more atomic in the future to avoid creating too many connections.
     }
     db.emit('onLoggedInChange', true);
     return true;

@@ -31,11 +31,7 @@ export const loadRooms =
         loadRemote: true,
         awaitLoadRemote: true,
       });
-      if (
-        remoteLoadedRoom.ySweetProvider &&
-        remoteLoadedRoom.ySweetProvider?.status !== 'error' &&
-        remoteLoadedRoom.ySweetProvider?.status !== 'offline'
-      ) {
+      if (remoteLoadedRoom.syncProvider?.status === 'connected') {
         remoteLoadedRooms.push(remoteLoadedRoom);
       }
     }

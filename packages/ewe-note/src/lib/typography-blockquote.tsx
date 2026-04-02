@@ -1,5 +1,4 @@
-export interface BlockquoteProps
-  extends React.HTMLAttributes<HTMLQuoteElement> {
+export interface BlockquoteProps extends React.HTMLAttributes<HTMLQuoteElement> {
   children: React.ReactNode;
 }
 

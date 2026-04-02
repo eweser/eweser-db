@@ -7,12 +7,12 @@ import {
 export const logout =
   (db: Database) =>
   /**
-   * clears the login token from storage and disconnects all ySweet providers. Still leaves the local indexedDB yDocs.
+   * Clears the login token from storage and disconnects all sync providers. Still leaves the local indexedDB yDocs.
    */
   () => {
     clearLocalAccessGrantToken(db)();
     db.accessGrantToken = '';
-    db.useYSweet = false;
+    db.useSync = false;
     db.online = false;
     for (const room of db.registry) {
       const dbRoom = db.getRoom(room.collectionKey, room.id);

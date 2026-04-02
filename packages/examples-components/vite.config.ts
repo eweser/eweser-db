@@ -20,7 +20,11 @@ export default defineConfig((configEnv) => ({
       fileName: (format) => `examples-components.${format}.js`,
     },
     rollupOptions: {
-      external: [...Object.keys(packageJson.peerDependencies)],
+      external: [
+        ...Object.keys(packageJson.peerDependencies),
+        'react/jsx-runtime',
+        'react/jsx-dev-runtime',
+      ],
     },
   },
 }));

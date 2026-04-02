@@ -50,8 +50,8 @@ export function AcceptingInviteLoading({
             error.message === roomNotFoundError
               ? roomNotFoundError
               : error.message === notAdminOfRoomError
-              ? notAdminOfRoomError
-              : 'Failed to update room';
+                ? notAdminOfRoomError
+                : 'Failed to update room';
           setError(message);
         }
       }

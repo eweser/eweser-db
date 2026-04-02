@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Database } from '@eweser/db';
-import type { CollectionKey, Documents, Note, Room } from '@eweser/db';
+import type {
+  CollectionKey,
+  Documents,
+  EweDocument,
+  Note,
+  Room,
+} from '@eweser/db';
 import * as config from './config';
 import { styles, StatusBar } from '@eweser/examples-components';
 
@@ -172,11 +178,11 @@ const NotesRoom = ({ notesRoom }: { notesRoom: Room<Note> }) => {
   return (
     <>
       <div style={styles.roomBar}>
-        <RoomName db={db} room={notesRoom} />{' '}
+        <RoomName db={db} room={notesRoom as unknown as Room<EweDocument>} />{' '}
         <button style={styles.newNoteButton} onClick={() => createNote()}>
           New note
         </button>
-        <ShareButton db={db} room={notesRoom} />
+        <ShareButton db={db} room={notesRoom as unknown as Room<EweDocument>} />
         {connectionStatus}
       </div>
 
@@ -224,7 +230,7 @@ const NotesRoom = ({ notesRoom }: { notesRoom: Room<Note> }) => {
   );
 };
 
-const RoomName = ({ db, room }: { db: Database; room: Room<any> }) => {
+const RoomName = ({ db, room }: { db: Database; room: Room<EweDocument> }) => {
   const [editing, setEditing] = useState(false);
   const [newName, setNewName] = useState(room.name);
   const [submitting, setSubmitting] = useState(false);
@@ -258,7 +264,13 @@ const RoomName = ({ db, room }: { db: Database; room: Room<any> }) => {
   );
 };
 
-const ShareButton = ({ db, room }: { db: Database; room: Room<any> }) => {
+const ShareButton = ({
+  db,
+  room,
+}: {
+  db: Database;
+  room: Room<EweDocument>;
+}) => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareLink, setShareLink] = useState('');
   const [copied, setCopied] = useState(false);

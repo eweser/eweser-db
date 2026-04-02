@@ -1,0 +1,39 @@
+{
+  "name": "@eweser/auth-server-hono",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "clean": "rm -rf dist",
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@eweser/shared": "^1.15.0",
+    "@hono/node-server": "^1.14.3",
+    "better-auth": "^1.5.6",
+    "drizzle-orm": "^0.45.2",
+    "drizzle-zod": "^0.8.3",
+    "hono": "^4.7.10",
+    "jsonwebtoken": "^9.0.3",
+    "postgres": "^3.4.7",
+    "zod": "^3.25.20"
+  },
+  "devDependencies": {
+    "@eweser/eslint-config-ts": "^1.15.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^22.15.21",
+    "drizzle-kit": "^0.31.10",
+    "eslint": "^9.39.1",
+    "tsx": "^4.19.4",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.2"
+  }
+}

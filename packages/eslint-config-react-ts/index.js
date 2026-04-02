@@ -6,7 +6,7 @@ import eslintPluginPrettier from 'eslint-plugin-prettier/recommended';
 
 export default tseslint
   .config({
-    extends: [eslint.configs.recommended, tseslint.configs.recommended],
+    extends: [eslint.configs.recommended, tseslint.configs.strict],
 
     plugins: {
       react,
@@ -14,29 +14,27 @@ export default tseslint
       'react-hooks': reactHooks,
     },
     rules: {
-      'no-console': 'warn',
-      'react-hooks/rules-of-hooks': 'error',
-      'react-hooks/exhaustive-deps': 'warn',
-      'react/react-in-jsx-scope': 'off',
-      'prettier/prettier': [
-        'warn',
-        {
-          trailingComma: 'es5',
-          tabWidth: 2,
-          semi: true,
-          singleQuote: true,
-        },
-      ],
+      'no-console': 'warn', // Allow console for debugging; warn to encourage removal
+      'react-hooks/rules-of-hooks': 'error', // Critical for correct React behavior
+      'react-hooks/exhaustive-deps': 'error', // Catch dependency bugs early
+      'react/react-in-jsx-scope': 'off', // Not needed in React 17+
+      'prettier/prettier': 'error', // Enforce consistent formatting
       'linebreak-style': 'off', // ignore overly strict linebreak style rule
-      'prefer-const': 'warn',
-      '@typescript-eslint/consistent-type-imports': 'warn', // Require consistent use of type imports
-      '@typescript-eslint/no-explicit-any': 'off',
-      'no-unused-vars': 'off', // typescript-eslint/no-unused-vars will cover this, and wont throw errors for unused variables in function parameters for ts types
+      'prefer-const': 'warn', // Style preference; non-blocking
+      '@typescript-eslint/consistent-type-imports': 'warn', // Style preference; non-blocking
+      '@typescript-eslint/no-explicit-any': 'error', // Catch implicit any usage
+      'no-unused-vars': 'off', // typescript-eslint/no-unused-vars will cover this
       '@typescript-eslint/no-unused-vars': [
-        'warn',
+        'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
-      ], // Warn about unused variables to avoid leaving them in the code accidentally and creating clutter.
-      '@typescript-eslint/ban-ts-comment': 'off', // Allow ts-ignore comments to turn off type checking when needed
+      ], // Prevent accidental unused vars
+      '@typescript-eslint/ban-ts-comment': [
+        'error',
+        {
+          'ts-ignore': 'allow-with-description',
+          'ts-nocheck': 'allow-with-description',
+        },
+      ], // Require justification for bypassing type checks
     },
   })
   .concat(eslintPluginPrettier);

@@ -32,11 +32,14 @@
     "build": "rm -rf ./dist; rm -rf ./types; tsc",
     "dev": "tsc -w",
     "clean": "rm -rf ./dist; rm -rf ./types",
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit",
     "test-watch": "vitest",
     "test": "vitest --run"
   },
   "devDependencies": {
     "@eweser/eslint-config-ts": "^1.15.0",
+    "eslint": "^9.39.1",
     "request": "^2.88.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"

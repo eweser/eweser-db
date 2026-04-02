@@ -1,14 +1,15 @@
-import { HTMLAttributeAnchorTarget } from 'react'; // only used as type should throw
-const App = () => {
-  const unused: HTMLAttributeAnchorTarget = 'asdf'; // yay works
+import type { HTMLAttributeAnchorTarget } from 'react';
 
-  const functionTest = (unusedParam = 1) => {
-    console.log('logs not allowed');
-  };
+interface Props {
+  target?: HTMLAttributeAnchorTarget;
+}
 
+const App = ({ target = '_self' }: Props) => {
   return (
     <div>
-      <h1>hi</h1>
+      <a href="https://example.com" target={target} rel="noreferrer">
+        hi
+      </a>
     </div>
   );
 };

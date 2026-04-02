@@ -21,7 +21,7 @@ export interface GetDocuments<T extends EweDocument> {
   getUndeletedToArray: () => T[];
   toArray: (docs: Documents<T>) => T[];
   onChange: (
-    callback: (event: YMapEvent<any>, transaction: Transaction) => void
+    callback: (event: YMapEvent<Documents<T>>, transaction: Transaction) => void
   ) => void;
   sortByRecent: (docs: Documents<T>) => Documents<T>;
 }
@@ -99,7 +99,10 @@ export const getDocuments =
         return Object.values(docs);
       },
       onChange: (
-        callback: (event: YMapEvent<any>, transaction: Transaction) => void
+        callback: (
+          event: YMapEvent<Documents<T>>,
+          transaction: Transaction
+        ) => void
       ) => {
         documents.observe(callback);
       },

@@ -56,6 +56,7 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
   const [creatingRoom, setCreatingRoom] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
+
   const handleCreateRoom = async () => {
     try {
       setCreatingRoom(true);
@@ -68,8 +69,8 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
       setSelectedRoom(newRoom);
       const newNote = newRoom.getDocuments().new({ text: '# New Note' });
       setSelectedNoteId(newNote._id);
-    } catch (error: any) {
-      alert(error.message);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Failed to create room');
     } finally {
       setCreatingRoom(false);
       setNewRoomName('');

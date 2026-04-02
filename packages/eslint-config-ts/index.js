@@ -18,25 +18,23 @@ export default tseslint.config({
     prettier,
   },
   rules: {
-    'prettier/prettier': [
-      'warn',
-      {
-        trailingComma: 'es5',
-        tabWidth: 2,
-        semi: true,
-        singleQuote: true,
-      },
-    ],
+    'prettier/prettier': 'error', // Enforce consistent formatting
     'linebreak-style': 'off', // ignore overly strict linebreak style rule
     'prefer-const': 'warn', // Warn about using const instead of let. Helps to avoid accidental reassignment
-    'no-console': 'warn',
-    '@typescript-eslint/consistent-type-imports': 'warn', // Require consistent use of type imports
-    '@typescript-eslint/no-explicit-any': 'off',
-    'no-unused-vars': 'off', // typescript-eslint/no-unused-vars will cover this, and wont throw errors for unused variables in function parameters for ts types
+    'no-console': 'warn', // Allow console for debugging; warn to encourage removal before commit
+    '@typescript-eslint/consistent-type-imports': 'warn', // Style preference; non-blocking
+    '@typescript-eslint/no-explicit-any': 'error', // Catch implicit any usage to maintain type safety
+    'no-unused-vars': 'off', // typescript-eslint/no-unused-vars will cover this
     '@typescript-eslint/no-unused-vars': [
-      'warn',
+      'error',
       { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
-    ], // Warn about unused variables to avoid leaving them in the code accidentally and creating clutter.
-    '@typescript-eslint/ban-ts-comment': 'off', // Allow ts-ignore comments to turn off type checking when needed
+    ], // Prevent accidental unused vars and clutter
+    '@typescript-eslint/ban-ts-comment': [
+      'error',
+      {
+        'ts-ignore': 'allow-with-description',
+        'ts-nocheck': 'allow-with-description',
+      },
+    ], // Require justification for bypassing type checks
   },
 });

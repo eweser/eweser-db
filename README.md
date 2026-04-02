@@ -181,6 +181,16 @@ This is achieved using 'aggregator' servers. These are Node.js servers which the
 - view the code at `/examples/example-basic`.
 - E2E test is in `/e2e/cypress/tests/basic.cy.js`
 
+# Code Quality & Development Standards
+
+All code must pass strict linting, formatting, type-checking, and test gates before merging. Run the quality check locally before pushing:
+
+```bash
+npm run check
+```
+
+For details on quality requirements per workspace, see [Quality Gates Matrix](docs/ai/quality-gates-matrix.md).
+
 # Contribute and develop
 
 ## How to contribute

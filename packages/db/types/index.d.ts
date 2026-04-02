@@ -13,7 +13,7 @@ export interface DatabaseOptions {
      */
     logLevel?: number;
     /** Which providers to use. By default uses all.
-     * Currently indexedDB is required and webRTC and YSweet are optional
+      * Currently indexedDB is required and webRTC and Hocuspocus are optional
      * Setting only indexedDB will make the database offline only
      */
     providers?: ProviderOptions[];
@@ -33,8 +33,8 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
     offlineOnly: boolean;
     /** these rooms will be synced for one second and then disconnected sequentially. Remove the id from this array and the next iteration will not sync that room when it reaches it*/
     collectionKeysForRollingSync: CollectionKey[];
-    /** set to false before `db.loginWithToken()` so that offline-first mode is the default, and it upgrades to online sync after login with token */
-    useYSweet: boolean;
+    /** Set to false before login so offline-first stays the default until sync is enabled. */
+    useSync: boolean;
     useWebRTC: boolean;
     useIndexedDB: boolean;
     indexedDBProviderPolyfill?: indexedDBProviderPolyfill;
@@ -66,8 +66,8 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
     logoutAndClear: () => void;
     getAccessGrantTokenFromUrl: () => string | null;
     getToken: () => string | null;
-    refreshYSweetToken: (room: Room<any>) => Promise<import("@eweser/shared").RefreshYSweetTokenRouteResponse | null>;
-    /** first loads the local indexedDB ydoc for the room. if this.useYSweet is true and ySweetTokens are available will also connect to remote.
+    refreshSyncToken: (room: Room<any>) => Promise<import("@eweser/shared").RefreshSyncTokenRouteResponse | null>;
+    /** First loads the local indexedDB ydoc for the room. If sync is enabled and room sync details are available it also connects remotely.
      * @param {RemoteLoadOptions} RemoteLoadOptions - options for loading the remote ydoc
      */
     loadRoom: (serverRoom: import("@eweser/shared").ServerRoom, remoteLoadOptions?: import("./methods/connection/loadRoom").RemoteLoadOptions) => Promise<Room<any>>;
@@ -86,9 +86,9 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
         collectionKey: CollectionKey;
         name: string;
         id?: string | undefined;
-        ySweetUrl?: string | null | undefined;
+        syncToken?: string | null | undefined;
+        syncUrl?: string | null | undefined;
         tokenExpiry?: string | null | undefined;
-        ySweetBaseUrl?: string | null | undefined;
         publicAccess?: "private" | "read" | "write" | undefined;
         readAccess?: string[] | undefined;
         writeAccess?: string[] | undefined;
@@ -97,7 +97,7 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
         updatedAt?: string | null | undefined;
         indexedDbProvider?: (import("y-indexeddb").IndexeddbPersistence | null) | undefined;
         webRtcProvider?: (import("y-webrtc").WebrtcProvider | null) | undefined;
-        ySweetProvider?: (import("@y-sweet/client").YSweetProvider | null) | undefined;
+        syncProvider?: (import("@hocuspocus/provider").HocuspocusProvider | null) | undefined;
         ydoc?: import("./types").YDoc<T> | null | undefined;
     }) => Room<T>;
     renameRoom: (room: Room<any>, newName: string) => Promise<import("@eweser/shared").ServerRoom | null>;
@@ -110,8 +110,8 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
         accessType: import("@eweser/shared").RoomAccessType;
         appName: string;
     }) => Promise<string>;
-    pingServer: () => Promise<boolean | "" | undefined>;
-    /** Because we can't have more than 10 rooms open (connected to ySweet) at one time, we can do a rollingSync of all rooms where we briefly connect them, one at a time, let them sync and then disconnect */
+    pingServer: () => Promise<boolean>;
+    /** Connect a limited set of rooms sequentially so background sync does not flood the sync server. */
     rollingSync(): Promise<void>;
     statusListener(): void;
     /** useful for debugging or less granular event listening */

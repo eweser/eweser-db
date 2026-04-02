@@ -1,5 +1,4 @@
 import type {
-  Collection,
   CollectionKey,
   Collections,
   CollectionToDocument,
@@ -26,7 +25,7 @@ import { getAccessGrantTokenFromUrl } from './methods/connection/getAccessGrantT
 import { getToken } from './methods/connection/getToken';
 import { getRegistry } from './methods/getRegistry';
 import { loadRoom } from './methods/connection/loadRoom';
-import { refreshYSweetToken } from './methods/connection/refreshYSweetToken';
+import { refreshSyncToken } from './methods/connection/refreshSyncToken';
 import { syncRegistry } from './methods/connection/syncRegistry';
 import { loadRooms } from './methods/connection/loadRooms';
 import type {
@@ -60,7 +59,7 @@ export interface DatabaseOptions {
    */
   logLevel?: number;
   /** Which providers to use. By default uses all.
-   * Currently indexedDB is required and webRTC and YSweet are optional
+   * Currently indexedDB is required and webRTC and Hocuspocus are optional
    * Setting only indexedDB will make the database offline only
    */
   providers?: ProviderOptions[];
@@ -83,8 +82,8 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
   /** these rooms will be synced for one second and then disconnected sequentially. Remove the id from this array and the next iteration will not sync that room when it reaches it*/
   collectionKeysForRollingSync: CollectionKey[] = [];
 
-  /** set to false before `db.loginWithToken()` so that offline-first mode is the default, and it upgrades to online sync after login with token */
-  useYSweet = false;
+  /** Set to false before login so offline-first stays the default until sync is enabled. */
+  useSync = false;
   useWebRTC = true;
   useIndexedDB = true;
   indexedDBProviderPolyfill?: indexedDBProviderPolyfill;
@@ -117,8 +116,8 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
   getAccessGrantTokenFromUrl = getAccessGrantTokenFromUrl(this);
   getToken = getToken(this);
 
-  refreshYSweetToken = refreshYSweetToken(this);
-  /** first loads the local indexedDB ydoc for the room. if this.useYSweet is true and ySweetTokens are available will also connect to remote.
+  refreshSyncToken = refreshSyncToken(this);
+  /** First loads the local indexedDB ydoc for the room. If sync is enabled and room sync details are available it also connects remotely.
    * @param {RemoteLoadOptions} RemoteLoadOptions - options for loading the remote ydoc
    */
   loadRoom = loadRoom(this);
@@ -149,19 +148,19 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
   }
 
   allRooms() {
-    return Object.values(this.collections).flatMap(
-      (collection: Collection<any>) => Object.values(collection)
-    );
+    return Object.values(this.collections).flatMap((collection) =>
+      Object.values(collection)
+    ) as Array<Room<EweDocument>>;
   }
 
   newRoom = newRoom(this);
 
-  renameRoom = async (room: Room<any>, newName: string) => {
+  renameRoom = async (room: Room<EweDocument>, newName: string) => {
     const body: UpdateRoomPostBody = {
       newName,
     };
     const { data, error } = await this.serverFetch<UpdateRoomResponse>(
-      `/access-grant/update-room/${room.id}`,
+      `/api/access-grant/update-room/${room.id}`,
       {
         method: 'POST',
         body,
@@ -187,7 +186,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
   generateShareRoomLink = generateShareRoomLink(this);
   pingServer = pingServer(this);
 
-  /** Because we can't have more than 10 rooms open (connected to ySweet) at one time, we can do a rollingSync of all rooms where we briefly connect them, one at a time, let them sync and then disconnect */
+  /** Connect a limited set of rooms sequentially so background sync does not flood the sync server. */
   async rollingSync() {
     while (true) {
       this.debug('--- rollingSync ---');
@@ -270,8 +269,8 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
         this.webRtcPeers = [];
         this.useWebRTC = false;
       }
-      if (options.providers.includes('YSweet')) {
-        this.useYSweet = true;
+      if (options.providers.includes('Hocuspocus')) {
+        this.useSync = true;
       }
       if (!options.providers.includes('IndexedDB')) {
         // need to have at least one provider, the local storage provider
@@ -304,7 +303,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     if (options.initialRooms) {
       const registryRoomIds = this.registry.map((r) => r.id);
       for (const room of options.initialRooms) {
-        const registryRoom = roomToServerRoom(this.newRoom<any>(room));
+        const registryRoom = roomToServerRoom(this.newRoom<EweDocument>(room));
         if (room.id && !registryRoomIds.includes(room.id)) {
           this.registry.push(registryRoom);
         }

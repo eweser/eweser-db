@@ -59,19 +59,19 @@ e2e/                   ← Cypress integration tests
 
 ## Core Tech Stack
 
-| Layer            | Current                                     | Migration Target                                                |
-| ---------------- | ------------------------------------------- | --------------------------------------------------------------- |
-| **Core SDK**     | Yjs, y-indexeddb, y-webrtc, @y-sweet/client | Yjs, y-indexeddb, @hocuspocus/provider                          |
-| **Auth Backend** | Next.js 16 + Supabase + Drizzle             | Hono + better-auth + Drizzle                                    |
-| **Auth UI**      | Next.js pages                               | React SPA (Vite)                                                |
-| **Sync Server**  | Y-Sweet (JamSocket hosted or self-host)     | Hocuspocus (self-hosted in Docker Compose, SQLite/Postgres)     |
-| **Database**     | Supabase (PostgreSQL)                       | Self-hosted PostgreSQL in Docker Compose                        |
-| **Auth**         | Supabase Auth                               | better-auth (email/password + OAuth, Drizzle adapter)           |
-| **Frontend**     | React 18-19, Vite, Tailwind, Radix UI       | No change                                                       |
-| **Testing**      | Vitest (unit), Cypress (E2E)                | No change                                                       |
-| **Build**        | Vite, tsc                                   | No change                                                       |
-| **Monorepo**     | npm workspaces                              | No change                                                       |
-| **CI/CD**        | GitHub Actions                              | No change                                                       |
+| Layer            | Current                                     | Migration Target                                            |
+| ---------------- | ------------------------------------------- | ----------------------------------------------------------- |
+| **Core SDK**     | Yjs, y-indexeddb, y-webrtc, @y-sweet/client | Yjs, y-indexeddb, @hocuspocus/provider                      |
+| **Auth Backend** | Next.js 16 + Supabase + Drizzle             | Hono + better-auth + Drizzle                                |
+| **Auth UI**      | Next.js pages                               | React SPA (Vite)                                            |
+| **Sync Server**  | Y-Sweet (JamSocket hosted or self-host)     | Hocuspocus (self-hosted in Docker Compose, SQLite/Postgres) |
+| **Database**     | Supabase (PostgreSQL)                       | Self-hosted PostgreSQL in Docker Compose                    |
+| **Auth**         | Supabase Auth                               | better-auth (email/password + OAuth, Drizzle adapter)       |
+| **Frontend**     | React 18-19, Vite, Tailwind, Radix UI       | No change                                                   |
+| **Testing**      | Vitest (unit), Cypress (E2E)                | No change                                                   |
+| **Build**        | Vite, tsc                                   | No change                                                   |
+| **Monorepo**     | npm workspaces                              | No change                                                   |
+| **CI/CD**        | GitHub Actions                              | No change                                                   |
 
 ## Planned Migration: Docker Compose Consolidation
 

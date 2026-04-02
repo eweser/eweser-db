@@ -8,8 +8,7 @@ export type ServerRoom = {
     name: string;
     collectionKey: CollectionKey;
     tokenExpiry: string | null;
-    ySweetUrl: string | null;
-    ySweetBaseUrl: string | null;
+    syncUrl: string | null;
     publicAccess: PublicAccessType;
     readAccess: string[];
     writeAccess: string[];

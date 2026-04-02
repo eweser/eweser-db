@@ -1,13 +1,16 @@
 import { Room } from '../../room';
 
 import type { ServerRoom } from '@eweser/shared';
+import { HocuspocusProvider, WebSocketStatus } from '@hocuspocus/provider';
 import { initializeDocAndLocalProvider } from '../../utils/connection/initializeDoc';
-import { createYjsProvider } from '@y-sweet/client';
 import type { Doc } from 'yjs';
 import type { Database } from '../..';
 import type { RoomConnectionStatus } from '../../events';
 import { wait } from '@eweser/shared';
 import { Awareness } from 'y-protocols/awareness';
+import type { EweDocument } from '@eweser/shared';
+
+const TOKEN_EXPIRY_BUFFER_MS = 5 * 60 * 1000;
 
 function validate(room: ServerRoom) {
   if (!room) {
@@ -24,34 +27,33 @@ function validate(room: ServerRoom) {
 }
 
 function checkLoadedState(db: Database) {
-  return (room: Room<any>, ySweetUrl: string | null) => {
+  return (room: Room<EweDocument>, syncUrl: string | null) => {
     const localLoaded = !!room && !!room.ydoc && !!room.indexedDbProvider;
-    const ySweet = room.ySweetProvider;
-    const shouldLoadYSweet =
+    const syncProvider = room.syncProvider;
+    const shouldLoadSync =
       room.connectionStatus === 'disconnected' &&
       !!db.getToken() &&
-      db.useYSweet &&
-      !!room?.ySweetUrl &&
-      ySweet?.status !== 'connecting' &&
-      ySweet?.status !== 'handshaking';
-    const ySweetLoaded =
+      db.useSync &&
+      !!room?.syncUrl &&
+      syncProvider?.status !== WebSocketStatus.Connecting;
+    const syncLoaded =
       room.connectionStatus === 'connected' &&
-      ySweetUrl &&
-      ySweet &&
-      room.ySweetUrl === ySweetUrl &&
-      ySweet.status === 'connected';
+      syncUrl &&
+      syncProvider &&
+      room.syncUrl === syncUrl &&
+      syncProvider.status === WebSocketStatus.Connected;
     db.info('checkLoadedState', {
       room: room.name,
       localLoaded,
-      ySweetLoaded,
-      shouldLoadYSweet,
-      status: ySweet?.status,
+      syncLoaded,
+      shouldLoadSync,
+      status: syncProvider?.status,
     });
 
-    return { localLoaded, ySweetLoaded, shouldLoadYSweet };
+    return { localLoaded, syncLoaded, shouldLoadSync };
   };
 }
-async function loadLocal(db: Database, room: Room<any>) {
+async function loadLocal(db: Database, room: Room<EweDocument>) {
   const { yDoc: ydoc, localProvider } = await initializeDocAndLocalProvider(
     room.id,
     room.ydoc,
@@ -67,9 +69,9 @@ async function loadLocal(db: Database, room: Room<any>) {
   );
 }
 
-export async function loadYSweet(
+export async function loadSync(
   db: Database,
-  room: Room<any>,
+  room: Room<EweDocument>,
   withAwareness = true,
   awaitConnection = false,
   maxWait = 30000
@@ -85,145 +87,108 @@ export async function loadYSweet(
     room.emit('roomConnectionChange', status, room);
     db.emit('roomConnectionChange', status, room);
   }
-  const handleStatusChange = ({ status }: { status: RoomConnectionStatus }) => {
-    if (status === 'connected') {
+  const handleStatusChange = ({ status }: { status: WebSocketStatus }) => {
+    if (status === WebSocketStatus.Connected) {
       room.connectionRetries = 0;
       room.connectAbortController?.abort();
     }
     emitConnectionChange(status);
   };
-  function handleSync(synced: boolean) {
-    emitConnectionChange(synced ? 'connected' : 'disconnected');
-    db.debug('ySweetProvider synced', synced);
+  function handleSynced({ state }: { state: boolean }) {
+    emitConnectionChange(state ? 'connected' : 'disconnected');
+    db.debug('syncProvider synced', state);
   }
-  async function handleConnectionError(error: any) {
-    db.error('ySweetProvider error', room.name, error);
+  function handleAuthenticationFailed({ reason }: { reason: string }) {
+    db.error('syncProvider authentication failed', room.name, reason);
     emitConnectionChange('disconnected');
-    // because this is a change listener, it could be called many times. In order to prevent an infinite loop of retries, we will only allow 3 retries.
-    if (room.connectionRetries < 3) {
-      await wait(1000);
-      room.connectionRetries++;
-      checkTokenAndConnectProvider();
-    }
   }
-  async function pollForYSweetConnectionAndAwait(maxWait: number) {
+  async function pollForSyncConnectionAndAwait(maxWait: number) {
     let waited = 0;
-    while (room.ySweetProvider?.status !== 'connected') {
+    while (room.syncProvider?.status !== WebSocketStatus.Connected) {
       await wait(300);
       waited += 300;
       if (waited >= maxWait) {
         db.debug(
-          'timed out waiting for ySweet connection',
+          'timed out waiting for sync connection',
           room.name,
           waited,
           maxWait,
-          room.ySweetProvider
+          room.syncProvider
         );
-        throw new Error('timed out waiting for ySweet connection ' + room.name);
+        throw new Error('timed out waiting for sync connection ' + room.name);
       }
     }
   }
-  async function checkTokenAndConnectProvider() {
-    if (room.ySweetProvider) {
-      if (
-        awaitConnection &&
-        room.ySweetProvider.status !== 'connected' &&
-        room.ySweetProvider.status !== 'connecting'
-      ) {
-        try {
-          await pollForYSweetConnectionAndAwait(maxWait);
-        } catch (e) {
-          db.error(e);
-        }
-        db.emit('roomRemoteLoaded', room);
-      }
-      return;
-    }
-    emitConnectionChange('connecting');
-    room.ySweetProvider = createYjsProvider(
-      room.ydoc as Doc,
-      room.id,
-      async () => {
-        db.debug(
-          '----- createYjsProvider token refresh',
-          room.ySweetProvider?.status,
-          room.name
-        );
-        const status = room.ySweetProvider?.status;
-        // if have at least 5 minutes left ignore
-        if (
-          room.ySweetUrl &&
-          room.ySweetBaseUrl &&
-          room.tokenExpiry &&
-          new Date(room.tokenExpiry) > new Date(Date.now() + 5 * 60 * 1000)
-        ) {
-          db.debug('returning existing token', room.name);
-          return {
-            url: room.ySweetUrl,
-            baseUrl: room.ySweetBaseUrl,
-            docId: room.id,
-          };
-        }
-        if (
-          (status === 'connecting' || status === 'handshaking') &&
-          room.ySweetUrl &&
-          room.ySweetBaseUrl &&
-          room.tokenExpiry
-        ) {
-          db.debug('already connecting, returning existing token', room.name);
-          return {
-            url: room.ySweetUrl,
-            baseUrl: room.ySweetBaseUrl,
-            docId: room.id,
-          };
-        }
-        const refreshed = await db.refreshYSweetToken(room);
-        db.debug(
-          'refreshed token. success: ',
-          refreshed?.ySweetUrl && refreshed.tokenExpiry,
-          room.name
-        );
-        if (
-          refreshed?.ySweetUrl &&
-          refreshed.tokenExpiry &&
-          refreshed.ySweetBaseUrl
-        ) {
-          room.tokenExpiry = refreshed.tokenExpiry;
-          room.ySweetUrl = refreshed.ySweetUrl;
-          room.ySweetBaseUrl = refreshed.ySweetBaseUrl;
-          return {
-            url: refreshed.ySweetUrl,
-            baseUrl: refreshed.ySweetBaseUrl,
-            docId: room.id,
-          };
-        } else {
-          throw new Error('No ySweetUrl found: ' + room.name);
-        }
-      },
-      withAwareness ? { awareness: new Awareness(room.ydoc as Doc) } : {}
-    );
-    // update the room's ydoc with the new provider attached
-    // room.ydoc = room.ySweetProvider.doc as YDoc<any>;
-    room.ySweetProvider.on('status', handleStatusChange);
-    room.ySweetProvider.on('sync', handleSync);
-    room.ySweetProvider.on('connection-error', handleConnectionError);
-    // room.ySweetProvider.connect();
-  }
-  await checkTokenAndConnectProvider();
 
-  db.debug('created ySweetProvider', room.ySweetProvider);
+  async function getValidSyncToken() {
+    if (
+      room.syncToken &&
+      room.tokenExpiry &&
+      new Date(room.tokenExpiry) > new Date(Date.now() + TOKEN_EXPIRY_BUFFER_MS)
+    ) {
+      db.debug('returning existing sync token', room.name);
+      return room.syncToken;
+    }
+
+    const refreshed = await db.refreshSyncToken(room);
+    db.debug(
+      'refreshed sync token. success:',
+      refreshed?.syncToken && refreshed.tokenExpiry,
+      room.name
+    );
+
+    if (refreshed?.syncToken && refreshed.syncUrl && refreshed.tokenExpiry) {
+      room.tokenExpiry = refreshed.tokenExpiry;
+      room.syncToken = refreshed.syncToken;
+      room.syncUrl = refreshed.syncUrl;
+      return refreshed.syncToken;
+    }
+
+    throw new Error('No sync token found: ' + room.name);
+  }
+
+  if (room.syncProvider) {
+    if (awaitConnection) {
+      try {
+        await pollForSyncConnectionAndAwait(maxWait);
+      } catch (e) {
+        db.error(e);
+      }
+    }
+    db.emit('roomRemoteLoaded', room);
+    return;
+  }
+
+  if (!room.syncUrl) {
+    throw new Error('No syncUrl found: ' + room.name);
+  }
+
+  emitConnectionChange('connecting');
+  room.syncProvider = new HocuspocusProvider({
+    url: room.syncUrl,
+    name: room.id,
+    document: room.ydoc as Doc,
+    token: getValidSyncToken,
+    awareness: withAwareness ? new Awareness(room.ydoc as Doc) : null,
+  });
+
+  room.syncProvider.on('status', handleStatusChange);
+  room.syncProvider.on('synced', handleSynced);
+  room.syncProvider.on('authenticationFailed', handleAuthenticationFailed);
+
+  db.debug('created syncProvider', room.syncProvider);
 
   room.disconnect = () => {
-    room.ySweetProvider?.off('status', handleStatusChange);
-    room.ySweetProvider?.off('sync', handleSync);
-    room.ySweetProvider?.off('connection-error', handleConnectionError);
-    room.ySweetProvider?.disconnect();
+    room.syncProvider?.off('status', handleStatusChange);
+    room.syncProvider?.off('synced', handleSynced);
+    room.syncProvider?.off('authenticationFailed', handleAuthenticationFailed);
+    room.syncProvider?.disconnect();
     room.webRtcProvider?.disconnect();
     emitConnectionChange('disconnected');
   };
   if (awaitConnection) {
     try {
-      await pollForYSweetConnectionAndAwait(maxWait);
+      await pollForSyncConnectionAndAwait(maxWait);
     } catch (e) {
       db.error(e);
     }
@@ -231,11 +196,11 @@ export async function loadYSweet(
   db.emit('roomRemoteLoaded', room);
 }
 export type RemoteLoadOptions = {
-  /* whether to load the remote ySweet connection. Default is true */
+  /* whether to load the remote sync connection. Default is true */
   awaitLoadRemote?: boolean;
-  /* whether to await the remote ySweet connection. Default is true*/
+  /* whether to await the remote sync connection. Default is true */
   loadRemote?: boolean;
-  /* the maximum time to wait for the remote ySweet connection. Default is 30000ms */
+  /* the maximum time to wait for the remote sync connection. Default is 30000ms */
   loadRemoteMaxWait?: number;
   /** use Awareness, false by default */
   withAwareness?: boolean;
@@ -251,19 +216,20 @@ export const loadRoom =
 
     const { roomId, collectionKey } = validate(serverRoom);
 
-    const room: Room<any> =
-      db.collections[collectionKey][roomId] ?? new Room({ db, ...serverRoom });
+    const room = (db.collections[collectionKey][roomId] ??
+      new Room({ db, ...serverRoom })) as unknown as Room<EweDocument>;
     db.info('loading room', { room, serverRoom });
 
-    const { localLoaded, ySweetLoaded, shouldLoadYSweet } = checkLoadedState(
-      db
-    )(room, serverRoom.ySweetUrl);
+    const { localLoaded, syncLoaded, shouldLoadSync } = checkLoadedState(db)(
+      room,
+      serverRoom.syncUrl
+    );
     db.debug('loadedState', {
       localLoaded,
-      ySweetLoaded,
-      shouldLoadYSweet,
+      syncLoaded,
+      shouldLoadSync,
     });
-    if (localLoaded && (!shouldLoadYSweet || ySweetLoaded)) {
+    if (localLoaded && (!shouldLoadSync || syncLoaded)) {
       db.debug('room already loaded', room);
       return room;
     }
@@ -272,11 +238,11 @@ export const loadRoom =
       await loadLocal(db, room);
     }
 
-    if (loadRemote && shouldLoadYSweet && !ySweetLoaded) {
+    if (loadRemote && shouldLoadSync && !syncLoaded) {
       if (awaitLoadRemote) {
-        await loadYSweet(db, room, withAwareness, true, loadRemoteMaxWait);
+        await loadSync(db, room, withAwareness, true, loadRemoteMaxWait);
       } else {
-        loadYSweet(db, room, withAwareness, false);
+        loadSync(db, room, withAwareness, false);
       }
     }
 

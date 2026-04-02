@@ -5,10 +5,10 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function logger(...log: any[]) {
-  if (log instanceof Error) {
+export function logger(...log: unknown[]) {
+  if (log.length === 1 && log[0] instanceof Error) {
     // eslint-disable-next-line no-console
-    console.error(log);
+    console.error(log[0]);
     return;
   }
   // eslint-disable-next-line no-console

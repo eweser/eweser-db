@@ -18,13 +18,14 @@ export const newRoom =
   <T extends EweDocument>(options: NewRoomHelperOptions<T>) => {
     const room = new Room<T>({ db, ...options });
     db.debug('new room', room);
-    db.collections[options.collectionKey][room.id] = room as Room<any>;
+    db.collections[options.collectionKey][room.id] =
+      room as unknown as Room<EweDocument>;
 
     const registryRoom = roomToServerRoom(room);
     db.registry.push(registryRoom);
     setLocalRegistry(db)(db.registry);
 
-    db.loadRoom(room);
+    db.loadRoom(room as unknown as Room<EweDocument>);
 
     if (db.online) {
       db.syncRegistry();

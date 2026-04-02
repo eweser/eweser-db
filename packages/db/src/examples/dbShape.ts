@@ -1,5 +1,5 @@
 import type { Flashcard, Note, Profile, DocumentBase } from '@eweser/shared';
-import type { Collections, Documents } from '../types';
+import type { Collections, Documents, YDoc } from '../types';
 import { buildRef } from '../utils';
 import { Room } from '../room';
 import { Database } from '..';
@@ -110,7 +110,7 @@ const _exampleDb: { collections: Collections } = {
         db,
         collectionKey: 'notes',
         name: 'My Study Notes',
-        ydoc: myStudyNotesYDoc as any,
+        ydoc: myStudyNotesYDoc as unknown as YDoc<Note>,
       }),
     },
     flashcards: {
@@ -118,13 +118,13 @@ const _exampleDb: { collections: Collections } = {
         db,
         collectionKey: 'flashcards',
         name: 'Typescript Study Flashcards',
-        ydoc: typescriptFlashcardsYDoc as any,
+        ydoc: typescriptFlashcardsYDoc as unknown as YDoc<Flashcard>,
       }),
       ['chinese_flashcards']: new Room({
         db,
         collectionKey: 'flashcards',
         name: 'Chinese Study Flashcards',
-        ydoc: chineseFlashcardsYDoc as any,
+        ydoc: chineseFlashcardsYDoc as unknown as YDoc<Flashcard>,
       }),
     },
     profiles: {
@@ -132,13 +132,13 @@ const _exampleDb: { collections: Collections } = {
         db,
         collectionKey: 'profiles',
         name: 'Public Profile',
-        ydoc: profileYDoc as any,
+        ydoc: profileYDoc as unknown as YDoc<Profile>,
       }),
       ['private']: new Room({
         db,
         collectionKey: 'profiles',
         name: 'Private Profile',
-        ydoc: profilePrivateYDoc as any,
+        ydoc: profilePrivateYDoc as unknown as YDoc<Profile>,
       }),
     },
   },
@@ -157,8 +157,7 @@ const _room = new Room({
   name: 'room_name',
   collectionKey: 'flashcards', // CollectionKey
   tokenExpiry: '12-12-12',
-  ySweetUrl: 'https://url-from-ysweet', // acts as a token
-  ySweetBaseUrl: 'https://base-url-from-ysweet', // acts as a token
+  syncUrl: 'wss://sync.example.com',
   publicAccess: 'private', //"private" | "read" | "write" // if read or write will invite all aggregators.
   readAccess: ['userId', 'AUTH_SERVER_DOMAIN'], // auth server if just for personal use, more (aggregators) if public
   writeAccess: ['userId', 'AUTH_SERVER_DOMAIN'], // auth server if just for personal use, more (other users) if shared writable
@@ -170,7 +169,7 @@ const _room = new Room({
 
   indexedDbProvider: null,
   webRtcProvider: null,
-  ySweetProvider: null,
+  syncProvider: null,
   ydoc: null,
 });
 

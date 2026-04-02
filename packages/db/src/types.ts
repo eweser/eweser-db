@@ -15,7 +15,7 @@ import type { IndexeddbPersistence } from 'y-indexeddb';
 import type { Doc } from 'yjs';
 import type { GetDocuments } from './utils/getDocuments';
 
-export type ProviderOptions = 'WebRTC' | 'YSweet' | 'IndexedDB';
+export type ProviderOptions = 'WebRTC' | 'Hocuspocus' | 'IndexedDB';
 export type indexedDBProviderPolyfill = (
   roomId: string,
   yDoc: Doc

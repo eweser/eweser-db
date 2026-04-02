@@ -11,6 +11,8 @@
     "vite-build-watch": "vite build --watch",
     "dev": "run-p vite-build-watch typescript-watch",
     "build": "tsc && vite build",
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit",
     "preview": "vite preview"
   },
   "files": [
@@ -38,12 +40,12 @@
   },
   "devDependencies": {
     "@eweser/eslint-config-react-ts": "^1.15.0",
-    "@types/react": "^18.0.28",
-    "@types/react-dom": "^18.0.11",
-    "@vitejs/plugin-react": "^4.2.1",
-    "eslint": "^8.37.0",
-    "typescript": "^4.9.3",
-    "vite": "^5.1.4",
-    "vite-plugin-dts": "^2.3.0"
+    "@types/react": "^18.3.21",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^5.2.0",
+    "eslint": "^9.39.1",
+    "typescript": "^5.7.3",
+    "vite": "^7.3.1",
+    "vite-plugin-dts": "^4.5.4"
   }
 }

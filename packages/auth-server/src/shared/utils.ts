@@ -66,8 +66,8 @@ export function validateLoginQueryOptions(
   const collections = !queryOptions.collections
     ? ['all']
     : queryOptions.collections === 'all'
-    ? ['all']
-    : queryOptions.collections?.split('|');
+      ? ['all']
+      : queryOptions.collections?.split('|');
   const validCollections =
     Array.isArray(collections) &&
     collections.length > 0 &&

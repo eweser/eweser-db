@@ -40,4 +40,8 @@ vite.config.ts.timestamp*.mjs
 .expo/metro/polyfill.js
 .expo/metro/polyfill.*.js
 .expo/metro/externals/
-packages/db/dist/
+**/**/dist
+
+# Added by ggshield
+.cache_ggshield
+

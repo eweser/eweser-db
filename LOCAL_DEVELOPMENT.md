@@ -7,13 +7,11 @@ This guide will help you set up a local development environment for eweser-db.
 ### Required Software
 
 1. **Node.js** (v20.11.0)
-
    - This project uses [Volta](https://volta.sh/) for Node version management
    - Volta will automatically use the correct version specified in `package.json`
    - Alternatively, install Node.js 20.11.0 manually
 
 2. **Docker Desktop**
-
    - Required for running Supabase locally
    - [Install Docker Desktop](https://www.docker.com/products/docker-desktop/)
    - Make sure Docker is running before starting development
@@ -199,6 +197,30 @@ Edit the generated migration file in `packages/auth-server/supabase/migrations/`
 ```bash
 npx supabase db reset  # Resets local DB and applies all migrations
 ```
+
+## Code Quality
+
+Before committing, run the quality check command to verify linting, formatting, type-safety, and tests:
+
+```bash
+npm run check
+```
+
+This command runs all quality gates in order:
+
+- Linting (ESLint)
+- Format check (Prettier)
+- Type-check (TypeScript)
+- Unit tests (Vitest)
+
+To fix formatting and lint issues automatically:
+
+```bash
+npm run lint:fix
+npm run format
+```
+
+For details on quality gate requirements per package, see [Quality Gates Matrix](docs/ai/quality-gates-matrix.md).
 
 ## Testing
 

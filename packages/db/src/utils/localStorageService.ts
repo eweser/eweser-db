@@ -9,12 +9,12 @@ export enum LocalStorageKey {
 export type LocalStoragePolyfill = Storage;
 
 export type LocalStorageService = {
-  getItem: <T = any>(key: LocalStorageKey) => T | null;
-  setItem: <T = any>(key: LocalStorageKey, value: T) => void;
+  getItem: <T = unknown>(key: LocalStorageKey) => T | null;
+  setItem: <T = unknown>(key: LocalStorageKey, value: T) => void;
   removeItem: (key: LocalStorageKey) => void;
 };
 export const localStorageSet =
-  (db: Database) => (key: LocalStorageKey, value: any) => {
+  (db: Database) => (key: LocalStorageKey, value: unknown) => {
     db.debug('#### localStorageSet', key, value);
     db.localStoragePolyfill.setItem('ewe_' + key, JSON.stringify(value));
   };

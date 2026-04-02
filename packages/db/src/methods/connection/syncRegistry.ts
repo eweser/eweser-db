@@ -1,4 +1,7 @@
-import type { Registry } from '../../types';
+import type {
+  RegistrySyncRequestBody,
+  RegistrySyncResponse,
+} from '@eweser/shared';
 import {
   setLocalAccessGrantToken,
   setLocalRegistry,
@@ -10,22 +13,15 @@ export const syncRegistry =
   /** sends the registry to the server to check for additions/subtractions on either side */
   async () => {
     db.emit('registrySync', 'syncing');
-    // packages/auth-server/src/app/access-grant/sync-registry/route.ts
-    type RegistrySyncRequestBody = {
-      token: string;
-      rooms: Registry;
-    };
-    type RegistrySyncResponse = RegistrySyncRequestBody & { userId: string };
     const body: RegistrySyncRequestBody = {
-      token: db.getToken() ?? '',
       rooms: db.registry,
     };
-    if (!body.token) {
+    if (!db.getToken()) {
       return false;
     }
     const { data: syncResult, error } =
       await db.serverFetch<RegistrySyncResponse>(
-        '/access-grant/sync-registry',
+        '/api/access-grant/sync-registry',
         { method: 'POST', body }
       );
     if (error) {

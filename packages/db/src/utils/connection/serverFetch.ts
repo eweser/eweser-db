@@ -1,7 +1,7 @@
 import type { Database } from '../..';
 
 export type Options = Omit<RequestInit, 'body'> & {
-  body: any;
+  body?: BodyInit | object | null;
 };
 
 export const serverFetch =
@@ -11,7 +11,7 @@ export const serverFetch =
     _options?: Options,
     abortController?: AbortController
   ) => {
-    const options = {
+    const options: Options = {
       ..._options,
       signal: abortController?.signal,
     };
@@ -32,7 +32,10 @@ export const serverFetch =
         options.referrer = 'no-referrer';
       }
 
-      const resultRaw = await fetch(`${_db.authServer}${path}`, options);
+      const resultRaw = await fetch(`${_db.authServer}${path}`, {
+        ...options,
+        body: options.body as BodyInit | null | undefined,
+      });
       const data = (await resultRaw.json()) as ReturnType;
       if (!data || typeof data !== 'object') {
         throw new Error('No data returned');

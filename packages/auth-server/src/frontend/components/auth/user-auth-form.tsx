@@ -47,8 +47,8 @@ export function UserAuthForm({
           {isShareInviteRedirect
             ? 'You have been invited to share data. Please log in or create an account to accept the invite.'
             : isSignup
-            ? 'And take control of your data today'
-            : 'Log in to provision and manage your data'}
+              ? 'And take control of your data today'
+              : 'Log in to provision and manage your data'}
         </p>
       </div>
       <form

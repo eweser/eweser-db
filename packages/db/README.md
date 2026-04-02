@@ -233,4 +233,4 @@ Nice to haves:
 - [ ] newRoom
 - [ ] don't send to permissions page if grant already exists and matches the login request permissions. just redirect back with token.
 - [ ] reimplement server ping, online check, reload when re-online.
-- [ ] track users' active sync hours and charge them for it or limit after a certain amount, based on ySweet pricing model.
+- [ ] track users' active sync hours and charge them for it or limit after a certain amount, based on the sync provider pricing model.

@@ -1,5 +1,5 @@
 import type { CollectionKey, EweDocument, ServerRoom } from '@eweser/shared';
-import type { YSweetProvider } from '@y-sweet/client';
+import type { HocuspocusProvider } from '@hocuspocus/provider';
 import type { IndexeddbPersistence } from 'y-indexeddb';
 import type { WebrtcProvider } from 'y-webrtc';
 import type { RoomConnectionStatus, RoomEvents } from './events';
@@ -13,8 +13,8 @@ export type NewRoomOptions<T extends EweDocument> = {
     collectionKey: CollectionKey;
     id?: string;
     tokenExpiry?: string | null;
-    ySweetUrl?: string | null;
-    ySweetBaseUrl?: string | null;
+    syncUrl?: string | null;
+    syncToken?: string | null;
     publicAccess?: 'private' | 'read' | 'write';
     readAccess?: string[];
     writeAccess?: string[];
@@ -25,7 +25,7 @@ export type NewRoomOptions<T extends EweDocument> = {
     _ttl?: string | null;
     indexedDbProvider?: IndexeddbPersistence | null;
     webRtcProvider?: WebrtcProvider | null;
-    ySweetProvider?: YSweetProvider | null;
+    syncProvider?: HocuspocusProvider | null;
     ydoc?: YDoc<T> | null;
 };
 export declare class Room<T extends EweDocument> extends TypedEventEmitter<RoomEvents<T>> implements ServerRoom {
@@ -34,8 +34,8 @@ export declare class Room<T extends EweDocument> extends TypedEventEmitter<RoomE
     collectionKey: CollectionKey;
     id: string;
     tokenExpiry: string | null;
-    ySweetUrl: string | null;
-    ySweetBaseUrl: string | null;
+    syncUrl: string | null;
+    syncToken: string | null;
     publicAccess: 'private' | 'read' | 'write';
     readAccess: string[];
     writeAccess: string[];
@@ -46,7 +46,7 @@ export declare class Room<T extends EweDocument> extends TypedEventEmitter<RoomE
     _ttl: string | null;
     indexedDbProvider?: IndexeddbPersistence | null;
     webRtcProvider?: WebrtcProvider | null;
-    ySweetProvider?: YSweetProvider | null;
+    syncProvider?: HocuspocusProvider | null;
     ydoc?: YDoc<T> | null;
     connectionRetries: number;
     connectionStatus: RoomConnectionStatus;
@@ -55,7 +55,7 @@ export declare class Room<T extends EweDocument> extends TypedEventEmitter<RoomE
     getDocuments: () => GetDocuments<T>;
     load: (remoteLoadOptions?: RemoteLoadOptions) => Promise<Room<T>>;
     addingAwareness: boolean;
-    /** disconnect and reconnect the existing ySweetProvider, this time with awareness on */
+    /** Disconnect and reconnect the existing sync provider, this time with awareness on. */
     addAwareness: () => Promise<void>;
     constructor(options: NewRoomOptions<T>);
 }

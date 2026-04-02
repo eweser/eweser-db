@@ -25,7 +25,8 @@
     "build": "tsc && vite build",
     "preview": "vite preview --host",
     "clean": "rm -rf dist",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit"
   },
   "bugs": {
     "url": "https://github.com/jacobcoro/eweserdb/issues"

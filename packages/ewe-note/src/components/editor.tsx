@@ -48,7 +48,7 @@ export default function Editor({
     selectedRoom.id,
     loggedIn
   );
-  const provider = room?.ySweetProvider;
+  const provider = room?.syncProvider;
   const doc = room?.ydoc;
 
   const note = notes ? notes[selectedNoteId] : null;
@@ -75,8 +75,8 @@ function EditorInternal({
   note,
 }: {
   selectedNoteId: string;
-  provider: any;
-  doc: any;
+  provider: Room<Note>['syncProvider'];
+  doc: NonNullable<Room<Note>['ydoc']>;
   updateNoteText: (text: string, note?: Note) => void;
   note: Note;
 }) {

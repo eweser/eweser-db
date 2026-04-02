@@ -26,9 +26,9 @@ export const StatusBar = ({
     };
     db.on('onLoggedInChange', handleLoggedInChange);
     return () => {
-      // @ts-ignore // for some reason the EventEmitter type is not working
+      // @ts-ignore: EventEmitter typing does not expose removeListener for these event overloads.
       db.removeListener('roomConnectionChange', handleOnlineChange);
-      // @ts-ignore
+      // @ts-ignore: EventEmitter typing does not expose removeListener for these event overloads.
       db.removeListener('logout', handleLoggedInChange);
     };
   }, [db, setLoggedIn]);

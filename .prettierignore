@@ -1,0 +1,21 @@
+node_modules
+dist
+build
+.next
+.turbo
+*.d.ts
+coverage
+cypress/videos
+cypress/screenshots
+.git
+.DS_Store
+package-lock.json
+CHANGELOG.md
+# Archived old code
+old-code/**
+# React Native generated/Expo files
+examples/react-native/.expo/**
+# Supabase generated temp files
+packages/auth-server/supabase/.temp/**
+# Changeset metadata files
+.changeset/**

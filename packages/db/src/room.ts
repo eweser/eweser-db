@@ -1,5 +1,5 @@
 import type { CollectionKey, EweDocument, ServerRoom } from '@eweser/shared';
-import type { YSweetProvider } from '@y-sweet/client';
+import type { HocuspocusProvider } from '@hocuspocus/provider';
 import type { IndexeddbPersistence } from 'y-indexeddb';
 import type { WebrtcProvider } from 'y-webrtc';
 import type { RoomConnectionStatus, RoomEvents } from './events';
@@ -8,7 +8,7 @@ import type { Database, YDoc } from '.';
 import type { GetDocuments } from './utils/getDocuments';
 import { getDocuments } from './utils/getDocuments';
 import type { RemoteLoadOptions } from './methods/connection/loadRoom';
-import { loadYSweet } from './methods/connection/loadRoom';
+import { loadSync } from './methods/connection/loadRoom';
 
 export type NewRoomOptions<T extends EweDocument> = {
   db: Database;
@@ -16,8 +16,8 @@ export type NewRoomOptions<T extends EweDocument> = {
   collectionKey: CollectionKey;
   id?: string;
   tokenExpiry?: string | null;
-  ySweetUrl?: string | null;
-  ySweetBaseUrl?: string | null;
+  syncUrl?: string | null;
+  syncToken?: string | null;
   publicAccess?: 'private' | 'read' | 'write';
   readAccess?: string[];
   writeAccess?: string[];
@@ -28,7 +28,7 @@ export type NewRoomOptions<T extends EweDocument> = {
   _ttl?: string | null;
   indexedDbProvider?: IndexeddbPersistence | null;
   webRtcProvider?: WebrtcProvider | null;
-  ySweetProvider?: YSweetProvider | null;
+  syncProvider?: HocuspocusProvider | null;
   ydoc?: YDoc<T> | null;
 };
 
@@ -41,8 +41,8 @@ export class Room<T extends EweDocument>
   collectionKey: CollectionKey;
   id: string;
   tokenExpiry: string | null;
-  ySweetUrl: string | null;
-  ySweetBaseUrl: string | null;
+  syncUrl: string | null;
+  syncToken: string | null;
   publicAccess: 'private' | 'read' | 'write';
   readAccess: string[];
   writeAccess: string[];
@@ -54,7 +54,7 @@ export class Room<T extends EweDocument>
 
   indexedDbProvider?: IndexeddbPersistence | null;
   webRtcProvider?: WebrtcProvider | null;
-  ySweetProvider?: YSweetProvider | null;
+  syncProvider?: HocuspocusProvider | null;
   ydoc?: YDoc<T> | null;
 
   connectionRetries = 0;
@@ -62,7 +62,7 @@ export class Room<T extends EweDocument>
   connectAbortController?: AbortController;
 
   disconnect = () => {
-    this.ySweetProvider?.disconnect();
+    this.syncProvider?.disconnect();
     this.webRtcProvider?.disconnect();
     this.emit('roomConnectionChange', 'disconnected', this);
   };
@@ -71,16 +71,16 @@ export class Room<T extends EweDocument>
   load: (remoteLoadOptions?: RemoteLoadOptions) => Promise<Room<T>>;
 
   addingAwareness = false;
-  /** disconnect and reconnect the existing ySweetProvider, this time with awareness on */
+  /** Disconnect and reconnect the existing sync provider, this time with awareness on. */
   addAwareness = async () => {
-    if (this.addingAwareness || this.ySweetProvider?.awareness) {
+    if (this.addingAwareness || this.syncProvider?.awareness) {
       return;
     }
     this.addingAwareness = true;
-    this.ySweetProvider?.disconnect();
-    this.ySweetProvider?.destroy();
-    this.ySweetProvider = null;
-    await loadYSweet(this.db, this, true, true);
+    this.syncProvider?.disconnect();
+    this.syncProvider?.destroy();
+    this.syncProvider = null;
+    await loadSync(this.db, this as unknown as Room<EweDocument>, true, true);
     this.addingAwareness = false;
   };
 
@@ -91,8 +91,8 @@ export class Room<T extends EweDocument>
     this.collectionKey = options.collectionKey;
     this.id = options.id || crypto.randomUUID();
     this.tokenExpiry = options.tokenExpiry ?? null;
-    this.ySweetUrl = options.ySweetUrl ?? null;
-    this.ySweetBaseUrl = options.ySweetBaseUrl ?? null;
+    this.syncUrl = options.syncUrl ?? null;
+    this.syncToken = options.syncToken ?? null;
     this.publicAccess = options.publicAccess ?? 'private';
     this.readAccess = options.readAccess ?? [];
     this.writeAccess = options.writeAccess ?? [];
@@ -108,8 +108,8 @@ export class Room<T extends EweDocument>
     if (options.webRtcProvider) {
       this.webRtcProvider = options.webRtcProvider;
     }
-    if (options.ySweetProvider) {
-      this.ySweetProvider = options.ySweetProvider;
+    if (options.syncProvider) {
+      this.syncProvider = options.syncProvider;
     }
     if (options.ydoc) {
       this.ydoc = options.ydoc;
@@ -117,18 +117,22 @@ export class Room<T extends EweDocument>
 
     this.getDocuments = () => getDocuments(this.db)(this);
     this.load = async (remoteLoadOptions?: RemoteLoadOptions) =>
-      await this.db.loadRoom(this, remoteLoadOptions);
+      (await this.db.loadRoom(
+        this as unknown as Room<EweDocument>,
+        remoteLoadOptions
+      )) as unknown as Room<T>;
   }
 }
 
-export function roomToServerRoom(room: Room<any>): ServerRoom {
+export function roomToServerRoom<T extends EweDocument>(
+  room: Room<T>
+): ServerRoom {
   return {
     id: room.id,
     name: room.name,
     collectionKey: room.collectionKey,
     tokenExpiry: room.tokenExpiry,
-    ySweetUrl: room.ySweetUrl,
-    ySweetBaseUrl: room.ySweetBaseUrl,
+    syncUrl: room.syncUrl,
     publicAccess: room.publicAccess,
     readAccess: room.readAccess,
     writeAccess: room.writeAccess,
