@@ -124,12 +124,12 @@ jobs:
           }
           trap cleanup EXIT
 
-          until curl -sf http://localhost:38100/ > /dev/null; do
+          until bash -c '</dev/tcp/127.0.0.1/38100' 2>/dev/null; do
             echo "Waiting for auth-server on :38100"
             sleep 2
           done
 
-          until curl -sf http://localhost:38110/ > /dev/null; do
+          until bash -c '</dev/tcp/127.0.0.1/38110' 2>/dev/null; do
             echo "Waiting for example-basic on :38110"
             sleep 2
           done
