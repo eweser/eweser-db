@@ -19,9 +19,7 @@ app.post(
     upsert: async (input) => {
       await upsertIndexedDocument(db, input);
     },
-    ...(env.WEBHOOK_SECRET !== undefined
-      ? { secret: env.WEBHOOK_SECRET }
-      : {}),
+    ...(env.WEBHOOK_SECRET !== undefined ? { secret: env.WEBHOOK_SECRET } : {}),
   })
 );
 

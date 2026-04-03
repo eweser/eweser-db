@@ -27,7 +27,8 @@ export function createSearchRouter(deps: SearchRouteDeps) {
     const collectionKey = c.req.query('collection')?.trim() || undefined;
     const rawLimit = parseInt(c.req.query('limit') ?? '50', 10);
     const rawOffset = parseInt(c.req.query('offset') ?? '0', 10);
-    const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 200) : 50;
+    const limit =
+      Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 200) : 50;
     const offset = Number.isFinite(rawOffset) && rawOffset >= 0 ? rawOffset : 0;
 
     if (!query) {

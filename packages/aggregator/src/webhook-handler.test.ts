@@ -112,10 +112,7 @@ describe('createWebhookHandler', () => {
     const upsert = vi.fn().mockResolvedValue(undefined);
     const app = new Hono();
     const secret = 'test-secret';
-    app.post(
-      '/webhooks/hocuspocus',
-      createWebhookHandler({ upsert, secret })
-    );
+    app.post('/webhooks/hocuspocus', createWebhookHandler({ upsert, secret }));
 
     const body = JSON.stringify({
       roomId: '9f9b7fd2-10da-4c55-bd58-19e3e92465b3',

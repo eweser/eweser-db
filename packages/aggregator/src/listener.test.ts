@@ -3,9 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AggregatorListener, observeRoomDocuments } from './listener.js';
 
 vi.mock('@hocuspocus/provider', () => {
-  const HocuspocusProvider = vi.fn(function (
-    this: Record<string, unknown>
-  ) {
+  const HocuspocusProvider = vi.fn(function (this: Record<string, unknown>) {
     this.on = vi.fn();
     this.destroy = vi.fn();
   });
@@ -91,7 +89,11 @@ describe('AggregatorListener', () => {
   it('destroys the provider when stopListening is called', () => {
     listener.listenToRoom('room-1', 'notes');
     // grab the instance created by the constructor
-    const instance = (listener as never as { providers: Map<string, { destroy: ReturnType<typeof vi.fn> }> }).providers.get('room-1:notes');
+    const instance = (
+      listener as never as {
+        providers: Map<string, { destroy: ReturnType<typeof vi.fn> }>;
+      }
+    ).providers.get('room-1:notes');
     listener.stopListening('room-1', 'notes');
     expect(instance?.destroy).toHaveBeenCalledOnce();
   });
@@ -99,7 +101,11 @@ describe('AggregatorListener', () => {
   it('destroys all providers on destroy()', () => {
     listener.listenToRoom('room-1', 'notes');
     listener.listenToRoom('room-2', 'flashcards');
-    const providers = (listener as never as { providers: Map<string, { destroy: ReturnType<typeof vi.fn> }> }).providers;
+    const providers = (
+      listener as never as {
+        providers: Map<string, { destroy: ReturnType<typeof vi.fn> }>;
+      }
+    ).providers;
     const instances = [...providers.values()];
     listener.destroy();
     for (const inst of instances) {
