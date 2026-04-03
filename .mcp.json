@@ -7,7 +7,11 @@
       }
     },
     "fetch-mcp": {
-      "command": "/home/jacob/.nvm/versions/node/v24.11.1/bin/mcp-fetch"
+      "command": "/home/jacob/.local/bin/mcp-server-fetch",
+      "args": ["--ignore-robots-txt"],
+      "env": {
+        "SSL_CERT_FILE": "/etc/ssl/certs/ca-certificates.crt"
+      }
     },
     "playwright": {
       "command": "/home/jacob/.nvm/versions/node/v24.11.1/bin/playwright-mcp",
