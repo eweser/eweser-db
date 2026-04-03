@@ -2,6 +2,56 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Docker: Start Backend",
+      "type": "shell",
+      "command": "docker compose -f docker-compose.dev.yml up",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: Stop Backend",
+      "type": "shell",
+      "command": "docker compose -f docker-compose.dev.yml down",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: Rebuild & Start",
+      "type": "shell",
+      "command": "docker compose -f docker-compose.dev.yml up --build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: Clean Volumes",
+      "type": "shell",
+      "command": "docker compose -f docker-compose.dev.yml down -v",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: View Logs",
+      "type": "shell",
+      "command": "docker compose -f docker-compose.dev.yml logs -f",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "Run DB Dev",
       "type": "shell",
       "command": "cd packages/db && npm run dev",
@@ -14,24 +64,6 @@
       "label": "Run Shared Dev",
       "type": "shell",
       "command": "cd packages/shared && npm run dev",
-      "presentation": {
-        "reveal": "always",
-        "panel": "new"
-      }
-    },
-    {
-      "label": "Run auth-server Dev",
-      "type": "shell",
-      "command": "cd packages/auth-server && npm run dev",
-      "presentation": {
-        "reveal": "always",
-        "panel": "new"
-      }
-    },
-    {
-      "label": "Run Aggregator Dev",
-      "type": "shell",
-      "command": "cd packages/aggregator && npm run dev",
       "presentation": {
         "reveal": "always",
         "panel": "new"
@@ -58,10 +90,9 @@
     {
       "label": "Run All Dev",
       "dependsOn": [
+        "Docker: Start Backend",
         "Run DB Dev",
         "Run Shared Dev",
-        "Run auth-server Dev",
-        "Run Aggregator Dev",
         "Run Example-basic Dev",
         "Run Example-components Dev"
       ],

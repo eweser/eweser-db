@@ -11,6 +11,7 @@ Build `packages/mcp-server/` — a stdio MCP server that lets AI agents (Claude 
 ## Scope
 
 - **In:**
+  - Move document helpers + CRUD interface from `@eweser/db` to `@eweser/shared` (prevents drift)
   - New `packages/mcp-server/` package with full MCP tool definitions
   - New auth-server endpoints for agent-authenticated room listing and sync token generation
   - Permission enforcement (allowedCollections, allowedRooms, read vs readwrite)
@@ -57,9 +58,9 @@ Build `packages/mcp-server/` — a stdio MCP server that lets AI agents (Claude 
 
 2. **Auth: Agent bearer token from env var** — MCP server reads `EWESER_AGENT_TOKEN` on startup, calls `POST /api/agents/verify-token` to get permissions. No login flow, no browser, no OAuth.
 
-3. **Data access: @hocuspocus/provider + Yjs directly** — NOT using the full `@eweser/db` SDK. The SDK assumes a browser context with user login (better-auth sessions). The MCP server uses `@hocuspocus/provider` directly to connect to Hocuspocus rooms, managing Yjs Y.Docs in memory. Shares type definitions from `@eweser/shared`.
+3. **Data access: @hocuspocus/provider + Yjs via @eweser/shared** — NOT using the full `@eweser/db` SDK (its `login()` requires a browser-oriented better-auth session). Instead, the MCP server uses `@hocuspocus/provider` to connect to Hocuspocus rooms and `@eweser/shared`'s document CRUD helpers (`getDocuments`, `newDocument`, `buildRef`) to read/write Yjs Y.Maps. This ensures **zero implementation drift** — both the browser SDK and the MCP server use the same document creation, ref generation, and CRUD logic from one source of truth.
 
-   _Why not the full SDK?_ The SDK's `login()` calls `syncRegistry()` which requires a user JWT from better-auth. Agents authenticate differently (bearer tokens). Fighting the SDK's assumptions adds complexity for no benefit. The MCP server only needs: Y.Doc ↔ Y.Map ↔ documents, plus a WebSocket connection. That's `yjs` + `@hocuspocus/provider`.
+   _Why not the full SDK?_ The SDK's `login()` calls `syncRegistry()` which requires a user JWT from better-auth. Agents authenticate differently (bearer tokens). The SDK also mandates IndexedDB. Rather than fight those assumptions, we share the pure data-layer logic via `@eweser/shared` (with `yjs` as a peerDependency) and handle auth/transport separately.
 
 4. **New auth-server endpoints for agents** — Two new endpoints authenticated by agent bearer token (not user JWT):
    - `POST /api/agents/me/rooms` — Returns rooms this agent can access
@@ -98,6 +99,77 @@ Runtime:
 ```
 
 ## Runs
+
+### Run 0: Move Document Helpers to @eweser/shared
+
+- **Recommended Agent**: `02-coder` (Smart)
+- **Reason**: Modifying a published package (`@eweser/shared`) with a new peerDependency (`yjs`). Must preserve backward compatibility — `@eweser/db` must still work after re-exporting from shared. Needs a changeset. Risk of yjs duplicate instance bugs if dependency configuration is wrong.
+
+#### Context: Why This Run Exists
+
+To prevent implementation drift between the browser SDK and the MCP server, we move the document CRUD logic from `@eweser/db` into `@eweser/shared`. Both consumers then import from one source of truth.
+
+**Yjs duplicate instance safety:** `yjs` is added as a **peerDependency** of shared (not a direct dependency). In the npm workspaces monorepo, yjs is hoisted to a single copy at root (verified: only `/node_modules/yjs` v13.6.30 exists). Vite consumers should add `resolve.dedupe: ['yjs']` as belt-and-suspenders. See [yjs/yjs#438](https://github.com/yjs/yjs/issues/438).
+
+#### Steps:
+
+- [ ] **Add `yjs` as peerDependency** to `packages/shared/package.json`
+  - `"peerDependencies": { "yjs": "^13.6.0" }`
+  - Add `yjs` + `yjs-types` as devDependencies too (for building/testing shared itself)
+
+- [ ] **Move pure functions** from `packages/db/src/utils/index.ts` → `packages/shared/src/utils/documents.ts`:
+  - `newDocument<T>(id, ref, doc)` — adds `_id`, `_ref`, `_created`, `_updated`, `_deleted` metadata
+  - `buildRef({ authServer, collectionKey, roomId, documentId })` — builds ref string with validation
+  - `randomString(length)` — random alphanumeric ID generator
+  - These functions have **zero external dependencies** (only shared's own types)
+
+- [ ] **Move `Documents<T>` type** from `packages/db/src/types.ts` → `packages/shared/src/collections/index.ts`
+  - `interface Documents<T extends EweDocument> { [documentId: string]: T }`
+  - Remove duplicate `DocumentWithoutBase<T>` from db (already exists in shared)
+
+- [ ] **Move `getDocuments()` factory** from `packages/db/src/utils/getDocuments.ts` → `packages/shared/src/utils/documents.ts`:
+  - Change signature: `getDocuments(authServer: string)` instead of `getDocuments(_db: Database)`
+  - The factory returns `<T>(ydoc: Y.Doc) => GetDocuments<T>` instead of `<T>(room: Room<T>) => GetDocuments<T>`
+  - Inner method: reads `ydoc.getMap('documents')` directly (no Room class dependency)
+  - This is the **only function that touches yjs** — it uses `Y.Map` operations
+  - Export the `GetDocuments<T>` interface from shared
+
+- [ ] **Move `getRoomDocuments()`** — pure Y.Map accessor:
+  - `getRoomDocuments<T>(ydoc: Y.Doc): TypedMap<Documents<T>>` — gets `ydoc.getMap('documents')`
+  - No Room class dependency in new signature
+
+- [ ] **Update `@eweser/db`** to re-export from shared:
+  - `packages/db/src/utils/index.ts`: replace local implementations with `export { newDocument, buildRef, randomString } from '@eweser/shared'`
+  - `packages/db/src/utils/getDocuments.ts`: import from shared, create a thin wrapper that extracts `room.ydoc` and `_db.authServer` to pass to shared's `getDocuments(authServer)(room.ydoc)`
+  - `packages/db/src/types.ts`: remove `DocumentWithoutBase<T>` and `Documents<T>`, import from shared
+  - All existing SDK tests must still pass with no changes
+
+- [ ] **Export from shared's index** — add to `packages/shared/src/index.ts`:
+  - `export { newDocument, buildRef, randomString, getDocuments, getRoomDocuments } from './utils/documents'`
+  - `export type { GetDocuments, Documents } from './utils/documents'`
+
+- [ ] **Create changeset** — `@eweser/shared` is a published package and gets a new peerDep + new exports
+  - Run `npm run changeset` → minor version bump for shared
+  - No breaking changes (only additions)
+
+- [ ] **Run all tests** — `npm test` from root. Specifically:
+  - `packages/shared` tests pass
+  - `packages/db` tests pass (re-exports work correctly)
+  - No "Yjs was already imported" warnings
+
+#### Files:
+
+- Create: `packages/shared/src/utils/documents.ts`
+- Modify: `packages/shared/src/utils/index.ts` (re-export)
+- Modify: `packages/shared/src/index.ts` (re-export)
+- Modify: `packages/shared/src/collections/index.ts` (add `Documents<T>`)
+- Modify: `packages/shared/package.json` (peerDeps)
+- Modify: `packages/db/src/utils/index.ts` (re-export from shared)
+- Modify: `packages/db/src/utils/getDocuments.ts` (thin wrapper over shared)
+- Modify: `packages/db/src/types.ts` (remove duplicates, import from shared)
+- Create: changeset file
+
+---
 
 ### Run 1: Auth Server — Agent Data Endpoints
 
@@ -198,12 +270,8 @@ Runtime:
     - `async connectRoom(room)` — create Y.Doc + HocuspocusProvider, wait for sync
     - `disconnectRoom(roomId)` — clean shutdown of provider
     - `listRooms(collectionKey?)` — return connected rooms, optionally filtered
-    - `getDocuments(roomId)` — read all docs from Y.Map('documents')
-    - `getDocument(roomId, docId)` — read single doc
-    - `searchDocuments(query, collectionKey?)` — text search across rooms
-    - `createDocument(roomId, data)` — create with \_id, \_ref, \_created, \_updated
-    - `updateDocument(roomId, docId, updates)` — merge updates, set \_updated
-    - `deleteDocument(roomId, docId)` — set `_deleted: true`, `_updated: now`
+    - Document CRUD: delegates to `@eweser/shared`'s `getDocuments(authServer)(ydoc)` — **same interface as browser SDK**
+    - `searchDocuments(query, collectionKey?)` — calls aggregator API for cross-room full-text search (PostgreSQL ts_rank)
   - Permission checking:
     - `assertReadAccess(roomId)` — throws if room not in allowed list
     - `assertWriteAccess(roomId)` — throws if permissions !== 'readwrite'
@@ -366,27 +434,29 @@ Runtime:
 
 ## Risks
 
-| Risk                                                                                          | Mitigation                                                                                                                  |
-| --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| **Hocuspocus provider in Node.js** — The `@hocuspocus/provider` may assume browser WebSocket. | It uses `ws` under the hood in Node.js environments. Verify in Run 3; fallback: use `ws` directly with Hocuspocus protocol. |
-| **Yjs memory with many rooms** — Each room loads a full Y.Doc into memory.                    | Lazy-load rooms on first access instead of all at startup. Add disconnect-after-idle timer.                                 |
-| **Token refresh race conditions** — Sync token expires during a long operation.               | HocuspocusProvider supports token callback (not static token). Use the same pattern as the browser SDK.                     |
-| **Agent token revocation latency** — User revokes token in UI but MCP server doesn't know.    | Periodic re-verify (every 60 min). On any 401 from sync server, re-verify immediately.                                      |
-| **Large document search performance** — Full-text search across all Yjs docs is O(n).         | Start with simple substring match. Index in a follow-up (SQLite FTS or similar).                                            |
-| **Changeset needed?** — If `@eweser/shared` gets new types (e.g., `bookmarks`).               | Deferred. This plan only uses existing collection types.                                                                    |
+| Risk                                                                                          | Mitigation                                                                                                                                                              |
+| --------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Hocuspocus provider in Node.js** — The `@hocuspocus/provider` may assume browser WebSocket. | It uses `ws` under the hood in Node.js environments. Verify in Run 3; fallback: use `ws` directly with Hocuspocus protocol.                                             |
+| **Yjs memory with many rooms** — Each room loads a full Y.Doc into memory.                    | Lazy-load rooms on first access instead of all at startup. Add disconnect-after-idle timer.                                                                             |
+| **Token refresh race conditions** — Sync token expires during a long operation.               | HocuspocusProvider supports token callback (not static token). Use the same pattern as the browser SDK.                                                                 |
+| **Agent token revocation latency** — User revokes token in UI but MCP server doesn't know.    | Periodic re-verify (every 60 min). On any 401 from sync server, re-verify immediately.                                                                                  |
+| **Large document search performance** — Full-text search across all Yjs docs is O(n).         | Use aggregator's PostgreSQL full-text search API for cross-room search. Local Y.Map scan only for single-room listing.                                                  |
+| **Yjs duplicate instance** — Importing yjs from both shared and db could cause duplicate.     | yjs is a peerDep of shared (not direct dep). npm workspaces hoist to single copy. Vite `resolve.dedupe: ['yjs']`. See [yjs#438](https://github.com/yjs/yjs/issues/438). |
+| **Changeset needed?** — `@eweser/shared` gets new exports + peerDep.                          | Yes — handled in Run 0. Minor version bump, no breaking changes.                                                                                                        |
 
 ## Execution Summary
 
 ```text
-Run 1: Auth Server Agent Endpoints (Smart)
+Run 0: Move Document Helpers to @eweser/shared (Smart) [FIRST — blocks all others]
+├── Run 1: Auth Server Agent Endpoints (Smart) [Parallel with Run 2]
 ├── Run 2: MCP Package Scaffold (Smart) [Parallel with Run 1]
-│   └── Run 3: Data Layer - Yjs + Hocuspocus (Smart) [Depends on Run 2]
+│   └── Run 3: Data Layer - Yjs + Hocuspocus (Smart) [Depends on Runs 0 + 2]
 │       └── Run 4: MCP Tool Implementations (Fast) [Depends on Run 3]
 └── Run 5: Testing & Integration (Smart) [Depends on Runs 1 + 4]
     └── Run 6: Documentation & Config (Fast) [Depends on Run 5]
 ```
 
-**Parallelization:** Runs 1 and 2 are independent and can execute concurrently. Run 3 depends on Run 2 (package exists). Run 4 depends on Run 3 (DataLayer exists). Run 5 depends on both Run 1 (auth endpoints to test against) and Run 4 (tools to test). Run 6 is final.
+**Parallelization:** Run 0 must complete first (shared is a dependency of everything). Then Runs 1 and 2 are independent and can execute concurrently. Run 3 depends on Runs 0 (shared exports) + 2 (package exists). Run 4 depends on Run 3. Run 5 depends on Runs 1 + 4. Run 6 is final.
 
 ## Status
 
