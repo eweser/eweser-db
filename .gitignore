@@ -45,6 +45,6 @@ vite.config.ts.timestamp*.mjs
 .expo/metro/externals/
 **/**/dist
 
-# Added by ggshield
-.cache_ggshield
+# gitleaks
+.gitleaks-report.json
 

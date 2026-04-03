@@ -5,6 +5,8 @@ import { indexedDocuments } from './schema.js';
 export type SearchIndexedDocumentsParams = {
   query: string;
   collectionKey?: string | undefined;
+  limit?: number;
+  offset?: number;
 };
 
 type SearchDB = Pick<DBInstance, 'select'>;
@@ -13,6 +15,8 @@ export async function searchIndexedDocuments(
   db: SearchDB,
   params: SearchIndexedDocumentsParams
 ) {
+  const limit = params.limit ?? 50;
+  const offset = params.offset ?? 0;
   const searchPredicate = sql`to_tsvector('english', ${indexedDocuments.documentData}::text) @@ plainto_tsquery('english', ${params.query})`;
 
   const whereClause = params.collectionKey
@@ -30,11 +34,17 @@ export async function searchIndexedDocuments(
       userId: indexedDocuments.userId,
       documentData: indexedDocuments.documentData,
       updatedAt: indexedDocuments.updatedAt,
+      rank: sql<number>`ts_rank(to_tsvector('english', ${indexedDocuments.documentData}::text), plainto_tsquery('english', ${params.query}))`,
     })
     .from(indexedDocuments)
     .where(whereClause)
-    .orderBy(desc(indexedDocuments.updatedAt))
-    .limit(50);
+    .orderBy(
+      desc(
+        sql`ts_rank(to_tsvector('english', ${indexedDocuments.documentData}::text), plainto_tsquery('english', ${params.query}))`
+      )
+    )
+    .limit(limit)
+    .offset(offset);
 }
 
 export async function getDocumentsByRoom(db: SearchDB, roomId: string) {
@@ -49,5 +59,6 @@ export async function getDocumentsByRoom(db: SearchDB, roomId: string) {
     })
     .from(indexedDocuments)
     .where(eq(indexedDocuments.roomId, roomId))
-    .orderBy(desc(indexedDocuments.updatedAt));
+    .orderBy(desc(indexedDocuments.updatedAt))
+    .limit(200);
 }

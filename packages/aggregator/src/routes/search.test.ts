@@ -49,6 +49,8 @@ describe('createSearchRouter', () => {
     expect(searchDocuments).toHaveBeenCalledWith({
       query: 'hello',
       collectionKey: 'notes',
+      limit: 50,
+      offset: 0,
     });
     expect(response.status).toBe(200);
 

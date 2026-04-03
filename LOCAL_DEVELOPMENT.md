@@ -140,6 +140,7 @@ This will start:
 - `packages/db` - The core database library (watch mode)
 - `packages/shared` - Shared utilities (watch mode)
 - `packages/auth-server` - Auth server at `http://localhost:38100`
+- `packages/aggregator` - Search/indexing service at `http://localhost:8090`
 - `examples/example-basic` - Example app at `http://localhost:38110`
 - `packages/examples-components` - UI components (watch mode)
 
@@ -151,6 +152,7 @@ You can override the defaults with environment variables:
 
 - `AUTH_SERVER_PORT` — legacy Next auth server dev/start port. Default: `38100`
 - `AUTH_API_PORT` — standalone Hono auth API port. Default: `38101`
+- `AGGREGATOR_WEBHOOK_URL` — sync-server webhook target for aggregator indexing. Default in Docker Compose: `http://aggregator:8090/webhooks/hocuspocus`
 - `EXAMPLE_BASIC_PORT` — example-basic Vite dev/preview port and Cypress default target. Default: `38110`
 - `CADDY_HOST_PORT` — Docker Compose host port for the full stack. Default: `38180`
 - `AUTH_PUBLIC_URL`, `AUTH_PUBLIC_DOMAIN`, `SYNC_PUBLIC_URL` — full-stack public URLs used by Docker Compose
@@ -174,6 +176,11 @@ cd examples/example-basic && npm run dev
 npm run dev:db
 # or
 cd packages/db && npm run dev
+
+# Aggregator service
+npm run dev:aggregator
+# or
+cd packages/aggregator && npm run dev
 ```
 
 ## Development Workflow

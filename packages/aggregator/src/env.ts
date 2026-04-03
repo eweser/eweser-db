@@ -6,6 +6,9 @@ const envSchema = z.object({
     .min(1)
     .default('postgresql://eweser:changeme@localhost:5432/eweser'),
   PORT: z.coerce.number().default(8090),
+  SYNC_SERVER_URL: z.string().url().default('ws://localhost:8080'),
+  SYNC_AUTH_SECRET: z.string().min(1).default('changeme'),
+  WEBHOOK_SECRET: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

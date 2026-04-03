@@ -1,9 +1,26 @@
+import { createHmac, timingSafeEqual } from 'crypto';
 import type { Context } from 'hono';
 import type { IndexedDocumentInput } from './db/upsert.js';
 
 type WebhookHandlerDeps = {
   upsert: (input: IndexedDocumentInput) => Promise<void>;
+  secret?: string | undefined;
 };
+
+export function verifyHmacSignature(
+  rawBody: string,
+  signature: string | undefined,
+  secret: string
+): boolean {
+  if (!signature) return false;
+  const expected =
+    'sha256=' + createHmac('sha256', secret).update(rawBody).digest('hex');
+  try {
+    return timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+  } catch {
+    return false;
+  }
+}
 
 type JsonRecord = Record<string, unknown>;
 
@@ -69,10 +86,30 @@ export function createWebhookHandler(deps: WebhookHandlerDeps) {
   return async function webhookHandler(c: Context) {
     let payload: unknown;
 
-    try {
-      payload = await c.req.json();
-    } catch {
-      return c.json({ error: 'Invalid JSON body' }, 400);
+    if (deps.secret) {
+      let rawBody: string;
+      try {
+        rawBody = await c.req.text();
+      } catch {
+        return c.json({ error: 'Failed to read request body' }, 400);
+      }
+
+      const sig = c.req.header('x-hocuspocus-signature-256');
+      if (!verifyHmacSignature(rawBody, sig, deps.secret)) {
+        return c.json({ error: 'Invalid signature' }, 401);
+      }
+
+      try {
+        payload = JSON.parse(rawBody) as unknown;
+      } catch {
+        return c.json({ error: 'Invalid JSON body' }, 400);
+      }
+    } else {
+      try {
+        payload = await c.req.json();
+      } catch {
+        return c.json({ error: 'Invalid JSON body' }, 400);
+      }
     }
 
     const event = extractIndexableEvent(payload);

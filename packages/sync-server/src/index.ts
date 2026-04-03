@@ -7,11 +7,17 @@ const port = parseInt(process.env.SYNC_PORT || '8080', 10);
 const dbPath = process.env.SYNC_DB_PATH || '/data/sync.sqlite';
 const secret = process.env.SYNC_AUTH_SECRET || 'test-secret';
 const aggregatorWebhookUrl = process.env.AGGREGATOR_WEBHOOK_URL;
+const webhookSecret = process.env.WEBHOOK_SECRET;
 
 const extensions = [new SQLite({ database: dbPath })];
 
 if (aggregatorWebhookUrl) {
-  extensions.push(new Webhook({ target: aggregatorWebhookUrl }));
+  extensions.push(
+    new Webhook({
+      target: aggregatorWebhookUrl,
+      ...(webhookSecret ? { secret: webhookSecret } : {}),
+    })
+  );
 }
 
 const server = Server.configure({
