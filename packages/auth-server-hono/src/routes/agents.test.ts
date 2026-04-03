@@ -83,7 +83,9 @@ function authenticatedFetch(
     user: mockUser,
     session: { id: 'session-1' },
   });
-  return Promise.resolve(app.fetch(new Request(`http://localhost${path}`, init)));
+  return Promise.resolve(
+    app.fetch(new Request(`http://localhost${path}`, init))
+  );
 }
 
 const baseAgent = {
@@ -146,7 +148,7 @@ describe('agentsRouter', () => {
       const res = await authenticatedFetch(app, '/api/agents');
       expect(res.status).toBe(200);
 
-      const body = await res.json() as { agents: typeof baseAgent[] };
+      const body = (await res.json()) as { agents: (typeof baseAgent)[] };
       expect(body.agents).toHaveLength(1);
       expect(body.agents[0]).not.toHaveProperty('tokenHash');
       expect(body.agents[0]?.name).toBe('Claude Code');
@@ -155,7 +157,7 @@ describe('agentsRouter', () => {
     it('returns empty list when user has no agents', async () => {
       mockGetAgentConfigsByUserId.mockResolvedValueOnce([]);
       const res = await authenticatedFetch(app, '/api/agents');
-      const body = await res.json() as { agents: unknown[] };
+      const body = (await res.json()) as { agents: unknown[] };
       expect(body.agents).toHaveLength(0);
     });
   });
@@ -181,7 +183,11 @@ describe('agentsRouter', () => {
       });
 
       expect(res.status).toBe(201);
-      const body = await res.json() as { agent: unknown; token: string; warning: string };
+      const body = (await res.json()) as {
+        agent: unknown;
+        token: string;
+        warning: string;
+      };
       expect(body.token).toBe('raw-token-value');
       expect(body.warning).toContain('Store this token securely');
       expect(body.agent).not.toHaveProperty('tokenHash');
@@ -213,21 +219,15 @@ describe('agentsRouter', () => {
   describe('GET /:id', () => {
     it('returns agent without tokenHash', async () => {
       mockGetAgentConfigById.mockResolvedValueOnce(baseAgent);
-      const res = await authenticatedFetch(
-        app,
-        `/api/agents/${baseAgent.id}`
-      );
+      const res = await authenticatedFetch(app, `/api/agents/${baseAgent.id}`);
       expect(res.status).toBe(200);
-      const body = await res.json() as { agent: object };
+      const body = (await res.json()) as { agent: object };
       expect(body.agent).not.toHaveProperty('tokenHash');
     });
 
     it('returns 404 for nonexistent agent', async () => {
       mockGetAgentConfigById.mockResolvedValueOnce(null);
-      const res = await authenticatedFetch(
-        app,
-        '/api/agents/nonexistent-id'
-      );
+      const res = await authenticatedFetch(app, '/api/agents/nonexistent-id');
       expect(res.status).toBe(404);
     });
   });
@@ -247,7 +247,10 @@ describe('agentsRouter', () => {
         { method: 'POST' }
       );
       expect(res.status).toBe(200);
-      const body = await res.json() as { agent: { isActive: boolean }; message: string };
+      const body = (await res.json()) as {
+        agent: { isActive: boolean };
+        message: string;
+      };
       expect(body.message).toContain('revoked');
       expect(body.agent.isActive).toBe(false);
     });
@@ -280,7 +283,7 @@ describe('agentsRouter', () => {
         { method: 'POST' }
       );
       expect(res.status).toBe(200);
-      const body = await res.json() as { token: string; warning: string };
+      const body = (await res.json()) as { token: string; warning: string };
       expect(body.token).toBe('new-raw-token');
       expect(body.warning).toContain('Store this token securely');
     });
@@ -294,23 +297,19 @@ describe('agentsRouter', () => {
     it('deletes agent and returns confirmation', async () => {
       mockDeleteAgentConfig.mockResolvedValueOnce(true);
 
-      const res = await authenticatedFetch(
-        app,
-        `/api/agents/${baseAgent.id}`,
-        { method: 'DELETE' }
-      );
+      const res = await authenticatedFetch(app, `/api/agents/${baseAgent.id}`, {
+        method: 'DELETE',
+      });
       expect(res.status).toBe(200);
-      const body = await res.json() as { message: string };
+      const body = (await res.json()) as { message: string };
       expect(body.message).toContain('deleted');
     });
 
     it('returns 404 for nonexistent agent', async () => {
       mockDeleteAgentConfig.mockResolvedValueOnce(false);
-      const res = await authenticatedFetch(
-        app,
-        '/api/agents/gone',
-        { method: 'DELETE' }
-      );
+      const res = await authenticatedFetch(app, '/api/agents/gone', {
+        method: 'DELETE',
+      });
       expect(res.status).toBe(404);
     });
   });
@@ -340,16 +339,13 @@ describe('agentsRouter', () => {
         `/api/agents/${baseAgent.id}/logs`
       );
       expect(res.status).toBe(200);
-      const body = await res.json() as { logs: unknown[] };
+      const body = (await res.json()) as { logs: unknown[] };
       expect(body.logs).toHaveLength(1);
     });
 
     it('returns 404 when agent does not exist', async () => {
       mockGetAgentConfigById.mockResolvedValueOnce(null);
-      const res = await authenticatedFetch(
-        app,
-        '/api/agents/nonexistent/logs'
-      );
+      const res = await authenticatedFetch(app, '/api/agents/nonexistent/logs');
       expect(res.status).toBe(404);
     });
   });
@@ -374,7 +370,7 @@ describe('agentsRouter', () => {
       );
 
       expect(res.status).toBe(200);
-      const body = await res.json() as { agent: object };
+      const body = (await res.json()) as { agent: object };
       expect(body.agent).not.toHaveProperty('tokenHash');
     });
 

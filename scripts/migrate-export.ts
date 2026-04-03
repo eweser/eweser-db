@@ -48,7 +48,8 @@ if (!databaseUrl) {
 }
 
 async function main() {
-  const client = postgres(databaseUrl!);
+  if (!databaseUrl) throw new Error('DATABASE_URL is required'); // validated at module level
+  const client = postgres(databaseUrl);
   const db = drizzle(client, { schema });
 
   try {
@@ -63,7 +64,11 @@ async function main() {
       : await db.select().from(schema.users);
 
     if (allUsers.length === 0) {
-      console.warn(userIdFilter ? `No user found with id: ${userIdFilter}` : 'No users found.');
+      console.warn(
+        userIdFilter
+          ? `No user found with id: ${userIdFilter}`
+          : 'No users found.'
+      );
       process.exit(0);
     }
 
@@ -114,9 +119,7 @@ async function main() {
 
     fs.writeFileSync(outputFile, json, 'utf-8');
     console.log(`\nExport complete → ${outputFile}`);
-    console.log(
-      `  Total users: ${exportData.users.length}`
-    );
+    console.log(`  Total users: ${exportData.users.length}`);
   } finally {
     await client.end();
   }

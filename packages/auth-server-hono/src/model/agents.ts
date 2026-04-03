@@ -2,10 +2,7 @@ import { and, desc, eq } from 'drizzle-orm';
 import crypto from 'node:crypto';
 import { db } from '../db/drizzle.js';
 import type { DBInstance } from '../db/drizzle.js';
-import {
-  agentAccessLogs,
-  agentConfigs,
-} from '../db/schema/agents.js';
+import { agentAccessLogs, agentConfigs } from '../db/schema/agents.js';
 import type {
   AgentAccessLogInsert,
   AgentConfig,

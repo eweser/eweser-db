@@ -26,6 +26,7 @@ If the one-click button isn't available, follow these steps:
 ### 2. Add a PostgreSQL database
 
 In your Railway project:
+
 1. Click **New** → **Database** → **PostgreSQL**
 2. Railway will automatically add a `DATABASE_URL` environment variable to your project
 
@@ -34,15 +35,18 @@ In your Railway project:
 EweserDB runs as multiple services. Add each one:
 
 **Auth API:**
+
 - Source: `packages/auth-server-hono`
 - Dockerfile: `packages/auth-server-hono/Dockerfile`
 - Root directory: `/` (so it can access workspace dependencies)
 
 **Sync Server:**
+
 - Source: `packages/sync-server`
 - Dockerfile: `packages/sync-server/Dockerfile`
 
 **Caddy (reverse proxy):**
+
 - Source: `docker/caddy`
 - Set the public domain from Railway's generated domain
 
@@ -63,6 +67,7 @@ SYNC_PUBLIC_URL=wss://<your-railway-domain>/sync
 ```
 
 Generate secrets:
+
 ```bash
 openssl rand -hex 32  # run once per secret
 ```
@@ -78,6 +83,7 @@ Click **Deploy** to trigger the first deployment.
 ## Costs
 
 Railway's **Starter plan** ($5/month) is sufficient for personal use:
+
 - 512 MB RAM per service
 - 1 GB disk
 - Shared CPU

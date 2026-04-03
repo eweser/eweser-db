@@ -39,7 +39,9 @@ const userIdFilter = getArg('--user-id');
 
 if (!inputFile) {
   console.error('ERROR: --input <file> is required.');
-  console.error('Usage: DATABASE_URL=... npx tsx scripts/migrate-import.ts --input export.json');
+  console.error(
+    'Usage: DATABASE_URL=... npx tsx scripts/migrate-import.ts --input export.json'
+  );
   process.exit(1);
 }
 
@@ -66,7 +68,8 @@ type ExportFile = {
 };
 
 async function main() {
-  const raw = fs.readFileSync(inputFile!, 'utf-8');
+  if (!inputFile || !databaseUrl) throw new Error('Required args missing'); // validated at module level
+  const raw = fs.readFileSync(inputFile, 'utf-8');
   const data = JSON.parse(raw) as ExportFile;
 
   if (data.version !== 1) {
@@ -91,8 +94,8 @@ async function main() {
     process.exit(0);
   }
 
-  const client = postgres(databaseUrl!);
-  const db = drizzle(client, { schema });
+  const client = postgres(databaseUrl);
+  const _db = drizzle(client, { schema }); // reserved for future ORM queries
 
   try {
     for (const user of usersToImport) {
@@ -155,7 +158,9 @@ async function main() {
               updated_at = NOW()
           `;
         } else {
-          console.log(`    [dry-run] Would upsert room: ${room.name as string} (${room.id as string})`);
+          console.log(
+            `    [dry-run] Would upsert room: ${room.name as string} (${room.id as string})`
+          );
         }
       }
 
@@ -199,7 +204,9 @@ async function main() {
               updated_at = NOW()
           `;
         } else {
-          console.log(`    [dry-run] Would upsert grant: ${grant.id as string}`);
+          console.log(
+            `    [dry-run] Would upsert grant: ${grant.id as string}`
+          );
         }
       }
       if (!isDryRun) {
@@ -208,14 +215,22 @@ async function main() {
     }
 
     if (!isDryRun) {
-      console.log(`\nImport complete. ${usersToImport.length} user(s) imported.`);
+      console.log(
+        `\nImport complete. ${usersToImport.length} user(s) imported.`
+      );
       console.log(`\nNext steps:`);
       console.log(`  1. Update your SDK's sync URL to point to this server:`);
       console.log(`     SYNC_SERVER_URL=wss://your-new-server.com/sync`);
-      console.log(`  2. Your local IndexedDB data will sync to the new server on next connection.`);
-      console.log(`  3. If migrating from eweser.com, delete your data there after verifying the import.`);
+      console.log(
+        `  2. Your local IndexedDB data will sync to the new server on next connection.`
+      );
+      console.log(
+        `  3. If migrating from eweser.com, delete your data there after verifying the import.`
+      );
     } else {
-      console.log(`\n--- DRY RUN complete. Run without --dry-run to apply changes. ---`);
+      console.log(
+        `\n--- DRY RUN complete. Run without --dry-run to apply changes. ---`
+      );
     }
   } finally {
     await client.end();

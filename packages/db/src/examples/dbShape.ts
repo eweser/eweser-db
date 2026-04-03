@@ -140,6 +140,8 @@ const _exampleDb: { collections: Collections } = {
         ydoc: profilePrivateYDoc as unknown as YDoc<Profile>,
       }),
     },
+    agentConfigs: {},
+    agentAccessLogs: {},
   },
 };
 

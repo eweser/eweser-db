@@ -282,6 +282,9 @@ describe('accessGrantRouter', () => {
   });
 
   it('refreshes sync token for authorized room', async () => {
+    getRoomsByIdsMock.mockResolvedValueOnce([
+      { id: 'room-1', collectionKey: 'notes' },
+    ]);
     generateSyncTokenMock.mockReturnValueOnce({
       token: 'sync-token',
       expiry: new Date('2026-04-03T00:00:00.000Z'),
@@ -291,7 +294,7 @@ describe('accessGrantRouter', () => {
       new Request('http://localhost/api/access-grant/refresh-sync-token/room-1')
     );
 
-    expect(generateSyncTokenMock).toHaveBeenCalledWith('room-1');
+    expect(generateSyncTokenMock).toHaveBeenCalledWith('room-1', 'notes');
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({
       syncUrl: 'ws://localhost:8080',

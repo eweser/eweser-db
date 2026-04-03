@@ -28,7 +28,7 @@ services:
       - key: SYNC_AUTH_SECRET
         value: ${SYNC_AUTH_SECRET}
       - key: PORT
-        value: "3000"
+        value: '3000'
     health_check:
       http_path: /health
 
@@ -43,7 +43,7 @@ services:
       - path: /sync
     envs:
       - key: SYNC_PORT
-        value: "8080"
+        value: '8080'
       - key: SYNC_DB_PATH
         value: /data/sync.sqlite
       - key: SYNC_AUTH_SECRET
@@ -52,7 +52,7 @@ services:
 databases:
   - name: db
     engine: PG
-    version: "17"
+    version: '17'
     size: db-s-dev-database
     num_nodes: 1
 

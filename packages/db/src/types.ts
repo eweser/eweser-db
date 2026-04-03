@@ -3,6 +3,8 @@ import type {
   Note,
   Flashcard,
   Profile,
+  AgentConfig,
+  AgentAccessLogEntry,
   COLLECTION_KEYS,
   ServerRoom,
   EweDocument,
@@ -39,11 +41,15 @@ export type CollectionToDocument = {
   notes: Note;
   flashcards: Flashcard;
   profiles: Profile;
+  agentConfigs: AgentConfig;
+  agentAccessLogs: AgentAccessLogEntry;
 };
 export const collections: Collections = {
   notes: {},
   flashcards: {},
   profiles: {},
+  agentConfigs: {},
+  agentAccessLogs: {},
 };
 
 export type DocumentWithoutBase<T extends EweDocument> = Omit<

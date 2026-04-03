@@ -66,11 +66,13 @@ cp .env.example .env
 ```
 
 Edit `.env`:
+
 ```bash
 nano .env
 ```
 
 Required values to change:
+
 ```env
 POSTGRES_PASSWORD=<strong-random-password>
 SERVER_SECRET=<random-32-chars>
@@ -83,6 +85,7 @@ SYNC_PUBLIC_URL=wss://your-domain.com/sync
 ```
 
 Generate secrets:
+
 ```bash
 openssl rand -hex 32  # run 4 times, one for each secret
 ```
@@ -146,6 +149,7 @@ docker cp eweser-db-sync-server-1:/data/sync.sqlite ./sync-backup-$(date +%Y%m%d
 ## Troubleshooting
 
 **Containers not starting?**
+
 ```bash
 docker compose -f docker-compose.prod.yml logs --tail=50
 ```

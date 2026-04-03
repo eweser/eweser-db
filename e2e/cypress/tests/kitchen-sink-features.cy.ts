@@ -25,8 +25,7 @@ describe('kitchen-sink: multi-room', () => {
     });
 
     // Wait for room ydoc to initialize, then create a note
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(500);
+    cy.wait(500); // required: Yjs doc needs time to initialize before note creation
     cy.get('button[data-cy^="basic-new-note-"]').first().click();
     cy.get('textarea[data-cy^="basic-note-editor-"]')
       .first()

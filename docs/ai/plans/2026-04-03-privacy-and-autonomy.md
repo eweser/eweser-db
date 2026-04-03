@@ -135,6 +135,7 @@ The self-hosting story is the ultimate autonomy guarantee. It must be real, not 
 - `scripts/migrate-import.ts` ✅
 
 **Notes:**
+
 - Both scripts support `--dry-run` mode for safe inspection before committing changes
 - Export/import cover: users, rooms, access grants
 - Live migration (changing sync URL) already works architecturally without any code change — the IndexedDB holds the source of truth and syncs to whichever Hocuspocus URL is configured

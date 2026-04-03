@@ -14,7 +14,6 @@ const envSchema = z.object({
 const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
-  // eslint-disable-next-line no-console -- intentional startup env-validation error log
   console.error(
     'Invalid environment variables:',
     parsed.error.flatten().fieldErrors

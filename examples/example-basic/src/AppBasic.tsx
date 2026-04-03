@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { Database, buildRef } from '@eweser/db';
+import { Database } from '@eweser/db';
 import type {
   CollectionKey,
   Documents,
@@ -459,7 +459,7 @@ const NoteCard = ({
       </button>
       {(note.flashcardRefs ?? []).length > 0 && (
         <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>
-          {note.flashcardRefs!.length} linked
+          {(note.flashcardRefs ?? []).length} linked
         </span>
       )}
     </div>
@@ -626,10 +626,11 @@ const ProfileTab = () => {
     if (!ProfileApi) return;
     const load = () => {
       const all = ProfileApi.getUndeletedToArray();
-      if (all.length > 0) {
-        setProfile(all[0]!);
-        setFirstName(all[0]!.firstName ?? '');
-        setLastName(all[0]!.lastName ?? '');
+      const first = all[0];
+      if (first) {
+        setProfile(first);
+        setFirstName(first.firstName ?? '');
+        setLastName(first.lastName ?? '');
       }
     };
     load();

@@ -47,10 +47,7 @@ agentsRouter.post('/', requireAuth, async (c) => {
   }>();
 
   if (!body.name || !Array.isArray(body.allowedCollections)) {
-    return c.json(
-      { error: 'name and allowedCollections are required' },
-      400
-    );
+    return c.json({ error: 'name and allowedCollections are required' }, 400);
   }
 
   const { agentConfig, token } = await createAgentConfig({
@@ -61,9 +58,7 @@ agentsRouter.post('/', requireAuth, async (c) => {
     allowedCollections: body.allowedCollections,
     allowedRooms: body.allowedRooms ?? [],
     permissions: body.permissions ?? 'read',
-    tokenExpiresAt: body.tokenExpiresAt
-      ? new Date(body.tokenExpiresAt)
-      : null,
+    tokenExpiresAt: body.tokenExpiresAt ? new Date(body.tokenExpiresAt) : null,
   });
 
   const { tokenHash: _tokenHash, ...safeConfig } = agentConfig;
@@ -132,8 +127,7 @@ agentsRouter.post('/:id/rotate-token', requireAuth, async (c) => {
   return c.json({
     agent: safeAgent,
     token: result.token,
-    warning:
-      'Store this token securely. It will not be shown again.',
+    warning: 'Store this token securely. It will not be shown again.',
   });
 });
 
@@ -210,4 +204,3 @@ agentsRouter.post('/verify-token', async (c) => {
   const { tokenHash: _tokenHash, ...safeAgent } = agent;
   return c.json({ agent: safeAgent });
 });
-
