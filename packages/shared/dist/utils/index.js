@@ -2,7 +2,7 @@ export function loginOptionsToQueryParams({ collections, ...rest }) {
     const _collections = collections.length === 0
         ? 'all'
         : collections.length === 1
-            ? collections[0]
+            ? (collections[0] ?? 'all')
             : collections.join('|');
     const params = {
         collections: _collections,

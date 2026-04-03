@@ -1,20 +1,22 @@
-import type { DocumentBase } from './documentBase';
-import type { Flashcard } from './flashcard';
+import type { AgentConfig, AgentAccessLogEntry } from './agent-config';
 import type { Note } from './note';
+import type { Flashcard } from './flashcard';
 import type { Profile } from './profile';
+import type { DocumentBase } from './documentBase';
 export * from './note';
 export * from './flashcard';
 export * from './profile';
 export * from './documentBase';
+export * from './agent-config';
 /** We don't include registry because we use this after login to get all non-registry collections. */
-export declare const COLLECTION_KEYS: readonly ["notes", "flashcards", "profiles"];
-export declare const COLLECTION_KEYS_OR_ALL: readonly ["notes", "flashcards", "profiles", "all"];
+export declare const COLLECTION_KEYS: readonly ["notes", "flashcards", "profiles", "agentConfigs", "agentAccessLogs"];
+export declare const COLLECTION_KEYS_OR_ALL: readonly ["notes", "flashcards", "profiles", "agentConfigs", "agentAccessLogs", "all"];
 export declare const PUBLIC_ACCESS_TYPES: readonly ["private", "read", "write"];
 export type PublicAccessType = (typeof PUBLIC_ACCESS_TYPES)[number];
 export declare const ROOM_ACCESS_TYPES: readonly ["read", "write", "admin"];
 export type RoomAccessType = (typeof ROOM_ACCESS_TYPES)[number];
-export declare const collectionKeys: ("notes" | "flashcards" | "profiles")[];
-export type EweDocument = Note | Flashcard | Profile;
+export declare const collectionKeys: ("notes" | "flashcards" | "profiles" | "agentConfigs" | "agentAccessLogs")[];
+export type EweDocument = Note | Flashcard | Profile | AgentConfig | AgentAccessLogEntry;
 export type CollectionKey = (typeof COLLECTION_KEYS)[number];
 export type CollectionKeyOrAll = (typeof COLLECTION_KEYS_OR_ALL)[number];
 export type DocumentWithoutBase<T extends EweDocument> = Omit<T, keyof DocumentBase>;

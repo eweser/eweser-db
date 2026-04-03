@@ -1,6 +1,6 @@
 import type { DocumentBase } from './documentBase';
 export type ProfileBase = {
-    firstName?: any;
+    firstName?: string;
     lastName?: string;
     avatarUrl?: string;
 };

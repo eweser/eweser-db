@@ -46,7 +46,7 @@
     "build-shared": "cd packages/shared && npm run build; cd ../../",
     "build": "run-s build-shared build-db build-auth-server build-aggregator build-components build-example:*",
     "dev": "run-p dev:*",
-    "dev:aggregator": "cd packages/aggregator && npm run dev",
+    "dev:aggregator": "cd packages/aggregator && DATABASE_URL=postgresql://eweser:changeme@localhost:5499/eweser npm run dev",
     "dev:sync-server-a": "SYNC_PORT=38181 SYNC_DB_PATH=/tmp/eweser-sync-a.sqlite SYNC_AUTH_SECRET=dev-sync-secret tsx packages/sync-server/src/index.ts",
     "dev:sync-server-b": "SYNC_PORT=38182 SYNC_DB_PATH=/tmp/eweser-sync-b.sqlite SYNC_AUTH_SECRET=dev-sync-secret tsx packages/sync-server/src/index.ts",
     "dev:example-aggregator": "cd examples/example-aggregator && npm run dev",
