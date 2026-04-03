@@ -21,6 +21,23 @@ services:
       - sync-data:/data
     expose:
       - '8080'
+    ports:
+      - '${SYNC_A_HOST_PORT:-38181}:8080'
+    environment:
+      SYNC_PORT: 8080
+      SYNC_DB_PATH: /data/sync.sqlite
+      SYNC_AUTH_SECRET: ${SYNC_AUTH_SECRET:-dev-secret}
+      AGGREGATOR_WEBHOOK_URL: http://aggregator:8090/webhooks/hocuspocus
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:-dev-webhook-secret}
+
+  sync-server-2:
+    build: packages/sync-server
+    volumes:
+      - sync-data-2:/data
+    expose:
+      - '8080'
+    ports:
+      - '${SYNC_B_HOST_PORT:-38182}:8080'
     environment:
       SYNC_PORT: 8080
       SYNC_DB_PATH: /data/sync.sqlite
@@ -35,8 +52,12 @@ services:
         condition: service_healthy
       sync-server:
         condition: service_started
+      sync-server-2:
+        condition: service_started
     expose:
       - '8090'
+    ports:
+      - '${AGGREGATOR_HOST_PORT:-38190}:8090'
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-eweser}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-eweser}
       PORT: 8090
@@ -77,6 +98,8 @@ services:
         condition: service_started
       sync-server:
         condition: service_started
+      sync-server-2:
+        condition: service_started
       aggregator:
         condition: service_started
     environment:
@@ -87,3 +110,4 @@ services:
 volumes:
   pgdata:
   sync-data:
+  sync-data-2:

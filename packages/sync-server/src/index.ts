@@ -1,4 +1,5 @@
 import { Server } from '@hocuspocus/server';
+import type { Extension } from '@hocuspocus/server';
 import { SQLite } from '@hocuspocus/extension-sqlite';
 import { Webhook } from '@hocuspocus/extension-webhook';
 import jwt from 'jsonwebtoken';
@@ -9,12 +10,12 @@ const secret = process.env.SYNC_AUTH_SECRET || 'test-secret';
 const aggregatorWebhookUrl = process.env.AGGREGATOR_WEBHOOK_URL;
 const webhookSecret = process.env.WEBHOOK_SECRET;
 
-const extensions = [new SQLite({ database: dbPath })];
+const extensions: Extension[] = [new SQLite({ database: dbPath })];
 
 if (aggregatorWebhookUrl) {
   extensions.push(
     new Webhook({
-      target: aggregatorWebhookUrl,
+      url: aggregatorWebhookUrl,
       ...(webhookSecret ? { secret: webhookSecret } : {}),
     })
   );
