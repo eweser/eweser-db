@@ -8,12 +8,17 @@ Hard-cutover assumption: index only the new Hocuspocus-authenticated document fl
 
 ## Progress
 
-- [ ] Run 3.1 — Create new aggregator package
-- [ ] Run 3.2 — Search API
+- [x] Run 3.1 — Create new aggregator package
+- [x] Run 3.2 — Search API
 
 ## Agent Scratchpad
 
 > Use this section to track decisions, blockers, and notes during implementation.
+
+- Implemented `packages/aggregator` with Hono entrypoint, webhook ingestion, Drizzle schema/upsert logic, room-observer helper, and search routes.
+- Added unit tests for webhook extraction/ingest, listener upsert triggering, upsert semantics, and search routes.
+- Wired `sync-server` webhook extension (`AGGREGATOR_WEBHOOK_URL`) and passed `collectionKey` through sync JWT payload so webhook context can include indexing metadata.
+- Added `aggregator` service to `docker-compose.yml` and connected it to `postgres` + `sync-server`.
 
 ---
 

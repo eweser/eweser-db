@@ -4,6 +4,7 @@ import { env } from '../env.js';
 export interface SyncTokenPayload {
   roomId: string;
   userId?: string;
+  collectionKey?: string;
 }
 
 const TOKEN_VALID_MINUTES = 60; // 1 hour
@@ -14,10 +15,15 @@ const TOKEN_VALID_MINUTES = 60; // 1 hour
  */
 export function generateSyncToken(
   roomId: string,
+  collectionKey?: string,
   userId?: string,
   validMinutes = TOKEN_VALID_MINUTES
 ): { token: string; expiry: Date } {
-  const payload: SyncTokenPayload = { roomId, ...(userId ? { userId } : {}) };
+  const payload: SyncTokenPayload = {
+    roomId,
+    ...(collectionKey ? { collectionKey } : {}),
+    ...(userId ? { userId } : {}),
+  };
   const secret = env.SYNC_AUTH_SECRET ?? env.SERVER_SECRET;
   const token = jwt.sign(payload, secret, {
     expiresIn: `${validMinutes}m`,

@@ -25,6 +25,22 @@ services:
       SYNC_PORT: 8080
       SYNC_DB_PATH: /data/sync.sqlite
       SYNC_AUTH_SECRET: ${SYNC_AUTH_SECRET:-dev-secret}
+      AGGREGATOR_WEBHOOK_URL: http://aggregator:8090/webhooks/hocuspocus
+
+  aggregator:
+    build: packages/aggregator
+    depends_on:
+      postgres:
+        condition: service_healthy
+      sync-server:
+        condition: service_started
+    expose:
+      - '8090'
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-eweser}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-eweser}
+      PORT: 8090
+      SYNC_SERVER_URL: ws://sync-server:8080
+      SYNC_AUTH_SECRET: ${SYNC_AUTH_SECRET:-dev-secret}
 
   auth-api:
     build:
@@ -58,6 +74,8 @@ services:
       auth-api:
         condition: service_started
       sync-server:
+        condition: service_started
+      aggregator:
         condition: service_started
     environment:
       DOMAIN: ${DOMAIN:-localhost}

@@ -204,7 +204,12 @@ accessGrantRouter.get(
       return c.json({ error: 'Invalid room' }, 403);
     }
 
-    const { token, expiry } = generateSyncToken(roomId);
+    const [room] = await getRoomsByIds([roomId]);
+    if (!room) {
+      return c.json({ error: 'Room not found' }, 404);
+    }
+
+    const { token, expiry } = generateSyncToken(roomId, room.collectionKey);
 
     const response: RefreshSyncTokenRouteResponse = {
       syncUrl: env.SYNC_SERVER_URL,
