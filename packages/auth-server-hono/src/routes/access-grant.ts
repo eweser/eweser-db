@@ -79,6 +79,23 @@ accessGrantRouter.post('/permissions', requireAuth, async (c) => {
     return c.json({ error: 'Invalid request' }, 400);
   }
 
+  // Validate redirect URL to prevent open redirect attacks
+  let redirectUrl: URL;
+  try {
+    redirectUrl = new URL(body.redirect);
+    if (
+      redirectUrl.protocol !== 'https:' &&
+      redirectUrl.protocol !== 'http:'
+    ) {
+      return c.json({ error: 'Invalid redirect protocol' }, 400);
+    }
+    if (redirectUrl.host !== body.domain) {
+      return c.json({ error: 'Redirect domain mismatch' }, 400);
+    }
+  } catch {
+    return c.json({ error: 'Invalid redirect URL' }, 400);
+  }
+
   const token = await createOrUpdateThirdPartyAppPermissions({
     collections: body.collections,
     domain: body.domain,
@@ -89,7 +106,6 @@ accessGrantRouter.post('/permissions', requireAuth, async (c) => {
       : {}),
   });
 
-  const redirectUrl = new URL(body.redirect);
   redirectUrl.searchParams.set('token', token);
 
   return c.json({ redirectUrl: redirectUrl.toString() });

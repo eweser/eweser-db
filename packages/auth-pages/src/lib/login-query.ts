@@ -15,11 +15,16 @@ export function validateLoginQueryOptions(
   }
 
   const { redirect, domain, name } = queryOptions;
-  const validRedirect =
-    typeof redirect === 'string' &&
-    redirect.length > 0 &&
-    redirect.startsWith('http') &&
-    redirect.includes(domain ?? '');
+  // Use proper URL parsing to avoid subdomain bypass attacks
+  let validRedirect = false;
+  if (typeof redirect === 'string' && redirect.length > 0) {
+    try {
+      const url = new URL(redirect);
+      validRedirect = url.host === domain;
+    } catch {
+      validRedirect = false;
+    }
+  }
   const validDomain = typeof domain === 'string' && domain.length > 0;
   const collections = !queryOptions.collections
     ? ['all']
@@ -42,9 +47,9 @@ export function validateLoginQueryOptions(
 
   return {
     collections: collections as LoginQueryOptions['collections'],
-    domain,
-    name,
-    redirect,
+    domain: domain as string,
+    name: name as string,
+    redirect: redirect as string,
   };
 }
 

@@ -45,6 +45,10 @@ vite.config.ts.timestamp*.mjs
 .expo/metro/externals/
 **/**/dist
 
+# TypeScript incremental build artifacts
+*.tsbuildinfo
+**/*.tsbuildinfo
+
 # gitleaks
 .gitleaks-report.json
 
