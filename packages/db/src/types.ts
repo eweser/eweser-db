@@ -5,10 +5,13 @@ import type {
   Profile,
   AgentConfig,
   AgentAccessLogEntry,
+  Conversation,
   COLLECTION_KEYS,
   ServerRoom,
   EweDocument,
   CollectionKey,
+  Documents,
+  DocumentWithoutBase,
 } from '@eweser/shared';
 import type { TypedDoc, TypedMap } from 'yjs-types';
 
@@ -32,6 +35,7 @@ export type {
   Note,
   Flashcard,
   Profile,
+  Conversation,
   GetDocuments,
 };
 
@@ -43,6 +47,7 @@ export type CollectionToDocument = {
   profiles: Profile;
   agentConfigs: AgentConfig;
   agentAccessLogs: AgentAccessLogEntry;
+  conversations: Conversation;
 };
 export const collections: Collections = {
   notes: {},
@@ -50,16 +55,10 @@ export const collections: Collections = {
   profiles: {},
   agentConfigs: {},
   agentAccessLogs: {},
+  conversations: {},
 };
 
-export type DocumentWithoutBase<T extends EweDocument> = Omit<
-  T,
-  keyof DocumentBase
->;
-
-export interface Documents<T extends EweDocument> {
-  [documentId: string]: T;
-}
+export type { DocumentWithoutBase, Documents };
 
 export type YDoc<T extends EweDocument> = TypedDoc<{
   documents: TypedMap<Documents<T>>;

@@ -3,9 +3,10 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { db } from './db/client.js';
 import { ensureIndexedDocumentsSchema } from './db/ensure-schema.js';
-import { getDocumentsByRoom, searchIndexedDocuments } from './db/queries.js';
+import { agentSearchDocuments, getDocumentsByRoom, searchIndexedDocuments } from './db/queries.js';
 import { upsertIndexedDocument } from './db/upsert.js';
 import { env } from './env.js';
+import { createAgentSearchRouter } from './routes/agent-search.js';
 import { createDevTokenRouter } from './routes/dev-token.js';
 import { createSearchRouter } from './routes/search.js';
 import { createWebhookHandler } from './webhook-handler.js';
@@ -52,6 +53,29 @@ app.route(
 // Never mount in production.
 if (process.env.NODE_ENV !== 'production') {
   app.route('/api', createDevTokenRouter());
+}
+
+// Agent-authenticated search endpoint — only mounted when auth server URL is configured
+if (env.EWESER_AUTH_URL) {
+  const authUrl = env.EWESER_AUTH_URL;
+  app.route(
+    '/api',
+    createAgentSearchRouter({
+      agentSearchDocuments: async (params) => agentSearchDocuments(db, params),
+      verifyAgentToken: async (token) => {
+        const res = await fetch(`${authUrl}/api/agents/verify-token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+        });
+        if (!res.ok) {
+          throw new Error(`Token verification failed: ${res.status}`);
+        }
+        const data = (await res.json()) as { agent: { id: string; allowedRooms: string[] } };
+        return data.agent;
+      },
+    })
+  );
 }
 
 export async function startServer() {

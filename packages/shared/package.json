@@ -37,12 +37,17 @@
     "test-watch": "vitest",
     "test": "vitest --run"
   },
+  "peerDependencies": {
+    "yjs": "^13.6.0"
+  },
   "devDependencies": {
     "@eweser/eslint-config-ts": "^1.15.0",
     "eslint": "^9.39.1",
     "request": "^2.88.2",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.8"
+    "vitest": "^2.1.8",
+    "yjs": "^13.6.30",
+    "yjs-types": "^0.0.1"
   },
   "gitHead": "d6ee91d84092583f851548fa9ffe8ccf5de5705a"
 }

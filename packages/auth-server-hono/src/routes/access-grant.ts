@@ -83,10 +83,7 @@ accessGrantRouter.post('/permissions', requireAuth, async (c) => {
   let redirectUrl: URL;
   try {
     redirectUrl = new URL(body.redirect);
-    if (
-      redirectUrl.protocol !== 'https:' &&
-      redirectUrl.protocol !== 'http:'
-    ) {
+    if (redirectUrl.protocol !== 'https:' && redirectUrl.protocol !== 'http:') {
       return c.json({ error: 'Invalid redirect protocol' }, 400);
     }
     if (redirectUrl.host !== body.domain) {

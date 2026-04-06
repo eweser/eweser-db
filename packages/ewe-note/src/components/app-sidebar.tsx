@@ -24,10 +24,11 @@ import { Icons } from '@/lib/icons';
 import { SidebarUser } from './sidebar-user';
 import { useDb } from '@/db';
 import type { ComponentProps } from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import removeMarkdown from 'markdown-to-text';
 import {
   Dialog,
+  DialogClose,
   DialogTrigger,
   DialogContent,
   DialogHeader,
@@ -55,7 +56,79 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
   } = useDb();
   const [creatingRoom, setCreatingRoom] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [notesByRoomId, setNotesByRoomId] = useState<Record<string, Note[]>>(
+    {}
+  );
+  const [openRoomIds, setOpenRoomIds] = useState<Set<string>>(new Set());
+
+  // Open the current room's collapsible when selectedRoom changes.
+  useEffect(() => {
+    if (selectedRoom?.id) {
+      setOpenRoomIds((prev) => {
+        const next = new Set(prev);
+        next.add(selectedRoom.id);
+        return next;
+      });
+    }
+  }, [selectedRoom?.id]);
+
+  // Keep notesByRoomId in sync with allRooms and register onChange handlers.
+  useEffect(() => {
+    const getNotes = (room: (typeof allRooms)[number]) => {
+      try {
+        const docs = room.getDocuments();
+        return docs.toArray(docs.sortByRecent(docs.getUndeleted()));
+      } catch {
+        return [];
+      }
+    };
+
+    const handlers: Array<{
+      room: (typeof allRooms)[number];
+      handler: Parameters<
+        ReturnType<(typeof allRooms)[number]['getDocuments']>['onChange']
+      >[0];
+    }> = [];
+
+    allRooms.forEach((room) => {
+      try {
+        const docsObj = room.getDocuments();
+        const handler = () => {
+          const fresh = getNotes(room);
+          setNotesByRoomId((prev) => {
+            const existing = prev[room.id] ?? [];
+            const freshIds = new Set(fresh.map((n) => n._id));
+            // Merge: keep any existing undeleted notes not in the fresh snapshot
+            // (guards against ydoc race where different ydocs may have different notes)
+            const fromExisting = existing.filter(
+              (n) => !n._deleted && !freshIds.has(n._id)
+            );
+            const merged = [...fresh, ...fromExisting].sort(
+              (a, b) => b._updated - a._updated
+            );
+            return { ...prev, [room.id]: merged };
+          });
+        };
+        docsObj.onChange(handler);
+        handlers.push({ room, handler });
+        // Initial snapshot
+        handler();
+      } catch {
+        // ydoc not yet available
+      }
+    });
+
+    return () => {
+      // Cleanup: unobserve all handlers to prevent StrictMode double-registration
+      handlers.forEach(({ room, handler }) => {
+        try {
+          room.getDocuments().documents.unobserve(handler);
+        } catch {
+          // ignore
+        }
+      });
+    };
+  }, [allRooms]);
 
   const handleCreateRoom = async () => {
     try {
@@ -80,23 +153,32 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
     if (!selectedRoom) {
       throw new Error('No room selected');
     }
-    const newNote = selectedRoom.getDocuments().new({ text: '# New Note' });
+    const docs = selectedRoom.getDocuments();
+    const newNote = docs.new({ text: '# New Note' });
     setSelectedNoteId(newNote._id);
+    // Optimistically add the new note without replacing existing notes.
+    // The onChange handler (fired synchronously by docs.new()) handles merging
+    // Y.Map changes, but we also add directly here in case of ydoc race conditions.
+    setNotesByRoomId((prev) => {
+      const existing = prev[selectedRoom.id] ?? [];
+      if (existing.some((n) => n._id === newNote._id)) return prev;
+      return { ...prev, [selectedRoom.id]: [newNote, ...existing] };
+    });
   };
 
   return (
-    <Sidebar {...props}>
+    <Sidebar data-cy="ewe-note-sidebar" {...props}>
       <SidebarHeader>
         <SearchForm />
       </SidebarHeader>
-      <SidebarContent className="gap-0" key={refreshKey}>
+      <SidebarContent className="gap-0">
         <div className="flex align-middle justify-center">
-          <Button variant="ghost" onClick={handleCreateNote}>
+          <Button data-cy="ewe-note-new-note" variant="ghost" onClick={handleCreateNote}>
             <SquarePen />
           </Button>
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="ghost">
+              <Button data-cy="ewe-note-new-folder-trigger" variant="ghost">
                 <FolderPlus />
               </Button>
             </DialogTrigger>
@@ -111,6 +193,7 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
                 <Label htmlFor="new-room-name">Folder Name</Label>
                 <Input
                   id="new-room-name"
+                  data-cy="ewe-note-new-folder-input"
                   type="text"
                   placeholder="Enter folder name"
                   value={newRoomName}
@@ -119,10 +202,12 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
                 />
               </div>
               <DialogFooter>
-                <Button variant="secondary" disabled={creatingRoom}>
-                  Cancel
-                </Button>
-                <Button onClick={handleCreateRoom} disabled={creatingRoom}>
+                <DialogClose asChild>
+                  <Button variant="secondary" disabled={creatingRoom}>
+                    Cancel
+                  </Button>
+                </DialogClose>
+                <Button data-cy="ewe-note-create-folder-submit" onClick={handleCreateRoom} disabled={creatingRoom}>
                   {creatingRoom ? (
                     <Icons.Spinner className="mr-2" />
                   ) : (
@@ -135,14 +220,21 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
         </div>
         {/* We create a collapsible SidebarGroup for each parent. */}
         {allRooms.map((room) => {
-          const docs = room.getDocuments();
-          docs.onChange(() => setRefreshKey(refreshKey + 1));
-          const notes = docs.toArray(docs.sortByRecent(docs.getUndeleted()));
+          const notes = notesByRoomId[room.id] ?? [];
           return (
             <Collapsible
               key={room.id}
               title={room.name}
-              defaultOpen={selectedRoom?.id === room.id}
+              data-note-count={notes.length}
+              open={openRoomIds.has(room.id)}
+              onOpenChange={(isOpen) =>
+                setOpenRoomIds((prev) => {
+                  const next = new Set(prev);
+                  if (isOpen) next.add(room.id);
+                  else next.delete(room.id);
+                  return next;
+                })
+              }
               className="group/collapsible"
             >
               <SidebarGroup>
@@ -164,6 +256,7 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
                       {notes.map((note) => (
                         <SidebarMenuItem key={note._id}>
                           <SidebarMenuButton
+                            data-cy={`ewe-note-note-item-${note._id}`}
                             onClick={() => {
                               setSelectedNoteId(note._id);
                               setSelectedRoom(room);
@@ -186,12 +279,12 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
       </SidebarContent>
       <SidebarFooter>
         {loggedIn ? (
-          <button onClick={signOut} className="flex items-center space-x-2">
+          <button data-cy="ewe-note-logout" onClick={signOut} className="flex items-center space-x-2">
             <Icons.Logo className="h-6 w-6" />
             <span className="inline-block font-bold">Logout</span>
           </button>
         ) : (
-          <a href={loginUrl} className="flex items-center space-x-2">
+          <a data-cy="ewe-note-login" href={loginUrl} className="flex items-center space-x-2">
             <Icons.Logo className="h-6 w-6" />
             <span className="inline-block font-bold">Login</span>
           </a>

@@ -1,5 +1,8 @@
 import type { LoginQueryOptions, LoginQueryParams } from '..';
 
+export * from './documents';
+export * from './obsidian-markdown';
+
 export function loginOptionsToQueryParams({
   collections,
   ...rest

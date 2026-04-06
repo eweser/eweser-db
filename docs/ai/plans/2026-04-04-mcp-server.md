@@ -113,46 +113,46 @@ To prevent implementation drift between the browser SDK and the MCP server, we m
 
 #### Steps:
 
-- [ ] **Add `yjs` as peerDependency** to `packages/shared/package.json`
+- [x] **Add `yjs` as peerDependency** to `packages/shared/package.json`
   - `"peerDependencies": { "yjs": "^13.6.0" }`
   - Add `yjs` + `yjs-types` as devDependencies too (for building/testing shared itself)
 
-- [ ] **Move pure functions** from `packages/db/src/utils/index.ts` → `packages/shared/src/utils/documents.ts`:
+- [x] **Move pure functions** from `packages/db/src/utils/index.ts` → `packages/shared/src/utils/documents.ts`:
   - `newDocument<T>(id, ref, doc)` — adds `_id`, `_ref`, `_created`, `_updated`, `_deleted` metadata
   - `buildRef({ authServer, collectionKey, roomId, documentId })` — builds ref string with validation
   - `randomString(length)` — random alphanumeric ID generator
   - These functions have **zero external dependencies** (only shared's own types)
 
-- [ ] **Move `Documents<T>` type** from `packages/db/src/types.ts` → `packages/shared/src/collections/index.ts`
+- [x] **Move `Documents<T>` type** from `packages/db/src/types.ts` → `packages/shared/src/collections/index.ts`
   - `interface Documents<T extends EweDocument> { [documentId: string]: T }`
   - Remove duplicate `DocumentWithoutBase<T>` from db (already exists in shared)
 
-- [ ] **Move `getDocuments()` factory** from `packages/db/src/utils/getDocuments.ts` → `packages/shared/src/utils/documents.ts`:
+- [x] **Move `getDocuments()` factory** from `packages/db/src/utils/getDocuments.ts` → `packages/shared/src/utils/documents.ts`:
   - Change signature: `getDocuments(authServer: string)` instead of `getDocuments(_db: Database)`
   - The factory returns `<T>(ydoc: Y.Doc) => GetDocuments<T>` instead of `<T>(room: Room<T>) => GetDocuments<T>`
   - Inner method: reads `ydoc.getMap('documents')` directly (no Room class dependency)
   - This is the **only function that touches yjs** — it uses `Y.Map` operations
   - Export the `GetDocuments<T>` interface from shared
 
-- [ ] **Move `getRoomDocuments()`** — pure Y.Map accessor:
+- [x] **Move `getRoomDocuments()`** — pure Y.Map accessor:
   - `getRoomDocuments<T>(ydoc: Y.Doc): TypedMap<Documents<T>>` — gets `ydoc.getMap('documents')`
   - No Room class dependency in new signature
 
-- [ ] **Update `@eweser/db`** to re-export from shared:
+- [x] **Update `@eweser/db`** to re-export from shared:
   - `packages/db/src/utils/index.ts`: replace local implementations with `export { newDocument, buildRef, randomString } from '@eweser/shared'`
   - `packages/db/src/utils/getDocuments.ts`: import from shared, create a thin wrapper that extracts `room.ydoc` and `_db.authServer` to pass to shared's `getDocuments(authServer)(room.ydoc)`
   - `packages/db/src/types.ts`: remove `DocumentWithoutBase<T>` and `Documents<T>`, import from shared
   - All existing SDK tests must still pass with no changes
 
-- [ ] **Export from shared's index** — add to `packages/shared/src/index.ts`:
+- [x] **Export from shared's index** — add to `packages/shared/src/index.ts`:
   - `export { newDocument, buildRef, randomString, getDocuments, getRoomDocuments } from './utils/documents'`
   - `export type { GetDocuments, Documents } from './utils/documents'`
 
-- [ ] **Create changeset** — `@eweser/shared` is a published package and gets a new peerDep + new exports
+- [x] **Create changeset** — `@eweser/shared` is a published package and gets a new peerDep + new exports
   - Run `npm run changeset` → minor version bump for shared
   - No breaking changes (only additions)
 
-- [ ] **Run all tests** — `npm test` from root. Specifically:
+- [x] **Run all tests** — `npm test` from root. Specifically:
   - `packages/shared` tests pass
   - `packages/db` tests pass (re-exports work correctly)
   - No "Yjs was already imported" warnings
@@ -178,31 +178,31 @@ To prevent implementation drift between the browser SDK and the MCP server, we m
 
 #### Steps:
 
-- [ ] Create `agentAuthMiddleware` in `packages/auth-server-hono/src/middleware/agent-auth.ts`
+- [x] Create `agentAuthMiddleware` in `packages/auth-server-hono/src/middleware/agent-auth.ts`
   - Reads `Authorization: Bearer <token>` header
   - Hashes token, looks up in `agent_configs` table
   - Validates: `isActive`, not expired, exists
   - Sets `c.set('agent', safeAgent)` for downstream handlers
   - Reuses `hashToken` and `getAgentConfigByTokenHash` from existing model
-- [ ] Add `POST /api/agents/me/rooms` to `agents.ts`
+- [x] Add `POST /api/agents/me/rooms` to `agents.ts`
   - Protected by `agentAuthMiddleware`
   - Gets agent's `userId` from the agent config
   - Fetches user's rooms via existing `getRoomsByIds` / access grant lookup
   - Filters by `agent.allowedCollections` (room.collectionKey must be in list)
   - Filters by `agent.allowedRooms` (if non-empty, room.id must be in list)
   - Returns `{ rooms: Room[] }` (id, name, collectionKey — no sensitive fields)
-- [ ] Add `POST /api/agents/me/sync-token` to `agents.ts`
+- [x] Add `POST /api/agents/me/sync-token` to `agents.ts`
   - Protected by `agentAuthMiddleware`
   - Body: `{ roomId: string }`
   - Validates room belongs to user AND agent is allowed access
   - Calls existing `generateSyncToken(roomId, collectionKey)` to create Hocuspocus JWT
   - Returns `{ syncUrl, syncToken, tokenExpiry }` using existing `getRefreshedSyncToken()`
-- [ ] Add `POST /api/agents/me/log` to `agents.ts`
+- [x] Add `POST /api/agents/me/log` to `agents.ts`
   - Protected by `agentAuthMiddleware`
   - Body: `{ roomId, collectionKey, action, documentCount }`
   - Calls existing `logAgentAccess()` model function
   - Returns `{ ok: true }`
-- [ ] Tests for all 3 new endpoints + middleware
+- [x] Tests for all 3 new endpoints + middleware
 
 #### Files:
 
@@ -219,29 +219,29 @@ To prevent implementation drift between the browser SDK and the MCP server, we m
 
 #### Steps:
 
-- [ ] Create `packages/mcp-server/package.json`
+- [x] Create `packages/mcp-server/package.json`
   - `name: "@eweser/mcp"`
   - `type: "module"`
   - `bin: { "eweser-mcp": "./dist/index.js" }`
   - Dependencies: `@modelcontextprotocol/sdk`, `zod`, `@hocuspocus/provider`, `yjs`, `@eweser/shared`
   - Dev: `vitest`, `typescript`, `tsx`
-- [ ] Create `packages/mcp-server/tsconfig.json`
+- [x] Create `packages/mcp-server/tsconfig.json`
   - Extends root tsconfig
   - `outDir: "./dist"`, target ESNext, module NodeNext
-- [ ] Create `packages/mcp-server/src/index.ts`
+- [x] Create `packages/mcp-server/src/index.ts`
   - Entry point: creates McpServer, StdioServerTransport
   - Reads env vars, calls auth startup flow
   - Registers tools, connects transport
   - Graceful shutdown on SIGINT/SIGTERM
-- [ ] Create `packages/mcp-server/src/env.ts`
+- [x] Create `packages/mcp-server/src/env.ts`
   - Loads and validates: `EWESER_AGENT_TOKEN`, `EWESER_AUTH_URL`, `EWESER_SYNC_URL` (optional override)
-- [ ] Create `packages/mcp-server/src/auth.ts`
+- [x] Create `packages/mcp-server/src/auth.ts`
   - `verifyAgentToken(token, authUrl)` → calls `/api/agents/verify-token`
   - `fetchAgentRooms(token, authUrl)` → calls `/api/agents/me/rooms`
   - `fetchSyncToken(token, authUrl, roomId)` → calls `/api/agents/me/sync-token`
   - `logAccess(token, authUrl, entry)` → calls `/api/agents/me/log`
   - All return typed results, throw on auth failure
-- [ ] `npm install` from root to link workspace deps
+- [x] `npm install` from root to link workspace deps
 
 #### Files:
 
@@ -260,7 +260,7 @@ To prevent implementation drift between the browser SDK and the MCP server, we m
 
 #### Steps:
 
-- [ ] Create `packages/mcp-server/src/data-layer.ts` — the core class
+- [x] Create `packages/mcp-server/src/data-layer.ts` — the core class
   - `DataLayer` class manages:
     - Map of `roomId → { ydoc: Y.Doc, provider: HocuspocusProvider, meta: RoomMeta }`
     - Agent permissions from startup
@@ -278,7 +278,7 @@ To prevent implementation drift between the browser SDK and the MCP server, we m
   - Token refresh:
     - Each room's sync token refreshes 5 min before expiry
     - Uses `fetchSyncToken()` from auth module
-- [ ] Create `packages/mcp-server/src/data-layer.test.ts`
+- [x] Create `packages/mcp-server/src/data-layer.test.ts`
   - Mock HocuspocusProvider (test Yjs operations in isolation)
   - Test permission checking
   - Test document CRUD on Y.Map
@@ -298,7 +298,7 @@ To prevent implementation drift between the browser SDK and the MCP server, we m
 
 #### Steps:
 
-- [ ] Create `packages/mcp-server/src/tools.ts`
+- [x] Create `packages/mcp-server/src/tools.ts`
   - `registerTools(server: McpServer, dataLayer: DataLayer, logAccess: fn)`
   - Each tool:
     1. Validates input via Zod schema (handled by MCP SDK)
@@ -363,7 +363,7 @@ To prevent implementation drift between the browser SDK and the MCP server, we m
   Annotations: destructiveHint: true
   ```
 
-- [ ] Wire tools in `src/index.ts` — import and call `registerTools()` after DataLayer init
+- [x] Wire tools in `src/index.ts` — import and call `registerTools()` after DataLayer init
 
 #### Files:
 
@@ -379,18 +379,18 @@ To prevent implementation drift between the browser SDK and the MCP server, we m
 
 #### Steps:
 
-- [ ] Create `packages/mcp-server/src/auth.test.ts`
+- [x] Create `packages/mcp-server/src/auth.test.ts`
   - Mock fetch calls to auth server
   - Test verify-token, fetch-rooms, fetch-sync-token, log-access
   - Test error handling (401, network failure, token expiry)
-- [ ] Create `packages/mcp-server/src/tools.test.ts`
+- [x] Create `packages/mcp-server/src/tools.test.ts`
   - Mock DataLayer, test each tool's input validation and response shape
   - Test permission enforcement (read-only agent can't write)
   - Test audit logging is called after each tool
-- [ ] Create `packages/mcp-server/vitest.config.ts`
-- [ ] Add `"test": "vitest run"` to package.json scripts
-- [ ] Add build script: `"build": "tsc"` or use `tsx` for dev
-- [ ] Verify `npm run build` from root still works
+- [x] Create `packages/mcp-server/vitest.config.ts`
+- [x] Add `"test": "vitest run"` to package.json scripts
+- [x] Add build script: `"build": "tsc"` or use `tsx` for dev
+- [x] Verify `npm run build` from root still works
 
 #### Files:
 
@@ -408,7 +408,7 @@ To prevent implementation drift between the browser SDK and the MCP server, we m
 
 #### Steps:
 
-- [ ] Create `packages/mcp-server/README.md`
+- [x] Create `packages/mcp-server/README.md`
   - What it is, prerequisites (auth server running, agent token created)
   - Installation: `npm install -g @eweser/mcp` or local
   - Configuration examples:
@@ -417,11 +417,11 @@ To prevent implementation drift between the browser SDK and the MCP server, we m
     - OpenClaw (env vars)
   - Available tools table
   - Troubleshooting (common errors, token issues, connectivity)
-- [ ] Create `packages/mcp-server/example.env`
+- [x] Create `packages/mcp-server/example.env`
   - `EWESER_AGENT_TOKEN=`, `EWESER_AUTH_URL=http://localhost:3001`
-- [ ] Update root `package.json` workspaces if needed
-- [ ] Update `ARCHITECTURE.md` to reference MCP server
-- [ ] If `@eweser/shared` types change → create changeset
+- [x] Update root `package.json` workspaces if needed
+- [x] Update `ARCHITECTURE.md` to reference MCP server
+- [x] If `@eweser/shared` types change → create changeset
 
 #### Files:
 
@@ -460,4 +460,74 @@ Run 0: Move Document Helpers to @eweser/shared (Smart) [FIRST — blocks all oth
 
 ## Status
 
-- [ ] Approved by user
+- [x] Approved by user
+
+---
+
+## Follow-up: Conversations Collection & Cross-Agent Memory
+
+> **Not part of this plan.** To be implemented after MCP server is live and in daily use.
+
+### Goal
+
+Add a `conversations` collection schema to `@eweser/shared` so any MCP-connected agent can save session summaries, memories, and optionally full transcripts — readable by any other authorized agent.
+
+### Design
+
+#### Collection Schema (`ConversationDoc`)
+
+```ts
+interface ConversationDoc extends EweDocument {
+  title: string; // e.g. "MCP server planning session"
+  summary: string; // agent-written summary, ≤500 tokens
+  agentId: string; // which agent wrote this (e.g. "copilot", "claude", "openclaw-pa")
+  date: string; // ISO date
+  tags: string[];
+  turns?: Turn[]; // optional: capped at last N turns, never full transcript by default
+  memoryType: 'session' | 'memory' | 'bookmark' | 'decision';
+}
+
+interface Turn {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+}
+```
+
+#### How Saves Work
+
+| Mode                | Trigger                                                | Token Cost                     | Full Auto?                                               |
+| ------------------- | ------------------------------------------------------ | ------------------------------ | -------------------------------------------------------- |
+| **Summary**         | Agent calls `eweser_create_document` at end of session | Near-zero (already in context) | With session-end hook (OpenClaw yes, Claude Desktop TBD) |
+| **Memory note**     | User says "remember this" mid-session                  | Near-zero                      | No — requires user intent                                |
+| **Full transcript** | Explicit user request only                             | Near-zero to write             | No — opt-in power-user feature                           |
+
+#### Reading Back (Cross-Agent Memory)
+
+- `eweser_search("user prefers X")` → returns summaries + matching snippets — no extra tokens beyond search results returned to context
+- `eweser_list_documents` returns `summary` field only by default — never full turns
+- `eweser_read_document` on a conversation returns: summary + last 10 turns (configurable) — never the full raw transcript unless turns array is short
+- Large transcripts are never returned whole: enforced by a `maxTurns` cap in the tool implementation
+
+#### Implementation Notes
+
+- Add `conversations` to `CollectionKey` enum in `@eweser/shared`
+- Add `ConversationDoc` interface to shared collections
+- No new MCP tools needed — existing CRUD tools work for all memory operations
+- `eweser_search` should weight `summary` and `tags` fields higher than `turns` content
+- Consider a `memoryType: 'memory'` filter in `eweser_search` for quick recall queries
+
+#### Risks
+
+- **Context-blowing transcripts:** Mitigated by `maxTurns` cap on read. Never return raw full transcript unless explicitly requested with a `fullTranscript: true` flag and agent acknowledges token cost.
+- **Cross-agent confusion:** Each doc has `agentId` — easy to filter by source agent if needed.
+- **Write permissions:** Agents need `readwrite` on a `conversations` room. User sets this in agent config. Default recommended: `readwrite` for personal agents, `read` for third-party agents.
+
+#### Suggested Plan Doc
+
+When ready, create `docs/ai/plans/YYYY-MM-DD-conversations-collection.md` covering:
+
+- Schema definition + migration to `@eweser/shared`
+- `eweser_search` weighted scoring for memory retrieval
+- Session-end hook integration for OpenClaw PA
+- Claude Desktop workaround (manual trigger until native hooks exist)

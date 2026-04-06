@@ -1,0 +1,37 @@
+{
+  "name": "@eweser/mcp",
+  "version": "0.1.0",
+  "description": "EweserDB MCP server — lets AI agents read and write user data via the Model Context Protocol",
+  "type": "module",
+  "bin": {
+    "eweser-mcp": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsx src/index.ts",
+    "test": "vitest run",
+    "test-watch": "vitest",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@eweser/shared": "*",
+    "@hocuspocus/provider": "^2.15.3",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "yjs": "^13.6.30",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1",
+    "tsx": "^4.7.0",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8",
+    "yjs-types": "^0.0.1"
+  },
+  "files": [
+    "/dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

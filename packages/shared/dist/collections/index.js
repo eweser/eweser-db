@@ -3,8 +3,16 @@ export * from './flashcard';
 export * from './profile';
 export * from './documentBase';
 export * from './agent-config';
+export * from './conversation';
 /** We don't include registry because we use this after login to get all non-registry collections. */
-export const COLLECTION_KEYS = ['notes', 'flashcards', 'profiles', 'agentConfigs', 'agentAccessLogs'];
+export const COLLECTION_KEYS = [
+    'notes',
+    'flashcards',
+    'profiles',
+    'agentConfigs',
+    'agentAccessLogs',
+    'conversations',
+];
 export const COLLECTION_KEYS_OR_ALL = [...COLLECTION_KEYS, 'all'];
 export const PUBLIC_ACCESS_TYPES = ['private', 'read', 'write'];
 export const ROOM_ACCESS_TYPES = ['read', 'write', 'admin'];

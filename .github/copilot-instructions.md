@@ -88,3 +88,19 @@ This repo uses a three-phase agent workflow:
 3. **@qa** — Run tests, review code, verify quality
 
 See `.github/agents/` for all agent configurations.
+
+## Session Memory
+
+At the end of every coding session, save a session summary using `eweser_save_memory`:
+
+```
+"save session: <brief description of what was accomplished>"
+```
+
+This calls `eweser_save_memory` with `memoryType: "session"` and stores it in the configured conversations room. To recall past decisions and sessions, use `eweser_search`:
+
+```json
+{ "tool": "eweser_search", "args": { "query": "your topic", "filters": { "memoryType": ["decision", "session"] } } }
+```
+
+See [CLAUDE.md](../CLAUDE.md) for full manual workflow details.

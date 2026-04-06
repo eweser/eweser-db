@@ -4,59 +4,17 @@ import type {
   Room,
   Documents,
   EweDocument,
-  DocumentWithoutBase,
-  DocumentBase,
 } from '../types';
 import type { Database } from '..';
 
-/** Sets the metadata like created and updated for the doc */
-export const newDocument = <T extends EweDocument>(
-  _id: string,
-  _ref: string,
-  doc: DocumentWithoutBase<T>
-): T => {
-  const now = new Date().getTime();
-  const base: DocumentBase = {
-    _created: now,
-    _id,
-    _ref,
-    _updated: now,
-    _deleted: false,
-  };
-  return { ...base, ...doc } as T;
-};
-
-/**
- *
- * @param collection e.g. `'flashcards'` "flashcards"
- * Params must be strings and cannot include `|`
- * @returns `${authServer}|${collectionKey}|${roomId}|${documentId}`
- * @example 'https://www.eweser.com|flashcards|room-id-uuid|doc-id-uuid'
- */
-export const buildRef = (params: {
-  collectionKey: CollectionKey;
-  roomId: string;
-  documentId: string | number;
-  authServer: string;
-}) => {
-  Object.entries(params).forEach(([key, param]) => {
-    if (!param) throw new Error(`${key} is required`);
-    if (typeof param !== 'string') throw new Error(`${key} must be a string`);
-    if (param.includes('|')) throw new Error(`${key} cannot include |`);
-  });
-
-  const { collectionKey, roomId, documentId, authServer } = params;
-  // from large to small groupings
-  return `${authServer}|${collectionKey}|${roomId}|${documentId}`;
-};
+export {
+  newDocument,
+  buildRef,
+  randomString,
+} from '@eweser/shared';
 
 export const wait = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
-
-export const randomString = (length: number) =>
-  Math.random()
-    .toString(36)
-    .substring(2, length + 2);
 
 export function getRoomDocuments<T extends EweDocument>(
   room: Room<T>

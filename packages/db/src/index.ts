@@ -271,7 +271,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     this.debug('Database created with options', options);
 
     this.registry = this.getRegistry() || [];
-    const initializedRooms = [];
+    const initializedRooms: Registry = [];
     if (options.initialRooms) {
       const registryRoomIds = this.registry.map((r) => r.id);
       for (const room of options.initialRooms) {
@@ -284,8 +284,12 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
       /** try to load remotes for initial rooms */
       this.loadRooms(initializedRooms, true);
     }
-    /** load all rooms in the registry locally */
-    this.loadRooms(this.registry);
+    /** load all rooms in the registry locally, skipping any already handled above */
+    const initializedRoomIds = new Set(initializedRooms.map((r) => r.id));
+    const remainingRegistryRooms = this.registry.filter(
+      (r) => !initializedRoomIds.has(r.id)
+    );
+    this.loadRooms(remainingRegistryRooms);
     this.pollForRegistrySync();
     this.rollingSync();
     this.emit('initialized');

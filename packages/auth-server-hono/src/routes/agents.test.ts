@@ -35,6 +35,7 @@ const mockRotateAgentToken = vi.fn();
 const mockDeleteAgentConfig = vi.fn();
 const mockGetAgentAccessLogs = vi.fn();
 const mockTouchAgentLastAccess = vi.fn();
+const mockLogAgentAccess = vi.fn();
 const mockHashToken = vi.fn((t: string) => `hashed:${t}`);
 
 vi.mock('../model/agents.js', () => ({
@@ -47,11 +48,31 @@ vi.mock('../model/agents.js', () => ({
   deleteAgentConfig: mockDeleteAgentConfig,
   getAgentAccessLogs: mockGetAgentAccessLogs,
   touchAgentLastAccess: mockTouchAgentLastAccess,
+  logAgentAccess: mockLogAgentAccess,
   hashToken: mockHashToken,
   generateAgentToken: vi.fn(() => ({
     token: 'raw-token',
     hash: 'hashed-token',
   })),
+}));
+
+const mockGetRoomsByIds = vi.fn();
+const mockGetUserById = vi.fn();
+const mockGenerateSyncToken = vi.fn(() => ({
+  token: 'sync-jwt-token',
+  expiry: new Date('2026-04-04T01:00:00Z'),
+}));
+
+vi.mock('../model/rooms/calls.js', () => ({
+  getRoomsByIds: mockGetRoomsByIds,
+}));
+
+vi.mock('../model/users.js', () => ({
+  getUserById: mockGetUserById,
+}));
+
+vi.mock('../services/sync-token.js', () => ({
+  generateSyncToken: mockGenerateSyncToken,
 }));
 
 const { agentsRouter } = await import('./agents.js');
@@ -431,6 +452,205 @@ describe('agentsRouter', () => {
           body: JSON.stringify({}),
         })
       );
+      expect(res.status).toBe(400);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Helper for agent-authenticated requests
+// ---------------------------------------------------------------------------
+
+function agentFetch(
+  app: ReturnType<typeof makeApp>,
+  path: string,
+  body: unknown
+): Promise<Response> {
+  return Promise.resolve(
+    app.fetch(
+      new Request(`http://localhost${path}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer agent-raw-token',
+        },
+        body: JSON.stringify(body),
+      })
+    )
+  );
+}
+
+const safeAgent = {
+  id: 'agent-uuid-1',
+  userId: 'user-uuid-1',
+  name: 'Test MCP Agent',
+  type: 'mcp' as const,
+  endpoint: null,
+  allowedCollections: ['notes'],
+  allowedRooms: [],
+  permissions: 'readwrite' as const,
+  isActive: true,
+  tokenExpiresAt: null,
+  lastAccessAt: null,
+  createdAt: new Date('2026-04-04'),
+  updatedAt: null,
+};
+
+const mockRoom = {
+  id: 'room-uuid-1',
+  name: 'My Notes',
+  collectionKey: 'notes',
+  syncUrl: null,
+  syncBaseUrl: null,
+  userId: 'user-uuid-1',
+  publicAccess: 'private' as const,
+  readAccess: [],
+  writeAccess: [],
+  adminAccess: [],
+  createdAt: new Date(),
+  updatedAt: null,
+  _deleted: false,
+  _ttl: null,
+};
+
+const mockUserWithRooms = {
+  id: 'user-uuid-1',
+  email: 'test@example.com',
+  name: 'Test User',
+  emailVerified: true,
+  image: null,
+  rooms: ['room-uuid-1'],
+};
+
+describe('agent-authenticated endpoints', () => {
+  let app: ReturnType<typeof makeApp>;
+
+  beforeEach(() => {
+    app = makeApp();
+    vi.clearAllMocks();
+    // Default: valid agent token
+    mockGetAgentConfigByTokenHash.mockResolvedValue({
+      ...safeAgent,
+      tokenHash: 'hashed:agent-raw-token',
+    });
+  });
+
+  describe('POST /me/rooms', () => {
+    it('returns rooms for the agent', async () => {
+      mockGetUserById.mockResolvedValueOnce(mockUserWithRooms);
+      mockGetRoomsByIds.mockResolvedValueOnce([mockRoom]);
+
+      const res = await agentFetch(app, '/api/agents/me/rooms', {});
+      expect(res.status).toBe(200);
+      const data = await res.json<{ rooms: typeof mockRoom[] }>();
+      expect(data.rooms).toHaveLength(1);
+      expect(data.rooms[0]?.id).toBe('room-uuid-1');
+    });
+
+    it('filters rooms by allowedCollections', async () => {
+      mockGetAgentConfigByTokenHash.mockResolvedValue({
+        ...safeAgent,
+        allowedCollections: ['flashcards'],
+        tokenHash: 'hashed:agent-raw-token',
+      });
+      mockGetUserById.mockResolvedValueOnce(mockUserWithRooms);
+      mockGetRoomsByIds.mockResolvedValueOnce([mockRoom]); // notes room
+
+      const res = await agentFetch(app, '/api/agents/me/rooms', {});
+      expect(res.status).toBe(200);
+      const data = await res.json<{ rooms: unknown[] }>();
+      expect(data.rooms).toHaveLength(0); // filtered out
+    });
+
+    it('returns 401 without agent token', async () => {
+      mockGetAgentConfigByTokenHash.mockResolvedValue(null);
+      const res = await agentFetch(app, '/api/agents/me/rooms', {});
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe('POST /me/sync-token', () => {
+    it('returns sync token for allowed room', async () => {
+      mockGetUserById.mockResolvedValueOnce(mockUserWithRooms);
+      mockGetRoomsByIds.mockResolvedValueOnce([mockRoom]);
+
+      const res = await agentFetch(app, '/api/agents/me/sync-token', {
+        roomId: 'room-uuid-1',
+      });
+      expect(res.status).toBe(200);
+      const data = await res.json<{
+        syncUrl: string;
+        syncToken: string;
+        tokenExpiry: string;
+      }>();
+      expect(data.syncToken).toBe('sync-jwt-token');
+      expect(data.syncUrl).toContain('room-uuid-1');
+    });
+
+    it('returns 404 if room not in user rooms', async () => {
+      mockGetUserById.mockResolvedValueOnce({ ...mockUserWithRooms, rooms: [] });
+
+      const res = await agentFetch(app, '/api/agents/me/sync-token', {
+        roomId: 'room-uuid-1',
+      });
+      expect(res.status).toBe(404);
+    });
+
+    it('returns 403 if collection not allowed', async () => {
+      mockGetAgentConfigByTokenHash.mockResolvedValue({
+        ...safeAgent,
+        allowedCollections: ['flashcards'],
+        tokenHash: 'hashed:agent-raw-token',
+      });
+      mockGetUserById.mockResolvedValueOnce(mockUserWithRooms);
+      mockGetRoomsByIds.mockResolvedValueOnce([mockRoom]);
+
+      const res = await agentFetch(app, '/api/agents/me/sync-token', {
+        roomId: 'room-uuid-1',
+      });
+      expect(res.status).toBe(403);
+    });
+
+    it('returns 400 when roomId is missing', async () => {
+      const res = await agentFetch(app, '/api/agents/me/sync-token', {});
+      expect(res.status).toBe(400);
+    });
+  });
+
+  describe('POST /me/log', () => {
+    it('logs access and returns ok', async () => {
+      mockLogAgentAccess.mockResolvedValueOnce(undefined);
+
+      const res = await agentFetch(app, '/api/agents/me/log', {
+        roomId: 'room-uuid-1',
+        collectionKey: 'notes',
+        action: 'read',
+        documentCount: 5,
+      });
+      expect(res.status).toBe(200);
+      const data = await res.json<{ ok: boolean }>();
+      expect(data.ok).toBe(true);
+      expect(mockLogAgentAccess).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'read',
+          documentCount: 5,
+        })
+      );
+    });
+
+    it('returns 400 when action is invalid', async () => {
+      const res = await agentFetch(app, '/api/agents/me/log', {
+        roomId: 'room-uuid-1',
+        collectionKey: 'notes',
+        action: 'delete',
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it('returns 400 when required fields are missing', async () => {
+      const res = await agentFetch(app, '/api/agents/me/log', {
+        roomId: 'room-uuid-1',
+      });
       expect(res.status).toBe(400);
     });
   });

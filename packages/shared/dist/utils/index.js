@@ -1,3 +1,5 @@
+export * from './documents';
+export * from './obsidian-markdown';
 export function loginOptionsToQueryParams({ collections, ...rest }) {
     const _collections = collections.length === 0
         ? 'all'

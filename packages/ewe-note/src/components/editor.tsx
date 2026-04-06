@@ -9,6 +9,8 @@ import { useNotesRoom } from '@/notes-room';
 import { useEffect } from 'react';
 import { Icons } from '@/lib/icons';
 import { logger } from '@/utils';
+import { blocksToOfm, ofmToBlocks } from '@/extensions/ofm-serializer';
+import FrontmatterEditor from '@/components/frontmatter-editor';
 
 const darkModeCursorColors = [
   '#ffe4a1', // Lightened orange
@@ -44,7 +46,7 @@ export default function Editor({
 }) {
   const { loggedIn } = useDb();
 
-  const { notes, updateNoteText, room } = useNotesRoom(
+  const { notes, updateNoteText, updateNoteFrontmatter, room } = useNotesRoom(
     selectedRoom.id,
     loggedIn
   );
@@ -62,6 +64,7 @@ export default function Editor({
       provider={provider}
       doc={doc}
       updateNoteText={updateNoteText}
+      updateNoteFrontmatter={updateNoteFrontmatter}
       note={note}
     />
   );
@@ -72,12 +75,17 @@ function EditorInternal({
   provider,
   doc,
   updateNoteText,
+  updateNoteFrontmatter,
   note,
 }: {
   selectedNoteId: string;
   provider: Room<Note>['syncProvider'];
   doc: NonNullable<Room<Note>['ydoc']>;
   updateNoteText: (text: string, note?: Note) => void;
+  updateNoteFrontmatter: (
+    frontmatter: Record<string, unknown>,
+    note?: Note
+  ) => void;
   note: Note;
 }) {
   const { user } = useDb();
@@ -110,7 +118,12 @@ function EditorInternal({
   // make the updateNoteText debounced so it doesn't update the note text on every keystroke
   const updateNoteTextDebounced = debounce(updateNoteText, 1000);
   editor.onChange(async (editor) => {
-    updateNoteTextDebounced(await editor.blocksToMarkdownLossy(), note);
+    // Use OFM serializer — preserves wiki-links, highlights, and other OFM syntax
+    const isVaultNote = !!note.sourcePath;
+    const text = isVaultNote
+      ? await blocksToOfm(editor)
+      : await editor.blocksToMarkdownLossy();
+    updateNoteTextDebounced(text, note);
   });
 
   // Pull the initial note text from eweser-db and set it in the editor
@@ -121,8 +134,12 @@ function EditorInternal({
       if (existing && note.text && existing === note.text) {
         logger('existing === note.text');
       } else {
-        const markdown = await editor.tryParseMarkdownToBlocks(note.text);
-        editor.replaceBlocks(editor.document, markdown);
+        // Use OFM-aware parser for vault notes
+        const isVaultNote = !!note.sourcePath;
+        const blocks = isVaultNote
+          ? await ofmToBlocks(editor, note.text)
+          : await editor.tryParseMarkdownToBlocks(note.text);
+        editor.replaceBlocks(editor.document, blocks);
       }
 
       // set focus
@@ -140,8 +157,14 @@ function EditorInternal({
   // TODO: listen for remote updates, but filter out updates that are from this browser
 
   return (
-    <div className="editor-wrapper w-full max-w-full">
+    <div data-cy="ewe-note-editor" className="editor-wrapper w-full max-w-full">
       <div className="max-w-5xl mx-auto w-full">
+        {note.frontmatter && Object.keys(note.frontmatter).length > 0 && (
+          <FrontmatterEditor
+            note={note}
+            onUpdate={(fm) => updateNoteFrontmatter(fm, note)}
+          />
+        )}
         <BlockNoteView
           editor={editor}
           theme={usedTheme}
