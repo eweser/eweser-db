@@ -2,7 +2,11 @@ import { Hono } from 'hono';
 import { requireJwtAuth } from '../middleware/jwt-auth.js';
 import { requireAuth } from '../middleware/auth.js';
 import { syncRoomsWithClient } from '../services/rooms/sync-rooms-with-client.js';
-import { getRoomsByIds, updateRoom } from '../model/rooms/calls.js';
+import {
+  getRoomsByIds,
+  getWritableRoomsByUserId,
+  updateRoom,
+} from '../model/rooms/calls.js';
 import { createRoomInviteLink } from '../services/access-grant/create-room-invite-link.js';
 import { verifyRoomInviteToken } from '../services/access-grant/create-room-invite-link.js';
 import { generateSyncToken } from '../services/sync-token.js';
@@ -16,6 +20,7 @@ import {
   createOrUpdateThirdPartyAppPermissions,
   type ThirdPartyAppPermissions,
 } from '../services/access-grant/create-third-party-app-permissions.js';
+import { collectionKeys } from '@eweser/shared';
 import type {
   RegistrySyncRequestBody,
   CreateRoomInviteBody,
@@ -79,14 +84,29 @@ accessGrantRouter.post('/permissions', requireAuth, async (c) => {
     return c.json({ error: 'Invalid request' }, 400);
   }
 
+  if (!Array.isArray(body.roomIds) || !Array.isArray(body.collections)) {
+    return c.json({ error: 'Invalid request' }, 400);
+  }
+
+  const hasAllCollection = body.collections.includes('all');
+  if (hasAllCollection && body.collections.length > 1) {
+    return c.json({ error: 'Invalid collections' }, 400);
+  }
+
+  const hasInvalidCollection = body.collections.some(
+    (collection) =>
+      collection !== 'all' &&
+      !collectionKeys.includes(collection as (typeof collectionKeys)[number])
+  );
+  if (hasInvalidCollection) {
+    return c.json({ error: 'Invalid collections' }, 400);
+  }
+
   // Validate redirect URL to prevent open redirect attacks
   let redirectUrl: URL;
   try {
     redirectUrl = new URL(body.redirect);
-    if (
-      redirectUrl.protocol !== 'https:' &&
-      redirectUrl.protocol !== 'http:'
-    ) {
+    if (redirectUrl.protocol !== 'https:' && redirectUrl.protocol !== 'http:') {
       return c.json({ error: 'Invalid redirect protocol' }, 400);
     }
     if (redirectUrl.host !== body.domain) {
@@ -94,6 +114,29 @@ accessGrantRouter.post('/permissions', requireAuth, async (c) => {
     }
   } catch {
     return c.json({ error: 'Invalid redirect URL' }, 400);
+  }
+
+  const writableRooms = await getWritableRoomsByUserId(user.id);
+  const writableRoomIds = new Set(writableRooms.map((room) => room.id));
+  const writableCollections = new Set(
+    writableRooms.map((room) => room.collectionKey)
+  );
+
+  const unauthorizedRoomId = body.roomIds.find(
+    (roomId) => !writableRoomIds.has(roomId)
+  );
+  if (unauthorizedRoomId) {
+    return c.json({ error: 'Invalid room' }, 403);
+  }
+
+  if (!hasAllCollection) {
+    const unauthorizedCollection = body.collections.find(
+      (collection) =>
+        collection !== 'all' && !writableCollections.has(collection)
+    );
+    if (unauthorizedCollection) {
+      return c.json({ error: 'Invalid collection' }, 403);
+    }
   }
 
   const token = await createOrUpdateThirdPartyAppPermissions({
@@ -178,7 +221,22 @@ accessGrantRouter.post('/accept-room-invite', requireAuth, async (c) => {
   }
 
   const protocol = env.AUTH_SERVER_URL.startsWith('https') ? 'https' : 'http';
-  const redirectUrl = new URL(redirect, `${protocol}://${domain}`);
+  if (!redirect.startsWith('/') || redirect.startsWith('//')) {
+    return c.json({ error: 'Invalid invite redirect' }, 400);
+  }
+
+  let inviteBaseUrl: URL;
+  try {
+    inviteBaseUrl = new URL(`${protocol}://${domain}`);
+  } catch {
+    return c.json({ error: 'Invalid invite domain' }, 400);
+  }
+
+  const redirectUrl = new URL(redirect, inviteBaseUrl);
+  if (redirectUrl.host !== inviteBaseUrl.host) {
+    return c.json({ error: 'Invalid invite redirect host' }, 400);
+  }
+
   if (redirectQueries) {
     Object.entries(redirectQueries).forEach(([key, value]) => {
       redirectUrl.searchParams.set(key, value);

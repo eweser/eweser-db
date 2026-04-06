@@ -15,17 +15,29 @@ export function validateLoginQueryOptions(
   }
 
   const { redirect, domain, name } = queryOptions;
+  let validDomain = false;
+  if (typeof domain === 'string' && domain.length > 0) {
+    try {
+      const domainUrl = new URL(`https://${domain}`);
+      validDomain = domainUrl.host === domain;
+    } catch {
+      validDomain = false;
+    }
+  }
+
   // Use proper URL parsing to avoid subdomain bypass attacks
   let validRedirect = false;
   if (typeof redirect === 'string' && redirect.length > 0) {
     try {
       const url = new URL(redirect);
-      validRedirect = url.host === domain;
+      validRedirect =
+        (url.protocol === 'https:' || url.protocol === 'http:') &&
+        validDomain &&
+        url.host === domain;
     } catch {
       validRedirect = false;
     }
   }
-  const validDomain = typeof domain === 'string' && domain.length > 0;
   const collections = !queryOptions.collections
     ? ['all']
     : queryOptions.collections === 'all'

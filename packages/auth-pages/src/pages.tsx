@@ -763,9 +763,11 @@ function PermissionPage() {
             <Button
               tone="ghost"
               type="button"
-              onClick={() =>
-                window.location.assign(`${loginQuery.redirect}?error=denied`)
-              }
+              onClick={() => {
+                const denyUrl = new URL(loginQuery.redirect);
+                denyUrl.searchParams.set('error', 'denied');
+                window.location.assign(denyUrl.toString());
+              }}
             >
               Deny
             </Button>

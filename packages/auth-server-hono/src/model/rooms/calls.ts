@@ -27,6 +27,21 @@ export async function getRoomsByIds(ids: string[]): Promise<Room[]> {
   return await db.select().from(rooms).where(inArray(rooms.id, ids));
 }
 
+export async function getWritableRoomsByUserId(
+  userId: string,
+  dbInstance?: DBInstance
+): Promise<Pick<Room, 'id' | 'collectionKey'>[]> {
+  return await (dbInstance ?? db)
+    .select({ id: rooms.id, collectionKey: rooms.collectionKey })
+    .from(rooms)
+    .where(
+      and(
+        or(isNull(rooms._deleted), ne(rooms._deleted, true)),
+        arrayOverlaps(rooms.writeAccess, [userId])
+      )
+    );
+}
+
 /**
  * Locks rows for update. Returns profile rooms for a user.
  */
@@ -150,6 +165,7 @@ export async function getRoomIdsFromAccessGrant(
         .where(
           and(
             or(isNull(rooms._deleted), ne(rooms._deleted, true)),
+            arrayOverlaps(rooms.writeAccess, [ownerId]),
             or(
               grantRoomIds.length > 0
                 ? inArray(rooms.id, grantRoomIds)
@@ -195,6 +211,7 @@ export async function getRoomsFromAccessGrant(
     .where(
       and(
         or(isNull(rooms._deleted), ne(rooms._deleted, true)),
+        arrayOverlaps(rooms.writeAccess, [ownerId]),
         or(
           grantRoomIds.length > 0
             ? inArray(rooms.id, grantRoomIds)

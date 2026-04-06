@@ -4,6 +4,7 @@ import type { Context, Next } from 'hono';
 
 const syncRoomsWithClientMock = vi.fn();
 const getRoomsByIdsMock = vi.fn();
+const getWritableRoomsByUserIdMock = vi.fn();
 const updateRoomMock = vi.fn();
 const createRoomInviteLinkMock = vi.fn();
 const verifyRoomInviteTokenMock = vi.fn();
@@ -32,6 +33,7 @@ vi.mock('../services/rooms/sync-rooms-with-client.js', () => ({
 
 vi.mock('../model/rooms/calls.js', () => ({
   getRoomsByIds: getRoomsByIdsMock,
+  getWritableRoomsByUserId: getWritableRoomsByUserIdMock,
   updateRoom: updateRoomMock,
 }));
 
@@ -74,6 +76,9 @@ describe('accessGrantRouter', () => {
     app = new Hono();
     app.route('/api/access-grant', accessGrantRouter);
     vi.clearAllMocks();
+    getWritableRoomsByUserIdMock.mockResolvedValue([
+      { id: 'room-1', collectionKey: 'notes' },
+    ]);
   });
 
   it('returns 401 on sync-registry when auth header is missing', async () => {
@@ -197,6 +202,25 @@ describe('accessGrantRouter', () => {
     });
   });
 
+  it('returns 403 when permissions request includes unauthorized room', async () => {
+    const res = await app.fetch(
+      new Request('http://localhost/api/access-grant/permissions', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          domain: 'example.com',
+          redirect: 'https://example.com/callback',
+          roomIds: ['room-999'],
+          collections: ['all'],
+        }),
+      })
+    );
+
+    expect(res.status).toBe(403);
+    await expect(res.json()).resolves.toEqual({ error: 'Invalid room' });
+    expect(createOrUpdateThirdPartyAppPermissionsMock).not.toHaveBeenCalled();
+  });
+
   it('returns 400 when invite token is missing', async () => {
     const res = await app.fetch(
       new Request('http://localhost/api/access-grant/accept-room-invite', {
@@ -265,6 +289,32 @@ describe('accessGrantRouter', () => {
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({
       redirectUrl: 'http://example.com/accepted?from=invite',
+    });
+  });
+
+  it('returns 400 when invite redirect is absolute URL', async () => {
+    verifyRoomInviteTokenMock.mockReturnValueOnce({
+      roomId: 'room-1',
+      inviterId: 'owner-1',
+      accessType: 'write',
+      domain: 'example.com',
+      redirect: 'https://evil.example/path',
+      invitees: [],
+      expiry: new Date(Date.now() + 60_000).toISOString(),
+      redirectQueries: { from: 'invite' },
+    });
+
+    const res = await app.fetch(
+      new Request('http://localhost/api/access-grant/accept-room-invite', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ token: 'invite-token' }),
+      })
+    );
+
+    expect(res.status).toBe(400);
+    await expect(res.json()).resolves.toEqual({
+      error: 'Invalid invite redirect',
     });
   });
 

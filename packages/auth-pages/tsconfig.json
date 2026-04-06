@@ -16,11 +16,11 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo",
     "jsx": "react-jsx",
     "types": ["vite/client"],
     "baseUrl": "./src"
   },
-  "include": ["vite.config.ts", "src", "vite-env.d.ts"],
-  "exclude": ["vite.config.ts"],
+  "include": ["src", "vite-env.d.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
