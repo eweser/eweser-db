@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import type { DBInstance } from './client.js';
 import { indexedDocuments } from './schema.js';
 
@@ -108,25 +108,43 @@ export async function agentSearchDocuments(
 
   // Build WHERE conditions as SQL fragments
   const conditions: ReturnType<typeof sql>[] = [
-    sql`room_id = ANY(ARRAY[${sql.join(roomIds.map((id) => sql`${id}::uuid`), sql`, `)}])`,
+    sql`room_id = ANY(ARRAY[${sql.join(
+      roomIds.map((id) => sql`${id}::uuid`),
+      sql`, `
+    )}])`,
     sql`to_tsvector('english', document_data::text) @@ plainto_tsquery('english', ${query})`,
     sql`(document_data->>'_deleted')::boolean IS DISTINCT FROM true`,
   ];
 
   if (filters?.collectionKey && filters.collectionKey.length > 0) {
     const keys = filters.collectionKey;
-    conditions.push(sql`collection_key = ANY(ARRAY[${sql.join(keys.map((k) => sql`${k}`), sql`, `)}])`);
+    conditions.push(
+      sql`collection_key = ANY(ARRAY[${sql.join(
+        keys.map((k) => sql`${k}`),
+        sql`, `
+      )}])`
+    );
   }
   if (filters?.memoryType && filters.memoryType.length > 0) {
     const types = filters.memoryType;
-    conditions.push(sql`document_data->>'memoryType' = ANY(ARRAY[${sql.join(types.map((t) => sql`${t}`), sql`, `)}])`);
+    conditions.push(
+      sql`document_data->>'memoryType' = ANY(ARRAY[${sql.join(
+        types.map((t) => sql`${t}`),
+        sql`, `
+      )}])`
+    );
   }
   if (filters?.agentId) {
     conditions.push(sql`document_data->>'agentId' = ${filters.agentId}`);
   }
   if (filters?.tags && filters.tags.length > 0) {
     const tags = filters.tags;
-    conditions.push(sql`document_data->'tags' ?| ARRAY[${sql.join(tags.map((t) => sql`${t}`), sql`, `)}]::text[]`);
+    conditions.push(
+      sql`document_data->'tags' ?| ARRAY[${sql.join(
+        tags.map((t) => sql`${t}`),
+        sql`, `
+      )}]::text[]`
+    );
   }
   if (filters?.dateFrom) {
     conditions.push(sql`document_data->>'date' >= ${filters.dateFrom}`);
@@ -175,7 +193,7 @@ export async function agentSearchDocuments(
   `)) as Array<Record<string, unknown>>;
 
   return rows.map((row) => {
-    const data = row['documentData'] as Record<string, unknown> | null ?? {};
+    const data = (row['documentData'] as Record<string, unknown> | null) ?? {};
     const docId = (data['_id'] as string | undefined) ?? (row['id'] as string);
     const roomId = row['roomId'] as string;
     const collectionKey = row['collectionKey'] as string;
@@ -191,9 +209,12 @@ export async function agentSearchDocuments(
       snippet,
       score: Number(row['base_score']) * Number(row['boost']),
     };
-    if (data['summary'] !== undefined) result.summary = data['summary'] as string;
-    if (data['memoryType'] !== undefined) result.memoryType = data['memoryType'] as string;
-    if (data['agentId'] !== undefined) result.agentId = data['agentId'] as string;
+    if (data['summary'] !== undefined)
+      result.summary = data['summary'] as string;
+    if (data['memoryType'] !== undefined)
+      result.memoryType = data['memoryType'] as string;
+    if (data['agentId'] !== undefined)
+      result.agentId = data['agentId'] as string;
     if (data['date'] !== undefined) result.date = data['date'] as string;
     if (Array.isArray(data['tags'])) result.tags = data['tags'] as string[];
     return result;

@@ -18,7 +18,10 @@ describe('createAgentSearchRouter', () => {
 
   beforeEach(() => {
     app = new Hono();
-    app.route('/api', createAgentSearchRouter({ agentSearchDocuments, verifyAgentToken }));
+    app.route(
+      '/api',
+      createAgentSearchRouter({ agentSearchDocuments, verifyAgentToken })
+    );
     vi.clearAllMocks();
     verifyAgentToken.mockResolvedValue(AGENT_CONFIG);
     agentSearchDocuments.mockResolvedValue([]);
@@ -62,7 +65,9 @@ describe('createAgentSearchRouter', () => {
       })
     );
     expect(res.status).toBe(400);
-    await expect(res.json()).resolves.toMatchObject({ error: expect.stringContaining('query') });
+    await expect(res.json()).resolves.toMatchObject({
+      error: expect.stringContaining('query'),
+    });
   });
 
   it('searches all agent rooms when no roomIds provided', async () => {
@@ -99,7 +104,7 @@ describe('createAgentSearchRouter', () => {
         limit: 10,
       })
     );
-    const body = await res.json() as { results: unknown[] };
+    const body = (await res.json()) as { results: unknown[] };
     expect(body.results).toEqual(mockResults);
   });
 
@@ -145,7 +150,7 @@ describe('createAgentSearchRouter', () => {
     );
 
     expect(res.status).toBe(200);
-    const body = await res.json() as { results: unknown[] };
+    const body = (await res.json()) as { results: unknown[] };
     expect(body.results).toEqual([]);
     expect(agentSearchDocuments).not.toHaveBeenCalled();
   });
@@ -160,7 +165,11 @@ describe('createAgentSearchRouter', () => {
         },
         body: JSON.stringify({
           query: 'auth',
-          filters: { collectionKey: ['conversations'], memoryType: ['decision'], tags: ['auth-server'] },
+          filters: {
+            collectionKey: ['conversations'],
+            memoryType: ['decision'],
+            tags: ['auth-server'],
+          },
         }),
       })
     );
@@ -168,8 +177,54 @@ describe('createAgentSearchRouter', () => {
     expect(res.status).toBe(200);
     expect(agentSearchDocuments).toHaveBeenCalledWith(
       expect.objectContaining({
-        filters: { collectionKey: ['conversations'], memoryType: ['decision'], tags: ['auth-server'] },
+        filters: {
+          collectionKey: ['conversations'],
+          memoryType: ['decision'],
+          tags: ['auth-server'],
+        },
       })
     );
+  });
+
+  it('returns 400 when roomIds is not an array of strings', async () => {
+    const res = await app.fetch(
+      new Request('http://localhost/api/agent-search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${VALID_TOKEN}`,
+        },
+        body: JSON.stringify({
+          query: 'auth',
+          roomIds: 'not-an-array',
+        }),
+      })
+    );
+
+    expect(res.status).toBe(400);
+    await expect(res.json()).resolves.toMatchObject({
+      error: 'roomIds must be an array of strings',
+    });
+  });
+
+  it('returns 400 when filters contain wrong types', async () => {
+    const res = await app.fetch(
+      new Request('http://localhost/api/agent-search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${VALID_TOKEN}`,
+        },
+        body: JSON.stringify({
+          query: 'auth',
+          filters: { collectionKey: 'conversations' },
+        }),
+      })
+    );
+
+    expect(res.status).toBe(400);
+    await expect(res.json()).resolves.toMatchObject({
+      error: 'filters.collectionKey must be an array of strings',
+    });
   });
 });

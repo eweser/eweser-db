@@ -454,6 +454,18 @@ describe('agentsRouter', () => {
       );
       expect(res.status).toBe(400);
     });
+
+    it('returns 400 for invalid JSON body', async () => {
+      const res = await app.fetch(
+        new Request('http://localhost/api/agents/verify-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: '{not-valid-json',
+        })
+      );
+
+      expect(res.status).toBe(400);
+    });
   });
 });
 
@@ -542,7 +554,7 @@ describe('agent-authenticated endpoints', () => {
 
       const res = await agentFetch(app, '/api/agents/me/rooms', {});
       expect(res.status).toBe(200);
-      const data = await res.json<{ rooms: typeof mockRoom[] }>();
+      const data = await res.json<{ rooms: (typeof mockRoom)[] }>();
       expect(data.rooms).toHaveLength(1);
       expect(data.rooms[0]?.id).toBe('room-uuid-1');
     });
@@ -588,7 +600,10 @@ describe('agent-authenticated endpoints', () => {
     });
 
     it('returns 404 if room not in user rooms', async () => {
-      mockGetUserById.mockResolvedValueOnce({ ...mockUserWithRooms, rooms: [] });
+      mockGetUserById.mockResolvedValueOnce({
+        ...mockUserWithRooms,
+        rooms: [],
+      });
 
       const res = await agentFetch(app, '/api/agents/me/sync-token', {
         roomId: 'room-uuid-1',
