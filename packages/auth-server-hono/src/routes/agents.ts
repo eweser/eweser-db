@@ -63,7 +63,9 @@ agentsRouter.post('/', requireAuth, async (c) => {
   );
   if (invalidCollections.length > 0) {
     return c.json(
-      { error: `Invalid collection keys: ${invalidCollections.join(', ')}. Allowed: ${COLLECTION_KEYS.join(', ')}` },
+      {
+        error: `Invalid collection keys: ${invalidCollections.join(', ')}. Allowed: ${COLLECTION_KEYS.join(', ')}`,
+      },
       400
     );
   }
@@ -203,7 +205,8 @@ const verifyTokenRateLimiter = (() => {
   const WINDOW_MS = 60_000;
   const MAX = 30;
   return createMiddleware(async (c, next) => {
-    const ip = c.req.header('x-forwarded-for') ?? c.req.header('x-real-ip') ?? 'unknown';
+    const ip =
+      c.req.header('x-forwarded-for') ?? c.req.header('x-real-ip') ?? 'unknown';
     const now = Date.now();
     const entry = counts.get(ip);
     if (!entry || now > entry.resetAt) {
@@ -282,13 +285,15 @@ agentsRouter.post('/me/rooms', agentAuth, async (c) => {
   }
 
   // Return only safe fields
-  const rooms = allRooms.map(({ id, name, collectionKey, syncUrl, syncBaseUrl }) => ({
-    id,
-    name,
-    collectionKey,
-    syncUrl,
-    syncBaseUrl,
-  }));
+  const rooms = allRooms.map(
+    ({ id, name, collectionKey, syncUrl, syncBaseUrl }) => ({
+      id,
+      name,
+      collectionKey,
+      syncUrl,
+      syncBaseUrl,
+    })
+  );
 
   return c.json({ rooms });
 });
@@ -328,7 +333,10 @@ agentsRouter.post('/me/sync-token', agentAuth, async (c) => {
     agent.allowedCollections.length > 0 &&
     !agent.allowedCollections.includes(room.collectionKey)
   ) {
-    return c.json({ error: 'Agent not allowed to access this collection' }, 403);
+    return c.json(
+      { error: 'Agent not allowed to access this collection' },
+      403
+    );
   }
   if (
     agent.allowedRooms.length > 0 &&
@@ -338,10 +346,18 @@ agentsRouter.post('/me/sync-token', agentAuth, async (c) => {
   }
 
   const syncBaseUrl = room.syncBaseUrl ?? env.SYNC_SERVER_URL;
-  const { token, expiry } = generateSyncToken(body.roomId, room.collectionKey, agent.userId);
+  const { token, expiry } = generateSyncToken(
+    body.roomId,
+    room.collectionKey,
+    agent.userId
+  );
   const syncUrl = `${syncBaseUrl}/${body.roomId}`;
 
-  return c.json({ syncUrl, syncToken: token, tokenExpiry: expiry.toISOString() });
+  return c.json({
+    syncUrl,
+    syncToken: token,
+    tokenExpiry: expiry.toISOString(),
+  });
 });
 
 /**
@@ -358,7 +374,10 @@ agentsRouter.post('/me/log', agentAuth, async (c) => {
   }>();
 
   if (!body.roomId || !body.collectionKey || !body.action) {
-    return c.json({ error: 'roomId, collectionKey, and action are required' }, 400);
+    return c.json(
+      { error: 'roomId, collectionKey, and action are required' },
+      400
+    );
   }
   if (body.action !== 'read' && body.action !== 'write') {
     return c.json({ error: 'action must be read or write' }, 400);

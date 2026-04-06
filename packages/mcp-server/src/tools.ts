@@ -43,9 +43,11 @@ interface AggregatorSearchResult {
 
 /** Emoji prefix for a result based on collectionKey / memoryType */
 function resultEmoji(result: AggregatorSearchResult): string {
-  if (result.memoryType === 'memory' || result.memoryType === 'decision') return '🧠';
+  if (result.memoryType === 'memory' || result.memoryType === 'decision')
+    return '🧠';
   if (result.memoryType === 'session') return '📝';
-  if (result.memoryType === 'bookmark' || result.collectionKey === 'bookmarks') return '🔖';
+  if (result.memoryType === 'bookmark' || result.collectionKey === 'bookmarks')
+    return '🔖';
   return '📚';
 }
 
@@ -69,14 +71,23 @@ function formatAggregatorResults(results: AggregatorSearchResult[]): string {
 
 const SearchFiltersSchema = z
   .object({
-    collectionKey: z.array(z.string()).optional().describe('Restrict to these collection keys'),
+    collectionKey: z
+      .array(z.string())
+      .optional()
+      .describe('Restrict to these collection keys'),
     memoryType: z
       .array(z.enum(['session', 'memory', 'decision', 'bookmark']))
       .optional()
       .describe('Filter by memoryType'),
-    agentId: z.string().optional().describe('Filter by agent that wrote the doc'),
+    agentId: z
+      .string()
+      .optional()
+      .describe('Filter by agent that wrote the doc'),
     tags: z.array(z.string()).optional().describe('Filter by tags (ANY match)'),
-    dateFrom: z.string().optional().describe('ISO date lower bound (inclusive)'),
+    dateFrom: z
+      .string()
+      .optional()
+      .describe('ISO date lower bound (inclusive)'),
     dateTo: z.string().optional().describe('ISO date upper bound (inclusive)'),
   })
   .optional();
@@ -176,7 +187,12 @@ export function registerTools(
       if (!doc) {
         return {
           isError: true,
-          content: [{ type: 'text' as const, text: `Document not found: ${documentId}` }],
+          content: [
+            {
+              type: 'text' as const,
+              text: `Document not found: ${documentId}`,
+            },
+          ],
         };
       }
 
@@ -227,7 +243,9 @@ export function registerTools(
           });
 
           if (res.ok) {
-            const data = (await res.json()) as { results: AggregatorSearchResult[] };
+            const data = (await res.json()) as {
+              results: AggregatorSearchResult[];
+            };
             if (data.results.length > 0) {
               const formatted = formatAggregatorResults(data.results);
               return {
@@ -246,8 +264,12 @@ export function registerTools(
 
       // In-memory fallback (O(n) scan over loaded Y.Docs)
       const collectionFilter =
-        filters?.collectionKey?.length === 1 ? filters.collectionKey[0] : undefined;
-      const results = dataLayer.searchDocuments(query, collectionFilter).slice(0, 10);
+        filters?.collectionKey?.length === 1
+          ? filters.collectionKey[0]
+          : undefined;
+      const results = dataLayer
+        .searchDocuments(query, collectionFilter)
+        .slice(0, 10);
       return {
         content: [
           {
@@ -269,7 +291,9 @@ export function registerTools(
     'Create a new document in a room.',
     {
       roomId: z.string().describe('The room UUID'),
-      data: z.record(z.unknown()).describe('Document fields (excluding metadata)'),
+      data: z
+        .record(z.unknown())
+        .describe('Document fields (excluding metadata)'),
     },
     async ({ roomId, data }) => {
       const connected = dataLayer.assertWriteAccess(roomId);
@@ -313,7 +337,12 @@ export function registerTools(
       if (!existing) {
         return {
           isError: true,
-          content: [{ type: 'text' as const, text: `Document not found: ${documentId}` }],
+          content: [
+            {
+              type: 'text' as const,
+              text: `Document not found: ${documentId}`,
+            },
+          ],
         };
       }
 
@@ -350,7 +379,10 @@ export function registerTools(
       'Keep summary concise — ideally under 500 tokens.',
     {
       roomId: z.string().describe('The conversations room UUID to write to'),
-      title: z.string().min(1).describe('Short descriptive title for this memory'),
+      title: z
+        .string()
+        .min(1)
+        .describe('Short descriptive title for this memory'),
       summary: z
         .string()
         .min(1)
@@ -364,12 +396,17 @@ export function registerTools(
       agentId: z
         .string()
         .optional()
-        .describe('Agent identifier, e.g. "copilot", "claude". Defaults to "unknown".'),
+        .describe(
+          'Agent identifier, e.g. "copilot", "claude". Defaults to "unknown".'
+        ),
       date: z
         .string()
         .optional()
         .describe('ISO date string. Defaults to today.'),
-      tags: z.array(z.string()).optional().describe('Labels for filtering/search'),
+      tags: z
+        .array(z.string())
+        .optional()
+        .describe('Labels for filtering/search'),
       turns: z
         .array(
           z.object({
@@ -379,13 +416,25 @@ export function registerTools(
           })
         )
         .optional()
-        .describe('Optional turn-by-turn transcript. Capped at last 100 turns.'),
+        .describe(
+          'Optional turn-by-turn transcript. Capped at last 100 turns.'
+        ),
       relatedDocIds: z
         .array(z.string())
         .optional()
         .describe('IDs of related EweserDB documents'),
     },
-    async ({ roomId, title, summary, memoryType, agentId, date, tags, turns, relatedDocIds }) => {
+    async ({
+      roomId,
+      title,
+      summary,
+      memoryType,
+      agentId,
+      date,
+      tags,
+      turns,
+      relatedDocIds,
+    }) => {
       const connected = dataLayer.assertWriteAccess(roomId);
       const crudApi = dataLayer.getDocumentsForRoom(roomId);
 
@@ -393,7 +442,11 @@ export function registerTools(
       let cappedTurns = turns;
       if (turns && turns.length > MAX_TURNS) {
         cappedTurns = [
-          { role: 'assistant' as const, content: `[${turns.length - MAX_TURNS} turns truncated]`, timestamp: new Date().toISOString() },
+          {
+            role: 'assistant' as const,
+            content: `[${turns.length - MAX_TURNS} turns truncated]`,
+            timestamp: new Date().toISOString(),
+          },
           ...turns.slice(-MAX_TURNS),
         ];
       }

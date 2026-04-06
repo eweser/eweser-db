@@ -18,11 +18,12 @@ Claude Desktop and Claude Code do **not** have automatic session-end hooks (as o
 ```
 
 This will call:
+
 ```json
 {
   "tool": "eweser_save_memory",
   "args": {
-    "roomId": "<your-conversations-room-id>",
+    "roomId": "ec8a7adb-45ca-4480-8de9-b4d74173f73f",
     "title": "Session: auth server migration decision",
     "summary": "We decided to use Hono for the auth server migration and completed run 1 of the aggregator search plan.",
     "memoryType": "session",

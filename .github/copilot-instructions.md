@@ -97,7 +97,7 @@ At the end of every coding session, save a session summary using `eweser_save_me
 "save session: <brief description of what was accomplished>"
 ```
 
-This calls `eweser_save_memory` with `memoryType: "session"` and stores it in the configured conversations room. To recall past decisions and sessions, use `eweser_search`:
+This calls `eweser_save_memory` with `memoryType: "session"`, `roomId: "ec8a7adb-45ca-4480-8de9-b4d74173f73f"`, and stores it in the conversations room. To recall past decisions and sessions, use `eweser_search`:
 
 ```json
 { "tool": "eweser_search", "args": { "query": "your topic", "filters": { "memoryType": ["decision", "session"] } } }

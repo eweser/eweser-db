@@ -15,9 +15,16 @@ type ToolHandler = (args: Record<string, unknown>) => Promise<{
 const registeredTools = new Map<string, ToolHandler>();
 
 const mockServer = {
-  tool: vi.fn((name: string, _description: string, _schema: unknown, handler: ToolHandler) => {
-    registeredTools.set(name, handler);
-  }),
+  tool: vi.fn(
+    (
+      name: string,
+      _description: string,
+      _schema: unknown,
+      handler: ToolHandler
+    ) => {
+      registeredTools.set(name, handler);
+    }
+  ),
 } as unknown as McpServer;
 
 const mockLog = vi.fn().mockResolvedValue(undefined);
@@ -62,7 +69,9 @@ const mockDataLayer = {
   getRawDocuments: vi.fn(() => ({ 'doc-1': mockDoc1 })),
   getDocumentsForRoom: vi.fn(() => mockCrudApi),
   getAgentToken: vi.fn(() => 'mock-agent-token'),
-  searchDocuments: vi.fn(() => [{ roomId: 'room-1', document: mockDoc1, score: 1 }]),
+  searchDocuments: vi.fn(() => [
+    { roomId: 'room-1', document: mockDoc1, score: 1 },
+  ]),
 } as unknown as DataLayer;
 
 // ---------------------------------------------------------------------------
@@ -111,7 +120,10 @@ describe('eweser_list_rooms', () => {
 // ---------------------------------------------------------------------------
 describe('eweser_list_documents', () => {
   it('returns document summaries', async () => {
-    const result = await callTool('eweser_list_documents', { roomId: 'room-1', limit: 50 });
+    const result = await callTool('eweser_list_documents', {
+      roomId: 'room-1',
+      limit: 50,
+    });
     expect(result.isError).toBeFalsy();
     const docs = JSON.parse(result.content[0].text);
     expect(docs).toHaveLength(1);
@@ -162,8 +174,36 @@ describe('eweser_search', () => {
   });
 
   it('passes collectionKey filter to searchDocuments fallback', async () => {
-    await callTool('eweser_search', { query: 'hello', filters: { collectionKey: ['notes'] } });
-    expect(mockDataLayer.searchDocuments).toHaveBeenCalledWith('hello', 'notes');
+    await callTool('eweser_search', {
+      query: 'hello',
+      filters: { collectionKey: ['notes'] },
+    });
+    expect(mockDataLayer.searchDocuments).toHaveBeenCalledWith(
+      'hello',
+      'notes'
+    );
+  });
+
+  it('falls back to in-memory search when aggregator returns zero results', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ results: [] }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    registeredTools.clear();
+    registerTools(mockServer, mockDataLayer, mockLog, 'http://aggregator.test');
+
+    const result = await callTool('eweser_search', { query: 'hello' });
+
+    expect(result.isError).toBeFalsy();
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(mockDataLayer.searchDocuments).toHaveBeenCalledWith(
+      'hello',
+      undefined
+    );
+
+    vi.unstubAllGlobals();
   });
 });
 
@@ -354,7 +394,10 @@ describe('eweser_save_memory', () => {
       summary: 'A test memory',
       memoryType: 'memory',
     });
-    const callArgs = mockCrudApi.new.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+    const callArgs = mockCrudApi.new.mock.calls.at(-1)?.[0] as Record<
+      string,
+      unknown
+    >;
     expect(callArgs?.agentId).toBe('unknown');
   });
 
@@ -366,7 +409,10 @@ describe('eweser_save_memory', () => {
       memoryType: 'session',
       agentId: 'copilot',
     });
-    const callArgs = mockCrudApi.new.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+    const callArgs = mockCrudApi.new.mock.calls.at(-1)?.[0] as Record<
+      string,
+      unknown
+    >;
     expect(callArgs?.agentId).toBe('copilot');
   });
 
@@ -375,7 +421,11 @@ describe('eweser_save_memory', () => {
       role: i % 2 === 0 ? 'user' : 'assistant',
       content: `Turn ${i}`,
       timestamp: new Date().toISOString(),
-    })) as Array<{ role: 'user' | 'assistant'; content: string; timestamp: string }>;
+    })) as Array<{
+      role: 'user' | 'assistant';
+      content: string;
+      timestamp: string;
+    }>;
 
     await callTool('eweser_save_memory', {
       roomId: 'room-1',
@@ -385,7 +435,10 @@ describe('eweser_save_memory', () => {
       turns,
     });
 
-    const callArgs = mockCrudApi.new.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+    const callArgs = mockCrudApi.new.mock.calls.at(-1)?.[0] as Record<
+      string,
+      unknown
+    >;
     const savedTurns = callArgs?.turns as Array<{ content: string }>;
     // 1 truncation marker + 100 turns = 101
     expect(savedTurns).toHaveLength(101);
@@ -395,8 +448,16 @@ describe('eweser_save_memory', () => {
 
   it('passes through turns unchanged when within limit', async () => {
     const turns = [
-      { role: 'user' as const, content: 'hello', timestamp: '2025-01-01T00:00:00.000Z' },
-      { role: 'assistant' as const, content: 'world', timestamp: '2025-01-01T00:00:01.000Z' },
+      {
+        role: 'user' as const,
+        content: 'hello',
+        timestamp: '2025-01-01T00:00:00.000Z',
+      },
+      {
+        role: 'assistant' as const,
+        content: 'world',
+        timestamp: '2025-01-01T00:00:01.000Z',
+      },
     ];
     await callTool('eweser_save_memory', {
       roomId: 'room-1',
@@ -405,7 +466,10 @@ describe('eweser_save_memory', () => {
       memoryType: 'session',
       turns,
     });
-    const callArgs = mockCrudApi.new.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+    const callArgs = mockCrudApi.new.mock.calls.at(-1)?.[0] as Record<
+      string,
+      unknown
+    >;
     expect(callArgs?.turns).toHaveLength(2);
   });
 });
