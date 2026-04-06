@@ -5,12 +5,13 @@ import { oAuthLoginCallback } from '../../../../modules/account/oauth/login-call
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { next?: string } }
+  { params }: { params: Promise<{ next: string }> }
 ) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
   // if "next" is in param, use it as the redirect URL
-  const next = params.next ?? '/home';
+  const { next: nextPath } = await params;
+  const next = nextPath || '/home';
 
   const redirectTo = request.nextUrl.clone();
   redirectTo.pathname = next;

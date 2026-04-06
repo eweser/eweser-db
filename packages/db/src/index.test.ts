@@ -2,7 +2,13 @@ import type { DatabaseOptions } from '.';
 import { Database } from '.';
 import { it, expect } from 'vitest';
 
-const collectionKeys = ['notes', 'flashcards', 'profiles'];
+const collectionKeys = [
+  'notes',
+  'flashcards',
+  'profiles',
+  'agentConfigs',
+  'agentAccessLogs',
+];
 const defaultAuthServer = 'https://www.eweser.com';
 
 it('Database initializes with defaults', () => {

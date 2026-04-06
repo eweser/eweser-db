@@ -1,319 +1,233 @@
 # Local Development Setup
 
-This guide will help you set up a local development environment for eweser-db.
+> **Docker-only backend** — Backend services (PostgreSQL, sync servers, aggregator, auth API) run in Docker. Frontend apps run on the host via `npm run dev` for hot reloading.
 
 ## Prerequisites
 
-### Required Software
+| Software                                                          | Version  | Notes                                 |
+| ----------------------------------------------------------------- | -------- | ------------------------------------- |
+| [Node.js](https://volta.sh/)                                      | v20.11.0 | Managed by Volta (see `package.json`) |
+| [Docker Desktop](https://www.docker.com/products/docker-desktop/) | Latest   | Required for backend services         |
+| Git                                                               | Any      | For cloning                           |
 
-1. **Node.js** (v20.11.0)
-   - This project uses [Volta](https://volta.sh/) for Node version management
-   - Volta will automatically use the correct version specified in `package.json`
-   - Alternatively, install Node.js 20.11.0 manually
-
-2. **Docker Desktop**
-   - Required for running Supabase locally
-   - [Install Docker Desktop](https://www.docker.com/products/docker-desktop/)
-   - Make sure Docker is running before starting development
-
-3. **Git**
-   - For cloning the repository
-
-## Initial Setup
-
-### 1. Clone the Repository
+## Quick Start
 
 ```bash
+# 1. Clone & install
 git clone https://github.com/eweser/eweser-db.git
 cd eweser-db
-```
-
-### 2. Install Dependencies
-
-This is a monorepo using npm workspaces. Install all dependencies from the root:
-
-```bash
 npm install
-```
 
-This will install dependencies for all packages and examples in the workspace.
+# 2. Start backend services (Docker)
+npm run dev:docker
 
-### 3. Set Up Supabase (Local Development)
-
-The auth-server package uses Supabase for authentication and database management.
-
-#### Start Supabase
-
-Make sure Docker is running, then:
-
-```bash
-cd packages/auth-server
-npx supabase start
-```
-
-This command will:
-
-- Pull the necessary Docker images
-- Start the Supabase stack locally (PostgreSQL, Auth, Storage, etc.)
-- Display connection details including:
-  - API URL (usually `http://127.0.0.1:54321`)
-  - Database URL
-  - Studio URL (Supabase Dashboard)
-  - Anon Key
-  - Service Role Key
-
-**Note:** The first time you run this, it may take several minutes to download the Docker images.
-
-#### Configure Environment Variables
-
-1. Copy the example environment file:
-
-```bash
-cp example.env .env.local
-```
-
-2. Update `.env.local` with the connection details from `supabase start`:
-
-```bash
-# Supabase local dev
-NEXT_PUBLIC_SUPABASE_URL='http://127.0.0.1:54321'
-NEXT_PUBLIC_SUPABASE_ANON_KEY='<your-anon-key-from-supabase-start>'
-SUPABASE_CONNECTION_URL='postgresql://postgres:postgres@127.0.0.1:54322/postgres'
-SUPABASE_SERVICE_ROLE_KEY='<your-service-role-key-from-supabase-start>'
-
-# Local auth server
-NEXT_PUBLIC_AUTH_SERVER_URL='http://localhost:3000'
-NEXT_PUBLIC_AUTH_SERVER_DOMAIN='localhost:3000'
-
-# Server secret (can be any random string)
-SERVER_SECRET='any-random-string-for-local-dev'
-
-# Y-Sweet connection (see Y-Sweet section below)
-Y_SWEET_CONNECTION_STRING=yss://asdf.asdf-asdf@y-sweet.net/p/asdf--asdf/
-```
-
-#### Access Supabase Studio
-
-Once Supabase is running, you can access the Supabase Studio (local dashboard) at:
-
-```
-http://127.0.0.1:54323
-```
-
-This provides a UI for:
-
-- Viewing/editing database tables
-- Managing authentication
-- Viewing API logs
-- Testing SQL queries
-
-### 4. Set Up Y-Sweet
-
-Y-Sweet is used for real-time CRDT synchronization.
-
-#### Option 1: Use Hosted Y-Sweet (Recommended for Development)
-
-1. Sign up at [JamSocket](https://jamsocket.com/)
-2. Follow their [Quick Start Guide](https://docs.jamsocket.com/y-sweet/quickstart) to generate a connection string
-3. Add the connection string to your `.env.local`:
-
-```bash
-Y_SWEET_CONNECTION_STRING=yss://your-connection-string@y-sweet.net/p/your-project/
-```
-
-#### Option 2: Self-Host Y-Sweet (Advanced)
-
-Follow the Y-Sweet self-hosting documentation. You'll need to set up your own Y-Sweet instance and configure the connection string accordingly.
-
-## Running the Development Environment
-
-### Run Everything at Once
-
-From the root directory, run all development servers:
-
-```bash
+# 3. Start frontend apps (in a new terminal)
 npm run dev
 ```
 
-This will start:
+| App               | URL                           |
+| ----------------- | ----------------------------- |
+| Example app       | http://localhost:38110        |
+| Auth API (health) | http://localhost:38101/health |
 
-- `packages/db` - The core database library (watch mode)
-- `packages/shared` - Shared utilities (watch mode)
-- `packages/auth-server` - Auth server at `http://localhost:3000`
-- `examples/example-basic` - Example app at `http://localhost:8000`
-- `packages/examples-components` - UI components (watch mode)
+## Architecture Overview
 
-Alternatively, use the VS Code tasks (Command Palette → "Tasks: Run Task" → "Run All Dev")
-
-### Run Individual Packages
-
-You can also run packages individually:
-
-```bash
-# Auth server only
-npm run dev:auth-server
-# or
-cd packages/auth-server && npm run dev
-
-# Example app only
-npm run dev:example-basic
-# or
-cd examples/example-basic && npm run dev
-
-# Database library (watch mode)
-npm run dev:db
-# or
-cd packages/db && npm run dev
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Your Browser                         │
+│  ┌─────────────┐  ┌──────────────────────────────────┐ │
+│  │   Example   │  │  Other apps using @eweser/db      │ │
+│  │   App       │  │                                  │ │
+│  │ (Vite dev)  │  │                                  │ │
+│  └──────┬──────┘  └───────────────┬───────────────────┘ │
+│         │                         │                     │
+│         │    ┌───────────────────┘                     │
+│         │    │                                         │
+│  ┌──────▼────▼────┐                                    │
+│  │  @eweser/db    │  ← Yjs CRDT, IndexedDB local      │
+│  │  (core SDK)    │    persistence                    │
+│  └──────┬─────────┘                                    │
+└─────────┼───────────────────────────────────────────────┘
+          │ WebSocket (Hocuspocus)
+          │                  ┌─────────────────────────┐
+          │                  │   Docker Compose Dev    │
+          │    ┌────────────▼──────────┐              │
+          │    │  Hocuspocus Sync      │              │
+          │    │  Server (x2)          │              │
+          │    └────────────┬──────────┘              │
+          │                 │                          │
+          │    ┌────────────▼──────────┐              │
+          │    │  PostgreSQL           │              │
+          │    │  Auth API (Hono +     │              │
+          │    │  better-auth)         │              │
+          │    │  Aggregator           │              │
+          │    └────────────────────────┘              │
+          └──────────────────────────────────────────────┘
 ```
 
-## Development Workflow
+## NPM Scripts
 
-### Project Structure
-
-- `packages/db` - Core database library
-- `packages/auth-server` - Next.js authentication server
-- `packages/shared` - Shared types and utilities
-- `packages/examples-components` - Reusable UI components
-- `examples/example-basic` - Basic example application
-- `examples/react-native` - React Native example
-
-### Making Changes
-
-1. Make changes to the code in any package
-2. The dev servers will automatically rebuild and hot-reload
-3. Test your changes in the example apps
-
-### Database Migrations
-
-If you need to modify the database schema:
+### Docker Backend
 
 ```bash
-cd packages/auth-server
-npx supabase migration new <migration_name>
+npm run dev:docker       # Start all backend services
+npm run dev:docker:stop  # Stop all services
+npm run dev:docker:build # Rebuild & start
+npm run dev:docker:logs  # Tail logs
+npm run dev:docker:clean # Stop and remove volumes
 ```
 
-Edit the generated migration file in `packages/auth-server/supabase/migrations/`, then apply it:
+### Frontend Dev Servers
 
 ```bash
-npx supabase db reset  # Resets local DB and applies all migrations
+npm run dev              # Start all frontend dev servers (DB, shared, examples)
+npm run dev:db           # Core SDK only (watch mode)
+npm run dev:shared       # Shared types only (watch mode)
+npm run dev:example-basic # Example app only
 ```
 
-## Code Quality
-
-Before committing, run the quality check command to verify linting, formatting, type-safety, and tests:
+### Quality & Release
 
 ```bash
-npm run check
+npm run check      # lint + format + type-check + test
+npm run lint:fix   # Auto-fix lint issues
+npm run format     # Auto-fix formatting
+npm run changeset  # Create a changeset for publishing
 ```
 
-This command runs all quality gates in order:
+## VS Code Tasks
 
-- Linting (ESLint)
-- Format check (Prettier)
-- Type-check (TypeScript)
-- Unit tests (Vitest)
+Open Command Palette → "Tasks: Run Task" → select one of:
 
-To fix formatting and lint issues automatically:
+| Task                           | Description                           |
+| ------------------------------ | ------------------------------------- |
+| **Docker: Start Backend**      | Start all backend services            |
+| **Docker: Stop Backend**       | Stop all backend services             |
+| **Docker: Rebuild & Start**    | Rebuild images and start              |
+| **Docker: Clean Volumes**      | Stop and delete all data              |
+| **Docker: View Logs**          | Tail backend logs                     |
+| **Run All Dev**                | Docker backend + all frontend servers |
+| **Run DB Dev**                 | Core SDK only                         |
+| **Run Shared Dev**             | Shared types only                     |
+| **Run Example-basic Dev**      | Example app only                      |
+| **Run Example-components Dev** | UI components only                    |
+
+## Environment Variables
+
+Default values work for local development. Override in `.env.local` if needed:
+
+| Variable               | Default                   | Description                 |
+| ---------------------- | ------------------------- | --------------------------- |
+| `POSTGRES_HOST_PORT`   | `5499`                    | PostgreSQL port             |
+| `POSTGRES_PASSWORD`    | `changeme`                | PostgreSQL password         |
+| `SYNC_A_HOST_PORT`     | `38181`                   | Primary sync server port    |
+| `SYNC_B_HOST_PORT`     | `38182`                   | Secondary sync server port  |
+| `AGGREGATOR_HOST_PORT` | `38190`                   | Aggregator service port     |
+| `AUTH_API_HOST_PORT`   | `38101`                   | Auth API port               |
+| `SYNC_AUTH_SECRET`     | `dev-secret`              | Secret for sync server auth |
+| `WEBHOOK_SECRET`       | `dev-webhook-secret`      | Webhook authentication      |
+| `SERVER_SECRET`        | `dev-secret`              | Auth server secret          |
+| `BETTER_AUTH_SECRET`   | `change-me-in-production` | better-auth secret          |
+
+## Docker Services
+
+| Service         | Internal Port | Host Port | Purpose                       |
+| --------------- | ------------- | --------- | ----------------------------- |
+| `postgres`      | 5432          | 5499      | Database                      |
+| `sync-server`   | 8080          | 38181     | Primary CRDT sync             |
+| `sync-server-2` | 8080          | 38182     | Secondary CRDT sync           |
+| `aggregator`    | 8090          | 38190     | Data indexing                 |
+| `auth-api`      | 3000          | 38101     | Auth API (Hono + better-auth) |
+
+## Stopping Services
 
 ```bash
-npm run lint:fix
-npm run format
+# Stop Docker backend
+npm run dev:docker:stop
+
+# Stop everything (Ctrl+C in terminals running dev servers)
+
+# Clean slate (removes all data)
+npm run dev:docker:clean
 ```
-
-For details on quality gate requirements per package, see [Quality Gates Matrix](docs/ai/quality-gates-matrix.md).
-
-## Testing
-
-### Unit Tests
-
-The database package has unit tests. To run them:
-
-```bash
-npm run test:db
-```
-
-### End-to-End Tests
-
-Run E2E tests with Cypress:
-
-```bash
-# Headless mode (runs once)
-npm run test:e2e
-
-# Interactive mode (opens Cypress GUI)
-npm run dev-e2e
-```
-
-**Note:** Make sure the development servers are running before running E2E tests.
 
 ## Common Issues
 
 ### Port Already in Use
 
-If you see port conflict errors:
-
-- Check if another service is using ports 3000, 8000, 54321, 54322, or 54323
-- Stop the conflicting service or change the port in the configuration
-
-### Supabase Won't Start
-
-- Make sure Docker is running
-- Try stopping and removing existing containers: `npx supabase stop --no-backup`
-- Then start again: `npx supabase start`
-
-### "Too Many Event Listeners" Error
-
-This happens when too many rooms are connected simultaneously. Use `db.disconnectRoom()` to disconnect from rooms when they're not needed (current limit is 100 rooms).
-
-## Stopping Services
-
-### Stop Development Servers
-
-Press `Ctrl+C` in the terminal running the dev servers.
-
-### Stop Supabase
-
 ```bash
-cd packages/auth-server
-npx supabase stop
+# Find what's using port 38101
+lsof -i :38101
+# or
+docker ps --format "{{.Names}}\t{{.Ports}}"
 ```
 
-Add `--no-backup` flag to also remove the database data:
+### Docker Build Fails
 
 ```bash
-npx supabase stop --no-backup
+# Clean Docker cache and rebuild
+docker system prune -a
+npm run dev:docker:build
 ```
 
-## Building for Production
+### Docker Build Context Errors
 
-### Build All Packages
+If you see `"/src": not found` or similar path errors during build, the build context for that service is wrong. Each `build:` in `docker-compose.dev.yml` must set `context` to the package directory (not repo root), except for `auth-api` which expects repo root:
 
-```bash
-npm run build
+```yaml
+# ✅ Correct — context is the package directory
+sync-server:
+  build:
+    context: packages/sync-server
+    dockerfile: Dockerfile
+
+# ✅ Correct — auth-api Dockerfile uses COPY packages/shared paths
+auth-api:
+  build:
+    context: .
+    dockerfile: packages/auth-server-hono/Dockerfile
+
+# ❌ Wrong — context is repo root but Dockerfile does COPY src/ src/
+sync-server:
+  build:
+    context: .
+    dockerfile: packages/sync-server/Dockerfile
 ```
 
-This builds all packages and examples in the correct order.
+### "Too Many Event Listeners"
 
-### Build Individual Packages
+This happens when too many rooms are connected. Use `db.disconnectRoom()` to disconnect from rooms when not needed.
 
-```bash
-npm run build-db
-npm run build-auth-server
-npm run build-shared
-npm run build-components
-npm run build-examples
+## Project Structure
+
+```
+packages/
+  db/                    ← @eweser/db — Core SDK (Yjs, IndexedDB)
+  shared/                ← @eweser/shared — Types & utilities
+  auth-server-hono/      ← Auth API (Hono + better-auth)
+  aggregator/            ← Search/indexing service
+  examples-components/   ← Reusable UI components
+  sync-server/           ← Hocuspocus sync server
+
+examples/
+  example-basic/         ← Minimal demo app
+  example-multi-room/    ← Multi-room demo
+  example-interop-notes/ ← Notes interoperability demo
+  example-interop-flashcards/ ← Flashcards demo
+  example-aggregator/    ← Aggregator demo
 ```
 
-## Additional Resources
+## E2E Tests
 
-- [Main README](./README.md) - Project overview and features
-- [Auth Server README](./packages/auth-server/README.md) - Deployment and production setup
-- [Supabase Documentation](https://supabase.com/docs)
-- [Y-Sweet Documentation](https://docs.jamsocket.com/y-sweet)
-- [Yjs Documentation](https://docs.yjs.dev/)
+E2E tests (Cypress) are **not yet Docker-ized**. They currently run against:
 
-## Getting Help
+- Legacy Next.js auth-server on port `38100`
+- Built example-basic preview on port `38110`
 
-- Open an issue on [GitHub](https://github.com/eweser/eweser-db/issues)
-- Check existing issues for solutions
-- Review the example apps for implementation patterns
+After the auth-server migration is complete (removing Next.js), the E2E smoke test in `.github/workflows/quality.yaml` will need updating to use the Docker backend instead.
+
+## Next Steps
+
+- Read [ARCHITECTURE.md](ARCHITECTURE.md) for system design
+- See [README.md](README.md) for project philosophy and API overview
+- Check `docs/deployment/` for production deployment guides

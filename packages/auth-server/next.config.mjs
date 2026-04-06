@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ['@eweser/shared', '@eweser/db'],
+  turbopack: {},
   webpack: (config, { dev }) => {
     if (dev) {
       config.devtool = 'source-map';

@@ -55,11 +55,16 @@ export function validateLoginQueryOptions(
   }
   const { redirect, domain, name } = queryOptions;
 
-  const validRedirect =
-    typeof redirect === 'string' &&
-    redirect.length > 0 &&
-    redirect.startsWith('http') &&
-    redirect.includes(domain ?? '');
+  // Use proper URL parsing to avoid subdomain bypass attacks
+  let validRedirect = false;
+  if (typeof redirect === 'string' && redirect.length > 0) {
+    try {
+      const url = new URL(redirect);
+      validRedirect = url.host === domain;
+    } catch {
+      validRedirect = false;
+    }
+  }
 
   const validDomain = typeof domain === 'string' && domain.length > 0;
 
@@ -79,10 +84,10 @@ export function validateLoginQueryOptions(
 
   if (validRedirect && validDomain && validCollections && nameValid) {
     return {
-      redirect,
-      domain,
+      redirect: redirect as string,
+      domain: domain as string,
       collections: collections as LoginQueryOptions['collections'],
-      name,
+      name: name as string,
     };
   }
   return null;

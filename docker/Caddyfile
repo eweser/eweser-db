@@ -1,0 +1,65 @@
+{
+    auto_https off
+}
+
+http://{$DOMAIN:localhost} {
+    encode zstd gzip
+
+    @legacy_login {
+        path /
+        query redirect=*
+        query domain=*
+        query name=*
+    }
+    redir @legacy_login /auth/sign-in?{query} 302
+
+    @auth_root path /auth
+    redir @auth_root /auth/ 302
+
+    @notes_root path /notes
+    redir @notes_root /notes/ 302
+
+    handle /api/auth/* {
+        reverse_proxy auth-api:3000
+    }
+
+    handle /api/* {
+        reverse_proxy auth-api:3000
+    }
+
+    handle /ping {
+        reverse_proxy auth-api:3000
+    }
+
+    handle /health {
+        reverse_proxy auth-api:3000
+    }
+
+    @sync path /sync /sync/*
+    handle @sync {
+        uri strip_prefix /sync
+        reverse_proxy sync-server:8080
+    }
+
+    @auth_pages path /auth/*
+    handle @auth_pages {
+        uri strip_prefix /auth
+        root * /srv/auth-pages
+        try_files {path} /index.html
+        file_server
+    }
+
+    @notes_pages path /notes/*
+    handle @notes_pages {
+        uri strip_prefix /notes
+        root * /srv/ewe-note
+        try_files {path} /index.html
+        file_server
+    }
+
+    handle {
+        root * /srv/app
+        try_files {path} /index.html
+        file_server
+    }
+}

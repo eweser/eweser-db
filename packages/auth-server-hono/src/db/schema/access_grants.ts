@@ -6,7 +6,7 @@ import {
   integer,
   uuid,
 } from 'drizzle-orm/pg-core';
-import { users } from './users.ts';
+import { users } from './users.js';
 
 export const accessGrants = pgTable('access_grants', {
   id: text('id').primaryKey().notNull(), // <owner_user_id>|<requester_id/app_domain>

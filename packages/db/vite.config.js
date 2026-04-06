@@ -15,7 +15,7 @@ export default defineConfig({
     minify: false, // for now while in development
   },
   test: {
-    environment: 'jsdom',
+    environment: 'node',
     setupFiles: 'src/setupTests.ts',
     // need to slow down the tests or the server will reject the requests
     maxConcurrency: 2,

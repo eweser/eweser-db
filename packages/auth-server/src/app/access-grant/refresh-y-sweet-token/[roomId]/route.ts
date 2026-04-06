@@ -1,7 +1,3 @@
-import type {
-  RefreshYSweetTokenRouteParams,
-  RefreshYSweetTokenRouteResponse,
-} from '@eweser/shared';
 import { getRoomById } from '../../../../model/rooms/calls';
 import type { AccessGrantJWT } from '../../../../modules/account/access-grant/create-token-from-grant';
 import { SERVER_SECRET } from '../../../../shared/server-constants';
@@ -9,15 +5,26 @@ import {
   authTokenFromHeaders,
   serverRouteError,
 } from '../../../../shared/utils';
+import type { NextRequest } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { refreshTokenIfNeededAndSaveToRoom } from '../../../../modules/rooms/refresh-token-save-to-room';
 import { db } from '../../../../services/database';
 
+type RefreshYSweetTokenRouteParams = {
+  roomId: string;
+};
+
+type RefreshYSweetTokenRouteResponse = {
+  ySweetUrl: string;
+  ySweetBaseUrl: string;
+  tokenExpiry: string;
+};
+
 export async function GET(
-  request: Request,
-  { params }: { params: RefreshYSweetTokenRouteParams }
+  request: NextRequest,
+  { params }: { params: Promise<RefreshYSweetTokenRouteParams> }
 ) {
-  const roomId = params.roomId;
+  const { roomId } = await params;
   if (!roomId) {
     return serverRouteError('No roomId provided', 400);
   }

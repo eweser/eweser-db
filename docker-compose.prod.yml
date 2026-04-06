@@ -1,0 +1,180 @@
+# Production Docker Compose configuration
+# Differences from docker-compose.yml:
+#   - Restart policies: always
+#   - Health checks on all services
+#   - Resource limits to prevent runaway containers
+#   - No host port exposure except Caddy (80/443)
+#   - No dev-specific defaults for secrets (all must be set in .env)
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: always
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-eweser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-eweser}
+    expose:
+      - '5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-eweser}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+
+  sync-server:
+    build: packages/sync-server
+    restart: always
+    volumes:
+      - sync-data:/data
+    expose:
+      - '8080'
+    environment:
+      SYNC_PORT: 8080
+      SYNC_DB_PATH: /data/sync.sqlite
+      SYNC_AUTH_SECRET: ${SYNC_AUTH_SECRET:?SYNC_AUTH_SECRET is required}
+      AGGREGATOR_WEBHOOK_URL: http://aggregator:8090/webhooks/hocuspocus
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:?WEBHOOK_SECRET is required}
+    healthcheck:
+      test:
+        ['CMD-SHELL', 'wget -q --spider http://localhost:8080/health || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.25'
+
+  sync-server-2:
+    build: packages/sync-server
+    restart: always
+    volumes:
+      - sync-data-2:/data
+    expose:
+      - '8080'
+    environment:
+      SYNC_PORT: 8080
+      SYNC_DB_PATH: /data/sync.sqlite
+      SYNC_AUTH_SECRET: ${SYNC_AUTH_SECRET:?SYNC_AUTH_SECRET is required}
+      AGGREGATOR_WEBHOOK_URL: http://aggregator:8090/webhooks/hocuspocus
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:?WEBHOOK_SECRET is required}
+    healthcheck:
+      test:
+        ['CMD-SHELL', 'wget -q --spider http://localhost:8080/health || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.25'
+
+  aggregator:
+    build: packages/aggregator
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      sync-server:
+        condition: service_healthy
+      sync-server-2:
+        condition: service_healthy
+    expose:
+      - '8090'
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-eweser}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-eweser}
+      PORT: 8090
+      SYNC_SERVER_URL: ws://sync-server:8080
+      SYNC_AUTH_SECRET: ${SYNC_AUTH_SECRET:?SYNC_AUTH_SECRET is required}
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:?WEBHOOK_SECRET is required}
+    healthcheck:
+      test:
+        ['CMD-SHELL', 'wget -q --spider http://localhost:8090/health || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.25'
+
+  auth-api:
+    build:
+      context: .
+      dockerfile: packages/auth-server-hono/Dockerfile
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose:
+      - '3000'
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-eweser}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-eweser}
+      SERVER_SECRET: ${SERVER_SECRET:?SERVER_SECRET is required}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required}
+      BETTER_AUTH_BASE_URL: ${AUTH_PUBLIC_URL:?AUTH_PUBLIC_URL is required}
+      AUTH_SERVER_DOMAIN: ${AUTH_PUBLIC_DOMAIN:?AUTH_PUBLIC_DOMAIN is required}
+      AUTH_SERVER_URL: ${AUTH_PUBLIC_URL:?AUTH_PUBLIC_URL is required}
+      SYNC_SERVER_URL: ${SYNC_PUBLIC_URL:?SYNC_PUBLIC_URL is required}
+      SYNC_AUTH_SECRET: ${SYNC_AUTH_SECRET:?SYNC_AUTH_SECRET is required}
+      PORT: 3000
+    healthcheck:
+      test:
+        ['CMD-SHELL', 'wget -q --spider http://localhost:3000/health || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.25'
+
+  caddy:
+    build:
+      context: .
+      dockerfile: docker/caddy/Dockerfile
+      args:
+        PUBLIC_ORIGIN: ${AUTH_PUBLIC_URL:?AUTH_PUBLIC_URL is required}
+    restart: always
+    depends_on:
+      auth-api:
+        condition: service_healthy
+      sync-server:
+        condition: service_healthy
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN is required}
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+          cpus: '0.1'
+
+volumes:
+  pgdata:
+  sync-data:
+  sync-data-2:
+  caddy-data:
+  caddy-config:

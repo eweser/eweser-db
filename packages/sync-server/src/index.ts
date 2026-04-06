@@ -1,14 +1,29 @@
 import { Server } from '@hocuspocus/server';
+import type { Extension } from '@hocuspocus/server';
 import { SQLite } from '@hocuspocus/extension-sqlite';
+import { Webhook } from '@hocuspocus/extension-webhook';
 import jwt from 'jsonwebtoken';
 
 const port = parseInt(process.env.SYNC_PORT || '8080', 10);
 const dbPath = process.env.SYNC_DB_PATH || '/data/sync.sqlite';
 const secret = process.env.SYNC_AUTH_SECRET || 'test-secret';
+const aggregatorWebhookUrl = process.env.AGGREGATOR_WEBHOOK_URL;
+const webhookSecret = process.env.WEBHOOK_SECRET;
+
+const extensions: Extension[] = [new SQLite({ database: dbPath })];
+
+if (aggregatorWebhookUrl) {
+  extensions.push(
+    new Webhook({
+      url: aggregatorWebhookUrl,
+      ...(webhookSecret ? { secret: webhookSecret } : {}),
+    })
+  );
+}
 
 const server = Server.configure({
   port,
-  extensions: [new SQLite({ database: dbPath })],
+  extensions,
   async onAuthenticate({ token }) {
     if (!token) {
       throw new Error('Authentication required');
@@ -18,12 +33,16 @@ const server = Server.configure({
       const decoded = jwt.verify(token, secret) as {
         roomId: string;
         userId?: string;
+        collectionKey?: string;
       };
       return {
         user: {
           id: decoded.userId || 'anonymous',
           name: decoded.userId || 'anonymous',
         },
+        roomId: decoded.roomId,
+        userId: decoded.userId,
+        collectionKey: decoded.collectionKey,
       };
     } catch {
       throw new Error('Invalid token');

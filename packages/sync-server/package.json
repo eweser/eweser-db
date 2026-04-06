@@ -9,10 +9,12 @@
     "start": "node dist/index.js",
     "clean": "rm -rf dist",
     "lint": "eslint .",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "vitest --run --passWithNoTests"
   },
   "dependencies": {
     "@hocuspocus/extension-sqlite": "^2.15.0",
+    "@hocuspocus/extension-webhook": "^2.15.0",
     "@hocuspocus/server": "^2.15.0",
     "jsonwebtoken": "^9.0.3"
   },

@@ -3,12 +3,15 @@ services:
     image: postgres:17-alpine
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres:/docker-entrypoint-initdb.d:ro
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-eweser}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       POSTGRES_DB: ${POSTGRES_DB:-eweser}
+      # Use md5 so Node postgres clients can authenticate over TCP (docker bridge NAT)
+      POSTGRES_HOST_AUTH_METHOD: md5
     ports:
-      - '5432:5432'
+      - '${POSTGRES_HOST_PORT:-5499}:5432'
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-eweser}']
       interval: 5s
@@ -19,25 +22,95 @@ services:
     build: packages/sync-server
     volumes:
       - sync-data:/data
+    expose:
+      - '8080'
     ports:
-      - '8080:8080'
+      - '${SYNC_A_HOST_PORT:-38181}:8080'
     environment:
       SYNC_PORT: 8080
       SYNC_DB_PATH: /data/sync.sqlite
       SYNC_AUTH_SECRET: ${SYNC_AUTH_SECRET:-dev-secret}
+      AGGREGATOR_WEBHOOK_URL: http://aggregator:8090/webhooks/hocuspocus
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:-dev-webhook-secret}
 
-  auth-api:
-    build: packages/auth-server-hono
+  sync-server-2:
+    build: packages/sync-server
+    volumes:
+      - sync-data-2:/data
+    expose:
+      - '8080'
+    ports:
+      - '${SYNC_B_HOST_PORT:-38182}:8080'
+    environment:
+      SYNC_PORT: 8080
+      SYNC_DB_PATH: /data/sync.sqlite
+      SYNC_AUTH_SECRET: ${SYNC_AUTH_SECRET:-dev-secret}
+      AGGREGATOR_WEBHOOK_URL: http://aggregator:8090/webhooks/hocuspocus
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:-dev-webhook-secret}
+
+  aggregator:
+    build: packages/aggregator
     depends_on:
       postgres:
         condition: service_healthy
+      sync-server:
+        condition: service_started
+      sync-server-2:
+        condition: service_started
+    expose:
+      - '8090'
     ports:
-      - '3000:3000'
+      - '${AGGREGATOR_HOST_PORT:-38190}:8090'
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-eweser}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-eweser}
+      PORT: 8090
+      SYNC_SERVER_URL: ws://sync-server:8080
+      SYNC_AUTH_SECRET: ${SYNC_AUTH_SECRET:-dev-secret}
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:-dev-webhook-secret}
+
+  auth-api:
+    build:
+      context: .
+      dockerfile: packages/auth-server-hono/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose:
+      - '3000'
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-eweser}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-eweser}
       SERVER_SECRET: ${SERVER_SECRET:-dev-secret}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-change-me-in-production}
+      BETTER_AUTH_BASE_URL: ${AUTH_PUBLIC_URL:-http://localhost:38180}
+      AUTH_SERVER_DOMAIN: ${AUTH_PUBLIC_DOMAIN:-localhost:38180}
+      AUTH_SERVER_URL: ${AUTH_PUBLIC_URL:-http://localhost:38180}
+      SYNC_SERVER_URL: ${SYNC_PUBLIC_URL:-ws://localhost:38180/sync}
+      SYNC_AUTH_SECRET: ${SYNC_AUTH_SECRET:-dev-secret}
       PORT: 3000
+
+  caddy:
+    build:
+      context: .
+      dockerfile: docker/caddy/Dockerfile
+      args:
+        PUBLIC_ORIGIN: ${AUTH_PUBLIC_URL:-http://localhost:38180}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth-api:
+        condition: service_started
+      sync-server:
+        condition: service_started
+      sync-server-2:
+        condition: service_started
+      aggregator:
+        condition: service_started
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    ports:
+      - '${CADDY_HOST_PORT:-38180}:80'
 
 volumes:
   pgdata:
   sync-data:
+  sync-data-2:

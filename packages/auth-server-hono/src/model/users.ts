@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { count, eq } from 'drizzle-orm';
 import { db } from '../db/drizzle.js';
 import type { DBInstance } from '../db/drizzle.js';
 import { users } from '../db/schema/users.js';
@@ -30,4 +30,11 @@ export async function updateUserRooms(
     .update(users)
     .set({ rooms: roomIds })
     .where(eq(users.id, userId));
+}
+
+export async function getUserCount(dbInstance?: DBInstance) {
+  const results = await (dbInstance ?? db)
+    .select({ count: count() })
+    .from(users);
+  return Number(results[0]?.count ?? 0);
 }

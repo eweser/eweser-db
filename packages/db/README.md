@@ -177,7 +177,7 @@ This is achieved using 'aggregator' servers. These are Node.js servers which the
 
 ### [Basic Notes App](https://eweser-db-example-basic.netlify.app/)
 
-- dev [url](http://localhost:8000/)
+- dev [url](http://localhost:38110/)
 - view the code at `/examples/example-basic`.
 - E2E test is in `/e2e/cypress/tests/basic.cy.js`
 

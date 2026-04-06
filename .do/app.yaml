@@ -1,0 +1,77 @@
+name: eweser-db
+region: nyc
+services:
+  - name: auth-api
+    type: web
+    dockerfile_path: packages/auth-server-hono/Dockerfile
+    source_dir: /
+    http_port: 3000
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    routes:
+      - path: /api
+    envs:
+      - key: DATABASE_URL
+        value: ${db.DATABASE_URL}
+      - key: SERVER_SECRET
+        value: ${SERVER_SECRET}
+      - key: BETTER_AUTH_SECRET
+        value: ${BETTER_AUTH_SECRET}
+      - key: BETTER_AUTH_BASE_URL
+        value: ${APP_URL}
+      - key: AUTH_SERVER_DOMAIN
+        value: ${APP_DOMAIN}
+      - key: AUTH_SERVER_URL
+        value: ${APP_URL}
+      - key: SYNC_SERVER_URL
+        value: ${SYNC_SERVER_URL}
+      - key: SYNC_AUTH_SECRET
+        value: ${SYNC_AUTH_SECRET}
+      - key: PORT
+        value: '3000'
+    health_check:
+      http_path: /health
+
+  - name: sync-server
+    type: web
+    dockerfile_path: packages/sync-server/Dockerfile
+    source_dir: packages/sync-server
+    http_port: 8080
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    routes:
+      - path: /sync
+    envs:
+      - key: SYNC_PORT
+        value: '8080'
+      - key: SYNC_DB_PATH
+        value: /data/sync.sqlite
+      - key: SYNC_AUTH_SECRET
+        value: ${SYNC_AUTH_SECRET}
+
+databases:
+  - name: db
+    engine: PG
+    version: '17'
+    size: db-s-dev-database
+    num_nodes: 1
+
+envs:
+  - key: APP_URL
+    value: https://app.example.com
+    scope: RUN_AND_BUILD_TIME
+  - key: APP_DOMAIN
+    value: app.example.com
+    scope: RUN_AND_BUILD_TIME
+  - key: SYNC_SERVER_URL
+    value: wss://app.example.com/sync
+    scope: RUN_AND_BUILD_TIME
+  - key: SYNC_AUTH_SECRET
+    type: SECRET
+    scope: RUN_AND_BUILD_TIME
+  - key: SERVER_SECRET
+    type: SECRET
+    scope: RUN_AND_BUILD_TIME
+  - key: BETTER_AUTH_SECRET
+    type: SECRET
+    scope: RUN_AND_BUILD_TIME

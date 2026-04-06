@@ -87,21 +87,23 @@ function EditorInternal({
     usedTheme === 'dark' ? darkModeCursorColors : lightModeCursorColors;
   /** Really this should be set to the OTHER user's color theme but that is impossible */
   const cursorColor =
-    cursorColors[Math.floor(Math.random() * cursorColors.length)];
+    cursorColors[Math.floor(Math.random() * cursorColors.length)] ?? '#e6b45c';
   const editor = useCreateBlockNote({
-    collaboration: provider
+    ...(provider
       ? {
-          // The Yjs Provider responsible for transporting updates:
-          provider,
-          // Where to store BlockNote data in the Y.Doc:
-          fragment: doc.getXmlFragment(selectedNoteId),
-          // Information (name and color) for this user:
-          user: {
-            name: user.firstName || getDeviceType(),
-            color: cursorColor,
+          collaboration: {
+            // The Yjs Provider responsible for transporting updates:
+            provider,
+            // Where to store BlockNote data in the Y.Doc:
+            fragment: doc.getXmlFragment(selectedNoteId),
+            // Information (name and color) for this user:
+            user: {
+              name: user.firstName || getDeviceType(),
+              color: cursorColor,
+            },
           },
         }
-      : undefined,
+      : {}),
   });
 
   // Listen for changes and changes to the editor and update eweser-db note text
@@ -125,10 +127,10 @@ function EditorInternal({
 
       // set focus
       setTimeout(() => {
-        editor.setTextCursorPosition(
-          editor.document[editor.document.length - 1],
-          'end'
-        );
+        const lastBlock = editor.document[editor.document.length - 1];
+        if (lastBlock) {
+          editor.setTextCursorPosition(lastBlock, 'end');
+        }
         editor.focus();
       }, 0);
     })();

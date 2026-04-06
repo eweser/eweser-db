@@ -20,7 +20,10 @@
     "sourceMap": true,
     "downlevelIteration": true,
     "outDir": "dist",
-    "useUnknownInCatchVariables": false
+    "useUnknownInCatchVariables": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true
   },
   "include": ["src"],
   "exclude": ["**/*.test.ts"]

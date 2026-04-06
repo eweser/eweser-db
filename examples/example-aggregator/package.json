@@ -1,0 +1,35 @@
+{
+  "name": "@eweser/example-aggregator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Toy app demonstrating the EweserDB aggregator: two sync-server backends, CRDT docs, full-text search.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview --host",
+    "clean": "rm -rf dist",
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit",
+    "test": "vitest --run --passWithNoTests"
+  },
+  "dependencies": {
+    "@hocuspocus/provider": "^2.15.0",
+    "jose": "^5.10.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "yjs": "^13.6.27"
+  },
+  "devDependencies": {
+    "@eweser/eslint-config-react-ts": "^1.15.0",
+    "@types/react": "^18.3.23",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.5.2",
+    "buffer": "^6.0.3",
+    "eslint": "^9.39.1",
+    "events": "^3.3.0",
+    "typescript": "^5.9.3",
+    "vite": "^6.3.5",
+    "vitest": "^4.0.9"
+  }
+}

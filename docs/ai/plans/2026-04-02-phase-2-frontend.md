@@ -8,14 +8,25 @@ Hard-cutover assumption: implement only the new architecture and route contracts
 
 ## Progress
 
-- [ ] Run 2.1 — Create auth-pages React SPA
-- [ ] Run 2.2 — Add Caddy reverse proxy to Docker Compose
-- [ ] Run 2.3 — Port Ewe Note to SPA + PWA
-- [ ] Run 2.4 — Update example-basic for Docker Compose
+- [x] Run 2.1 — Create auth-pages React SPA
+- [x] Run 2.2 — Add Caddy reverse proxy to Docker Compose
+- [x] Run 2.3 — Port Ewe Note to SPA + PWA
+- [x] Run 2.4 — Update example-basic for Docker Compose
 
 ## Agent Scratchpad
 
 > Use this section to track decisions, blockers, and notes during implementation.
+
+- 2026-04-02: Created `packages/auth-pages` as a Vite React SPA mounted at `/auth/` with sign-in, sign-up, account, sign-out, permission grant, invite acceptance, and legal pages.
+- 2026-04-02: Added session-backed Hono endpoints for account bootstrap, permission submission, and invite acceptance so the SPA can replace the old Next.js page actions.
+- 2026-04-02: Added a workspace-aware `packages/auth-pages/Dockerfile` plus nginx SPA fallback so the auth app can build and serve cleanly at `/auth/`.
+- 2026-04-02: Added a Caddy-based Docker Compose entrypoint that serves `example-basic` at `/`, `auth-pages` at `/auth`, a temporary Ewe Note placeholder at `/notes`, proxies `/sync`, and keeps `/api/*` plus `/ping` routed to the Hono auth API.
+- 2026-04-02: Kept the current SDK auth contract working by redirecting legacy root login-query requests to `/auth/sign-in` and packaging `packages/auth-server-hono` with checked-in SQL migrations so `docker compose up` starts the API without `drizzle-kit push`.
+- 2026-04-03: Rebuilt `packages/ewe-note` as the real `/notes/` target with a checked-in manifest, prompt-based service worker registration, origin-relative auth routing, and a Caddy image build that now copies the actual SPA dist instead of the placeholder.
+- 2026-04-03: Verified the Caddy route contract from inside the container, then fixed local compose serving to stay on plain HTTP (`auto_https off` plus an explicit `http://` site label) because only port 80 is published in Docker Compose.
+- 2026-04-03: Updated the Caddy builder image to use `node:22` instead of `node:22-slim`, avoiding flaky Debian mirror installs while still providing Python, `make`, and `g++` for native dependencies like `sqlite3`.
+- 2026-04-03: Rebuilt the Caddy image successfully with the new builder base and reverified `/notes/`, `/auth/sign-in`, and the legacy login redirect from inside the running container; host-side browser checks in this environment still hit Apache on port 80 instead of Docker's published Caddy port.
+- 2026-04-03: Replaced hardcoded local host ports with env-driven defaults (`AUTH_SERVER_PORT`, `AUTH_API_PORT`, `EXAMPLE_BASIC_PORT`, `CADDY_HOST_PORT`) and moved the Docker Compose stack to `http://localhost:38180` by default.
 
 ---
 

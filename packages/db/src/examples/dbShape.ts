@@ -20,7 +20,6 @@ const metadata: DocumentBase = {
   _created: 1653135317729,
   _updated: 1653135317729,
   _deleted: false,
-  _ttl: undefined,
 };
 
 const profileYDoc: { documents: Documents<Profile> } = {
@@ -141,6 +140,8 @@ const _exampleDb: { collections: Collections } = {
         ydoc: profilePrivateYDoc as unknown as YDoc<Profile>,
       }),
     },
+    agentConfigs: {},
+    agentAccessLogs: {},
   },
 };
 

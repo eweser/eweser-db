@@ -22,7 +22,6 @@ export const newDocument = <T extends EweDocument>(
     _ref,
     _updated: now,
     _deleted: false,
-    _ttl: undefined,
   };
   return { ...base, ...doc } as T;
 };

@@ -39,6 +39,8 @@ export default [
       'packages/db/src/**/*.ts',
       'packages/auth-server-hono/src/**/*.ts',
       'packages/sync-server/src/**/*.ts',
+      'packages/aggregator/src/**/*.ts',
+      'scripts/**/*.ts',
     ],
   })),
   // React + TypeScript packages
@@ -46,9 +48,21 @@ export default [
     ...config,
     files: [
       ...(config.files ?? []),
+      'packages/auth-pages/src/**/*.{ts,tsx}',
       'packages/ewe-note/src/**/*.{ts,tsx}',
       'packages/examples-components/src/**/*.{ts,tsx}',
       'examples/example-basic/src/**/*.{ts,tsx}',
+      'examples/example-multi-room/src/**/*.{ts,tsx}',
+      'examples/example-interop-notes/src/**/*.{ts,tsx}',
+      'examples/example-interop-flashcards/src/**/*.{ts,tsx}',
+      'examples/example-aggregator/src/**/*.{ts,tsx}',
     ],
   })),
+  // CLI scripts and startup validation — console output is intentional
+  {
+    files: ['scripts/**/*.ts', 'packages/aggregator/src/env.ts'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
 ];

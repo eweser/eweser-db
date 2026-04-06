@@ -1,0 +1,54 @@
+{
+  "name": "@eweser/example-multi-room",
+  "version": "1.15.0",
+  "private": true,
+  "description": "eweser-db toy app demonstrating deterministic multi-room note workflows",
+  "keywords": [
+    "user-owned",
+    "crdt",
+    "interoperable",
+    "local-first"
+  ],
+  "author": "jacobcoro",
+  "type": "module",
+  "homepage": "https://github.com/jacobcoro/eweserdb",
+  "license": "MIT",
+  "directories": {
+    "src": "src"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jacobcoro/eweserdb.git"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview --host",
+    "clean": "rm -rf dist",
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit",
+    "test": "vitest --run --passWithNoTests"
+  },
+  "bugs": {
+    "url": "https://github.com/jacobcoro/eweserdb/issues"
+  },
+  "dependencies": {
+    "@eweser/db": "^1.15.0",
+    "@eweser/examples-components": "^3.0.0",
+    "buffer": "^6.0.3",
+    "events": "3.3.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.9.6"
+  },
+  "devDependencies": {
+    "@eweser/eslint-config-react-ts": "^1.15.0",
+    "@types/react": "^19.2.4",
+    "@types/react-dom": "^19.2.3",
+    "@types/uuid": "^11.0.0",
+    "@vitejs/plugin-react": "^5.1.1",
+    "eslint": "^9.39.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.2"
+  }
+}
