@@ -23,7 +23,7 @@ This will call:
 {
   "tool": "eweser_save_memory",
   "args": {
-    "roomId": "ec8a7adb-45ca-4480-8de9-b4d74173f73f",
+    "roomId": "<your-conversations-room-id>",
     "title": "Session: auth server migration decision",
     "summary": "We decided to use Hono for the auth server migration and completed run 1 of the aggregator search plan.",
     "memoryType": "session",

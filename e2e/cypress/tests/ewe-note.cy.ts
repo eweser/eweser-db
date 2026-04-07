@@ -53,7 +53,10 @@ describe('ewe-note app', () => {
     // Create a second note so we have two to click between
     cy.getBySel('ewe-note-new-note').click();
 
-    cy.get('[data-cy^="ewe-note-note-item-"]').should('have.length.at.least', 2);
+    cy.get('[data-cy^="ewe-note-note-item-"]').should(
+      'have.length.at.least',
+      2
+    );
 
     // Click the first note
     cy.get('[data-cy^="ewe-note-note-item-"]').first().click();

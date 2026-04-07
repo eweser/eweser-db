@@ -14,14 +14,8 @@ type LogFn = (entry: {
   documentCount?: number;
 }) => Promise<void>;
 
-/** Extract a short text summary from a document — prefers title/summary fields. */
+/** Extract a short text summary from a document (first 200 chars of JSON). */
 function summarize(doc: EweDocument): string {
-  const d = doc as Record<string, unknown>;
-  const title = typeof d['title'] === 'string' ? d['title'] : '';
-  const summary = typeof d['summary'] === 'string' ? d['summary'] : '';
-  if (title || summary) {
-    return [title, summary].filter(Boolean).join(' — ').slice(0, 200);
-  }
   return JSON.stringify(doc).slice(0, 200);
 }
 
@@ -101,7 +95,6 @@ export function registerTools(
   // -------------------------------------------------------------------------
   // eweser_list_rooms
   // -------------------------------------------------------------------------
-  // TODO: Remove when @modelcontextprotocol/sdk fixes TS2589 deep overload inference
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore TS2589: deep Zod overload inference
   server.tool(
@@ -129,7 +122,6 @@ export function registerTools(
   // -------------------------------------------------------------------------
   // eweser_list_documents
   // -------------------------------------------------------------------------
-  // TODO: Remove when @modelcontextprotocol/sdk fixes TS2589 deep overload inference
   // @ts-ignore TS2589: deep Zod overload inference
   server.tool(
     'eweser_list_documents',
@@ -246,15 +238,13 @@ export function registerTools(
             const data = (await res.json()) as {
               results: AggregatorSearchResult[];
             };
-            if (data.results.length > 0) {
-              const formatted = formatAggregatorResults(data.results);
-              return {
-                content: [
-                  { type: 'text' as const, text: formatted },
-                  { type: 'text' as const, text: JSON.stringify(data.results) },
-                ],
-              };
-            }
+            const formatted = formatAggregatorResults(data.results);
+            return {
+              content: [
+                { type: 'text' as const, text: formatted },
+                { type: 'text' as const, text: JSON.stringify(data.results) },
+              ],
+            };
           }
           // Fall through to in-memory on non-ok response
         } catch {
@@ -284,7 +274,6 @@ export function registerTools(
   // -------------------------------------------------------------------------
   // eweser_create_document
   // -------------------------------------------------------------------------
-  // TODO: Remove when @modelcontextprotocol/sdk fixes TS2589 deep overload inference
   // @ts-ignore TS2589: deep Zod overload inference
   server.tool(
     'eweser_create_document',
@@ -369,7 +358,6 @@ export function registerTools(
   // -------------------------------------------------------------------------
   // eweser_save_memory
   // -------------------------------------------------------------------------
-  // TODO: Remove when @modelcontextprotocol/sdk fixes TS2589 deep overload inference
   // @ts-ignore TS2589: deep Zod overload inference
   server.tool(
     'eweser_save_memory',

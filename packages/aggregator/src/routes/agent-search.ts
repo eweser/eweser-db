@@ -57,7 +57,11 @@ export function createAgentSearchRouter(deps: AgentSearchRouteDeps) {
       return c.json({ error: 'Missing required field: query' }, 400);
     }
 
-    const { query, roomIds: requestedRoomIds, filters } = body as {
+    const {
+      query,
+      roomIds: requestedRoomIds,
+      filters,
+    } = body as {
       query: string;
       roomIds?: unknown;
       filters?: unknown;
@@ -73,8 +77,9 @@ export function createAgentSearchRouter(deps: AgentSearchRouteDeps) {
 
     if (Array.isArray(requestedRoomIds)) {
       // Only keep rooms the agent is actually allowed to access
-      resolvedRoomIds = (requestedRoomIds as unknown[])
-        .filter((id): id is string => typeof id === 'string' && agentAllowed.has(id));
+      resolvedRoomIds = (requestedRoomIds as unknown[]).filter(
+        (id): id is string => typeof id === 'string' && agentAllowed.has(id)
+      );
     } else {
       // No room filter provided — search all agent's allowed rooms
       resolvedRoomIds = agentConfig.allowedRooms;
@@ -86,7 +91,9 @@ export function createAgentSearchRouter(deps: AgentSearchRouteDeps) {
 
     // Validate filters shape (permissive — unknown fields are ignored)
     const safeFilters: SearchFilters | undefined =
-      filters && typeof filters === 'object' ? (filters as SearchFilters) : undefined;
+      filters && typeof filters === 'object'
+        ? (filters as SearchFilters)
+        : undefined;
 
     try {
       const results = await deps.agentSearchDocuments({

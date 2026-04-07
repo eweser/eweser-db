@@ -86,7 +86,10 @@ export class DataLayer {
     await this.waitForSync(provider, room.id);
   }
 
-  private waitForSync(provider: HocuspocusProvider, roomId: string): Promise<void> {
+  private waitForSync(
+    provider: HocuspocusProvider,
+    roomId: string
+  ): Promise<void> {
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         reject(new Error(`[eweser-mcp] Timed out waiting for sync: ${roomId}`));
@@ -137,7 +140,10 @@ export class DataLayer {
       connected.provider.setConfiguration({ token: result.syncToken });
       this.scheduleTokenRefresh(roomId, connected);
     } catch (err) {
-      console.error(`[eweser-mcp] Failed to refresh token for room ${roomId}:`, err);
+      console.error(
+        `[eweser-mcp] Failed to refresh token for room ${roomId}:`,
+        err
+      );
     }
   }
 
@@ -191,9 +197,7 @@ export class DataLayer {
   // Document CRUD (delegates to @eweser/shared's getDocuments)
   // ---------------------------------------------------------------------------
 
-  getDocumentsForRoom<T extends EweDocument>(
-    roomId: string
-  ): GetDocuments<T> {
+  getDocumentsForRoom<T extends EweDocument>(roomId: string): GetDocuments<T> {
     const connected = this.assertReadAccess(roomId);
     return getDocuments(
       this.authUrl,
@@ -202,9 +206,7 @@ export class DataLayer {
     )<T>(connected.ydoc);
   }
 
-  getRawDocuments<T extends EweDocument>(
-    roomId: string
-  ): Documents<T> {
+  getRawDocuments<T extends EweDocument>(roomId: string): Documents<T> {
     const connected = this.assertReadAccess(roomId);
     return getRoomDocuments<T>(connected.ydoc).toJSON() as Documents<T>;
   }
@@ -222,7 +224,11 @@ export class DataLayer {
     query: string,
     collectionKey?: string
   ): Array<{ roomId: string; collectionKey: string; doc: EweDocument }> {
-    const results: Array<{ roomId: string; collectionKey: string; doc: EweDocument }> = [];
+    const results: Array<{
+      roomId: string;
+      collectionKey: string;
+      doc: EweDocument;
+    }> = [];
     const targetRooms = this.listRooms(collectionKey);
 
     const lowerQuery = query.toLowerCase();

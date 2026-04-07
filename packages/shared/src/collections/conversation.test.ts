@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { COLLECTION_KEYS } from '../collections/index.js';
-import type { Conversation, ConversationTurn, ConversationMemoryType } from '../collections/conversation.js';
+import type {
+  Conversation,
+  ConversationTurn,
+  ConversationMemoryType,
+} from '../collections/conversation.js';
 
 describe('conversations collection', () => {
   it('conversations is in COLLECTION_KEYS', () => {
@@ -34,14 +38,22 @@ describe('conversations collection', () => {
   });
 
   it('accepts all memoryType values', () => {
-    const types: ConversationMemoryType[] = ['session', 'memory', 'decision', 'bookmark'];
+    const types: ConversationMemoryType[] = [
+      'session',
+      'memory',
+      'decision',
+      'bookmark',
+    ];
     for (const t of types) {
       expect(['session', 'memory', 'decision', 'bookmark']).toContain(t);
     }
   });
 
   it('turns and relatedDocIds are optional', () => {
-    const minimal: Omit<Conversation, '_id' | '_ref' | '_created' | '_updated'> = {
+    const minimal: Omit<
+      Conversation,
+      '_id' | '_ref' | '_created' | '_updated'
+    > = {
       title: 'Quick note',
       summary: 'A brief memory.',
       agentId: 'claude',

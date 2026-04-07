@@ -204,13 +204,43 @@ const verifyTokenRateLimiter = (() => {
   const counts = new Map<string, { count: number; resetAt: number }>();
   const WINDOW_MS = 60_000;
   const MAX = 30;
+
+  const getClientKey = (
+    c: Parameters<ReturnType<typeof createMiddleware>>[0]
+  ) => {
+    // Prefer trusted single-value headers when present and only use the first forwarded hop.
+    const clientIp =
+      c.req.header('cf-connecting-ip') ??
+      c.req.header('x-real-ip') ??
+      c.req.header('x-forwarded-for')?.split(',')[0] ??
+      'unknown';
+    return clientIp.trim().slice(0, 64) || 'unknown';
+  };
+
+  const evictStaleEntries = (now: number) => {
+    if (counts.size < 10_000) return;
+
+    for (const [key, entry] of counts) {
+      if (now > entry.resetAt) {
+        counts.delete(key);
+      }
+    }
+
+    while (counts.size > 10_000) {
+      const oldestKey = counts.keys().next().value;
+      if (!oldestKey) break;
+      counts.delete(oldestKey);
+    }
+  };
+
   return createMiddleware(async (c, next) => {
-    const ip =
-      c.req.header('x-forwarded-for') ?? c.req.header('x-real-ip') ?? 'unknown';
     const now = Date.now();
-    const entry = counts.get(ip);
+    evictStaleEntries(now);
+
+    const clientKey = getClientKey(c);
+    const entry = counts.get(clientKey);
     if (!entry || now > entry.resetAt) {
-      counts.set(ip, { count: 1, resetAt: now + WINDOW_MS });
+      counts.set(clientKey, { count: 1, resetAt: now + WINDOW_MS });
     } else {
       entry.count++;
       if (entry.count > MAX) {
@@ -222,9 +252,14 @@ const verifyTokenRateLimiter = (() => {
 })();
 
 agentsRouter.post('/verify-token', verifyTokenRateLimiter, async (c) => {
-  const body = await c.req.json<{ token: string }>();
+  let body: { token?: unknown };
+  try {
+    body = await c.req.json<{ token?: unknown }>();
+  } catch {
+    return c.json({ error: 'Invalid JSON body' }, 400);
+  }
 
-  if (!body.token) {
+  if (typeof body.token !== 'string' || body.token.length === 0) {
     return c.json({ error: 'token is required' }, 400);
   }
 

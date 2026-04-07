@@ -173,7 +173,11 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent className="gap-0">
         <div className="flex align-middle justify-center">
-          <Button data-cy="ewe-note-new-note" variant="ghost" onClick={handleCreateNote}>
+          <Button
+            data-cy="ewe-note-new-note"
+            variant="ghost"
+            onClick={handleCreateNote}
+          >
             <SquarePen />
           </Button>
           <Dialog>
@@ -207,7 +211,11 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
                     Cancel
                   </Button>
                 </DialogClose>
-                <Button data-cy="ewe-note-create-folder-submit" onClick={handleCreateRoom} disabled={creatingRoom}>
+                <Button
+                  data-cy="ewe-note-create-folder-submit"
+                  onClick={handleCreateRoom}
+                  disabled={creatingRoom}
+                >
                   {creatingRoom ? (
                     <Icons.Spinner className="mr-2" />
                   ) : (
@@ -279,12 +287,20 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
       </SidebarContent>
       <SidebarFooter>
         {loggedIn ? (
-          <button data-cy="ewe-note-logout" onClick={signOut} className="flex items-center space-x-2">
+          <button
+            data-cy="ewe-note-logout"
+            onClick={signOut}
+            className="flex items-center space-x-2"
+          >
             <Icons.Logo className="h-6 w-6" />
             <span className="inline-block font-bold">Logout</span>
           </button>
         ) : (
-          <a data-cy="ewe-note-login" href={loginUrl} className="flex items-center space-x-2">
+          <a
+            data-cy="ewe-note-login"
+            href={loginUrl}
+            className="flex items-center space-x-2"
+          >
             <Icons.Logo className="h-6 w-6" />
             <span className="inline-block font-bold">Login</span>
           </a>

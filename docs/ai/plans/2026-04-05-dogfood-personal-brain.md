@@ -1,7 +1,7 @@
 # Plan: Dogfood EweserDB as Personal Brain
 
 > **Created:** 2026-04-05
-> **Status:** Draft — awaiting approval
+> **Status:** In progress — Run 1 complete; Run 4 (cross-tool docs) complete via memory-mcp-wrap-up; Runs 2–3 remaining
 > **Supersedes:** [2026-04-04-cross-agent-memory-search.md](./2026-04-04-cross-agent-memory-search.md) (infrastructure already built; this plan is about actually using it)
 
 ## Goal
@@ -156,10 +156,10 @@ Already complete. MCP tools visible in Copilot. `eweser_list_rooms` returns 2 pr
 ## Execution Summary
 
 ```text
-Run 1: Connect MCP to Copilot (Fast)       ← DONE
+Run 1: Connect MCP to Copilot (Fast)       ← DONE ✅
 ├── Run 2: Create Conversations Room (Smart)  ← next, depends on Run 1
 │   └── Run 3: Session Save Workflow (Fast)   ← depends on Run 2 (needs conversations room)
-└── Run 4: Cross-Tool Docs (Fast)             ← independent, can parallel with Run 2/3
+└── Run 4: Cross-Tool Docs (Fast)             ← DONE ✅ (completed via 2026-04-06-memory-mcp-wrap-up)
 ```
 
 **Total effort:** Small. The hard engineering is done. This is mostly configuration, data seeding, and workflow documentation.
