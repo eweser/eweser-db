@@ -208,11 +208,13 @@ const verifyTokenRateLimiter = (() => {
   const getClientKey = (
     c: Parameters<ReturnType<typeof createMiddleware>>[0]
   ) => {
-    // Prefer trusted single-value headers when present and only use the first forwarded hop.
+    // Only trust x-forwarded-for when a known proxy set it; cf-connecting-ip and x-real-ip
+    // are client-supplied headers that can be spoofed to bypass rate limits.
+    // In production, Caddy (reverse proxy) sets x-forwarded-for; do not trust it from direct clients.
+    const xForwarded = c.req.header('x-forwarded-for');
     const clientIp =
-      c.req.header('cf-connecting-ip') ??
+      (xForwarded ? xForwarded.split(',')[0] : null) ??
       c.req.header('x-real-ip') ??
-      c.req.header('x-forwarded-for')?.split(',')[0] ??
       'unknown';
     return clientIp.trim().slice(0, 64) || 'unknown';
   };

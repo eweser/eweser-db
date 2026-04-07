@@ -84,6 +84,12 @@ export const useNotesRoom = (
     if (Array.isArray(aliases)) {
       note.aliases = aliases.filter((a): a is string => typeof a === 'string');
     }
+    const tags = frontmatter['tags'];
+    if (Array.isArray(tags)) {
+      note.tags = tags.filter((t): t is string => typeof t === 'string');
+    } else {
+      note.tags = [];
+    }
     Notes.set(note);
   };
 

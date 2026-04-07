@@ -90,8 +90,8 @@ export const getDocuments =
         return documents.get(id);
       },
       set: (doc: T) => {
-        doc._updated = Date.now();
-        return documents.set(doc._id, doc);
+        const updated = { ...doc, _updated: Date.now() };
+        return documents.set(doc._id, updated);
       },
       new: (doc: DocumentWithoutBase<T>, id?: string) => {
         if (id && documents.get(id)) {
@@ -113,9 +113,12 @@ export const getDocuments =
         const doc = documents.get(id);
         if (!doc) throw new Error('document does not exist');
         const oneMonth = 1000 * 60 * 60 * 24 * 30;
-        doc._deleted = true;
-        doc._ttl = timeToLiveMs ?? new Date().getTime() + oneMonth;
-        return documents.set(id, doc);
+        const updated = {
+          ...doc,
+          _deleted: true,
+          _ttl: timeToLiveMs ?? new Date().getTime() + oneMonth,
+        };
+        return documents.set(id, updated);
       },
       getAll: () => {
         return documents.toJSON() as Documents<T>;
