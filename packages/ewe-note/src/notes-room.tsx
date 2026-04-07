@@ -11,6 +11,10 @@ export type NotesRoomType = {
   Notes: GetDocuments<Note> | null;
   createNote: () => void;
   updateNoteText: (text: string, note?: Note) => void;
+  updateNoteFrontmatter: (
+    frontmatter: Record<string, unknown>,
+    note?: Note
+  ) => void;
   deleteNote: (note: Note) => void;
 };
 
@@ -69,6 +73,26 @@ export const useNotesRoom = (
     Notes.set(note);
   };
 
+  const updateNoteFrontmatter = (
+    frontmatter: Record<string, unknown>,
+    note?: Note
+  ) => {
+    if (!note) return;
+    note.frontmatter = frontmatter;
+    // Re-extract aliases and tags from updated frontmatter
+    const aliases = frontmatter['aliases'];
+    if (Array.isArray(aliases)) {
+      note.aliases = aliases.filter((a): a is string => typeof a === 'string');
+    }
+    const tags = frontmatter['tags'];
+    if (Array.isArray(tags)) {
+      note.tags = tags.filter((t): t is string => typeof t === 'string');
+    } else {
+      note.tags = [];
+    }
+    Notes.set(note);
+  };
+
   const deleteNote = (note: Note) => {
     Notes.delete(note._id);
   };
@@ -81,6 +105,7 @@ export const useNotesRoom = (
     Notes,
     createNote,
     updateNoteText,
+    updateNoteFrontmatter,
     deleteNote,
   };
 };

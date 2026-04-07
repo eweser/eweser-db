@@ -14,6 +14,6 @@ import { auth } from '../auth.js';
  */
 export const authRouter = new Hono();
 
-authRouter.on(['GET', 'POST'], '/**', (c) => {
+authRouter.on(['GET', 'POST'], '/*', (c) => {
   return auth.handler(c.req.raw);
 });

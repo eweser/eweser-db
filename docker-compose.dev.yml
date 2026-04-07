@@ -80,6 +80,7 @@ services:
       SYNC_SERVER_URL: ws://sync-server:8080
       SYNC_AUTH_SECRET: ${SYNC_AUTH_SECRET:-dev-secret}
       WEBHOOK_SECRET: ${WEBHOOK_SECRET:-dev-webhook-secret}
+      EWESER_AUTH_URL: http://auth-api:3000
 
   auth-api:
     build:

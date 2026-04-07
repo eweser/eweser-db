@@ -9,6 +9,8 @@ const envSchema = z.object({
   SYNC_SERVER_URL: z.string().url().default('ws://localhost:8080'),
   SYNC_AUTH_SECRET: z.string().min(1).default('changeme'),
   WEBHOOK_SECRET: z.string().optional(),
+  /** Base URL of the EweserDB auth server (for agent token verification). Optional — if omitted, agent search endpoint is disabled. */
+  EWESER_AUTH_URL: z.string().url().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

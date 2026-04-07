@@ -24,7 +24,10 @@ export function Layout({ children }: Readonly<PropsWithChildren>) {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset className="overflow-hidden w-full">
-        <header className="flex sticky top-0 z-10 bg-background h-16 shrink-0 items-center border-b px-4 justify-between w-full">
+        <header
+          data-cy="ewe-note-header"
+          className="flex sticky top-0 bg-background h-16 shrink-0 items-center border-b px-4 justify-between w-full"
+        >
           <div className="flex items-center gap-2 justify-between">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />

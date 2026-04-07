@@ -142,6 +142,7 @@ const _exampleDb: { collections: Collections } = {
     },
     agentConfigs: {},
     agentAccessLogs: {},
+    conversations: {},
   },
 };
 

@@ -1,7 +1,7 @@
 # Plan: Privacy & Autonomy — "Protect by Architecture, Guarantee by Policy"
 
 > **Created:** 2026-04-03
-> **Status:** Draft — awaiting approval
+> **Status:** Approved — P1–P3 backend complete; auth-pages agent management UI and MCP permission enforcement deferred
 
 ## Goal
 

@@ -33,9 +33,9 @@ EweserDB flips data ownership: **users own their data**, not apps. Apps interope
          │             │              │
   ┌──────▼──────┐ ┌────▼─────┐ ┌─────▼──────────┐
   │ Auth Server │ │ Auth     │ │ Aggregator     │
-  │ (API)       │ │ Pages    │ │ (planned)      │
-  │ Supabase +  │ │ Login/   │ │ Server-side    │
-  │ Drizzle ORM │ │ Signup   │ │ data indexing  │
+  │ (API)       │ │ Pages    │ │                │
+  │ Hono +      │ │ Login/   │ │ Server-side    │
+  │ better-auth │ │ Signup   │ │ data indexing  │
   └─────────────┘ └──────────┘ └────────────────┘
 ```
 
@@ -44,8 +44,12 @@ EweserDB flips data ownership: **users own their data**, not apps. Apps interope
 ```
 packages/
   db/                  ← @eweser/db — core SDK (Yjs, IndexedDB, Hocuspocus provider)
-  shared/              ← @eweser/shared — shared types & utilities
-  auth-server/         ← Authentication server + pages (MIGRATING from Next.js)
+  shared/              ← @eweser/shared — shared types, utilities, and document CRUD helpers
+  auth-server-hono/    ← @eweser/auth-server — new Hono + better-auth implementation
+  auth-pages/          ← React SPA for login/signup/account
+  sync-server/         ← @eweser/sync-server — Hocuspocus sync relay
+  aggregator/          ← @eweser/aggregator — Server-side data indexing
+  mcp-server/          ← @eweser/mcp — stdio MCP server for AI agent access
   ewe-note/            ← Full note-taking app (BlockNote editor, Yjs sync)
   examples-components/ ← Reusable UI components for examples
   eslint-config-*/     ← Shared lint configs
@@ -59,19 +63,47 @@ e2e/                   ← Cypress integration tests
 
 ## Core Tech Stack
 
-| Layer            | Current                                     | Migration Target                                            |
-| ---------------- | ------------------------------------------- | ----------------------------------------------------------- |
-| **Core SDK**     | Yjs, y-indexeddb, y-webrtc, @y-sweet/client | Yjs, y-indexeddb, @hocuspocus/provider                      |
-| **Auth Backend** | Next.js 16 + Supabase + Drizzle             | Hono + better-auth + Drizzle                                |
-| **Auth UI**      | Next.js pages                               | React SPA (Vite)                                            |
-| **Sync Server**  | Y-Sweet (JamSocket hosted or self-host)     | Hocuspocus (self-hosted in Docker Compose, SQLite/Postgres) |
-| **Database**     | Supabase (PostgreSQL)                       | Self-hosted PostgreSQL in Docker Compose                    |
-| **Auth**         | Supabase Auth                               | better-auth (email/password + OAuth, Drizzle adapter)       |
-| **Frontend**     | React 18-19, Vite, Tailwind, Radix UI       | No change                                                   |
-| **Testing**      | Vitest (unit), Cypress (E2E)                | No change                                                   |
-| **Build**        | Vite, tsc                                   | No change                                                   |
-| **Monorepo**     | npm workspaces                              | No change                                                   |
-| **CI/CD**        | GitHub Actions                              | No change                                                   |
+| Layer            | Current                                    | Migration Target |
+| ---------------- | ------------------------------------------ | ---------------- |
+| **Core SDK**     | Yjs, y-indexeddb, @hocuspocus/provider     | No change        |
+| **Auth Backend** | Hono + better-auth + Drizzle               | No change        |
+| **Auth UI**      | React SPA (Vite)                           | No change        |
+| **Sync Server**  | Hocuspocus (self-hosted in Docker Compose) | No change        |
+| **Database**     | Self-hosted PostgreSQL in Docker Compose   | No change        |
+| **Auth**         | better-auth (email/password + OAuth)       | No change        |
+| **Frontend**     | React 18-19, Vite, Tailwind, Radix UI      | No change        |
+| **Testing**      | Vitest (unit), Cypress (E2E)               | No change        |
+| **Build**        | Vite, tsc                                  | No change        |
+| **Monorepo**     | npm workspaces                             | No change        |
+| **CI/CD**        | GitHub Actions                             | No change        |
+
+## Development Workflow
+
+The project uses a hybrid approach: **backend services** run in Docker, while **frontend apps** run on the host for hot reloading.
+
+### 1. Start Backend Services
+
+```bash
+npm run dev:docker
+```
+
+This starts PostgreSQL, Hocuspocus (sync-server), the Aggregator, and the Auth API.
+
+### 2. Start Frontend Apps
+
+In separate terminals, run the apps you want to work on:
+
+```bash
+npm run dev:shared        # Watch shared types
+npm run dev:db            # Watch core SDK
+npm run dev:example-basic # Start the basic demo
+```
+
+### 3. Useful Commands
+
+- `npm run dev:docker:stop` — Stop backend services
+- `npm run dev:docker:clean` — Stop and remove volumes (reset DB)
+- `npm run dev:docker:logs` — View backend logs
 
 ## Planned Migration: Docker Compose Consolidation
 

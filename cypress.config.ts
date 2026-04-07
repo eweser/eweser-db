@@ -1,8 +1,12 @@
 import { defineConfig } from 'cypress';
 
 const exampleBasicPort = process.env.EXAMPLE_BASIC_PORT ?? '38110';
+const eweNotePort = process.env.EWE_NOTE_PORT ?? '5173';
 const baseUrl =
   process.env.CYPRESS_BASE_URL ?? `http://localhost:${exampleBasicPort}`;
+const eweNoteBaseUrl =
+  process.env.EWE_NOTE_BASE_URL ?? `http://localhost:${eweNotePort}/notes/`;
+const authServer = process.env.VITE_AUTH_SERVER ?? `http://localhost:38101`;
 
 export default defineConfig({
   projectId: 'obyc2w',
@@ -13,6 +17,10 @@ export default defineConfig({
     supportFile: 'e2e/cypress/support/e2e.js',
     specPattern: 'e2e/cypress/**/*.cy.{js,jsx,ts,tsx}',
     baseUrl,
+    env: {
+      eweNoteBaseUrl,
+      authServer,
+    },
     setupNodeEvents(on, config) {
       // implement node event listeners here
     },

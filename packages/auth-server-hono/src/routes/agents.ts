@@ -1,5 +1,7 @@
 import { Hono } from 'hono';
+import { createMiddleware } from 'hono/factory';
 import { requireAuth } from '../middleware/auth.js';
+import { agentAuth } from '../middleware/agent-auth.js';
 import {
   createAgentConfig,
   deleteAgentConfig,
@@ -8,10 +10,16 @@ import {
   getAgentConfigsByUserId,
   getAgentConfigByTokenHash,
   hashToken,
+  logAgentAccess,
   revokeAgentConfig,
   rotateAgentToken,
   touchAgentLastAccess,
 } from '../model/agents.js';
+import { getRoomsByIds } from '../model/rooms/calls.js';
+import { getUserById } from '../model/users.js';
+import { generateSyncToken } from '../services/sync-token.js';
+import { env } from '../env.js';
+import { COLLECTION_KEYS } from '@eweser/shared';
 
 export const agentsRouter = new Hono();
 
@@ -48,6 +56,18 @@ agentsRouter.post('/', requireAuth, async (c) => {
 
   if (!body.name || !Array.isArray(body.allowedCollections)) {
     return c.json({ error: 'name and allowedCollections are required' }, 400);
+  }
+
+  const invalidCollections = body.allowedCollections.filter(
+    (k) => !COLLECTION_KEYS.includes(k as (typeof COLLECTION_KEYS)[number])
+  );
+  if (invalidCollections.length > 0) {
+    return c.json(
+      {
+        error: `Invalid collection keys: ${invalidCollections.join(', ')}. Allowed: ${COLLECTION_KEYS.join(', ')}`,
+      },
+      400
+    );
   }
 
   const { agentConfig, token } = await createAgentConfig({
@@ -178,11 +198,70 @@ agentsRouter.get('/:id/logs', requireAuth, async (c) => {
  * Returns: { agentConfig } with allowed collections/rooms, or 401.
  *
  * Security: The MCP server should call this with the raw token from the Bearer header.
+ * Rate-limited to 30 requests per minute per IP to prevent brute-force attacks.
  */
-agentsRouter.post('/verify-token', async (c) => {
-  const body = await c.req.json<{ token: string }>();
+const verifyTokenRateLimiter = (() => {
+  const counts = new Map<string, { count: number; resetAt: number }>();
+  const WINDOW_MS = 60_000;
+  const MAX = 30;
 
-  if (!body.token) {
+  const getClientKey = (
+    c: Parameters<ReturnType<typeof createMiddleware>>[0]
+  ) => {
+    // Only trust x-forwarded-for when a known proxy set it; cf-connecting-ip and x-real-ip
+    // are client-supplied headers that can be spoofed to bypass rate limits.
+    // In production, Caddy (reverse proxy) sets x-forwarded-for; do not trust it from direct clients.
+    const xForwarded = c.req.header('x-forwarded-for');
+    const clientIp =
+      (xForwarded ? xForwarded.split(',')[0] : null) ??
+      c.req.header('x-real-ip') ??
+      'unknown';
+    return clientIp.trim().slice(0, 64) || 'unknown';
+  };
+
+  const evictStaleEntries = (now: number) => {
+    if (counts.size < 10_000) return;
+
+    for (const [key, entry] of counts) {
+      if (now > entry.resetAt) {
+        counts.delete(key);
+      }
+    }
+
+    while (counts.size > 10_000) {
+      const oldestKey = counts.keys().next().value;
+      if (!oldestKey) break;
+      counts.delete(oldestKey);
+    }
+  };
+
+  return createMiddleware(async (c, next) => {
+    const now = Date.now();
+    evictStaleEntries(now);
+
+    const clientKey = getClientKey(c);
+    const entry = counts.get(clientKey);
+    if (!entry || now > entry.resetAt) {
+      counts.set(clientKey, { count: 1, resetAt: now + WINDOW_MS });
+    } else {
+      entry.count++;
+      if (entry.count > MAX) {
+        return c.json({ error: 'Too many requests' }, 429);
+      }
+    }
+    await next();
+  });
+})();
+
+agentsRouter.post('/verify-token', verifyTokenRateLimiter, async (c) => {
+  let body: { token?: unknown };
+  try {
+    body = await c.req.json<{ token?: unknown }>();
+  } catch {
+    return c.json({ error: 'Invalid JSON body' }, 400);
+  }
+
+  if (typeof body.token !== 'string' || body.token.length === 0) {
     return c.json({ error: 'token is required' }, 400);
   }
 
@@ -191,6 +270,10 @@ agentsRouter.post('/verify-token', async (c) => {
 
   if (!agent) {
     return c.json({ error: 'Invalid or revoked token' }, 401);
+  }
+
+  if (!agent.isActive) {
+    return c.json({ error: 'Agent is revoked' }, 401);
   }
 
   // Check token expiry
@@ -203,4 +286,150 @@ agentsRouter.post('/verify-token', async (c) => {
 
   const { tokenHash: _tokenHash, ...safeAgent } = agent;
   return c.json({ agent: safeAgent });
+});
+
+/**
+ * POST /api/agents/me/rooms
+ * Agent-authenticated: returns rooms this agent is allowed to access.
+ * Filters by agent.allowedCollections and agent.allowedRooms.
+ */
+agentsRouter.post('/me/rooms', agentAuth, async (c) => {
+  const agent = c.get('agent');
+
+  // Get the owning user to find their room IDs
+  const user = await getUserById(agent.userId);
+  if (!user) {
+    return c.json({ error: 'User not found' }, 404);
+  }
+
+  const userRoomIds: string[] = user.rooms ?? [];
+  if (userRoomIds.length === 0) {
+    return c.json({ rooms: [] });
+  }
+
+  let allRooms = await getRoomsByIds(userRoomIds);
+
+  // Filter by allowedCollections
+  if (agent.allowedCollections.length > 0) {
+    allRooms = allRooms.filter((r) =>
+      agent.allowedCollections.includes(r.collectionKey)
+    );
+  }
+
+  // Filter by allowedRooms (if non-empty, restrict to specific room IDs)
+  if (agent.allowedRooms.length > 0) {
+    allRooms = allRooms.filter((r) => agent.allowedRooms.includes(r.id));
+  }
+
+  // Return only safe fields
+  const rooms = allRooms.map(
+    ({ id, name, collectionKey, syncUrl, syncBaseUrl }) => ({
+      id,
+      name,
+      collectionKey,
+      syncUrl,
+      syncBaseUrl,
+    })
+  );
+
+  return c.json({ rooms });
+});
+
+/**
+ * POST /api/agents/me/sync-token
+ * Agent-authenticated: returns a Hocuspocus sync JWT for a specific room.
+ * Validates the room belongs to the user and the agent has access.
+ */
+agentsRouter.post('/me/sync-token', agentAuth, async (c) => {
+  const agent = c.get('agent');
+  const body = await c.req.json<{ roomId: string }>();
+
+  if (!body.roomId) {
+    return c.json({ error: 'roomId is required' }, 400);
+  }
+
+  // Get the owning user to find their room IDs
+  const user = await getUserById(agent.userId);
+  if (!user) {
+    return c.json({ error: 'User not found' }, 404);
+  }
+
+  const userRoomIds: string[] = user.rooms ?? [];
+  if (!userRoomIds.includes(body.roomId)) {
+    return c.json({ error: 'Room not found or not accessible' }, 404);
+  }
+
+  const rooms = await getRoomsByIds([body.roomId]);
+  const room = rooms[0];
+  if (!room) {
+    return c.json({ error: 'Room not found' }, 404);
+  }
+
+  // Validate agent is allowed access to this room
+  if (
+    agent.allowedCollections.length > 0 &&
+    !agent.allowedCollections.includes(room.collectionKey)
+  ) {
+    return c.json(
+      { error: 'Agent not allowed to access this collection' },
+      403
+    );
+  }
+  if (
+    agent.allowedRooms.length > 0 &&
+    !agent.allowedRooms.includes(body.roomId)
+  ) {
+    return c.json({ error: 'Agent not allowed to access this room' }, 403);
+  }
+
+  const syncBaseUrl = room.syncBaseUrl ?? env.SYNC_SERVER_URL;
+  const { token, expiry } = generateSyncToken(
+    body.roomId,
+    room.collectionKey,
+    agent.userId
+  );
+  const syncUrl = `${syncBaseUrl}/${body.roomId}`;
+
+  return c.json({
+    syncUrl,
+    syncToken: token,
+    tokenExpiry: expiry.toISOString(),
+  });
+});
+
+/**
+ * POST /api/agents/me/log
+ * Agent-authenticated: logs an access entry for audit purposes.
+ */
+agentsRouter.post('/me/log', agentAuth, async (c) => {
+  const agent = c.get('agent');
+  const body = await c.req.json<{
+    roomId: string;
+    collectionKey: string;
+    action: 'read' | 'write';
+    documentCount?: number;
+  }>();
+
+  if (!body.roomId || !body.collectionKey || !body.action) {
+    return c.json(
+      { error: 'roomId, collectionKey, and action are required' },
+      400
+    );
+  }
+  if (body.action !== 'read' && body.action !== 'write') {
+    return c.json({ error: 'action must be read or write' }, 400);
+  }
+
+  await logAgentAccess({
+    agentId: agent.id,
+    userId: agent.userId,
+    roomId: body.roomId,
+    collectionKey: body.collectionKey,
+    action: body.action,
+    documentCount: body.documentCount ?? 0,
+  });
+
+  void touchAgentLastAccess(agent.id);
+
+  return c.json({ ok: true });
 });

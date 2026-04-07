@@ -6,11 +6,11 @@ export declare enum LocalStorageKey {
 }
 export type LocalStoragePolyfill = Storage;
 export type LocalStorageService = {
-    getItem: <T = any>(key: LocalStorageKey) => T | null;
-    setItem: <T = any>(key: LocalStorageKey, value: T) => void;
+    getItem: <T = unknown>(key: LocalStorageKey) => T | null;
+    setItem: <T = unknown>(key: LocalStorageKey, value: T) => void;
     removeItem: (key: LocalStorageKey) => void;
 };
-export declare const localStorageSet: (db: Database) => (key: LocalStorageKey, value: any) => void;
+export declare const localStorageSet: (db: Database) => (key: LocalStorageKey, value: unknown) => void;
 export declare const localStorageGet: (db: Database) => <T>(key: LocalStorageKey) => T | null;
 export declare const localStorageRemove: (db: Database) => (key: LocalStorageKey) => void;
 export declare const getLocalRegistry: (db: Database) => () => Registry;

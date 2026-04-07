@@ -13,7 +13,7 @@ export interface DatabaseOptions {
      */
     logLevel?: number;
     /** Which providers to use. By default uses all.
-      * Currently indexedDB is required and webRTC and Hocuspocus are optional
+     * Currently indexedDB is required and webRTC and Hocuspocus are optional
      * Setting only indexedDB will make the database offline only
      */
     providers?: ProviderOptions[];
@@ -44,7 +44,7 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
     accessGrantToken: string;
     webRtcPeers: string[];
     logLevel: number;
-    log: (level: number, ...args: any[]) => void;
+    log: (level: number, ...args: unknown[]) => void;
     debug: DatabaseEvents['debug'];
     info: DatabaseEvents['info'];
     warn: DatabaseEvents['warn'];
@@ -66,41 +66,41 @@ export declare class Database extends TypedEventEmitter<DatabaseEvents> {
     logoutAndClear: () => void;
     getAccessGrantTokenFromUrl: () => string | null;
     getToken: () => string | null;
-    refreshSyncToken: (room: Room<any>) => Promise<import("@eweser/shared").RefreshSyncTokenRouteResponse | null>;
+    refreshSyncToken: (room: Room<EweDocument>) => Promise<import("@eweser/shared").RefreshSyncTokenRouteResponse | null>;
     /** First loads the local indexedDB ydoc for the room. If sync is enabled and room sync details are available it also connects remotely.
      * @param {RemoteLoadOptions} RemoteLoadOptions - options for loading the remote ydoc
      */
-    loadRoom: (serverRoom: import("@eweser/shared").ServerRoom, remoteLoadOptions?: import("./methods/connection/loadRoom").RemoteLoadOptions) => Promise<Room<any>>;
+    loadRoom: (serverRoom: import("@eweser/shared").ServerRoom, remoteLoadOptions?: import("./methods/connection/loadRoom").RemoteLoadOptions) => Promise<Room<EweDocument>>;
     loadRooms: (rooms: Registry, loadRemotes?: boolean, staggerMs?: number) => Promise<void>;
     syncRegistry: () => Promise<boolean>;
     getRegistry: () => Registry;
     localStoragePolyfill: LocalStoragePolyfill;
     localStorageService: LocalStorageService;
-    getDocuments: <T extends EweDocument>(room: Room<T>) => import("./types").GetDocuments<T>;
+    getDocuments: <T extends EweDocument>(room: Room<T>) => import("@eweser/shared").GetDocuments<T>;
     getRoom: <T extends EweDocument>(collectionKey: CollectionKey, roomId: string) => Room<T>;
     getRooms<T extends CollectionKey>(collectionKey: T): Room<CollectionToDocument[T]>[];
-    allRooms(): Room<any>[];
+    allRooms(): Array<Room<EweDocument>>;
     newRoom: <T extends EweDocument>(options: {
-        _deleted?: boolean | null | undefined;
-        _ttl?: string | null | undefined;
-        collectionKey: CollectionKey;
         name: string;
-        id?: string | undefined;
-        syncToken?: string | null | undefined;
-        syncUrl?: string | null | undefined;
-        tokenExpiry?: string | null | undefined;
-        publicAccess?: "private" | "read" | "write" | undefined;
-        readAccess?: string[] | undefined;
-        writeAccess?: string[] | undefined;
-        adminAccess?: string[] | undefined;
-        createdAt?: string | null | undefined;
-        updatedAt?: string | null | undefined;
-        indexedDbProvider?: (import("y-indexeddb").IndexeddbPersistence | null) | undefined;
-        webRtcProvider?: (import("y-webrtc").WebrtcProvider | null) | undefined;
-        syncProvider?: (import("@hocuspocus/provider").HocuspocusProvider | null) | undefined;
-        ydoc?: import("./types").YDoc<T> | null | undefined;
+        id?: string;
+        collectionKey: CollectionKey;
+        syncToken?: string | null;
+        syncUrl?: string | null;
+        tokenExpiry?: string | null;
+        _deleted?: boolean | null;
+        _ttl?: string | null;
+        publicAccess?: "private" | "read" | "write";
+        readAccess?: string[];
+        writeAccess?: string[];
+        adminAccess?: string[];
+        createdAt?: string | null;
+        updatedAt?: string | null;
+        indexedDbProvider?: import("y-indexeddb").IndexeddbPersistence | null;
+        webRtcProvider?: import("y-webrtc").WebrtcProvider | null;
+        syncProvider?: import("@hocuspocus/provider").HocuspocusProvider | null;
+        ydoc?: import("./types").YDoc<T> | null;
     }) => Room<T>;
-    renameRoom: (room: Room<any>, newName: string) => Promise<import("@eweser/shared").ServerRoom | null>;
+    renameRoom: (room: Room<EweDocument>, newName: string) => Promise<import("@eweser/shared").ServerRoom | null>;
     generateShareRoomLink: ({ roomId, invitees, redirectUrl, redirectQueries, expiry, accessType, appName, domain, collections, }: Partial<import("@eweser/shared").LoginQueryOptions> & {
         roomId: string;
         invitees?: string[];

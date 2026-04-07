@@ -3,11 +3,13 @@ import type { Note } from './note';
 import type { Flashcard } from './flashcard';
 import type { Profile } from './profile';
 import type { DocumentBase } from './documentBase';
+import type { Conversation } from './conversation';
 export * from './note';
 export * from './flashcard';
 export * from './profile';
 export * from './documentBase';
 export * from './agent-config';
+export * from './conversation';
 
 /** We don't include registry because we use this after login to get all non-registry collections. */
 export const COLLECTION_KEYS = [
@@ -16,6 +18,7 @@ export const COLLECTION_KEYS = [
   'profiles',
   'agentConfigs',
   'agentAccessLogs',
+  'conversations',
 ] as const;
 
 export const COLLECTION_KEYS_OR_ALL = [...COLLECTION_KEYS, 'all'] as const;
@@ -32,7 +35,8 @@ export type EweDocument =
   | Flashcard
   | Profile
   | AgentConfig
-  | AgentAccessLogEntry;
+  | AgentAccessLogEntry
+  | Conversation;
 export type CollectionKey = (typeof COLLECTION_KEYS)[number];
 export type CollectionKeyOrAll = (typeof COLLECTION_KEYS_OR_ALL)[number];
 

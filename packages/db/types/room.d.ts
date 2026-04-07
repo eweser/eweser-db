@@ -59,4 +59,4 @@ export declare class Room<T extends EweDocument> extends TypedEventEmitter<RoomE
     addAwareness: () => Promise<void>;
     constructor(options: NewRoomOptions<T>);
 }
-export declare function roomToServerRoom(room: Room<any>): ServerRoom;
+export declare function roomToServerRoom<T extends EweDocument>(room: Room<T>): ServerRoom;
