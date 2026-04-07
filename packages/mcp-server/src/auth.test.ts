@@ -77,13 +77,17 @@ describe('verifyAgentToken', () => {
   });
 
   it('throws on non-OK response', async () => {
-    mockFetch.mockResolvedValueOnce(makeResponse({ error: 'Unauthorized' }, 401));
+    mockFetch.mockResolvedValueOnce(
+      makeResponse({ error: 'Unauthorized' }, 401)
+    );
     await expect(verifyAgentToken(TOKEN, AUTH_URL)).rejects.toThrow('401');
   });
 
   it('throws on network error', async () => {
     mockFetch.mockRejectedValueOnce(new Error('network failure'));
-    await expect(verifyAgentToken(TOKEN, AUTH_URL)).rejects.toThrow('network failure');
+    await expect(verifyAgentToken(TOKEN, AUTH_URL)).rejects.toThrow(
+      'network failure'
+    );
   });
 });
 
@@ -115,8 +119,12 @@ describe('fetchSyncToken', () => {
   });
 
   it('throws on auth failure', async () => {
-    mockFetch.mockResolvedValueOnce(makeResponse({ error: 'Unauthorized' }, 401));
-    await expect(fetchSyncToken(TOKEN, AUTH_URL, 'room-1')).rejects.toThrow('401');
+    mockFetch.mockResolvedValueOnce(
+      makeResponse({ error: 'Unauthorized' }, 401)
+    );
+    await expect(fetchSyncToken(TOKEN, AUTH_URL, 'room-1')).rejects.toThrow(
+      '401'
+    );
   });
 });
 
@@ -140,7 +148,9 @@ describe('logAccess', () => {
   });
 
   it('throws on server error', async () => {
-    mockFetch.mockResolvedValueOnce(makeResponse({ error: 'Server Error' }, 500));
+    mockFetch.mockResolvedValueOnce(
+      makeResponse({ error: 'Server Error' }, 500)
+    );
     await expect(
       logAccess(TOKEN, AUTH_URL, {
         roomId: 'room-1',

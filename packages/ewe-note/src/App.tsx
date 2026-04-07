@@ -26,7 +26,10 @@ function App() {
         </Layout>
       ) : (
         // usually loads almost instantaneously, but we need to make sure a yDoc is ready before we can use it
-        <div data-cy="ewe-note-loading" className="flex items-center justify-center h-screen">
+        <div
+          data-cy="ewe-note-loading"
+          className="flex items-center justify-center h-screen"
+        >
           <Icons.Spinner className="w-24 h-24 animate-spin" />
         </div>
       )}

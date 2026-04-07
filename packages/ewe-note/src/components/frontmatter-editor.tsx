@@ -67,8 +67,7 @@ export default function FrontmatterEditor({
   };
 
   const handleDelete = (key: string) => {
-    const updated = { ...frontmatter };
-    delete updated[key];
+    const { [key]: _removed, ...updated } = frontmatter;
     onUpdate(updated);
   };
 

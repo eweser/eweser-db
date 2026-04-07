@@ -1,17 +1,8 @@
 import type { TypedMap } from 'yjs-types';
-import type {
-  CollectionKey,
-  Room,
-  Documents,
-  EweDocument,
-} from '../types';
+import type { CollectionKey, Room, Documents, EweDocument } from '../types';
 import type { Database } from '..';
 
-export {
-  newDocument,
-  buildRef,
-  randomString,
-} from '@eweser/shared';
+export { newDocument, buildRef, randomString } from '@eweser/shared';
 
 export const wait = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));

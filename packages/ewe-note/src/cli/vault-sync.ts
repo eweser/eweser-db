@@ -283,7 +283,8 @@ export class VaultSyncEngine {
     if (!note) return;
 
     // Remove from state (could also set a _deleted flag for EweserDB integration)
-    delete this.state.notes[noteId];
+    const { [noteId]: _removed, ...remainingNotes } = this.state.notes;
+    this.state.notes = remainingNotes;
     this.state.lastSyncedAt = new Date().toISOString();
     await writeState(this.statePath, this.state);
     console.log(`File → State: deleted "${relPath}"`);

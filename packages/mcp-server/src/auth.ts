@@ -60,9 +60,7 @@ export async function verifyAgentToken(
     body: JSON.stringify({ token }),
   });
   if (!res.ok) {
-    throw new Error(
-      `[eweser-mcp] Token verification failed: ${res.status}`
-    );
+    throw new Error(`[eweser-mcp] Token verification failed: ${res.status}`);
   }
   const data = (await res.json()) as { agent: AgentConfig };
   return data.agent;
@@ -106,10 +104,5 @@ export async function logAccess(
     documentCount?: number;
   }
 ): Promise<void> {
-  await authFetch<{ ok: boolean }>(
-    authUrl,
-    '/api/agents/me/log',
-    token,
-    entry
-  );
+  await authFetch<{ ok: boolean }>(authUrl, '/api/agents/me/log', token, entry);
 }

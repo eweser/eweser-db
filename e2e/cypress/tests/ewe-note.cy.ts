@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-const eweNoteUrl = () => Cypress.env('eweNoteBaseUrl') as string;
+const eweNoteUrl = () => Cypress.env('eweNoteBaseUrl') ?? '';
 
 describe('ewe-note app', () => {
   beforeEach(() => {

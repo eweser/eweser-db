@@ -60,14 +60,14 @@ Store cross-repo reference docs (VPN setup, tunneling configs, dev environment n
 
 These are prompt-layer conventions on top of the existing `eweser_save_memory` / `eweser_search` tools — not new storage subsystems.
 
-| Intent | Maps to | Defaults | Notes |
-|--------|---------|----------|-------|
-| `remember <fact>` | `eweser_save_memory` | `memoryType: "memory"`, `roomId: conversations` | Captures a specific fact to recall later |
-| `decision <description>` | `eweser_save_memory` | `memoryType: "decision"`, `roomId: conversations` | Architectural/strategic choices with rationale |
-| `bookmark <url>` | `eweser_save_memory` | `memoryType: "bookmark"`, `roomId: conversations` | URL or reference worth keeping |
-| `save session: <summary>` | `eweser_save_memory` | `memoryType: "session"`, `roomId: conversations` | End-of-session summary |
-| `next: <action>` | `eweser_save_memory` | `memoryType: "memory"`, `roomId: conversations`, `tags: ["next"]` | Captures a planned action |
-| `search eweser for <query>` | `eweser_search` | no filters | Recall from any agent |
-| `scratch <note>` | `eweser_save_memory` | `memoryType: "memory"`, short summary | Quick capture; not persistent long-term |
+| Intent                      | Maps to              | Defaults                                                          | Notes                                          |
+| --------------------------- | -------------------- | ----------------------------------------------------------------- | ---------------------------------------------- |
+| `remember <fact>`           | `eweser_save_memory` | `memoryType: "memory"`, `roomId: conversations`                   | Captures a specific fact to recall later       |
+| `decision <description>`    | `eweser_save_memory` | `memoryType: "decision"`, `roomId: conversations`                 | Architectural/strategic choices with rationale |
+| `bookmark <url>`            | `eweser_save_memory` | `memoryType: "bookmark"`, `roomId: conversations`                 | URL or reference worth keeping                 |
+| `save session: <summary>`   | `eweser_save_memory` | `memoryType: "session"`, `roomId: conversations`                  | End-of-session summary                         |
+| `next: <action>`            | `eweser_save_memory` | `memoryType: "memory"`, `roomId: conversations`, `tags: ["next"]` | Captures a planned action                      |
+| `search eweser for <query>` | `eweser_search`      | no filters                                                        | Recall from any agent                          |
+| `scratch <note>`            | `eweser_save_memory` | `memoryType: "memory"`, short summary                             | Quick capture; not persistent long-term        |
 
 All helpers default to `roomId: ec8a7adb-45ca-4480-8de9-b4d74173f73f` (conversations room). Pure prompt-layer aliases — no new MCP tool required.

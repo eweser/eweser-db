@@ -56,7 +56,7 @@ Replace BlockNote with TipTap 2.x directly in ewe-note, then build the Obsidian-
 - [ ] Rewrite OFM serializer as a set of proper TipTap extensions (`addMarkdown()`) rather than pre/post string processing:
 
   **a) `==Highlight==` mark** — add custom inline MD tokenizer to the Highlight extension; serializes back to `==text==`
-  
+
   **b) `WikiLinkNode`** — inline atom Node:
   - Attributes: `{ name: string, alias?: string }` (no UUID — resolve name at render time)
   - `renderHTML`: `<span data-wiki-link="true" data-name="...">[[name]]</span>`

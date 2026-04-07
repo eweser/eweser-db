@@ -10,15 +10,15 @@ Get EweserDB running as Jacob's personal cross-tool knowledge store — replacin
 
 ## The Real Pain Points
 
-| # | Pain Point | Current State | EweserDB Solution |
-|---|---|---|---|
-| 1 | **Obsidian sync broken in WSL** | Notes not syncing, work-os vault stale | EweserDB runs natively in WSL (local IndexedDB + Hocuspocus). No Obsidian needed. |
-| 2 | **Sensitive/personal data** | Nowhere safe + agent-accessible (logins, people notes, VPN configs) | Notes collection, local-first, never in git. Agents access via MCP with scoped permissions. |
-| 3 | **Cross-repo context loss** | Each repo has its own plan files, agents can't see other repos | One MCP server, all agents connect. VPN docs, tunneling setup, etc. accessible from any repo. |
-| 4 | **Lost worktree conversations** | Gone when worktree deleted | `eweser_save_memory` saves session summaries to EweserDB. Survives worktree deletion. |
-| 5 | **Copilot session search is bad** | Manual rename + scroll through sessions | `eweser_search` — full-text search across all saved sessions/decisions. |
-| 6 | **Can't move context between tools** | Copy-paste between Claude web ↔ Copilot | Save research in Claude web → EweserDB → Copilot reads it via MCP. |
-| 7 | **$250+/mo Copilot credits** | All research + planning + coding in Copilot | Research/planning in Claude/ChatGPT web (flat sub), save to EweserDB, Copilot only for implementation. |
+| #   | Pain Point                           | Current State                                                       | EweserDB Solution                                                                                      |
+| --- | ------------------------------------ | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| 1   | **Obsidian sync broken in WSL**      | Notes not syncing, work-os vault stale                              | EweserDB runs natively in WSL (local IndexedDB + Hocuspocus). No Obsidian needed.                      |
+| 2   | **Sensitive/personal data**          | Nowhere safe + agent-accessible (logins, people notes, VPN configs) | Notes collection, local-first, never in git. Agents access via MCP with scoped permissions.            |
+| 3   | **Cross-repo context loss**          | Each repo has its own plan files, agents can't see other repos      | One MCP server, all agents connect. VPN docs, tunneling setup, etc. accessible from any repo.          |
+| 4   | **Lost worktree conversations**      | Gone when worktree deleted                                          | `eweser_save_memory` saves session summaries to EweserDB. Survives worktree deletion.                  |
+| 5   | **Copilot session search is bad**    | Manual rename + scroll through sessions                             | `eweser_search` — full-text search across all saved sessions/decisions.                                |
+| 6   | **Can't move context between tools** | Copy-paste between Claude web ↔ Copilot                             | Save research in Claude web → EweserDB → Copilot reads it via MCP.                                     |
+| 7   | **$250+/mo Copilot credits**         | All research + planning + coding in Copilot                         | Research/planning in Claude/ChatGPT web (flat sub), save to EweserDB, Copilot only for implementation. |
 
 ## What's Already Built & Connected
 
@@ -100,6 +100,7 @@ Already complete. MCP tools visible in Copilot. `eweser_list_rooms` returns 2 pr
   4. Verify recall works
 
 **Files:**
+
 - Modify: `.github/copilot-instructions.md`
 - Modify: `CLAUDE.md`
 
@@ -129,29 +130,30 @@ Already complete. MCP tools visible in Copilot. `eweser_list_rooms` returns 2 pr
     3. Never in git, never in plan files
 
 **Files:**
+
 - Create: `docs/workflows/cross-tool-research.md`
 
 ---
 
 ## What This Does NOT Solve (Yet)
 
-| Gap | Why Not Now | Future Solution |
-|---|---|---|
-| **Auto-save from Claude web** | No browser extension yet | Browser extension MVP (saves conversation to EweserDB with one click) |
-| **E2E encryption for credentials** | Needs crypto key management | Separate plan — critical before storing real secrets |
-| **ChatGPT MCP support** | OpenAI hasn't shipped MCP yet | When they do, add ChatGPT as another MCP client |
-| **Mobile access** | No mobile app | Ewe Note PWA (future) |
-| **Real-time Now.md replacement** | Now.md changes too frequently for manual sync | Could auto-sync via cron or file watcher — explore later |
+| Gap                                | Why Not Now                                   | Future Solution                                                       |
+| ---------------------------------- | --------------------------------------------- | --------------------------------------------------------------------- |
+| **Auto-save from Claude web**      | No browser extension yet                      | Browser extension MVP (saves conversation to EweserDB with one click) |
+| **E2E encryption for credentials** | Needs crypto key management                   | Separate plan — critical before storing real secrets                  |
+| **ChatGPT MCP support**            | OpenAI hasn't shipped MCP yet                 | When they do, add ChatGPT as another MCP client                       |
+| **Mobile access**                  | No mobile app                                 | Ewe Note PWA (future)                                                 |
+| **Real-time Now.md replacement**   | Now.md changes too frequently for manual sync | Could auto-sync via cron or file watcher — explore later              |
 
 ## Risks
 
-| Risk | Mitigation |
-|---|---|
-| **Credentials in plaintext** | DO NOT store real secrets until E2E encryption is implemented. Use for non-critical data only. Flag prominently in docs. |
-| **Docker stack goes down** | MCP server falls back to in-memory Y.Doc. Data persists in IndexedDB locally — no data loss, just no search until aggregator is back. |
-| **Token in `.env.local` gets committed** | Add `.env.local` to `.gitignore`. Token is scoped — can be revoked via API if leaked. |
-| **Workflow adoption** | Start with just session save + search. Don't try to migrate everything from Obsidian at once. |
-| **MCP server startup slow** | Needs to verify token + connect to Hocuspocus on every Copilot restart. Monitor and optimize if painful. |
+| Risk                                     | Mitigation                                                                                                                            |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **Credentials in plaintext**             | DO NOT store real secrets until E2E encryption is implemented. Use for non-critical data only. Flag prominently in docs.              |
+| **Docker stack goes down**               | MCP server falls back to in-memory Y.Doc. Data persists in IndexedDB locally — no data loss, just no search until aggregator is back. |
+| **Token in `.env.local` gets committed** | Add `.env.local` to `.gitignore`. Token is scoped — can be revoked via API if leaked.                                                 |
+| **Workflow adoption**                    | Start with just session save + search. Don't try to migrate everything from Obsidian at once.                                         |
+| **MCP server startup slow**              | Needs to verify token + connect to Hocuspocus on every Copilot restart. Monitor and optimize if painful.                              |
 
 ## Execution Summary
 

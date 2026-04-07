@@ -26,23 +26,23 @@ Copy `example.env` and fill in your credentials:
 cp example.env .env
 ```
 
-| Variable | Required | Description |
-|---|---|---|
-| `EWESER_AGENT_TOKEN` | ✅ | Agent bearer token from auth server |
-| `EWESER_AUTH_URL` | ✅ | Base URL of the auth server, e.g. `http://localhost:3001` |
-| `EWESER_SYNC_URL` | optional | Override sync WebSocket URL |
+| Variable             | Required | Description                                               |
+| -------------------- | -------- | --------------------------------------------------------- |
+| `EWESER_AGENT_TOKEN` | ✅       | Agent bearer token from auth server                       |
+| `EWESER_AUTH_URL`    | ✅       | Base URL of the auth server, e.g. `http://localhost:3001` |
+| `EWESER_SYNC_URL`    | optional | Override sync WebSocket URL                               |
 
 ## Available Tools
 
-| Tool | Description |
-|---|---|
-| `eweser_list_rooms` | List rooms the agent can access, optionally filtered by collection key |
-| `eweser_list_documents` | List documents in a room (IDs + summaries) |
-| `eweser_read_document` | Read a full document by room ID and document ID |
-| `eweser_search` | Full-text search across all accessible rooms |
-| `eweser_create_document` | Create a new document in a room |
-| `eweser_update_document` | Update fields on an existing document |
-| `eweser_delete_document` | Soft-delete a document (sets `_deleted = true`) |
+| Tool                     | Description                                                            |
+| ------------------------ | ---------------------------------------------------------------------- |
+| `eweser_list_rooms`      | List rooms the agent can access, optionally filtered by collection key |
+| `eweser_list_documents`  | List documents in a room (IDs + summaries)                             |
+| `eweser_read_document`   | Read a full document by room ID and document ID                        |
+| `eweser_search`          | Full-text search across all accessible rooms                           |
+| `eweser_create_document` | Create a new document in a room                                        |
+| `eweser_update_document` | Update fields on an existing document                                  |
+| `eweser_delete_document` | Soft-delete a document (sets `_deleted = true`)                        |
 
 ## Client Configuration
 
@@ -111,9 +111,9 @@ Every tool call is audit-logged to the auth server (room, action, document count
 
 ## Troubleshooting
 
-| Error | Fix |
-|---|---|
-| `Token verification failed: 401` | Check `EWESER_AGENT_TOKEN` is correct and not expired |
-| `Room not connected or not accessible` | The room ID may not be in the agent's `allowedRooms` list |
+| Error                                  | Fix                                                              |
+| -------------------------------------- | ---------------------------------------------------------------- |
+| `Token verification failed: 401`       | Check `EWESER_AGENT_TOKEN` is correct and not expired            |
+| `Room not connected or not accessible` | The room ID may not be in the agent's `allowedRooms` list        |
 | `Agent does not have write permission` | The token has `permissions: "read"` — create a `readwrite` token |
-| WebSocket connection errors | Check `EWESER_AUTH_URL` / `EWESER_SYNC_URL` are reachable |
+| WebSocket connection errors            | Check `EWESER_AUTH_URL` / `EWESER_SYNC_URL` are reachable        |

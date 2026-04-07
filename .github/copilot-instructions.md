@@ -100,7 +100,13 @@ At the end of every coding session, save a session summary using `eweser_save_me
 This calls `eweser_save_memory` with `memoryType: "session"` and stores it in the configured conversations room. To recall past decisions and sessions, use `eweser_search`:
 
 ```json
-{ "tool": "eweser_search", "args": { "query": "your topic", "filters": { "memoryType": ["decision", "session"] } } }
+{
+  "tool": "eweser_search",
+  "args": {
+    "query": "your topic",
+    "filters": { "memoryType": ["decision", "session"] }
+  }
+}
 ```
 
 See [CLAUDE.md](../CLAUDE.md) for full manual workflow details.

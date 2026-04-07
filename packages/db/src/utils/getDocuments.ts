@@ -10,8 +10,9 @@ export const getDocuments =
   <T extends EweDocument>(room: Room<T>) => {
     if (!room) throw new Error('no room');
     if (!room.ydoc) throw new Error('no documents');
-    return sharedGetDocuments(_db.authServer, room.collectionKey, room.id)<T>(
-      room.ydoc as unknown as Doc
-    );
+    return sharedGetDocuments(
+      _db.authServer,
+      room.collectionKey,
+      room.id
+    )<T>(room.ydoc as unknown as Doc);
   };
-

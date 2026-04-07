@@ -124,7 +124,7 @@ export function generateNoteId(vaultName: string, sourcePath: string): string {
 
 async function scanDirectory(
   dir: string,
-  vaultRoot: string
+  _vaultRoot: string // eslint-disable-line @typescript-eslint/no-unused-vars -- reserved for future vault root resolution
 ): Promise<{ mdFiles: string[]; attachmentFiles: string[] }> {
   const mdFiles: string[] = [];
   const attachmentFiles: string[] = [];

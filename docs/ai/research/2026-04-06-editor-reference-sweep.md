@@ -15,6 +15,7 @@
 ### What to copy
 
 **Callout as TipTap Node with `content: "heading block*"`:**
+
 ```ts
 export const Callout = Node.create({
   name: "callout",
@@ -32,21 +33,23 @@ export const Callout = Node.create({
 ```
 
 **Internal links as `nn://` custom protocol on standard Link mark:**
+
 ```ts
 // No dedicated wiki-link mark needed — reuse Link
 export function createInternalLink(noteId: string) {
   return `nn://note/${noteId}`;
 }
 export function isInternalLink(href: string) {
-  return href?.startsWith("nn://");
+  return href?.startsWith('nn://');
 }
 ```
 
 **Block IDs via `addGlobalAttributes()`:**
+
 ```ts
 // Adds data-block-id to ALL block nodes — essential for deep-link anchors
 editor.commands.addGlobalAttributes([
-  { types: allBlockTypes, attributes: { blockId: { default: null } } }
+  { types: allBlockTypes, attributes: { blockId: { default: null } } },
 ]);
 ```
 
@@ -55,6 +58,7 @@ editor.commands.addGlobalAttributes([
 **ProseMirror version pinning:** `prosemirror-view` pinned to exact `1.34.2` — mismatched versions cause duplicate ProseMirror instance bugs. **Pin all ProseMirror deps.**
 
 ### What NOT to copy
+
 - HTML string storage (raw HTML, not TipTap JSON) — breaks Yjs
 - WebView mobile bridge strategy for a PWA (postMessage overhead)
 - No `==highlight==` input rule — they use a color-picker only
@@ -71,6 +75,7 @@ editor.commands.addGlobalAttributes([
 ### What to copy
 
 **Wiki-link autocomplete trigger pattern:**
+
 ```ts
 // CodeMirror extension — but the PATTERN is portable to TipTap Suggestion
 // Triggers on [[, fuzzy-match against note names, smart double-close prevention
@@ -78,6 +83,7 @@ editor.commands.addGlobalAttributes([
 ```
 
 **Callout decoration approach (CodeMirror ViewPlugin):**
+
 ```ts
 // Match > [!type] Title pattern in blockquote
 // → Apply CSS class to the first line for the label
@@ -88,6 +94,7 @@ editor.commands.addGlobalAttributes([
 **Frontmatter: hand-rolled YAML parser** — parses `---\n key: value \n---` at top of doc, no `gray-matter` dep dependency. ~50 lines. Useful for keeping bundle lean.
 
 **Embed widget pattern (`![[Note]]`):**
+
 ```ts
 // CodeMirror widget: hides when cursor is on that line (re-shows as text)
 // Reads target file async, renders first 30 lines
@@ -97,6 +104,7 @@ editor.commands.addGlobalAttributes([
 **Slash commands:** `/` at line start → DOM overlay at cursor position. Replaces the trigger text + space with the block type. Clean, no external library.
 
 ### What NOT to copy
+
 - Linear scan wiki-link resolution (no index, only 5s TTL cache) — won't scale to large vaults
 - Hand-rolled CodeMirror editor from scratch — too much custom event handling
 - Phone RN `TextInput` renderer — ewe-note is PWA-first
@@ -111,19 +119,20 @@ editor.commands.addGlobalAttributes([
 
 ### Verdict: ❌ Do NOT use for ewe-note
 
-| Criterion | Assessment |
-|---|---|
+| Criterion                | Assessment                                                |
+| ------------------------ | --------------------------------------------------------- |
 | OFM / Obsidian wikilinks | ❌ No — internal links are UUID block refs, no round-trip |
-| YAML frontmatter | ❌ No evidence |
-| Obsidian import | ❌ Open feature request since 2025 |
-| React-native components | ❌ Lit web components — shadow DOM, can't use Tailwind |
-| Customizability | 🔴 Community reports it's impossible outside AFFiNE |
-| Stable release | 🔴 Canary-only |
-| Bundle size | 🔴 60+ sub-packages + canvas renderer + full Lit runtime |
+| YAML frontmatter         | ❌ No evidence                                            |
+| Obsidian import          | ❌ Open feature request since 2025                        |
+| React-native components  | ❌ Lit web components — shadow DOM, can't use Tailwind    |
+| Customizability          | 🔴 Community reports it's impossible outside AFFiNE       |
+| Stable release           | 🔴 Canary-only                                            |
+| Bundle size              | 🔴 60+ sub-packages + canvas renderer + full Lit runtime  |
 
 **Root cause of coupling (from community discussion #8005):** The `@blocksuite/presets` layer assumes AFFiNE's exact block schema, keyboard maps, and toolbar widgets. 0 maintainer replies to embeddability questions.
 
 **What IS worth noting architecturally:**
+
 - Block-per-editor model solves large document performance (no single contenteditable monolith)
 - Yjs-native was the right call for collaboration — but we already have this with Hocuspocus
 - ForceAtlas2 physics (from SiYuan research too) is a solid graph layout algorithm
@@ -143,6 +152,7 @@ editor.commands.addGlobalAttributes([
 **Block ID strategy:** 20-char timestamp-based IDs (`20230101120000-abc123`) — sortable, globally unique, encode creation time. Much better than UUIDs for on-disk storage.
 
 **SQLite as query layer pattern:**
+
 ```
 Store documents as Markdown files on disk
 +
@@ -151,13 +161,16 @@ Maintain a SQLite index of all blocks (id, parent_id, root_id, content, markdown
 → Fast full-text search via FTS5 virtual table
 → SQL embeds: query blocks like a database
 ```
+
 This is the right backlinks architecture for any Obsidian clone. SiYuan's schema:
+
 ```sql
 blocks (id, parent_id, root_id, box, path, hpath, content, markdown, type, subtype, ial, refs)
 refs  (id, def_block_id, def_block_root_id, block_id, ...)
 ```
 
 **vis-network for graph view** (v9.1.13, `forceAtlas2Based` physics):
+
 ```ts
 physics: {
   solver: "forceAtlas2Based",
@@ -172,9 +185,11 @@ physics: {
   stabilization: { iterations: 64 }
 }
 ```
+
 Incremental node batching for large graphs (add nodes in intervals to avoid blocking).
 
 **Wikilink import pipeline pattern:**
+
 ```ts
 // SiYuan's Obsidian import steps (kernel/model/import.go)
 1. parseStdMd(data)                         // parse .md files with lute
@@ -186,6 +201,7 @@ Incremental node batching for large graphs (add nodes in intervals to avoid bloc
 ```
 
 **Transaction model for undo/redo:**
+
 ```go
 type Operation struct {
   Action     string // "insert", "update", "delete", "move"
@@ -194,9 +210,11 @@ type Operation struct {
   PreviousID string
 }
 ```
+
 Every edit is an operation in a transaction — cleaner than event-sourcing full document state.
 
 ### What NOT to copy
+
 - Custom contenteditable Protyle (3,200+ lines, 5+ year investment)
 - Proprietary `.sy` / Kramdown IAL format (not interoperable)
 - Go WASM round-trip on every keystroke (latency, complexity)
@@ -213,41 +231,41 @@ Every edit is an operation in a transaction — cleaner than event-sourcing full
 
 ### OFM feature effort estimates
 
-| Feature | TipTap Native | Effort |
-|---|---|---|
-| Bold, italic, strike, code | ✅ StarterKit | Zero |
-| Headings H1–H6 | ✅ StarterKit | Zero |
-| Bullet/ordered/task lists | ✅ StarterKit + TaskList | Zero |
-| Code blocks + syntax highlight | ✅ + CodeBlockLowlight | Zero |
-| Blockquotes | ✅ StarterKit | Zero |
-| Tables | ✅ Table extension | Zero |
-| `==Highlight==` | ✅ Highlight extension + MD tokenizer | ~2h |
-| Math (`$...$`) | ✅ Mathematics extension | ~2h |
-| Yjs collab migration from BN | ✅ extension-collaboration | ~4h |
-| Floating toolbar | ✅ BubbleMenu (headless) | ~4h |
-| Slash menu (`/`) | ⚠️ Suggestion utility | ~1 day |
-| `[[Wiki-links]]` | ❌ Custom atom Node | ~1–2 days |
-| `![[Embeds]]` | ❌ Custom block Node | ~2–3 days |
-| Callouts `> [!NOTE]` | ❌ Custom Node + MD tokenizer | ~1–2 days |
-| YAML frontmatter | ❌ Pre/post processing | ~2–3 days |
-| `#tags` inline | ❌ Custom Mark or Node | ~1 day |
-| Backlinks panel | ❌ External (requires note index) | ~3–5 days |
-| Graph view | ❌ External (vis-network + index) | ~1–2 weeks |
+| Feature                        | TipTap Native                         | Effort     |
+| ------------------------------ | ------------------------------------- | ---------- |
+| Bold, italic, strike, code     | ✅ StarterKit                         | Zero       |
+| Headings H1–H6                 | ✅ StarterKit                         | Zero       |
+| Bullet/ordered/task lists      | ✅ StarterKit + TaskList              | Zero       |
+| Code blocks + syntax highlight | ✅ + CodeBlockLowlight                | Zero       |
+| Blockquotes                    | ✅ StarterKit                         | Zero       |
+| Tables                         | ✅ Table extension                    | Zero       |
+| `==Highlight==`                | ✅ Highlight extension + MD tokenizer | ~2h        |
+| Math (`$...$`)                 | ✅ Mathematics extension              | ~2h        |
+| Yjs collab migration from BN   | ✅ extension-collaboration            | ~4h        |
+| Floating toolbar               | ✅ BubbleMenu (headless)              | ~4h        |
+| Slash menu (`/`)               | ⚠️ Suggestion utility                 | ~1 day     |
+| `[[Wiki-links]]`               | ❌ Custom atom Node                   | ~1–2 days  |
+| `![[Embeds]]`                  | ❌ Custom block Node                  | ~2–3 days  |
+| Callouts `> [!NOTE]`           | ❌ Custom Node + MD tokenizer         | ~1–2 days  |
+| YAML frontmatter               | ❌ Pre/post processing                | ~2–3 days  |
+| `#tags` inline                 | ❌ Custom Mark or Node                | ~1 day     |
+| Backlinks panel                | ❌ External (requires note index)     | ~3–5 days  |
+| Graph view                     | ❌ External (vis-network + index)     | ~1–2 weeks |
 
 ### Key TipTap Yjs wiring (replaces BlockNote)
 
 ```ts
 // TipTap + Hocuspocus — server side unchanged
-import Collaboration from '@tiptap/extension-collaboration'
-import CollaborationCursor from '@tiptap/extension-collaboration-cursor'
+import Collaboration from '@tiptap/extension-collaboration';
+import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 
 const editor = useEditor({
   extensions: [
-    StarterKit.configure({ undoRedo: false }),  // ← MUST disable, Collaboration adds its own
+    StarterKit.configure({ undoRedo: false }), // ← MUST disable, Collaboration adds its own
     Collaboration.configure({ document: ydoc }),
     CollaborationCursor.configure({ provider, user: { name, color } }),
   ],
-})
+});
 ```
 
 **Critical:** `undoRedo: false` in StarterKit or you get double-undo behavior.
@@ -259,26 +277,28 @@ const editor = useEditor({
 ```ts
 // WikiLinkNode — inline atom (not splittable)
 const WikiLinkNode = Node.create({
-  name: "wikiLink",
-  group: "inline",
+  name: 'wikiLink',
+  group: 'inline',
   inline: true,
   atom: true,
   addAttributes() {
     return {
-      id:   { parseHTML: el => el.getAttribute("data-id") },
-      name: { parseHTML: el => el.getAttribute("data-name") },
-    }
+      id: { parseHTML: (el) => el.getAttribute('data-id') },
+      name: { parseHTML: (el) => el.getAttribute('data-name') },
+    };
   },
   addNodeView() {
     return ({ node }) => {
-      const el = document.createElement("button")
-      el.className = "wikilink"
-      el.textContent = node.attrs.name
-      el.addEventListener("click", () => options.onWikiLinkClick(node.attrs.id, node.attrs.name))
-      return { dom: el }
-    }
+      const el = document.createElement('button');
+      el.className = 'wikilink';
+      el.textContent = node.attrs.name;
+      el.addEventListener('click', () =>
+        options.onWikiLinkClick(node.attrs.id, node.attrs.name)
+      );
+      return { dom: el };
+    };
   },
-})
+});
 ```
 
 **Note:** This library doesn't have alias support (`[[Page|Alias]]`) or Markdown serialization. Roll your own from this pattern.
@@ -291,10 +311,10 @@ const highlightTokenizer: MarkdownTokenizer = {
   level: 'inline',
   start: (src) => src.indexOf('=='),
   tokenize(src) {
-    const match = /^==([^=]+)==/.exec(src)
-    if (match) return { type: 'highlight', raw: match[0], text: match[1] }
+    const match = /^==([^=]+)==/.exec(src);
+    if (match) return { type: 'highlight', raw: match[0], text: match[1] };
   },
-}
+};
 ```
 
 ### Callout tokenizer for `> [!NOTE]` (OFM style)
@@ -307,20 +327,20 @@ const calloutTokenizer: MarkdownTokenizer = {
   level: 'block',
   start: (src) => src.indexOf('> [!'),
   tokenize(src, tokens, lexer) {
-    const match = /^> \[!(\w+)\](?: (.+))?\n((?:> [^\n]*\n?)*)/.exec(src)
+    const match = /^> \[!(\w+)\](?: (.+))?\n((?:> [^\n]*\n?)*)/.exec(src);
     if (match) {
-      const [, type, title, body] = match
-      const innerMarkdown = body.replace(/^> /gm, '')
+      const [, type, title, body] = match;
+      const innerMarkdown = body.replace(/^> /gm, '');
       return {
         type: 'callout',
         raw: match[0],
         calloutType: type.toLowerCase(),
         title: title ?? '',
         tokens: lexer.blockTokens(innerMarkdown),
-      }
+      };
     }
   },
-}
+};
 ```
 
 ---
@@ -329,12 +349,12 @@ const calloutTokenizer: MarkdownTokenizer = {
 
 ### Editor foundation recommendation: TipTap 2.x directly
 
-| Approach | Obsidian compat | Yjs support | React native | Bundle | Extension API |
-|---|---|---|---|---|---|
-| **Stay on BlockNote 0.23** | ❌ Hacks only | ✅ | ✅ | Medium | Limited |
-| **TipTap 2.x directly** | ✅ Build it all | ✅ | ✅ | Medium | Full ProseMirror |
-| **BlockSuite** | ❌ None | ✅✅ | ❌ Lit | Very heavy | Locked to AFFiNE |
-| **CodeMirror 6** | ⚠️ Would need port | ❌ No Yjs collab | ✅ | Light | Full but different API |
+| Approach                   | Obsidian compat    | Yjs support      | React native | Bundle     | Extension API          |
+| -------------------------- | ------------------ | ---------------- | ------------ | ---------- | ---------------------- |
+| **Stay on BlockNote 0.23** | ❌ Hacks only      | ✅               | ✅           | Medium     | Limited                |
+| **TipTap 2.x directly**    | ✅ Build it all    | ✅               | ✅           | Medium     | Full ProseMirror       |
+| **BlockSuite**             | ❌ None            | ✅✅             | ❌ Lit       | Very heavy | Locked to AFFiNE       |
+| **CodeMirror 6**           | ⚠️ Would need port | ❌ No Yjs collab | ✅           | Light      | Full but different API |
 
 **Decision: Migrate to TipTap 2.x directly.** Remove the BlockNote abstraction layer. Keep Hocuspocus/Yjs wiring intact (server unchanged). Build Obsidian features as proper TipTap extensions.
 

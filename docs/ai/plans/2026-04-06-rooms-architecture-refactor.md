@@ -6,15 +6,15 @@ Solve ewe-note's rooms/Y.Doc mismatch by splitting the monolithic single-Y.Doc-p
 
 ## Context: Current Problems
 
-| Problem | Root Cause |
-|---------|-----------|
-| Room = folder with permissions, but Y.Doc = the entire room → all notes load into memory | One Y.Doc per room, notes stored as Y.Map entries + separate Y.XmlFragments inside the same doc |
-| Subdocs would be ideal but Hocuspocus doesn't support them | Hocuspocus v2 "next-major" feature; not available today |
-| Debounced markdown save causes glitches | `editor.onChange` → `blocksToOfm()` → `updateNoteTextDebounced()` writes to the same Y.Map that also syncs via Hocuspocus, creating update storms and race conditions between CRDT syncs and debounced snapshots |
-| Too many rooms open = haywire | Each open room = 1 Y.Doc + 1 IndexeddbPersistence + 1 HocuspocusProvider; with all notes' XmlFragments in memory, switching between rooms rapidly compounds memory/connection issues |
-| 500 XmlFragments in one Y.Doc don't scale | `Y.encodeStateAsUpdate()` encodes ALL fragments; every keystroke's update includes the full doc state vector; initial sync sends everything |
-| Flashcards need structured rich-text too | Flashcard `frontText`/`backText` are plain strings now, but users want formatted content + linked notes. Same room/doc split problem applies. |
-| Cross-collection references need resolution | Flashcards have `noteRefs[]`, notes have `flashcardRefs[]` — but resolving a ref like `notes\|roomId\|docId` requires loading that room, which may not be connected |
+| Problem                                                                                  | Root Cause                                                                                                                                                                                                       |
+| ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Room = folder with permissions, but Y.Doc = the entire room → all notes load into memory | One Y.Doc per room, notes stored as Y.Map entries + separate Y.XmlFragments inside the same doc                                                                                                                  |
+| Subdocs would be ideal but Hocuspocus doesn't support them                               | Hocuspocus v2 "next-major" feature; not available today                                                                                                                                                          |
+| Debounced markdown save causes glitches                                                  | `editor.onChange` → `blocksToOfm()` → `updateNoteTextDebounced()` writes to the same Y.Map that also syncs via Hocuspocus, creating update storms and race conditions between CRDT syncs and debounced snapshots |
+| Too many rooms open = haywire                                                            | Each open room = 1 Y.Doc + 1 IndexeddbPersistence + 1 HocuspocusProvider; with all notes' XmlFragments in memory, switching between rooms rapidly compounds memory/connection issues                             |
+| 500 XmlFragments in one Y.Doc don't scale                                                | `Y.encodeStateAsUpdate()` encodes ALL fragments; every keystroke's update includes the full doc state vector; initial sync sends everything                                                                      |
+| Flashcards need structured rich-text too                                                 | Flashcard `frontText`/`backText` are plain strings now, but users want formatted content + linked notes. Same room/doc split problem applies.                                                                    |
+| Cross-collection references need resolution                                              | Flashcards have `noteRefs[]`, notes have `flashcardRefs[]` — but resolving a ref like `notes\|roomId\|docId` requires loading that room, which may not be connected                                              |
 
 ## Solution Architecture: Pattern D (Hybrid Meta + Content Docs)
 
@@ -117,36 +117,38 @@ RefResolver.resolve("notes|roomB|noteId123")
 
 - [ ] Add `HocuspocusProviderWebsocket` as a shared singleton per server URL (new field on Database class)
 - [ ] New class: `RoomDocManager<T extends EweDocument>` (generic over collection type):
+
   ```ts
   class RoomDocManager<T extends EweDocument> {
-    collectionKey: CollectionKey
-    roomId: string
-    metaDoc: Y.Doc       // document list/titles/tags
-    metaProvider: HocuspocusProvider
-    activeItemDoc: Y.Doc | null   // currently edited document
-    activeItemProvider: HocuspocusProvider | null
-    
-    openItem(docId: string): ItemDocHandle<T>  // type-specific fragments
-    closeItem(): void
-    getItemList(): DocMeta<T>[]
-    createItem(data: Partial<T>): { docId: string }
-    deleteItem(docId: string): void
-    updateItemMeta(docId: string, meta: Partial<DocMeta<T>>): void
+    collectionKey: CollectionKey;
+    roomId: string;
+    metaDoc: Y.Doc; // document list/titles/tags
+    metaProvider: HocuspocusProvider;
+    activeItemDoc: Y.Doc | null; // currently edited document
+    activeItemProvider: HocuspocusProvider | null;
+
+    openItem(docId: string): ItemDocHandle<T>; // type-specific fragments
+    closeItem(): void;
+    getItemList(): DocMeta<T>[];
+    createItem(data: Partial<T>): { docId: string };
+    deleteItem(docId: string): void;
+    updateItemMeta(docId: string, meta: Partial<DocMeta<T>>): void;
   }
 
   // Type-specific item doc handles:
   type NoteDocHandle = {
-    content: Y.XmlFragment    // TipTap editor state
-    markdown: Y.Text          // plaintext snapshot
-    provider: HocuspocusProvider
-  }
+    content: Y.XmlFragment; // TipTap editor state
+    markdown: Y.Text; // plaintext snapshot
+    provider: HocuspocusProvider;
+  };
   type FlashcardDocHandle = {
-    front: Y.XmlFragment      // rich-text front
-    back: Y.XmlFragment       // rich-text back
-    refs: Y.Map               // { noteRefs: string[] }
-    provider: HocuspocusProvider
-  }
+    front: Y.XmlFragment; // rich-text front
+    back: Y.XmlFragment; // rich-text back
+    refs: Y.Map; // { noteRefs: string[] }
+    provider: HocuspocusProvider;
+  };
   ```
+
 - [ ] `openItem()` flow:
   1. If another item is open, disconnect its provider
   2. Create new Y.Doc + HocuspocusProvider (using shared WebSocket)
@@ -160,7 +162,7 @@ RefResolver.resolve("notes|roomB|noteId123")
 - [ ] Meta doc lifecycle:
   - Connected when room is "open" in the UI
   - Disconnected when room is "closed" or during rolling sync cycle
-- [ ] **Item doc schema registry** — a config map that tells the manager what Y.* types to create per collection:
+- [ ] **Item doc schema registry** — a config map that tells the manager what Y.\* types to create per collection:
   ```ts
   const ITEM_DOC_SCHEMAS: Record<CollectionKey, ItemDocSchema> = {
     notes: { fragments: ['content'], texts: ['markdown'] },
@@ -246,24 +248,28 @@ RefResolver.resolve("notes|roomB|noteId123")
 **Reason:** New abstraction — must handle lazy loading, caching, and cross-room access patterns without opening excessive connections.
 
 - [ ] New class: `RefResolver` on the Database instance:
+
   ```ts
   class RefResolver {
     // Parse a _ref string → { authServer, collectionKey, roomId, docId }
-    parse(ref: string): ParsedRef
-    
+    parse(ref: string): ParsedRef;
+
     // Get metadata for a referenced doc (loads meta doc if needed)
-    resolveMeta(ref: string): Promise<DocMeta | null>
-    
+    resolveMeta(ref: string): Promise<DocMeta | null>;
+
     // Get full content (loads item doc on demand, disconnects after read)
-    resolveContent(ref: string): Promise<{ markdown?: string, front?: string, back?: string } | null>
-    
+    resolveContent(
+      ref: string
+    ): Promise<{ markdown?: string; front?: string; back?: string } | null>;
+
     // Batch resolve (for flashcard review showing all linked notes)
-    resolveMany(refs: string[]): Promise<Map<string, DocMeta>>
-    
+    resolveMany(refs: string[]): Promise<Map<string, DocMeta>>;
+
     // Cache: meta docs stay in memory once loaded for the session
-    private metaDocCache: Map<string, Y.Doc>
+    private metaDocCache: Map<string, Y.Doc>;
   }
   ```
+
 - [ ] **Lazy meta doc loading**: When resolving a ref to a room that's not currently open, create a read-only HocuspocusProvider for just the meta doc, sync it, read the entry, then disconnect. Cache the meta doc locally in IndexedDB.
 - [ ] **Content reads**: When a flashcard wants to display a linked note's full text, the RefResolver opens the specific item doc, reads the Y.Text("markdown"), and returns it. The item doc provider is disconnected after reading (no long-lived connection for reads).
 - [ ] **Permission boundary**: Cross-collection refs may point to rooms the user doesn't have access to. `resolveMeta()` returns `null` (not throws) for inaccessible refs. The UI shows "Link to inaccessible note" gracefully.
@@ -322,7 +328,7 @@ TipTap Plan Run 1: Swap BlockNote → TipTap (editor layer only)
     ↓
 Rooms Plan Run 0: Spike multiplexing validation
 Rooms Plan Run 1: RoomDocManager in SDK (generic over collection type)
-Rooms Plan Run 2: Sync server auth updates  
+Rooms Plan Run 2: Sync server auth updates
     ↓ (these 3 can overlap with TipTap Run 1)
 Rooms Plan Run 3: Y.Text markdown layer  ← depends on TipTap Run 1 (needs TipTap onUpdate)
 Rooms Plan Run 4: ewe-note wiring        ← depends on both
@@ -335,6 +341,7 @@ Rooms Plan Run 6: Migration from old format
 ```
 
 **Recommended sequencing:**
+
 1. TipTap Run 1 (swap editor) + Rooms Run 0 (spike) — parallel
 2. Rooms Runs 1–2 (SDK + server)
 3. Rooms Runs 3–4 (markdown layer + ewe-note wiring)

@@ -40,6 +40,7 @@ export default [
       'packages/auth-server-hono/src/**/*.ts',
       'packages/sync-server/src/**/*.ts',
       'packages/aggregator/src/**/*.ts',
+      'packages/mcp-server/src/**/*.ts',
       'scripts/**/*.ts',
     ],
   })),
@@ -56,6 +57,7 @@ export default [
       'examples/example-interop-notes/src/**/*.{ts,tsx}',
       'examples/example-interop-flashcards/src/**/*.{ts,tsx}',
       'examples/example-aggregator/src/**/*.{ts,tsx}',
+      'e2e/cypress/**/*.ts',
     ],
   })),
   // CLI scripts and startup validation — console output is intentional

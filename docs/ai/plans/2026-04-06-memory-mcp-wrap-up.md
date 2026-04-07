@@ -88,6 +88,7 @@ Run 1: Lock current boundary (Fast)  ✅
 ```
 
 Parallelization:
+
 - Run 1 set the authoritative boundary.
 - Run 2 and Run 3 ran in parallel.
 
