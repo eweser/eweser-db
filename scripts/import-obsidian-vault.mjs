@@ -19,11 +19,15 @@ import { join, relative, extname, basename } from 'path';
 import { randomUUID } from 'crypto';
 import postgres from '/home/jacob/eweser-db/node_modules/postgres/src/index.js';
 
-const DATABASE_URL = process.env.DATABASE_URL ?? 'postgresql://eweser:changeme@localhost:5499/eweser';
+const DATABASE_URL =
+  process.env.DATABASE_URL ??
+  'postgresql://eweser:changeme@localhost:5499/eweser';
 const [vaultPath, roomId, vaultNameArg] = process.argv.slice(2);
 
 if (!vaultPath || !roomId) {
-  console.error('Usage: node import-obsidian-vault.mjs <vault-path> <room-id> [vault-name]');
+  console.error(
+    'Usage: node import-obsidian-vault.mjs <vault-path> <room-id> [vault-name]'
+  );
   process.exit(1);
 }
 
@@ -43,7 +47,10 @@ function parseFrontmatter(content) {
     if (m) {
       const val = m[2].trim();
       if (val.startsWith('[') && val.endsWith(']')) {
-        frontmatter[m[1]] = val.slice(1, -1).split(',').map((s) => s.trim().replace(/^["']|["']$/g, ''));
+        frontmatter[m[1]] = val
+          .slice(1, -1)
+          .split(',')
+          .map((s) => s.trim().replace(/^["']|["']$/g, ''));
       } else if (val) {
         frontmatter[m[1]] = val.replace(/^["']|["']$/g, '');
       }
@@ -55,7 +62,9 @@ function parseFrontmatter(content) {
 function extractTags(body, frontmatter) {
   const tags = new Set();
   if (frontmatter.tags) {
-    const fm = Array.isArray(frontmatter.tags) ? frontmatter.tags : [frontmatter.tags];
+    const fm = Array.isArray(frontmatter.tags)
+      ? frontmatter.tags
+      : [frontmatter.tags];
     fm.forEach((t) => tags.add(String(t)));
   }
   const inlineTags = body.match(/(?<![`\w])#([\w/-]+)/g) || [];
@@ -75,7 +84,7 @@ async function collectMarkdownFiles(dir) {
     if (entry.name.startsWith('.')) continue;
     const fullPath = join(dir, entry.name);
     if (entry.isDirectory()) {
-      results.push(...await collectMarkdownFiles(fullPath));
+      results.push(...(await collectMarkdownFiles(fullPath)));
     } else if (entry.isFile() && extname(entry.name) === '.md') {
       results.push(fullPath);
     }
@@ -103,7 +112,10 @@ async function main() {
     const tags = extractTags(body, frontmatter);
     const title = frontmatter.title ?? basename(filePath, '.md');
     const aliases = frontmatter.aliases
-      ? (Array.isArray(frontmatter.aliases) ? frontmatter.aliases : [frontmatter.aliases]).map(String)
+      ? (Array.isArray(frontmatter.aliases)
+          ? frontmatter.aliases
+          : [frontmatter.aliases]
+        ).map(String)
       : [];
     const docId = randomUUID();
     documents[docId] = {
@@ -143,7 +155,9 @@ async function main() {
     await sql.end();
   }
 
-  console.log(`\n✅ Done! ${files.length} notes from "${vaultName}" are now searchable`);
+  console.log(
+    `\n✅ Done! ${files.length} notes from "${vaultName}" are now searchable`
+  );
   console.log(`   Use eweser_search({ query: "..." }) to find them\n`);
 }
 

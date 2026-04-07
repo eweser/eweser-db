@@ -8,7 +8,7 @@ const mcp = spawn(
     env: {
       ...process.env,
       EWESER_AGENT_TOKEN:
-        process.env.EWESER_AGENT_TOKEN ?? 'your-agent-token-here',
+        'a7f886f07a6f0a36f98e37cf47e7bd3a35ca2c88fb9f6979db0c9559bb5ebd00',
       EWESER_AUTH_URL: 'http://localhost:38101',
       EWESER_AGGREGATOR_URL: 'http://localhost:38190',
       EWESER_SYNC_URL: 'ws://localhost:38181/sync',

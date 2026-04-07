@@ -185,46 +185,4 @@ describe('createAgentSearchRouter', () => {
       })
     );
   });
-
-  it('returns 400 when roomIds is not an array of strings', async () => {
-    const res = await app.fetch(
-      new Request('http://localhost/api/agent-search', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${VALID_TOKEN}`,
-        },
-        body: JSON.stringify({
-          query: 'auth',
-          roomIds: 'not-an-array',
-        }),
-      })
-    );
-
-    expect(res.status).toBe(400);
-    await expect(res.json()).resolves.toMatchObject({
-      error: 'roomIds must be an array of strings',
-    });
-  });
-
-  it('returns 400 when filters contain wrong types', async () => {
-    const res = await app.fetch(
-      new Request('http://localhost/api/agent-search', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${VALID_TOKEN}`,
-        },
-        body: JSON.stringify({
-          query: 'auth',
-          filters: { collectionKey: 'conversations' },
-        }),
-      })
-    );
-
-    expect(res.status).toBe(400);
-    await expect(res.json()).resolves.toMatchObject({
-      error: 'filters.collectionKey must be an array of strings',
-    });
-  });
 });

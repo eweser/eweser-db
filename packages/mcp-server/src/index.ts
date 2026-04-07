@@ -17,17 +17,28 @@ async function main() {
   // 1. Verify agent token
   let agentConfig;
   try {
-    agentConfig = await verifyAgentToken(env.EWESER_AGENT_TOKEN, env.EWESER_AUTH_URL);
+    agentConfig = await verifyAgentToken(
+      env.EWESER_AGENT_TOKEN,
+      env.EWESER_AUTH_URL
+    );
   } catch (err) {
     console.error('[eweser-mcp] Failed to verify agent token:', err);
     process.exit(1);
   }
 
   // 2. Fetch rooms this agent can access
-  const rooms = await fetchAgentRooms(env.EWESER_AGENT_TOKEN, env.EWESER_AUTH_URL);
+  const rooms = await fetchAgentRooms(
+    env.EWESER_AGENT_TOKEN,
+    env.EWESER_AUTH_URL
+  );
 
   // 3. Initialize data layer (connect to Hocuspocus rooms)
-  const dataLayer = new DataLayer(agentConfig, env.EWESER_AUTH_URL, env.EWESER_AGENT_TOKEN, env.EWESER_SYNC_URL);
+  const dataLayer = new DataLayer(
+    agentConfig,
+    env.EWESER_AUTH_URL,
+    env.EWESER_AGENT_TOKEN,
+    env.EWESER_SYNC_URL
+  );
   await dataLayer.init(rooms);
 
   // 4. Create and configure MCP server

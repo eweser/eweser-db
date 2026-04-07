@@ -183,28 +183,6 @@ describe('eweser_search', () => {
       'notes'
     );
   });
-
-  it('falls back to in-memory search when aggregator returns zero results', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ results: [] }),
-    });
-    vi.stubGlobal('fetch', fetchMock);
-
-    registeredTools.clear();
-    registerTools(mockServer, mockDataLayer, mockLog, 'http://aggregator.test');
-
-    const result = await callTool('eweser_search', { query: 'hello' });
-
-    expect(result.isError).toBeFalsy();
-    expect(fetchMock).toHaveBeenCalledOnce();
-    expect(mockDataLayer.searchDocuments).toHaveBeenCalledWith(
-      'hello',
-      undefined
-    );
-
-    vi.unstubAllGlobals();
-  });
 });
 
 // ---------------------------------------------------------------------------

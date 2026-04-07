@@ -3,7 +3,11 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { db } from './db/client.js';
 import { ensureIndexedDocumentsSchema } from './db/ensure-schema.js';
-import { agentSearchDocuments, getDocumentsByRoom, searchIndexedDocuments } from './db/queries.js';
+import {
+  agentSearchDocuments,
+  getDocumentsByRoom,
+  searchIndexedDocuments,
+} from './db/queries.js';
 import { upsertIndexedDocument } from './db/upsert.js';
 import { env } from './env.js';
 import { createAgentSearchRouter } from './routes/agent-search.js';
@@ -71,7 +75,9 @@ if (env.EWESER_AUTH_URL) {
         if (!res.ok) {
           throw new Error(`Token verification failed: ${res.status}`);
         }
-        const data = (await res.json()) as { agent: { id: string; allowedRooms: string[] } };
+        const data = (await res.json()) as {
+          agent: { id: string; allowedRooms: string[] };
+        };
         return data.agent;
       },
     })
