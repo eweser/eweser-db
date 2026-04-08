@@ -25,6 +25,24 @@ http://{$DOMAIN:localhost} {
         reverse_proxy auth-api:3000
     }
 
+    # MCP endpoint (ChatGPT, Claude web)
+    handle /mcp {
+        reverse_proxy auth-api:3000
+    }
+    handle /mcp/* {
+        reverse_proxy auth-api:3000
+    }
+
+    # OAuth 2.0 Authorization Server
+    handle /oauth/* {
+        reverse_proxy auth-api:3000
+    }
+
+    # OAuth 2.0 discovery metadata
+    handle /.well-known/* {
+        reverse_proxy auth-api:3000
+    }
+
     handle /ping {
         reverse_proxy auth-api:3000
     }

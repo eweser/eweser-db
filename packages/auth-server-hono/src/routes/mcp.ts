@@ -39,15 +39,18 @@ const sessionCache = new Map<string, McpSession>();
 
 // Prune sessions idle for more than 30 minutes
 const SESSION_TTL_MS = 30 * 60 * 1000;
-setInterval(() => {
-  const now = Date.now();
-  for (const [id, session] of sessionCache) {
-    if (now - session.lastAccessAt > SESSION_TTL_MS) {
-      session.dataLayer.destroy().catch(() => {});
-      sessionCache.delete(id);
+setInterval(
+  () => {
+    const now = Date.now();
+    for (const [id, session] of sessionCache) {
+      if (now - session.lastAccessAt > SESSION_TTL_MS) {
+        session.dataLayer.disconnect().catch(() => {});
+        sessionCache.delete(id);
+      }
     }
-  }
-}, 5 * 60 * 1000);
+  },
+  5 * 60 * 1000
+);
 
 // ---------------------------------------------------------------------------
 // Auth resolution — try OAuth token first, then legacy agent token
@@ -73,7 +76,12 @@ async function resolveAuth(
     const permissions = oauthToken.scopes.includes('readwrite')
       ? 'readwrite'
       : 'read';
-    return { userId: oauthToken.userId, permissions, agentConfig: null, agentToken: token };
+    return {
+      userId: oauthToken.userId,
+      permissions,
+      agentConfig: null,
+      agentToken: token,
+    };
   }
 
   // 2. Try legacy agent bearer token
@@ -85,7 +93,18 @@ async function resolveAuth(
     return {
       userId: agent.userId,
       permissions: agent.permissions,
-      agentConfig: agent,
+      // Map DB AgentConfig to mcp-server AgentConfig (tokenExpiresAt is Date | null in DB, string | null in mcp)
+      agentConfig: {
+        id: agent.id,
+        userId: agent.userId,
+        name: agent.name,
+        type: agent.type,
+        allowedCollections: agent.allowedCollections,
+        allowedRooms: agent.allowedRooms,
+        permissions: agent.permissions,
+        isActive: agent.isActive,
+        tokenExpiresAt: agent.tokenExpiresAt?.toISOString() ?? null,
+      },
       agentToken: token,
     };
   }
@@ -183,12 +202,16 @@ mcpRouter.all('/', async (c) => {
       );
       // Filter to allowedRooms if configured
       const allowedRooms = auth.agentConfig.allowedRooms;
-      agentRooms = allowedRooms.length > 0
-        ? ar.filter((r) => allowedRooms.includes(r.id))
-        : ar;
+      agentRooms =
+        allowedRooms.length > 0
+          ? ar.filter((r) => allowedRooms.includes(r.id))
+          : ar;
     } else {
       // OAuth token path
-      const built = await buildAgentConfigForUser(auth.userId, auth.permissions);
+      const built = await buildAgentConfigForUser(
+        auth.userId,
+        auth.permissions
+      );
       agentConfig = built.agentConfig;
       agentRooms = built.rooms;
     }
@@ -198,7 +221,10 @@ mcpRouter.all('/', async (c) => {
       agentConfig,
       env.AUTH_SERVER_URL,
       auth.agentToken ?? `oauth-placeholder-${auth.userId}`,
-      env.SYNC_SERVER_URL?.replace('ws://', 'http://').replace('wss://', 'https://')
+      env.SYNC_SERVER_URL?.replace('ws://', 'http://').replace(
+        'wss://',
+        'https://'
+      )
     );
     await dataLayer.init(agentRooms);
 

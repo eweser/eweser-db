@@ -173,7 +173,8 @@ const Sidebar = React.forwardRef<
   ) => {
     const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
     const collapsedToIcon = state === 'collapsed' && collapsible === 'icon';
-    const collapsedOffcanvas = state === 'collapsed' && collapsible === 'offcanvas';
+    const collapsedOffcanvas =
+      state === 'collapsed' && collapsible === 'offcanvas';
     const desktopGapWidth = collapsedOffcanvas
       ? '0px'
       : collapsedToIcon
@@ -242,7 +243,7 @@ const Sidebar = React.forwardRef<
         <div
           className={cn(
             'duration-200 relative h-svh bg-transparent transition-[width] ease-linear',
-            'group-data-[side=right]:rotate-180',
+            'group-data-[side=right]:rotate-180'
           )}
           style={{ width: desktopGapWidth }}
         />
