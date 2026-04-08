@@ -18,14 +18,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { getLayoutHotkeyAction } from '@/components/layout-shortcuts';
 
 const SIDEBAR_COOKIE_NAME = 'sidebar:state';
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
 const SIDEBAR_WIDTH = '16rem';
 const SIDEBAR_WIDTH_MOBILE = '18rem';
 const SIDEBAR_WIDTH_ICON = '3rem';
-const SIDEBAR_KEYBOARD_SHORTCUT = 'b';
-
 type SidebarContext = {
   state: 'expanded' | 'collapsed';
   open: boolean;
@@ -100,10 +99,7 @@ const SidebarProvider = React.forwardRef<
     // Adds a keyboard shortcut to toggle the sidebar.
     React.useEffect(() => {
       const handleKeyDown = (event: KeyboardEvent) => {
-        if (
-          event.key === SIDEBAR_KEYBOARD_SHORTCUT &&
-          (event.metaKey || event.ctrlKey)
-        ) {
+        if (getLayoutHotkeyAction(event, false) === 'toggle-sidebar') {
           event.preventDefault();
           toggleSidebar();
         }
@@ -176,6 +172,27 @@ const Sidebar = React.forwardRef<
     ref
   ) => {
     const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
+    const collapsedToIcon = state === 'collapsed' && collapsible === 'icon';
+    const collapsedOffcanvas = state === 'collapsed' && collapsible === 'offcanvas';
+    const desktopGapWidth = collapsedOffcanvas
+      ? '0px'
+      : collapsedToIcon
+        ? variant === 'floating' || variant === 'inset'
+          ? 'calc(var(--sidebar-width-icon) + 1rem)'
+          : 'var(--sidebar-width-icon)'
+        : 'var(--sidebar-width)';
+    const desktopPanelWidth = collapsedToIcon
+      ? variant === 'floating' || variant === 'inset'
+        ? 'calc(var(--sidebar-width-icon) + 1rem + 2px)'
+        : 'var(--sidebar-width-icon)'
+      : 'var(--sidebar-width)';
+    const desktopPanelOffset = collapsedOffcanvas
+      ? side === 'left'
+        ? { left: 'calc(var(--sidebar-width) * -1)' }
+        : { right: 'calc(var(--sidebar-width) * -1)' }
+      : side === 'left'
+        ? { left: '0px' }
+        : { right: '0px' };
 
     if (collapsible === 'none') {
       return (
@@ -224,26 +241,21 @@ const Sidebar = React.forwardRef<
         {/* This is what handles the sidebar gap on desktop */}
         <div
           className={cn(
-            'duration-200 relative h-svh w-[--sidebar-width] bg-transparent transition-[width] ease-linear',
-            'group-data-[collapsible=offcanvas]:w-0',
+            'duration-200 relative h-svh bg-transparent transition-[width] ease-linear',
             'group-data-[side=right]:rotate-180',
-            variant === 'floating' || variant === 'inset'
-              ? 'group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]'
-              : 'group-data-[collapsible=icon]:w-[--sidebar-width-icon]'
           )}
+          style={{ width: desktopGapWidth }}
         />
         <div
           className={cn(
-            'duration-200 fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right,width] ease-linear md:flex',
-            side === 'left'
-              ? 'left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]'
-              : 'right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]',
+            'duration-200 fixed inset-y-0 z-10 hidden h-svh transition-[left,right,width] ease-linear md:flex',
             // Adjust the padding for floating and inset variants.
             variant === 'floating' || variant === 'inset'
-              ? 'p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]'
-              : 'group-data-[collapsible=icon]:w-[--sidebar-width-icon] group-data-[side=left]:border-r group-data-[side=right]:border-l',
+              ? 'p-2'
+              : 'group-data-[side=left]:border-r group-data-[side=right]:border-l',
             className
           )}
+          style={{ width: desktopPanelWidth, ...desktopPanelOffset }}
           {...props}
         >
           <div

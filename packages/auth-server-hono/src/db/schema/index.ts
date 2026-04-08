@@ -6,3 +6,4 @@ export * from './sessions.js';
 export * from './accounts.js';
 export * from './verifications.js';
 export * from './agents.js';
+export * from './oauth.js';

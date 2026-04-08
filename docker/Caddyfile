@@ -2,6 +2,7 @@
     auto_https off
 }
 
+# Main domain — landing, auth pages, API, sync
 http://{$DOMAIN:localhost} {
     encode zstd gzip
 
@@ -15,9 +16,6 @@ http://{$DOMAIN:localhost} {
 
     @auth_root path /auth
     redir @auth_root /auth/ 302
-
-    @notes_root path /notes
-    redir @notes_root /notes/ 302
 
     handle /api/auth/* {
         reverse_proxy auth-api:3000
@@ -41,18 +39,15 @@ http://{$DOMAIN:localhost} {
         reverse_proxy sync-server:8080
     }
 
+    handle /aggregator/* {
+        uri strip_prefix /aggregator
+        reverse_proxy aggregator:8090
+    }
+
     @auth_pages path /auth/*
     handle @auth_pages {
         uri strip_prefix /auth
         root * /srv/auth-pages
-        try_files {path} /index.html
-        file_server
-    }
-
-    @notes_pages path /notes/*
-    handle @notes_pages {
-        uri strip_prefix /notes
-        root * /srv/ewe-note
         try_files {path} /index.html
         file_server
     }
@@ -62,4 +57,11 @@ http://{$DOMAIN:localhost} {
         try_files {path} /index.html
         file_server
     }
+}
+
+# Notes subdomain — Ewe Note app
+http://notes.{$DOMAIN:localhost} {
+    encode zstd gzip
+
+    reverse_proxy ewe-note:80
 }

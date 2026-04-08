@@ -1,0 +1,10 @@
+[build]
+dockerfilePath = "packages/aggregator/Dockerfile"
+buildCommand = ""
+
+[deploy]
+startCommand = "node dist/index.js"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+restartPolicyType = "on-failure"
+restartPolicyMaxRetries = 3

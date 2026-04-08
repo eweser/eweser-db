@@ -5,7 +5,7 @@
 ## Self-Hosting
 
 [![Deploy to DigitalOcean](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/eweser/eweser-db/tree/main)
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/eweser-db?referralCode=eweser)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/eweser/eweser-db)
 
 Runs on a **$6/month VPS** with 512 MB RAM. [Deployment guides →](docs/deployment/)
 

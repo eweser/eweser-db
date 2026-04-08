@@ -14,23 +14,6 @@ body,
   background-color: black;
 }
 
-/* Force main content to have left padding to account for sidebar */
-@media (min-width: 768px) {
-  main.relative.flex.min-h-svh {
-    margin-left: 0 !important;
-    padding-left: 0 !important;
-  }
-
-  /* Add padding to header and content to push them away from sidebar */
-  main.relative.flex.min-h-svh > header {
-    padding-left: calc(1rem + 16rem) !important;
-  }
-
-  main.relative.flex.min-h-svh > div {
-    padding-left: calc(1rem + 16rem) !important;
-  }
-}
-
 .editor-wrapper {
   width: 100%;
   max-width: 100%;

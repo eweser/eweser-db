@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import { requireAuth } from '../middleware/auth.js';
 import { agentAuth } from '../middleware/agent-auth.js';
+import { combinedAgentAuth } from '../middleware/combined-agent-auth.js';
 import {
   createAgentConfig,
   deleteAgentConfig,
@@ -340,7 +341,7 @@ agentsRouter.post('/me/rooms', agentAuth, async (c) => {
  * Agent-authenticated: returns a Hocuspocus sync JWT for a specific room.
  * Validates the room belongs to the user and the agent has access.
  */
-agentsRouter.post('/me/sync-token', agentAuth, async (c) => {
+agentsRouter.post('/me/sync-token', combinedAgentAuth, async (c) => {
   const agent = c.get('agent');
   const body = await c.req.json<{ roomId: string }>();
 

@@ -14,8 +14,15 @@ import {
   SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import type { PropsWithChildren } from 'react';
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { PanelTop } from 'lucide-react';
 import { ModeToggle } from './mode-toggle';
 import { useDb } from '@/db';
 import removeMarkdown from 'markdown-to-text';
@@ -112,6 +119,17 @@ function LayoutInner({ children }: Readonly<PropsWithChildren>) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentChrome, isPureFocus, setOpen, setOpenMobile]);
 
+  const handleTopbarToggle = () => {
+    const nextState = getNextLayoutChromeState({
+      action: 'toggle-topbar',
+      current: currentChrome,
+      lastNonFocus: lastNonFocusRef.current,
+    });
+
+    lastNonFocusRef.current = nextState.lastNonFocus;
+    setTopbarVisible(nextState.current.topbarVisible);
+  };
+
   return (
     <>
       <AppSidebar />
@@ -122,7 +140,14 @@ function LayoutInner({ children }: Readonly<PropsWithChildren>) {
             className="flex sticky top-0 z-20 bg-background/95 backdrop-blur h-16 shrink-0 items-center border-b px-4 justify-between w-full"
           >
             <div className="flex min-w-0 items-center gap-2 justify-between">
-              <SidebarTrigger className="-ml-1" />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <SidebarTrigger className="-ml-1" />
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  Toggle sidebar {LAYOUT_SHORTCUT_LABELS.sidebar}
+                </TooltipContent>
+              </Tooltip>
               <Separator orientation="vertical" className="mr-2 h-4" />
               <Breadcrumb>
                 <BreadcrumbList>
@@ -144,9 +169,7 @@ function LayoutInner({ children }: Readonly<PropsWithChildren>) {
               </Breadcrumb>
             </div>
             <div className="flex items-center gap-2">
-              <span className="hidden text-xs text-muted-foreground lg:inline">
-                Topbar {LAYOUT_SHORTCUT_LABELS.topbar}
-              </span>
+              <TopbarToggleButton onClick={handleTopbarToggle} />
               <ModeToggle />
             </div>
           </header>
@@ -155,6 +178,21 @@ function LayoutInner({ children }: Readonly<PropsWithChildren>) {
           {children}
         </div>
       </SidebarInset>
+      {!topbarVisible ? (
+        isMobile ? (
+          <div className="fixed right-3 top-3 z-30">
+            <TopbarToggleButton onClick={handleTopbarToggle} />
+          </div>
+        ) : (
+          <div className="pointer-events-none fixed inset-x-0 top-0 z-30 hidden md:block">
+            <div className="group pointer-events-auto flex h-5 w-full justify-end px-4">
+              <div className="-translate-y-2 pt-1 opacity-0 transition-all group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                <TopbarToggleButton onClick={handleTopbarToggle} />
+              </div>
+            </div>
+          </div>
+        )
+      ) : null}
       {focusHintVisible ? (
         <div className="pointer-events-none fixed inset-x-0 top-4 z-50 flex justify-center px-4">
           <div className="rounded-full border bg-background/95 px-3 py-1.5 text-xs text-foreground shadow-lg backdrop-blur">
@@ -164,5 +202,27 @@ function LayoutInner({ children }: Readonly<PropsWithChildren>) {
         </div>
       ) : null}
     </>
+  );
+}
+
+function TopbarToggleButton({ onClick }: Readonly<{ onClick: () => void }>) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          aria-label="Toggle Topbar"
+          className="h-7 w-7"
+          onClick={onClick}
+          size="icon"
+          variant="ghost"
+        >
+          <PanelTop />
+          <span className="sr-only">Toggle Topbar</span>
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">
+        Toggle topbar {LAYOUT_SHORTCUT_LABELS.topbar}
+      </TooltipContent>
+    </Tooltip>
   );
 }

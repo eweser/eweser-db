@@ -2,7 +2,6 @@ name: eweser-db
 region: nyc
 services:
   - name: auth-api
-    type: web
     dockerfile_path: packages/auth-server-hono/Dockerfile
     source_dir: /
     http_port: 3000
@@ -33,7 +32,6 @@ services:
       http_path: /health
 
   - name: sync-server
-    type: web
     dockerfile_path: packages/sync-server/Dockerfile
     source_dir: packages/sync-server
     http_port: 8080
@@ -48,6 +46,54 @@ services:
         value: /data/sync.sqlite
       - key: SYNC_AUTH_SECRET
         value: ${SYNC_AUTH_SECRET}
+      - key: AGGREGATOR_WEBHOOK_URL
+        value: ${_self.PRIVATE_URL}/webhooks/hocuspocus
+      - key: WEBHOOK_SECRET
+        value: ${WEBHOOK_SECRET}
+
+  - name: aggregator
+    dockerfile_path: packages/aggregator/Dockerfile
+    source_dir: packages/aggregator
+    http_port: 8090
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    routes:
+      - path: /aggregator
+    envs:
+      - key: DATABASE_URL
+        value: ${db.DATABASE_URL}
+      - key: PORT
+        value: '8090'
+      - key: SYNC_SERVER_URL
+        value: ${SYNC_SERVER_URL}
+      - key: SYNC_AUTH_SECRET
+        value: ${SYNC_AUTH_SECRET}
+      - key: WEBHOOK_SECRET
+        value: ${WEBHOOK_SECRET}
+    health_check:
+      http_path: /health
+
+  - name: auth-pages
+    dockerfile_path: packages/auth-pages/Dockerfile
+    source_dir: /
+    http_port: 80
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    routes:
+      - path: /auth
+
+  - name: ewe-note
+    dockerfile_path: packages/ewe-note/Dockerfile
+    source_dir: /
+    http_port: 80
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    routes:
+      - path: /notes
+    envs:
+      - key: VITE_AUTH_SERVER
+        value: ${APP_URL}
+        scope: BUILD_TIME
 
 databases:
   - name: db
@@ -73,5 +119,8 @@ envs:
     type: SECRET
     scope: RUN_AND_BUILD_TIME
   - key: BETTER_AUTH_SECRET
+    type: SECRET
+    scope: RUN_AND_BUILD_TIME
+  - key: WEBHOOK_SECRET
     type: SECRET
     scope: RUN_AND_BUILD_TIME

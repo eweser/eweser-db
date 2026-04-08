@@ -31,6 +31,8 @@ const envSchema = z.object({
   SYNC_SERVER_URL: z.string().default('ws://localhost:8080'),
   /** Secret for signing Hocuspocus auth JWTs — defaults to SERVER_SECRET if not set */
   SYNC_AUTH_SECRET: z.string().optional(),
+  /** Aggregator URL for MCP search tool */
+  AGGREGATOR_URL: z.string().url().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

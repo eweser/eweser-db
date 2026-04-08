@@ -1,0 +1,33 @@
+# Railway configuration — EweserDB monorepo root
+# This file configures the default service (auth-api) when deploying from the root.
+# For a full multi-service deployment, add each package as a separate Railway service
+# pointing to the same repo with its own config file:
+#
+#   packages/auth-server-hono/railway.toml   → auth-api
+#   packages/sync-server/railway.toml        → sync-server
+#   packages/aggregator/railway.toml         → aggregator
+#   packages/auth-pages/railway.toml         → auth-pages
+#   packages/ewe-note/railway.toml           → ewe-note
+#
+# Required environment variables (set in Railway dashboard):
+#   DATABASE_URL         — from Railway PostgreSQL plugin
+#   SERVER_SECRET        — openssl rand -hex 32
+#   BETTER_AUTH_SECRET   — openssl rand -hex 32
+#   SYNC_AUTH_SECRET     — openssl rand -hex 32
+#   WEBHOOK_SECRET       — openssl rand -hex 32
+#   BETTER_AUTH_BASE_URL — https://<your-railway-domain>
+#   AUTH_SERVER_DOMAIN   — <your-railway-domain>
+#   AUTH_SERVER_URL      — https://<your-railway-domain>
+#   SYNC_SERVER_URL      — wss://<your-railway-domain>/sync
+#   SYNC_PUBLIC_URL      — wss://<your-railway-domain>/sync
+
+[build]
+dockerfilePath = "packages/auth-server-hono/Dockerfile"
+buildCommand = ""
+
+[deploy]
+startCommand = "node dist/db/migrate.js && node dist/index.js"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+restartPolicyType = "on-failure"
+restartPolicyMaxRetries = 3

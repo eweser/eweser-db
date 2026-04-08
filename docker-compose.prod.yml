@@ -146,6 +146,25 @@ services:
           memory: 128M
           cpus: '0.25'
 
+  ewe-note:
+    build:
+      context: .
+      dockerfile: packages/ewe-note/Dockerfile
+    restart: always
+    expose:
+      - '80'
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -q --spider http://localhost:80/ || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 32M
+          cpus: '0.1'
+
   caddy:
     build:
       context: .
@@ -157,6 +176,8 @@ services:
       auth-api:
         condition: service_healthy
       sync-server:
+        condition: service_healthy
+      ewe-note:
         condition: service_healthy
     environment:
       DOMAIN: ${DOMAIN:?DOMAIN is required}
