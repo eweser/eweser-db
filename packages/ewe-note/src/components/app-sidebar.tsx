@@ -1,4 +1,9 @@
-import { ChevronRight, FolderPlus, SquarePen, Share2 } from 'lucide-react';
+import {
+  ChevronRight,
+  FolderPlus,
+  MoreHorizontal,
+  SquarePen,
+} from 'lucide-react';
 
 import { SearchForm } from '@/components/search-form';
 
@@ -28,19 +33,22 @@ import { useState, useEffect } from 'react';
 import removeMarkdown from 'markdown-to-text';
 import {
   Dialog,
-  DialogClose,
-  DialogTrigger,
   DialogContent,
   DialogHeader,
   DialogFooter,
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import type { Note } from '@eweser/db';
 import { Button } from './ui/button';
 import { useFolders } from '@/notes-room';
+import type { FolderRecord } from '@/notes-room';
 import { FolderDialog } from '@/components/folder-dialog';
 
 export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
@@ -62,11 +70,14 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
     allRooms.find((r) => r.name === 'Notes') ?? allRooms[0] ?? null;
   const sharedRooms = allRooms.filter((r) => r !== canonicalRoom);
 
-  const { folders, createFolder } = useFolders(canonicalRoom ?? null);
+  const { folders, createFolder, renameFolder, deleteFolder } = useFolders(
+    canonicalRoom ?? null
+  );
 
-  const [creatingSpace, setCreatingSpace] = useState(false);
-  const [newSpaceName, setNewSpaceName] = useState('');
   const [folderDialogOpen, setFolderDialogOpen] = useState(false);
+  const [renamingFolderId, setRenamingFolderId] = useState<string | null>(null);
+  const [sharingFolder, setSharingFolder] = useState<FolderRecord | null>(null);
+  const [isSharing, setIsSharing] = useState(false);
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [notesByRoomId, setNotesByRoomId] = useState<Record<string, Note[]>>(
     {}
@@ -138,22 +149,44 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
     };
   }, [allRooms]);
 
-  const handleCreateSpace = async () => {
+  const handleShareFolder = async (folder: FolderRecord) => {
+    if (!canonicalRoom) return;
+    setIsSharing(true);
     try {
-      setCreatingSpace(true);
       const newRoom = db.newRoom<Note>({
         collectionKey: 'notes',
-        name: newSpaceName,
+        name: folder.name,
       });
       await newRoom.load();
+      // Move notes belonging to this folder into the new room
+      const canonicalDocs = canonicalRoom.getDocuments();
+      const newDocs = newRoom.getDocuments();
+      const folderNotes = (notesByRoomId[canonicalRoom.id] ?? []).filter((n) =>
+        n.folderIds?.includes(folder.id)
+      );
+      folderNotes.forEach((note) => {
+        // Create copy in new room (without folderIds — shared room is flat)
+        const { text, tags, title } = note as Note & {
+          tags?: string[];
+          title?: string;
+        };
+        newDocs.new({
+          text,
+          ...(tags ? { tags } : {}),
+          ...(title ? { title } : {}),
+        });
+        // Delete from canonical room
+        canonicalDocs.delete(note._id);
+      });
+      // Delete the folder metadata
+      deleteFolder(folder.id);
       setSelectedRoom(newRoom);
-      const newNote = newRoom.getDocuments().new({ text: '# New Note' });
-      setSelectedNoteId(newNote._id);
-    } catch (error) {
-      alert(error instanceof Error ? error.message : 'Failed to create space');
+      if (selectedFolderId === folder.id) setSelectedFolderId(null);
+      setSharingFolder(null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to share folder');
     } finally {
-      setCreatingSpace(false);
-      setNewSpaceName('');
+      setIsSharing(false);
     }
   };
 
@@ -236,56 +269,6 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
           >
             <FolderPlus />
           </Button>
-          {/* New Space: creates a real collaborative room */}
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button
-                data-cy="ewe-note-new-space-trigger"
-                variant="ghost"
-                title="New Shared Space"
-              >
-                <Share2 />
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>New Shared Space</DialogTitle>
-                <DialogDescription>
-                  A shared space is a real sync boundary for collaboration.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-1">
-                <Label htmlFor="new-space-name">Space Name</Label>
-                <Input
-                  id="new-space-name"
-                  data-cy="ewe-note-new-space-input"
-                  type="text"
-                  placeholder="Enter space name"
-                  value={newSpaceName}
-                  onChange={(e) => setNewSpaceName(e.target.value)}
-                  disabled={creatingSpace}
-                />
-              </div>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button variant="secondary" disabled={creatingSpace}>
-                    Cancel
-                  </Button>
-                </DialogClose>
-                <Button
-                  data-cy="ewe-note-create-space-submit"
-                  onClick={handleCreateSpace}
-                  disabled={creatingSpace}
-                >
-                  {creatingSpace ? (
-                    <Icons.Spinner className="mr-2" />
-                  ) : (
-                    'Create Space'
-                  )}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
         </div>
 
         {/* My Notes — canonical room with folders */}
@@ -326,6 +309,38 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
                       >
                         {folder.name}
                       </button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            className="ml-auto flex-shrink-0 p-1 rounded opacity-0 group-hover/collapsible:opacity-100 focus:opacity-100"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent side="right" align="start">
+                          <DropdownMenuItem
+                            onSelect={() => {
+                              setRenamingFolderId(folder.id);
+                              setFolderDialogOpen(true);
+                            }}
+                          >
+                            Rename
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onSelect={() => setSharingFolder(folder)}
+                          >
+                            Share
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onSelect={() => deleteFolder(folder.id)}
+                            className="text-destructive"
+                          >
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                       <CollapsibleTrigger asChild>
                         <button
                           type="button"
@@ -457,12 +472,55 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
         )}
       </SidebarContent>
 
-      {/* Folder creation dialog */}
+      {/* Share folder confirmation dialog */}
+      <Dialog
+        open={!!sharingFolder}
+        onOpenChange={(open) => {
+          if (!open) setSharingFolder(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Share "{sharingFolder?.name}"?</DialogTitle>
+            <DialogDescription>
+              This will move all notes in this folder into a synced shared space
+              that others can collaborate on. The folder itself will be removed.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="secondary"
+              disabled={isSharing}
+              onClick={() => setSharingFolder(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={isSharing}
+              onClick={() => sharingFolder && handleShareFolder(sharingFolder)}
+            >
+              {isSharing ? <Icons.Spinner className="mr-2" /> : 'Share Folder'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Folder create / rename dialog */}
       <FolderDialog
         open={folderDialogOpen}
-        onOpenChange={setFolderDialogOpen}
-        mode="create"
-        onSubmit={(name) => createFolder(name)}
+        onOpenChange={(open) => {
+          setFolderDialogOpen(open);
+          if (!open) setRenamingFolderId(null);
+        }}
+        mode={renamingFolderId ? 'rename' : 'create'}
+        onSubmit={(name) => {
+          if (renamingFolderId) {
+            renameFolder(renamingFolderId, name);
+            setRenamingFolderId(null);
+          } else {
+            createFolder(name);
+          }
+        }}
       />
 
       <SidebarFooter>
