@@ -14,9 +14,32 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import type { PropsWithChildren } from 'react';
+import { useState, useEffect } from 'react';
 import { ModeToggle } from './mode-toggle';
 import { useDb } from '@/db';
 import removeMarkdown from 'markdown-to-text';
+import type { Note, Room } from '@eweser/db';
+
+function NoteTitle({
+  room,
+  noteId,
+}: {
+  room: Room<Note>;
+  noteId: string;
+}) {
+  const [text, setText] = useState(
+    () => room.getDocuments().get(noteId)?.text ?? ''
+  );
+  useEffect(() => {
+    const docs = room.getDocuments();
+    const update = () => setText(docs.get(noteId)?.text ?? '');
+    docs.documents.observe(update);
+    return () => {
+      docs.documents.unobserve(update);
+    };
+  }, [room, noteId]);
+  return <>{removeMarkdown(text)}</>;
+}
 
 export function Layout({ children }: Readonly<PropsWithChildren>) {
   const { selectedRoom, selectedNoteId } = useDb();
@@ -39,10 +62,12 @@ export function Layout({ children }: Readonly<PropsWithChildren>) {
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
                   <BreadcrumbPage className="truncate max-w-[200px]">
-                    {removeMarkdown(
-                      selectedRoom?.getDocuments().get(selectedNoteId)?.text ??
-                        ''
-                    )}
+                    {selectedRoom ? (
+                      <NoteTitle
+                        room={selectedRoom as Room<Note>}
+                        noteId={selectedNoteId}
+                      />
+                    ) : null}
                   </BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>

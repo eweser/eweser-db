@@ -38,6 +38,20 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    port: 5181,
+    strictPort: false,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:38101',
+        changeOrigin: true,
+      },
+      '/ping': {
+        target: 'http://localhost:38101',
+        changeOrigin: true,
+      },
+    },
+  },
   optimizeDeps: {
     include: ['yjs'],
   },

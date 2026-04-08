@@ -152,7 +152,7 @@ User Account
 
 **Changeset needed** — modifies `@eweser/shared` public types.
 
-- [ ] Add `Folder` type to `packages/shared/src/collections/folder.ts` (new file):
+- [x] Add `Folder` type to `packages/shared/src/collections/folder.ts` (new file):
 
   ```ts
   import type { DocumentBase } from './documentBase';
@@ -252,7 +252,7 @@ User Account
 **Recommended Agent:** `02-coder` (Smart)
 **Reason:** Must confirm the multiplexing pattern works end-to-end before committing to the doc-split architecture. Small scope, high-risk validation.
 
-- [ ] Write a minimal test script that:
+- [x] Write a minimal test script that:
   1. Creates a `HocuspocusProviderWebsocket` with one URL pointing at the dev sync server
   2. Creates 3+ `HocuspocusProvider` instances on the same socket for different doc names:
      - `room.test-room.meta`
@@ -263,11 +263,11 @@ User Account
   5. Disconnects `doc.note1`, modifies it server-side (via second client), reconnects — confirms it picks up changes
   6. Measures: connection handshake, update latency, memory footprint with 10 concurrent providers
 
-- [ ] Test with the existing Hocuspocus sync server in docker-compose (need a way to bypass auth for the spike OR generate a valid JWT)
+- [x] Test with the existing Hocuspocus sync server in docker-compose (need a way to bypass auth for the spike OR generate a valid JWT)
 
-- [ ] Confirm: disconnecting one provider does NOT close the shared WebSocket (other providers stay connected)
+- [x] Confirm: disconnecting one provider does NOT close the shared WebSocket (other providers stay connected)
 
-- [ ] Document findings in `docs/ai/research/multiplexing-spike-results.md`
+- [x] Document findings in `docs/ai/research/multiplexing-spike-results.md`
 
 **Files:**
 
@@ -284,13 +284,13 @@ User Account
 
 **Depends on:** Run 1 (Folder type), Run 2 (canonical rooms exist at signup)
 
-- [ ] Update `packages/ewe-note/src/db.tsx`:
+- [x] Update `packages/ewe-note/src/db.tsx`:
   - Change `initialRooms` from creating a device-named room to expecting the canonical `private-notes` room from the registry
   - If the canonical room doesn't exist in registry (pre-migration user), create it as the initial room
   - Remove `collectionKeysForRollingSync` — with 1 personal room, rolling sync is unnecessary for notes
   - App stays connected to the canonical notes room for the session
 
-- [ ] Update `packages/ewe-note/src/components/app-sidebar.tsx`:
+- [x] Update `packages/ewe-note/src/components/app-sidebar.tsx`:
   - **"New Folder" button** → creates a `Folder` document inside the current room's Y.Map, NOT a new room via `db.newRoom()`
   - **"New Space" button** (new) → creates a real shared room via `db.newRoom()` for collaboration
   - **Sidebar structure** changes from:
@@ -319,7 +319,7 @@ User Account
   - Folder CRUD: create, rename, delete (soft-delete), reorder
   - Drag-and-drop note into folder (stretch — can defer)
 
-- [ ] Add folder state management in `packages/ewe-note/src/notes-room.tsx`:
+- [x] Add folder state management in `packages/ewe-note/src/notes-room.tsx`:
   - `useFolders()` hook: reads `Y.Map("folders")` or stores Folder objects in the existing documents Y.Map
   - **Decision: where to store folders?**
     - Option A: Folders as regular documents in the same room's Y.Map (simplest — they have `_id`, `_ref`, etc.)
@@ -328,9 +328,9 @@ User Account
     - **Better: store folder assignments on the notes themselves** (`folderIds` field) and **folder definitions in a separate Y.Map**. For now, before the meta-doc split, store folder definitions as a JSON string in a well-known document ID (e.g., `_folders`). After the meta-doc split, they move to the meta doc's `Y.Map("folders")`.
     - **Simplest approach for now:** Folders are a `Record<string, Folder>` stored as a single entry in the room's documents Y.Map under key `__folders__`. Not elegant but works pre-split.
 
-- [ ] Update note filtering: sidebar groups notes by `folderIds`. Notes with no `folderIds` go to "Unfiled".
+- [x] Update note filtering: sidebar groups notes by `folderIds`. Notes with no `folderIds` go to "Unfiled".
 
-- [ ] **Keep existing multi-room support working** for shared spaces — the sidebar still shows shared rooms as collapsible groups under "Shared Spaces".
+- [x] **Keep existing multi-room support working** for shared spaces — the sidebar still shows shared rooms as collapsible groups under "Shared Spaces".
 
 **Files:**
 

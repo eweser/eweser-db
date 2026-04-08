@@ -12,5 +12,7 @@ export type NoteBase = {
     aliases?: string[];
     /** Tags extracted from frontmatter + inline #tags */
     tags?: string[];
+    /** IDs of folders this note belongs to */
+    folderIds?: string[];
 };
 export type Note = DocumentBase & NoteBase;

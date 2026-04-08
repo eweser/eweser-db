@@ -10,6 +10,7 @@ export * from './profile';
 export * from './documentBase';
 export * from './agent-config';
 export * from './conversation';
+export * from './folder';
 /** We don't include registry because we use this after login to get all non-registry collections. */
 export declare const COLLECTION_KEYS: readonly ["notes", "flashcards", "profiles", "agentConfigs", "agentAccessLogs", "conversations"];
 export declare const COLLECTION_KEYS_OR_ALL: readonly ["notes", "flashcards", "profiles", "agentConfigs", "agentAccessLogs", "conversations", "all"];

@@ -60,8 +60,20 @@ export const db = new Database({
   initialRooms,
   pollForStatus: true,
 });
-// run the rolling sync on the notes collection. This will cycle through all the rooms in the collectionKeysForRollingSync array and sync them for one second each.
-db.collectionKeysForRollingSync = [collectionKey];
+// Rolling sync disabled: with canonical room topology, one personal notes room
+// stays connected for the session — no need to cycle through rooms.
+// db.collectionKeysForRollingSync = [collectionKey];
+
+/** Find the canonical notes room: the room named 'Notes' from the registry,
+ *  or fall back to the first notes room, or the device-local default room. */
+export function getCanonicalNotesRoom() {
+  const rooms = db.getRooms(collectionKey);
+  return (
+    rooms.find((r) => r.name === 'Notes') ??
+    rooms[0] ??
+    db.getRoom(collectionKey, defaultRoomId)
+  );
+}
 
 export const loginUrl = db.generateLoginUrl({
   name: config.APP_NAME,
@@ -109,7 +121,9 @@ const signOut = () => {
 // db.on('status', (status) => console.log(status));
 
 export const DbProvider = ({ children }: { children: ReactNode }) => {
-  const [loaded, setLoaded] = useState(false);
+  // If rooms were already loaded before this component mounted (db is module-level),
+  // initialize loaded as true so offline/local-first mode works without login.
+  const [loaded, setLoaded] = useState(() => db.getRooms(collectionKey).length > 0);
   const [loggedIn, setLoggedIn] = useState(false);
   const [hasToken, setHasToken] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<Room<Note> | null>(null);
@@ -118,7 +132,7 @@ export const DbProvider = ({ children }: { children: ReactNode }) => {
 
   const [defaultNote, setDefaultNote] = useState<Note | null>(null);
 
-  const [allRooms, setAllRooms] = useState<Room<Note>[]>([]);
+  const [allRooms, setAllRooms] = useState<Room<Note>[]>(() => db.getRooms(collectionKey));
   const allRoomIds = allRooms.map((room) => room.id);
 
   useEffect(() => {
@@ -176,10 +190,27 @@ export const DbProvider = ({ children }: { children: ReactNode }) => {
     const handleRoomsLoaded = () => {
       setLoaded(true);
       setAllRooms(db.getRooms('notes'));
+      // On initial load: switch to canonical room only if we don't have an
+      // active note in the current room already (i.e., fresh start).
+      setSelectedRoom((prev) => {
+        const canonical = getCanonicalNotesRoom();
+        if (!canonical) return prev;
+        // If already on the canonical room, no change needed.
+        if (prev?.id === canonical.id) return prev as unknown as Room<Note>;
+        // If no current room, switch to canonical.
+        if (!prev) return canonical as unknown as Room<Note>;
+        // Stay on the current room; don't disrupt an in-progress session.
+        return prev;
+      });
     };
 
     const handleRegistrySync = (status: string) => {
-      if (status === 'success') setAllRooms(db.getRooms('notes'));
+      if (status === 'success') {
+        // Update room list but do NOT change selectedRoom here — the user may
+        // already be editing notes in their local room. A forced switch to the
+        // canonical server room would make local notes appear to disappear.
+        setAllRooms(db.getRooms('notes'));
+      }
     };
 
     db.on('roomsLoaded', handleRoomsLoaded);

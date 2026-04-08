@@ -6,7 +6,7 @@ import { useTheme } from '@/components/theme-provider';
 import { getDeviceType, useDb } from '@/db';
 import type { Note, Room } from '@eweser/db';
 import { useNotesRoom } from '@/notes-room';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Icons } from '@/lib/icons';
 import { logger } from '@/utils';
 import { blocksToOfm, ofmToBlocks } from '@/extensions/ofm-serializer';
@@ -114,17 +114,33 @@ function EditorInternal({
       : {}),
   });
 
-  // Listen for changes and changes to the editor and update eweser-db note text
-  // make the updateNoteText debounced so it doesn't update the note text on every keystroke
-  const updateNoteTextDebounced = debounce(updateNoteText, 1000);
-  editor.onChange(async (editor) => {
-    // Use OFM serializer — preserves wiki-links, highlights, and other OFM syntax
-    const isVaultNote = !!note.sourcePath;
-    const text = isVaultNote
-      ? await blocksToOfm(editor)
-      : await editor.blocksToMarkdownLossy();
-    updateNoteTextDebounced(text, note);
+  // Stable ref so the onChange closure always sees the latest note without re-registering
+  const noteRef = useRef(note);
+  useEffect(() => {
+    noteRef.current = note;
   });
+
+  // Stable debounced save — created once per editor instance
+  const debouncedSaveRef = useRef<ReturnType<typeof debounce> | null>(null);
+  if (!debouncedSaveRef.current) {
+    debouncedSaveRef.current = debounce(updateNoteText, 1000);
+  }
+
+  // Register onChange once; use refs so we never need to re-register
+  useEffect(() => {
+    const unsubscribe = editor.onChange(async (e) => {
+      const currentNote = noteRef.current;
+      const isVaultNote = !!currentNote.sourcePath;
+      const text = isVaultNote
+        ? await blocksToOfm(e)
+        : await e.blocksToMarkdownLossy();
+      debouncedSaveRef.current!(text, currentNote);
+    });
+    return () => {
+      unsubscribe?.();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor]);
 
   // Pull the initial note text from eweser-db and set it in the editor
   useEffect(() => {

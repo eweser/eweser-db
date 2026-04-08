@@ -23,6 +23,7 @@
     },
     {
       "label": "Docker: Rebuild & Start",
+
       "type": "shell",
       "command": "docker compose -f docker-compose.dev.yml up --build",
       "presentation": {
@@ -88,13 +89,23 @@
       }
     },
     {
+      "label": "Ewe-note Dev",
+      "type": "shell",
+      "command": "cd packages/ewe-note && npm run dev",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
       "label": "Run All Dev",
       "dependsOn": [
         "Docker: Start Backend",
         "Run DB Dev",
         "Run Shared Dev",
         "Run Example-basic Dev",
-        "Run Example-components Dev"
+        "Run Example-components Dev",
+        "Ewe-note Dev"
       ],
       "presentation": {
         "reveal": "always",

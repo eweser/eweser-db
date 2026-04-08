@@ -14,8 +14,12 @@ export async function createNewUserRoomsAndAuthServerAccess(userId: string) {
   return await db.transaction(async (dbInstance) => {
     const publicProfileId = crypto.randomUUID();
     const privateProfileId = crypto.randomUUID();
+    const privateNotesId = crypto.randomUUID();
+    const privateFlashcardsId = crypto.randomUUID();
+    const privateAgentConfigId = crypto.randomUUID();
+    const privateConversationsId = crypto.randomUUID();
 
-    const profileRooms = [
+    const rooms = [
       {
         id: publicProfileId,
         name: 'Public Profile',
@@ -38,9 +42,53 @@ export async function createNewUserRoomsAndAuthServerAccess(userId: string) {
         syncUrl: env.SYNC_SERVER_URL,
         syncBaseUrl: env.SYNC_SERVER_URL,
       },
+      {
+        id: privateNotesId,
+        name: 'Notes',
+        collectionKey: 'notes',
+        publicAccess: 'private' as const,
+        readAccess: [userId, env.AUTH_SERVER_DOMAIN],
+        writeAccess: [userId, env.AUTH_SERVER_DOMAIN],
+        adminAccess: [userId],
+        syncUrl: env.SYNC_SERVER_URL,
+        syncBaseUrl: env.SYNC_SERVER_URL,
+      },
+      {
+        id: privateFlashcardsId,
+        name: 'Flashcards',
+        collectionKey: 'flashcards',
+        publicAccess: 'private' as const,
+        readAccess: [userId, env.AUTH_SERVER_DOMAIN],
+        writeAccess: [userId, env.AUTH_SERVER_DOMAIN],
+        adminAccess: [userId],
+        syncUrl: env.SYNC_SERVER_URL,
+        syncBaseUrl: env.SYNC_SERVER_URL,
+      },
+      {
+        id: privateAgentConfigId,
+        name: 'Agent Config',
+        collectionKey: 'agentConfigs',
+        publicAccess: 'private' as const,
+        readAccess: [userId, env.AUTH_SERVER_DOMAIN],
+        writeAccess: [userId, env.AUTH_SERVER_DOMAIN],
+        adminAccess: [userId],
+        syncUrl: env.SYNC_SERVER_URL,
+        syncBaseUrl: env.SYNC_SERVER_URL,
+      },
+      {
+        id: privateConversationsId,
+        name: 'Conversations',
+        collectionKey: 'conversations',
+        publicAccess: 'private' as const,
+        readAccess: [userId, env.AUTH_SERVER_DOMAIN],
+        writeAccess: [userId, env.AUTH_SERVER_DOMAIN],
+        adminAccess: [userId],
+        syncUrl: env.SYNC_SERVER_URL,
+        syncBaseUrl: env.SYNC_SERVER_URL,
+      },
     ];
 
-    await insertRooms(profileRooms, userId, dbInstance);
+    await insertRooms(rooms, userId, dbInstance);
 
     const grantId = createAccessGrantId(userId, env.AUTH_SERVER_DOMAIN);
     await insertAccessGrants(
@@ -51,7 +99,14 @@ export async function createNewUserRoomsAndAuthServerAccess(userId: string) {
           requesterId: env.AUTH_SERVER_DOMAIN,
           requesterType: 'app',
           collections: ['all'],
-          roomIds: [publicProfileId, privateProfileId],
+          roomIds: [
+            publicProfileId,
+            privateProfileId,
+            privateNotesId,
+            privateFlashcardsId,
+            privateAgentConfigId,
+            privateConversationsId,
+          ],
           isValid: true,
           keepAliveDays: 365,
         },

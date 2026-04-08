@@ -2,6 +2,8 @@ import type { Room, Note, Documents } from '@eweser/db';
 import { useState, useEffect, useMemo } from 'react';
 import { useDb } from './db';
 import type { GetDocuments } from '@eweser/db';
+import type { FolderBase } from '@eweser/shared';
+import type { Map as YMap } from 'yjs';
 
 export type NotesRoomType = {
   room: Room<Note> | null;
@@ -56,7 +58,7 @@ export const useNotesRoom = (
     };
     Notes.onChange(handleNotesChange);
     return () => {
-      Notes.onChange(handleNotesChange);
+      Notes.documents.unobserve(handleNotesChange);
     };
   }, [Notes]);
 
@@ -109,3 +111,90 @@ export const useNotesRoom = (
     deleteNote,
   };
 };
+
+// ---------------------------------------------------------------------------
+// Folder storage: a Y.Map('folders') on the room's ydoc.
+// Key = folderId (string), value = JSON-stringified FolderBase.
+// ---------------------------------------------------------------------------
+
+export type FolderRecord = FolderBase & { id: string };
+
+export type UseFoldersResult = {
+  folders: FolderRecord[];
+  createFolder: (name: string, parentFolderId?: string) => string;
+  renameFolder: (id: string, name: string) => void;
+  deleteFolder: (id: string) => void;
+  getFolderMap: () => YMap<string> | null;
+};
+
+export function useFolders(room: Room<Note> | null): UseFoldersResult {
+  const getFolderMap = (): YMap<string> | null => {
+    if (!room?.ydoc) return null;
+    // Cast through unknown because YDoc<T> is a typed wrapper but the
+    // underlying Yjs Doc has the standard getMap() API.
+    return (
+      room.ydoc as unknown as { getMap: (name: string) => YMap<string> }
+    ).getMap('folders');
+  };
+
+  const readFolders = (): FolderRecord[] => {
+    const map = getFolderMap();
+    if (!map) return [];
+    const result: FolderRecord[] = [];
+    map.forEach((json, id) => {
+      try {
+        const base = JSON.parse(json) as FolderBase;
+        result.push({ ...base, id });
+      } catch {
+        // skip malformed entry
+      }
+    });
+    return result;
+  };
+
+  const [folders, setFolders] = useState<FolderRecord[]>(readFolders);
+
+  useEffect(() => {
+    const map = getFolderMap();
+    if (!map) return;
+    const handler = () => setFolders(readFolders());
+    map.observe(handler);
+    return () => map.unobserve(handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [room?.ydoc]);
+
+  const createFolder = (name: string, parentFolderId?: string): string => {
+    const map = getFolderMap();
+    if (!map) throw new Error('Room ydoc not available');
+    const id = crypto.randomUUID();
+    const base: FolderBase = {
+      name,
+      ...(parentFolderId ? { parentFolderId } : {}),
+    };
+    room!.ydoc!.transact(() => {
+      map.set(id, JSON.stringify(base));
+    });
+    return id;
+  };
+
+  const renameFolder = (id: string, name: string) => {
+    const map = getFolderMap();
+    if (!map) return;
+    const existing = map.get(id);
+    if (!existing) return;
+    const base = JSON.parse(existing) as FolderBase;
+    room!.ydoc!.transact(() => {
+      map.set(id, JSON.stringify({ ...base, name }));
+    });
+  };
+
+  const deleteFolder = (id: string) => {
+    const map = getFolderMap();
+    if (!map) return;
+    room!.ydoc!.transact(() => {
+      map.delete(id);
+    });
+  };
+
+  return { folders, createFolder, renameFolder, deleteFolder, getFolderMap };
+}
