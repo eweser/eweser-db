@@ -1,49 +1,27 @@
 # Deploy EweserDB to DigitalOcean
 
-Two deployment options: **App Platform** (managed, no SSH) or **Droplet** (full control).
+Use a **Droplet** ($6/mo) with the VPS setup script — all services run together on one machine via Docker Compose.
+
+> **Note:** DigitalOcean App Platform deploys each service separately (~$25/mo total). Use Railway for managed one-click deploys instead.
 
 ---
 
-## Option A: DigitalOcean App Platform
+## DigitalOcean Droplet (Docker Compose)
 
-Click the button below to deploy EweserDB to DigitalOcean App Platform with one click:
+**Quickest path** — SSH into your new Droplet and run:
 
-[![Deploy to DigitalOcean](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/eweser/eweser-db/tree/main)
+```bash
+curl -fsSL https://raw.githubusercontent.com/eweser/eweser-db/main/scripts/setup-vps.sh | bash
+# Or with a domain:
+DOMAIN=yourdomain.com bash <(curl -fsSL https://raw.githubusercontent.com/eweser/eweser-db/main/scripts/setup-vps.sh)
+```
 
-> The `.do/app.yaml` spec at the root of this repo configures the App Platform deployment.
-
-### What you'll need
-
-- A DigitalOcean account (free to sign up)
-- A domain name (optional but recommended for HTTPS)
-
-### Steps
-
-1. Click "Deploy to DigitalOcean" above
-2. Connect your DigitalOcean account if prompted
-3. **Create a managed PostgreSQL database** manually in the DigitalOcean dashboard before continuing — App Platform can no longer provision databases via the app spec. Choose:
-   - Engine: PostgreSQL
-   - Version: 17
-   - Size: Starter (or any size)
-   - Region: Same as your app (nyc)
-4. In your app's dashboard, go to the **Settings** tab → **Environment Variables** and add `DATABASE_URL` with the value from your managed database's connection string (it looks like `postgresql://...`)
-5. Set the remaining required environment variables:
-   - `POSTGRES_PASSWORD` — a strong random password (DigitalOcean can generate one)
-   - `SERVER_SECRET` — a random 32-character string (`openssl rand -hex 16`)
-   - `BETTER_AUTH_SECRET` — a random 32-character string
-   - `SYNC_AUTH_SECRET` — a random 32-character string
-   - `DOMAIN` — your custom domain, or leave blank for the default `*.ondigitalocean.app` domain
-5. Click **Create Resources**
-6. Wait ~5 minutes for the deployment to complete
-7. Your EweserDB instance is live at the URL shown in the dashboard
+The script installs Docker, clones the repo, generates all secrets, and starts the stack. Skip to [Point your domain](#5-point-your-domain) when done.
 
 ---
 
-## Option B: DigitalOcean Droplet (Docker Compose)
+### Manual setup
 
-Recommended if you want full control, SSH access, or are running other services on the same server.
-
-### 1. Create a Droplet
 
 - **Image:** Ubuntu 24.04 LTS
 - **Plan:** Basic — $6/month (1 vCPU, 512 MB RAM, 10 GB disk)

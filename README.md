@@ -4,16 +4,11 @@
 
 ## Self-Hosting
 
-| Option | Cost | One-click? |
-|--------|------|------------|
-| **Railway** (recommended) | ~$5–15/mo usage-based | ✅ |
-| **DigitalOcean App Platform** | ~$25/mo (5 services) | ✅ |
-| **Any VPS / Droplet** (Docker Compose) | ~$6/mo | Script below |
+**One-click deploy on Railway** (~$5–15/mo, usage-based):
 
 [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/eweser/eweser-db)
-[![Deploy to DigitalOcean](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/eweser/eweser-db/tree/main)
 
-**Self-host on any $6/mo VPS (Ubuntu):**
+**Self-host on any $6/mo VPS** (AWS, Hetzner, DigitalOcean Droplet, etc.):
 ```bash
 curl -fsSL https://raw.githubusercontent.com/eweser/eweser-db/main/scripts/setup-vps.sh | bash
 ```
