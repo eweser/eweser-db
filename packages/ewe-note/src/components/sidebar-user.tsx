@@ -6,6 +6,9 @@ import {
   ChevronsUpDown,
   CreditCard,
   LogOut,
+  Moon,
+  Palette,
+  Sun,
 } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -24,7 +27,8 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { ModeToggle } from './mode-toggle';
+import { useTheme } from '@/components/theme-provider';
+import { ThemeSettingsDialog } from '@/components/theme-settings-dialog';
 
 export function SidebarUser({
   user,
@@ -35,6 +39,7 @@ export function SidebarUser({
   };
 }>) {
   const { isMobile } = useSidebar();
+  const { resolvedMode, setMode } = useTheme();
 
   return (
     <SidebarMenu>
@@ -74,9 +79,24 @@ export function SidebarUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <ModeToggle />
+              <DropdownMenuItem
+                onClick={() => setMode(resolvedMode === 'dark' ? 'light' : 'dark')}
+              >
+                {resolvedMode === 'dark' ? (
+                  <Sun className="mr-2 h-4 w-4" />
+                ) : (
+                  <Moon className="mr-2 h-4 w-4" />
+                )}
+                {resolvedMode === 'dark' ? 'Switch to Light' : 'Switch to Dark'}
               </DropdownMenuItem>
+              <ThemeSettingsDialog
+                trigger={
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <Palette className="mr-2 h-4 w-4" />
+                    Themes
+                  </DropdownMenuItem>
+                }
+              />
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>

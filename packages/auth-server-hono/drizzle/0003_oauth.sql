@@ -40,6 +40,9 @@ ALTER TABLE "oauth_codes" ADD CONSTRAINT "oauth_codes_user_id_users_id_fk" FOREI
 ALTER TABLE "oauth_access_tokens" ADD CONSTRAINT "oauth_access_tokens_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
 --> statement-breakpoint
 -- Seed first-party OAuth clients
+-- FIXME: Verify redirect URIs against official MCP docs before production:
+--   ChatGPT: https://platform.openai.com/docs/mcp (confirm client_id and callback URL)
+--   Claude:  https://docs.anthropic.com/en/docs/mcp (confirm client_id and callback URL)
 INSERT INTO "oauth_clients" ("client_id", "client_name", "redirect_uris", "is_first_party")
 VALUES
   ('chatgpt-web', 'ChatGPT', ARRAY['https://chatgpt.com/aip/mcp/oauth/callback'], true),

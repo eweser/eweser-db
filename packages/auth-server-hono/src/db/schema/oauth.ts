@@ -1,10 +1,4 @@
-import {
-  boolean,
-  pgTable,
-  text,
-  timestamp,
-  uuid,
-} from 'drizzle-orm/pg-core';
+import { boolean, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { users } from './users.js';
 
 /**
@@ -59,7 +53,10 @@ export const oauthCodes = pgTable('oauth_codes', {
   /** Requested permission scopes (space-separated) */
   scopes: text('scopes').notNull().default('read'),
 
-  expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),
+  expiresAt: timestamp('expires_at', {
+    withTimezone: true,
+    mode: 'date',
+  }).notNull(),
 
   /** Null until redeemed; once set the code cannot be reused */
   usedAt: timestamp('used_at', { withTimezone: true, mode: 'date' }),

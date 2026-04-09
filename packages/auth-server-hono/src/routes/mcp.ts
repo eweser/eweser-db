@@ -35,6 +35,10 @@ interface McpSession {
 
 export const mcpRouter = new Hono();
 
+// TODO(multi-instance): This module-level Map works for a single Node.js process.
+// For multiple auth-server replicas (horizontal scaling), replace with a Redis-backed
+// session store or switch to stateless mode (re-initialize DataLayer on every request,
+// which is slower but correct). See docs/ai/plans/2026-04-08-chatgpt-web-mcp.md.
 const sessionCache = new Map<string, McpSession>();
 
 // Prune sessions idle for more than 30 minutes

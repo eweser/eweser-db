@@ -111,9 +111,7 @@ export async function consumeAuthCode(
   const rows = await db
     .select()
     .from(oauthCodes)
-    .where(
-      and(eq(oauthCodes.codeHash, codeHash), isNull(oauthCodes.usedAt))
-    )
+    .where(and(eq(oauthCodes.codeHash, codeHash), isNull(oauthCodes.usedAt)))
     .limit(1);
 
   const row = rows[0];

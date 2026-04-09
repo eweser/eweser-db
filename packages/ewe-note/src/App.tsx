@@ -11,7 +11,7 @@ function App() {
   const { loaded, selectedRoom, selectedNoteId } = useDb();
 
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+    <ThemeProvider defaultMode="dark" defaultLightThemeId="paper" defaultDarkThemeId="true-black">
       {/* You can check that the ydoc exists to make sure the room is connected */}
       {loaded &&
       selectedRoom?.id &&
