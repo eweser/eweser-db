@@ -104,6 +104,15 @@ services:
       SYNC_AUTH_SECRET: ${SYNC_AUTH_SECRET:-dev-secret}
       PORT: 3000
 
+  # ─── Dev-only observability ────────────────────────────────────────────────
+  # Zero-config browser log viewer — browse all container logs at http://localhost:9999
+  dozzle:
+    image: amir20/dozzle:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - '${DOZZLE_PORT:-9999}:8080'
+
 volumes:
   pgdata:
   sync-data:

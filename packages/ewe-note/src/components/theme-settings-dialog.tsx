@@ -9,7 +9,6 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { useTheme } from '@/components/theme-provider';
 import {
   getThemesByMode,
@@ -19,10 +18,10 @@ import {
 } from '@/lib/themes';
 
 // ----- Custom theme defaults (used as seed when user opens custom editor) -----
-const CUSTOM_LIGHT_SEED: ThemeVars = getThemesByMode('light')[0]?.vars ??
-  PRESET_THEMES[0].vars;
-const CUSTOM_DARK_SEED: ThemeVars = getThemesByMode('dark')[0]?.vars ??
-  PRESET_THEMES[2].vars;
+const CUSTOM_LIGHT_SEED: ThemeVars =
+  getThemesByMode('light')[0]?.vars ?? PRESET_THEMES[0].vars;
+const CUSTOM_DARK_SEED: ThemeVars =
+  getThemesByMode('dark')[0]?.vars ?? PRESET_THEMES[2].vars;
 
 // ----- Hex ↔ HSL helpers -----
 function hexToHsl(hex: string): string {
@@ -53,7 +52,9 @@ function hexToHsl(hex: string): string {
 }
 
 function hslToHex(hsl: string): string {
-  const match = hsl.match(/hsl\((\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)%\s+(\d+(?:\.\d+)?)%\)/);
+  const match = hsl.match(
+    /hsl\((\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)%\s+(\d+(?:\.\d+)?)%\)/
+  );
   if (!match) return '#888888';
   const h = parseFloat(match[1]) / 360;
   const s = parseFloat(match[2]) / 100;
@@ -93,7 +94,13 @@ interface ThemeCardProps {
   onClick: () => void;
 }
 
-function ThemeCard({ id, name, swatches, isActive, onClick }: Readonly<ThemeCardProps>) {
+function ThemeCard({
+  id: _id,
+  name,
+  swatches,
+  isActive,
+  onClick,
+}: Readonly<ThemeCardProps>) {
   return (
     <button
       type="button"
@@ -136,7 +143,12 @@ interface CustomThemeEditorProps {
   onCancel: () => void;
 }
 
-function CustomThemeEditor({ seed, initial, onSave, onCancel }: Readonly<CustomThemeEditorProps>) {
+function CustomThemeEditor({
+  seed,
+  initial,
+  onSave,
+  onCancel,
+}: Readonly<CustomThemeEditorProps>) {
   const [vars, setVars] = useState<ThemeVars>(initial ?? seed);
 
   const handleColorChange = (key: keyof ThemeVars, hex: string) => {
@@ -219,7 +231,9 @@ function ThemeSection({
           type="button"
           onClick={handleSelectCustom}
           className={`relative flex flex-col items-center gap-1.5 rounded-lg border-2 p-2 transition-all cursor-pointer hover:border-primary ${
-            activeId === 'custom' ? 'border-primary ring-2 ring-primary/30' : 'border-dashed border-border'
+            activeId === 'custom'
+              ? 'border-primary ring-2 ring-primary/30'
+              : 'border-dashed border-border'
           }`}
           aria-label="Create custom theme"
         >
@@ -280,7 +294,9 @@ interface ThemeSettingsDialogProps {
   trigger?: React.ReactNode;
 }
 
-export function ThemeSettingsDialog({ trigger }: Readonly<ThemeSettingsDialogProps>) {
+export function ThemeSettingsDialog({
+  trigger,
+}: Readonly<ThemeSettingsDialogProps>) {
   const {
     lightThemeId,
     setLightThemeId,

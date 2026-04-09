@@ -29,6 +29,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@eweser/logger": "*",
     "@eweser/shared": "*",
     "@hocuspocus/provider": "^2.15.3",
     "@modelcontextprotocol/sdk": "^1.29.0",

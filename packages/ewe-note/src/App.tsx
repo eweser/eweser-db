@@ -11,7 +11,11 @@ function App() {
   const { loaded, selectedRoom, selectedNoteId } = useDb();
 
   return (
-    <ThemeProvider defaultMode="dark" defaultLightThemeId="paper" defaultDarkThemeId="true-black">
+    <ThemeProvider
+      defaultMode="dark"
+      defaultLightThemeId="paper"
+      defaultDarkThemeId="true-black"
+    >
       {/* You can check that the ydoc exists to make sure the room is connected */}
       {loaded &&
       selectedRoom?.id &&

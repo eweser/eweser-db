@@ -283,8 +283,11 @@ const ShareButton = ({
         appName: 'Basic Example App',
       })
         .then((link) => setShareLink(link))
-        // eslint-disable-next-line no-console
-        .catch((e) => console.error(e));
+
+        .catch(
+          // eslint-disable-next-line no-console -- example app error fallback
+          (e) => console.error(e)
+        );
     } else {
       setShareLink('Unable to get share link');
     }

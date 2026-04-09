@@ -1,3 +1,4 @@
+import { logger } from '@eweser/logger';
 import { z } from 'zod';
 
 const defaultAuthApiPort = Number(process.env.AUTH_API_PORT ?? '38101');
@@ -38,8 +39,7 @@ const envSchema = z.object({
 const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
-  // eslint-disable-next-line no-console -- intentional startup env-validation error log
-  console.error(
+  logger.error(
     'Invalid environment variables:',
     parsed.error.flatten().fieldErrors
   );

@@ -1,3 +1,4 @@
+/* eslint-disable no-console -- this IS the logger implementation */
 import type { EweDocument } from '@eweser/shared';
 import { EventEmitter } from 'events';
 import type { Room } from './types';
@@ -52,16 +53,12 @@ export const setupLogger = (db: Database) => {
   db.on('log', (level, ...message) => {
     switch (level) {
       case 0:
-        // eslint-disable-next-line no-console
         return console.info(...message);
       case 1:
-        // eslint-disable-next-line no-console
         return console.log(...message);
       case 2:
-        // eslint-disable-next-line no-console
         return console.warn(...message);
       case 3:
-        // eslint-disable-next-line no-console
         return console.error(...message);
     }
   });

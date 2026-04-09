@@ -14,8 +14,23 @@ import { createAgentSearchRouter } from './routes/agent-search.js';
 import { createDevTokenRouter } from './routes/dev-token.js';
 import { createSearchRouter } from './routes/search.js';
 import { createWebhookHandler } from './webhook-handler.js';
+import { createLogger, initTelemetry } from '@eweser/logger';
+
+const log = createLogger('aggregator');
 
 export const app = new Hono();
+
+app.use('*', async (c, next) => {
+  const start = Date.now();
+  await next();
+  const ms = Date.now() - start;
+  log.info({
+    method: c.req.method,
+    path: c.req.path,
+    status: c.res.status,
+    duration_ms: ms,
+  });
+});
 
 app.use(
   '*',
@@ -85,16 +100,16 @@ if (env.EWESER_AUTH_URL) {
 }
 
 export async function startServer() {
+  await initTelemetry('aggregator');
   await ensureIndexedDocumentsSchema(db);
   serve({ fetch: app.fetch, port: env.PORT });
-  // eslint-disable-next-line no-console -- intentional server startup log
-  console.log(`Aggregator server running on port ${env.PORT}`);
+
+  log.info(`Aggregator server running on port ${env.PORT}`);
 }
 
 if (process.env.NODE_ENV !== 'test') {
   void startServer().catch((error: unknown) => {
-    // eslint-disable-next-line no-console -- intentional startup failure log
-    console.error('Aggregator failed to start:', error);
+    log.error('Aggregator failed to start:', error);
     process.exit(1);
   });
 }

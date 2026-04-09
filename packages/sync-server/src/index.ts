@@ -3,6 +3,11 @@ import type { Extension } from '@hocuspocus/server';
 import { SQLite } from '@hocuspocus/extension-sqlite';
 import { Webhook } from '@hocuspocus/extension-webhook';
 import jwt from 'jsonwebtoken';
+import { createLogger, initTelemetry } from '@eweser/logger';
+
+await initTelemetry('sync-server');
+
+const log = createLogger('sync-server');
 
 const port = parseInt(process.env.SYNC_PORT || '8080', 10);
 const dbPath = process.env.SYNC_DB_PATH || '/data/sync.sqlite';
@@ -51,6 +56,5 @@ const server = Server.configure({
 });
 
 server.listen().then(() => {
-  // eslint-disable-next-line no-console -- intentional server startup log
-  console.log(`Hocuspocus sync server running on port ${port}`);
+  log.info(`Hocuspocus sync server running on port ${port}`);
 });

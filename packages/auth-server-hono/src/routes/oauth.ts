@@ -62,14 +62,20 @@ oauthRouter.get('/authorize', requireAuth, async (c) => {
   // Validate required params
   if (!client_id || !redirect_uri || !code_challenge) {
     return c.json(
-      { error: 'invalid_request', error_description: 'Missing required parameters' },
+      {
+        error: 'invalid_request',
+        error_description: 'Missing required parameters',
+      },
       400
     );
   }
 
   if (code_challenge_method && code_challenge_method !== 'S256') {
     return c.json(
-      { error: 'invalid_request', error_description: 'Only S256 code_challenge_method is supported' },
+      {
+        error: 'invalid_request',
+        error_description: 'Only S256 code_challenge_method is supported',
+      },
       400
     );
   }
@@ -77,13 +83,19 @@ oauthRouter.get('/authorize', requireAuth, async (c) => {
   // Validate client
   const client = await getOAuthClient(client_id);
   if (!client) {
-    return c.json({ error: 'invalid_client', error_description: 'Unknown client_id' }, 400);
+    return c.json(
+      { error: 'invalid_client', error_description: 'Unknown client_id' },
+      400
+    );
   }
 
   // Validate redirect_uri
   if (!client.redirectUris.includes(redirect_uri)) {
     return c.json(
-      { error: 'invalid_request', error_description: 'redirect_uri not registered for this client' },
+      {
+        error: 'invalid_request',
+        error_description: 'redirect_uri not registered for this client',
+      },
       400
     );
   }
@@ -94,7 +106,10 @@ oauthRouter.get('/authorize', requireAuth, async (c) => {
   const invalidScopes = requestedScopes.filter((s) => !validScopes.includes(s));
   if (invalidScopes.length > 0) {
     return c.json(
-      { error: 'invalid_scope', error_description: `Unknown scopes: ${invalidScopes.join(', ')}` },
+      {
+        error: 'invalid_scope',
+        error_description: `Unknown scopes: ${invalidScopes.join(', ')}`,
+      },
       400
     );
   }
@@ -193,15 +208,15 @@ oauthRouter.post('/token', async (c) => {
   const { grant_type, code, redirect_uri, code_verifier, client_id } = body;
 
   if (grant_type !== 'authorization_code') {
-    return c.json(
-      { error: 'unsupported_grant_type' },
-      400
-    );
+    return c.json({ error: 'unsupported_grant_type' }, 400);
   }
 
   if (!code || !redirect_uri || !code_verifier || !client_id) {
     return c.json(
-      { error: 'invalid_request', error_description: 'Missing required parameters' },
+      {
+        error: 'invalid_request',
+        error_description: 'Missing required parameters',
+      },
       400
     );
   }
@@ -210,23 +225,36 @@ oauthRouter.post('/token', async (c) => {
   const codeRow = await consumeAuthCode(code);
   if (!codeRow) {
     return c.json(
-      { error: 'invalid_grant', error_description: 'Authorization code is invalid, expired, or already used' },
+      {
+        error: 'invalid_grant',
+        error_description:
+          'Authorization code is invalid, expired, or already used',
+      },
       400
     );
   }
 
   // Verify client_id and redirect_uri match
   if (codeRow.clientId !== client_id) {
-    return c.json({ error: 'invalid_grant', error_description: 'client_id mismatch' }, 400);
+    return c.json(
+      { error: 'invalid_grant', error_description: 'client_id mismatch' },
+      400
+    );
   }
   if (codeRow.redirectUri !== redirect_uri) {
-    return c.json({ error: 'invalid_grant', error_description: 'redirect_uri mismatch' }, 400);
+    return c.json(
+      { error: 'invalid_grant', error_description: 'redirect_uri mismatch' },
+      400
+    );
   }
 
   // Verify PKCE
   const pkceValid = verifyPKCE(code_verifier, codeRow.codeChallenge);
   if (!pkceValid) {
-    return c.json({ error: 'invalid_grant', error_description: 'PKCE verification failed' }, 400);
+    return c.json(
+      { error: 'invalid_grant', error_description: 'PKCE verification failed' },
+      400
+    );
   }
 
   // Issue access token
@@ -261,7 +289,13 @@ oauthRouter.post('/revoke', async (c) => {
   }
 
   if (!token) {
-    return c.json({ error: 'invalid_request', error_description: 'token parameter is required' }, 400);
+    return c.json(
+      {
+        error: 'invalid_request',
+        error_description: 'token parameter is required',
+      },
+      400
+    );
   }
 
   await revokeOAuthAccessToken(token);

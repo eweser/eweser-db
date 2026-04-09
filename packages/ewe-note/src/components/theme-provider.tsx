@@ -111,7 +111,8 @@ export function ThemeProvider({
     root.classList.add(resolvedMode);
 
     const activeThemeId = resolvedMode === 'dark' ? darkThemeId : lightThemeId;
-    const customVars = resolvedMode === 'dark' ? customDarkVars : customLightVars;
+    const customVars =
+      resolvedMode === 'dark' ? customDarkVars : customLightVars;
 
     if (activeThemeId === 'custom' && customVars) {
       applyThemeVars(customVars);
@@ -122,7 +123,13 @@ export function ThemeProvider({
         PRESET_THEMES[0];
       applyThemeVars(theme.vars);
     }
-  }, [resolvedMode, lightThemeId, darkThemeId, customLightVars, customDarkVars]);
+  }, [
+    resolvedMode,
+    lightThemeId,
+    darkThemeId,
+    customLightVars,
+    customDarkVars,
+  ]);
 
   const setMode = useCallback((newMode: Mode) => {
     localStorage.setItem(STORAGE_MODE, newMode);

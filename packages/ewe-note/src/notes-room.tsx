@@ -171,7 +171,7 @@ export function useFolders(room: Room<Note> | null): UseFoldersResult {
       name,
       ...(parentFolderId ? { parentFolderId } : {}),
     };
-    room!.ydoc!.transact(() => {
+    room?.ydoc?.transact(() => {
       map.set(id, JSON.stringify(base));
     });
     return id;
@@ -183,7 +183,7 @@ export function useFolders(room: Room<Note> | null): UseFoldersResult {
     const existing = map.get(id);
     if (!existing) return;
     const base = JSON.parse(existing) as FolderBase;
-    room!.ydoc!.transact(() => {
+    room?.ydoc?.transact(() => {
       map.set(id, JSON.stringify({ ...base, name }));
     });
   };
@@ -191,7 +191,7 @@ export function useFolders(room: Room<Note> | null): UseFoldersResult {
   const deleteFolder = (id: string) => {
     const map = getFolderMap();
     if (!map) return;
-    room!.ydoc!.transact(() => {
+    room?.ydoc?.transact(() => {
       map.delete(id);
     });
   };

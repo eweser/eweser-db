@@ -8,10 +8,12 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { env } from './env.js';
-import { verifyAgentToken, fetchAgentRooms } from './auth.js';
+import { verifyAgentToken, fetchAgentRooms, logAccess } from './auth.js';
 import { DataLayer } from './data-layer.js';
 import { registerTools } from './tools.js';
-import { logAccess } from './auth.js';
+import { createLogger } from '@eweser/logger';
+
+const log = createLogger('mcp-server');
 
 async function main() {
   // 1. Verify agent token
@@ -22,7 +24,7 @@ async function main() {
       env.EWESER_AUTH_URL
     );
   } catch (err) {
-    console.error('[eweser-mcp] Failed to verify agent token:', err);
+    log.error('[eweser-mcp] Failed to verify agent token:', err);
     process.exit(1);
   }
 
@@ -71,6 +73,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error('[eweser-mcp] Fatal error:', err);
+  log.error('[eweser-mcp] Fatal error:', err);
   process.exit(1);
 });

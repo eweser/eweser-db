@@ -95,7 +95,7 @@ export function registerTools(
   // -------------------------------------------------------------------------
   // eweser_list_rooms
   // -------------------------------------------------------------------------
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+
   // @ts-ignore TS2589: deep Zod overload inference
   server.tool(
     'eweser_list_rooms',

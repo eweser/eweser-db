@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable no-console -- CLI tool: console is the correct output mechanism */
 /**
  * Obsidian Vault Export CLI
  *

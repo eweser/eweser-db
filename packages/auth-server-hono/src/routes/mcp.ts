@@ -188,7 +188,8 @@ mcpRouter.all('/', async (c) => {
   let dataLayer: DataLayer;
 
   if (sessionId && sessionCache.has(sessionId)) {
-    const cached = sessionCache.get(sessionId)!;
+    const cached = sessionCache.get(sessionId);
+    if (!cached) return c.json({ error: 'Session not found' }, 400);
     cached.lastAccessAt = Date.now();
     dataLayer = cached.dataLayer;
   } else {

@@ -131,13 +131,111 @@ Default values work for local development. Override in `.env.local` if needed:
 
 ## Docker Services
 
-| Service         | Internal Port | Host Port | Purpose                       |
-| --------------- | ------------- | --------- | ----------------------------- |
-| `postgres`      | 5432          | 5499      | Database                      |
-| `sync-server`   | 8080          | 38181     | Primary CRDT sync             |
-| `sync-server-2` | 8080          | 38182     | Secondary CRDT sync           |
-| `aggregator`    | 8090          | 38190     | Data indexing                 |
-| `auth-api`      | 3000          | 38101     | Auth API (Hono + better-auth) |
+| Service         | Internal Port | Host Port | Purpose                         |
+| --------------- | ------------- | --------- | ------------------------------- |
+| `postgres`      | 5432          | 5499      | Database                        |
+| `sync-server`   | 8080          | 38181     | Primary CRDT sync               |
+| `sync-server-2` | 8080          | 38182     | Secondary CRDT sync             |
+| `aggregator`    | 8090          | 38190     | Data indexing                   |
+| `auth-api`      | 3000          | 38101     | Auth API (Hono + better-auth)   |
+| `dozzle`        | 8080          | 9999      | Dev log viewer (all containers) |
+
+## Observability & Logging Strategy
+
+EweserDB uses **pino** for structured logging and **OpenTelemetry** for host metrics. Both are **opt-in** — services always log to stdout and file; Axiom transport activates only when env vars are present.
+
+### Log Destination Architecture
+
+```
+Every server process (sync-server, aggregator, auth-api)
+    │
+    └─▶ pino logger (always)
+           ├─▶ stdout        (always — coloured in dev, JSON in prod)
+           ├─▶ ./logs/*.log  (always — daily-rotated JSON in prod)
+           └─▶ @axiomhq/pino transport  (opt-in — AXIOM_API_KEY + AXIOM_EVENTS_DATASET)
+```
+
+### Dev: Dozzle (Local Log Viewer)
+
+All container logs streamed live to browser — no config needed:
+
+```
+http://localhost:9999
+```
+
+Filter by container, search text, tail in real-time. Use this instead of `docker logs` for a better UX during development.
+
+### Dev: Pretty Console Output
+
+In development (`NODE_ENV !== 'production'`), logs are coloured and human-readable via `pino-pretty`:
+
+```
+[12:34:56] INFO (auth-api): Server listening on :3000
+[12:34:57] INFO (auth-api): GET /health 200 +2ms
+```
+
+### Prod: JSON File Logs
+
+In production, logs go to `./logs/app-YYYY-MM-DD.log` as newline-delimited JSON (one JSON object per line). Rotate by restarting daily — each file is one day's logs.
+
+```bash
+# Tail prod logs on the server
+tail -f ./logs/app-$(date +%Y-%m-%d).log | pino-pretty
+
+# Search for errors
+grep '"level":50' ./logs/app-2026-04-09.log
+```
+
+### Opt-in: Axiom Cloud (Logs + Metrics)
+
+Axiom provides a free tier (500 GB/mo ingest) suitable for personal deployments. Both logs and metrics ship to the same Axiom account.
+
+#### 1. Create datasets in Axiom
+
+In the Axiom dashboard (https://app.axiom.co):
+
+- **Events dataset** — for structured logs (e.g. `eweser-db-events`)
+- **Metrics dataset** — for numeric time-series (e.g. `eweser-db-metrics`)
+
+#### 2. Add env vars
+
+```bash
+# .env or .env.production
+AXIOM_API_KEY=         # Axiom API token (Settings → API Tokens)
+AXIOM_EVENTS_DATASET=  # Dataset name for logs, type: Events
+AXIOM_METRICS_DATASET= # Dataset name for host metrics, type: Metrics
+```
+
+#### 3. Query logs in Axiom
+
+```apl
+// All error logs from the last hour
+['eweser-db-events'] | where level >= 50 and _time > ago(1h)
+
+// Auth server errors only
+['eweser-db-events'] | where name == "auth-api" and level >= 40
+
+// Slow requests (>1s) by endpoint
+['eweser-db-events'] | where duration_ms > 1000 | take 50
+```
+
+#### 4. Host metrics in Axiom
+
+Metrics exported via OTel include:
+
+| Metric | Description |
+| ------ | ----------- |
+| `system.cpu.time` | CPU usage per core |
+| `system.memory.used` / `.free` | Memory consumption |
+| `process.gc.duration` | GC pause times |
+| `eventloop.lag` | Event loop delay |
+| `process.handles` / `process.requests` | Open handles/requests |
+
+Tag filters: `service.name` (e.g. `sync-server`), `deployment.environment` (e.g. `production`).
+
+#### 5. No Axiom? No Problem
+
+Without Axiom vars set, services work identically — just logs go to stdout and `./logs/` as described above. The `initTelemetry()` call is a no-op if `AXIOM_API_KEY` or `AXIOM_METRICS_DATASET` is missing.
 
 ## Stopping Services
 

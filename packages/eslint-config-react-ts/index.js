@@ -14,7 +14,7 @@ export default tseslint
       'react-hooks': reactHooks,
     },
     rules: {
-      'no-console': 'warn', // Allow console for debugging; warn to encourage removal
+      'no-console': 'error', // Allowed in frontend code; remove before commit is a convention not a gate
       'react-hooks/rules-of-hooks': 'error', // Critical for correct React behavior
       'react-hooks/exhaustive-deps': 'error', // Catch dependency bugs early
       'react/react-in-jsx-scope': 'off', // Not needed in React 17+

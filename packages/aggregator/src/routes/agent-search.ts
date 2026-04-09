@@ -5,6 +5,7 @@
  * then runs PostgreSQL full-text search.
  */
 import { Hono } from 'hono';
+import { logger } from '@eweser/logger';
 import type { AgentSearchResult, SearchFilters } from '../db/queries.js';
 
 interface AgentConfig {
@@ -104,7 +105,7 @@ export function createAgentSearchRouter(deps: AgentSearchRouteDeps) {
       });
       return c.json({ results }, 200);
     } catch (err) {
-      console.error('[agent-search] Search error:', err);
+      logger.error('[agent-search] Search error:', err);
       return c.json({ error: 'Search failed' }, 500);
     }
   });

@@ -126,7 +126,10 @@ describe('oauthRouter', () => {
     });
 
     it('returns 400 when required params are missing', async () => {
-      const res = await authenticatedFetch(app, '/oauth/authorize?client_id=chatgpt-web');
+      const res = await authenticatedFetch(
+        app,
+        '/oauth/authorize?client_id=chatgpt-web'
+      );
       expect(res.status).toBe(400);
       const body = await res.json();
       expect(body.error).toBe('invalid_request');
@@ -248,7 +251,10 @@ describe('oauthRouter', () => {
         new Request('http://localhost/oauth/token', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ grant_type: 'authorization_code', code: 'abc' }),
+          body: JSON.stringify({
+            grant_type: 'authorization_code',
+            code: 'abc',
+          }),
         })
       );
       expect(res.status).toBe(400);

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable no-console -- CLI tool: console is the correct output mechanism */
 /**
  * Obsidian Vault Import CLI
  *
@@ -124,7 +125,7 @@ export function generateNoteId(vaultName: string, sourcePath: string): string {
 
 async function scanDirectory(
   dir: string,
-  _vaultRoot: string // eslint-disable-line @typescript-eslint/no-unused-vars -- reserved for future vault root resolution
+  _vaultRoot: string
 ): Promise<{ mdFiles: string[]; attachmentFiles: string[] }> {
   const mdFiles: string[] = [];
   const attachmentFiles: string[] = [];

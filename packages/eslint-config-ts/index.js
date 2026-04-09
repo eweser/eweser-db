@@ -21,7 +21,7 @@ export default tseslint.config({
     'prettier/prettier': 'error', // Enforce consistent formatting
     'linebreak-style': 'off', // ignore overly strict linebreak style rule
     'prefer-const': 'warn', // Warn about using const instead of let. Helps to avoid accidental reassignment
-    'no-console': 'warn', // Allow console for debugging; warn to encourage removal before commit
+    'no-console': 'error', // Allowed in server/CLI/library code; remove before commit is a convention not a gate
     '@typescript-eslint/consistent-type-imports': 'warn', // Style preference; non-blocking
     '@typescript-eslint/no-explicit-any': 'error', // Catch implicit any usage to maintain type safety
     'no-unused-vars': 'off', // typescript-eslint/no-unused-vars will cover this

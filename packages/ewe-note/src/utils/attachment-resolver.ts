@@ -16,6 +16,7 @@
  *   - BASE64: Image loaded as base64 data URL (for small images, offline use).
  *   - STORAGE_URL: Image hosted on a remote storage service (for cloud sync).
  */
+import { logger } from './index.js';
 
 export type ResolutionStrategy = 'local_file' | 'base64' | 'storage_url';
 
@@ -111,7 +112,7 @@ export function resolveAttachment(
 
     case 'storage_url': {
       if (!vaultConfig.storageBaseUrl) {
-        console.warn('resolveAttachment: storageBaseUrl not configured');
+        logger.warn('resolveAttachment: storageBaseUrl not configured');
         return '';
       }
       return `${vaultConfig.storageBaseUrl}/${encodeURIComponent(primaryCandidate)}`;

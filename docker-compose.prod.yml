@@ -43,6 +43,9 @@ services:
       SYNC_AUTH_SECRET: ${SYNC_AUTH_SECRET:?SYNC_AUTH_SECRET is required}
       AGGREGATOR_WEBHOOK_URL: http://aggregator:8090/webhooks/hocuspocus
       WEBHOOK_SECRET: ${WEBHOOK_SECRET:?WEBHOOK_SECRET is required}
+      AXIOM_API_KEY: ${AXIOM_API_KEY:-}
+      AXIOM_EVENTS_DATASET: ${AXIOM_EVENTS_DATASET:-}
+      AXIOM_METRICS_DATASET: ${AXIOM_METRICS_DATASET:-}
     healthcheck:
       test:
         ['CMD-SHELL', 'wget -q --spider http://localhost:8080/health || exit 1']
@@ -69,6 +72,9 @@ services:
       SYNC_AUTH_SECRET: ${SYNC_AUTH_SECRET:?SYNC_AUTH_SECRET is required}
       AGGREGATOR_WEBHOOK_URL: http://aggregator:8090/webhooks/hocuspocus
       WEBHOOK_SECRET: ${WEBHOOK_SECRET:?WEBHOOK_SECRET is required}
+      AXIOM_API_KEY: ${AXIOM_API_KEY:-}
+      AXIOM_EVENTS_DATASET: ${AXIOM_EVENTS_DATASET:-}
+      AXIOM_METRICS_DATASET: ${AXIOM_METRICS_DATASET:-}
     healthcheck:
       test:
         ['CMD-SHELL', 'wget -q --spider http://localhost:8080/health || exit 1']
@@ -100,6 +106,9 @@ services:
       SYNC_SERVER_URL: ws://sync-server:8080
       SYNC_AUTH_SECRET: ${SYNC_AUTH_SECRET:?SYNC_AUTH_SECRET is required}
       WEBHOOK_SECRET: ${WEBHOOK_SECRET:?WEBHOOK_SECRET is required}
+      AXIOM_API_KEY: ${AXIOM_API_KEY:-}
+      AXIOM_EVENTS_DATASET: ${AXIOM_EVENTS_DATASET:-}
+      AXIOM_METRICS_DATASET: ${AXIOM_METRICS_DATASET:-}
     healthcheck:
       test:
         ['CMD-SHELL', 'wget -q --spider http://localhost:8090/health || exit 1']
@@ -133,6 +142,9 @@ services:
       SYNC_SERVER_URL: ${SYNC_PUBLIC_URL:?SYNC_PUBLIC_URL is required}
       SYNC_AUTH_SECRET: ${SYNC_AUTH_SECRET:?SYNC_AUTH_SECRET is required}
       PORT: 3000
+      AXIOM_API_KEY: ${AXIOM_API_KEY:-}
+      AXIOM_EVENTS_DATASET: ${AXIOM_EVENTS_DATASET:-}
+      AXIOM_METRICS_DATASET: ${AXIOM_METRICS_DATASET:-}
     healthcheck:
       test:
         ['CMD-SHELL', 'wget -q --spider http://localhost:3000/health || exit 1']

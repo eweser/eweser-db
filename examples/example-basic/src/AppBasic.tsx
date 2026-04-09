@@ -918,8 +918,11 @@ const ShareButton = ({
         appName: 'EweserDB Kitchen Sink',
       })
         .then((link) => setShareLink(link))
-        // eslint-disable-next-line no-console
-        .catch((e) => console.error(e));
+
+        .catch(
+          // eslint-disable-next-line no-console -- example app error fallback
+          (e) => console.error(e)
+        );
     } else {
       setShareLink('');
     }

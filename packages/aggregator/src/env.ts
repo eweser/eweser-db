@@ -1,3 +1,4 @@
+import { logger } from '@eweser/logger';
 import { z } from 'zod';
 
 const envSchema = z.object({
@@ -16,7 +17,7 @@ const envSchema = z.object({
 const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
-  console.error(
+  logger.error(
     'Invalid environment variables:',
     parsed.error.flatten().fieldErrors
   );

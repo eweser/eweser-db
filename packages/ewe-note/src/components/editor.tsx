@@ -134,12 +134,11 @@ function EditorInternal({
       const text = isVaultNote
         ? await blocksToOfm(e)
         : await e.blocksToMarkdownLossy();
-      debouncedSaveRef.current!(text, currentNote);
+      debouncedSaveRef.current?.(text, currentNote);
     });
     return () => {
       unsubscribe?.();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor]);
 
   // Pull the initial note text from eweser-db and set it in the editor

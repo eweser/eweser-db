@@ -19,6 +19,7 @@
     "hono": "^4.10.6",
     "jsonwebtoken": "^9.0.3",
     "postgres": "^3.4.7",
+    "@eweser/logger": "*",
     "yjs": "^13.6.27",
     "zod": "^4.1.12"
   },

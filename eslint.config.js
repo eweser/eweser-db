@@ -5,12 +5,8 @@ export default [
   // Global ignores — these directories are excluded from root linting
   {
     ignores: [
-      // Next.js auth-server is being migrated — skip for now
-      'packages/auth-server/**',
       // React Native uses a different toolchain
       'examples/react-native/**',
-      // Old/archived code
-      'old-code/**',
       // Build outputs, type stubs, generated files
       '**/dist/**',
       '**/build/**',
@@ -41,6 +37,7 @@ export default [
       'packages/sync-server/src/**/*.ts',
       'packages/aggregator/src/**/*.ts',
       'packages/mcp-server/src/**/*.ts',
+      'packages/logger/src/**/*.ts',
       'scripts/**/*.ts',
     ],
   })),
@@ -62,7 +59,11 @@ export default [
   })),
   // CLI scripts and startup validation — console output is intentional
   {
-    files: ['scripts/**/*.ts', 'packages/aggregator/src/env.ts'],
+    files: [
+      'scripts/**/*.ts',
+      'packages/aggregator/src/env.ts',
+      'packages/logger/src/**/*.ts',
+    ],
     rules: {
       'no-console': 'off',
     },

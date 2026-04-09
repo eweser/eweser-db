@@ -3,19 +3,19 @@ import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres from 'postgres';
 import { env } from '../env.js';
 
+import { logger } from '@eweser/logger';
+
 const migrationClient = postgres(env.DATABASE_URL, { max: 1 });
 
 async function main() {
-  // eslint-disable-next-line no-console -- intentional migration progress log
-  console.log('Running migrations...');
+  logger.info('Running migrations...');
   await migrate(drizzle(migrationClient), { migrationsFolder: './drizzle' });
-  // eslint-disable-next-line no-console -- intentional migration progress log
-  console.log('Migrations complete!');
+
+  logger.info('Migrations complete!');
   process.exit(0);
 }
 
 main().catch((err) => {
-  // eslint-disable-next-line no-console -- intentional migration failure log
-  console.error('Migration failed:', err);
+  logger.error('Migration failed:', err);
   process.exit(1);
 });

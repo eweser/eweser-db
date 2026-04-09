@@ -123,7 +123,9 @@ const signOut = () => {
 export const DbProvider = ({ children }: { children: ReactNode }) => {
   // If rooms were already loaded before this component mounted (db is module-level),
   // initialize loaded as true so offline/local-first mode works without login.
-  const [loaded, setLoaded] = useState(() => db.getRooms(collectionKey).length > 0);
+  const [loaded, setLoaded] = useState(
+    () => db.getRooms(collectionKey).length > 0
+  );
   const [loggedIn, setLoggedIn] = useState(false);
   const [hasToken, setHasToken] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<Room<Note> | null>(null);
@@ -132,7 +134,9 @@ export const DbProvider = ({ children }: { children: ReactNode }) => {
 
   const [defaultNote, setDefaultNote] = useState<Note | null>(null);
 
-  const [allRooms, setAllRooms] = useState<Room<Note>[]>(() => db.getRooms(collectionKey));
+  const [allRooms, setAllRooms] = useState<Room<Note>[]>(() =>
+    db.getRooms(collectionKey)
+  );
   const allRoomIds = allRooms.map((room) => room.id);
 
   useEffect(() => {

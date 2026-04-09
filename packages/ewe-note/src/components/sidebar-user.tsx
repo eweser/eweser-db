@@ -80,7 +80,9 @@ export function SidebarUser({
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem
-                onClick={() => setMode(resolvedMode === 'dark' ? 'light' : 'dark')}
+                onClick={() =>
+                  setMode(resolvedMode === 'dark' ? 'light' : 'dark')
+                }
               >
                 {resolvedMode === 'dark' ? (
                   <Sun className="mr-2 h-4 w-4" />

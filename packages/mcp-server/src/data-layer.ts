@@ -6,6 +6,9 @@ import * as Y from 'yjs';
 import { HocuspocusProvider } from '@hocuspocus/provider';
 import type { AgentConfig, AgentRoom, SyncTokenResult } from './auth.js';
 import { fetchSyncToken } from './auth.js';
+import { createLogger } from '@eweser/logger';
+
+const log = createLogger('mcp-server').child({ component: 'data-layer' });
 import {
   getDocuments,
   getRoomDocuments,
@@ -140,7 +143,7 @@ export class DataLayer {
       connected.provider.setConfiguration({ token: result.syncToken });
       this.scheduleTokenRefresh(roomId, connected);
     } catch (err) {
-      console.error(
+      log.error(
         `[eweser-mcp] Failed to refresh token for room ${roomId}:`,
         err
       );
