@@ -3,6 +3,9 @@ spec:
   region: nyc
   services:
     - name: auth-api
+      git:
+        repo_clone_url: https://github.com/eweser/eweser-db.git
+        branch: main
       dockerfile_path: packages/auth-server-hono/Dockerfile
       source_dir: /
       http_port: 3000
@@ -33,6 +36,9 @@ spec:
         http_path: /health
 
     - name: sync-server
+      git:
+        repo_clone_url: https://github.com/eweser/eweser-db.git
+        branch: main
       dockerfile_path: packages/sync-server/Dockerfile
       source_dir: packages/sync-server
       http_port: 8080
@@ -53,6 +59,9 @@ spec:
           value: ${WEBHOOK_SECRET}
 
     - name: aggregator
+      git:
+        repo_clone_url: https://github.com/eweser/eweser-db.git
+        branch: main
       dockerfile_path: packages/aggregator/Dockerfile
       source_dir: packages/aggregator
       http_port: 8090
@@ -75,6 +84,9 @@ spec:
         http_path: /health
 
     - name: auth-pages
+      git:
+        repo_clone_url: https://github.com/eweser/eweser-db.git
+        branch: main
       dockerfile_path: packages/auth-pages/Dockerfile
       source_dir: /
       http_port: 80
@@ -84,6 +96,9 @@ spec:
         - path: /auth
 
     - name: ewe-note
+      git:
+        repo_clone_url: https://github.com/eweser/eweser-db.git
+        branch: main
       dockerfile_path: packages/ewe-note/Dockerfile
       source_dir: /
       http_port: 80
