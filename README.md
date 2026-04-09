@@ -4,10 +4,21 @@
 
 ## Self-Hosting
 
-[![Deploy to DigitalOcean](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/eweser/eweser-db/tree/main)
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/eweser/eweser-db)
+| Option | Cost | One-click? |
+|--------|------|------------|
+| **Railway** (recommended) | ~$5–15/mo usage-based | ✅ |
+| **DigitalOcean App Platform** | ~$25/mo (5 services) | ✅ |
+| **Any VPS / Droplet** (Docker Compose) | ~$6/mo | Script below |
 
-Runs on a **$6/month VPS** with 512 MB RAM. [Deployment guides →](docs/deployment/)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/eweser/eweser-db)
+[![Deploy to DigitalOcean](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/eweser/eweser-db/tree/main)
+
+**Self-host on any $6/mo VPS (Ubuntu):**
+```bash
+curl -fsSL https://raw.githubusercontent.com/eweser/eweser-db/main/scripts/setup-vps.sh | bash
+```
+
+[Full deployment guides →](docs/deployment/)
 
 # A User owned database
 
