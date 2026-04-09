@@ -119,6 +119,56 @@ curl https://your-domain.com/api/health
 
 ---
 
+## Observability (Optional)
+
+Logging and metrics are opt-in. Without configuration, services log to stdout and `./logs/` only.
+
+### Built-in: JSON File Logs
+
+In production, all services write JSON logs to `./logs/app-YYYY-MM-DD.log` (one file per day). No configuration needed:
+
+```bash
+# On the server
+tail -f ./logs/app-$(date +%Y-%m-%d).log | pino-pretty
+grep '"level":50' ./logs/app-2026-04-09.log
+```
+
+### Optional: Axiom Cloud (Logs + Metrics)
+
+Axiom's free tier (500 GB/mo) is generous for personal deployments. Both logs and metrics go to the same account.
+
+**1. Create datasets at https://app.axiom.co:**
+- `eweser-db-events` (type: **Events**) — for structured logs
+- `eweser-db-metrics` (type: **Metrics**) — for host metrics
+
+**2. Add to `.env` on your server:**
+
+```env
+AXIOM_API_KEY=your-axiom-ingest-token
+AXIOM_EVENTS_DATASET=eweser-db-events
+AXIOM_METRICS_DATASET=eweser-db-metrics
+```
+
+**3. Restart services:**
+
+```bash
+docker compose -f docker-compose.prod.yml up -d
+```
+
+**4. Query logs in Axiom:**
+
+```apl
+// Recent errors from any service
+['eweser-db-events'] | where level >= 50 | take 20
+
+// Slow requests (>1s)
+['eweser-db-events'] | where duration_ms > 1000 | take 50
+```
+
+**Host metrics available:** CPU, memory, GC duration, event loop lag, active handles — all tagged with `service.name` and `deployment.environment`.
+
+---
+
 ## Updates
 
 To update your deployment when a new version is released:

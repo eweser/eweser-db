@@ -6,29 +6,30 @@ Make both one-click deploy buttons functional and deploy a real production insta
 
 ## Current State
 
-| Issue | Detail |
-|-------|--------|
-| Railway template 404 | Template URL `https://railway.app/template/eweser-db` points to an unpublished template. No `railway.toml` in repo. |
-| DO button may fail | `.do/app.yaml` exists but is missing `auth-pages`, `ewe-note`, and `aggregator` services. |
-| ewe-note no Dockerfile | `packages/ewe-note/` has no Dockerfile; needed for both platforms. |
-| auth-pages Dockerfile uses `COPY . .` | Requires monorepo root build context — must match `.do/app.yaml` `source_dir: /` |
+| Issue                                 | Detail                                                                                                              |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Railway template 404                  | Template URL `https://railway.app/template/eweser-db` points to an unpublished template. No `railway.toml` in repo. |
+| DO button may fail                    | `.do/app.yaml` exists but is missing `auth-pages`, `ewe-note`, and `aggregator` services.                           |
+| ewe-note no Dockerfile                | `packages/ewe-note/` has no Dockerfile; needed for both platforms.                                                  |
+| auth-pages Dockerfile uses `COPY . .` | Requires monorepo root build context — must match `.do/app.yaml` `source_dir: /`                                    |
 
 ## Routing Architecture
 
-| URL | Service |
-|-----|---------|
-| `yourdomain.com` | Static landing page |
-| `yourdomain.com/auth/` | Auth pages (login/signup) |
-| `yourdomain.com/api/` | Auth API (Hono) |
-| `yourdomain.com/sync` | Hocuspocus WebSocket |
-| `yourdomain.com/aggregator/` | Aggregator API |
-| `notes.yourdomain.com` | Ewe Note app (subdomain) |
+| URL                          | Service                   |
+| ---------------------------- | ------------------------- |
+| `yourdomain.com`             | Static landing page       |
+| `yourdomain.com/auth/`       | Auth pages (login/signup) |
+| `yourdomain.com/api/`        | Auth API (Hono)           |
+| `yourdomain.com/sync`        | Hocuspocus WebSocket      |
+| `yourdomain.com/aggregator/` | Aggregator API            |
+| `notes.yourdomain.com`       | Ewe Note app (subdomain)  |
 
 Caddy handles subdomain routing for `notes.*` and path routing for everything else. On DO App Platform, this requires the `notes` service to have its own domain mapping.
 
 ## Scope
 
 **In:**
+
 - Create `packages/ewe-note/Dockerfile` (nginx + monorepo build)
 - Update Caddyfile to serve `notes.{$DOMAIN}` as a separate virtual host
 - Fix/complete `.do/app.yaml` (add auth-pages, ewe-note, aggregator with subdomain route)
@@ -38,6 +39,7 @@ Caddy handles subdomain routing for `notes.*` and path routing for everything el
 - Actually deploy to DigitalOcean using the existing API key
 
 **Out:**
+
 - Aggregator Dockerfile changes (already complete ✓)
 - SSL cert provisioning (handled by Caddy auto-HTTPS / platform)
 - Custom domain configuration (user-specific)
@@ -57,6 +59,7 @@ Caddy handles subdomain routing for `notes.*` and path routing for everything el
 - [ ] Verify: `docker build -f packages/ewe-note/Dockerfile .` from repo root succeeds
 
 **Files:**
+
 - `packages/ewe-note/Dockerfile` (create)
 - `packages/ewe-note/nginx.conf` (create — copy from auth-pages)
 
@@ -68,6 +71,7 @@ Caddy handles subdomain routing for `notes.*` and path routing for everything el
 **Reason:** Config editing — adding missing services and subdomain routing.
 
 The DigitalOcean App Platform button URL is structurally valid. Current issues to fix:
+
 - Missing `auth-pages` service (Dockerfile exists, needs `source_dir: /`)
 - Missing `ewe-note` service (Dockerfile from Run 1) — routes via own subdomain `notes.{domain}` (DO custom domain)
 - Missing `aggregator` service (Dockerfile exists ✓, `source_dir: packages/aggregator`)
@@ -76,6 +80,7 @@ The DigitalOcean App Platform button URL is structurally valid. Current issues t
 - Update Caddyfile for self-hosted: `notes.{$DOMAIN}` as separate virtual host routing to ewe-note nginx
 
 **Files:**
+
 - `.do/app.yaml` (modify)
 - `docker/Caddyfile` (update — add `notes.{$DOMAIN}` virtual host)
 
@@ -89,11 +94,13 @@ The DigitalOcean App Platform button URL is structurally valid. Current issues t
 Railway's `railway.toml` format supports a single service per file. For multi-service monorepos, Railway uses `railway.json` or multiple config files, OR deploys are managed per-service through the dashboard with a shared repo.
 
 **Practical approach:** Railway doesn't have native multi-service `railway.toml` support like Docker Compose. The recommended Railway approach for a monorepo is:
+
 1. One Railway project
 2. Multiple "services" each pointing to the same repo but different build configs
 3. A `railway.toml` at root can configure the _default_ service; per-service overrides are set via Railway dashboard
 
 **What to create:**
+
 - `railway.toml` — configures the primary service (auth-api) + documents the multi-service setup
 - `packages/auth-server-hono/railway.toml` — per-service config for auth-api
 - `packages/sync-server/railway.toml` — per-service config for sync-server
@@ -101,12 +108,15 @@ Railway's `railway.toml` format supports a single service per file. For multi-se
 
 **Railway button URL fix:**
 The correct format for deploying from a GitHub repo (not a published template):
+
 ```
 https://railway.app/new/template?template=https://github.com/eweser/eweser-db
 ```
+
 This works without needing to publish a Railway template. Update `README.md` and `docs/deployment/railway.md`.
 
 **Files:**
+
 - `railway.toml` (create)
 - `packages/auth-server-hono/railway.toml` (create)
 - `packages/sync-server/railway.toml` (create)
@@ -126,6 +136,7 @@ This works without needing to publish a Railway template. Update `README.md` and
 - [ ] Update `docs/deployment/railway.md` — accurate multi-service setup instructions
 
 **Files:**
+
 - `.env.example` (create)
 - `docs/deployment/digital-ocean.md` (update)
 - `docs/deployment/railway.md` (update)
@@ -138,6 +149,7 @@ This works without needing to publish a Railway template. Update `README.md` and
 **Reason:** Uses DO API key from `.env`. Needs to create the App Platform app via `doctl` or DO API, then verify deployment succeeds.
 
 **Steps:**
+
 1. Install/verify `doctl` CLI is available
 2. Authenticate with the DO API key from `.env`
 3. Create the app: `doctl apps create --spec .do/app.yaml`
@@ -157,29 +169,32 @@ This works without needing to publish a Railway template. Update `README.md` and
 **Reason:** Railway deployment requires OAuth browser-based authentication; cannot be scripted from `.env` credentials alone.
 
 **What the coder can prepare:**
+
 - Install Railway CLI: `npm install -g @railway/cli`
 - Create a `setup-railway.sh` script that runs `railway login`, creates the project, adds services, and sets env vars
 - Document exact commands
 
 **What the user must do manually:**
+
 - `railway login` (opens browser)
 - `railway link` to associate with the project
 - Set secrets via dashboard or `railway variables set`
 
 **Files:**
+
 - `scripts/setup-railway.sh` (create — interactive setup script)
 
 ---
 
 ## Risks
 
-| Risk | Mitigation |
-|------|-----------|
-| DO App Platform doesn't support Caddy as a service (it manages routing itself) | Remove Caddy from `.do/app.yaml` — DO App Platform has its own routing/HTTPS |
-| ewe-note Dockerfile build time may be slow (full monorepo `npm ci`) | Use layer caching; consider a lighter build that only installs workspace deps needed |
-| Railway template vs "deploy from GitHub" UX difference | The GitHub deploy URL still works; template publishing is optional |
-| WEBHOOK_SECRET missing from env | Add to `.env.example` and `.do/app.yaml` global envs |
-| `sync-server` on DO App Platform uses ephemeral filesystem — SQLite state lost on restart | Use `instance_count: 1` and accept SQLite volatility for MVP; note in docs |
+| Risk                                                                                      | Mitigation                                                                           |
+| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| DO App Platform doesn't support Caddy as a service (it manages routing itself)            | Remove Caddy from `.do/app.yaml` — DO App Platform has its own routing/HTTPS         |
+| ewe-note Dockerfile build time may be slow (full monorepo `npm ci`)                       | Use layer caching; consider a lighter build that only installs workspace deps needed |
+| Railway template vs "deploy from GitHub" UX difference                                    | The GitHub deploy URL still works; template publishing is optional                   |
+| WEBHOOK_SECRET missing from env                                                           | Add to `.env.example` and `.do/app.yaml` global envs                                 |
+| `sync-server` on DO App Platform uses ephemeral filesystem — SQLite state lost on restart | Use `instance_count: 1` and accept SQLite volatility for MVP; note in docs           |
 
 ## Execution Summary
 
@@ -193,6 +208,7 @@ Run 4: .env.example + docs (Fast) ← parallel with Run 2+3
 ```
 
 Parallel opportunities:
+
 - Runs 2, 3, 4 can all start simultaneously after Run 1 is done
 - Run 5 and 6 are sequential deployments after config files land
 

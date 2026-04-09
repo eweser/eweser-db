@@ -73,7 +73,30 @@ Binary files (images, PDFs, video) are **not** stored in Yjs or PostgreSQL. They
 
 ## Providers That Work Well
 
-| Provider      | Min Plan       | Monthly Cost | Notes                                     |
+## Logging & Monitoring
+
+### Built-in (no setup)
+
+Every service writes JSON logs to `./logs/app-YYYY-MM-DD.log`. Use `pino-pretty` to read them human-readable on the server:
+
+```bash
+tail -f ./logs/app-$(date +%Y-%m-%d).log | pino-pretty
+```
+
+### Optional: Axiom (free tier — 500 GB/mo)
+
+Axiom accepts both structured logs (via pino transport) and host metrics (via OTel OTLP). See [digital-ocean.md](./digital-ocean.md#observability-optional) for setup instructions.
+
+With Axiom you get:
+- Structured log search and dashboards
+- Host metrics (CPU, memory, GC, event loop lag)
+- Alerts (e.g. CPU > 80% for 5 min)
+
+### Optional: Dozzle (dev only)
+
+For local development, [Dozzle](https://dozzle.dev/) provides a live log viewer at `http://localhost:9999`. Not needed in production — use Axiom or file logs instead.
+
+## Providers
 | ------------- | -------------- | ------------ | ----------------------------------------- |
 | DigitalOcean  | Basic Droplet  | $6/mo        | "Deploy to DigitalOcean" button available |
 | Hetzner Cloud | CX11           | €4/mo        | Best price/performance in EU              |
