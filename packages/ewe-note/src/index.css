@@ -11,7 +11,7 @@ body,
 }
 
 #root {
-  background-color: black;
+  background-color: var(--background);
 }
 
 .editor-wrapper {
@@ -199,4 +199,45 @@ body,
   background-color: var(--scrollbar-thumb, #888);
   border-radius: 10px;
   border: 3px solid var(--scrollbar-track, #ffffff00);
+}
+
+/* ---- Sidebar mobile sheet opacity fix ---- */
+/* SheetContent renders in a Radix portal; ensure it gets a fully opaque background */
+[data-mobile='true'],
+[data-sidebar='sidebar'][data-mobile='true'] {
+  background-color: var(--sidebar-background) !important;
+  color: var(--sidebar-foreground) !important;
+}
+/* .bn-shadcn has its own hardcoded CSS variable scope that shadows root vars.
+   Override the rendered properties directly with our theme vars. */
+.bn-shadcn .bn-editor {
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+  border-radius: 0 !important;
+}
+
+/* Menus / popovers */
+.bn-container .bn-menu-dropdown,
+.bn-container .bn-suggestion-menu,
+.bn-shadcn [class*='bn-'][class*='dropdown'],
+.bn-shadcn [class*='bn-'][class*='popover'],
+.bn-shadcn [data-radix-popper-content-wrapper] {
+  background-color: var(--popover) !important;
+  color: var(--popover-foreground) !important;
+  border-color: var(--border) !important;
+}
+
+/* Also patch the low-level bn-colors vars for toolbars / side menus */
+.bn-container {
+  --bn-colors-editor-background: var(--background) !important;
+  --bn-colors-editor-text: var(--foreground) !important;
+  --bn-colors-menu-background: var(--popover) !important;
+  --bn-colors-menu-text: var(--popover-foreground) !important;
+  --bn-colors-tooltip-background: var(--muted) !important;
+  --bn-colors-tooltip-text: var(--muted-foreground) !important;
+  --bn-colors-hovered-background: var(--accent) !important;
+  --bn-colors-hovered-text: var(--accent-foreground) !important;
+  --bn-colors-border: var(--border) !important;
+  --bn-colors-shadow: var(--border) !important;
+  --bn-colors-side-menu: var(--muted-foreground) !important;
 }

@@ -89,8 +89,8 @@ function EditorInternal({
   note: Note;
 }) {
   const { user } = useDb();
-  const { theme } = useTheme();
-  const usedTheme = theme === 'system' ? 'dark' : theme;
+  const { resolvedMode } = useTheme();
+  const usedTheme = resolvedMode;
   const cursorColors =
     usedTheme === 'dark' ? darkModeCursorColors : lightModeCursorColors;
   /** Really this should be set to the OTHER user's color theme but that is impossible */
