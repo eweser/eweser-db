@@ -21,8 +21,13 @@ Click the button below to deploy EweserDB to DigitalOcean App Platform with one 
 
 1. Click "Deploy to DigitalOcean" above
 2. Connect your DigitalOcean account if prompted
-3. Review the app spec — DigitalOcean will provision a managed PostgreSQL database automatically
-4. Set the required environment variables:
+3. **Create a managed PostgreSQL database** manually in the DigitalOcean dashboard before continuing — App Platform can no longer provision databases via the app spec. Choose:
+   - Engine: PostgreSQL
+   - Version: 17
+   - Size: Starter (or any size)
+   - Region: Same as your app (nyc)
+4. In your app's dashboard, go to the **Settings** tab → **Environment Variables** and add `DATABASE_URL` with the value from your managed database's connection string (it looks like `postgresql://...`)
+5. Set the remaining required environment variables:
    - `POSTGRES_PASSWORD` — a strong random password (DigitalOcean can generate one)
    - `SERVER_SECRET` — a random 32-character string (`openssl rand -hex 16`)
    - `BETTER_AUTH_SECRET` — a random 32-character string

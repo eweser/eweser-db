@@ -11,7 +11,7 @@ services:
       - path: /api
     envs:
       - key: DATABASE_URL
-        value: ${db.DATABASE_URL}
+        value: ${DATABASE_URL}
       - key: SERVER_SECRET
         value: ${SERVER_SECRET}
       - key: BETTER_AUTH_SECRET
@@ -61,7 +61,7 @@ services:
       - path: /aggregator
     envs:
       - key: DATABASE_URL
-        value: ${db.DATABASE_URL}
+        value: ${DATABASE_URL}
       - key: PORT
         value: '8090'
       - key: SYNC_SERVER_URL
@@ -94,13 +94,6 @@ services:
       - key: VITE_AUTH_SERVER
         value: ${APP_URL}
         scope: BUILD_TIME
-
-databases:
-  - name: db
-    engine: PG
-    version: '17'
-    size: db-s-dev-database
-    num_nodes: 1
 
 envs:
   - key: APP_URL
