@@ -27,12 +27,14 @@ Yes — Figma Make is the right call. Last time it produced a polished result qu
 ## Scope
 
 **In:**
+
 - New `packages/landing/` package (Vite, static HTML/CSS/JS — no heavy framework needed but React is fine if Figma Make outputs it)
 - Caddyfile tweak: root `handle` points at `/srv/landing` instead of `/srv/app`
 - Docker Compose: add a `landing` service or fold static files into Caddy container
 - Content copywriting (see brief below)
 
 **Out:**
+
 - Any changes to packages/db, packages/auth-server-hono, or published APIs
 - CMS or dynamic content
 - Blog / docs section (separate concern)
@@ -61,13 +63,16 @@ Use this as the basis for your Figma Make prompt. Tailored to two audiences stac
 
 ### Section 1 — Hero
 
-**Headline:**  
+**Headline:**
+
 > Your notes. Your data. Every app.
 
-**Subheadline:**  
+**Subheadline:**
+
 > EweserDB is a local-first, user-owned database. Write in one app, read in another. Take your PKM anywhere — no lock-in, no vendor dependency, works offline.
 
 **CTA buttons:**
+
 - Primary: `Try Ewe Note →` (links to notes.eweser.com)
 - Secondary: `For Developers` (anchor scroll to dev section)
 
@@ -79,14 +84,14 @@ Use this as the basis for your Figma Make prompt. Tailored to two audiences stac
 
 Two-column contrast layout:
 
-| **Old world** | **EweserDB world** |
-|---|---|
-| You ask Notion: "Can I have my notes?" | Notion asks you: "Can I see your notes?" |
-| Switching apps means starting over | All your data follows you to any app |
-| Offline? Hope the app cached it | Offline first — always available |
+| **Old world**                          | **EweserDB world**                                       |
+| -------------------------------------- | -------------------------------------------------------- |
+| You ask Notion: "Can I have my notes?" | Notion asks you: "Can I see your notes?"                 |
+| Switching apps means starting over     | All your data follows you to any app                     |
+| Offline? Hope the app cached it        | Offline first — always available                         |
 | Your AI assistant can't touch your PKM | AI agents access your data via MCP — you stay in control |
 
-**Tagline:** *"It's like decentralized Firebase — but users own the data, not the platform."*
+**Tagline:** _"It's like decentralized Firebase — but users own the data, not the platform."_
 
 ---
 
@@ -117,19 +122,21 @@ Icon + headline + 2-line description cards (3-column grid):
 ### Section 4 — Demo Panel
 
 Animated screen recording or SVG:
+
 - Left: "Ewe Note" with a note being typed
 - Right: A "Flashcard App" showing the same note being referenced
 - Both updating in real-time
 - Offline badge appearing, then syncing back
-- Small caption: *"One user. Two apps. Same Yjs CRDT document."*
+- Small caption: _"One user. Two apps. Same Yjs CRDT document."_
 
 ---
 
 ### Section 5 — Developer Section (clearly separated, maybe dark-themed)
 
-**Headline:** *Build interoperable apps in minutes*
+**Headline:** _Build interoperable apps in minutes_
 
-**Subheadline:**  
+**Subheadline:**
+
 > Add `@eweser/db` to your app. Users bring their own data. No backend required.
 
 **Code block:**
@@ -141,7 +148,9 @@ npm install @eweser/db yjs
 ```tsx
 import { Database } from '@eweser/db';
 
-const db = new Database({ initialRooms: [{ collectionKey: 'notes', name: 'My Notes' }] });
+const db = new Database({
+  initialRooms: [{ collectionKey: 'notes', name: 'My Notes' }],
+});
 const room = db.getRoom('notes');
 const Notes = room.getDocuments();
 
@@ -175,7 +184,7 @@ Notes.new({ text: 'Hello from any app' });
 
 Short flowing paragraph or pull-quote style:
 
-> *"The current paradigm: you ask the app for your data. The new paradigm: the app asks you for your data."*
+> _"The current paradigm: you ask the app for your data. The new paradigm: the app asks you for your data."_
 
 > EweserDB enforces this at the protocol level. Auth servers are federated — a user on one homeserver can share rooms with a user on another. Access control is per-room, per-user, with expiring JWT grants. Apps never hold the data. Users do.
 
@@ -188,11 +197,13 @@ Short flowing paragraph or pull-quote style:
 Two CTA cards side by side:
 
 **Card 1: Users**
+
 > **Try Ewe Note free**  
 > No sign-up friction. Works on our hosted server.  
 > [Open Ewe Note →]
 
 **Card 2: Developers**
+
 > **Deploy your own homeserver**  
 > Railway one-click or VPS script.  
 > [One-click Railway deploy ↗] [GitHub repo ↗]
@@ -203,19 +214,21 @@ Two CTA cards side by side:
 
 - Links: GitHub, npm package, docs, auth server
 - Stack callouts: Yjs · Hocuspocus · better-auth · TypeScript · MIT
-- Tagline: *EweserDB — 'Ewe-ser', pronounced 'user'. Because you are.*
+- Tagline: _EweserDB — 'Ewe-ser', pronounced 'user'. Because you are._
 
 ---
 
 ## Technical Plan
 
-### Run 1: Create `packages/landing/` scaffolding
+### Run 1: Create `packages/landing/` scaffolding (Astro)
 
 - **Recommended Agent:** `02-coder` (Fast — boilerplate)
-- [ ] Create `packages/landing/` as a Vite static project (no framework, or React if Figma Make output uses it)
-- [ ] `package.json` with `build` script → outputs to `dist/`
-- [ ] Dockerfile: `FROM node:20-alpine AS build + FROM nginx:alpine` serving `dist/`
-- [ ] Files: `packages/landing/package.json`, `packages/landing/Dockerfile`, `packages/landing/index.html`
+- [ ] Create `packages/landing/` as an **Astro** project (static output, full prerendered HTML for SEO)
+- [ ] Add `@astrojs/react` integration so Figma Make React components drop straight in as islands
+- [ ] `package.json` with `build` script → `astro build` outputs to `dist/`
+- [ ] `.astro` page shells for each section, ready for Figma Make content
+- [ ] Dockerfile: `FROM node:20-alpine AS build + FROM nginx:alpine` (or Caddy) serving `dist/`
+- [ ] Files: `packages/landing/package.json`, `packages/landing/astro.config.mjs`, `packages/landing/Dockerfile`, `packages/landing/src/pages/index.astro`
 
 ### Run 2: Paste & wire Figma Make output
 
@@ -247,7 +260,7 @@ Two CTA cards side by side:
 - **Figma Make output quality** — May need CSS cleanup or responsiveness fixes. Account for 1–2 hours of polish.
 - **Current `/` usage** — Double-check: is the Caddy root `handle` currently needed for any redirect logic (there's already a `@legacy_login` matcher at `/` with query params). The legacy redirect must be preserved.
 - **No changeset needed** — `packages/landing` is not a published package. Confirm it's excluded from changesets config.
-- **SEO** — A static HTML file is fine for SEO. If ever more pages are needed, consider Astro later.
+- **SEO** — Astro prerenders full HTML at build time; crawlers see complete content with no JS required. Each `.astro` page is a static HTML file.
 
 ---
 

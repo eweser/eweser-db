@@ -1,0 +1,58 @@
+---
+// User features section — for PKM / productivity audience
+const features = [
+  {
+    icon: '📶',
+    title: 'Works Offline, Always',
+    description:
+      'Your data lives in your browser first. Notes sync when you\'re back online — automatically, silently.',
+  },
+  {
+    icon: '🔀',
+    title: 'Use Multiple Apps, Share One Dataset',
+    description:
+      'Take notes in Ewe Note. Review flashcards in a flashcard app. Both work with the same data — no copy-paste, no export.',
+  },
+  {
+    icon: '⚡',
+    title: 'Real-Time Collaboration',
+    description:
+      'Share a room with a teammate. Edit together live. Conflict-free CRDT merging — no one\'s work gets lost.',
+  },
+  {
+    icon: '🚀',
+    title: 'Skip the Onboarding',
+    description:
+      'Try a new PKM app with all your existing data already loaded. No friction — just switch and go.',
+  },
+  {
+    icon: '🏠',
+    title: 'Self-Host or Use Our Server',
+    description:
+      'One-click deploy on Railway (~$5/mo). Or run it on your own VPS. You own the server, you own the data.',
+  },
+  {
+    icon: '🤖',
+    title: 'AI-Powered — On Your Terms',
+    description:
+      'Give Claude, Copilot, or any MCP-compatible AI agent access to your notes. You control what the agent can see and write.',
+  },
+];
+---
+
+<section id="features" class="py-24 px-6">
+  <div class="max-w-6xl mx-auto">
+    <h2 class="text-3xl font-bold text-center mb-4">Built for how you actually work</h2>
+    <p class="text-center text-gray-500 mb-16 text-lg">Local-first. Offline-ready. Interoperable by design.</p>
+
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+      {features.map((f) => (
+        <div class="rounded-xl border border-gray-100 p-6 hover:border-gray-300 transition">
+          <div class="text-3xl mb-3">{f.icon}</div>
+          <h3 class="font-semibold text-lg mb-2">{f.title}</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">{f.description}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

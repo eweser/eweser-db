@@ -1,0 +1,23 @@
+---
+// packages/landing/src/pages/index.astro
+// Shell layout — replace section content with Figma Make output
+import Layout from '../layouts/Layout.astro';
+import Hero from '../components/Hero.astro';
+import Philosophy from '../components/Philosophy.astro';
+import UserFeatures from '../components/UserFeatures.astro';
+import DeveloperSection from '../components/DeveloperSection.astro';
+import SelfHosting from '../components/SelfHosting.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Layout
+  title="EweserDB — Your notes. Your data. Every app."
+  description="EweserDB is a local-first, user-owned database. Write in one app, read in another. No lock-in, no vendor dependency, works offline."
+>
+  <Hero />
+  <Philosophy />
+  <UserFeatures />
+  <DeveloperSection />
+  <SelfHosting />
+  <Footer />
+</Layout>

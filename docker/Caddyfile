@@ -71,8 +71,8 @@ http://{$DOMAIN:localhost} {
     }
 
     handle {
-        root * /srv/app
-        try_files {path} /index.html
+        root * /srv/landing
+        try_files {path} {path}.html /index.html
         file_server
     }
 }
