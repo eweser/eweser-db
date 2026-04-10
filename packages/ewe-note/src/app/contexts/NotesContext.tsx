@@ -133,12 +133,16 @@ function stringifyProperties(frontmatter?: Record<string, unknown>) {
 
 function extractWikiLinks(markdown: string) {
   const matches = markdown.matchAll(/\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g);
-  return Array.from(matches, (match) => match[1]?.trim()).filter(Boolean) as string[];
+  return Array.from(matches, (match) => match[1]?.trim()).filter(
+    Boolean
+  ) as string[];
 }
 
 function loadPinnedIds() {
   try {
-    return new Set<string>(JSON.parse(localStorage.getItem(PINNED_STORAGE_KEY) ?? '[]'));
+    return new Set<string>(
+      JSON.parse(localStorage.getItem(PINNED_STORAGE_KEY) ?? '[]')
+    );
   } catch {
     return new Set<string>();
   }
@@ -183,9 +187,15 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
   } = useDb();
   const canonicalRoom =
     allRooms.find((room) => room.name === 'Notes') ?? allRooms[0] ?? null;
-  const { folders: roomFolders, createFolder, renameFolder, deleteFolder } =
-    useFolders(canonicalRoom);
-  const [notesByRoomId, setNotesByRoomId] = useState<Record<string, DbNote[]>>({});
+  const {
+    folders: roomFolders,
+    createFolder,
+    renameFolder,
+    deleteFolder,
+  } = useFolders(canonicalRoom);
+  const [notesByRoomId, setNotesByRoomId] = useState<Record<string, DbNote[]>>(
+    {}
+  );
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(loadPinnedIds);
   const [templates, setTemplates] = useState<Template[]>(loadTemplates);
   const [manualTasks, setManualTasks] = useState<Task[]>([]);
@@ -279,7 +289,7 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
         const folderId =
           canonicalRoom && room.id !== canonicalRoom.id
             ? `room:${room.id}`
-            : source.folderIds?.[0] ?? '';
+            : (source.folderIds?.[0] ?? '');
 
         const note: InternalNote = {
           id: source._id,
@@ -299,7 +309,9 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
 
         internal.push(note);
         titleIndex.set(normalize(title), source._id);
-        aliases.forEach((alias) => titleIndex.set(normalize(alias), source._id));
+        aliases.forEach((alias) =>
+          titleIndex.set(normalize(alias), source._id)
+        );
       }
     }
 
@@ -319,10 +331,15 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
       });
     }
 
-    return internal.map(({ source: _source, ...note }) => ({
-      ...note,
-      backlinks: Array.from(new Set(backlinksById.get(note.id) ?? [])),
-    }));
+    return internal
+      .map(({ source: _source, ...note }) => ({
+        ...note,
+        backlinks: Array.from(new Set(backlinksById.get(note.id) ?? [])),
+      }))
+      .sort(
+        (a, b) =>
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      );
   }, [allRooms, canonicalRoom, notesByRoomId, pinnedIds]);
 
   const tasks = useMemo(() => {
@@ -356,7 +373,7 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
       folder:
         canonicalRoom && room.id !== canonicalRoom.id
           ? `room:${room.id}`
-          : source.folderIds?.[0] ?? '',
+          : (source.folderIds?.[0] ?? ''),
       tags: source.tags ?? [],
       properties: stringifyProperties(source.frontmatter),
       createdAt: new Date(source._created).toISOString(),
@@ -399,9 +416,7 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     });
 
     const created = targetRoom.getDocuments().new({
-      text:
-        note.content ||
-        `# ${note.title?.trim() || 'Untitled'}\n\n`,
+      text: note.content || `# ${note.title?.trim() || 'Untitled'}\n\n`,
       ...(Object.keys(frontmatter).length ? { frontmatter } : {}),
       ...(note.tags?.length ? { tags: note.tags } : {}),
       ...(note.folder &&
@@ -603,7 +618,9 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <NotesContext.Provider value={contextValue}>{children}</NotesContext.Provider>
+    <NotesContext.Provider value={contextValue}>
+      {children}
+    </NotesContext.Provider>
   );
 }
 

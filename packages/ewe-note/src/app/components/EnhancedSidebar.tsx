@@ -126,9 +126,11 @@ function SidebarContent({
       <div className="p-6 border-b border-sidebar-border">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold text-sm">
-              🐑
-            </div>
+            <img
+              src={theme === 'light' ? '/eweser-logo.svg' : '/eweser-logo-white.svg'}
+              alt="EweNote"
+              className="w-8 h-8 rounded-lg"
+            />
             <span className="text-lg tracking-tight font-medium">EweNote</span>
           </div>
           <button

@@ -62,6 +62,7 @@ export default function Editor({
   // needs to be in a different component because hooks can't be called conditionally
   return (
     <EditorInternal
+      key={selectedNoteId}
       selectedNoteId={selectedNoteId}
       provider={provider}
       doc={doc}
@@ -182,10 +183,10 @@ function EditorInternal({
         {showFrontmatterEditor &&
           note.frontmatter &&
           Object.keys(note.frontmatter).length > 0 && (
-          <FrontmatterEditor
-            note={note}
-            onUpdate={(fm) => updateNoteFrontmatter(fm, note)}
-          />
+            <FrontmatterEditor
+              note={note}
+              onUpdate={(fm) => updateNoteFrontmatter(fm, note)}
+            />
           )}
         <BlockNoteView
           editor={editor}
