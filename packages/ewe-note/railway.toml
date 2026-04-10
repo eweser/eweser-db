@@ -6,5 +6,4 @@ buildCommand = ""
 startCommand = "nginx -g 'daemon off;'"
 healthcheckPath = "/"
 healthcheckTimeout = 30
-restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
