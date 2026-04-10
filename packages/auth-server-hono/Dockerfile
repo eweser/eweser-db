@@ -1,37 +1,38 @@
-FROM node:22-slim AS shared-builder
+FROM node:22-slim AS builder
 
-WORKDIR /workspace/packages/shared
+WORKDIR /workspace
 
-COPY packages/shared/package.json ./package.json
-COPY packages/shared/tsconfig.json ./tsconfig.json
-COPY packages/shared/src ./src
+COPY package.json package-lock.json ./
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/logger/package.json ./packages/logger/
+COPY packages/mcp-server/package.json ./packages/mcp-server/
+COPY packages/auth-server-hono/package.json ./packages/auth-server-hono/
 
-RUN npm install --ignore-scripts
-RUN npm run build
+RUN npm ci \
+  --workspace @eweser/shared \
+  --workspace @eweser/logger \
+  --workspace @eweser/mcp \
+  --workspace @eweser/auth-server-hono \
+  --include-workspace-root
 
-FROM node:22-slim AS auth-builder
+COPY packages/shared/ ./packages/shared/
+COPY packages/logger/ ./packages/logger/
+COPY packages/mcp-server/ ./packages/mcp-server/
+COPY packages/auth-server-hono/ ./packages/auth-server-hono/
 
-WORKDIR /workspace/packages/auth-server-hono
-
-COPY packages/auth-server-hono/package.json ./package.json
-COPY packages/auth-server-hono/tsconfig.json ./tsconfig.json
-COPY packages/auth-server-hono/drizzle.config.ts ./drizzle.config.ts
-COPY packages/auth-server-hono/src ./src
-COPY packages/auth-server-hono/drizzle ./drizzle
-
-RUN npm install --ignore-scripts
-COPY --from=shared-builder /workspace/packages/shared /workspace/packages/shared
-RUN npm install --ignore-scripts /workspace/packages/shared
-RUN npm run build
+RUN npm run build --workspace @eweser/shared
+RUN npm run build --workspace @eweser/logger
+RUN npm run build --workspace @eweser/mcp
+RUN npm run build --workspace @eweser/auth-server-hono
 
 FROM node:22-slim
 
 WORKDIR /app
 
-COPY --from=auth-builder /workspace/packages/auth-server-hono/package.json ./package.json
-COPY --from=auth-builder /workspace/packages/auth-server-hono/node_modules ./node_modules
-COPY --from=auth-builder /workspace/packages/auth-server-hono/dist ./dist
-COPY --from=auth-builder /workspace/packages/auth-server-hono/drizzle ./drizzle
+COPY --from=builder /workspace/packages/auth-server-hono/dist ./dist
+COPY --from=builder /workspace/packages/auth-server-hono/drizzle ./drizzle
+COPY --from=builder /workspace/packages/auth-server-hono/node_modules ./node_modules
+COPY --from=builder /workspace/packages/auth-server-hono/package.json ./
 
 ENV PORT=3000
 EXPOSE 3000
