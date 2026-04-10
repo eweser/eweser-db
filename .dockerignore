@@ -2,6 +2,8 @@ node_modules
 **/node_modules
 dist
 **/dist
+# Exception: hand-written DTS stub for mcp-server (needed by auth-server-hono build)
+!packages/mcp-server/dist/lib.d.ts
 types
 **/types
 *.tsbuildinfo
