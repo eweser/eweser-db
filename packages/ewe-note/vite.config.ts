@@ -5,14 +5,14 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
-  base: '/notes/',
+  base: '/',
   plugins: [
     react(),
     VitePWA({
       injectRegister: false,
       manifest: false,
       registerType: 'prompt',
-      scope: '/notes/',
+      scope: '/',
       includeAssets: [
         'favicon.ico',
         'eweser-logo.svg',
@@ -27,7 +27,7 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         globPatterns: ['**/*.{css,html,ico,js,png,svg,webmanifest}'],
-        navigateFallback: '/notes/index.html',
+        navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//, /^\/sync(?:\/|$)/],
         skipWaiting: false,
       },
