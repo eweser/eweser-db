@@ -38,7 +38,7 @@ export function DatabaseProvider({
 
     db.on('roomsLoaded', handleLoaded);
     return () => {
-      db.removeListener('roomsLoaded', handleLoaded);
+      db.removeAllListeners('roomsLoaded');
       db.allRooms().forEach((room) => room.disconnect());
     };
   }, [db]);
