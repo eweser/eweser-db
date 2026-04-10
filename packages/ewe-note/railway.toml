@@ -3,7 +3,6 @@ dockerfilePath = "packages/ewe-note/Dockerfile"
 buildCommand = ""
 
 [deploy]
-startCommand = "nginx -g 'daemon off;'"
 healthcheckPath = "/"
 healthcheckTimeout = 30
 restartPolicyMaxRetries = 3
