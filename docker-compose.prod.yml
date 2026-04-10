@@ -50,7 +50,7 @@ services:
       AXIOM_METRICS_DATASET: ${AXIOM_METRICS_DATASET:-}
     healthcheck:
       test:
-        ['CMD-SHELL', 'wget -q --spider http://localhost:8080/health || exit 1']
+        ['CMD-SHELL', 'node -e "const h=require(\x27http\x27);const r=h.request({host:\x27localhost\x27,port:8080,path:\x27/health\x27,method:\x27GET\x27},(res)=>{process.exit(res.statusCode===200?0:1)});r.on(\x27error\x27,()=>process.exit(1));r.end();" || exit 1']
       interval: 15s
       timeout: 5s
       retries: 3
@@ -81,7 +81,7 @@ services:
       AXIOM_METRICS_DATASET: ${AXIOM_METRICS_DATASET:-}
     healthcheck:
       test:
-        ['CMD-SHELL', 'wget -q --spider http://localhost:8080/health || exit 1']
+        ['CMD-SHELL', 'node -e "const h=require(\x27http\x27);const r=h.request({host:\x27localhost\x27,port:8080,path:\x27/health\x27,method:\x27GET\x27},(res)=>{process.exit(res.statusCode===200?0:1)});r.on(\x27error\x27,()=>process.exit(1));r.end();" || exit 1']
       interval: 15s
       timeout: 5s
       retries: 3
