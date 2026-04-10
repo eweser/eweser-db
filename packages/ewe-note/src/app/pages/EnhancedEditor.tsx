@@ -11,9 +11,15 @@ import {
   Hash,
   Link2,
   Minimize2,
+  SidebarClose,
+  SidebarOpen,
+  Copy,
+  Download,
+  Check,
 } from 'lucide-react';
 import { EnhancedSidebar } from '../components/EnhancedSidebar';
 import { EnhancedCommandPalette } from '../components/EnhancedCommandPalette';
+import { RightPanel } from '../components/RightPanel';
 import { useNotes } from '../contexts/NotesContext';
 import { Badge } from '../components/ui/badge';
 import {
@@ -29,9 +35,40 @@ import { useDb } from '@/db';
 export function EnhancedEditor() {
   const [commandOpen, setCommandOpen] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
+  const [rightPanelOpen, setRightPanelOpen] = useState(false);
+  const [copyLinkDone, setCopyLinkDone] = useState(false);
   const navigate = useNavigate();
   const { noteId } = useParams();
-  const { notes, folders, updateNote, togglePinNote, deleteNote } = useNotes();
+  const { notes, folders, updateNote, togglePinNote, deleteNote, addNote } = useNotes();
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setCopyLinkDone(true);
+    setTimeout(() => setCopyLinkDone(false), 2000);
+  };
+
+  const handleDuplicate = () => {
+    if (!note) return;
+    const copy = addNote({
+      title: `Copy of ${note.title}`,
+      content: note.content,
+      folder: note.folder,
+      tags: note.tags,
+      properties: note.properties,
+    });
+    navigate(`/editor/${copy.id}`);
+  };
+
+  const handleExport = () => {
+    if (!note) return;
+    const blob = new Blob([note.content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${note.title.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
   const { allRooms, selectedRoom, setSelectedRoom, setSelectedNoteId } =
     useDb();
 
@@ -140,6 +177,17 @@ export function EnhancedEditor() {
 
             <div className="flex items-center gap-2">
               <button
+                onClick={() => setRightPanelOpen((v) => !v)}
+                className="p-2 hover:bg-accent rounded-lg transition-colors"
+                title={rightPanelOpen ? 'Close note info' : 'Open note info'}
+              >
+                {rightPanelOpen ? (
+                  <SidebarClose className="w-4 h-4" />
+                ) : (
+                  <SidebarOpen className="w-4 h-4" />
+                )}
+              </button>
+              <button
                 onClick={() => setFocusMode(true)}
                 className="p-2 hover:bg-accent rounded-lg transition-colors"
                 title="Focus Mode"
@@ -164,12 +212,22 @@ export function EnhancedEditor() {
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem>
-                    <Link2 className="w-4 h-4 mr-2" />
-                    Copy Link
+                  <DropdownMenuItem onClick={handleCopyLink}>
+                    {copyLinkDone ? (
+                      <Check className="w-4 h-4 mr-2 text-green-500" />
+                    ) : (
+                      <Link2 className="w-4 h-4 mr-2" />
+                    )}
+                    {copyLinkDone ? 'Copied!' : 'Copy Link'}
                   </DropdownMenuItem>
-                  <DropdownMenuItem>Duplicate</DropdownMenuItem>
-                  <DropdownMenuItem>Export</DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleDuplicate}>
+                    <Copy className="w-4 h-4 mr-2" />
+                    Duplicate
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleExport}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Export as Markdown
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="text-destructive"
@@ -226,6 +284,10 @@ export function EnhancedEditor() {
           </div>
         </div>
       </main>
+
+      {rightPanelOpen && note && (
+        <RightPanel noteId={note.id} onClose={() => setRightPanelOpen(false)} />
+      )}
 
       <EnhancedCommandPalette
         open={commandOpen}

@@ -297,7 +297,7 @@ function SidebarContent({
       {/* Footer */}
       <div className="p-4 border-t border-sidebar-border space-y-2">
         <button
-          onClick={() => navigate('/style-guide')}
+          onClick={() => navigate('/settings')}
           className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-sidebar-accent transition-colors text-left"
         >
           <Settings className="w-4 h-4 text-muted-foreground" />
@@ -479,7 +479,7 @@ interface NoteItemProps {
 
 function NoteItem({ note, folderId, onMove }: NoteItemProps) {
   const navigate = useNavigate();
-  const { togglePinNote } = useNotes();
+  const { togglePinNote, updateNote, deleteNote } = useNotes();
 
   const [{ isDragging }, drag] = useDrag({
     type: ItemTypes.NOTE,
@@ -522,12 +522,26 @@ function NoteItem({ note, folderId, onMove }: NoteItemProps) {
             </>
           )}
         </ContextMenuItem>
-        <ContextMenuItem>
+        <ContextMenuItem
+          onClick={() => {
+            const newTitle = window.prompt('Rename note:', note.title);
+            if (newTitle && newTitle.trim()) {
+              updateNote(note.id, { title: newTitle.trim() });
+            }
+          }}
+        >
           <Pencil className="w-4 h-4 mr-2" />
           <span>Rename</span>
         </ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem className="text-destructive">
+        <ContextMenuItem
+          className="text-destructive"
+          onClick={() => {
+            if (confirm('Delete this note?')) {
+              deleteNote(note.id);
+            }
+          }}
+        >
           <Trash2 className="w-4 h-4 mr-2" />
           <span>Delete</span>
         </ContextMenuItem>
