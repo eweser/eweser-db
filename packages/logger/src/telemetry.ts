@@ -92,8 +92,9 @@ export async function initTelemetry(
   });
 
   meterProvider = new MeterProvider({
-    resource,
-    metricReaders: [metricReader],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resource: resource as any,
+    readers: [metricReader],
   });
 
   // Start host metrics collection
