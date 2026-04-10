@@ -1,5 +1,30 @@
 ---
-description: 'Step 3 of 3: Run tests, review code, verify quality.'
+description: 'Full-feature QA pass. Runs tester (unit test gaps + regression locks) then PR reviewer (correctness + security) on the complete branch diff. Invoke after all coding runs are complete.'
+model:
+    - 'MoonshotAI: Kimi K2.5 (openrouter)'
+    - 'Claude Sonnet 4.6 (copilot)'
+tools:
+    - agent
+    - read
+    - search
+    - execute
+    - edit
+    - todo
+    - vscode/memory
+    - web/fetch
+    - github.vscode-pull-request-github/issue_fetch
+    - github.vscode-pull-request-github/activePullRequest
+    - github.vscode-pull-request-github/openPullRequest
+agents: [tester, pr-reviewer, code-explore]
+handoffs:
+    - label: '↺ Fix Required'
+      agent: 02-coder
+      prompt: 'QA found issues that need fixing:'
+      send: false
+    - label: '→ Create PR'
+      agent: create-pr
+      prompt: 'QA passed. Create a pull request for this feature.'
+      send: false
 ---
 
 # Quality Assurance — Step 3 of 3

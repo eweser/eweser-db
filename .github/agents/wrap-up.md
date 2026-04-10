@@ -1,5 +1,33 @@
 ---
-description: 'Session closure — capture learnings, update tracking'
+description: 'Session wrap-up: promotes specs, captures learnings, updates notes, and cleans up the workspace.'
+model:
+    - 'MoonshotAI: Kimi K2.5 (openrouter)'
+    - 'Gemini 3 Flash (Preview) (copilot)'
+tools:
+    - read/readFile
+    - read/problems
+    - search/codebase
+    - search/textSearch
+    - search/fileSearch
+    - search/listDirectory
+    - search/usages
+    - search/changes
+    - execute/runInTerminal
+    - execute/getTerminalOutput
+    - edit/createFile
+    - edit/editFiles
+    - edit/createDirectory
+    - todo
+    - vscode/memory
+    - agent
+    - github.vscode-pull-request-github/activePullRequest
+    - github.vscode-pull-request-github/openPullRequest
+agents: [code-explore]
+handoffs:
+    - label: '→ Update Docs'
+      agent: documenter
+      prompt: 'Audit and update documentation to reflect the completed feature.'
+      send: false
 ---
 
 # Wrap-Up Agent

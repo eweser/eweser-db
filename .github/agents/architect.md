@@ -1,5 +1,36 @@
 ---
-description: 'Architecture review during planning phase — confirms component boundaries, contracts, and failure modes'
+description: 'Architecture review agent. Confirms component boundaries, contracts, and failure modes. Produces a design checklist for the Coder. Called by 01-planner as a subagent, or invoked directly for standalone architecture review.'
+model:
+    - 'MoonshotAI: Kimi K2.5 (openrouter)'
+    - 'Claude Sonnet 4.6 (copilot)'
+tools:
+    - read/readFile
+    - read/problems
+    - search/codebase
+    - search/textSearch
+    - search/fileSearch
+    - search/listDirectory
+    - search/usages
+    - search/changes
+    - edit/createFile
+    - edit/editFiles
+    - edit/createDirectory
+    - web/fetch
+    - web/githubRepo
+    - todo
+    - vscode/memory
+    - github.vscode-pull-request-github/issue_fetch
+    - agent
+agents: [code-explore, web-explore]
+handoffs:
+    - label: '→ Start Coding'
+      agent: 02-coder
+      prompt: 'Implement the changes described in the architecture document above.'
+      send: false
+    - label: '↺ Revise Plan'
+      agent: 01-planner
+      prompt: 'The architecture review found issues. Revise the plan:'
+      send: false
 ---
 
 # Architect Agent

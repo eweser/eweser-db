@@ -1,5 +1,36 @@
 ---
-description: 'Step 1 of 3: Research and plan before coding. Produces a scoped, approved plan.'
+description: 'Step 1 of 3 (plan → code → qa). Drafts a scoped implementation plan. Invokes code-explore (internal research) and web-explore (external research) as subagents, then architect as a subagent for architecture review. Presents the combined plan for user approval before handing off to the Coder.'
+model:
+    - 'Claude Sonnet 4.6 (copilot)'
+    - 'MiniMax: MiniMax M2.7 (openrouter)'
+tools:
+    - read/readFile
+    - read/problems
+    - read/terminalLastCommand
+    - search/codebase
+    - search/textSearch
+    - search/fileSearch
+    - search/listDirectory
+    - search/usages
+    - search/changes
+    - execute/runInTerminal
+    - execute/getTerminalOutput
+    - execute/awaitTerminal
+    - execute/killTerminal
+    - edit/createFile
+    - edit/editFiles
+    - edit/createDirectory
+    - web/fetch
+    - web/githubRepo
+    - agent
+    - todo
+    - vscode/memory
+agents: [code-explore, web-explore, architect]
+handoffs:
+    - label: 'Start Run 1'
+      agent: 02-coder
+      prompt: 'Implement all runs from the plan file. Read the plan, find all runs, and implement them sequentially.'
+      send: false
 ---
 
 # Planner — Step 1 of 3

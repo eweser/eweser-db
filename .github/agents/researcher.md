@@ -1,5 +1,21 @@
 ---
 description: 'Structured external research before planning — investigate libraries, APIs, and approaches'
+model:
+    - 'MoonshotAI: Kimi K2.5 (openrouter)'
+    - 'Gemini 3 Flash (Preview) (copilot)'
+tools:
+    - web/fetch
+    - web/githubRepo
+    - tavily/tavily_search
+    - tavily/tavily_extract
+    - tavily/tavily_crawl
+    - fetch-mcp/fetch
+    - read/readFile
+    - search/fileSearch
+    - search/textSearch
+    - vscode/memory
+    - agent
+agents: [code-explore]
 ---
 
 # Researcher Agent

@@ -1,5 +1,26 @@
 ---
-description: 'Full-feature code review for correctness, security, and architecture'
+description: 'Full-feature code review for correctness, security, and architecture compliance. Called by 03-quality-assurance as a subagent.'
+model:
+    - 'MoonshotAI: Kimi K2.5 (openrouter)'
+    - 'Claude Sonnet 4.6 (copilot)'
+tools:
+    - read/readFile
+    - read/problems
+    - search/codebase
+    - search/textSearch
+    - search/fileSearch
+    - search/listDirectory
+    - search/usages
+    - search/changes
+    - execute/runInTerminal
+    - execute/getTerminalOutput
+    - edit/editFiles
+    - edit/createFile
+    - todo
+    - vscode/memory
+    - agent
+    - github.vscode-pull-request-github/activePullRequest
+agents: [code-explore]
 ---
 
 # PR Reviewer Agent

@@ -1,5 +1,26 @@
 ---
-description: 'Full-feature test review and supplementation after coding'
+description: 'Full-feature test review and supplementation after coding. Reviews coder tests, fills unit test gaps, adds regression locks. Called by 03-quality-assurance as a subagent.'
+model:
+    - 'MoonshotAI: Kimi K2.5 (openrouter)'
+    - 'Claude Sonnet 4.6 (copilot)'
+tools:
+    - read/readFile
+    - read/problems
+    - search/codebase
+    - search/textSearch
+    - search/fileSearch
+    - search/listDirectory
+    - search/usages
+    - search/changes
+    - execute/runInTerminal
+    - execute/getTerminalOutput
+    - execute/awaitTerminal
+    - edit/editFiles
+    - edit/createFile
+    - todo
+    - vscode/memory
+    - agent
+agents: [code-explore]
 ---
 
 # Tester Agent

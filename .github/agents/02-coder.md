@@ -1,5 +1,42 @@
 ---
-description: 'Step 2 of 3: Implement the approved plan with tests.'
+description: 'Top-level implementation agent. Implements changes with minimal diff, following EweserDB/TypeScript/Yjs patterns. Writes happy-path tests, runs lint inline, and implements all runs in one session.'
+model:
+    - 'Claude Sonnet 4.6 (copilot)'
+    - 'MoonshotAI: Kimi K2.5 (openrouter)'
+tools:
+    - read/readFile
+    - read/problems
+    - execute/runInTerminal
+    - execute/getTerminalOutput
+    - execute/awaitTerminal
+    - execute/killTerminal
+    - edit/editFiles
+    - edit/createFile
+    - edit/createDirectory
+    - search/codebase
+    - search/textSearch
+    - search/fileSearch
+    - search/listDirectory
+    - search/usages
+    - search/changes
+    - web/fetch
+    - web/githubRepo
+    - github.vscode-pull-request-github/issue_fetch
+    - github.vscode-pull-request-github/activePullRequest
+    - github.vscode-pull-request-github/openPullRequest
+    - agent
+    - todo
+    - vscode/memory
+agents: [code-explore]
+handoffs:
+    - label: '-> Architecture Issue'
+      agent: architect
+      prompt: 'Found an architecture issue during implementation that needs review:'
+      send: false
+    - label: '→ QA Pass'
+      agent: 03-quality-assurance
+      prompt: 'All coding runs are complete. Run the full QA pipeline (tester + PR reviewer) on this branch.'
+      send: false
 ---
 
 # Coder — Step 2 of 3
