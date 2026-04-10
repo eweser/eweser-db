@@ -17,7 +17,7 @@ import {
 } from '@opentelemetry/sdk-metrics';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-proto';
 import { HostMetrics } from '@opentelemetry/host-metrics';
-import { Resource } from '@opentelemetry/resources';
+import { resourceFromAttributes } from '@opentelemetry/resources';
 import {
   SEMRESATTRS_SERVICE_NAME,
   SEMRESATTRS_DEPLOYMENT_ENVIRONMENT,
@@ -86,7 +86,7 @@ export async function initTelemetry(
     exportTimeoutMillis: 20_000,
   });
 
-  const resource = new Resource({
+  const resource = resourceFromAttributes({
     [SEMRESATTRS_SERVICE_NAME]: serviceName,
     [SEMRESATTRS_DEPLOYMENT_ENVIRONMENT]: environment,
   });
