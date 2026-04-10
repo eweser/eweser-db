@@ -7,7 +7,7 @@ COPY . .
 RUN npm ci
 RUN npm run build --workspace @eweser/shared
 RUN npm run build --workspace @eweser/db
-RUN npm run build --workspace @eweser/ewe-note
+RUN cd packages/ewe-note && npx vite build
 
 FROM nginx:1.29-alpine
 

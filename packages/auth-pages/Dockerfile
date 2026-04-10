@@ -8,7 +8,7 @@ RUN npm ci
 
 RUN npm run build --workspace @eweser/shared
 RUN npm run build --workspace @eweser/db
-RUN npm run build --workspace @eweser/auth-pages
+RUN cd packages/auth-pages && npx vite build
 
 FROM nginx:1.29-alpine
 

@@ -17,6 +17,7 @@ import {
 } from '@opentelemetry/sdk-metrics';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-proto';
 import { HostMetrics } from '@opentelemetry/host-metrics';
+import { Resource } from '@opentelemetry/resources';
 import {
   SEMRESATTRS_SERVICE_NAME,
   SEMRESATTRS_DEPLOYMENT_ENVIRONMENT,
@@ -85,16 +86,13 @@ export async function initTelemetry(
     exportTimeoutMillis: 20_000,
   });
 
-  // Build resource attributes directly — avoids import of the Resource class
-  // whose version may differ between sdk-metrics and the top-level resources package.
-  const resourceAttributes = {
+  const resource = new Resource({
     [SEMRESATTRS_SERVICE_NAME]: serviceName,
     [SEMRESATTRS_DEPLOYMENT_ENVIRONMENT]: environment,
-  };
+  });
 
-  // @ts-expect-error Resource class version mismatch between sdk-metrics and resources
   meterProvider = new MeterProvider({
-    resourceAttributes,
+    resource,
     metricReaders: [metricReader],
   });
 
