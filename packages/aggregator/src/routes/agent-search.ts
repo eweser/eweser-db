@@ -105,7 +105,7 @@ export function createAgentSearchRouter(deps: AgentSearchRouteDeps) {
       });
       return c.json({ results }, 200);
     } catch (err) {
-      logger.error('[agent-search] Search error:', err);
+      logger.error({ err }, '[agent-search] Search error:');
       return c.json({ error: 'Search failed' }, 500);
     }
   });

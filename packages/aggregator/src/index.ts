@@ -109,7 +109,7 @@ export async function startServer() {
 
 if (process.env.NODE_ENV !== 'test') {
   void startServer().catch((error: unknown) => {
-    log.error('Aggregator failed to start:', error);
+    log.error({ error }, 'Aggregator failed to start:');
     process.exit(1);
   });
 }

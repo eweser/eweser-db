@@ -22,7 +22,7 @@
     }
   },
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && tsc --emitDeclarationOnly --declarationDir dist --project tsconfig.json",
     "dev": "tsx src/index.ts",
     "test": "vitest run",
     "test-watch": "vitest",

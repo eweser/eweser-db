@@ -27,14 +27,22 @@ RUN npm run build --workspace @eweser/auth-server-hono
 
 FROM node:22-slim
 
-WORKDIR /app
+# Keep workspace structure so node can resolve @eweser/* symlinks from root node_modules
+WORKDIR /workspace
 
-COPY --from=builder /workspace/packages/auth-server-hono/dist ./dist
-COPY --from=builder /workspace/packages/auth-server-hono/drizzle ./drizzle
-COPY --from=builder /workspace/packages/auth-server-hono/node_modules ./node_modules
-COPY --from=builder /workspace/packages/auth-server-hono/package.json ./
+COPY --from=builder /workspace/node_modules ./node_modules
+COPY --from=builder /workspace/packages/auth-server-hono/dist ./packages/auth-server-hono/dist
+COPY --from=builder /workspace/packages/auth-server-hono/drizzle ./packages/auth-server-hono/drizzle
+COPY --from=builder /workspace/packages/auth-server-hono/package.json ./packages/auth-server-hono/
+# Workspace packages used as deps (resolved via node_modules symlinks)
+COPY --from=builder /workspace/packages/logger/dist ./packages/logger/dist
+COPY --from=builder /workspace/packages/logger/package.json ./packages/logger/
+COPY --from=builder /workspace/packages/shared/dist ./packages/shared/dist
+COPY --from=builder /workspace/packages/shared/package.json ./packages/shared/
+COPY --from=builder /workspace/packages/mcp-server/dist ./packages/mcp-server/dist
+COPY --from=builder /workspace/packages/mcp-server/package.json ./packages/mcp-server/
 
 ENV PORT=3000
 EXPOSE 3000
 
-CMD ["sh", "-c", "node dist/db/migrate.js && node dist/index.js"]
+CMD ["sh", "-c", "node packages/auth-server-hono/dist/db/migrate.js && node packages/auth-server-hono/dist/index.js"]

@@ -1,9 +1,15 @@
 import type { EweDocument } from '@eweser/shared';
-import { EventEmitter } from 'events';
 import type { Room } from './types';
 import type { Database } from '.';
 type EmittedEvents = Record<string | symbol, (...args: never[]) => void>;
-export declare class TypedEventEmitter<_Events extends EmittedEvents> extends EventEmitter {
+/** Minimal browser-compatible typed event emitter (no Node.js 'events' dependency). */
+export declare class TypedEventEmitter<Events extends EmittedEvents> {
+    private _listeners;
+    on<K extends keyof Events>(event: K, listener: Events[K]): this;
+    off<K extends keyof Events>(event: K, listener: Events[K]): this;
+    emit<K extends keyof Events>(event: K, ...args: Parameters<Events[K]>): boolean;
+    once<K extends keyof Events>(event: K, listener: Events[K]): this;
+    removeAllListeners<K extends keyof Events>(event?: K): this;
 }
 export type RoomConnectionStatus = 'connected' | 'disconnected' | 'connecting';
 export type DatabaseEvents = {

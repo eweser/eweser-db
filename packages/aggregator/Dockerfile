@@ -19,12 +19,19 @@ RUN npm run build --workspace @eweser/aggregator
 
 FROM node:22-slim
 
-WORKDIR /app
-COPY --from=builder /workspace/packages/aggregator/dist ./dist
-COPY --from=builder /workspace/packages/aggregator/node_modules ./node_modules
-COPY --from=builder /workspace/packages/aggregator/package.json ./
+# Keep workspace structure so node can resolve @eweser/* symlinks from root node_modules
+WORKDIR /workspace
+
+COPY --from=builder /workspace/node_modules ./node_modules
+COPY --from=builder /workspace/packages/aggregator/dist ./packages/aggregator/dist
+COPY --from=builder /workspace/packages/aggregator/package.json ./packages/aggregator/
+# Workspace packages used as deps (resolved via node_modules symlinks)
+COPY --from=builder /workspace/packages/logger/dist ./packages/logger/dist
+COPY --from=builder /workspace/packages/logger/package.json ./packages/logger/
+COPY --from=builder /workspace/packages/shared/dist ./packages/shared/dist
+COPY --from=builder /workspace/packages/shared/package.json ./packages/shared/
 
 ENV PORT=8090
 EXPOSE 8090
 
-CMD ["node", "dist/index.js"]
+CMD ["node", "packages/aggregator/dist/index.js"]
