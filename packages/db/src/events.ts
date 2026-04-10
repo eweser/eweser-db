@@ -1,14 +1,56 @@
 /* eslint-disable no-console -- this IS the logger implementation */
 import type { EweDocument } from '@eweser/shared';
-import { EventEmitter } from 'events';
 import type { Room } from './types';
 import type { Database } from '.';
 
 type EmittedEvents = Record<string | symbol, (...args: never[]) => void>;
 
-export class TypedEventEmitter<
-  _Events extends EmittedEvents,
-> extends EventEmitter {}
+type Listener = (...args: unknown[]) => void;
+
+/** Minimal browser-compatible typed event emitter (no Node.js 'events' dependency). */
+export class TypedEventEmitter<Events extends EmittedEvents> {
+  private _listeners: Map<string | symbol, Set<Listener>> = new Map();
+
+  on<K extends keyof Events>(event: K, listener: Events[K]): this {
+    const key = event as string | symbol;
+    if (!this._listeners.has(key)) this._listeners.set(key, new Set());
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+    this._listeners.get(key)!.add(listener as unknown as Listener);
+    return this;
+  }
+
+  off<K extends keyof Events>(event: K, listener: Events[K]): this {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+    this._listeners.get(event as string | symbol)?.delete(listener as unknown as Listener);
+    return this;
+  }
+
+  emit<K extends keyof Events>(event: K, ...args: Parameters<Events[K]>): boolean {
+    const listeners = this._listeners.get(event as string | symbol);
+    if (!listeners || listeners.size === 0) return false;
+    listeners.forEach((l) => l(...(args as unknown[])));
+    return true;
+  }
+
+  once<K extends keyof Events>(event: K, listener: Events[K]): this {
+    const wrapper: Listener = (...args) => {
+      this.off(event, listener);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+      (listener as unknown as Listener)(...args);
+    };
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+    return this.on(event, wrapper as unknown as Events[K]);
+  }
+
+  removeAllListeners<K extends keyof Events>(event?: K): this {
+    if (event !== undefined) {
+      this._listeners.delete(event as string | symbol);
+    } else {
+      this._listeners.clear();
+    }
+    return this;
+  }
+}
 
 export type RoomConnectionStatus = 'connected' | 'disconnected' | 'connecting';
 
