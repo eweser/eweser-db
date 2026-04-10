@@ -1,13 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { Command } from 'cmdk';
-import {
-  Search,
-  FileText,
-  Clock,
-  Plus,
-  ArrowRight,
-} from 'lucide-react';
+import { Search, FileText, Clock, Plus, ArrowRight } from 'lucide-react';
 import { useNotes } from '../contexts/NotesContext';
 
 interface EnhancedCommandPaletteProps {
@@ -15,16 +9,13 @@ interface EnhancedCommandPaletteProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function EnhancedCommandPalette({ open, onOpenChange }: EnhancedCommandPaletteProps) {
+export function EnhancedCommandPalette({
+  open,
+  onOpenChange,
+}: EnhancedCommandPaletteProps) {
   const [search, setSearch] = useState('');
   const navigate = useNavigate();
-  const {
-    notes,
-    folders,
-    addNote,
-    searchNotes,
-    getRecentNotes,
-  } = useNotes();
+  const { notes, folders, addNote, searchNotes, getRecentNotes } = useNotes();
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -53,7 +44,6 @@ export function EnhancedCommandPalette({ open, onOpenChange }: EnhancedCommandPa
     const newNote = addNote({
       title: customTitle || 'Untitled',
       content: customTitle ? `# ${customTitle}\n\n` : '',
-      folder: 'personal',
     });
     if (newNote) {
       navigate(`/editor/${newNote.id}`);
@@ -100,7 +90,7 @@ export function EnhancedCommandPalette({ open, onOpenChange }: EnhancedCommandPa
           <Command.List className="max-h-[60vh] overflow-y-auto p-3">
             {/* Create new note - always show when searching */}
             {search && (
-              <div className="mb-3">
+              <Command.Group className="mb-3">
                 <Command.Item
                   onSelect={() => handleNewNote(search)}
                   className="flex items-center gap-4 px-4 py-3.5 rounded-lg cursor-pointer bg-primary/5 border border-primary/20 hover:bg-primary/10 hover:border-primary/30 transition-all data-[selected=true]:bg-primary/10 data-[selected=true]:border-primary/30"
@@ -118,60 +108,57 @@ export function EnhancedCommandPalette({ open, onOpenChange }: EnhancedCommandPa
                   </div>
                   <ArrowRight className="w-4 h-4 text-primary flex-shrink-0" />
                 </Command.Item>
-              </div>
+              </Command.Group>
             )}
 
             {/* Search Results */}
             {search && searchResults.length > 0 && (
-              <>
-                <div className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  <span>{searchResults.length} {searchResults.length === 1 ? 'Result' : 'Results'}</span>
-                </div>
-                <div className="space-y-1">
-                  {searchResults.map((note) => (
-                    <Command.Item
-                      key={note.id}
-                      onSelect={() => handleSelectNote(note.id)}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer hover:bg-accent/70 data-[selected=true]:bg-accent transition-colors"
-                    >
-                      <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[15px] truncate font-medium">{note.title}</div>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-xs text-muted-foreground">
-                            {folders.find((f) => f.id === note.folder)?.name}
-                          </span>
-                          {note.tags.length > 0 && (
-                            <>
-                              <span className="text-muted-foreground">•</span>
-                              <div className="flex gap-1">
-                                {note.tags.slice(0, 2).map((tag) => (
-                                  <span
-                                    key={tag}
-                                    className="text-xs text-primary/70"
-                                  >
-                                    #{tag}
-                                  </span>
-                                ))}
-                              </div>
-                            </>
-                          )}
-                        </div>
+              <Command.Group
+                heading={`${searchResults.length} ${searchResults.length === 1 ? 'Result' : 'Results'}`}
+                className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider"
+              >
+                {searchResults.map((note) => (
+                  <Command.Item
+                    key={note.id}
+                    onSelect={() => handleSelectNote(note.id)}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer hover:bg-accent/70 data-[selected=true]:bg-accent transition-colors"
+                  >
+                    <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[15px] truncate font-medium">
+                        {note.title}
                       </div>
-                    </Command.Item>
-                  ))}
-                </div>
-              </>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-xs text-muted-foreground">
+                          {folders.find((f) => f.id === note.folder)?.name}
+                        </span>
+                        {note.tags.length > 0 && (
+                          <>
+                            <span className="text-muted-foreground">•</span>
+                            {note.tags.slice(0, 2).map((tag) => (
+                              <span
+                                key={tag}
+                                className="text-xs text-primary/70"
+                              >
+                                #{tag}
+                              </span>
+                            ))}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </Command.Item>
+                ))}
+              </Command.Group>
             )}
 
             {/* No search - show quick actions and recent */}
             {!search && (
               <>
-                {/* Quick Actions */}
-                <div className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  <span>Quick Actions</span>
-                </div>
-                <div className="space-y-1 mb-4">
+                <Command.Group
+                  heading="Quick Actions"
+                  className="mb-4 [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider"
+                >
                   <Command.Item
                     onSelect={handleNewNote}
                     className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer hover:bg-accent/70 data-[selected=true]:bg-accent transition-colors"
@@ -184,13 +171,12 @@ export function EnhancedCommandPalette({ open, onOpenChange }: EnhancedCommandPa
                       ⌘N
                     </kbd>
                   </Command.Item>
-                </div>
+                </Command.Group>
 
-                {/* Recent Notes */}
-                <div className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider mt-3">
-                  <span>Recent</span>
-                </div>
-                <div className="space-y-1">
+                <Command.Group
+                  heading="Recent"
+                  className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider"
+                >
                   {recentNotes.map((note) => (
                     <Command.Item
                       key={note.id}
@@ -199,14 +185,16 @@ export function EnhancedCommandPalette({ open, onOpenChange }: EnhancedCommandPa
                     >
                       <Clock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <div className="text-[15px] truncate font-medium">{note.title}</div>
+                        <div className="text-[15px] truncate font-medium">
+                          {note.title}
+                        </div>
                         <div className="text-xs text-muted-foreground truncate">
                           {folders.find((f) => f.id === note.folder)?.name}
                         </div>
                       </div>
                     </Command.Item>
                   ))}
-                </div>
+                </Command.Group>
               </>
             )}
 
@@ -225,15 +213,21 @@ export function EnhancedCommandPalette({ open, onOpenChange }: EnhancedCommandPa
           {/* Footer hint */}
           <div className="border-t border-border bg-muted/30 px-4 py-2.5 flex items-center gap-4 text-xs text-muted-foreground">
             <div className="flex items-center gap-1.5">
-              <kbd className="px-1.5 py-0.5 bg-background border border-border rounded font-mono">↑↓</kbd>
+              <kbd className="px-1.5 py-0.5 bg-background border border-border rounded font-mono">
+                ↑↓
+              </kbd>
               <span>Navigate</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <kbd className="px-1.5 py-0.5 bg-background border border-border rounded font-mono">↵</kbd>
+              <kbd className="px-1.5 py-0.5 bg-background border border-border rounded font-mono">
+                ↵
+              </kbd>
               <span>Open</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <kbd className="px-1.5 py-0.5 bg-background border border-border rounded font-mono">Esc</kbd>
+              <kbd className="px-1.5 py-0.5 bg-background border border-border rounded font-mono">
+                Esc
+              </kbd>
               <span>Close</span>
             </div>
           </div>

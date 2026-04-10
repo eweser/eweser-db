@@ -150,9 +150,31 @@ function EditorInternal({
   // Pull the initial note text from eweser-db and set it in the editor
   useEffect(() => {
     (async () => {
-      if (!editor || !note.text) return;
+      if (!editor) return;
+
+      // When collaboration is active, the Yjs XML fragment is the source of
+      // truth. Only fall back to note.text if the fragment is empty (first
+      // time this note is opened before any Yjs content has been written).
+      if (provider) {
+        const fragment = doc.getXmlFragment(selectedNoteId);
+        const fragmentHasContent = fragment.length > 0;
+        if (fragmentHasContent) {
+          // Yjs already has content — just focus the editor.
+          setTimeout(() => {
+            const lastBlock = editor.document[editor.document.length - 1];
+            if (lastBlock) {
+              editor.setTextCursorPosition(lastBlock, 'end');
+            }
+            editor.focus();
+          }, 0);
+          return;
+        }
+      }
+
+      // Offline / no collaboration, or Yjs fragment is empty — seed from note.text.
+      if (!note.text) return;
       const existing = await editor.blocksToMarkdownLossy();
-      if (existing && note.text && existing === note.text) {
+      if (existing && existing === note.text) {
         logger('existing === note.text');
       } else {
         // Use OFM-aware parser for vault notes
