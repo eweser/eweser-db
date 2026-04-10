@@ -29,7 +29,7 @@
   "source": "src/index.ts",
   "types": "./types/index.d.ts",
   "scripts": {
-    "build": "rm -rf ./dist; rm -rf ./types; tsc && node ../../scripts/fix-esm-extensions.mjs dist",
+    "build": "rm -rf ./dist; rm -rf ./types; tsc && node ./fix-esm-extensions.mjs dist",
     "dev": "tsc -w",
     "clean": "rm -rf ./dist; rm -rf ./types",
     "lint": "eslint .",
