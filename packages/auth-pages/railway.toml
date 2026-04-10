@@ -3,6 +3,6 @@ dockerfilePath = "packages/auth-pages/Dockerfile"
 buildCommand = ""
 
 [deploy]
-healthcheckPath = "/"
+healthcheckPath = "/auth/"
 healthcheckTimeout = 30
 restartPolicyMaxRetries = 3

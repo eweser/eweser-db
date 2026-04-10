@@ -3,6 +3,4 @@ dockerfilePath = "packages/sync-server/Dockerfile"
 buildCommand = ""
 
 [deploy]
-healthcheckPath = "/health"
-healthcheckTimeout = 30
 restartPolicyMaxRetries = 3

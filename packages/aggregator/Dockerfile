@@ -19,19 +19,24 @@ RUN npm run build --workspace @eweser/aggregator
 
 FROM node:22-slim
 
-# Keep workspace structure so node can resolve @eweser/* symlinks from root node_modules
 WORKDIR /workspace
 
-COPY --from=builder /workspace/node_modules ./node_modules
-COPY --from=builder /workspace/packages/aggregator/dist ./packages/aggregator/dist
-COPY --from=builder /workspace/packages/aggregator/package.json ./packages/aggregator/
-# Workspace packages used as deps (resolved via node_modules symlinks)
-COPY --from=builder /workspace/packages/logger/dist ./packages/logger/dist
-COPY --from=builder /workspace/packages/logger/package.json ./packages/logger/
-COPY --from=builder /workspace/packages/shared/dist ./packages/shared/dist
+# Copy package manifests and lockfile for production install
+COPY --from=builder /workspace/package.json /workspace/package-lock.json ./
 COPY --from=builder /workspace/packages/shared/package.json ./packages/shared/
+COPY --from=builder /workspace/packages/logger/package.json ./packages/logger/
+COPY --from=builder /workspace/packages/aggregator/package.json ./packages/aggregator/
+
+# Install only production deps (properly sets up workspace symlinks)
+RUN npm ci --workspace @eweser/shared --workspace @eweser/logger --workspace @eweser/aggregator --include-workspace-root --omit=dev
+
+# Copy built dist files
+COPY --from=builder /workspace/packages/aggregator/dist ./packages/aggregator/dist
+COPY --from=builder /workspace/packages/logger/dist ./packages/logger/dist
+COPY --from=builder /workspace/packages/shared/dist ./packages/shared/dist
 
 ENV PORT=8090
 EXPOSE 8090
 
 CMD ["node", "packages/aggregator/dist/index.js"]
+

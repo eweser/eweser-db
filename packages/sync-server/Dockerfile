@@ -19,17 +19,21 @@ RUN npm run build --workspace @eweser/sync-server
 
 FROM node:22-slim
 
-# Keep workspace structure so node can resolve @eweser/* symlinks from root node_modules
 WORKDIR /workspace
 
-COPY --from=builder /workspace/node_modules ./node_modules
-COPY --from=builder /workspace/packages/sync-server/dist ./packages/sync-server/dist
-COPY --from=builder /workspace/packages/sync-server/package.json ./packages/sync-server/
-# Workspace packages used as deps (resolved via node_modules symlinks)
-COPY --from=builder /workspace/packages/logger/dist ./packages/logger/dist
-COPY --from=builder /workspace/packages/logger/package.json ./packages/logger/
-COPY --from=builder /workspace/packages/shared/dist ./packages/shared/dist
+# Copy package manifests and lockfile for production install
+COPY --from=builder /workspace/package.json /workspace/package-lock.json ./
 COPY --from=builder /workspace/packages/shared/package.json ./packages/shared/
+COPY --from=builder /workspace/packages/logger/package.json ./packages/logger/
+COPY --from=builder /workspace/packages/sync-server/package.json ./packages/sync-server/
+
+# Install only production deps
+RUN npm ci --workspace @eweser/shared --workspace @eweser/logger --workspace @eweser/sync-server --include-workspace-root --omit=dev
+
+# Copy built dist files
+COPY --from=builder /workspace/packages/sync-server/dist ./packages/sync-server/dist
+COPY --from=builder /workspace/packages/logger/dist ./packages/logger/dist
+COPY --from=builder /workspace/packages/shared/dist ./packages/shared/dist
 
 # SQLite data directory
 RUN mkdir -p /data
@@ -39,3 +43,4 @@ ENV SYNC_DB_PATH=/data/sync.sqlite
 EXPOSE 8080
 
 CMD ["node", "packages/sync-server/dist/index.js"]
+
