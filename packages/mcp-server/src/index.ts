@@ -24,7 +24,7 @@ async function main() {
       env.EWESER_AUTH_URL
     );
   } catch (err) {
-    log.error('[eweser-mcp] Failed to verify agent token:', err);
+    log.error({ err }, '[eweser-mcp] Failed to verify agent token:');
     process.exit(1);
   }
 
@@ -73,6 +73,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  log.error('[eweser-mcp] Fatal error:', err);
+  log.error({ err }, '[eweser-mcp] Fatal error:');
   process.exit(1);
 });
