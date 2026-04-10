@@ -1,7 +1,7 @@
 {
   "name": "@eweser/eslint-config-ts",
   "version": "1.15.0",
-  "description": ">An eslint configuration sharable across projects",
+  "description": "Base ESLint configuration for TypeScript projects in EweserDB",
   "author": "jacobcoro",
   "homepage": "https://github.com/eweser/eweser-db#readme",
   "license": "MIT",

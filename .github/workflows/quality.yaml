@@ -109,25 +109,34 @@ jobs:
         run: |
           npm run build-example:basic
 
-      - name: Start services and run Cypress
+      - name: Start Docker backend services
+        run: |
+          npm run dev:docker
+
+          # Wait for auth-api to be ready
+          until bash -c '</dev/tcp/127.0.0.1/38101' 2>/dev/null; do
+            echo "Waiting for auth-api on :38101"
+            sleep 2
+          done
+
+          # Wait for sync server to be ready
+          until bash -c '</dev/tcp/127.0.0.1/38181' 2>/dev/null; do
+            echo "Waiting for sync-server on :38181"
+            sleep 2
+          done
+
+      - name: Start example-basic preview and run Cypress
         run: |
           set -euo pipefail
-
-          npm run dev:auth-server > auth-server.log 2>&1 &
-          AUTH_PID=$!
 
           npm run run-example-preview:basic > example-basic.log 2>&1 &
           APP_PID=$!
 
           cleanup() {
-            kill "$AUTH_PID" "$APP_PID" 2>/dev/null || true
+            kill "$APP_PID" 2>/dev/null || true
+            npm run dev:docker:stop
           }
           trap cleanup EXIT
-
-          until bash -c '</dev/tcp/127.0.0.1/38100' 2>/dev/null; do
-            echo "Waiting for auth-server on :38100"
-            sleep 2
-          done
 
           until bash -c '</dev/tcp/127.0.0.1/38110' 2>/dev/null; do
             echo "Waiting for example-basic on :38110"

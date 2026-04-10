@@ -10,9 +10,17 @@ You'll want to either point the app to a Eweser DB instance or run your own inst
 
 To run your own instance check out the /server readme at [eweser-db repo](https://github.com/eweser/eweser-db)
 
-## TODO:
+## Features
 
-- [ ] App bar with login, profile, and sync status
-- [ ] Require signup at first, and get eweser db integrated
-- [ ] Allow offline-first and non-logged in user usage.
-- [ ] Show sync status with icons and not logged in would be broken sync icon.
+- ✓ App layout with sidebar navigation
+- ✓ Offline-first — works without login, syncs when connected
+- ✓ Connection status indicator
+- ✓ User authentication via `@eweser/db`
+- ✓ Real-time sync across devices
+- ✓ PWA support for installable experience
+
+## TODO
+
+- [ ] Enhanced user profile management
+- [ ] Collaborative cursors for real-time editing
+- [ ] Advanced search across notes

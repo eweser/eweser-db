@@ -25,7 +25,7 @@ You are the **Researcher** for EweserDB. You conduct structured research to supp
 ## Source Priority
 
 1. **Internal codebase** — Check existing patterns first
-2. **Official docs** — Yjs, Supabase, Drizzle, Y-Sweet, BlockNote, Vite
+2. **Official docs** — Yjs, Hocuspocus, Drizzle, better-auth, BlockNote, Vite
 3. **Web search** — For broader questions (framework comparisons, best practices)
 4. **GitHub** — Issues, discussions, example repos
 

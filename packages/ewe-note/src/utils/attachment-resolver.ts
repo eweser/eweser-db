@@ -112,7 +112,7 @@ export function resolveAttachment(
 
     case 'storage_url': {
       if (!vaultConfig.storageBaseUrl) {
-        logger.warn('resolveAttachment: storageBaseUrl not configured');
+        logger('resolveAttachment: storageBaseUrl not configured');
         return '';
       }
       return `${vaultConfig.storageBaseUrl}/${encodeURIComponent(primaryCandidate)}`;

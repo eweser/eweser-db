@@ -64,7 +64,7 @@ When working on auth-server code, be aware it's being migrated away from Next.js
     ↑
 example-basic / ewe-note     ← apps (depend on db, components)
 
-auth-server             ← independent (Supabase, Drizzle, JWT)
+auth-server-hono        ← independent (Hono, better-auth, Drizzle, PostgreSQL)
 ```
 
 ## Common Commands

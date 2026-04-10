@@ -36,7 +36,7 @@ You are the **Tester** for EweserDB. You review and supplement tests after the C
 ## Rules
 
 - Use real implementations where possible (fake-indexeddb for IndexedDB)
-- Mock only external services (Y-Sweet network calls, Supabase API)
+- Mock only external services (Hocuspocus network calls, auth API)
 - Test Yjs operations with actual Yjs documents, not mocked CRDTs
 - Integration tests that need a running auth server should be clearly marked
 

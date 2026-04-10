@@ -40,9 +40,11 @@ const lightModeCursorColors = [
 export default function Editor({
   selectedRoom,
   selectedNoteId,
+  showFrontmatterEditor = true,
 }: {
   selectedRoom: Room<Note>;
   selectedNoteId: string;
+  showFrontmatterEditor?: boolean;
 }) {
   const { loggedIn } = useDb();
 
@@ -66,6 +68,7 @@ export default function Editor({
       updateNoteText={updateNoteText}
       updateNoteFrontmatter={updateNoteFrontmatter}
       note={note}
+      showFrontmatterEditor={showFrontmatterEditor}
     />
   );
 }
@@ -77,6 +80,7 @@ function EditorInternal({
   updateNoteText,
   updateNoteFrontmatter,
   note,
+  showFrontmatterEditor,
 }: {
   selectedNoteId: string;
   provider: Room<Note>['syncProvider'];
@@ -87,6 +91,7 @@ function EditorInternal({
     note?: Note
   ) => void;
   note: Note;
+  showFrontmatterEditor: boolean;
 }) {
   const { user } = useDb();
   const { resolvedMode } = useTheme();
@@ -174,12 +179,14 @@ function EditorInternal({
   return (
     <div data-cy="ewe-note-editor" className="editor-wrapper w-full max-w-full">
       <div className="max-w-5xl mx-auto w-full">
-        {note.frontmatter && Object.keys(note.frontmatter).length > 0 && (
+        {showFrontmatterEditor &&
+          note.frontmatter &&
+          Object.keys(note.frontmatter).length > 0 && (
           <FrontmatterEditor
             note={note}
             onUpdate={(fm) => updateNoteFrontmatter(fm, note)}
           />
-        )}
+          )}
         <BlockNoteView
           editor={editor}
           theme={usedTheme}

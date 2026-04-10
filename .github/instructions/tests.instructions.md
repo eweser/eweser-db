@@ -18,16 +18,16 @@ applyTo: '**/*.test.ts,**/*.test.tsx,**/*.spec.ts,e2e/**,cypress/**'
 
 ### Testing Auth
 
-- Mock Supabase client for unit tests
-- Mock Y-Sweet for connection tests
 - Use real Drizzle queries against test database when possible
+- Mock better-auth for unit tests
+- Mock Hocuspocus provider for sync tests
 
 ## E2E Tests — Cypress
 
 - Located in `e2e/cypress/tests/`
 - Config: `cypress.config.ts`
 - Run: `npm run test:e2e`
-- Requires running dev servers (auth-server + example app)
+- Requires running dev servers (auth-api + example app)
 
 ## Rules
 

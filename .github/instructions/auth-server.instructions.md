@@ -1,39 +1,48 @@
 ---
-applyTo: 'packages/auth-server/**'
+applyTo: 'packages/auth-server-hono/**'
 ---
 
 # Auth Server Instructions
 
-## ⚠️ Migration In Progress
+## Overview
 
-This package is being migrated **away from Next.js** to a standalone Node server (Express or Hono, TBD) + React SPA.
+Auth server built with **Hono** + **better-auth** + **Drizzle ORM** + **PostgreSQL**.
 
-### Until migration is complete:
+Replaces the legacy Next.js auth-server.
 
-- Avoid adding Next.js-specific patterns
-- Keep business logic in pure functions separate from framework code
-- Drizzle queries, JWT logic, and Supabase client code should be framework-agnostic
-- New API routes should be simple request/response handlers, not Next.js-coupled
+## Architecture
 
-## Auth Architecture
-
-- **Supabase** handles user authentication (sign up, sign in, OAuth)
-- **Drizzle ORM** for custom database queries (room access, user profiles)
-- **JWT** tokens for room access authorization
-- **Y-Sweet** connection strings issued by auth server for authorized rooms
+- **Hono** — lightweight web framework
+- **better-auth** — authentication (email/password, OAuth)
+- **Drizzle ORM** — type-safe SQL queries
+- **PostgreSQL** — self-hosted (via Docker Compose)
+- **JWT** — room access tokens issued by sync-server auth hook
 
 ## Database
 
-- Supabase PostgreSQL with Drizzle ORM
-- **Never delete migrations** — only add new ones
-- Create migrations: `npx supabase migration new <name>`
-- Apply locally: `npx supabase db reset`
+- Self-hosted PostgreSQL with Drizzle ORM
+- Migrations in `drizzle/` folder
+- Generate: `npx drizzle-kit generate`
+- Apply: `npx drizzle-kit migrate`
+
+## Key Routes
+
+- `GET /health` — health check
+- `GET /.well-known/oauth-authorization-server` — OAuth metadata
+- `/auth/*` — better-auth routes (login, signup, OAuth)
+- `/account/*` — user account management
+- `/access-grants/*` — room access permissions
+- `/agents/*` — AI agent management
+- `/oauth/*` — OAuth 2.0 flows
+- `/mcp/*` — MCP (Model Context Protocol) endpoints
 
 ## Environment Variables
 
 Required (see `example.env` or `LOCAL_DEVELOPMENT.md`):
 
-- `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
-- `SUPABASE_CONNECTION_URL` (for Drizzle)
-- `SERVER_SECRET` (for JWT signing)
-- `Y_SWEET_CONNECTION_STRING`
+- `DATABASE_URL` — PostgreSQL connection string
+- `SERVER_SECRET` — JWT signing secret
+- `BETTER_AUTH_SECRET` — better-auth encryption key
+- `BETTER_AUTH_BASE_URL` — public auth server URL
+- `SYNC_SERVER_URL` — Hocuspocus sync server URL
+- `SYNC_AUTH_SECRET` — shared secret with sync server

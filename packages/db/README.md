@@ -14,7 +14,7 @@ It syncs user data using a [yjs](https://github.com/yjs/yjs) [CRDT](https://crdt
 
 - A lightweight database JavaScript client. This is all most developers will need.
 - An authentication server if app developers or power users want to self-host their own homeserver.
-- An 'aggregator' server to provide public data to users. (WIP)
+- An 'aggregator' server to provide public data to users.
 - A set of example apps that show how to use the database in different ways.
 
 ## Features:
@@ -71,7 +71,7 @@ This flipping of the ownership dynamic enables some important features:
 npm install @eweser/db yjs
 ```
 
-This is a simplified example. For a more use cases and working demos see the example apps like `packages/example-basic/src/App.tsx`
+This is a simplified example. For more use cases and working demos see the example apps like `examples/example-basic/src/App.tsx`
 
 ```tsx
 import { Database } from '@eweser/db';
@@ -117,13 +117,13 @@ That's it! 🚀🚀🚀 You now have a user-owned database that syncs between de
 Try opening in another browser or device and notice the changes sync.
 Refresh the page and notice the data persists.
 Turn off your internet and notice the data still updates in the browser app.
-Turn it back on and watch the sync propagate to the other device. (TODO: Reimplement log back in on internet connection reestablished)
+Turn it back on and watch the sync propagate to the other device.
 
 # Features
 
 ## Structure
 
-See `packages/db/examples/dbShape.ts` for how the data is structured.
+See `packages/db/src/examples/dbShape.ts` for how the data is structured.
 
 Like MongoDB, EweserDB has `document`s and `collection`s. In SQL database terms, collections are like tables and documents like rows. Documents have a strict schema(typescript type). Each collection can have only one schema(document) but as many of those documents as you'd like. See examples of document schemas in the `/collections` folder.
 
@@ -202,7 +202,7 @@ This will run the example apps in `examples/example-basic`
 
 Example apps will be served at the dev urls listed above.
 
-Run unit tests by first starting the docker server (make sure you have docker running) with `npm run start-test-server` and then `npm run test`
+Run unit tests by first starting the docker backend (make sure you have Docker running) with `npm run dev:docker` and then `npm run test`
 
 Run e2e tests headless once with `npm run test:e2e`, or with `npm run dev-e2e` to open the Cypress GUI.
 

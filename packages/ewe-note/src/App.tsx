@@ -1,11 +1,10 @@
 import '@blocknote/core/fonts/inter.css';
 import '@blocknote/shadcn/style.css';
-import { Layout } from './components/layout';
 import { ThemeProvider } from '@/components/theme-provider';
-import Editor from './components/editor';
 import { DbProvider, useDb } from './db';
 import { Icons } from './lib/icons';
 import { TooltipProvider } from './components/ui/tooltip';
+import RedesignApp from './app/App';
 
 function App() {
   const { loaded, selectedRoom, selectedNoteId } = useDb();
@@ -21,13 +20,7 @@ function App() {
       selectedRoom?.id &&
       selectedRoom.ydoc?.store &&
       selectedNoteId ? (
-        <Layout>
-          <Editor
-            key={selectedNoteId + selectedRoom.id}
-            selectedRoom={selectedRoom}
-            selectedNoteId={selectedNoteId}
-          />
-        </Layout>
+        <RedesignApp />
       ) : (
         // usually loads almost instantaneously, but we need to make sure a yDoc is ready before we can use it
         <div

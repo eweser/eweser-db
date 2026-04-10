@@ -1,6 +1,6 @@
 # Architecture — EweserDB
 
-> **Status:** Draft — undergoing major migration (Next.js removal, Docker Compose consolidation)
+> **Status:** Active — Core migration complete. Hono + better-auth auth server is production-ready.
 
 ## Philosophy
 
@@ -153,8 +153,8 @@ User action → @eweser/db SDK
 ## Key Files
 
 - `packages/db/src/` — Core SDK implementation
-- `packages/db/examples/dbShape.ts` — Data structure reference
+- `packages/db/src/examples/dbShape.ts` — Data structure reference
 - `packages/shared/src/` — Shared types
-- `packages/auth-server/` — Auth server (migrating)
+- `packages/auth-server-hono/` — Auth server (Hono + better-auth)
 - `packages/ewe-note/` — Note app
 - `LOCAL_DEVELOPMENT.md` — Dev setup guide

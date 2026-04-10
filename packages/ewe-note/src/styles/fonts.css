@@ -1,0 +1,17 @@
+/* Import Google Fonts for editorial quality */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+/* Apply Inter as the base font with system fallbacks */
+* {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Editorial styles for better reading */
+textarea {
+  font-variant-ligatures: common-ligatures;
+  letter-spacing: -0.011em;
+}

@@ -21,7 +21,7 @@ applyTo: 'packages/db/**,packages/shared/**'
 ## @eweser/db
 
 - Core SDK — manages rooms, documents, sync, and local persistence
-- Uses y-indexeddb for local storage, @y-sweet/client for remote sync
+- Uses y-indexeddb for local storage, @hocuspocus/provider for remote sync
 - Test with fake-indexeddb and jsdom environment
 - Any API changes require a changeset: `npm run changeset`
 

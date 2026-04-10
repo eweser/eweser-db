@@ -32,7 +32,7 @@ Key locations:
 
 - `packages/db/src/` — Core SDK
 - `packages/shared/src/` — Shared types & schemas
-- `packages/auth-server/` — Auth server (Next.js, migrating)
+- `packages/auth-server-hono/` — Auth server (Hono + better-auth)
 - `packages/ewe-note/src/` — Note app
 - `packages/examples-components/src/` — Shared UI components
 - `examples/example-basic/src/` — Basic demo app

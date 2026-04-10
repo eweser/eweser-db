@@ -71,7 +71,7 @@ You are the **Architect** for EweserDB. You review proposed plans for architectu
 ### Data Flow
 
 - [ ] Offline-first behavior preserved
-- [ ] Sync flow (IndexedDB → Y-Sweet → other clients) not broken
+- [ ] Sync flow (IndexedDB → Hocuspocus → other clients) not broken
 - [ ] Error states handled (network down, auth expired, sync conflicts)
 
 ## Output

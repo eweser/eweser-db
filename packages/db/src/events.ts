@@ -21,11 +21,16 @@ export class TypedEventEmitter<Events extends EmittedEvents> {
 
   off<K extends keyof Events>(event: K, listener: Events[K]): this {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-    this._listeners.get(event as string | symbol)?.delete(listener as unknown as Listener);
+    this._listeners
+      .get(event as string | symbol)
+      ?.delete(listener as unknown as Listener);
     return this;
   }
 
-  emit<K extends keyof Events>(event: K, ...args: Parameters<Events[K]>): boolean {
+  emit<K extends keyof Events>(
+    event: K,
+    ...args: Parameters<Events[K]>
+  ): boolean {
     const listeners = this._listeners.get(event as string | symbol);
     if (!listeners || listeners.size === 0) return false;
     listeners.forEach((l) => l(...(args as unknown[])));

@@ -223,12 +223,12 @@ AXIOM_METRICS_DATASET= # Dataset name for host metrics, type: Metrics
 
 Metrics exported via OTel include:
 
-| Metric | Description |
-| ------ | ----------- |
-| `system.cpu.time` | CPU usage per core |
-| `system.memory.used` / `.free` | Memory consumption |
-| `process.gc.duration` | GC pause times |
-| `eventloop.lag` | Event loop delay |
+| Metric                                 | Description           |
+| -------------------------------------- | --------------------- |
+| `system.cpu.time`                      | CPU usage per core    |
+| `system.memory.used` / `.free`         | Memory consumption    |
+| `process.gc.duration`                  | GC pause times        |
+| `eventloop.lag`                        | Event loop delay      |
 | `process.handles` / `process.requests` | Open handles/requests |
 
 Tag filters: `service.name` (e.g. `sync-server`), `deployment.environment` (e.g. `production`).
@@ -317,12 +317,24 @@ examples/
 
 ## E2E Tests
 
-E2E tests (Cypress) are **not yet Docker-ized**. They currently run against:
+E2E tests (Cypress) run against:
 
-- Legacy Next.js auth-server on port `38100`
+- Docker backend (PostgreSQL, auth API on port `38101`, sync server)
 - Built example-basic preview on port `38110`
 
-After the auth-server migration is complete (removing Next.js), the E2E smoke test in `.github/workflows/quality.yaml` will need updating to use the Docker backend instead.
+### Running E2E Tests Locally
+
+```bash
+# 1. Start the Docker backend
+npm run dev:docker
+
+# 2. In another terminal, build and preview the example app
+npm run build-example:basic
+npm run run-example-preview:basic
+
+# 3. Run Cypress
+npm run test:e2e
+```
 
 ## Next Steps
 

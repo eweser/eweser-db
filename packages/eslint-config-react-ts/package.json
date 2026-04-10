@@ -1,7 +1,7 @@
 {
   "name": "@eweser/eslint-config-react-ts",
   "version": "1.15.0",
-  "description": "> TODO: description",
+  "description": "ESLint configuration for React TypeScript projects in EweserDB",
   "author": "jacobcoro",
   "homepage": "https://github.com/eweser/eweser-db#readme",
   "license": "MIT",
