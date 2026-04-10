@@ -19,7 +19,9 @@ services:
       retries: 5
 
   sync-server:
-    build: packages/sync-server
+    build:
+      context: .
+      dockerfile: packages/sync-server/Dockerfile
     volumes:
       - sync-data:/data
     expose:
@@ -34,7 +36,9 @@ services:
       WEBHOOK_SECRET: ${WEBHOOK_SECRET:-dev-webhook-secret}
 
   sync-server-2:
-    build: packages/sync-server
+    build:
+      context: .
+      dockerfile: packages/sync-server/Dockerfile
     volumes:
       - sync-data-2:/data
     expose:
@@ -49,7 +53,9 @@ services:
       WEBHOOK_SECRET: ${WEBHOOK_SECRET:-dev-webhook-secret}
 
   aggregator:
-    build: packages/aggregator
+    build:
+      context: .
+      dockerfile: packages/aggregator/Dockerfile
     depends_on:
       postgres:
         condition: service_healthy

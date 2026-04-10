@@ -31,7 +31,9 @@ services:
           cpus: '0.5'
 
   sync-server:
-    build: packages/sync-server
+    build:
+      context: .
+      dockerfile: packages/sync-server/Dockerfile
     restart: always
     volumes:
       - sync-data:/data
@@ -60,7 +62,9 @@ services:
           cpus: '0.25'
 
   sync-server-2:
-    build: packages/sync-server
+    build:
+      context: .
+      dockerfile: packages/sync-server/Dockerfile
     restart: always
     volumes:
       - sync-data-2:/data
@@ -89,7 +93,9 @@ services:
           cpus: '0.25'
 
   aggregator:
-    build: packages/aggregator
+    build:
+      context: .
+      dockerfile: packages/aggregator/Dockerfile
     restart: always
     depends_on:
       postgres:
