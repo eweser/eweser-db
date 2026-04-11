@@ -1,0 +1,33 @@
+{
+  "name": "EweserDB",
+  "description": "Local-first, user-owned database with sync, auth, and notes",
+  "icon": "https://raw.githubusercontent.com/eweser/eweser-db/main/packages/ewe-note/src/imports/eweser-logo.svg",
+  "env": {
+    "SERVER_SECRET": {
+      "description": "Random secret for server sessions (auto-generated)",
+      "generator": "secret"
+    },
+    "BETTER_AUTH_SECRET": {
+      "description": "Secret for Better Auth (auto-generated)",
+      "generator": "secret"
+    },
+    "SYNC_AUTH_SECRET": {
+      "description": "Secret for sync server authentication (auto-generated)",
+      "generator": "secret"
+    },
+    "WEBHOOK_SECRET": {
+      "description": "Secret for webhook signatures (auto-generated)",
+      "generator": "secret"
+    }
+  },
+  "services": {
+    "postgres": {
+      "image": "postgres:16-alpine",
+      "env": {
+        "POSTGRES_USER": "eweser",
+        "POSTGRES_PASSWORD": "${{secret}}",
+        "POSTGRES_DB": "eweser"
+      }
+    }
+  }
+}
