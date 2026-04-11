@@ -213,7 +213,10 @@ export function EnhancedEditor() {
               </button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="p-2 hover:bg-accent rounded-lg transition-colors">
+                  <button
+                    data-cy="ewe-note-editor-menu-trigger"
+                    className="p-2 hover:bg-accent rounded-lg transition-colors"
+                  >
                     <MoreHorizontal className="w-4 h-4" />
                   </button>
                 </DropdownMenuTrigger>
