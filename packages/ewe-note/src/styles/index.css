@@ -1,8 +1,6 @@
 @import './fonts.css';
 @import './tailwind.css';
 @import './theme.css';
-
-/* Custom scrollbar styling */
 * {
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
