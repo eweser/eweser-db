@@ -14,7 +14,9 @@ RUN npm run build --workspace=packages/landing
 
 # Serve stage — static nginx
 FROM nginx:1.27-alpine AS serve
+RUN apk add --no-cache gettext
 COPY --from=build /app/packages/landing/dist /usr/share/nginx/html
-COPY packages/landing/nginx.conf /etc/nginx/conf.d/default.conf
+COPY packages/landing/nginx.conf /etc/nginx/templates/default.conf.template
 EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+ENV PORT=80
+CMD ["sh", "-c", "envsubst '${PORT}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
