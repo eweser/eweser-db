@@ -35,7 +35,6 @@ export function TemplatesDialog({ open, onOpenChange }: TemplatesDialogProps) {
         content: template.content,
         properties: template.properties,
         tags: template.tags,
-        folder: 'personal',
       });
       navigate(`/editor/${newNote.id}`);
       onOpenChange(false);
@@ -56,7 +55,10 @@ export function TemplatesDialog({ open, onOpenChange }: TemplatesDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+      <DialogContent
+        data-cy="ewe-note-templates-dialog"
+        className="max-w-3xl max-h-[80vh] overflow-y-auto"
+      >
         <DialogHeader>
           <DialogTitle>Templates</DialogTitle>
           <DialogDescription>
@@ -91,6 +93,7 @@ export function TemplatesDialog({ open, onOpenChange }: TemplatesDialogProps) {
                 <Label htmlFor="template-name">Template Name</Label>
                 <Input
                   id="template-name"
+                  data-cy="ewe-note-new-template-name"
                   value={newTemplateName}
                   onChange={(e) => setNewTemplateName(e.target.value)}
                   placeholder="e.g., Weekly Review"
@@ -101,13 +104,18 @@ export function TemplatesDialog({ open, onOpenChange }: TemplatesDialogProps) {
                 <Label htmlFor="template-content">Template Content</Label>
                 <Textarea
                   id="template-content"
+                  data-cy="ewe-note-new-template-content"
                   value={newTemplateContent}
                   onChange={(e) => setNewTemplateContent(e.target.value)}
                   placeholder="# Template Title&#10;&#10;Your template content here..."
                   className="mt-1 min-h-[200px] font-mono text-sm"
                 />
               </div>
-              <Button onClick={handleCreateTemplate} className="w-full">
+              <Button
+                data-cy="ewe-note-create-template-btn"
+                onClick={handleCreateTemplate}
+                className="w-full"
+              >
                 Create Template
               </Button>
             </div>
@@ -125,6 +133,7 @@ export function TemplatesDialog({ open, onOpenChange }: TemplatesDialogProps) {
                     <h3 className="font-medium">{template.name}</h3>
                   </div>
                   <button
+                    data-cy={`ewe-note-templates-delete-${template.id}`}
                     onClick={() => {
                       if (
                         confirm(
@@ -150,6 +159,7 @@ export function TemplatesDialog({ open, onOpenChange }: TemplatesDialogProps) {
                   ))}
                 </div>
                 <Button
+                  data-cy={`ewe-note-templates-use-${template.id}`}
                   onClick={() => handleUseTemplate(template.id)}
                   variant="outline"
                   size="sm"

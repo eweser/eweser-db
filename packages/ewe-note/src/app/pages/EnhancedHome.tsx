@@ -44,7 +44,6 @@ export function EnhancedHome() {
     const newNote = addNote({
       title: 'Untitled',
       content: '',
-      folder: 'personal',
     });
     navigate(`/editor/${newNote.id}`);
   };
@@ -346,7 +345,7 @@ function TasksView({ tasks, notes, navigate }: TasksViewProps) {
   });
 
   return (
-    <div className="max-w-4xl space-y-4">
+    <div data-cy="ewe-note-tasks-view" className="max-w-4xl space-y-4">
       {Object.entries(groupedByNote).map(([noteId, noteTasks]) => {
         const note = notes.find((n) => n.id === noteId);
         if (!note) return null;
@@ -366,6 +365,7 @@ function TasksView({ tasks, notes, navigate }: TasksViewProps) {
               {noteTasks.map((task: any) => (
                 <div
                   key={task.id}
+                  data-cy={`ewe-note-task-item-${task.id}`}
                   className="flex items-start gap-3 p-2 rounded hover:bg-accent/50 transition-colors"
                 >
                   <CheckSquare className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />

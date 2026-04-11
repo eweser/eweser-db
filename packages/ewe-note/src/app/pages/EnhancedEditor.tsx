@@ -39,7 +39,8 @@ export function EnhancedEditor() {
   const [copyLinkDone, setCopyLinkDone] = useState(false);
   const navigate = useNavigate();
   const { noteId } = useParams();
-  const { notes, folders, updateNote, togglePinNote, deleteNote, addNote } = useNotes();
+  const { notes, folders, updateNote, togglePinNote, deleteNote, addNote } =
+    useNotes();
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -126,7 +127,10 @@ export function EnhancedEditor() {
         </header>
 
         {/* Focus mode editor */}
-        <div className="flex-1 overflow-y-auto">
+        <div
+          data-cy="ewe-note-focus-mode-active"
+          className="flex-1 overflow-y-auto"
+        >
           <div className="max-w-3xl mx-auto px-8 py-12">
             {editorRoom ? (
               <Editor
@@ -177,6 +181,7 @@ export function EnhancedEditor() {
 
             <div className="flex items-center gap-2">
               <button
+                data-cy="ewe-note-info-panel-toggle"
                 onClick={() => setRightPanelOpen((v) => !v)}
                 className="p-2 hover:bg-accent rounded-lg transition-colors"
                 title={rightPanelOpen ? 'Close note info' : 'Open note info'}
@@ -188,6 +193,7 @@ export function EnhancedEditor() {
                 )}
               </button>
               <button
+                data-cy="ewe-note-focus-mode"
                 onClick={() => setFocusMode(true)}
                 className="p-2 hover:bg-accent rounded-lg transition-colors"
                 title="Focus Mode"
@@ -212,7 +218,10 @@ export function EnhancedEditor() {
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={handleCopyLink}>
+                  <DropdownMenuItem
+                    data-cy="ewe-note-copy-link"
+                    onClick={handleCopyLink}
+                  >
                     {copyLinkDone ? (
                       <Check className="w-4 h-4 mr-2 text-green-500" />
                     ) : (
@@ -220,16 +229,23 @@ export function EnhancedEditor() {
                     )}
                     {copyLinkDone ? 'Copied!' : 'Copy Link'}
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleDuplicate}>
+                  <DropdownMenuItem
+                    data-cy="ewe-note-duplicate"
+                    onClick={handleDuplicate}
+                  >
                     <Copy className="w-4 h-4 mr-2" />
                     Duplicate
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleExport}>
+                  <DropdownMenuItem
+                    data-cy="ewe-note-export"
+                    onClick={handleExport}
+                  >
                     <Download className="w-4 h-4 mr-2" />
                     Export as Markdown
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
+                    data-cy="ewe-note-delete-note"
                     className="text-destructive"
                     onClick={() => {
                       if (

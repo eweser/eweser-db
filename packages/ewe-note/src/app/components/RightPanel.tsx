@@ -81,7 +81,10 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
   };
 
   return (
-    <aside className="w-80 bg-card border-l border-border flex flex-col h-screen overflow-hidden">
+    <aside
+      data-cy="ewe-note-right-panel"
+      className="w-80 bg-card border-l border-border flex flex-col h-screen overflow-hidden"
+    >
       {/* Header */}
       <div className="px-4 py-4 border-b border-border flex items-center justify-between">
         <h2 className="text-sm font-medium">Note Info</h2>
@@ -96,7 +99,10 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="outline" className="flex-1 flex flex-col overflow-hidden">
+      <Tabs
+        defaultValue="outline"
+        className="flex-1 flex flex-col overflow-hidden"
+      >
         <TabsList className="w-full grid grid-cols-3 mx-4 mt-3">
           <TabsTrigger value="outline" className="text-xs">
             <List className="w-3.5 h-3.5 mr-1.5" />
@@ -113,7 +119,10 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
         </TabsList>
 
         {/* Outline Tab */}
-        <TabsContent value="outline" className="flex-1 overflow-y-auto px-4 pb-4 mt-4">
+        <TabsContent
+          value="outline"
+          className="flex-1 overflow-y-auto px-4 pb-4 mt-4"
+        >
           {headings.length === 0 ? (
             <div className="text-sm text-muted-foreground text-center py-8">
               No headings found in this note
@@ -135,7 +144,10 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
         </TabsContent>
 
         {/* Backlinks Tab */}
-        <TabsContent value="backlinks" className="flex-1 overflow-y-auto px-4 pb-4 mt-4">
+        <TabsContent
+          value="backlinks"
+          className="flex-1 overflow-y-auto px-4 pb-4 mt-4"
+        >
           <div className="space-y-4">
             {/* Outgoing Links */}
             <div>
@@ -143,7 +155,9 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
                 Outgoing Links ({note.links.length})
               </h3>
               {note.links.length === 0 ? (
-                <div className="text-sm text-muted-foreground">No outgoing links</div>
+                <div className="text-sm text-muted-foreground">
+                  No outgoing links
+                </div>
               ) : (
                 <div className="space-y-1">
                   {note.links.map((linkId) => {
@@ -177,7 +191,9 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
                 Backlinks ({backlinks.length})
               </h3>
               {backlinks.length === 0 ? (
-                <div className="text-sm text-muted-foreground">No backlinks</div>
+                <div className="text-sm text-muted-foreground">
+                  No backlinks
+                </div>
               ) : (
                 <div className="space-y-1">
                   {backlinks.map((backlink) => (
@@ -204,11 +220,16 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
         </TabsContent>
 
         {/* Properties Tab */}
-        <TabsContent value="properties" className="flex-1 overflow-y-auto px-4 pb-4 mt-4">
+        <TabsContent
+          value="properties"
+          className="flex-1 overflow-y-auto px-4 pb-4 mt-4"
+        >
           <div className="space-y-4">
             {/* Tags */}
             <div>
-              <h3 className="text-xs font-medium text-muted-foreground mb-2">Tags</h3>
+              <h3 className="text-xs font-medium text-muted-foreground mb-2">
+                Tags
+              </h3>
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {note.tags.map((tag) => (
                   <Badge
@@ -229,6 +250,7 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
               </div>
               <div className="flex gap-2">
                 <Input
+                  data-cy="ewe-note-add-tag-input"
                   value={newTag}
                   onChange={(e) => setNewTag(e.target.value)}
                   onKeyDown={(e) => {
@@ -240,6 +262,7 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
                   className="h-8 text-sm"
                 />
                 <button
+                  data-cy="ewe-note-add-tag-btn"
                   onClick={handleAddTag}
                   className="px-3 h-8 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity flex items-center gap-1 text-sm"
                 >
@@ -261,7 +284,9 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
                   >
                     <div className="flex-1">
                       <div className="text-xs font-medium">{key}</div>
-                      <div className="text-xs text-muted-foreground">{value}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {value}
+                      </div>
                     </div>
                     <button
                       onClick={() => handleRemoveProperty(key)}
@@ -274,6 +299,7 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
               </div>
               <div className="space-y-2">
                 <Input
+                  data-cy="ewe-note-add-property-key"
                   value={newPropertyKey}
                   onChange={(e) => setNewPropertyKey(e.target.value)}
                   placeholder="Property name..."
@@ -281,6 +307,7 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
                 />
                 <div className="flex gap-2">
                   <Input
+                    data-cy="ewe-note-add-property-value"
                     value={newPropertyValue}
                     onChange={(e) => setNewPropertyValue(e.target.value)}
                     onKeyDown={(e) => {
@@ -292,6 +319,7 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
                     className="h-8 text-sm"
                   />
                   <button
+                    data-cy="ewe-note-add-property-btn"
                     onClick={handleAddProperty}
                     className="px-3 h-8 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity flex items-center gap-1 text-sm"
                   >

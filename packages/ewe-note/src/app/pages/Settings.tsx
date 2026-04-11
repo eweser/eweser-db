@@ -7,7 +7,10 @@ export function Settings() {
   const { loggedIn, loginUrl, signOut, user } = useDb();
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div
+      data-cy="ewe-note-settings-page"
+      className="flex h-screen overflow-hidden"
+    >
       <main className="flex-1 flex flex-col overflow-hidden bg-background">
         <header className="px-8 py-5 border-b border-border bg-card">
           <div className="flex items-center gap-3">
@@ -36,7 +39,8 @@ export function Settings() {
                   {loggedIn ? (
                     <>
                       <div className="font-medium">
-                        {`${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() || 'Signed In'}
+                        {`${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() ||
+                          'Signed In'}
                       </div>
                       <div className="text-sm text-muted-foreground">
                         {user.avatar ?? ''}
@@ -50,6 +54,7 @@ export function Settings() {
 
               {loggedIn ? (
                 <button
+                  data-cy="ewe-note-settings-signout"
                   onClick={signOut}
                   className="flex items-center gap-2 px-4 py-2 text-sm text-destructive border border-destructive/30 rounded-lg hover:bg-destructive/10 transition-colors"
                 >
@@ -58,7 +63,9 @@ export function Settings() {
                 </button>
               ) : (
                 <button
-                  onClick={() => { window.location.href = loginUrl; }}
+                  onClick={() => {
+                    window.location.href = loginUrl;
+                  }}
                   className="flex items-center gap-2 px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity"
                 >
                   <LogIn className="w-4 h-4" />
@@ -78,7 +85,10 @@ export function Settings() {
                 <Server className="w-5 h-5 text-muted-foreground mt-0.5" />
                 <div>
                   <div className="text-sm font-medium mb-1">Homeserver</div>
-                  <div className="text-sm text-muted-foreground font-mono break-all">
+                  <div
+                    data-cy="ewe-note-settings-homeserver"
+                    className="text-sm text-muted-foreground font-mono break-all"
+                  >
                     {import.meta.env.VITE_AUTH_SERVER ?? 'Not configured'}
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">

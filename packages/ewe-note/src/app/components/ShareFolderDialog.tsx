@@ -18,7 +18,12 @@ interface ShareFolderDialogProps {
   folderId: string;
 }
 
-export function ShareFolderDialog({ open, onOpenChange, folderName, folderId }: ShareFolderDialogProps) {
+export function ShareFolderDialog({
+  open,
+  onOpenChange,
+  folderName,
+  folderId,
+}: ShareFolderDialogProps) {
   const [copied, setCopied] = useState(false);
   const shareLink = `${window.location.origin}/?folder=${encodeURIComponent(folderId)}`;
 
@@ -30,11 +35,12 @@ export function ShareFolderDialog({ open, onOpenChange, folderName, folderId }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl">
+      <DialogContent data-cy="ewe-note-share-dialog" className="max-w-xl">
         <DialogHeader>
           <DialogTitle>Share "{folderName}"</DialogTitle>
           <DialogDescription>
-            Share a link to this folder. Collaborative editing between users is coming soon.
+            Share a link to this folder. Collaborative editing between users is
+            coming soon.
           </DialogDescription>
         </DialogHeader>
 
@@ -44,11 +50,17 @@ export function ShareFolderDialog({ open, onOpenChange, folderName, folderId }: 
             <Label className="text-sm font-medium mb-2 block">Share Link</Label>
             <div className="flex gap-2">
               <Input
+                data-cy="ewe-note-share-link-input"
                 value={shareLink}
                 readOnly
                 className="flex-1 font-mono text-sm"
               />
-              <Button onClick={handleCopyLink} variant="outline" size="sm">
+              <Button
+                data-cy="ewe-note-share-copy-btn"
+                onClick={handleCopyLink}
+                variant="outline"
+                size="sm"
+              >
                 {copied ? (
                   <>
                     <Check className="w-4 h-4 mr-2" />
@@ -71,8 +83,9 @@ export function ShareFolderDialog({ open, onOpenChange, folderName, folderId }: 
               <div className="text-sm">
                 <p className="font-medium mb-1">Collaborative Editing</p>
                 <p className="text-muted-foreground">
-                  Real-time collaborative folders are powered by eweser-db shared rooms.
-                  Multi-user access control will be available in a future release.
+                  Real-time collaborative folders are powered by eweser-db
+                  shared rooms. Multi-user access control will be available in a
+                  future release.
                 </p>
               </div>
             </div>

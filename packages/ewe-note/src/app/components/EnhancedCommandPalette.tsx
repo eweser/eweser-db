@@ -75,6 +75,7 @@ export function EnhancedCommandPalette({
   return (
     <>
       <div
+        data-cy="ewe-note-command-palette"
         className="fixed inset-0 z-50 bg-foreground/30 backdrop-blur-sm"
         onClick={() => onOpenChange(false)}
       >
@@ -87,6 +88,7 @@ export function EnhancedCommandPalette({
             <div className="flex items-center gap-3 px-6 py-4 border-b border-border bg-background/50">
               <Search className="w-5 h-5 text-primary" />
               <Command.Input
+                data-cy="ewe-note-command-input"
                 onValueChange={setSearch}
                 placeholder="Search or create note..."
                 className="flex-1 bg-transparent outline-none text-base placeholder:text-muted-foreground"
@@ -182,6 +184,7 @@ export function EnhancedCommandPalette({
                       </kbd>
                     </Command.Item>
                     <Command.Item
+                      data-cy="ewe-note-browse-templates"
                       onSelect={() => {
                         onOpenChange(false);
                         setTemplatesOpen(true);

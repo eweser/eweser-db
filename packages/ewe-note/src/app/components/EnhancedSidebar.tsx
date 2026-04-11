@@ -127,7 +127,11 @@ function SidebarContent({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img
-              src={theme === 'light' ? '/eweser-logo.svg' : '/eweser-logo-white.svg'}
+              src={
+                theme === 'light'
+                  ? '/eweser-logo.svg'
+                  : '/eweser-logo-white.svg'
+              }
               alt="EweNote"
               className="w-8 h-8 rounded-lg"
             />
@@ -210,12 +214,14 @@ function SidebarContent({
             }}
           />
           <SidebarLink
+            dataCy="ewe-note-recent-link"
             icon={Clock}
             label="Recent"
             active={activeView === 'recent'}
             onClick={() => onViewChange?.('recent')}
           />
           <SidebarLink
+            dataCy="ewe-note-tasks-link"
             icon={CheckSquare}
             label="Tasks"
             count={incompleteTasks.length}
@@ -297,6 +303,7 @@ function SidebarContent({
       {/* Footer */}
       <div className="p-4 border-t border-sidebar-border space-y-2">
         <button
+          data-cy="ewe-note-settings-link"
           onClick={() => navigate('/settings')}
           className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-sidebar-accent transition-colors text-left"
         >
@@ -556,15 +563,18 @@ function SidebarLink({
   count,
   active = false,
   onClick,
+  dataCy,
 }: {
   icon: any;
   label: string;
   count?: number;
   active?: boolean;
   onClick?: () => void;
+  dataCy?: string;
 }) {
   return (
     <button
+      data-cy={dataCy}
       onClick={onClick}
       className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-left ${
         active

@@ -132,6 +132,13 @@ function EditorInternal({
     debouncedSaveRef.current = debounce(updateNoteText, 1000);
   }
 
+  // Flush any pending debounced save when the note changes (component unmounts)
+  useEffect(() => {
+    return () => {
+      debouncedSaveRef.current?.flush();
+    };
+  }, []);
+
   // Register onChange once; use refs so we never need to re-register
   useEffect(() => {
     const unsubscribe = editor.onChange(async (e) => {
@@ -222,14 +229,31 @@ function EditorInternal({
 
 function debounce(func: (text: string, note?: Note) => void, wait: number) {
   let timeout: NodeJS.Timeout | null = null;
+  let lastArgs: [string, Note?] | null = null;
 
-  return function (...args: [string, Note?]) {
+  const debounced = function (...args: [string, Note?]) {
+    lastArgs = args;
     if (timeout) {
       clearTimeout(timeout);
     }
 
     timeout = setTimeout(() => {
+      lastArgs = null;
+      timeout = null;
       func(...args);
     }, wait);
   };
+
+  /** Immediately call the function if there is a pending debounce */
+  debounced.flush = function () {
+    if (timeout && lastArgs) {
+      clearTimeout(timeout);
+      timeout = null;
+      const args = lastArgs;
+      lastArgs = null;
+      func(...args);
+    }
+  };
+
+  return debounced;
 }
