@@ -6,7 +6,9 @@
 
 **One-click deploy on Railway** (~$5–15/mo, usage-based):
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/eweser/eweser-db)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.com/new/template/TEMPLATE_CODE_PLACEHOLDER?utm_medium=integration&utm_source=button&utm_campaign=eweser-db)
+
+> To publish this template: Go to [Railway Workspace Templates](https://railway.com/workspace/templates) → Create template from your project → Publish → Copy the template code → Replace `TEMPLATE_CODE_PLACEHOLDER` above.
 
 **Self-host on any $6/mo VPS** (AWS, Hetzner, DigitalOcean Droplet, etc.):
 
