@@ -1,23 +1,443 @@
 ---
-// packages/landing/src/pages/index.astro
-// Shell layout — replace section content with Figma Make output
 import Layout from '../layouts/Layout.astro';
-import Hero from '../components/Hero.astro';
-import Philosophy from '../components/Philosophy.astro';
-import UserFeatures from '../components/UserFeatures.astro';
-import DeveloperSection from '../components/DeveloperSection.astro';
-import SelfHosting from '../components/SelfHosting.astro';
-import Footer from '../components/Footer.astro';
+
+const features = [
+  {
+    glyph: '01',
+    title: 'Works Offline, Always',
+    description:
+      'Your data lives in your browser first. Notes sync when you are back online, automatically and silently.',
+  },
+  {
+    glyph: '02',
+    title: 'Use Multiple Apps, Share One Dataset',
+    description:
+      'Take notes in Ewe Note. Review flashcards in another app. Both read the same data with no export step.',
+  },
+  {
+    glyph: '03',
+    title: 'Real-Time Collaboration',
+    description:
+      'Share a room with a teammate. Edit together live. Conflict-free CRDT merging keeps every change intact.',
+  },
+  {
+    glyph: '04',
+    title: 'Skip the Onboarding',
+    description:
+      'Try a new app with your existing data already loaded. No friction. No vendor lock-in. No cold start.',
+  },
+  {
+    glyph: '05',
+    title: 'Self-Host or Use Our Server',
+    description:
+      'One-click deploy on Railway or run it on your own VPS. You own the server, so you own the data.',
+  },
+  {
+    glyph: '06',
+    title: 'AI on Your Terms',
+    description:
+      'Give Claude, Copilot, or any MCP-compatible agent access to your notes. You control what it can see and write.',
+  },
+];
+
+const devFeatures = [
+  {
+    title: 'TypeScript-native',
+    description: 'Strongly typed schemas for notes, flashcards, profiles, and _ref links between collections.',
+  },
+  {
+    title: 'Yjs CRDT under the hood',
+    description: 'Conflict-free offline sync with IndexedDB locally and Hocuspocus over WebSocket in real time.',
+  },
+  {
+    title: 'MCP server built in',
+    description: 'Claude Desktop and VS Code Copilot can connect through @eweser/mcp with no extra backend.',
+  },
+  {
+    title: 'No backend required',
+    description: 'Point your app at eweser.com or any self-hosted homeserver. Auth and sync are already handled.',
+  },
+  {
+    title: 'Shared schemas',
+    description: 'Interoperate with other EweserDB apps out of the box or extend with your own document types.',
+  },
+  {
+    title: 'Open source, MIT',
+    description: 'The whole monorepo is public. Self-host the stack and stay independent of our servers.',
+  },
+];
+
+const codeSnippet = `import { Database } from '@eweser/db';
+
+const db = new Database({
+  initialRooms: [{ collectionKey: 'notes', name: 'My Notes' }]
+});
+
+const room = db.getRoom('notes');
+const Notes = room.getDocuments();
+
+Notes.new({ text: 'Hello from any app' });`;
 ---
 
 <Layout
   title="EweserDB — Your notes. Your data. Every app."
   description="EweserDB is a local-first, user-owned database. Write in one app, read in another. No lock-in, no vendor dependency, works offline."
 >
-  <Hero />
-  <Philosophy />
-  <UserFeatures />
-  <DeveloperSection />
-  <SelfHosting />
-  <Footer />
+  <header class="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#050505]/80 backdrop-blur-xl">
+    <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+      <a href="/" class="flex items-center gap-3">
+        <img src="/eweser-logo-white.svg" alt="" aria-hidden="true" class="h-8 w-8" />
+        <span class="text-lg font-semibold tracking-tight text-white">EweserDB</span>
+      </a>
+
+      <nav class="hidden items-center gap-6 md:flex">
+        <a href="#features" class="text-sm text-slate-300 transition-colors hover:text-white">Features</a>
+        <a href="#developers" class="text-sm text-slate-300 transition-colors hover:text-white">Developers</a>
+        <a
+          href="https://github.com/eweser/eweser-db"
+          target="_blank"
+          rel="noreferrer"
+          class="text-sm text-slate-300 transition-colors hover:text-white"
+        >
+          GitHub
+        </a>
+      </nav>
+
+      <div class="flex items-center gap-3">
+        <a href="/auth/" class="hidden text-sm text-slate-300 transition-colors hover:text-white md:inline-flex">
+          Sign in
+        </a>
+        <a
+          href="https://notes.eweser.com"
+          class="hidden items-center justify-center rounded-xl bg-white px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-slate-100 sm:inline-flex"
+        >
+          Open Ewe Note
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="relative isolate overflow-hidden bg-[#050505] pt-32 pb-20 text-white sm:pt-36 sm:pb-28">
+      <div
+        class="pointer-events-none absolute inset-0"
+        style="background: radial-gradient(circle at top, rgba(255,255,255,0.12), transparent 42%);"
+      ></div>
+      <div
+        class="pointer-events-none absolute inset-x-0 top-0 h-[520px]"
+        style="background: linear-gradient(180deg, rgba(74,222,128,0.12) 0%, rgba(5,5,5,0) 72%);"
+      ></div>
+
+      <div class="mx-auto grid max-w-6xl gap-14 px-6 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:gap-12">
+        <div class="max-w-2xl">
+          <p class="mb-5 text-sm font-medium uppercase tracking-[0.32em] text-slate-400">
+            Local-first database SDK
+          </p>
+          <h1 class="max-w-xl text-4xl font-bold tracking-tight leading-[1.02] text-white sm:text-6xl lg:text-7xl">
+            Your notes.
+            <br />
+            <span class="text-slate-400">Your data.</span>
+            <br />
+            Every app.
+          </h1>
+          <p class="mt-6 max-w-xl text-lg leading-8 text-slate-400 sm:text-xl">
+            EweserDB is a local-first, user-owned database. Write in one app, read in another. No lock-in, no vendor
+            dependency, works offline.
+          </p>
+
+          <div class="mt-10 flex flex-col gap-4 sm:flex-row">
+            <a
+              href="https://notes.eweser.com"
+              class="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 font-medium text-black transition-colors hover:bg-slate-100"
+            >
+              Try Ewe Note
+            </a>
+            <a
+              href="#developers"
+              class="inline-flex items-center justify-center rounded-xl border border-white/15 px-6 py-3 font-medium text-white transition-colors hover:bg-white/5"
+            >
+              For Developers
+            </a>
+          </div>
+        </div>
+
+        <div class="relative">
+          <div
+            class="absolute -left-6 top-10 h-24 w-24 rounded-full bg-emerald-400/20 blur-3xl float-slow"
+            aria-hidden="true"
+          ></div>
+          <div
+            class="absolute -right-4 bottom-12 h-32 w-32 rounded-full bg-white/10 blur-3xl float-fast"
+            aria-hidden="true"
+          ></div>
+
+          <div class="relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#101010] shadow-2xl shadow-black/40">
+            <div class="flex items-center gap-2 border-b border-white/10 bg-[#151515] px-4 py-3">
+              <span class="h-3 w-3 rounded-full bg-white/20"></span>
+              <span class="h-3 w-3 rounded-full bg-white/20"></span>
+              <span class="h-3 w-3 rounded-full bg-white/20"></span>
+            </div>
+
+            <div class="grid gap-6 p-6 sm:p-8">
+              <div class="rounded-[1.35rem] border border-white/10 bg-[#151515] p-4 shadow-2xl float-slow">
+                <div class="mb-4 text-xs font-mono uppercase tracking-[0.24em] text-slate-500">Ewe Note</div>
+                <div class="space-y-3">
+                  <div class="h-4 w-3/4 rounded bg-white/10"></div>
+                  <div class="relative h-4 overflow-hidden rounded bg-emerald-400/15">
+                    <div class="sheen absolute inset-y-0 left-0 w-1/2 bg-emerald-300/45"></div>
+                  </div>
+                  <div class="h-4 w-5/6 rounded bg-white/10"></div>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-center gap-4 text-emerald-400">
+                <div class="flex h-12 w-12 items-center justify-center rounded-full border border-emerald-400/30">
+                  <div class="h-2.5 w-2.5 rounded-full bg-emerald-400"></div>
+                </div>
+                <span class="text-xs font-mono uppercase tracking-[0.26em] text-emerald-300/80">CRDT Sync</span>
+              </div>
+
+              <div class="rounded-[1.35rem] border border-white/10 bg-[#151515] p-4 shadow-2xl float-fast">
+                <div class="mb-4 text-xs font-mono uppercase tracking-[0.24em] text-slate-500">Flashcard App</div>
+                <div class="space-y-3">
+                  <div class="h-4 w-3/4 rounded bg-white/10"></div>
+                  <div class="relative h-4 overflow-hidden rounded bg-emerald-400/15">
+                    <div class="sheen absolute inset-y-0 left-0 w-1/2 bg-emerald-300/45"></div>
+                  </div>
+                  <div class="h-4 w-5/6 rounded bg-white/10"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-white px-6 py-24 text-slate-900">
+      <div class="mx-auto max-w-6xl">
+        <div class="mb-16 text-center">
+          <h2 class="text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">The Data Dilemma</h2>
+          <p class="mx-auto mt-4 max-w-2xl text-lg text-slate-500 sm:text-xl">Apps should not hold your notes hostage.</p>
+        </div>
+
+        <div class="grid gap-6 md:grid-cols-2 lg:gap-10">
+          <div class="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-8 sm:p-10">
+            <p class="mb-8 text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">The old world</p>
+            <ul class="space-y-5">
+              <li class="flex gap-4 text-lg leading-8 text-slate-700">
+                <span class="mt-3 h-2 w-2 shrink-0 rounded-full bg-rose-400"></span>
+                You ask Notion: "Can I have my notes?"
+              </li>
+              <li class="flex gap-4 text-lg leading-8 text-slate-700">
+                <span class="mt-3 h-2 w-2 shrink-0 rounded-full bg-rose-400"></span>
+                Switching apps means starting over
+              </li>
+              <li class="flex gap-4 text-lg leading-8 text-slate-700">
+                <span class="mt-3 h-2 w-2 shrink-0 rounded-full bg-rose-400"></span>
+                Offline? Hope the app cached something
+              </li>
+              <li class="flex gap-4 text-lg leading-8 text-slate-700">
+                <span class="mt-3 h-2 w-2 shrink-0 rounded-full bg-rose-400"></span>
+                Your AI assistant cannot see your PKM
+              </li>
+            </ul>
+          </div>
+
+          <div class="rounded-[1.75rem] border border-emerald-400/20 bg-[#050505] p-8 text-white shadow-2xl shadow-black/30 sm:p-10">
+            <p class="mb-8 text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">EweserDB world</p>
+            <ul class="space-y-5">
+              <li class="flex gap-4 text-lg leading-8 text-slate-200">
+                <span class="mt-3 h-2 w-2 shrink-0 rounded-full bg-emerald-400"></span>
+                Notion asks you: "Can I see your notes?"
+              </li>
+              <li class="flex gap-4 text-lg leading-8 text-slate-200">
+                <span class="mt-3 h-2 w-2 shrink-0 rounded-full bg-emerald-400"></span>
+                All your data follows you to any app
+              </li>
+              <li class="flex gap-4 text-lg leading-8 text-slate-200">
+                <span class="mt-3 h-2 w-2 shrink-0 rounded-full bg-emerald-400"></span>
+                Offline first. Always available. Always yours.
+              </li>
+              <li class="flex gap-4 text-lg leading-8 text-slate-200">
+                <span class="mt-3 h-2 w-2 shrink-0 rounded-full bg-emerald-400"></span>
+                AI agents access your data via MCP, while you stay in control
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <p class="mx-auto mt-12 max-w-3xl text-center text-lg italic text-slate-500 sm:text-xl">
+          "It is like decentralized Firebase, but users own the data, not the platform."
+        </p>
+      </div>
+    </section>
+
+    <section id="features" class="bg-white px-6 py-24 text-slate-900">
+      <div class="mx-auto max-w-6xl">
+        <div class="mb-16">
+          <h2 class="text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">Your data, liberated.</h2>
+          <p class="mt-4 max-w-2xl text-lg text-slate-500 sm:text-xl">
+            Features built for true data ownership and seamless interoperability.
+          </p>
+        </div>
+
+        <div class="grid gap-x-8 gap-y-12 md:grid-cols-2 lg:grid-cols-3">
+          {features.map((feature) => (
+            <article class="flex flex-col">
+              <div class="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-700">
+                {feature.glyph}
+              </div>
+              <h3 class="text-xl font-semibold text-slate-950">{feature.title}</h3>
+              <p class="mt-3 max-w-sm text-slate-600 leading-7">{feature.description}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section id="developers" class="border-y border-white/10 bg-[#050505] px-6 py-24 text-white">
+      <div class="mx-auto max-w-6xl">
+        <div class="mb-16">
+          <p class="mb-6 inline-flex rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-mono font-medium uppercase tracking-[0.28em] text-emerald-300">
+            For Developers
+          </p>
+          <h2 class="text-4xl font-bold tracking-tight text-white sm:text-5xl">
+            Build interoperable apps in minutes
+          </h2>
+          <p class="mt-4 max-w-2xl text-lg text-slate-400 sm:text-xl">
+            Add <span class="text-emerald-300">@eweser/db</span> to your app. Users bring their own data. No backend
+            required.
+          </p>
+        </div>
+
+        <div class="grid items-start gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+          <div class="space-y-6">
+            <div class="overflow-hidden rounded-[1.5rem] border border-white/10 bg-[#0c0c0c] shadow-2xl shadow-black/30">
+              <div class="flex items-center gap-2 border-b border-white/10 bg-white/5 px-4 py-3">
+                <span class="h-3 w-3 rounded-full bg-rose-500/90"></span>
+                <span class="h-3 w-3 rounded-full bg-amber-400/90"></span>
+                <span class="h-3 w-3 rounded-full bg-emerald-400/90"></span>
+                <span class="ml-3 text-xs font-mono uppercase tracking-[0.22em] text-slate-500">Terminal</span>
+              </div>
+              <div class="px-6 py-5">
+                <code class="text-sm text-slate-200">$ npm install @eweser/db yjs</code>
+              </div>
+            </div>
+
+            <div class="overflow-hidden rounded-[1.5rem] border border-white/10 bg-[#0c0c0c] shadow-2xl shadow-black/30">
+              <div class="flex items-center gap-2 border-b border-white/10 bg-white/5 px-4 py-3">
+                <span class="h-3 w-3 rounded-full bg-rose-500/90"></span>
+                <span class="h-3 w-3 rounded-full bg-amber-400/90"></span>
+                <span class="h-3 w-3 rounded-full bg-emerald-400/90"></span>
+                <span class="ml-3 text-xs font-mono uppercase tracking-[0.22em] text-slate-500">app.ts</span>
+              </div>
+              <pre class="overflow-x-auto px-6 py-6 text-sm leading-7 text-slate-300"><code>{codeSnippet}</code></pre>
+            </div>
+          </div>
+
+          <div class="grid gap-4 sm:grid-cols-2">
+            {devFeatures.map((feature) => (
+              <article class="rounded-[1.35rem] border border-white/10 bg-white/[0.03] p-6 transition-colors hover:bg-white/[0.06]">
+                <h3 class="text-lg font-semibold text-white">{feature.title}</h3>
+                <p class="mt-3 text-sm leading-7 text-slate-400">{feature.description}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+
+        <div class="mx-auto mt-16 max-w-4xl border-l-4 border-slate-600 pl-6">
+          <p class="text-lg italic leading-8 text-slate-300">
+            "Apps must compete on experience, not lock-in. Third parties can build on your users' data without needing
+            permission from the original developer."
+          </p>
+          <p class="mt-3 text-sm text-slate-500">EweserDB philosophy</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="try" class="bg-white px-6 py-24 text-slate-900">
+      <div class="mx-auto max-w-5xl">
+        <div class="grid gap-6 lg:grid-cols-2 lg:gap-10">
+          <article class="flex h-full flex-col justify-between rounded-[1.75rem] border border-slate-200 bg-white p-8 shadow-sm sm:p-10">
+            <div>
+              <p class="mb-6 inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-mono font-medium uppercase tracking-[0.28em] text-slate-500">
+                For Users
+              </p>
+              <h3 class="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">Try Ewe Note free</h3>
+              <p class="mt-4 max-w-md text-lg leading-8 text-slate-500">
+                No sign-up friction. Works on our hosted server. Your data stays local in your browser first.
+              </p>
+            </div>
+            <a
+              href="https://notes.eweser.com"
+              class="mt-8 inline-flex items-center justify-center rounded-xl bg-slate-950 px-6 py-3 font-medium text-white transition-colors hover:bg-slate-800"
+            >
+              Open Ewe Note
+            </a>
+          </article>
+
+          <article class="flex h-full flex-col justify-between rounded-[1.75rem] border border-slate-200 bg-white p-8 shadow-sm sm:p-10">
+            <div>
+              <p class="mb-6 inline-flex rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-mono font-medium uppercase tracking-[0.28em] text-emerald-700">
+                For Developers
+              </p>
+              <h3 class="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">Deploy your own homeserver</h3>
+              <p class="mt-4 max-w-md text-lg leading-8 text-slate-500">
+                Railway one-click or VPS script. Around five dollars per month if you self-host.
+              </p>
+            </div>
+            <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+              <a
+                href="https://railway.app/new/template?template=https://github.com/eweser/eweser-db"
+                target="_blank"
+                rel="noreferrer"
+                class="inline-flex items-center justify-center rounded-xl bg-slate-950 px-6 py-3 font-medium text-white transition-colors hover:bg-slate-800"
+              >
+                Deploy on Railway
+              </a>
+              <a
+                href="https://github.com/eweser/eweser-db"
+                target="_blank"
+                rel="noreferrer"
+                class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-3 font-medium text-slate-700 transition-colors hover:bg-slate-50"
+              >
+                View on GitHub
+              </a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-slate-200 bg-white px-6 py-12 text-slate-600">
+    <div class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-8 md:flex-row">
+      <div class="flex flex-col items-center gap-2 md:items-start">
+        <div class="flex items-center gap-2">
+          <img src="/eweser-logo.svg" alt="" aria-hidden="true" class="h-6 w-6" />
+          <span class="font-semibold tracking-tight text-slate-950">EweserDB</span>
+        </div>
+        <span class="text-sm italic text-slate-500">"Ewe-ser", pronounced "user". Because you are.</span>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-center gap-6 text-sm font-medium">
+        <a href="https://github.com/eweser/eweser-db" target="_blank" rel="noreferrer" class="transition-colors hover:text-slate-950">
+          GitHub
+        </a>
+        <a href="https://www.npmjs.com/package/@eweser/db" target="_blank" rel="noreferrer" class="transition-colors hover:text-slate-950">
+          npm
+        </a>
+        <a href="/auth/" class="transition-colors hover:text-slate-950">Sign in</a>
+        <a href="https://notes.eweser.com" class="transition-colors hover:text-slate-950">Ewe Note</a>
+      </div>
+
+      <div class="flex flex-wrap justify-center gap-2">
+        {['Yjs', 'Hocuspocus', 'better-auth', 'TypeScript', 'MIT'].map((tag) => (
+          <span class="rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs font-mono font-medium text-slate-600">
+            {tag}
+          </span>
+        ))}
+      </div>
+    </div>
+  </footer>
 </Layout>

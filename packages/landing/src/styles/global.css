@@ -1,3 +1,85 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: #050505;
+}
+
+body {
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 38%),
+    linear-gradient(180deg, #050505 0%, #070707 32%, #ffffff 32%, #ffffff 100%);
+}
+
+section[id] {
+  scroll-margin-top: 6.5rem;
+}
+
+::selection {
+  background: rgba(74, 222, 128, 0.28);
+  color: #ffffff;
+}
+
+.float-slow {
+  animation: float-slow 10s ease-in-out infinite;
+}
+
+.float-fast {
+  animation: float-fast 7s ease-in-out infinite;
+}
+
+.sheen {
+  animation: sheen 4.8s linear infinite;
+}
+
+@keyframes float-slow {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: translate3d(0, -10px, 0);
+  }
+}
+
+@keyframes float-fast {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: translate3d(0, -16px, 0);
+  }
+}
+
+@keyframes sheen {
+  0% {
+    transform: translateX(-120%);
+  }
+
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
