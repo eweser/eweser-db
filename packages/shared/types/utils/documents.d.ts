@@ -1,7 +1,7 @@
 import type { YMapEvent, Transaction } from 'yjs';
 import type * as Y from 'yjs';
 import type { TypedMap } from 'yjs-types';
-import type { CollectionKey, EweDocument, DocumentWithoutBase } from '../collections';
+import type { CollectionKey, EweDocument, DocumentWithoutBase } from '../collections/index.js';
 /** Sets the metadata like created and updated for the doc */
 export declare const newDocument: <T extends EweDocument>(_id: string, _ref: string, doc: DocumentWithoutBase<T>) => T;
 /**

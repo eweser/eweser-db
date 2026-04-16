@@ -1,4 +1,4 @@
-import type { DocumentBase } from './documentBase';
+import type { DocumentBase } from './documentBase.js';
 /** Permissions granted to an AI agent for accessing EweserDB collections. */
 export type AgentConfigBase = {
     /** Human-readable name for this agent (e.g. "Claude Code", "My Local Agent") */

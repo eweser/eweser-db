@@ -6,7 +6,7 @@ import type {
   EweDocument,
   DocumentWithoutBase,
   DocumentBase,
-} from '../collections';
+} from '../collections/index.js';
 
 /** Sets the metadata like created and updated for the doc */
 export const newDocument = <T extends EweDocument>(

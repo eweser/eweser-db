@@ -1,5 +1,5 @@
 [build]
-dockerfilePath = "packages/auth-server-hono/Dockerfile"
+dockerfilePath = "Dockerfile"
 buildCommand = ""
 
 [deploy]

@@ -26,7 +26,7 @@ dockerfilePath = "packages/auth-server-hono/Dockerfile"
 buildCommand = ""
 
 [deploy]
-startCommand = "node dist/db/migrate.js && node dist/index.js"
+startCommand = "node packages/auth-server-hono/dist/db/migrate.js && node packages/auth-server-hono/dist/index.js"
 healthcheckPath = "/health"
 healthcheckTimeout = 30
 restartPolicyType = "ON_FAILURE"

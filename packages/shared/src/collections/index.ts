@@ -1,16 +1,16 @@
-import type { AgentConfig, AgentAccessLogEntry } from './agent-config';
-import type { Note } from './note';
-import type { Flashcard } from './flashcard';
-import type { Profile } from './profile';
-import type { DocumentBase } from './documentBase';
-import type { Conversation } from './conversation';
-export * from './note';
-export * from './flashcard';
-export * from './profile';
-export * from './documentBase';
-export * from './agent-config';
-export * from './conversation';
-export * from './folder';
+import type { AgentConfig, AgentAccessLogEntry } from './agent-config.js';
+import type { Note } from './note.js';
+import type { Flashcard } from './flashcard.js';
+import type { Profile } from './profile.js';
+import type { DocumentBase } from './documentBase.js';
+import type { Conversation } from './conversation.js';
+export * from './note.js';
+export * from './flashcard.js';
+export * from './profile.js';
+export * from './documentBase.js';
+export * from './agent-config.js';
+export * from './conversation.js';
+export * from './folder.js';
 
 /** We don't include registry because we use this after login to get all non-registry collections. */
 export const COLLECTION_KEYS = [

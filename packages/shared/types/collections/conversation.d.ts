@@ -1,4 +1,4 @@
-import type { DocumentBase } from './documentBase';
+import type { DocumentBase } from './documentBase.js';
 export interface ConversationTurn {
     role: 'user' | 'assistant';
     content: string;

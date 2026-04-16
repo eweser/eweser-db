@@ -1,5 +1,5 @@
 [build]
-dockerfilePath = "packages/sync-server/Dockerfile"
+dockerfilePath = "Dockerfile"
 buildCommand = ""
 
 [deploy]

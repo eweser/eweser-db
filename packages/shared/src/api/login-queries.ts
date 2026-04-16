@@ -1,4 +1,4 @@
-import type { CollectionKeyOrAll } from '../collections';
+import type { CollectionKeyOrAll } from '../collections/index.js';
 
 export type LoginQueryOptions = {
   redirect: string;

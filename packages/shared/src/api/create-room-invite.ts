@@ -1,5 +1,5 @@
-import type { RoomAccessType } from '../collections';
-import type { LoginQueryParams } from './login-queries';
+import type { RoomAccessType } from '../collections/index.js';
+import type { LoginQueryParams } from './login-queries.js';
 
 export type CreateRoomInviteBody = LoginQueryParams & {
   inviterId?: string;

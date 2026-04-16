@@ -38,6 +38,7 @@ COPY --from=builder /workspace/packages/shared/dist ./packages/shared/dist
 # SQLite data directory
 RUN mkdir -p /data
 
+ENV PORT=8080
 ENV SYNC_PORT=8080
 ENV SYNC_DB_PATH=/data/sync.sqlite
 EXPOSE 8080
