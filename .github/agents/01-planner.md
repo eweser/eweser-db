@@ -4,27 +4,43 @@ model:
     - 'Claude Sonnet 4.6 (copilot)'
     - 'MiniMax: MiniMax M2.7 (openrouter)'
 tools:
-    - read/readFile
-    - read/problems
-    - read/terminalLastCommand
-    - search/codebase
-    - search/textSearch
-    - search/fileSearch
-    - search/listDirectory
-    - search/usages
-    - search/changes
-    - execute/runInTerminal
-    - execute/getTerminalOutput
-    - execute/awaitTerminal
-    - execute/killTerminal
-    - edit/createFile
-    - edit/editFiles
-    - edit/createDirectory
-    - web/fetch
-    - web/githubRepo
-    - agent
-    - todo
-    - vscode/memory
+  - vscode/memory
+  - execute/getTerminalOutput
+  - execute/killTerminal
+  - execute/runInTerminal
+  - read/terminalLastCommand
+  - read/problems
+  - read/readFile
+  - agent/runSubagent
+  - edit/createDirectory
+  - edit/createFile
+  - edit/editFiles
+  - search/changes
+  - search/codebase
+  - search/fileSearch
+  - search/listDirectory
+  - search/textSearch
+  - search/usages
+  - web/fetch
+  - web/githubRepo
+  - eweser/eweser_create_document
+  - eweser/eweser_delete_document
+  - eweser/eweser_list_documents
+  - eweser/eweser_list_rooms
+  - eweser/eweser_read_document
+  - eweser/eweser_save_memory
+  - eweser/eweser_search
+  - eweser/eweser_update_document
+  - brave-search/brave_local_search
+  - brave-search/brave_web_search
+  - fetch-mcp/fetch
+  - tavily/tavily_crawl
+  - tavily/tavily_extract
+  - tavily/tavily_map
+  - tavily/tavily_research
+  - tavily/tavily_search
+  - todo
+  - agent
 agents: [code-explore, web-explore, architect]
 handoffs:
     - label: 'Start Run 1'
