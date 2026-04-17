@@ -1,5 +1,5 @@
 [build]
-dockerfilePath = "Dockerfile"
+dockerfilePath = "packages/auth-pages/Dockerfile"
 buildCommand = ""
 
 [deploy]
