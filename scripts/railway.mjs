@@ -100,7 +100,9 @@ function targetServices(project) {
 const [, , cmd = 'status', ...args] = process.argv;
 
 if (cmd === 'projects') {
-  const data = await gql(`query { me { projects(first: 50) { edges { node { id name } } } } }`);
+  const data = await gql(
+    `query { me { projects(first: 50) { edges { node { id name } } } } }`
+  );
   const projects = toEdges(data.me.projects);
   for (const p of projects) {
     console.log(`${p.name}: ${p.id}`);
