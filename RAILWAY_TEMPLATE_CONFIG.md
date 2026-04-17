@@ -104,5 +104,5 @@ POSTGRES_PASSWORD=${{secret}}
 8. **Copy the template code** (e.g., `a1b2c3d4`)
 9. **Update README.md**:
    ```markdown
-   [![Deploy on Railway](https://railway.app/button.svg)](https://railway.com/new/template/YOUR_TEMPLATE_CODE)
+   [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/YOUR_TEMPLATE_CODE)
    ```

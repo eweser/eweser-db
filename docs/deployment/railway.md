@@ -6,9 +6,9 @@ Railway offers managed container deployments with zero server management. No SSH
 
 ## One-Click Deploy
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/eweser/eweser-db)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/JPbli2?referralCode=WlO5hM&utm_medium=integration&utm_source=template&utm_campaign=generic)
 
-> Note: The Railway template is configured from `railway.toml` at the root of this repo.
+> Note: The published Railway template uses the root `railway.toml` plus per-service `RAILWAY_DOCKERFILE_PATH` variables configured in the template editor.
 
 ---
 
