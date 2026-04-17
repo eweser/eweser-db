@@ -1,6 +1,8 @@
 [build]
-dockerfilePath = "Dockerfile"
+dockerfilePath = "packages/sync-server/Dockerfile"
 buildCommand = ""
 
 [deploy]
+healthcheckPath = "/"
+healthcheckTimeout = 30
 restartPolicyMaxRetries = 3

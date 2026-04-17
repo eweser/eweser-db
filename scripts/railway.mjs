@@ -19,6 +19,7 @@ const SERVICES = {
 const CONFIG_FILES = {
   'ewe-note': 'packages/ewe-note/railway.toml',
   aggregator: 'packages/aggregator/railway.toml',
+  'auth-api': 'packages/auth-server-hono/railway.toml',
   'sync-server': 'packages/sync-server/railway.toml',
   'auth-pages': 'packages/auth-pages/railway.toml',
 };
