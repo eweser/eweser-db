@@ -53,6 +53,15 @@ const server = Server.configure({
       throw new Error('Invalid token');
     }
   },
+  async onRequest({ request, response }) {
+    // Health check endpoint for Railway
+    if (request.url === '/health') {
+      response.writeHead(200, { 'Content-Type': 'text/plain' });
+      response.end('OK');
+      return;
+    }
+    // Let Hocuspocus handle other requests
+  },
 });
 
 server.listen().then(() => {
