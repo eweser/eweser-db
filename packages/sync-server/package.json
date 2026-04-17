@@ -17,8 +17,7 @@
     "@hocuspocus/extension-webhook": "^2.15.0",
     "@eweser/logger": "*",
     "@hocuspocus/server": "^2.15.0",
-    "jsonwebtoken": "^9.0.3",
-    "ws": "^8.20.0"
+    "jsonwebtoken": "^9.0.3"
   },
   "devDependencies": {
     "@eweser/eslint-config-ts": "^1.15.0",
