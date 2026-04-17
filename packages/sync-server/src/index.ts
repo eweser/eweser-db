@@ -58,10 +58,8 @@ const server = Server.configure({
     if (url === '/health' || url.startsWith('/health')) {
       response.writeHead(200, { 'Content-Type': 'text/plain' });
       response.end('OK');
-      // Return a rejected promise to stop the hook chain
-      throw new Error('HEALTH_CHECK_HANDLED');
+      return;
     }
-    // Let other hooks handle the request
   },
 });
 
