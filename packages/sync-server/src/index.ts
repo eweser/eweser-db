@@ -1,8 +1,10 @@
-import { Server } from '@hocuspocus/server';
+import { Hocuspocus } from '@hocuspocus/server';
 import { SQLite } from '@hocuspocus/extension-sqlite';
 import { Webhook } from '@hocuspocus/extension-webhook';
 import jwt from 'jsonwebtoken';
 import { createLogger, initTelemetry } from '@eweser/logger';
+import { createServer } from 'http';
+import { WebSocketServer } from 'ws';
 
 await initTelemetry('sync-server');
 
@@ -25,8 +27,8 @@ if (aggregatorWebhookUrl) {
   );
 }
 
-const server = Server.configure({
-  port,
+// Create Hocuspocus instance (not server - we'll handle HTTP ourselves)
+const hocuspocus = new Hocuspocus({
   extensions,
   async onAuthenticate({ token }) {
     if (!token) {
@@ -52,17 +54,31 @@ const server = Server.configure({
       throw new Error('Invalid token');
     }
   },
-  async onRequest({ request, response }) {
-    // Health check endpoint for Railway
-    const url = request.url || '';
-    if (url === '/health' || url.startsWith('/health')) {
-      response.writeHead(200, { 'Content-Type': 'text/plain' });
-      response.end('OK');
-      return;
-    }
-  },
 });
 
-server.listen().then(() => {
-  log.info(`Hocuspocus sync server running on port ${port}`);
+// Create HTTP server
+const server = createServer((req, res) => {
+  // Health check endpoint for Railway
+  if (req.url === '/health' || req.url?.startsWith('/health')) {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('OK');
+    return;
+  }
+  
+  // For all other requests, return 404
+  res.writeHead(404);
+  res.end('Not found');
+});
+
+// Create WebSocket server attached to HTTP server
+const wss = new WebSocketServer({ server });
+
+// Handle WebSocket connections with Hocuspocus
+wss.on('connection', (ws, req) => {
+  hocuspocus.handleConnection(ws, req, {});
+});
+
+// Start server
+server.listen(port, () => {
+  log.info(`Sync server running on port ${port}`);
 });
