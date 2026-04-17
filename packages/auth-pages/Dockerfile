@@ -2,9 +2,21 @@ FROM node:22-slim AS builder
 
 WORKDIR /workspace
 
-COPY . .
+# Selective install — only the workspaces needed for the auth-pages build
+COPY package.json package-lock.json ./
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/db/package.json ./packages/db/
+COPY packages/auth-pages/package.json ./packages/auth-pages/
 
-RUN npm ci
+RUN npm ci \
+  --workspace @eweser/shared \
+  --workspace @eweser/db \
+  --workspace @eweser/auth-pages \
+  --include-workspace-root
+
+COPY packages/shared/ ./packages/shared/
+COPY packages/db/ ./packages/db/
+COPY packages/auth-pages/ ./packages/auth-pages/
 
 RUN npm run build --workspace @eweser/shared
 RUN npm run build --workspace @eweser/db

@@ -1,4 +1,5 @@
 import { Server } from '@hocuspocus/server';
+import type { Extension } from '@hocuspocus/server';
 import { SQLite } from '@hocuspocus/extension-sqlite';
 import { Webhook } from '@hocuspocus/extension-webhook';
 import jwt from 'jsonwebtoken';
@@ -14,7 +15,7 @@ const secret = process.env.SYNC_AUTH_SECRET || 'test-secret';
 const aggregatorWebhookUrl = process.env.AGGREGATOR_WEBHOOK_URL;
 const webhookSecret = process.env.WEBHOOK_SECRET;
 
-const extensions = [new SQLite({ database: dbPath })];
+const extensions: Extension[] = [new SQLite({ database: dbPath })];
 
 if (aggregatorWebhookUrl) {
   extensions.push(
@@ -25,7 +26,8 @@ if (aggregatorWebhookUrl) {
   );
 }
 
-// Use Server.configure which sets up HTTP server internally
+// Hocuspocus responds 200 OK to all plain HTTP requests by default,
+// so /health works without any custom onRequest hook.
 const server = Server.configure({
   port,
   extensions,
@@ -52,21 +54,6 @@ const server = Server.configure({
     } catch {
       throw new Error('Invalid token');
     }
-  },
-  // Handle HTTP requests - including health checks
-  async onRequest({ request, response }) {
-    const url = request.url || '';
-    log.info(`onRequest: ${url}`);
-    
-    // Health check endpoint for Railway
-    if (url === '/health' || url.startsWith('/health')) {
-      log.info('Health check - returning 200 OK');
-      response.writeHead(200, { 'Content-Type': 'text/plain' });
-      response.end('OK');
-      // Throw empty error to stop hook chain (as per Hocuspocus docs)
-      throw new Error();
-    }
-    // Let other hooks handle the request
   },
 });
 

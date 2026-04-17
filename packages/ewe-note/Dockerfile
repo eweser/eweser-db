@@ -1,10 +1,23 @@
-FROM node:22 AS builder
+FROM node:22-slim AS builder
 
 WORKDIR /workspace
 
-COPY . .
+# Selective install — only the workspaces needed for the ewe-note build
+COPY package.json package-lock.json ./
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/db/package.json ./packages/db/
+COPY packages/ewe-note/package.json ./packages/ewe-note/
 
-RUN npm ci
+RUN npm ci \
+  --workspace @eweser/shared \
+  --workspace @eweser/db \
+  --workspace @eweser/ewe-note \
+  --include-workspace-root
+
+COPY packages/shared/ ./packages/shared/
+COPY packages/db/ ./packages/db/
+COPY packages/ewe-note/ ./packages/ewe-note/
+
 RUN npm run build --workspace @eweser/shared
 RUN npm run build --workspace @eweser/db
 
