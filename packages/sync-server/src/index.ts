@@ -1,11 +1,10 @@
-import { Server } from '@hocuspocus/server';
-import type { Extension } from '@hocuspocus/server';
+import { Hocuspocus } from '@hocuspocus/server';
 import { SQLite } from '@hocuspocus/extension-sqlite';
 import { Webhook } from '@hocuspocus/extension-webhook';
 import jwt from 'jsonwebtoken';
 import { createLogger, initTelemetry } from '@eweser/logger';
-import { createServer } from 'http';
-import { WebSocketServer } from 'ws';
+import express from 'express';
+import expressWebsockets from 'express-ws';
 
 await initTelemetry('sync-server');
 
@@ -17,7 +16,7 @@ const secret = process.env.SYNC_AUTH_SECRET || 'test-secret';
 const aggregatorWebhookUrl = process.env.AGGREGATOR_WEBHOOK_URL;
 const webhookSecret = process.env.WEBHOOK_SECRET;
 
-const extensions: Extension[] = [new SQLite({ database: dbPath })];
+const extensions = [new SQLite({ database: dbPath })];
 
 if (aggregatorWebhookUrl) {
   extensions.push(
@@ -28,7 +27,8 @@ if (aggregatorWebhookUrl) {
   );
 }
 
-const hocuspocus = Server.configure({
+// Configure Hocuspocus
+const hocuspocus = new Hocuspocus({
   extensions,
   async onAuthenticate({ token }) {
     if (!token) {
@@ -56,29 +56,20 @@ const hocuspocus = Server.configure({
   },
 });
 
-// Create HTTP server with health endpoint
-const server = createServer((request, response) => {
-  // Health check endpoint for Railway
-  const url = request.url || '';
-  if (url === '/health' || url.startsWith('/health?')) {
-    response.writeHead(200, { 'Content-Type': 'text/plain' });
-    response.end('OK');
-    return;
-  }
-  
-  // For WebSocket upgrade requests, let them through
-  // Hocuspocus will handle them via the WebSocketServer
-  response.writeHead(404);
-  response.end('Not found');
+// Setup Express with express-ws
+const { app } = expressWebsockets(express());
+
+// Health check endpoint for Railway
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
 });
 
-// Create WebSocket server and attach Hocuspocus
-const wss = new WebSocketServer({ server });
-
-wss.on('connection', (ws, req) => {
-  hocuspocus.handleConnection(ws, req);
+// WebSocket route for Hocuspocus
+app.ws('/sync', (websocket, request) => {
+  hocuspocus.handleConnection(websocket, request, {});
 });
 
-server.listen(port, () => {
+// Start the server
+app.listen(port, () => {
   log.info(`Hocuspocus sync server running on port ${port}`);
 });
