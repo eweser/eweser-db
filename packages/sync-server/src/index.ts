@@ -1,10 +1,8 @@
-import { Hocuspocus } from '@hocuspocus/server';
+import { Server } from '@hocuspocus/server';
 import { SQLite } from '@hocuspocus/extension-sqlite';
 import { Webhook } from '@hocuspocus/extension-webhook';
 import jwt from 'jsonwebtoken';
 import { createLogger, initTelemetry } from '@eweser/logger';
-import express from 'express';
-import expressWebsockets from 'express-ws';
 
 await initTelemetry('sync-server');
 
@@ -27,8 +25,8 @@ if (aggregatorWebhookUrl) {
   );
 }
 
-// Configure Hocuspocus
-const hocuspocus = new Hocuspocus({
+const server = Server.configure({
+  port,
   extensions,
   async onAuthenticate({ token }) {
     if (!token) {
@@ -54,22 +52,19 @@ const hocuspocus = new Hocuspocus({
       throw new Error('Invalid token');
     }
   },
+  async onRequest({ request, response }) {
+    // Health check endpoint for Railway
+    const url = request.url || '';
+    if (url === '/health' || url.startsWith('/health')) {
+      response.writeHead(200, { 'Content-Type': 'text/plain' });
+      response.end('OK');
+      // Return a rejected promise to stop the hook chain
+      throw new Error('HEALTH_CHECK_HANDLED');
+    }
+    // Let other hooks handle the request
+  },
 });
 
-// Setup Express with express-ws
-const { app } = expressWebsockets(express());
-
-// Health check endpoint for Railway
-app.get('/health', (req, res) => {
-  res.status(200).send('OK');
-});
-
-// WebSocket route for Hocuspocus
-app.ws('/sync', (websocket, request) => {
-  hocuspocus.handleConnection(websocket, request, {});
-});
-
-// Start the server
-app.listen(port, () => {
+server.listen().then(() => {
   log.info(`Hocuspocus sync server running on port ${port}`);
 });
