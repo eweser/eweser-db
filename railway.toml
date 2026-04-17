@@ -1,32 +1,10 @@
 # Railway configuration — EweserDB monorepo root
-# This file configures the default service (auth-api) when deploying from the root.
-# For a full multi-service deployment, add each package as a separate Railway service
-# pointing to the same repo with its own config file:
 #
-#   packages/auth-server-hono/railway.toml   → auth-api
-#   packages/sync-server/railway.toml        → sync-server
-#   packages/aggregator/railway.toml         → aggregator
-#   packages/auth-pages/railway.toml         → auth-pages
-#   packages/ewe-note/railway.toml           → ewe-note
+# Intentionally left without [build]/[deploy] overrides.
 #
-# Required environment variables (set in Railway dashboard):
-#   DATABASE_URL         — from Railway PostgreSQL plugin
-#   SERVER_SECRET        — openssl rand -hex 32
-#   BETTER_AUTH_SECRET   — openssl rand -hex 32
-#   SYNC_AUTH_SECRET     — openssl rand -hex 32
-#   WEBHOOK_SECRET       — openssl rand -hex 32
-#   BETTER_AUTH_BASE_URL — https://<your-railway-domain>
-#   AUTH_SERVER_DOMAIN   — <your-railway-domain>
-#   AUTH_SERVER_URL      — https://<your-railway-domain>
-#   SYNC_SERVER_URL      — wss://<your-railway-domain>/sync
-#   SYNC_PUBLIC_URL      — wss://<your-railway-domain>/sync
-
-[build]
-dockerfilePath = "packages/auth-server-hono/Dockerfile"
-buildCommand = ""
-
-[deploy]
-healthcheckPath = "/health"
-healthcheckTimeout = 120
-restartPolicyType = "ON_FAILURE"
-restartPolicyMaxRetries = 3
+# Why: this repository is deployed as multiple Railway services from one repo.
+# Per-service settings (or each service's own railway.toml via railwayConfigFile)
+# must decide Dockerfile path, health checks, and start behavior.
+#
+# If root-level build/deploy is hardcoded here, all services can accidentally
+# inherit auth-api settings (wrong Dockerfile, healthcheck path, predeploy command).
