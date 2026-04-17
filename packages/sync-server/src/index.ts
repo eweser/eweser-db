@@ -27,7 +27,7 @@ if (aggregatorWebhookUrl) {
   );
 }
 
-// Create Hocuspocus instance (not server - we'll handle HTTP ourselves)
+// Create Hocuspocus instance
 const hocuspocus = new Hocuspocus({
   extensions,
   async onAuthenticate({ token }) {
@@ -58,8 +58,11 @@ const hocuspocus = new Hocuspocus({
 
 // Create HTTP server
 const server = createServer((req, res) => {
+  log.info(`HTTP request: ${req.url}`);
+  
   // Health check endpoint for Railway
   if (req.url === '/health' || req.url?.startsWith('/health')) {
+    log.info('Health check request received');
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('OK');
     return;
@@ -75,10 +78,11 @@ const wss = new WebSocketServer({ server });
 
 // Handle WebSocket connections with Hocuspocus
 wss.on('connection', (ws, req) => {
+  log.info('WebSocket connection received');
   hocuspocus.handleConnection(ws, req, {});
 });
 
-// Start server
-server.listen(port, () => {
+// Start server - bind to 0.0.0.0 for Railway
+server.listen(port, '0.0.0.0', () => {
   log.info(`Sync server running on port ${port}`);
 });
