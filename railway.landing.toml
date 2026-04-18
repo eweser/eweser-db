@@ -1,0 +1,7 @@
+[build]
+dockerfilePath = "packages/landing/Dockerfile"
+
+[deploy]
+healthcheckPath = "/"
+healthcheckTimeout = 30
+restartPolicyMaxRetries = 3
