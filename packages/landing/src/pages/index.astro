@@ -77,6 +77,10 @@ const room = db.getRoom('notes');
 const Notes = room.getDocuments();
 
 Notes.new({ text: 'Hello from any app' });`;
+
+const noteUrl = 'https://note.eweser.com/';
+const loginUrl =
+  'https://login.eweser.com/auth/?collections=all&redirect=https%3A%2F%2Fnote.eweser.com%2F&domain=note.eweser.com&name=Ewe+Note';
 ---
 
 <Layout
@@ -104,11 +108,11 @@ Notes.new({ text: 'Hello from any app' });`;
       </nav>
 
       <div class="flex items-center gap-3">
-        <a href="/auth/" class="hidden text-sm text-slate-300 transition-colors hover:text-white md:inline-flex">
+        <a href={loginUrl} class="hidden text-sm text-slate-300 transition-colors hover:text-white md:inline-flex">
           Sign in
         </a>
         <a
-          href="https://notes.eweser.com"
+          href={noteUrl}
           class="hidden items-center justify-center rounded-xl bg-white px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-slate-100 sm:inline-flex"
         >
           Open Ewe Note
@@ -147,7 +151,7 @@ Notes.new({ text: 'Hello from any app' });`;
 
           <div class="mt-10 flex flex-col gap-4 sm:flex-row">
             <a
-              href="https://notes.eweser.com"
+              href={noteUrl}
               class="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 font-medium text-black transition-colors hover:bg-slate-100"
             >
               Try Ewe Note
@@ -369,7 +373,7 @@ Notes.new({ text: 'Hello from any app' });`;
               </p>
             </div>
             <a
-              href="https://notes.eweser.com"
+              href={noteUrl}
               class="mt-8 inline-flex items-center justify-center rounded-xl bg-slate-950 px-6 py-3 font-medium text-white transition-colors hover:bg-slate-800"
             >
               Open Ewe Note
@@ -427,8 +431,8 @@ Notes.new({ text: 'Hello from any app' });`;
         <a href="https://www.npmjs.com/package/@eweser/db" target="_blank" rel="noreferrer" class="transition-colors hover:text-slate-950">
           npm
         </a>
-        <a href="/auth/" class="transition-colors hover:text-slate-950">Sign in</a>
-        <a href="https://notes.eweser.com" class="transition-colors hover:text-slate-950">Ewe Note</a>
+        <a href={loginUrl} class="transition-colors hover:text-slate-950">Sign in</a>
+        <a href={noteUrl} class="transition-colors hover:text-slate-950">Ewe Note</a>
       </div>
 
       <div class="flex flex-wrap justify-center gap-2">

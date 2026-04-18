@@ -7,11 +7,33 @@ body,
   margin: 0;
 }
 
-body {
+:root {
+  color-scheme: dark;
   font-family: 'Inter', 'Segoe UI', 'Helvetica Neue', sans-serif;
+  --background: hsl(222.2 84% 4.9%);
+  --foreground: hsl(210 40% 98%);
+  --card: hsl(222.2 84% 4.9%);
+  --card-foreground: hsl(210 40% 98%);
+  --popover: hsl(222.2 84% 4.9%);
+  --popover-foreground: hsl(210 40% 98%);
+  --primary: hsl(224.21 39.75% 46.86%);
+  --primary-foreground: hsl(223.93 41.18% 95%);
+  --secondary: hsl(21.75 34.78% 45.1%);
+  --secondary-foreground: hsl(22.3 84.96% 95%);
+  --muted: hsl(217.2 32.6% 17.5%);
+  --muted-foreground: hsl(215 20.2% 65.1%);
+  --accent: hsl(217.2 32.6% 17.5%);
+  --accent-foreground: hsl(210 40% 98%);
+  --destructive: hsl(0 62.8% 30.6%);
+  --destructive-foreground: hsl(210 40% 98%);
+  --border: hsl(217.2 32.6% 17.5%);
+  --input: hsl(217.2 32.6% 17.5%);
+  --ring: hsl(212.7 26.8% 83.9%);
+  --radius: 0.75rem;
 }
 
-:root {
+.light {
+  color-scheme: light;
   --background: hsl(0 0% 100%);
   --foreground: hsl(222.2 84% 4.9%);
   --card: hsl(0 0% 100%);
@@ -31,10 +53,10 @@ body {
   --border: hsl(214.3 31.8% 91.4%);
   --input: hsl(214.3 31.8% 91.4%);
   --ring: hsl(222.2 84% 4.9%);
-  --radius: 0.75rem;
 }
 
 .dark {
+  color-scheme: dark;
   --background: hsl(222.2 84% 4.9%);
   --foreground: hsl(210 40% 98%);
   --card: hsl(222.2 84% 4.9%);
@@ -86,19 +108,25 @@ body {
     @apply border-border;
   }
 
+  html {
+    background:
+      radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 38%),
+      linear-gradient(180deg, #050505 0%, #070707 100%);
+  }
+
   body {
     @apply bg-background text-foreground;
     background-image:
-      radial-gradient(
-        circle at top left,
-        rgb(234 240 255 / 0.9),
-        transparent 35%
-      ),
-      radial-gradient(
-        circle at bottom right,
-        rgb(255 233 220 / 0.9),
-        transparent 30%
-      );
+      radial-gradient(circle at top, rgba(255, 255, 255, 0.1), transparent 36%),
+      radial-gradient(circle at 84% 82%, rgba(74, 222, 128, 0.12), transparent 28%),
+      linear-gradient(180deg, #050505 0%, #070707 100%);
+    overflow-x: hidden;
+  }
+
+  .light body {
+    background-image:
+      radial-gradient(circle at top left, rgb(234 240 255 / 0.9), transparent 35%),
+      radial-gradient(circle at bottom right, rgb(255 233 220 / 0.9), transparent 30%);
   }
 
   a {

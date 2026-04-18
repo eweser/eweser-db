@@ -13,7 +13,6 @@ import {
 } from 'react-router-dom';
 import { ProfileEditor } from './components/profile-editor';
 import {
-  Badge,
   Button,
   Card,
   InlineSpinner,
@@ -39,6 +38,18 @@ import {
   validateLoginQueryOptions,
 } from './lib/login-query';
 
+const signInBullets = [
+  'Use one auth surface for notes, demos, and future apps.',
+  'Per-app access grants instead of vendor lock-in.',
+  'Offline-first account data with profile rooms.',
+];
+
+const signUpBullets = [
+  'Email/password accounts are handled by the Hono auth API.',
+  'Profile rooms keep your account data portable and user-owned.',
+  'Start with one identity, then reuse it across apps.',
+];
+
 function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
@@ -59,23 +70,31 @@ function SiteHeader() {
   const session = authClient.useSession();
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
-        <Link className="font-semibold text-foreground no-underline" to="/">
-          Eweser DB
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#050505]/80 backdrop-blur-xl">
+      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
+        <Link className="flex items-center gap-3 no-underline" to="/">
+          <span
+            aria-hidden="true"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white"
+          >
+            <span className="h-2.5 w-2.5 rounded-full bg-white/80" />
+          </span>
+          <span className="text-lg font-semibold tracking-tight text-white">
+            EweserDB
+          </span>
         </Link>
 
-        <nav className="flex items-center gap-2">
+        <nav className="hidden items-center gap-6 md:flex">
           {session.data?.user ? (
             <>
               <Link
-                className="text-sm text-muted-foreground no-underline hover:text-foreground"
+                className="text-sm text-slate-300 no-underline transition-colors hover:text-white"
                 to="/home"
               >
                 Home
               </Link>
               <Link
-                className="text-sm text-muted-foreground no-underline hover:text-foreground"
+                className="text-sm text-slate-300 no-underline transition-colors hover:text-white"
                 to="/sign-out"
               >
                 Sign out
@@ -84,13 +103,13 @@ function SiteHeader() {
           ) : (
             <>
               <Link
-                className="text-sm text-muted-foreground no-underline hover:text-foreground"
+                className="text-sm text-slate-300 no-underline transition-colors hover:text-white"
                 to="/sign-in"
               >
                 Sign in
               </Link>
               <Link
-                className="text-sm text-muted-foreground no-underline hover:text-foreground"
+                className="text-sm text-slate-300 no-underline transition-colors hover:text-white"
                 to="/sign-up"
               >
                 Sign up
@@ -98,7 +117,7 @@ function SiteHeader() {
             </>
           )}
           <a
-            className="text-sm text-muted-foreground no-underline hover:text-foreground"
+            className="text-sm text-slate-300 no-underline transition-colors hover:text-white"
             href="https://github.com/eweser/eweser-db"
             rel="noreferrer"
             target="_blank"
@@ -113,38 +132,101 @@ function SiteHeader() {
 }
 
 function AuthLayout({
+  bullets,
   children,
+  eyebrow,
+  description,
+  panelDescription,
+  panelTitle,
   title,
 }: {
+  bullets: string[];
   children: React.ReactNode;
-  title: string;
+  description: string;
+  eyebrow: string;
+  panelDescription: string;
+  panelTitle: string;
+  title: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] flex-col lg:flex-row">
-      <aside className="order-2 flex items-center justify-center bg-primary px-8 py-12 text-primary-foreground lg:order-1 lg:w-1/2">
-        <div className="max-w-lg space-y-5">
-          <Badge
-            tone="outline"
-            className="border-primary-foreground/20 text-primary-foreground"
-          >
-            User-owned auth
-          </Badge>
-          <h1 className="text-4xl font-semibold leading-tight">{title}</h1>
-          <p className="text-sm leading-6 text-primary-foreground/80">
-            Sign in, approve app access, and manage your profile from a
-            standalone SPA that talks directly to the Hono auth API.
-          </p>
-          <ul className="space-y-2 text-sm text-primary-foreground/80">
-            <li>Offline-first account data with profile rooms.</li>
-            <li>Per-app access grants instead of vendor lock-in.</li>
-            <li>One auth surface for notes, demos, and future apps.</li>
-          </ul>
-        </div>
-      </aside>
+    <div className="relative isolate min-h-[calc(100svh-5rem)] overflow-hidden bg-[#050505] text-white">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            'radial-gradient(circle at top, rgba(255,255,255,0.11), transparent 34%), radial-gradient(circle at 85% 78%, rgba(74,222,128,0.16), transparent 26%), radial-gradient(circle at 18% 86%, rgba(255,255,255,0.06), transparent 20%)',
+        }}
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-[420px]"
+        style={{
+          background:
+            'linear-gradient(180deg, rgba(74,222,128,0.08) 0%, rgba(5,5,5,0) 72%)',
+        }}
+      />
 
-      <section className="order-1 flex flex-1 items-center justify-center px-4 py-10 lg:order-2 lg:px-8">
-        <div className="w-full max-w-md">{children}</div>
-      </section>
+      <main className="mx-auto grid w-full max-w-7xl gap-12 px-6 py-10 lg:min-h-[calc(100svh-5rem)] lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:py-16">
+        <section className="relative max-w-2xl">
+          <p className="mb-5 text-sm font-medium uppercase tracking-[0.32em] text-slate-400">
+            {eyebrow}
+          </p>
+          <h1 className="max-w-xl text-4xl font-bold tracking-tight leading-[1.02] text-white sm:text-6xl lg:text-7xl">
+            {title}
+          </h1>
+          <p className="mt-6 max-w-xl text-lg leading-8 text-slate-400 sm:text-xl">
+            {description}
+          </p>
+
+          <ul className="mt-8 space-y-4">
+            {bullets.map((bullet) => (
+              <li
+                key={bullet}
+                className="flex gap-4 text-sm leading-7 text-slate-300 sm:text-base"
+              >
+                <span className="mt-3 h-2 w-2 shrink-0 rounded-full bg-emerald-400" />
+                <span>{bullet}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="relative">
+          <div
+            aria-hidden="true"
+            className="absolute -left-10 top-10 h-28 w-28 rounded-full bg-emerald-400/18 blur-3xl float-slow"
+          />
+          <div
+            aria-hidden="true"
+            className="absolute -right-4 bottom-12 h-32 w-32 rounded-full bg-white/10 blur-3xl float-fast"
+          />
+
+          <div className="relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#101010]/95 shadow-2xl shadow-black/40">
+            <div className="flex items-center gap-2 border-b border-white/10 bg-[#151515] px-4 py-3">
+              <span className="h-3 w-3 rounded-full bg-white/20" />
+              <span className="h-3 w-3 rounded-full bg-white/20" />
+              <span className="h-3 w-3 rounded-full bg-white/20" />
+            </div>
+
+            <div className="p-6 sm:p-8">
+              <div className="mb-8">
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
+                  {eyebrow}
+                </p>
+                <h2 className="mt-3 text-2xl font-semibold tracking-tight text-white">
+                  {panelTitle}
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-slate-400">
+                  {panelDescription}
+                </p>
+              </div>
+
+              {children}
+            </div>
+          </div>
+        </section>
+      </main>
     </div>
   );
 }
@@ -246,76 +328,104 @@ function SignInPage() {
   }
 
   return (
-    <AuthLayout title="Sign in to provision and manage your data">
-      <Card className="p-6">
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <div>
-            <h2 className="text-2xl font-semibold">Welcome back</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Use email/password or continue with an OAuth provider.
-            </p>
-          </div>
+    <AuthLayout
+      bullets={signInBullets}
+      description="Sign in, approve app access, and manage your profile from a standalone SPA that talks directly to the Hono auth API."
+      eyebrow="User-owned auth"
+      panelDescription="Use email/password or continue with an OAuth provider."
+      panelTitle="Welcome back"
+      title="Sign in to provision and manage your data"
+    >
+      <form className="space-y-4" onSubmit={handleSubmit}>
+        <div className="space-y-2">
+          <Label className="text-white/90" htmlFor="sign-in-email">
+            Email
+          </Label>
+          <Input
+            id="sign-in-email"
+            className="!h-12 !rounded-xl !border-white/10 !bg-white/5 !px-4 !text-base !text-white shadow-[0_1px_0_rgba(255,255,255,0.03)] placeholder:text-slate-500 focus-visible:ring-emerald-400/40"
+            name="email"
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="name@example.com"
+            type="email"
+            value={email}
+          />
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="sign-in-email">Email</Label>
-            <Input
-              id="sign-in-email"
-              name="email"
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="name@example.com"
-              type="email"
-              value={email}
-            />
-          </div>
+        <div className="space-y-2">
+          <Label className="text-white/90" htmlFor="sign-in-password">
+            Password
+          </Label>
+          <Input
+            id="sign-in-password"
+            className="!h-12 !rounded-xl !border-white/10 !bg-white/5 !px-4 !text-base !text-white shadow-[0_1px_0_rgba(255,255,255,0.03)] placeholder:text-slate-500 focus-visible:ring-emerald-400/40"
+            name="password"
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder="Password"
+            type="password"
+            value={password}
+          />
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="sign-in-password">Password</Label>
-            <Input
-              id="sign-in-password"
-              name="password"
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="Password"
-              type="password"
-              value={password}
-            />
-          </div>
+        {error ? <p className="text-sm text-red-300">{error}</p> : null}
 
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        <Button
+          className="!h-12 !w-full !rounded-xl !bg-white !px-6 !text-sm !font-semibold !text-black shadow-[0_24px_48px_rgba(255,255,255,0.08)] transition-transform hover:-translate-y-0.5 hover:bg-slate-100"
+          disabled={loading}
+          type="submit"
+        >
+          {loading ? <InlineSpinner className="text-black" /> : 'Sign in'}
+        </Button>
 
-          <Button className="w-full" disabled={loading} type="submit">
-            {loading ? <InlineSpinner /> : 'Sign in'}
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Button
+            className="!h-12 !rounded-xl !border-white/10 !bg-white/5 !text-white transition-colors hover:bg-white/10"
+            disabled={loading}
+            tone="outline"
+            type="button"
+            onClick={() => void handleSocial('google')}
+          >
+            Google
           </Button>
+          <Button
+            className="!h-12 !rounded-xl !border-white/10 !bg-white/5 !text-white transition-colors hover:bg-white/10"
+            disabled={loading}
+            tone="outline"
+            type="button"
+            onClick={() => void handleSocial('github')}
+          >
+            GitHub
+          </Button>
+        </div>
 
-          <div className="grid gap-2 sm:grid-cols-2">
-            <Button
-              disabled={loading}
-              tone="outline"
-              type="button"
-              onClick={() => void handleSocial('google')}
-            >
-              Google
-            </Button>
-            <Button
-              disabled={loading}
-              tone="outline"
-              type="button"
-              onClick={() => void handleSocial('github')}
-            >
-              GitHub
-            </Button>
-          </div>
+        <p className="pt-2 text-center text-sm text-slate-400">
+          Need an account?{' '}
+          <Link
+            className="text-emerald-300 hover:text-emerald-200"
+            to="/sign-up"
+          >
+            Create one
+          </Link>
+        </p>
 
-          <p className="text-center text-sm text-muted-foreground">
-            Need an account? <Link to="/sign-up">Create one</Link>
-          </p>
-
-          <p className="text-center text-xs text-muted-foreground">
-            By continuing, you agree to our{' '}
-            <Link to="/statement/terms-of-service">Terms</Link> and{' '}
-            <Link to="/statement/privacy">Privacy</Link> policy.
-          </p>
-        </form>
-      </Card>
+        <p className="text-center text-xs leading-5 text-slate-500">
+          By continuing, you agree to our{' '}
+          <Link
+            className="text-slate-300 hover:text-white"
+            to="/statement/terms-of-service"
+          >
+            Terms
+          </Link>{' '}
+          and{' '}
+          <Link
+            className="text-slate-300 hover:text-white"
+            to="/statement/privacy"
+          >
+            Privacy
+          </Link>{' '}
+          policy.
+        </p>
+      </form>
     </AuthLayout>
   );
 }
@@ -374,57 +484,77 @@ function SignUpPage() {
   }
 
   return (
-    <AuthLayout title="Create an account and take control of your data">
-      <Card className="p-6">
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <div>
-            <h2 className="text-2xl font-semibold">Create an account</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Email/password accounts are now handled by better-auth on the Hono
-              API.
-            </p>
-          </div>
+    <AuthLayout
+      bullets={signUpBullets}
+      description="Email/password accounts are now handled by better-auth on the Hono API."
+      eyebrow="User-owned auth"
+      panelDescription="Set up a shared identity for notes, demos, and future apps."
+      panelTitle="Create an account"
+      title="Create an account and take control of your data"
+    >
+      <form className="space-y-4" onSubmit={handleSubmit}>
+        <div className="space-y-2">
+          <Label className="text-white/90" htmlFor="sign-up-name">
+            Name
+          </Label>
+          <Input
+            id="sign-up-name"
+            className="!h-12 !rounded-xl !border-white/10 !bg-white/5 !px-4 !text-base !text-white shadow-[0_1px_0_rgba(255,255,255,0.03)] placeholder:text-slate-500 focus-visible:ring-emerald-400/40"
+            onChange={(event) => setName(event.target.value)}
+            value={name}
+          />
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="sign-up-name">Name</Label>
-            <Input
-              id="sign-up-name"
-              onChange={(event) => setName(event.target.value)}
-              value={name}
-            />
-          </div>
+        <div className="space-y-2">
+          <Label className="text-white/90" htmlFor="sign-up-email">
+            Email
+          </Label>
+          <Input
+            id="sign-up-email"
+            className="!h-12 !rounded-xl !border-white/10 !bg-white/5 !px-4 !text-base !text-white shadow-[0_1px_0_rgba(255,255,255,0.03)] placeholder:text-slate-500 focus-visible:ring-emerald-400/40"
+            onChange={(event) => setEmail(event.target.value)}
+            type="email"
+            value={email}
+          />
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="sign-up-email">Email</Label>
-            <Input
-              id="sign-up-email"
-              onChange={(event) => setEmail(event.target.value)}
-              type="email"
-              value={email}
-            />
-          </div>
+        <div className="space-y-2">
+          <Label className="text-white/90" htmlFor="sign-up-password">
+            Password
+          </Label>
+          <Input
+            id="sign-up-password"
+            className="!h-12 !rounded-xl !border-white/10 !bg-white/5 !px-4 !text-base !text-white shadow-[0_1px_0_rgba(255,255,255,0.03)] placeholder:text-slate-500 focus-visible:ring-emerald-400/40"
+            onChange={(event) => setPassword(event.target.value)}
+            type="password"
+            value={password}
+          />
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="sign-up-password">Password</Label>
-            <Input
-              id="sign-up-password"
-              onChange={(event) => setPassword(event.target.value)}
-              type="password"
-              value={password}
-            />
-          </div>
+        {error ? <p className="text-sm text-red-300">{error}</p> : null}
 
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        <Button
+          className="!h-12 !w-full !rounded-xl !bg-white !px-6 !text-sm !font-semibold !text-black shadow-[0_24px_48px_rgba(255,255,255,0.08)] transition-transform hover:-translate-y-0.5 hover:bg-slate-100"
+          disabled={loading}
+          type="submit"
+        >
+          {loading ? (
+            <InlineSpinner className="text-black" />
+          ) : (
+            'Create account'
+          )}
+        </Button>
 
-          <Button className="w-full" disabled={loading} type="submit">
-            {loading ? <InlineSpinner /> : 'Create account'}
-          </Button>
-
-          <p className="text-center text-sm text-muted-foreground">
-            Already have an account? <Link to="/sign-in">Sign in</Link>
-          </p>
-        </form>
-      </Card>
+        <p className="pt-2 text-center text-sm text-slate-400">
+          Already have an account?{' '}
+          <Link
+            className="text-emerald-300 hover:text-emerald-200"
+            to="/sign-in"
+          >
+            Sign in
+          </Link>
+        </p>
+      </form>
     </AuthLayout>
   );
 }
@@ -434,15 +564,36 @@ function AwaitConfirmPage() {
   const email = searchParams.get('email');
 
   return (
-    <AuthLayout title="Confirm your email">
-      <Card className="p-6">
-        <h2 className="text-2xl font-semibold">Check your inbox</h2>
-        <p className="mt-3 text-sm text-muted-foreground">
-          {email
-            ? `We sent a confirmation link to ${email}.`
-            : 'We sent a confirmation link to your email address.'}
+    <AuthLayout
+      bullets={[
+        'Open the email we sent and follow the confirmation link.',
+        'Once confirmed, return here to continue signing in.',
+        'If the message does not arrive, check spam or try again.',
+      ]}
+      description={
+        email
+          ? `We sent a confirmation link to ${email}.`
+          : 'We sent a confirmation link to your email address.'
+      }
+      eyebrow="User-owned auth"
+      panelDescription={
+        email
+          ? `A verification link was sent to ${email}.`
+          : 'A verification link was sent to your email address.'
+      }
+      panelTitle="Check your inbox"
+      title="Confirm your email"
+    >
+      <div className="space-y-4 text-sm leading-6 text-slate-300">
+        <p>
+          We are waiting on your account confirmation before finishing the
+          signup flow.
         </p>
-      </Card>
+        <p className="text-slate-400">
+          You can close this tab after clicking the confirmation link and come
+          back to sign in.
+        </p>
+      </div>
     </AuthLayout>
   );
 }
@@ -994,7 +1145,7 @@ export function AppRoutes() {
 
 export function AppShell() {
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
       <div className="min-h-screen">
         <SiteHeader />
         <AppRoutes />
