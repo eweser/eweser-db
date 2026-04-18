@@ -6,7 +6,7 @@ Built using [eweser-db](https://github.com/eweser/eweser-db)
 
 ## Development Setup
 
-You'll want to either point the app to a Eweser DB instance or run your own instance of the Eweser DB server. You can set the `AUTH_SERVER` environment variable to point to your Eweser DB instance.
+You'll want to either point the app to a Eweser DB instance or run your own instance of the Eweser DB server. You can set the `AUTH_SERVER` environment variable to point to your Eweser DB instance. In local dev, the app defaults to `http://localhost:38180` so the login link reaches the auth UI instead of the API port.
 
 To run your own instance check out the /server readme at [eweser-db repo](https://github.com/eweser/eweser-db)
 

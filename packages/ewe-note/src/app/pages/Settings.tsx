@@ -1,6 +1,7 @@
 import { ArrowLeft, User, Server, LogOut, LogIn } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useDb } from '@/db';
+import { AUTH_SERVER } from '@/config';
 
 export function Settings() {
   const navigate = useNavigate();
@@ -89,7 +90,7 @@ export function Settings() {
                     data-cy="ewe-note-settings-homeserver"
                     className="text-sm text-muted-foreground font-mono break-all"
                   >
-                    {import.meta.env.VITE_AUTH_SERVER ?? 'Not configured'}
+                    {AUTH_SERVER}
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
                     Notes are stored locally first and synced when connected.

@@ -33,8 +33,14 @@ export function resolveAuthServerUrl(
   authServer = import.meta.env.VITE_AUTH_SERVER,
   origin?: string
 ) {
+  const defaultAuthServer = import.meta.env.DEV
+    ? 'http://localhost:38180'
+    : '/';
+
   return stripTrailingSlash(
-    authServer ? resolveUrl(authServer, origin) : resolveUrl('/', origin)
+    authServer
+      ? resolveUrl(authServer, origin)
+      : resolveUrl(defaultAuthServer, origin)
   );
 }
 
