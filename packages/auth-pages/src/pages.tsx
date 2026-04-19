@@ -45,7 +45,7 @@ const signInBullets = [
 ];
 
 const signUpBullets = [
-  'Email/password accounts are handled by the Hono auth API.',
+  'Email/password accounts are handled by the auth app.',
   'Profile rooms keep your account data portable and user-owned.',
   'Start with one identity, then reuse it across apps.',
 ];
@@ -330,7 +330,7 @@ function SignInPage() {
   return (
     <AuthLayout
       bullets={signInBullets}
-      description="Sign in, approve app access, and manage your profile from a standalone SPA that talks directly to the Hono auth API."
+      description="Sign in, approve app access, and manage your profile from a standalone auth app."
       eyebrow="User-owned auth"
       panelDescription="Use email/password or continue with an OAuth provider."
       panelTitle="Welcome back"
@@ -486,7 +486,7 @@ function SignUpPage() {
   return (
     <AuthLayout
       bullets={signUpBullets}
-      description="Email/password accounts are now handled by better-auth on the Hono API."
+      description="Email/password accounts are handled by the auth app."
       eyebrow="User-owned auth"
       panelDescription="Set up a shared identity for notes, demos, and future apps."
       panelTitle="Create an account"
