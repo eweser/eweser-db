@@ -4,7 +4,6 @@ import {
   Link2,
   List,
   Tag,
-  Calendar,
   X,
   ChevronRight,
   Hash,
@@ -15,7 +14,6 @@ import { useNotes } from '../contexts/NotesContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
-import { Label } from './ui/label';
 
 interface RightPanelProps {
   noteId: string;

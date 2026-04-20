@@ -1,5 +1,5 @@
 import type { Note as DbNote, Room } from '@eweser/db';
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import removeMarkdown from 'markdown-to-text';
 import { useDb } from '@/db';
 import { useFolders } from '@/notes-room';
@@ -452,11 +452,12 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (updates.properties !== undefined) {
-      Object.keys(nextFrontmatter).forEach((key) => {
-        if (!['title', 'tags', 'aliases'].includes(key)) {
-          delete nextFrontmatter[key];
-        }
-      });
+      const preservedFrontmatter = Object.fromEntries(
+        Object.entries(nextFrontmatter).filter(([key]) =>
+          ['title', 'tags', 'aliases'].includes(key)
+        )
+      );
+      Object.assign(nextFrontmatter, preservedFrontmatter);
       Object.entries(updates.properties).forEach(([key, value]) => {
         nextFrontmatter[key] = value;
       });
@@ -587,35 +588,32 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const contextValue = useMemo<NotesContextType>(
-    () => ({
-      notes,
-      folders,
-      tasks,
-      templates,
-      currentNoteId: selectedNoteId,
-      setCurrentNoteId,
-      addNote,
-      updateNote,
-      deleteNote,
-      togglePinNote,
-      moveNote,
-      addFolder,
-      updateFolder,
-      deleteFolder,
-      addTask,
-      updateTask,
-      deleteTask,
-      addTemplate,
-      deleteTemplate,
-      getTodayNote,
-      searchNotes,
-      getNotesInFolder,
-      getRecentNotes,
-      getPinnedNotes,
-    }),
-    [notes, folders, tasks, templates, selectedNoteId]
-  );
+  const contextValue: NotesContextType = {
+    notes,
+    folders,
+    tasks,
+    templates,
+    currentNoteId: selectedNoteId,
+    setCurrentNoteId,
+    addNote,
+    updateNote,
+    deleteNote,
+    togglePinNote,
+    moveNote,
+    addFolder,
+    updateFolder,
+    deleteFolder,
+    addTask,
+    updateTask,
+    deleteTask,
+    addTemplate,
+    deleteTemplate,
+    getTodayNote,
+    searchNotes,
+    getNotesInFolder,
+    getRecentNotes,
+    getPinnedNotes,
+  };
 
   return (
     <NotesContext.Provider value={contextValue}>
