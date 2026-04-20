@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 const defaultAuthApiPort = Number(process.env.AUTH_API_PORT ?? '38101');
 
-const secretSchema = z.string().min(16);
+const secretSchema = z.string().min(32);
 const urlSchema = z.string().url();
 
 const envSchema = z
@@ -17,7 +17,9 @@ const envSchema = z
     PORT: z.coerce.number().default(defaultAuthApiPort),
 
     /** better-auth secret — must be a long random string in production */
-    BETTER_AUTH_SECRET: secretSchema.default('change-me-in-production'),
+    BETTER_AUTH_SECRET: secretSchema.default(
+      'change-me-in-production-secret-value'
+    ),
     /** Public base URL of this server, e.g. https://auth.example.com */
     BETTER_AUTH_BASE_URL: urlSchema.default(
       `http://localhost:${defaultAuthApiPort}`
@@ -29,6 +31,10 @@ const envSchema = z
     GOOGLE_CLIENT_ID: z.string().optional(),
     GOOGLE_CLIENT_SECRET: z.string().optional(),
     TURNSTILE_SECRET_KEY: z.string().optional(),
+    AUTH_EMAIL_PROVIDER: z.enum(['disabled', 'resend']).default('disabled'),
+    AUTH_EMAIL_FROM: z.string().optional(),
+    AUTH_EMAIL_REPLY_TO: z.string().optional(),
+    RESEND_API_KEY: z.string().optional(),
 
     /** Domain of this auth server, e.g. "auth.example.com" */
     AUTH_SERVER_DOMAIN: z
@@ -36,7 +42,9 @@ const envSchema = z
       .min(1)
       .default(`localhost:${defaultAuthApiPort}`),
     /** Full URL of this auth server, e.g. "https://auth.example.com" */
-    AUTH_SERVER_URL: urlSchema.default(`http://localhost:${defaultAuthApiPort}`),
+    AUTH_SERVER_URL: urlSchema.default(
+      `http://localhost:${defaultAuthApiPort}`
+    ),
     /** WebSocket URL of the Hocuspocus sync server, e.g. "ws://localhost:8080" */
     SYNC_SERVER_URL: z.string().url().default('ws://localhost:8080'),
     /** Secret for signing Hocuspocus auth JWTs — defaults to SERVER_SECRET if not set */
@@ -64,8 +72,16 @@ const envSchema = z
     /** Required when MCP_SESSION_MODE=redis */
     MCP_REDIS_URL: z.string().url().optional(),
     /** Default/max TTL for newly issued agent tokens */
-    AGENT_TOKEN_DEFAULT_TTL_SECONDS: z.coerce.number().int().positive().default(2_592_000),
-    AGENT_TOKEN_MAX_TTL_SECONDS: z.coerce.number().int().positive().default(7_776_000),
+    AGENT_TOKEN_DEFAULT_TTL_SECONDS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(2_592_000),
+    AGENT_TOKEN_MAX_TTL_SECONDS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(7_776_000),
     /** Feature flag: enable Better Auth two-factor plugin */
     AUTH_ENABLE_2FA: z
       .enum(['true', 'false'])
@@ -112,7 +128,8 @@ const envSchema = z
     if (normalizedAuthDomain !== authServerUrl.host) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'AUTH_SERVER_DOMAIN/AUTH_DOMAIN must match AUTH_SERVER_URL host',
+        message:
+          'AUTH_SERVER_DOMAIN/AUTH_DOMAIN must match AUTH_SERVER_URL host',
         path: ['AUTH_SERVER_DOMAIN'],
       });
     }
@@ -179,6 +196,34 @@ const envSchema = z
         message:
           'AGENT_TOKEN_DEFAULT_TTL_SECONDS cannot be greater than AGENT_TOKEN_MAX_TTL_SECONDS',
         path: ['AGENT_TOKEN_DEFAULT_TTL_SECONDS'],
+      });
+    }
+
+    if (value.AUTH_EMAIL_PROVIDER === 'resend') {
+      if (!value.AUTH_EMAIL_FROM) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message:
+            'AUTH_EMAIL_FROM is required when AUTH_EMAIL_PROVIDER=resend',
+          path: ['AUTH_EMAIL_FROM'],
+        });
+      }
+
+      if (!value.RESEND_API_KEY) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'RESEND_API_KEY is required when AUTH_EMAIL_PROVIDER=resend',
+          path: ['RESEND_API_KEY'],
+        });
+      }
+    }
+
+    if (isProduction && value.AUTH_EMAIL_PROVIDER === 'disabled') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          'AUTH_EMAIL_PROVIDER must be configured in production so recovery emails can be delivered',
+        path: ['AUTH_EMAIL_PROVIDER'],
       });
     }
   })

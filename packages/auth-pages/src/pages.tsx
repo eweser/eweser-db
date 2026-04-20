@@ -51,6 +51,9 @@ const signUpBullets = [
   'Start with one identity, then reuse it across apps.',
 ];
 
+const passwordResetRequestedMessage =
+  'If an account exists, password reset instructions were sent.';
+
 function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
@@ -613,10 +616,7 @@ function SignUpPage() {
         </div>
 
         {signUpCaptchaEnabled ? (
-          <TurnstileCaptcha
-            key={captchaKey}
-            onTokenChange={setCaptchaToken}
-          />
+          <TurnstileCaptcha key={captchaKey} onTokenChange={setCaptchaToken} />
         ) : null}
 
         {error ? <p className="text-sm text-red-300">{error}</p> : null}
@@ -746,7 +746,10 @@ function HomePage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
       <div className="mb-4 flex justify-end">
-        <Link className="text-sm text-slate-300 hover:text-white" to="/account/security">
+        <Link
+          className="text-sm text-slate-300 hover:text-white"
+          to="/account/security"
+        >
           Account security
         </Link>
       </div>
@@ -1158,6 +1161,13 @@ function ForgotPasswordPage() {
       });
       setDone(true);
     } catch (requestError) {
+      if (
+        requestError instanceof Error &&
+        requestError.message === passwordResetRequestedMessage
+      ) {
+        setDone(true);
+        return;
+      }
       setError(
         requestError instanceof Error
           ? requestError.message
@@ -1197,10 +1207,14 @@ function ForgotPasswordPage() {
         {error ? <p className="text-sm text-red-300">{error}</p> : null}
         {done ? (
           <p className="text-sm text-emerald-300">
-            If an account exists, reset instructions were sent.
+            {passwordResetRequestedMessage}
           </p>
         ) : null}
-        <Button className="!h-12 !w-full !rounded-xl" disabled={loading} type="submit">
+        <Button
+          className="!h-12 !w-full !rounded-xl"
+          disabled={loading}
+          type="submit"
+        >
           {loading ? <InlineSpinner /> : 'Send reset link'}
         </Button>
       </form>
@@ -1293,7 +1307,11 @@ function ResetPasswordPage() {
           />
         </div>
         {error ? <p className="text-sm text-red-300">{error}</p> : null}
-        <Button className="!h-12 !w-full !rounded-xl" disabled={loading} type="submit">
+        <Button
+          className="!h-12 !w-full !rounded-xl"
+          disabled={loading}
+          type="submit"
+        >
           {loading ? <InlineSpinner /> : 'Reset password'}
         </Button>
       </form>
@@ -1352,14 +1370,18 @@ function VerifyEmailPage() {
       title="Confirming your email address"
     >
       {error ? <p className="text-sm text-red-300">{error}</p> : null}
-      {done ? <p className="text-sm text-emerald-300">Email verified.</p> : null}
+      {done ? (
+        <p className="text-sm text-emerald-300">Email verified.</p>
+      ) : null}
       {!error && !done ? <InlineSpinner /> : null}
     </AuthLayout>
   );
 }
 
 function SecurityPage() {
-  const [bootstrap, setBootstrap] = useState<AccountBootstrapResponse | null>(null);
+  const [bootstrap, setBootstrap] = useState<AccountBootstrapResponse | null>(
+    null
+  );
   const [error, setError] = useState<string | null>(null);
   const [password, setPassword] = useState('');
   const [totpUri, setTotpUri] = useState<string | null>(null);
@@ -1545,7 +1567,10 @@ function TwoFactorChallengePage() {
 
     try {
       if (mode === 'totp') {
-        await postAuthJson('/two-factor/verify-totp', { code, trustDevice: true });
+        await postAuthJson('/two-factor/verify-totp', {
+          code,
+          trustDevice: true,
+        });
       } else {
         await postAuthJson('/two-factor/verify-backup-code', { code });
       }
@@ -1587,7 +1612,11 @@ function TwoFactorChallengePage() {
           />
         </div>
         {error ? <p className="text-sm text-red-300">{error}</p> : null}
-        <Button className="!h-12 !w-full !rounded-xl" disabled={working} type="submit">
+        <Button
+          className="!h-12 !w-full !rounded-xl"
+          disabled={working}
+          type="submit"
+        >
           {working ? <InlineSpinner /> : 'Verify'}
         </Button>
         <Button

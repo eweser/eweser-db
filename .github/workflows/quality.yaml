@@ -138,6 +138,7 @@ jobs:
       - name: Build example-basic
         run: |
           npm run build-example:basic
+          npm --workspace @eweser/auth-pages run build
 
       - name: Start Docker backend services
         run: |

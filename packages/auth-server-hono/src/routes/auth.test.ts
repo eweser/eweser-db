@@ -204,7 +204,7 @@ describe('authRouter', () => {
     );
 
     const res = await app.fetch(
-      new Request('http://localhost/api/auth/request-password-reset', {
+      new Request('http://localhost/api/auth/forget-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: 'missing@example.com' }),
@@ -216,5 +216,78 @@ describe('authRouter', () => {
     expect(body.error).toBe(
       'If an account exists, password reset instructions were sent.'
     );
+  });
+
+  it('passes /request-password-reset through to better-auth unchanged', async () => {
+    mockHandler.mockResolvedValueOnce(
+      new Response(JSON.stringify({ status: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    );
+
+    await app.fetch(
+      new Request('http://localhost/api/auth/request-password-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'legacy@example.com' }),
+      })
+    );
+
+    expect(mockHandler).toHaveBeenCalledOnce();
+    const request = mockHandler.mock.calls[0]?.[0] as Request;
+    expect(new URL(request.url).pathname).toBe(
+      '/api/auth/request-password-reset'
+    );
+  });
+
+  it('rewrites /forget-password to /request-password-reset before calling better-auth', async () => {
+    mockHandler.mockResolvedValueOnce(
+      new Response(JSON.stringify({ status: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    );
+
+    await app.fetch(
+      new Request('http://localhost/api/auth/forget-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'ui-client@example.com' }),
+      })
+    );
+
+    expect(mockHandler).toHaveBeenCalledOnce();
+    const handledRequest = mockHandler.mock.calls[0]?.[0] as Request;
+    expect(new URL(handledRequest.url).pathname).toBe(
+      '/api/auth/request-password-reset'
+    );
+  });
+
+  it('rate limits the canonical password-reset request path', async () => {
+    mockHandler.mockResolvedValue(
+      new Response(JSON.stringify({ status: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    );
+
+    let finalResponse: Response | undefined;
+    for (let index = 0; index < 7; index += 1) {
+      finalResponse = await app.fetch(
+        new Request('http://localhost/api/auth/forget-password', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-real-ip': '203.0.113.10',
+          },
+          body: JSON.stringify({ email: `limit-${index}@example.com` }),
+        })
+      );
+    }
+
+    expect(finalResponse?.status).toBe(429);
+    expect(finalResponse?.headers.get('retry-after')).toBeTruthy();
+    expect(mockHandler).toHaveBeenCalledTimes(6);
   });
 });

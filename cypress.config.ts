@@ -7,6 +7,8 @@ const baseUrl =
 const eweNoteBaseUrl =
   process.env.EWE_NOTE_BASE_URL ?? `http://localhost:${eweNotePort}/notes/`;
 const authServer = process.env.VITE_AUTH_SERVER ?? `http://localhost:38101`;
+const authPagesBaseUrl =
+  process.env.AUTH_PAGES_BASE_URL ?? 'http://localhost:38111/auth';
 
 export default defineConfig({
   projectId: 'obyc2w',
@@ -18,6 +20,8 @@ export default defineConfig({
     specPattern: 'e2e/cypress/**/*.cy.{js,jsx,ts,tsx}',
     baseUrl,
     env: {
+      authPagesBaseUrl,
+      AUTH_PAGES_BASE_URL: authPagesBaseUrl,
       eweNoteBaseUrl,
       authServer,
     },

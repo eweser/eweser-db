@@ -16,6 +16,19 @@
    - Revoke all agent tokens.
    - Revoke OAuth access tokens.
 
+## Alert Routing
+
+- Launch owner route:
+  - Page on auth failure spikes, password-reset abuse bursts, or MCP auth failure surges.
+  - Trigger conditions: repeated 429 bursts on auth endpoints, repeated `password.reset.delivery_failed`, or sustained 401/403 spikes on `/mcp`.
+- Escalation route:
+  - If the launch owner does not acknowledge within 15 minutes, page the backup operator and suspend new sign-ups until triage starts.
+- Required data in the first page:
+  - Absolute time window
+  - Affected endpoint or service
+  - Source IPs or origin set, if available
+  - Last deploy SHA / release identifier
+
 ## Session and Token Revocation
 
 - Revoke Better Auth sessions by deleting rows in `session` table for impacted users.

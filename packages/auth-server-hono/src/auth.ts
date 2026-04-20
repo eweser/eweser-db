@@ -5,6 +5,7 @@ import { randomUUID } from 'crypto';
 import { createLogger } from '@eweser/logger';
 import { db } from './db/drizzle.js';
 import * as schema from './db/schema/index.js';
+import { sendPasswordResetEmail, sendVerificationEmail } from './email.js';
 import { env } from './env.js';
 import { logSecurityEvent } from './model/security-events.js';
 
@@ -55,20 +56,37 @@ export const auth = betterAuth({
       });
     },
     async sendResetPassword({ token, url, user }) {
-      log.warn(
-        {
+      try {
+        await sendPasswordResetEmail({ to: user.email, url });
+        await logSecurityEvent({
+          action: 'password.reset.requested',
           userId: user.id,
-          email: user.email,
-          hasResetToken: Boolean(token),
-          resetOrigin: new URL(url).origin,
-        },
-        'Password reset sender not configured.'
-      );
-      await logSecurityEvent({
-        action: 'password.reset.requested',
-        userId: user.id,
-        level: 'warn',
-      });
+          level: 'info',
+          metadata: {
+            emailProvider: env.AUTH_EMAIL_PROVIDER,
+            hasResetToken: Boolean(token),
+          },
+        });
+      } catch (error) {
+        log.error(
+          {
+            error,
+            userId: user.id,
+            email: user.email,
+            hasResetToken: Boolean(token),
+          },
+          'Failed to deliver password reset email.'
+        );
+        await logSecurityEvent({
+          action: 'password.reset.delivery_failed',
+          userId: user.id,
+          level: 'error',
+          metadata: {
+            emailProvider: env.AUTH_EMAIL_PROVIDER,
+          },
+        });
+        throw error;
+      }
     },
   },
 
@@ -77,15 +95,37 @@ export const auth = betterAuth({
     sendOnSignIn: true,
     autoSignInAfterVerification: true,
     async sendVerificationEmail({ token, url, user }) {
-      log.warn(
-        {
+      try {
+        await sendVerificationEmail({ to: user.email, url });
+        await logSecurityEvent({
+          action: 'email.verification.sent',
           userId: user.id,
-          email: user.email,
-          hasVerificationToken: Boolean(token),
-          verifyOrigin: new URL(url).origin,
-        },
-        'Verification email sender not configured.'
-      );
+          level: 'info',
+          metadata: {
+            emailProvider: env.AUTH_EMAIL_PROVIDER,
+            hasVerificationToken: Boolean(token),
+          },
+        });
+      } catch (error) {
+        log.error(
+          {
+            error,
+            userId: user.id,
+            email: user.email,
+            hasVerificationToken: Boolean(token),
+          },
+          'Failed to deliver verification email.'
+        );
+        await logSecurityEvent({
+          action: 'email.verification.delivery_failed',
+          userId: user.id,
+          level: 'error',
+          metadata: {
+            emailProvider: env.AUTH_EMAIL_PROVIDER,
+          },
+        });
+        throw error;
+      }
     },
     async afterEmailVerification(user) {
       await logSecurityEvent({
@@ -116,6 +156,7 @@ export const auth = betterAuth({
             endpoints: [
               '/sign-up/email',
               '/sign-in/email',
+              '/forget-password',
               '/request-password-reset',
             ],
             provider: 'cloudflare-turnstile',

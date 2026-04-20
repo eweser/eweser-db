@@ -70,4 +70,56 @@ describe('parseEnv', () => {
       })
     ).toThrowError();
   });
+
+  it('rejects launch-critical secrets shorter than 32 characters', async () => {
+    const parseEnv = await loadParseEnv();
+    expect(() =>
+      parseEnv({
+        ...base,
+        SERVER_SECRET: '1234567890123456789012345678901',
+      })
+    ).toThrowError();
+
+    expect(() =>
+      parseEnv({
+        ...base,
+        SERVER_SECRET: '12345678901234567890123456789012',
+      })
+    ).not.toThrow();
+  });
+
+  it('requires email delivery provider configuration in production', async () => {
+    const parseEnv = await loadParseEnv();
+    expect(() =>
+      parseEnv({
+        ...base,
+        AUTH_SERVER_DOMAIN: 'auth.example.com',
+        AUTH_SERVER_URL: 'https://auth.example.com',
+        AUTH_TRUSTED_ORIGINS: 'https://app.example.com',
+        BETTER_AUTH_BASE_URL: 'https://auth.example.com',
+        MCP_ALLOWED_ORIGINS: 'https://app.example.com',
+        NODE_ENV: 'production',
+        TRUST_PROXY: 'true',
+      })
+    ).toThrowError();
+  });
+
+  it('requires resend env when the resend provider is enabled', async () => {
+    const parseEnv = await loadParseEnv();
+    expect(() =>
+      parseEnv({
+        ...base,
+        AUTH_EMAIL_PROVIDER: 'resend',
+      })
+    ).toThrowError();
+
+    expect(() =>
+      parseEnv({
+        ...base,
+        AUTH_EMAIL_FROM: 'EweserDB <no-reply@example.com>',
+        AUTH_EMAIL_PROVIDER: 'resend',
+        RESEND_API_KEY: 'RESEND_API_KEY_PLACEHOLDER',
+      })
+    ).not.toThrow();
+  });
 });

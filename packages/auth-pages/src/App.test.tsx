@@ -241,7 +241,9 @@ describe('auth-pages app', () => {
       throw new Error('Expected captcha button to exist');
     }
     await userEvent.click(captchaButton);
-    await userEvent.click(screen.getByRole('button', { name: /create account/i }));
+    await userEvent.click(
+      screen.getByRole('button', { name: /create account/i })
+    );
 
     await waitFor(() => {
       expect(authMocks.signUpEmail).toHaveBeenCalledOnce();
@@ -260,13 +262,29 @@ describe('auth-pages app', () => {
   });
 
   it('requests password reset from forgot-password page', async () => {
+    (
+      fetch as unknown as { mockResolvedValueOnce: (value: unknown) => void }
+    ).mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          error: 'If an account exists, password reset instructions were sent.',
+        }),
+        {
+          status: 404,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      )
+    );
+
     renderApp('/forgot-password');
 
     await userEvent.type(
       screen.getByLabelText(/email/i),
       'recover@example.com'
     );
-    await userEvent.click(screen.getByRole('button', { name: /send reset link/i }));
+    await userEvent.click(
+      screen.getByRole('button', { name: /send reset link/i })
+    );
 
     await waitFor(() => {
       expect(fetch).toHaveBeenCalled();
@@ -275,6 +293,11 @@ describe('auth-pages app', () => {
     const call = (fetch as unknown as { mock: { calls: unknown[][] } }).mock
       .calls[0];
     expect(String(call?.[0])).toContain('/api/auth/forget-password');
+    expect(
+      await screen.findByText(
+        /if an account exists, password reset instructions were sent\./i
+      )
+    ).toBeInTheDocument();
   });
 
   it('renders the security page for authenticated sessions', async () => {

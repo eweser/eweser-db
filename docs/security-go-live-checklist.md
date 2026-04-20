@@ -68,6 +68,15 @@
   - Monitor auth failures, lockout spikes, and MCP auth failures
   - Alert route defined for suspicious bursts
 
+## 7. Launch Evidence
+
+- Verified artifacts for this hardening pass:
+  - Email delivery and security logging: `packages/auth-server-hono/src/auth.ts`, `packages/auth-server-hono/src/email.ts`
+  - Reset request canonical path and legacy alias coverage: `packages/auth-server-hono/src/routes/auth.ts`, `packages/auth-server-hono/src/routes/auth.test.ts`
+  - 32+ character secret enforcement and provider env validation: `packages/auth-server-hono/src/env.ts`, `packages/auth-server-hono/src/env.test.ts`
+  - Automated auth smoke in CI: `scripts/run-e2e-smoke.mjs`, `e2e/cypress/tests/auth-security-smoke.cy.ts`, `.github/workflows/quality.yaml`
+  - Ops drill and alert route reference: `docs/ai/research/2026-04-20-go-live-ops-evidence.md`, `docs/security-incident-response.md`, `docs/deployment/digital-ocean.md`
+
 ## 6. Incident Response Quick Actions
 
 - Credential/key compromise:

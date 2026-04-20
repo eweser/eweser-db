@@ -18,6 +18,9 @@ import {
  */
 export const authRouter = new Hono();
 
+const canonicalResetRequestPath = '/forget-password';
+const upstreamResetRequestPath = '/request-password-reset';
+
 const signInRateLimit = createRateLimit({
   key: 'auth-sign-in',
   max: 10,
@@ -53,9 +56,9 @@ async function extractSignInIdentifier(req: Request): Promise<string | null> {
   const cloned = req.clone();
 
   if (contentType.includes('application/json')) {
-    const body = (await cloned.json().catch(() => null)) as
-      | { email?: unknown }
-      | null;
+    const body = (await cloned.json().catch(() => null)) as {
+      email?: unknown;
+    } | null;
     return typeof body?.email === 'string' ? body.email : null;
   }
 
@@ -78,7 +81,8 @@ const signInBackoff = createAuthFailureBackoff({
 
 authRouter.use('/sign-in/email', signInRateLimit, signInBackoff);
 authRouter.use('/sign-up/email', signUpRateLimit);
-authRouter.use('/request-password-reset', resetRequestRateLimit);
+authRouter.use(canonicalResetRequestPath, resetRequestRateLimit);
+authRouter.use(upstreamResetRequestPath, resetRequestRateLimit);
 authRouter.use('/reset-password', resetCompleteRateLimit);
 authRouter.use('/send-verification-email', verificationResendRateLimit);
 
@@ -89,14 +93,31 @@ function normalizedAuthError(pathname: string): string | null {
   if (pathname.endsWith('/sign-up/email')) {
     return 'Unable to create account with the provided details.';
   }
-  if (pathname.endsWith('/request-password-reset')) {
+  if (
+    pathname.endsWith(canonicalResetRequestPath) ||
+    pathname.endsWith(upstreamResetRequestPath)
+  ) {
     return 'If an account exists, password reset instructions were sent.';
   }
   return null;
 }
 
 authRouter.on(['GET', 'POST'], '/*', async (c) => {
-  const res = await auth.handler(c.req.raw);
+  const requestUrl = new URL(c.req.url);
+  const handlerRequest = requestUrl.pathname.endsWith(canonicalResetRequestPath)
+    ? new Request(
+        new URL(
+          requestUrl.pathname.replace(
+            canonicalResetRequestPath,
+            upstreamResetRequestPath
+          ) + requestUrl.search,
+          requestUrl.origin
+        ),
+        c.req.raw
+      )
+    : c.req.raw;
+
+  const res = await auth.handler(handlerRequest);
   const pathname = new URL(c.req.url).pathname;
   const replacement = normalizedAuthError(pathname);
 
