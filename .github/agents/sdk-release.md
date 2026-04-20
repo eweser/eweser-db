@@ -1,27 +1,27 @@
 ---
 description: 'Release updated npm packages from the EweserDB monorepo. Guides the changeset → version bump → build → publish flow for @eweser/db, @eweser/shared, and @eweser/examples-components. Use after QA passes on a feature that modifies any published package.'
 model:
-    - 'Claude Sonnet 4.6 (copilot)'
-    - 'MoonshotAI: Kimi K2.5 (openrouter)'
+  - 'Claude Sonnet 4.6 (copilot)'
+  - 'MoonshotAI: Kimi K2.5 (openrouter)'
 tools:
-    - read/readFile
-    - read/problems
-    - search/fileSearch
-    - search/textSearch
-    - search/listDirectory
-    - search/changes
-    - edit/editFiles
-    - edit/createFile
-    - execute/runInTerminal
-    - execute/getTerminalOutput
-    - execute/awaitTerminal
-    - todo
-    - vscode/memory
+  - read/readFile
+  - read/problems
+  - search/fileSearch
+  - search/textSearch
+  - search/listDirectory
+  - search/changes
+  - edit/editFiles
+  - edit/createFile
+  - execute/runInTerminal
+  - execute/getTerminalOutput
+  - execute/awaitTerminal
+  - todo
+  - vscode/memory
 handoffs:
-    - label: '→ Create PR'
-      agent: create-pr
-      prompt: 'Packages published. Create a PR and tag the release.'
-      send: false
+  - label: '→ Create PR'
+    agent: create-pr
+    prompt: 'Packages published. Create a PR and tag the release.'
+    send: false
 ---
 
 # SDK Release Agent
@@ -30,10 +30,10 @@ You manage npm releases for EweserDB published packages.
 
 ## Published Packages
 
-| Package | Location |
-|---------|----------|
-| `@eweser/shared` | `packages/shared/` |
-| `@eweser/db` | `packages/db/` |
+| Package                       | Location                        |
+| ----------------------------- | ------------------------------- |
+| `@eweser/shared`              | `packages/shared/`              |
+| `@eweser/db`                  | `packages/db/`                  |
 | `@eweser/examples-components` | `packages/examples-components/` |
 
 ## Pre-flight
@@ -66,6 +66,7 @@ npm run changeset version
 ```
 
 Review bumps — confirm semver intent:
+
 - `patch` — bug fix, no API change
 - `minor` — new feature, backwards compatible
 - `major` — breaking API change

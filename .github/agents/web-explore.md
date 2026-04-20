@@ -1,17 +1,17 @@
 ---
 description: 'Fast web and external docs research subagent. Use to search the web, fetch API docs, check package changelogs, and look up external references without cluttering the main agent context. NOT for reading local files — use code-explore for that.'
 model:
-    - 'MoonshotAI: Kimi K2.5 (openrouter)'
-    - 'Gemini 3 Flash (Preview) (copilot)'
+  - 'MoonshotAI: Kimi K2.5 (openrouter)'
+  - 'Gemini 3 Flash (Preview) (copilot)'
 tools:
-    - web/fetch
-    - web/githubRepo
-    - tavily/tavily_search
-    - tavily/tavily_extract
-    - tavily/tavily_crawl
-    - fetch-mcp/fetch
-    - vscode/memory
-    - agent
+  - web/fetch
+  - web/githubRepo
+  - tavily/tavily_search
+  - tavily/tavily_extract
+  - tavily/tavily_crawl
+  - fetch-mcp/fetch
+  - vscode/memory
+  - agent
 agents: [code-explore]
 ---
 

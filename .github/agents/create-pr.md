@@ -1,25 +1,25 @@
 ---
 description: 'Create a pull request: summarises commits, writes a clear title + description, and opens the PR against main.'
 model:
-    - 'MoonshotAI: Kimi K2.5 (openrouter)'
-    - 'Gemini 3 Flash (Preview) (copilot)'
+  - 'MoonshotAI: Kimi K2.5 (openrouter)'
+  - 'Gemini 3 Flash (Preview) (copilot)'
 tools:
-    - search/changes
-    - search/listDirectory
-    - search/textSearch
-    - search/fileSearch
-    - read/readFile
-    - execute/runInTerminal
-    - execute/getTerminalOutput
-    - github.vscode-pull-request-github/activePullRequest
-    - github.vscode-pull-request-github/openPullRequest
-    - todo
-    - vscode/memory
+  - search/changes
+  - search/listDirectory
+  - search/textSearch
+  - search/fileSearch
+  - read/readFile
+  - execute/runInTerminal
+  - execute/getTerminalOutput
+  - github.vscode-pull-request-github/activePullRequest
+  - github.vscode-pull-request-github/openPullRequest
+  - todo
+  - vscode/memory
 handoffs:
-    - label: '→ PR Review'
-      agent: pr-reviewer
-      prompt: 'Perform final PR review before merging.'
-      send: false
+  - label: '→ PR Review'
+    agent: pr-reviewer
+    prompt: 'Perform final PR review before merging.'
+    send: false
 ---
 
 # Create PR Agent

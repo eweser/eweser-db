@@ -1,22 +1,22 @@
 ---
 description: 'Debug Yjs CRDT sync and persistence issues in the EweserDB SDK. Covers Y.Doc state inspection, provider connection troubleshooting, sync conflicts, and diagnosing why data is not persisting or syncing. Also reviews code for direct-mutation bugs.'
 model:
-    - 'Claude Sonnet 4.6 (copilot)'
-    - 'MoonshotAI: Kimi K2.5 (openrouter)'
+  - 'Claude Sonnet 4.6 (copilot)'
+  - 'MoonshotAI: Kimi K2.5 (openrouter)'
 tools:
-    - read/readFile
-    - read/problems
-    - search/codebase
-    - search/textSearch
-    - search/fileSearch
-    - search/listDirectory
-    - search/usages
-    - edit/editFiles
-    - execute/runInTerminal
-    - execute/getTerminalOutput
-    - todo
-    - vscode/memory
-    - agent
+  - read/readFile
+  - read/problems
+  - search/codebase
+  - search/textSearch
+  - search/fileSearch
+  - search/listDirectory
+  - search/usages
+  - edit/editFiles
+  - execute/runInTerminal
+  - execute/getTerminalOutput
+  - todo
+  - vscode/memory
+  - agent
 agents: [code-explore]
 ---
 
@@ -50,6 +50,7 @@ console.log('state bytes:', update.byteLength);
 ## Common Failure Patterns
 
 ### Data not persisting after reload
+
 1. Wait for IndexedDB to load before writing:
    ```typescript
    await room.indexedDbProvider?.whenSynced;
@@ -58,11 +59,13 @@ console.log('state bytes:', update.byteLength);
 3. Look for `y-indexeddb` errors in console
 
 ### Data not syncing between clients
+
 1. `console.log(room.connectionStatus)` — must be `'connected'`
 2. Check `room.tokenExpiry` — JWT may be expired
 3. DevTools → Network → WS — confirm WebSocket is open
 
 ### Clients show different data
+
 - Verify both clients use the same `room.id`
 - Clear IndexedDB on stale client and reload
 - Force merge: `Y.applyUpdate(localDoc, remoteUpdate)`
@@ -70,22 +73,26 @@ console.log('state bytes:', update.byteLength);
 ### Direct mutation bug (most common source of "lost data")
 
 **Wrong — change is silently lost:**
+
 ```typescript
 const doc = docs.get(id);
-doc.text = 'new value';  // ❌ not a CRDT operation
+doc.text = 'new value'; // ❌ not a CRDT operation
 ```
 
 **Right:**
+
 ```typescript
 const doc = docs.get(id);
-docs.set({ ...doc, text: 'new value' });  // ✅
+docs.set({ ...doc, text: 'new value' }); // ✅
 ```
 
 ### Debugging provider events
 
 ```typescript
 room.syncProvider?.on('status', ({ status }) => console.log('sync:', status));
-room.syncProvider?.on('authenticationFailed', ({ reason }) => console.error('auth:', reason));
+room.syncProvider?.on('authenticationFailed', ({ reason }) =>
+  console.error('auth:', reason)
+);
 room.indexedDbProvider?.on('synced', () => console.log('idb synced'));
 ```
 
