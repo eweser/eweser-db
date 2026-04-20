@@ -75,85 +75,93 @@ accessGrantRouter.post('/create-room-invite', requireJwtAuth, async (c) => {
  * POST /api/access-grant/permissions
  * Creates or updates a third-party app grant for the signed-in user.
  */
-accessGrantRouter.post('/permissions', requireAuth, requireVerifiedEmail, async (c) => {
-  const user = c.get('user');
-  const body = (await c.req.json()) as ThirdPartyAppPermissions & {
-    redirect?: string;
-  };
+accessGrantRouter.post(
+  '/permissions',
+  requireAuth,
+  requireVerifiedEmail,
+  async (c) => {
+    const user = c.get('user');
+    const body = (await c.req.json()) as ThirdPartyAppPermissions & {
+      redirect?: string;
+    };
 
-  if (!body.domain || !body.redirect) {
-    return c.json({ error: 'Invalid request' }, 400);
-  }
-
-  if (!Array.isArray(body.roomIds) || !Array.isArray(body.collections)) {
-    return c.json({ error: 'Invalid request' }, 400);
-  }
-
-  const hasAllCollection = body.collections.includes('all');
-  if (hasAllCollection && body.collections.length > 1) {
-    return c.json({ error: 'Invalid collections' }, 400);
-  }
-
-  const hasInvalidCollection = body.collections.some(
-    (collection) =>
-      collection !== 'all' &&
-      !collectionKeys.includes(collection as (typeof collectionKeys)[number])
-  );
-  if (hasInvalidCollection) {
-    return c.json({ error: 'Invalid collections' }, 400);
-  }
-
-  // Validate redirect URL to prevent open redirect attacks
-  let redirectUrl: URL;
-  try {
-    redirectUrl = new URL(body.redirect);
-    if (redirectUrl.protocol !== 'https:' && redirectUrl.protocol !== 'http:') {
-      return c.json({ error: 'Invalid redirect protocol' }, 400);
+    if (!body.domain || !body.redirect) {
+      return c.json({ error: 'Invalid request' }, 400);
     }
-    if (redirectUrl.host !== body.domain) {
-      return c.json({ error: 'Redirect domain mismatch' }, 400);
+
+    if (!Array.isArray(body.roomIds) || !Array.isArray(body.collections)) {
+      return c.json({ error: 'Invalid request' }, 400);
     }
-  } catch {
-    return c.json({ error: 'Invalid redirect URL' }, 400);
-  }
 
-  const writableRooms = await getWritableRoomsByUserId(user.id);
-  const writableRoomIds = new Set(writableRooms.map((room) => room.id));
-  const writableCollections = new Set(
-    writableRooms.map((room) => room.collectionKey)
-  );
+    const hasAllCollection = body.collections.includes('all');
+    if (hasAllCollection && body.collections.length > 1) {
+      return c.json({ error: 'Invalid collections' }, 400);
+    }
 
-  const unauthorizedRoomId = body.roomIds.find(
-    (roomId) => !writableRoomIds.has(roomId)
-  );
-  if (unauthorizedRoomId) {
-    return c.json({ error: 'Invalid room' }, 403);
-  }
-
-  if (!hasAllCollection) {
-    const unauthorizedCollection = body.collections.find(
+    const hasInvalidCollection = body.collections.some(
       (collection) =>
-        collection !== 'all' && !writableCollections.has(collection)
+        collection !== 'all' &&
+        !collectionKeys.includes(collection as (typeof collectionKeys)[number])
     );
-    if (unauthorizedCollection) {
-      return c.json({ error: 'Invalid collection' }, 403);
+    if (hasInvalidCollection) {
+      return c.json({ error: 'Invalid collections' }, 400);
     }
+
+    // Validate redirect URL to prevent open redirect attacks
+    let redirectUrl: URL;
+    try {
+      redirectUrl = new URL(body.redirect);
+      if (
+        redirectUrl.protocol !== 'https:' &&
+        redirectUrl.protocol !== 'http:'
+      ) {
+        return c.json({ error: 'Invalid redirect protocol' }, 400);
+      }
+      if (redirectUrl.host !== body.domain) {
+        return c.json({ error: 'Redirect domain mismatch' }, 400);
+      }
+    } catch {
+      return c.json({ error: 'Invalid redirect URL' }, 400);
+    }
+
+    const writableRooms = await getWritableRoomsByUserId(user.id);
+    const writableRoomIds = new Set(writableRooms.map((room) => room.id));
+    const writableCollections = new Set(
+      writableRooms.map((room) => room.collectionKey)
+    );
+
+    const unauthorizedRoomId = body.roomIds.find(
+      (roomId) => !writableRoomIds.has(roomId)
+    );
+    if (unauthorizedRoomId) {
+      return c.json({ error: 'Invalid room' }, 403);
+    }
+
+    if (!hasAllCollection) {
+      const unauthorizedCollection = body.collections.find(
+        (collection) =>
+          collection !== 'all' && !writableCollections.has(collection)
+      );
+      if (unauthorizedCollection) {
+        return c.json({ error: 'Invalid collection' }, 403);
+      }
+    }
+
+    const token = await createOrUpdateThirdPartyAppPermissions({
+      collections: body.collections,
+      domain: body.domain,
+      roomIds: body.roomIds,
+      userId: user.id,
+      ...(typeof body.keepAliveDays === 'number'
+        ? { keepAliveDays: body.keepAliveDays }
+        : {}),
+    });
+
+    redirectUrl.searchParams.set('token', token);
+
+    return c.json({ redirectUrl: redirectUrl.toString() });
   }
-
-  const token = await createOrUpdateThirdPartyAppPermissions({
-    collections: body.collections,
-    domain: body.domain,
-    roomIds: body.roomIds,
-    userId: user.id,
-    ...(typeof body.keepAliveDays === 'number'
-      ? { keepAliveDays: body.keepAliveDays }
-      : {}),
-  });
-
-  redirectUrl.searchParams.set('token', token);
-
-  return c.json({ redirectUrl: redirectUrl.toString() });
-});
+);
 
 /**
  * POST /api/access-grant/accept-room-invite
@@ -164,91 +172,91 @@ accessGrantRouter.post(
   requireAuth,
   requireVerifiedEmail,
   async (c) => {
-  const user = c.get('user');
-  const body = (await c.req.json()) as { token?: string };
+    const user = c.get('user');
+    const body = (await c.req.json()) as { token?: string };
 
-  if (!body.token) {
-    return c.json({ error: 'No token provided' }, 400);
-  }
-
-  let invite;
-  try {
-    invite = verifyRoomInviteToken(body.token);
-  } catch {
-    return c.json({ error: 'Invalid invite token' }, 400);
-  }
-
-  const {
-    accessType,
-    domain,
-    expiry,
-    invitees,
-    inviterId,
-    redirect,
-    redirectQueries,
-    roomId,
-  } = invite;
-
-  if (!inviterId || !roomId || !accessType || !redirect || !domain) {
-    return c.json({ error: 'Invalid invite' }, 400);
-  }
-
-  if (inviterId === user.id) {
-    return c.json({ error: 'You cannot invite yourself' }, 400);
-  }
-
-  if (invitees.length > 0 && !invitees.includes(user.id)) {
-    return c.json({ error: 'You are not invited to this room' }, 403);
-  }
-
-  if (expiry && new Date(expiry) < new Date()) {
-    return c.json({ error: 'Invite has expired' }, 400);
-  }
-
-  try {
-    await acceptRoomInvite({
-      accessType,
-      inviterId,
-      roomId,
-      userId: user.id,
-    });
-  } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === roomNotFoundError) {
-        return c.json({ error: roomNotFoundError }, 404);
-      }
-      if (error.message === notAdminOfRoomError) {
-        return c.json({ error: notAdminOfRoomError }, 403);
-      }
-      return c.json({ error: error.message }, 400);
+    if (!body.token) {
+      return c.json({ error: 'No token provided' }, 400);
     }
-    return c.json({ error: 'Failed to accept invite' }, 500);
-  }
 
-  const protocol = env.AUTH_SERVER_URL.startsWith('https') ? 'https' : 'http';
-  if (!redirect.startsWith('/') || redirect.startsWith('//')) {
-    return c.json({ error: 'Invalid invite redirect' }, 400);
-  }
+    let invite;
+    try {
+      invite = verifyRoomInviteToken(body.token);
+    } catch {
+      return c.json({ error: 'Invalid invite token' }, 400);
+    }
 
-  let inviteBaseUrl: URL;
-  try {
-    inviteBaseUrl = new URL(`${protocol}://${domain}`);
-  } catch {
-    return c.json({ error: 'Invalid invite domain' }, 400);
-  }
+    const {
+      accessType,
+      domain,
+      expiry,
+      invitees,
+      inviterId,
+      redirect,
+      redirectQueries,
+      roomId,
+    } = invite;
 
-  const redirectUrl = new URL(redirect, inviteBaseUrl);
-  if (redirectUrl.host !== inviteBaseUrl.host) {
-    return c.json({ error: 'Invalid invite redirect host' }, 400);
-  }
+    if (!inviterId || !roomId || !accessType || !redirect || !domain) {
+      return c.json({ error: 'Invalid invite' }, 400);
+    }
 
-  if (redirectQueries) {
-    Object.entries(redirectQueries).forEach(([key, value]) => {
-      redirectUrl.searchParams.set(key, value);
-    });
-  }
+    if (inviterId === user.id) {
+      return c.json({ error: 'You cannot invite yourself' }, 400);
+    }
 
-  return c.json({ redirectUrl: redirectUrl.toString() });
+    if (invitees.length > 0 && !invitees.includes(user.id)) {
+      return c.json({ error: 'You are not invited to this room' }, 403);
+    }
+
+    if (expiry && new Date(expiry) < new Date()) {
+      return c.json({ error: 'Invite has expired' }, 400);
+    }
+
+    try {
+      await acceptRoomInvite({
+        accessType,
+        inviterId,
+        roomId,
+        userId: user.id,
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        if (error.message === roomNotFoundError) {
+          return c.json({ error: roomNotFoundError }, 404);
+        }
+        if (error.message === notAdminOfRoomError) {
+          return c.json({ error: notAdminOfRoomError }, 403);
+        }
+        return c.json({ error: error.message }, 400);
+      }
+      return c.json({ error: 'Failed to accept invite' }, 500);
+    }
+
+    const protocol = env.AUTH_SERVER_URL.startsWith('https') ? 'https' : 'http';
+    if (!redirect.startsWith('/') || redirect.startsWith('//')) {
+      return c.json({ error: 'Invalid invite redirect' }, 400);
+    }
+
+    let inviteBaseUrl: URL;
+    try {
+      inviteBaseUrl = new URL(`${protocol}://${domain}`);
+    } catch {
+      return c.json({ error: 'Invalid invite domain' }, 400);
+    }
+
+    const redirectUrl = new URL(redirect, inviteBaseUrl);
+    if (redirectUrl.host !== inviteBaseUrl.host) {
+      return c.json({ error: 'Invalid invite redirect host' }, 400);
+    }
+
+    if (redirectQueries) {
+      Object.entries(redirectQueries).forEach(([key, value]) => {
+        redirectUrl.searchParams.set(key, value);
+      });
+    }
+
+    return c.json({ redirectUrl: redirectUrl.toString() });
   }
 );
 

@@ -10,7 +10,7 @@ type TurnstileWidgetId = string | number;
 type TurnstileRenderOptions = {
   appearance?: 'always' | 'execute' | 'interaction-only';
   callback?: (token: string) => void;
-  'error-callback'?: (errorCode?: string) => boolean | void;
+  'error-callback'?: (errorCode?: string) => boolean | undefined;
   'expired-callback'?: () => void;
   sitekey: string;
   size?: 'compact' | 'flexible' | 'normal';

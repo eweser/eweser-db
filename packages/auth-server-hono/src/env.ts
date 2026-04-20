@@ -53,9 +53,7 @@ const envSchema = z
     AGGREGATOR_URL: z.string().url().optional(),
 
     /** Comma-separated list of browser origins allowed to call auth APIs */
-    AUTH_TRUSTED_ORIGINS: z
-      .string()
-      .default(`http://localhost:${defaultAuthApiPort}`),
+    AUTH_TRUSTED_ORIGINS: z.string().optional(),
     /** Explicit OAuth/public auth domain shown to users and used by cookie policy */
     AUTH_DOMAIN: z.string().optional(),
 
@@ -93,7 +91,8 @@ const envSchema = z
     const normalizedAuthDomain = value.AUTH_DOMAIN ?? value.AUTH_SERVER_DOMAIN;
     const authServerUrl = new URL(value.AUTH_SERVER_URL);
     const authBaseUrl = new URL(value.BETTER_AUTH_BASE_URL);
-    const trustedOrigins = value.AUTH_TRUSTED_ORIGINS.split(',')
+    const trustedOrigins = (value.AUTH_TRUSTED_ORIGINS ?? authServerUrl.origin)
+      .split(',')
       .map((origin) => origin.trim())
       .filter(Boolean);
     const mcpAllowedOrigins = (value.MCP_ALLOWED_ORIGINS ?? '')
@@ -109,19 +108,21 @@ const envSchema = z
       });
     }
 
-    const placeholderRegex =
-      /(changeme|change-me|replace-me|example|test-secret|dev-secret)/i;
-    for (const [key, secret] of [
-      ['SERVER_SECRET', value.SERVER_SECRET],
-      ['BETTER_AUTH_SECRET', value.BETTER_AUTH_SECRET],
-      ['SYNC_AUTH_SECRET', value.SYNC_AUTH_SECRET ?? value.SERVER_SECRET],
-    ] as const) {
-      if (placeholderRegex.test(secret)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `${key} looks like a placeholder secret`,
-          path: [key],
-        });
+    if (isProduction) {
+      const placeholderRegex =
+        /(changeme|change-me|replace-me|example|test-secret|dev-secret)/i;
+      for (const [key, secret] of [
+        ['SERVER_SECRET', value.SERVER_SECRET],
+        ['BETTER_AUTH_SECRET', value.BETTER_AUTH_SECRET],
+        ['SYNC_AUTH_SECRET', value.SYNC_AUTH_SECRET ?? value.SERVER_SECRET],
+      ] as const) {
+        if (placeholderRegex.test(secret)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `${key} looks like a placeholder secret`,
+            path: [key],
+          });
+        }
       }
     }
 
@@ -230,9 +231,11 @@ const envSchema = z
   .transform((value) => ({
     ...value,
     AUTH_DOMAIN: value.AUTH_DOMAIN ?? value.AUTH_SERVER_DOMAIN,
-    AUTH_TRUSTED_ORIGINS: value.AUTH_TRUSTED_ORIGINS.split(',')
+    AUTH_TRUSTED_ORIGINS: (value.AUTH_TRUSTED_ORIGINS ?? value.AUTH_SERVER_URL)
+      .split(',')
       .map((origin) => origin.trim())
-      .filter(Boolean),
+      .filter(Boolean)
+      .map((origin) => new URL(origin).origin),
     MCP_ALLOWED_ORIGINS: (value.MCP_ALLOWED_ORIGINS ?? '')
       .split(',')
       .map((origin) => origin.trim())

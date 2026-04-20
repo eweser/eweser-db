@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const base = {
   AGENT_TOKEN_DEFAULT_TTL_SECONDS: '2592000',
@@ -18,12 +18,21 @@ const base = {
   TRUST_PROXY: 'false',
 };
 
-Object.assign(process.env, base);
+const originalEnv = { ...process.env };
 
 async function loadParseEnv() {
+  Object.assign(process.env, base);
   const module = await import('./env.js');
   return module.parseEnv;
 }
+
+beforeEach(() => {
+  vi.resetModules();
+});
+
+afterEach(() => {
+  process.env = { ...originalEnv };
+});
 
 describe('parseEnv', () => {
   it('parses a valid development env', async () => {
@@ -32,6 +41,20 @@ describe('parseEnv', () => {
     expect(parsed.PORT).toBe(38101);
     expect(parsed.AUTH_TRUSTED_ORIGINS).toContain('http://localhost:38101');
     expect(parsed.MCP_ALLOWED_ORIGINS).toContain('http://localhost:38101');
+  });
+
+  it('defaults trusted origins to AUTH_SERVER_URL origin when not set', async () => {
+    const parseEnv = await loadParseEnv();
+    const parsed = parseEnv({
+      ...base,
+      AUTH_SERVER_URL: 'http://localhost:49000/auth',
+      AUTH_TRUSTED_ORIGINS: undefined,
+      BETTER_AUTH_BASE_URL: 'http://localhost:49000/auth',
+      MCP_ALLOWED_ORIGINS: 'http://localhost:49000',
+      AUTH_SERVER_DOMAIN: 'localhost:49000',
+    });
+
+    expect(parsed.AUTH_TRUSTED_ORIGINS).toEqual(['http://localhost:49000']);
   });
 
   it('requires MCP_REDIS_URL when redis mode is selected', async () => {

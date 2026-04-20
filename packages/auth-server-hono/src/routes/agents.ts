@@ -90,65 +90,68 @@ agentsRouter.post(
   requireVerifiedEmail,
   createAgentRateLimit,
   async (c) => {
-  const user = c.get('user');
-  const bodyResult = createAgentBodySchema.safeParse(
-    await c.req.json().catch(() => null)
-  );
-  if (!bodyResult.success) {
-    return c.json({ error: 'Invalid request body' }, 400);
-  }
-  const body = bodyResult.data;
+    const user = c.get('user');
+    const bodyResult = createAgentBodySchema.safeParse(
+      await c.req.json().catch(() => null)
+    );
+    if (!bodyResult.success) {
+      return c.json({ error: 'Invalid request body' }, 400);
+    }
+    const body = bodyResult.data;
 
-  const invalidCollections = body.allowedCollections.filter(
-    (k) => !COLLECTION_KEYS.includes(k as (typeof COLLECTION_KEYS)[number])
-  );
-  if (invalidCollections.length > 0) {
+    const invalidCollections = body.allowedCollections.filter(
+      (k) => !COLLECTION_KEYS.includes(k as (typeof COLLECTION_KEYS)[number])
+    );
+    if (invalidCollections.length > 0) {
+      return c.json(
+        {
+          error: `Invalid collection keys: ${invalidCollections.join(', ')}. Allowed: ${COLLECTION_KEYS.join(', ')}`,
+        },
+        400
+      );
+    }
+
+    const tokenExpiresAt = body.tokenExpiresAt
+      ? new Date(body.tokenExpiresAt)
+      : new Date(Date.now() + defaultAgentTokenTtlMs);
+    if (tokenExpiresAt.getTime() - Date.now() > maxAgentTokenTtlMs) {
+      return c.json({ error: 'tokenExpiresAt exceeds max TTL' }, 400);
+    }
+
+    const { agentConfig, token } = await createAgentConfig({
+      userId: user.id,
+      name: body.name,
+      type: body.type ?? 'mcp',
+      endpoint: body.endpoint,
+      allowedCollections: body.allowedCollections,
+      allowedRooms: body.allowedRooms ?? [],
+      permissions: body.permissions ?? 'read',
+      tokenExpiresAt,
+    });
+    await logSecurityEvent({
+      action: 'agent.token.created',
+      ipAddress: getClientIp(c.req.raw.headers),
+      level: 'info',
+      metadata: {
+        agentId: agentConfig.id,
+        permissions: agentConfig.permissions,
+      },
+      userId: user.id,
+    });
+
+    const { tokenHash: _tokenHash, ...safeConfig } = agentConfig;
+
     return c.json(
       {
-        error: `Invalid collection keys: ${invalidCollections.join(', ')}. Allowed: ${COLLECTION_KEYS.join(', ')}`,
+        agent: safeConfig,
+        // Shown only once — the client must store this securely.
+        token,
+        warning:
+          'Store this token securely. It will not be shown again. Use it as a Bearer token for MCP authentication.',
       },
-      400
+      201
     );
   }
-
-  const tokenExpiresAt = body.tokenExpiresAt
-    ? new Date(body.tokenExpiresAt)
-    : new Date(Date.now() + defaultAgentTokenTtlMs);
-  if (tokenExpiresAt.getTime() - Date.now() > maxAgentTokenTtlMs) {
-    return c.json({ error: 'tokenExpiresAt exceeds max TTL' }, 400);
-  }
-
-  const { agentConfig, token } = await createAgentConfig({
-    userId: user.id,
-    name: body.name,
-    type: body.type ?? 'mcp',
-    endpoint: body.endpoint,
-    allowedCollections: body.allowedCollections,
-    allowedRooms: body.allowedRooms ?? [],
-    permissions: body.permissions ?? 'read',
-    tokenExpiresAt,
-  });
-  await logSecurityEvent({
-    action: 'agent.token.created',
-    ipAddress: getClientIp(c.req.raw.headers),
-    level: 'info',
-    metadata: { agentId: agentConfig.id, permissions: agentConfig.permissions },
-    userId: user.id,
-  });
-
-  const { tokenHash: _tokenHash, ...safeConfig } = agentConfig;
-
-  return c.json(
-    {
-      agent: safeConfig,
-      // Shown only once — the client must store this securely.
-      token,
-      warning:
-        'Store this token securely. It will not be shown again. Use it as a Bearer token for MCP authentication.',
-    },
-    201
-  );
-}
 );
 
 /**
@@ -173,25 +176,30 @@ agentsRouter.get('/:id', requireAuth, async (c) => {
  * Revoke an agent — sets isActive=false and clears the token hash.
  * The agent will receive 401 on its next MCP call.
  */
-agentsRouter.post('/:id/revoke', requireAuth, requireVerifiedEmail, async (c) => {
-  const user = c.get('user');
-  const agentId = c.req.param('id');
+agentsRouter.post(
+  '/:id/revoke',
+  requireAuth,
+  requireVerifiedEmail,
+  async (c) => {
+    const user = c.get('user');
+    const agentId = c.req.param('id');
 
-  const updated = await revokeAgentConfig(agentId, user.id);
-  if (!updated) {
-    return c.json({ error: 'Agent not found' }, 404);
+    const updated = await revokeAgentConfig(agentId, user.id);
+    if (!updated) {
+      return c.json({ error: 'Agent not found' }, 404);
+    }
+    await logSecurityEvent({
+      action: 'agent.token.revoked',
+      ipAddress: getClientIp(c.req.raw.headers),
+      level: 'warn',
+      metadata: { agentId },
+      userId: user.id,
+    });
+
+    const { tokenHash: _tokenHash, ...safeAgent } = updated;
+    return c.json({ agent: safeAgent, message: 'Agent revoked successfully' });
   }
-  await logSecurityEvent({
-    action: 'agent.token.revoked',
-    ipAddress: getClientIp(c.req.raw.headers),
-    level: 'warn',
-    metadata: { agentId },
-    userId: user.id,
-  });
-
-  const { tokenHash: _tokenHash, ...safeAgent } = updated;
-  return c.json({ agent: safeAgent, message: 'Agent revoked successfully' });
-});
+);
 
 /**
  * POST /api/agents/:id/rotate-token
@@ -203,28 +211,28 @@ agentsRouter.post(
   requireVerifiedEmail,
   rotateTokenRateLimit,
   async (c) => {
-  const user = c.get('user');
-  const agentId = c.req.param('id');
+    const user = c.get('user');
+    const agentId = c.req.param('id');
 
-  const result = await rotateAgentToken(agentId, user.id);
-  if (!result) {
-    return c.json({ error: 'Agent not found' }, 404);
+    const result = await rotateAgentToken(agentId, user.id);
+    if (!result) {
+      return c.json({ error: 'Agent not found' }, 404);
+    }
+    await logSecurityEvent({
+      action: 'agent.token.rotated',
+      ipAddress: getClientIp(c.req.raw.headers),
+      level: 'warn',
+      metadata: { agentId },
+      userId: user.id,
+    });
+
+    const { tokenHash: _tokenHash, ...safeAgent } = result.agentConfig;
+    return c.json({
+      agent: safeAgent,
+      token: result.token,
+      warning: 'Store this token securely. It will not be shown again.',
+    });
   }
-  await logSecurityEvent({
-    action: 'agent.token.rotated',
-    ipAddress: getClientIp(c.req.raw.headers),
-    level: 'warn',
-    metadata: { agentId },
-    userId: user.id,
-  });
-
-  const { tokenHash: _tokenHash, ...safeAgent } = result.agentConfig;
-  return c.json({
-    agent: safeAgent,
-    token: result.token,
-    warning: 'Store this token securely. It will not be shown again.',
-  });
-}
 );
 
 /**
@@ -493,7 +501,10 @@ agentsRouter.post('/me/log', agentAuth, async (c) => {
     await c.req.json().catch(() => null)
   );
   if (!bodyResult.success) {
-    return c.json({ error: 'roomId, collectionKey, and action are required' }, 400);
+    return c.json(
+      { error: 'roomId, collectionKey, and action are required' },
+      400
+    );
   }
   const body = bodyResult.data;
 

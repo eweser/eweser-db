@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useNavigate, NavigateFunction } from 'react-router';
+import type { NavigateFunction } from 'react-router';
+import { useNavigate } from 'react-router';
 import {
   Clock,
   Star,
@@ -12,7 +13,8 @@ import {
 } from 'lucide-react';
 import { EnhancedSidebar } from '../components/EnhancedSidebar';
 import { EnhancedCommandPalette } from '../components/EnhancedCommandPalette';
-import { useNotes, Note, Folder, Task } from '../contexts/NotesContext';
+import type { Note, Folder, Task } from '../contexts/NotesContext';
+import { useNotes } from '../contexts/NotesContext';
 import { Badge } from '../components/ui/badge';
 import {
   DropdownMenu,

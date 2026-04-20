@@ -61,7 +61,7 @@ vi.mock('./lib/api', () => ({
 }));
 
 vi.mock('./lib/config', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./lib/config')>();
+  const actual = await importOriginal();
 
   return {
     ...actual,

@@ -1,4 +1,8 @@
-const authBase = Cypress.env('AUTH_PAGES_BASE_URL') as string | undefined;
+const authBase =
+  (Cypress.env('AUTH_PAGES_BASE_URL') as string | undefined) ??
+  (Cypress.env('authPagesBaseUrl') as string | undefined) ??
+  (Cypress.config('baseUrl') as string | undefined) ??
+  undefined;
 
 (authBase ? describe : describe.skip)('auth security smoke', () => {
   it('renders sign-in with recovery/security links', () => {

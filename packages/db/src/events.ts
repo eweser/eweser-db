@@ -14,13 +14,14 @@ export class TypedEventEmitter<Events extends EmittedEvents> {
   on<K extends keyof Events>(event: K, listener: Events[K]): this {
     const key = event as string | symbol;
     if (!this._listeners.has(key)) this._listeners.set(key, new Set());
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-    this._listeners.get(key)!.add(listener as unknown as Listener);
+    const listeners = this._listeners.get(key);
+    if (listeners) {
+      listeners.add(listener as unknown as Listener);
+    }
     return this;
   }
 
   off<K extends keyof Events>(event: K, listener: Events[K]): this {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
     this._listeners
       .get(event as string | symbol)
       ?.delete(listener as unknown as Listener);
@@ -40,10 +41,10 @@ export class TypedEventEmitter<Events extends EmittedEvents> {
   once<K extends keyof Events>(event: K, listener: Events[K]): this {
     const wrapper: Listener = (...args) => {
       this.off(event, listener);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+
       (listener as unknown as Listener)(...args);
     };
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+
     return this.on(event, wrapper as unknown as Events[K]);
   }
 

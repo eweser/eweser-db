@@ -40,10 +40,16 @@ Applies to: `packages/db/` and `packages/shared/`
 ## CollectionKeys
 
 ```typescript
-type CollectionKey = 'notes' | 'flashcards' | 'profiles' | 'agentConfigs' | 'agentAccessLogs' | 'conversations'
+type CollectionKey =
+  | 'notes'
+  | 'flashcards'
+  | 'profiles'
+  | 'agentConfigs'
+  | 'agentAccessLogs'
+  | 'conversations';
 ```
 
-## _ref Format
+## \_ref Format
 
 `${authServer}|${collectionKey}|${roomId}|${documentId}`
 Use `buildRef()` from `@eweser/shared`.

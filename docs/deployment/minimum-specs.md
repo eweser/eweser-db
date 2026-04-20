@@ -88,6 +88,7 @@ tail -f ./logs/app-$(date +%Y-%m-%d).log | pino-pretty
 Axiom accepts both structured logs (via pino transport) and host metrics (via OTel OTLP). See [digital-ocean.md](./digital-ocean.md#observability-optional) for setup instructions.
 
 With Axiom you get:
+
 - Structured log search and dashboards
 - Host metrics (CPU, memory, GC, event loop lag)
 - Alerts (e.g. CPU > 80% for 5 min)
@@ -97,14 +98,15 @@ With Axiom you get:
 For local development, [Dozzle](https://dozzle.dev/) provides a live log viewer at `http://localhost:9999`. Not needed in production — use Axiom or file logs instead.
 
 ## Providers
+
 | ------------- | -------------- | ------------ | ----------------------------------------- |
-| DigitalOcean  | Basic Droplet  | $6/mo        | "Deploy to DigitalOcean" button available |
-| Hetzner Cloud | CX11           | €4/mo        | Best price/performance in EU              |
-| Vultr         | Cloud Compute  | $6/mo        | Good global coverage                      |
-| Linode/Akamai | Nanode         | $5/mo        | Reliable US provider                      |
-| Railway       | Starter        | $5/mo        | Managed containers, no SSH required       |
-| Render        | Free → Starter | $7/mo        | Easy deploys from GitHub                  |
-| Fly.io        | Free tier      | Free–$5/mo   | Container-based, generous free tier       |
+| DigitalOcean | Basic Droplet | $6/mo | "Deploy to DigitalOcean" button available |
+| Hetzner Cloud | CX11 | €4/mo | Best price/performance in EU |
+| Vultr | Cloud Compute | $6/mo | Good global coverage |
+| Linode/Akamai | Nanode | $5/mo | Reliable US provider |
+| Railway | Starter | $5/mo | Managed containers, no SSH required |
+| Render | Free → Starter | $7/mo | Easy deploys from GitHub |
+| Fly.io | Free tier | Free–$5/mo | Container-based, generous free tier |
 
 ## Docker + Docker Compose Required
 

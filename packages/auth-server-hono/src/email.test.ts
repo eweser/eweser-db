@@ -19,9 +19,8 @@ vi.mock('@eweser/logger', () => ({
   }),
 }));
 
-const { sendPasswordResetEmail, sendVerificationEmail } = await import(
-  './email.js'
-);
+const { sendPasswordResetEmail, sendVerificationEmail } =
+  await import('./email.js');
 
 describe('sendPasswordResetEmail', () => {
   beforeEach(() => {

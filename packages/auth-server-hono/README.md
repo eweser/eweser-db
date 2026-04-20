@@ -49,16 +49,16 @@ npm run dev:docker
 
 ## Environment Variables
 
-| Variable               | Required | Description                    |
-| ---------------------- | -------- | ------------------------------ |
-| `DATABASE_URL`         | ✅       | PostgreSQL connection string   |
-| `BETTER_AUTH_SECRET`   | ✅       | Encryption key for sessions    |
-| `BETTER_AUTH_BASE_URL` | ✅       | Public URL of the auth server  |
-| `SERVER_SECRET`        | ✅       | JWT signing secret             |
-| `SYNC_AUTH_SECRET`     | ✅       | Shared secret with sync server |
-| `SYNC_SERVER_URL`      | ✅       | Hocusp sync server URL         |
+| Variable               | Required | Description                                             |
+| ---------------------- | -------- | ------------------------------------------------------- |
+| `DATABASE_URL`         | ✅       | PostgreSQL connection string                            |
+| `BETTER_AUTH_SECRET`   | ✅       | Encryption key for sessions                             |
+| `BETTER_AUTH_BASE_URL` | ✅       | Public URL of the auth server                           |
+| `SERVER_SECRET`        | ✅       | JWT signing secret                                      |
+| `SYNC_AUTH_SECRET`     | ✅       | Shared secret with sync server                          |
+| `SYNC_SERVER_URL`      | ✅       | Hocusp sync server URL                                  |
 | `TURNSTILE_SECRET_KEY` |          | Optional Cloudflare Turnstile secret for signup captcha |
-| `WEBHOOK_SECRET`       |          | Webhook validation secret      |
+| `WEBHOOK_SECRET`       |          | Webhook validation secret                               |
 
 ## API Routes
 

@@ -416,7 +416,11 @@ function FolderItem({
   onMove,
   onShareFolder,
 }: FolderItemProps) {
-  const [{ isOver }, drop] = useDrop<DraggedNoteItem, void, { isOver: boolean }>({
+  const [{ isOver }, drop] = useDrop<
+    DraggedNoteItem,
+    void,
+    { isOver: boolean }
+  >({
     accept: ItemTypes.NOTE,
     drop: (item) => {
       if (item.folderId !== folder.id) {
@@ -490,7 +494,11 @@ function NoteItem({ note, folderId, onMove }: NoteItemProps) {
   const navigate = useNavigate();
   const { togglePinNote, updateNote, deleteNote } = useNotes();
 
-  const [{ isDragging }, drag] = useDrag<DraggedNoteItem, void, { isDragging: boolean }>({
+  const [{ isDragging }, drag] = useDrag<
+    DraggedNoteItem,
+    void,
+    { isDragging: boolean }
+  >({
     type: ItemTypes.NOTE,
     item: { noteId: note.id, folderId },
     collect: (monitor) => ({

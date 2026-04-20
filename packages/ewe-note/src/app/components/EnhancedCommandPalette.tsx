@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { Command } from 'cmdk';
 import {
@@ -24,7 +24,22 @@ export function EnhancedCommandPalette({
   const [search, setSearch] = useState('');
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const navigate = useNavigate();
-  const { notes, folders, addNote, searchNotes, getRecentNotes } = useNotes();
+  const { folders, addNote, searchNotes, getRecentNotes } = useNotes();
+
+  const handleNewNote = useCallback(
+    (customTitle?: string) => {
+      const newNote = addNote({
+        title: customTitle || 'Untitled',
+        content: customTitle ? `# ${customTitle}\n\n` : '',
+      });
+      if (newNote) {
+        navigate(`/editor/${newNote.id}`);
+        onOpenChange(false);
+        setSearch('');
+      }
+    },
+    [addNote, navigate, onOpenChange]
+  );
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -40,26 +55,7 @@ export function EnhancedCommandPalette({
 
     document.addEventListener('keydown', down);
     return () => document.removeEventListener('keydown', down);
-  }, [open, onOpenChange]);
-
-  // Reset search when opening
-  useEffect(() => {
-    if (open) {
-      setSearch('');
-    }
-  }, [open]);
-
-  const handleNewNote = (customTitle?: string) => {
-    const newNote = addNote({
-      title: customTitle || 'Untitled',
-      content: customTitle ? `# ${customTitle}\n\n` : '',
-    });
-    if (newNote) {
-      navigate(`/editor/${newNote.id}`);
-      onOpenChange(false);
-      setSearch('');
-    }
-  };
+  }, [open, onOpenChange, handleNewNote]);
 
   const handleSelectNote = (noteId: string) => {
     navigate(`/editor/${noteId}`);

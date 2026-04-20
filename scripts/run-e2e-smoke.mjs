@@ -10,14 +10,48 @@ const specs = [
   'e2e/cypress/tests/auth-security-smoke.cy.ts',
 ].join(',');
 
+/**
+ * @param {string} command
+ * @param {string[]} args
+ * @param {import('node:child_process').SpawnOptions} [options]
+ */
 function run(command, args, options = {}) {
   return spawn(command, args, {
-    detached: true,
     stdio: 'inherit',
     ...options,
   });
 }
 
+/**
+ * @param {import('node:child_process').ChildProcess} childProcess
+ * @param {number} [timeoutMs]
+ * @returns {Promise<void>}
+ */
+function waitForExit(childProcess, timeoutMs = 5_000) {
+  return new Promise((resolve) => {
+    if (childProcess.exitCode !== null) {
+      resolve();
+      return;
+    }
+
+    const onExit = () => {
+      clearTimeout(timer);
+      resolve();
+    };
+
+    const timer = setTimeout(() => {
+      childProcess.off('exit', onExit);
+      resolve();
+    }, timeoutMs);
+
+    childProcess.once('exit', onExit);
+  });
+}
+
+/**
+ * @param {string} url
+ * @param {number} [timeoutMs]
+ */
 async function waitForServer(url, timeoutMs = 90_000) {
   const startedAt = Date.now();
   while (Date.now() - startedAt < timeoutMs) {
@@ -33,6 +67,7 @@ async function waitForServer(url, timeoutMs = 90_000) {
 }
 
 async function main() {
+  /** @type {import('node:child_process').ChildProcess[]} */
   const childProcesses = [];
 
   if (!process.env.CYPRESS_BASE_URL) {
@@ -93,12 +128,12 @@ async function main() {
     await Promise.all(
       childProcesses.map(async (childProcess) => {
         if (childProcess.killed || childProcess.exitCode !== null) return;
-        try {
-          process.kill(-childProcess.pid, 'SIGTERM');
-        } catch {
-          childProcess.kill('SIGTERM');
+        childProcess.kill('SIGTERM');
+        await waitForExit(childProcess);
+        if (childProcess.exitCode === null) {
+          childProcess.kill('SIGKILL');
+          await waitForExit(childProcess, 2_000);
         }
-        await delay(500);
       })
     );
   };

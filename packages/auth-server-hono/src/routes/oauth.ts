@@ -133,98 +133,115 @@ oauthRouter.get(
   requireVerifiedEmail,
   oauthAuthorizeRateLimit,
   async (c) => {
-  const user = c.get('user');
-  const query = c.req.query();
-  const client_id = query.client_id;
-  const redirect_uri = query.redirect_uri;
-  const code_challenge = query.code_challenge;
-  const code_challenge_method = query.code_challenge_method;
-  const state = query.state;
-  const scope = query.scope ?? 'read';
+    const user = c.get('user');
+    const parseResult = authorizeQuerySchema.safeParse(c.req.query());
+    if (!parseResult.success) {
+      const hasScopeIssue = parseResult.error.issues.some(
+        (issue) => issue.path[0] === 'scope'
+      );
+      return c.json(
+        {
+          error: hasScopeIssue ? 'invalid_scope' : 'invalid_request',
+          error_description:
+            parseResult.error.issues[0]?.message ??
+            'Missing required parameters',
+        },
+        400
+      );
+    }
 
-  if (!client_id || !redirect_uri || !code_challenge) {
-    return c.json(
-      {
-        error: 'invalid_request',
-        error_description: 'Missing required parameters',
-      },
-      400
+    const {
+      client_id,
+      redirect_uri,
+      code_challenge,
+      code_challenge_method,
+      scope,
+      state,
+    } = parseResult.data;
+
+    if (!client_id || !redirect_uri || !code_challenge) {
+      return c.json(
+        {
+          error: 'invalid_request',
+          error_description: 'Missing required parameters',
+        },
+        400
+      );
+    }
+
+    if (code_challenge_method && code_challenge_method !== 'S256') {
+      return c.json(
+        {
+          error: 'invalid_request',
+          error_description: 'Only S256 code_challenge_method is supported',
+        },
+        400
+      );
+    }
+
+    const requestedScopes = scope.split(' ').filter(Boolean);
+    const invalidScopes = requestedScopes.filter(
+      (requested) =>
+        !OAUTH_SCOPES.includes(requested as (typeof OAUTH_SCOPES)[number])
     );
-  }
+    if (invalidScopes.length > 0) {
+      return c.json(
+        {
+          error: 'invalid_scope',
+          error_description: `Unknown scopes: ${invalidScopes.join(', ')}`,
+        },
+        400
+      );
+    }
 
-  if (code_challenge_method && code_challenge_method !== 'S256') {
-    return c.json(
-      {
-        error: 'invalid_request',
-        error_description: 'Only S256 code_challenge_method is supported',
-      },
-      400
-    );
-  }
+    // Validate client
+    const client = await getOAuthClient(client_id);
+    if (!client) {
+      return c.json(
+        { error: 'invalid_client', error_description: 'Unknown client_id' },
+        400
+      );
+    }
 
-  const requestedScopes = scope.split(' ').filter(Boolean);
-  const invalidScopes = requestedScopes.filter(
-    (requested) =>
-      !OAUTH_SCOPES.includes(requested as (typeof OAUTH_SCOPES)[number])
-  );
-  if (invalidScopes.length > 0) {
-    return c.json(
-      {
-        error: 'invalid_scope',
-        error_description: `Unknown scopes: ${invalidScopes.join(', ')}`,
-      },
-      400
-    );
-  }
+    // Validate redirect_uri
+    if (!isRegisteredRedirectUri(redirect_uri, client.redirectUris)) {
+      return c.json(
+        {
+          error: 'invalid_request',
+          error_description: 'redirect_uri not registered for this client',
+        },
+        400
+      );
+    }
 
-  // Validate client
-  const client = await getOAuthClient(client_id);
-  if (!client) {
-    return c.json(
-      { error: 'invalid_client', error_description: 'Unknown client_id' },
-      400
-    );
-  }
+    // First-party clients: skip consent, issue code immediately
+    if (client.isFirstParty) {
+      const { code } = await createAuthCode({
+        userId: user.id,
+        clientId: client_id,
+        codeChallenge: code_challenge,
+        redirectUri: redirect_uri,
+        scopes: scope,
+      });
 
-  // Validate redirect_uri
-  if (!isRegisteredRedirectUri(redirect_uri, client.redirectUris)) {
-    return c.json(
-      {
-        error: 'invalid_request',
-        error_description: 'redirect_uri not registered for this client',
-      },
-      400
-    );
-  }
+      const redirectUrl = new URL(redirect_uri);
+      redirectUrl.searchParams.set('code', code);
+      if (state) redirectUrl.searchParams.set('state', state);
 
-  // First-party clients: skip consent, issue code immediately
-  if (client.isFirstParty) {
-    const { code } = await createAuthCode({
-      userId: user.id,
-      clientId: client_id,
-      codeChallenge: code_challenge,
-      redirectUri: redirect_uri,
-      scopes: scope,
+      return c.redirect(redirectUrl.toString(), 302);
+    }
+
+    // Third-party: show consent page
+    // Store params in a short-lived cookie and redirect to consent UI
+    const params = new URLSearchParams({
+      client_id,
+      redirect_uri,
+      code_challenge,
+      state: state ?? '',
+      scope,
     });
-
-    const redirectUrl = new URL(redirect_uri);
-    redirectUrl.searchParams.set('code', code);
-    if (state) redirectUrl.searchParams.set('state', state);
-
-    return c.redirect(redirectUrl.toString(), 302);
+    return c.redirect(`/auth/oauth-consent?${params.toString()}`, 302);
   }
-
-  // Third-party: show consent page
-  // Store params in a short-lived cookie and redirect to consent UI
-  const params = new URLSearchParams({
-    client_id,
-    redirect_uri,
-    code_challenge,
-    state: state ?? '',
-    scope,
-  });
-  return c.redirect(`/auth/oauth-consent?${params.toString()}`, 302);
-}
 );
 
 // ---------------------------------------------------------------------------
@@ -243,38 +260,43 @@ oauthRouter.post(
   requireVerifiedEmail,
   oauthAuthorizeRateLimit,
   async (c) => {
-  const user = c.get('user');
-  const parseResult = approveBodySchema.safeParse(await c.req.json().catch(() => null));
-  if (!parseResult.success) {
-    return c.json({ error: 'invalid_request' }, 400);
-  }
-  const body = parseResult.data;
+    const user = c.get('user');
+    const parseResult = approveBodySchema.safeParse(
+      await c.req.json().catch(() => null)
+    );
+    if (!parseResult.success) {
+      return c.json({ error: 'invalid_request' }, 400);
+    }
+    const body = parseResult.data;
 
-  if (!body.approved) {
+    if (!body.approved) {
+      const redirectUrl = new URL(body.redirect_uri);
+      redirectUrl.searchParams.set('error', 'access_denied');
+      if (body.state) redirectUrl.searchParams.set('state', body.state);
+      return c.redirect(redirectUrl.toString(), 302);
+    }
+
+    const client = await getOAuthClient(body.client_id);
+    if (
+      !client ||
+      !isRegisteredRedirectUri(body.redirect_uri, client.redirectUris)
+    ) {
+      return c.json({ error: 'invalid_request' }, 400);
+    }
+
+    const { code } = await createAuthCode({
+      userId: user.id,
+      clientId: body.client_id,
+      codeChallenge: body.code_challenge,
+      redirectUri: body.redirect_uri,
+      scopes: body.scope ?? 'read',
+    });
+
     const redirectUrl = new URL(body.redirect_uri);
-    redirectUrl.searchParams.set('error', 'access_denied');
+    redirectUrl.searchParams.set('code', code);
     if (body.state) redirectUrl.searchParams.set('state', body.state);
     return c.redirect(redirectUrl.toString(), 302);
   }
-
-  const client = await getOAuthClient(body.client_id);
-  if (!client || !isRegisteredRedirectUri(body.redirect_uri, client.redirectUris)) {
-    return c.json({ error: 'invalid_request' }, 400);
-  }
-
-  const { code } = await createAuthCode({
-    userId: user.id,
-    clientId: body.client_id,
-    codeChallenge: body.code_challenge,
-    redirectUri: body.redirect_uri,
-    scopes: body.scope ?? 'read',
-  });
-
-  const redirectUrl = new URL(body.redirect_uri);
-  redirectUrl.searchParams.set('code', code);
-  if (body.state) redirectUrl.searchParams.set('state', body.state);
-  return c.redirect(redirectUrl.toString(), 302);
-}
 );
 
 // ---------------------------------------------------------------------------
@@ -371,8 +393,7 @@ oauthRouter.post('/revoke', oauthTokenRateLimit, async (c) => {
     const text = await c.req.text();
     rawToken = new URLSearchParams(text).get('token') ?? undefined;
   } else {
-    const body = await c
-      .req
+    const body = await c.req
       .json<{ token?: string }>()
       .catch(() => ({ token: undefined }));
     rawToken = body.token;
