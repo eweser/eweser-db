@@ -1,0 +1,11 @@
+pre-commit:
+  parallel: true
+  commands:
+    staged-checks:
+      run: npm run precommit:staged
+
+pre-push:
+  parallel: false
+  commands:
+    check:
+      run: npm run prepush:check
