@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { requireJwtAuth } from '../middleware/jwt-auth.js';
 import { requireAuth } from '../middleware/auth.js';
+import { requireVerifiedEmail } from '../middleware/verified-email.js';
 import { syncRoomsWithClient } from '../services/rooms/sync-rooms-with-client.js';
 import {
   getRoomsByIds,
@@ -74,7 +75,7 @@ accessGrantRouter.post('/create-room-invite', requireJwtAuth, async (c) => {
  * POST /api/access-grant/permissions
  * Creates or updates a third-party app grant for the signed-in user.
  */
-accessGrantRouter.post('/permissions', requireAuth, async (c) => {
+accessGrantRouter.post('/permissions', requireAuth, requireVerifiedEmail, async (c) => {
   const user = c.get('user');
   const body = (await c.req.json()) as ThirdPartyAppPermissions & {
     redirect?: string;
@@ -158,7 +159,11 @@ accessGrantRouter.post('/permissions', requireAuth, async (c) => {
  * POST /api/access-grant/accept-room-invite
  * Accepts a room invite for the signed-in user.
  */
-accessGrantRouter.post('/accept-room-invite', requireAuth, async (c) => {
+accessGrantRouter.post(
+  '/accept-room-invite',
+  requireAuth,
+  requireVerifiedEmail,
+  async (c) => {
   const user = c.get('user');
   const body = (await c.req.json()) as { token?: string };
 
@@ -244,7 +249,8 @@ accessGrantRouter.post('/accept-room-invite', requireAuth, async (c) => {
   }
 
   return c.json({ redirectUrl: redirectUrl.toString() });
-});
+  }
+);
 
 /**
  * POST /api/access-grant/update-room/:roomId

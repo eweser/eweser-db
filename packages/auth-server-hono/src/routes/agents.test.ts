@@ -9,12 +9,21 @@ const mockGetSession = vi.fn();
 
 vi.mock('../env.js', () => ({
   env: {
+    AGENT_TOKEN_DEFAULT_TTL_SECONDS: 2_592_000,
+    AGENT_TOKEN_MAX_TTL_SECONDS: 7_776_000,
+    AUTH_DOMAIN: 'auth.local',
+    AUTH_TRUSTED_ORIGINS: ['http://localhost:3000'],
     DATABASE_URL: 'postgres://test:test@localhost:5432/test',
     SERVER_SECRET: 'test-secret',
     PORT: 3000,
     BETTER_AUTH_SECRET: 'test-auth-secret',
     BETTER_AUTH_BASE_URL: 'http://localhost:3000',
     AUTH_SERVER_DOMAIN: 'auth.local',
+    AUTH_SERVER_URL: 'http://localhost:3000',
+    NODE_ENV: 'test',
+    TRUST_PROXY: false,
+    AUTH_ENABLE_2FA: true,
+    SYNC_SERVER_URL: 'ws://localhost:38181',
   },
 }));
 
@@ -62,6 +71,7 @@ const mockGenerateSyncToken = vi.fn(() => ({
   token: 'sync-jwt-token',
   expiry: new Date('2026-04-04T01:00:00Z'),
 }));
+const mockLogSecurityEvent = vi.fn();
 
 vi.mock('../model/rooms/calls.js', () => ({
   getRoomsByIds: mockGetRoomsByIds,
@@ -73,6 +83,10 @@ vi.mock('../model/users.js', () => ({
 
 vi.mock('../services/sync-token.js', () => ({
   generateSyncToken: mockGenerateSyncToken,
+}));
+
+vi.mock('../model/security-events.js', () => ({
+  logSecurityEvent: mockLogSecurityEvent,
 }));
 
 const { agentsRouter } = await import('./agents.js');

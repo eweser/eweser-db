@@ -8,7 +8,9 @@ vi.mock('@hono/node-server', () => ({
 
 vi.mock('./env.js', () => ({
   env: {
+    AUTH_TRUSTED_ORIGINS: ['http://localhost:38101'],
     PORT: 38101,
+    TRUST_PROXY: false,
   },
 }));
 
@@ -54,5 +56,16 @@ describe('app health routes', () => {
     expect(serveMock).toHaveBeenCalled();
     const firstCallArg = serveMock.mock.calls[0]?.[0] as { port: number };
     expect(firstCallArg.port).toBe(38101);
+  });
+
+  it('rejects write requests with untrusted origin', async () => {
+    const response = await app.fetch(
+      new Request('http://localhost/auth/sign-in/email', {
+        headers: { Origin: 'https://evil.example.com' },
+        method: 'POST',
+      })
+    );
+
+    expect(response.status).toBe(403);
   });
 });

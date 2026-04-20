@@ -29,6 +29,13 @@
       "when": 1744070400000,
       "tag": "0003_oauth",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1776601800000,
+      "tag": "0004_security_two_factor",
+      "breakpoints": true
     }
   ]
 }

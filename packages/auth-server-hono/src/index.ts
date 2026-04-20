@@ -1,6 +1,7 @@
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { env } from './env.js';
+import { requestHardening } from './middleware/request-hardening.js';
 import { accountRouter } from './routes/account.js';
 import { agentsRouter } from './routes/agents.js';
 import { authRouter } from './routes/auth.js';
@@ -15,18 +16,7 @@ const log = createLogger('auth-server');
 
 export const app = new Hono();
 
-// Request logging middleware
-app.use('*', async (c, next) => {
-  const start = Date.now();
-  await next();
-  const ms = Date.now() - start;
-  log.info({
-    method: c.req.method,
-    path: c.req.path,
-    status: c.res.status,
-    duration_ms: ms,
-  });
-});
+app.use('*', requestHardening);
 
 app.get('/health', (c) => c.json({ status: 'ok' }));
 app.get('/ping', (c) => c.text('pong'));

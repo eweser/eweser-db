@@ -1,0 +1,51 @@
+name: Security Checks
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  dependency-audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.11.1
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit (high+ severity report)
+        run: npm audit --audit-level=high --json > audit-report.json || true
+
+      - name: Fail on critical vulnerabilities
+        run: |
+          node -e "const fs=require('fs');const p='audit-report.json';if(!fs.existsSync(p)){process.exit(0)};const r=JSON.parse(fs.readFileSync(p,'utf8'));const c=(r.metadata&&r.metadata.vulnerabilities&&r.metadata.vulnerabilities.critical)||0;console.log('critical vulnerabilities:',c);if(c>0){process.exit(1)}"
+
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-report
+          path: audit-report.json
+
+  secret-scan:
+    name: Secret Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_ENABLE_COMMENTS: "false"

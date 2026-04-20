@@ -22,7 +22,13 @@ vi.mock('../middleware/jwt-auth.js', () => ({
 
 vi.mock('../middleware/auth.js', () => ({
   requireAuth: async (c: Context, next: Next) => {
-    c.set('user', { id: 'user-1' });
+    c.set('user', { id: 'user-1', emailVerified: true });
+    await next();
+  },
+}));
+
+vi.mock('../middleware/verified-email.js', () => ({
+  requireVerifiedEmail: async (_c: Context, next: Next) => {
     await next();
   },
 }));

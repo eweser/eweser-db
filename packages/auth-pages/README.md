@@ -36,6 +36,7 @@ npm run dev
 | Variable               | Description                |
 | ---------------------- | -------------------------- |
 | `VITE_AUTH_SERVER_URL` | URL of the auth API server |
+| `VITE_TURNSTILE_SITE_KEY` | Optional Cloudflare Turnstile site key for signup captcha |
 
 ## Docker
 

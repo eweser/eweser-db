@@ -57,6 +57,7 @@ npm run dev:docker
 | `SERVER_SECRET`        | ✅       | JWT signing secret             |
 | `SYNC_AUTH_SECRET`     | ✅       | Shared secret with sync server |
 | `SYNC_SERVER_URL`      | ✅       | Hocusp sync server URL         |
+| `TURNSTILE_SECRET_KEY` |          | Optional Cloudflare Turnstile secret for signup captcha |
 | `WEBHOOK_SECRET`       |          | Webhook validation secret      |
 
 ## API Routes

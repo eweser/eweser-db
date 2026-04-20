@@ -10,10 +10,12 @@
  */
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { createLogger } from '@eweser/logger';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import { DataLayer, registerTools } from '@eweser/mcp';
 import type { AgentConfig, AgentRoom } from '@eweser/mcp';
+import { createRateLimit, getClientIp } from '../middleware/rate-limit.js';
 import { getValidOAuthAccessToken } from '../model/oauth.js';
 import {
   getAgentConfigByTokenHash,
@@ -23,6 +25,7 @@ import {
 import { getUserById } from '../model/users.js';
 import { getRoomsByIds } from '../model/rooms/calls.js';
 import { env } from '../env.js';
+import { logSecurityEvent } from '../model/security-events.js';
 
 // ---------------------------------------------------------------------------
 // Session cache — keyed by mcp-session-id header
@@ -34,6 +37,12 @@ interface McpSession {
 }
 
 export const mcpRouter = new Hono();
+const log = createLogger('mcp-route');
+const mcpRequestRateLimit = createRateLimit({
+  key: 'mcp-request',
+  max: 120,
+  windowMs: 60_000,
+});
 
 // TODO(multi-instance): This module-level Map works for a single Node.js process.
 // For multiple auth-server replicas (horizontal scaling), replace with a Redis-backed
@@ -159,8 +168,13 @@ async function buildAgentConfigForUser(
 mcpRouter.use(
   '*',
   cors({
-    origin: '*',
-    allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+    origin: (origin) => {
+      if (!origin) return undefined;
+      if (env.MCP_ALLOWED_ORIGINS.includes(origin)) return origin;
+      if (env.AUTH_TRUSTED_ORIGINS.includes(origin)) return origin;
+      return undefined;
+    },
+    allowMethods: ['GET', 'POST', 'OPTIONS'],
     allowHeaders: [
       'Content-Type',
       'Authorization',
@@ -172,19 +186,40 @@ mcpRouter.use(
   })
 );
 
+mcpRouter.use('*', mcpRequestRateLimit);
+
 // ---------------------------------------------------------------------------
 // POST/GET /mcp — Streamable HTTP MCP handler
 // ---------------------------------------------------------------------------
 
 mcpRouter.all('/', async (c) => {
+  if (env.MCP_SESSION_MODE === 'redis') {
+    return c.json(
+      {
+        error:
+          'MCP_SESSION_MODE=redis configured, but this build only supports single-instance in-memory sessions.',
+      },
+      503
+    );
+  }
+
   // 1. Authenticate
   const auth = await resolveAuth(c.req.header('Authorization'));
   if (!auth) {
+    await logSecurityEvent({
+      action: 'mcp.auth.failed',
+      ipAddress: getClientIp(c.req.raw.headers),
+      level: 'warn',
+      metadata: { path: c.req.path },
+    });
     return c.json({ error: 'Unauthorized' }, 401);
   }
 
   // 2. Get or create DataLayer session
   const sessionId = c.req.header('mcp-session-id');
+  if (sessionId && sessionId.length > 128) {
+    return c.json({ error: 'Invalid session id' }, 400);
+  }
   let dataLayer: DataLayer;
 
   if (sessionId && sessionCache.has(sessionId)) {
@@ -264,6 +299,12 @@ mcpRouter.all('/', async (c) => {
 
   const transport = new WebStandardStreamableHTTPServerTransport();
   await mcpServer.connect(transport);
+  log.info({
+    method: c.req.method,
+    path: c.req.path,
+    scope: auth.permissions,
+    userId: auth.userId,
+  });
 
   return transport.handleRequest(c.req.raw);
 });

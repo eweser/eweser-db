@@ -7,8 +7,11 @@
  * POST /oauth/revoke                            — Revocation endpoint
  */
 import { Hono } from 'hono';
+import { z } from 'zod';
 import { env } from '../env.js';
 import { requireAuth } from '../middleware/auth.js';
+import { createRateLimit } from '../middleware/rate-limit.js';
+import { requireVerifiedEmail } from '../middleware/verified-email.js';
 import {
   consumeAuthCode,
   createAuthCode,
@@ -21,6 +24,84 @@ import {
 export const oauthRouter = new Hono();
 
 const BASE_URL = env.AUTH_SERVER_URL;
+const OAUTH_SCOPES = ['read', 'readwrite'] as const;
+const oauthScopeSchema = z
+  .string()
+  .default('read')
+  .transform((scope) => scope.trim())
+  .superRefine((scope, ctx) => {
+    const requestedScopes = scope.split(' ').filter(Boolean);
+    const invalidScopes = requestedScopes.filter(
+      (requested) =>
+        !OAUTH_SCOPES.includes(requested as (typeof OAUTH_SCOPES)[number])
+    );
+    if (invalidScopes.length > 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Unknown scopes: ${invalidScopes.join(', ')}`,
+      });
+    }
+  });
+
+const authorizeQuerySchema = z.object({
+  client_id: z.string().min(1),
+  redirect_uri: z.string().url(),
+  code_challenge: z.string().min(1),
+  code_challenge_method: z.string().optional(),
+  scope: oauthScopeSchema,
+  state: z.string().optional(),
+});
+
+const approveBodySchema = z.object({
+  approved: z.boolean(),
+  client_id: z.string().min(1),
+  code_challenge: z.string().min(1),
+  redirect_uri: z.string().url(),
+  scope: oauthScopeSchema.optional(),
+  state: z.string().optional(),
+});
+
+const tokenBodySchema = z.object({
+  client_id: z.string().min(1),
+  code: z.string().min(1),
+  code_verifier: z.string().min(8),
+  grant_type: z.literal('authorization_code'),
+  redirect_uri: z.string().url(),
+});
+
+const revokeBodySchema = z.object({
+  token: z.string().min(1),
+});
+
+function isRegisteredRedirectUri(
+  redirectUri: string,
+  registeredUris: string[]
+): boolean {
+  let normalizedIncoming: string;
+  try {
+    normalizedIncoming = new URL(redirectUri).toString();
+  } catch {
+    return false;
+  }
+
+  return registeredUris.some((candidate) => {
+    try {
+      return new URL(candidate).toString() === normalizedIncoming;
+    } catch {
+      return false;
+    }
+  });
+}
+const oauthAuthorizeRateLimit = createRateLimit({
+  key: 'oauth-authorize',
+  max: 20,
+  windowMs: 60_000,
+});
+const oauthTokenRateLimit = createRateLimit({
+  key: 'oauth-token',
+  max: 40,
+  windowMs: 60_000,
+});
 
 // ---------------------------------------------------------------------------
 // GET /.well-known/oauth-authorization-server
@@ -46,20 +127,21 @@ export function oauthServerMetadata() {
 // GET /oauth/authorize
 // ---------------------------------------------------------------------------
 
-oauthRouter.get('/authorize', requireAuth, async (c) => {
+oauthRouter.get(
+  '/authorize',
+  requireAuth,
+  requireVerifiedEmail,
+  oauthAuthorizeRateLimit,
+  async (c) => {
   const user = c.get('user');
   const query = c.req.query();
+  const client_id = query.client_id;
+  const redirect_uri = query.redirect_uri;
+  const code_challenge = query.code_challenge;
+  const code_challenge_method = query.code_challenge_method;
+  const state = query.state;
+  const scope = query.scope ?? 'read';
 
-  const {
-    client_id,
-    redirect_uri,
-    code_challenge,
-    code_challenge_method,
-    state,
-    scope = 'read',
-  } = query;
-
-  // Validate required params
   if (!client_id || !redirect_uri || !code_challenge) {
     return c.json(
       {
@@ -80,6 +162,21 @@ oauthRouter.get('/authorize', requireAuth, async (c) => {
     );
   }
 
+  const requestedScopes = scope.split(' ').filter(Boolean);
+  const invalidScopes = requestedScopes.filter(
+    (requested) =>
+      !OAUTH_SCOPES.includes(requested as (typeof OAUTH_SCOPES)[number])
+  );
+  if (invalidScopes.length > 0) {
+    return c.json(
+      {
+        error: 'invalid_scope',
+        error_description: `Unknown scopes: ${invalidScopes.join(', ')}`,
+      },
+      400
+    );
+  }
+
   // Validate client
   const client = await getOAuthClient(client_id);
   if (!client) {
@@ -90,25 +187,11 @@ oauthRouter.get('/authorize', requireAuth, async (c) => {
   }
 
   // Validate redirect_uri
-  if (!client.redirectUris.includes(redirect_uri)) {
+  if (!isRegisteredRedirectUri(redirect_uri, client.redirectUris)) {
     return c.json(
       {
         error: 'invalid_request',
         error_description: 'redirect_uri not registered for this client',
-      },
-      400
-    );
-  }
-
-  // Validate scope
-  const validScopes = ['read', 'readwrite'];
-  const requestedScopes = scope.split(' ').filter(Boolean);
-  const invalidScopes = requestedScopes.filter((s) => !validScopes.includes(s));
-  if (invalidScopes.length > 0) {
-    return c.json(
-      {
-        error: 'invalid_scope',
-        error_description: `Unknown scopes: ${invalidScopes.join(', ')}`,
       },
       400
     );
@@ -141,7 +224,8 @@ oauthRouter.get('/authorize', requireAuth, async (c) => {
     scope,
   });
   return c.redirect(`/auth/oauth-consent?${params.toString()}`, 302);
-});
+}
+);
 
 // ---------------------------------------------------------------------------
 // POST /oauth/authorize/approve (called by consent UI for third-party clients)
@@ -153,16 +237,18 @@ oauthRouter.get('/authorize', requireAuth, async (c) => {
 // middleware validates the session, making cross-origin CSRF attacks impossible without a
 // valid same-origin session. No additional CSRF token is needed given the cookie-based session
 // check — this is acceptable per the OWASP CSRF cheat sheet (verifying origin/session is sufficient).
-oauthRouter.post('/authorize/approve', requireAuth, async (c) => {
+oauthRouter.post(
+  '/authorize/approve',
+  requireAuth,
+  requireVerifiedEmail,
+  oauthAuthorizeRateLimit,
+  async (c) => {
   const user = c.get('user');
-  const body = await c.req.json<{
-    client_id: string;
-    redirect_uri: string;
-    code_challenge: string;
-    state?: string;
-    scope?: string;
-    approved: boolean;
-  }>();
+  const parseResult = approveBodySchema.safeParse(await c.req.json().catch(() => null));
+  if (!parseResult.success) {
+    return c.json({ error: 'invalid_request' }, 400);
+  }
+  const body = parseResult.data;
 
   if (!body.approved) {
     const redirectUrl = new URL(body.redirect_uri);
@@ -172,7 +258,7 @@ oauthRouter.post('/authorize/approve', requireAuth, async (c) => {
   }
 
   const client = await getOAuthClient(body.client_id);
-  if (!client || !client.redirectUris.includes(body.redirect_uri)) {
+  if (!client || !isRegisteredRedirectUri(body.redirect_uri, client.redirectUris)) {
     return c.json({ error: 'invalid_request' }, 400);
   }
 
@@ -188,38 +274,39 @@ oauthRouter.post('/authorize/approve', requireAuth, async (c) => {
   redirectUrl.searchParams.set('code', code);
   if (body.state) redirectUrl.searchParams.set('state', body.state);
   return c.redirect(redirectUrl.toString(), 302);
-});
+}
+);
 
 // ---------------------------------------------------------------------------
 // POST /oauth/token
 // ---------------------------------------------------------------------------
 
-oauthRouter.post('/token', async (c) => {
-  let body: Record<string, string>;
+oauthRouter.post('/token', oauthTokenRateLimit, async (c) => {
+  let rawBody: Record<string, string>;
 
   const contentType = c.req.header('content-type') ?? '';
   if (contentType.includes('application/x-www-form-urlencoded')) {
     const text = await c.req.text();
-    body = Object.fromEntries(new URLSearchParams(text));
+    rawBody = Object.fromEntries(new URLSearchParams(text));
   } else {
-    body = await c.req.json<Record<string, string>>();
+    rawBody = await c.req.json<Record<string, string>>().catch(() => ({}));
   }
 
-  const { grant_type, code, redirect_uri, code_verifier, client_id } = body;
-
-  if (grant_type !== 'authorization_code') {
-    return c.json({ error: 'unsupported_grant_type' }, 400);
-  }
-
-  if (!code || !redirect_uri || !code_verifier || !client_id) {
+  const parsedBody = tokenBodySchema.safeParse(rawBody);
+  if (!parsedBody.success) {
+    if (rawBody.grant_type !== 'authorization_code') {
+      return c.json({ error: 'unsupported_grant_type' }, 400);
+    }
     return c.json(
       {
         error: 'invalid_request',
-        error_description: 'Missing required parameters',
+        error_description:
+          parsedBody.error.issues[0]?.message ?? 'Missing required parameters',
       },
       400
     );
   }
+  const { client_id, code, code_verifier, redirect_uri } = parsedBody.data;
 
   // Consume the authorization code
   const codeRow = await consumeAuthCode(code);
@@ -276,19 +363,23 @@ oauthRouter.post('/token', async (c) => {
 // POST /oauth/revoke
 // ---------------------------------------------------------------------------
 
-oauthRouter.post('/revoke', async (c) => {
+oauthRouter.post('/revoke', oauthTokenRateLimit, async (c) => {
   const contentType = c.req.header('content-type') ?? '';
-  let token: string | undefined;
+  let rawToken: string | undefined;
 
   if (contentType.includes('application/x-www-form-urlencoded')) {
     const text = await c.req.text();
-    token = new URLSearchParams(text).get('token') ?? undefined;
+    rawToken = new URLSearchParams(text).get('token') ?? undefined;
   } else {
-    const body = await c.req.json<{ token?: string }>();
-    token = body.token;
+    const body = await c
+      .req
+      .json<{ token?: string }>()
+      .catch(() => ({ token: undefined }));
+    rawToken = body.token;
   }
 
-  if (!token) {
+  const parsed = revokeBodySchema.safeParse({ token: rawToken });
+  if (!parsed.success) {
     return c.json(
       {
         error: 'invalid_request',
@@ -298,7 +389,7 @@ oauthRouter.post('/revoke', async (c) => {
     );
   }
 
-  await revokeOAuthAccessToken(token);
+  await revokeOAuthAccessToken(parsed.data.token);
 
   // Per RFC 7009 §2.2: always return 200 even if token was not found
   return c.json({});

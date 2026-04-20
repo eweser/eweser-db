@@ -1,10 +1,14 @@
-{
-    auto_https off
-}
-
 # Main domain — landing, auth pages, API, sync
-http://{$DOMAIN:localhost} {
+{$DOMAIN:localhost} {
     encode zstd gzip
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        X-Frame-Options "DENY"
+        Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+        Content-Security-Policy "default-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; connect-src 'self' https: wss:; img-src 'self' data: https:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline';"
+    }
 
     @legacy_login {
         path /
@@ -78,8 +82,16 @@ http://{$DOMAIN:localhost} {
 }
 
 # Notes subdomain — Ewe Note app
-http://notes.{$DOMAIN:localhost} {
+notes.{$DOMAIN:localhost} {
     encode zstd gzip
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        X-Frame-Options "DENY"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        Content-Security-Policy "default-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; connect-src 'self' https: wss:; img-src 'self' data: https:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline';"
+    }
 
     reverse_proxy ewe-note:80
 }

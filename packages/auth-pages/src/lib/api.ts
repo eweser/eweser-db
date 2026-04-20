@@ -67,3 +67,28 @@ export function acceptInvite(token: string) {
     }
   );
 }
+
+export function requestPasswordReset(email: string, redirectTo: string) {
+  return request<{ status: boolean }>('/api/auth/forget-password', {
+    body: JSON.stringify({ email, redirectTo }),
+    method: 'POST',
+  });
+}
+
+export function resetPassword(token: string, newPassword: string) {
+  return request<{ status: boolean }>('/api/auth/reset-password', {
+    body: JSON.stringify({
+      newPassword,
+      token,
+      revokeOtherSessions: true,
+    }),
+    method: 'POST',
+  });
+}
+
+export function resendVerification(callbackURL: string) {
+  return request<{ status: boolean }>('/api/auth/send-verification-email', {
+    body: JSON.stringify({ callbackURL }),
+    method: 'POST',
+  });
+}
