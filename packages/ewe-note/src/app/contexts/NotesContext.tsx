@@ -436,7 +436,7 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     if (!found) return;
 
     const next: DbNote = { ...found.source };
-    const nextFrontmatter = { ...(found.source.frontmatter ?? {}) };
+    let nextFrontmatter = { ...(found.source.frontmatter ?? {}) };
 
     if (updates.content !== undefined) {
       next.text = updates.content;
@@ -457,7 +457,7 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
           ['title', 'tags', 'aliases'].includes(key)
         )
       );
-      Object.assign(nextFrontmatter, preservedFrontmatter);
+      nextFrontmatter = { ...preservedFrontmatter };
       Object.entries(updates.properties).forEach(([key, value]) => {
         nextFrontmatter[key] = value;
       });
