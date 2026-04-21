@@ -16,7 +16,7 @@
     "types": [],
     "noEmit": false,
     "declaration": true,
-    "declarationDir": "types",
+    "declarationDir": "dist",
     "sourceMap": true,
     "downlevelIteration": true,
     "outDir": "dist",

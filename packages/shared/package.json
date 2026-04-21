@@ -17,21 +17,21 @@
   },
   "files": [
     "/dist",
-    "/types"
+    "/src"
   ],
   "exports": {
     ".": {
       "import": "./dist/index.js",
       "require": "./dist/index.js",
-      "types": "./types/index.d.ts"
+      "types": "./src/index.ts"
     }
   },
   "source": "src/index.ts",
-  "types": "./types/index.d.ts",
+  "types": "./src/index.ts",
   "scripts": {
-    "build": "rm -rf ./dist; rm -rf ./types; tsc && node ./fix-esm-extensions.mjs dist",
+    "build": "rm -rf ./dist; tsc && node ./fix-esm-extensions.mjs dist",
     "dev": "tsc -w",
-    "clean": "rm -rf ./dist; rm -rf ./types",
+    "clean": "rm -rf ./dist",
     "lint": "eslint .",
     "type-check": "tsc --noEmit",
     "test-watch": "vitest",

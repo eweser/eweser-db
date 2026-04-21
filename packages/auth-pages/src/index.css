@@ -118,6 +118,21 @@ body,
       linear-gradient(180deg, #050505 0%, #070707 100%);
   }
 
+  .light html {
+    background:
+      radial-gradient(
+        circle at top left,
+        rgb(255 255 255 / 0.95),
+        transparent 36%
+      ),
+      radial-gradient(
+        circle at bottom right,
+        rgb(226 232 240 / 0.88),
+        transparent 30%
+      ),
+      linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+  }
+
   body {
     @apply bg-background text-foreground;
     background-image:
@@ -135,12 +150,12 @@ body,
     background-image:
       radial-gradient(
         circle at top left,
-        rgb(234 240 255 / 0.9),
+        rgb(255 255 255 / 0.85),
         transparent 35%
       ),
       radial-gradient(
         circle at bottom right,
-        rgb(255 233 220 / 0.9),
+        rgb(226 232 240 / 0.75),
         transparent 30%
       );
   }

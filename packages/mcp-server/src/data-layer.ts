@@ -144,8 +144,8 @@ export class DataLayer {
       this.scheduleTokenRefresh(roomId, connected);
     } catch (err) {
       log.error(
-        `[eweser-mcp] Failed to refresh token for room ${roomId}:`,
-        err
+        { err, roomId },
+        `[eweser-mcp] Failed to refresh token for room ${roomId}`
       );
     }
   }

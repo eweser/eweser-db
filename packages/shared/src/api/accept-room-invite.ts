@@ -1,4 +1,4 @@
-import type { ServerRoom } from '..';
+import type { ServerRoom } from '../index.js';
 
 export type AcceptRoomInviteQueries = {
   token: string;

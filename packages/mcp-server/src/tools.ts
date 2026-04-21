@@ -209,6 +209,7 @@ export function registerTools(
   // -------------------------------------------------------------------------
   // eweser_search
   // -------------------------------------------------------------------------
+  // @ts-ignore TS2589: deep Zod overload inference
   server.tool(
     'eweser_search',
     'Full-text search across documents in allowed rooms. ' +
@@ -361,6 +362,7 @@ export function registerTools(
   // @ts-ignore TS2589: deep Zod overload inference
   server.tool(
     'eweser_save_memory',
+    // @ts-ignore TS2769: SDK overload inference picks schema overload for this long description form
     'Save a memory note, session summary, decision, or bookmark to a conversations room. ' +
       'A convenience wrapper around eweser_create_document with sensible defaults for AI agents. ' +
       'Requires readwrite access on the target room (collectionKey: "conversations"). ' +
