@@ -64,7 +64,7 @@ jobs:
       - name: Run type-check
         run: npm run type-check
         env:
-          NODE_OPTIONS: --max-old-space-size=6144
+          NODE_OPTIONS: --max-old-space-size=8192
 
   unit-tests:
     name: Unit Tests
