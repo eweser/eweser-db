@@ -20,9 +20,16 @@ const base = {
 
 const originalEnv = { ...process.env };
 
-async function loadParseEnv() {
-  Object.assign(process.env, base);
+async function loadParseEnv(
+  overrides: Partial<Record<keyof typeof base, string | undefined>> = {}
+) {
+  process.env = {
+    ...originalEnv,
+    ...base,
+    ...overrides,
+  };
   const module = await import('./env.js');
+  process.env = { ...originalEnv };
   return module.parseEnv;
 }
 
@@ -122,6 +129,28 @@ describe('parseEnv', () => {
         BETTER_AUTH_BASE_URL: 'https://auth.example.com',
         MCP_ALLOWED_ORIGINS: 'https://app.example.com',
         NODE_ENV: 'production',
+        TRUST_PROXY: 'true',
+      })
+    ).toThrowError();
+  });
+
+  it('rejects placeholder launch-critical secrets in production', async () => {
+    const parseEnv = await loadParseEnv();
+
+    expect(() =>
+      parseEnv({
+        ...base,
+        AUTH_EMAIL_FROM: 'EweserDB <no-reply@example.com>',
+        AUTH_EMAIL_PROVIDER: 'resend',
+        AUTH_SERVER_DOMAIN: 'auth.example.com',
+        AUTH_SERVER_URL: 'https://auth.example.com',
+        AUTH_TRUSTED_ORIGINS: 'https://app.example.com',
+        BETTER_AUTH_BASE_URL: 'https://auth.example.com',
+        NODE_ENV: 'production',
+        MCP_ALLOWED_ORIGINS: 'https://app.example.com',
+        RESEND_API_KEY: 're_12345678901234567890123456789012',
+        SERVER_SECRET: 'replace-with-random-32+-char-secret',
+        SYNC_AUTH_SECRET: 'replace-with-random-32+-char-secret',
         TRUST_PROXY: 'true',
       })
     ).toThrowError();

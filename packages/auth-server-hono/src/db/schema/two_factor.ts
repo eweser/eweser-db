@@ -1,7 +1,7 @@
 import { boolean, pgTable, text, uuid } from 'drizzle-orm/pg-core';
 import { users } from './users.js';
 
-export const twoFactor = pgTable('twoFactor', {
+export const twoFactor = pgTable('two_factor', {
   id: text('id').primaryKey(),
   userId: uuid('user_id')
     .notNull()

@@ -95,6 +95,9 @@
   "volta": {
     "node": "20.11.0"
   },
+  "overrides": {
+    "protobufjs": "^7.5.5"
+  },
   "dependencies": {
     "react-native-uuid": "^2.0.3"
   }

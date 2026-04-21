@@ -51,6 +51,7 @@ vite.config.ts.timestamp*.mjs
 
 # gitleaks
 .gitleaks-report.json
+storage_railway_*.json
 
 .mcp.json
 docs/ai/plans/railway-deployment-handoff.md
