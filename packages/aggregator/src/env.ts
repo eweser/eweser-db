@@ -5,7 +5,9 @@ const envSchema = z.object({
   DATABASE_URL: z
     .string()
     .optional()
-    .transform((v) => (!v ? 'postgresql://eweser:changeme@localhost:5432/eweser' : v)),
+    .transform((v) =>
+      !v ? 'postgresql://eweser:changeme@localhost:5432/eweser' : v
+    ),
   PORT: z.coerce.number().default(8090),
   SYNC_SERVER_URL: z.string().url().default('ws://localhost:8080'),
   SYNC_AUTH_SECRET: z.string().min(1).default('changeme'),

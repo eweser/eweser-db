@@ -22,7 +22,6 @@ The script installs Docker, clones the repo, generates all secrets, and starts t
 
 ### Manual setup
 
-
 - **Image:** Ubuntu 24.04 LTS
 - **Plan:** Basic — $6/month (1 vCPU, 512 MB RAM, 10 GB disk)
 - **Region:** Closest to your users
@@ -121,6 +120,7 @@ grep '"level":50' ./logs/app-2026-04-09.log
 Axiom's free tier (500 GB/mo) is generous for personal deployments. Both logs and metrics go to the same account.
 
 **1. Create datasets at https://app.axiom.co:**
+
 - `eweser-db-events` (type: **Events**) — for structured logs
 - `eweser-db-metrics` (type: **Metrics**) — for host metrics
 
@@ -176,6 +176,41 @@ docker exec eweser-db-postgres-1 pg_dump -U eweser eweser > backup-$(date +%Y%m%
 # Backup sync server SQLite
 docker cp eweser-db-sync-server-1:/data/sync.sqlite ./sync-backup-$(date +%Y%m%d).sqlite
 ```
+
+### Restore Drill
+
+Run this in a non-production shell on a regular schedule and record the date in your ops log:
+
+```bash
+# Create a scratch database for restore verification
+docker exec -i eweser-db-postgres-1 psql -U eweser -c "CREATE DATABASE eweser_restore_check;"
+
+# Restore the most recent dump into the scratch database
+cat backup-$(date +%Y%m%d).sql | docker exec -i eweser-db-postgres-1 psql -U eweser eweser_restore_check
+
+# Verify the schema restored
+docker exec eweser-db-postgres-1 psql -U eweser -d eweser_restore_check -c "\\dt"
+
+# Remove the scratch database once verification is complete
+docker exec eweser-db-postgres-1 psql -U eweser -c "DROP DATABASE eweser_restore_check;"
+```
+
+Keep the latest drill note with:
+
+- The exact date and operator
+- Backup filename restored
+- `\dt` output confirmation
+- Any restore errors or timing anomalies
+
+## Alert Watch
+
+During launch, monitor:
+
+- Auth 429 spikes on sign-in, sign-up, forgot-password, and verification resend
+- `password.reset.delivery_failed` and `email.verification.delivery_failed` events
+- MCP 401/403 surges or unusual token-issuance spikes
+
+If those alerts fire, follow `docs/security-incident-response.md` immediately.
 
 ---
 

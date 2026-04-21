@@ -1,20 +1,20 @@
 ---
 description: 'Docs auditor — verifies documentation reflects current system state'
 model:
-    - 'MoonshotAI: Kimi K2.5 (openrouter)'
-    - 'Gemini 3 Flash (Preview) (copilot)'
+  - 'MoonshotAI: Kimi K2.5 (openrouter)'
+  - 'Gemini 3 Flash (Preview) (copilot)'
 tools:
-    - read/readFile
-    - search/codebase
-    - search/textSearch
-    - search/fileSearch
-    - search/listDirectory
-    - search/changes
-    - edit/editFiles
-    - edit/createFile
-    - todo
-    - vscode/memory
-    - agent
+  - read/readFile
+  - search/codebase
+  - search/textSearch
+  - search/fileSearch
+  - search/listDirectory
+  - search/changes
+  - edit/editFiles
+  - edit/createFile
+  - todo
+  - vscode/memory
+  - agent
 agents: [code-explore]
 ---
 

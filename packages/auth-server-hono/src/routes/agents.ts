@@ -1,8 +1,11 @@
 import { Hono } from 'hono';
 import { createMiddleware } from 'hono/factory';
+import { z } from 'zod';
 import { requireAuth } from '../middleware/auth.js';
 import { agentAuth } from '../middleware/agent-auth.js';
 import { combinedAgentAuth } from '../middleware/combined-agent-auth.js';
+import { createRateLimit, getClientIp } from '../middleware/rate-limit.js';
+import { requireVerifiedEmail } from '../middleware/verified-email.js';
 import {
   createAgentConfig,
   deleteAgentConfig,
@@ -21,8 +24,46 @@ import { getUserById } from '../model/users.js';
 import { generateSyncToken } from '../services/sync-token.js';
 import { env } from '../env.js';
 import { COLLECTION_KEYS } from '@eweser/shared';
+import { logSecurityEvent } from '../model/security-events.js';
 
 export const agentsRouter = new Hono();
+const maxAgentTokenTtlMs = env.AGENT_TOKEN_MAX_TTL_SECONDS * 1000;
+const defaultAgentTokenTtlMs = env.AGENT_TOKEN_DEFAULT_TTL_SECONDS * 1000;
+const createAgentRateLimit = createRateLimit({
+  key: 'agents-create',
+  max: 20,
+  windowMs: 60_000,
+});
+const rotateTokenRateLimit = createRateLimit({
+  key: 'agents-rotate-token',
+  max: 20,
+  windowMs: 60_000,
+});
+
+const createAgentBodySchema = z.object({
+  allowedCollections: z.array(z.string()).min(1),
+  allowedRooms: z.array(z.string()).optional(),
+  endpoint: z.string().url().optional(),
+  name: z.string().min(2).max(120),
+  permissions: z.enum(['read', 'readwrite']).optional(),
+  tokenExpiresAt: z.number().int().positive().optional(),
+  type: z.enum(['mcp', 'openclaw', 'custom']).optional(),
+});
+
+const verifyTokenBodySchema = z.object({
+  token: z.string().min(1),
+});
+
+const syncTokenBodySchema = z.object({
+  roomId: z.string().min(1),
+});
+
+const agentLogBodySchema = z.object({
+  action: z.enum(['read', 'write']),
+  collectionKey: z.string().min(1),
+  documentCount: z.number().int().nonnegative().optional(),
+  roomId: z.string().min(1),
+});
 
 /**
  * GET /api/agents
@@ -43,58 +84,75 @@ agentsRouter.get('/', requireAuth, async (c) => {
  *
  * Body: { name, type?, endpoint?, allowedCollections, allowedRooms?, permissions?, tokenExpiresAt? }
  */
-agentsRouter.post('/', requireAuth, async (c) => {
-  const user = c.get('user');
-  const body = await c.req.json<{
-    name: string;
-    type?: 'mcp' | 'openclaw' | 'custom';
-    endpoint?: string;
-    allowedCollections: string[];
-    allowedRooms?: string[];
-    permissions?: 'read' | 'readwrite';
-    tokenExpiresAt?: number;
-  }>();
+agentsRouter.post(
+  '/',
+  requireAuth,
+  requireVerifiedEmail,
+  createAgentRateLimit,
+  async (c) => {
+    const user = c.get('user');
+    const bodyResult = createAgentBodySchema.safeParse(
+      await c.req.json().catch(() => null)
+    );
+    if (!bodyResult.success) {
+      return c.json({ error: 'Invalid request body' }, 400);
+    }
+    const body = bodyResult.data;
 
-  if (!body.name || !Array.isArray(body.allowedCollections)) {
-    return c.json({ error: 'name and allowedCollections are required' }, 400);
-  }
+    const invalidCollections = body.allowedCollections.filter(
+      (k) => !COLLECTION_KEYS.includes(k as (typeof COLLECTION_KEYS)[number])
+    );
+    if (invalidCollections.length > 0) {
+      return c.json(
+        {
+          error: `Invalid collection keys: ${invalidCollections.join(', ')}. Allowed: ${COLLECTION_KEYS.join(', ')}`,
+        },
+        400
+      );
+    }
 
-  const invalidCollections = body.allowedCollections.filter(
-    (k) => !COLLECTION_KEYS.includes(k as (typeof COLLECTION_KEYS)[number])
-  );
-  if (invalidCollections.length > 0) {
+    const tokenExpiresAt = body.tokenExpiresAt
+      ? new Date(body.tokenExpiresAt)
+      : new Date(Date.now() + defaultAgentTokenTtlMs);
+    if (tokenExpiresAt.getTime() - Date.now() > maxAgentTokenTtlMs) {
+      return c.json({ error: 'tokenExpiresAt exceeds max TTL' }, 400);
+    }
+
+    const { agentConfig, token } = await createAgentConfig({
+      userId: user.id,
+      name: body.name,
+      type: body.type ?? 'mcp',
+      endpoint: body.endpoint,
+      allowedCollections: body.allowedCollections,
+      allowedRooms: body.allowedRooms ?? [],
+      permissions: body.permissions ?? 'read',
+      tokenExpiresAt,
+    });
+    await logSecurityEvent({
+      action: 'agent.token.created',
+      ipAddress: getClientIp(c.req.raw.headers),
+      level: 'info',
+      metadata: {
+        agentId: agentConfig.id,
+        permissions: agentConfig.permissions,
+      },
+      userId: user.id,
+    });
+
+    const { tokenHash: _tokenHash, ...safeConfig } = agentConfig;
+
     return c.json(
       {
-        error: `Invalid collection keys: ${invalidCollections.join(', ')}. Allowed: ${COLLECTION_KEYS.join(', ')}`,
+        agent: safeConfig,
+        // Shown only once — the client must store this securely.
+        token,
+        warning:
+          'Store this token securely. It will not be shown again. Use it as a Bearer token for MCP authentication.',
       },
-      400
+      201
     );
   }
-
-  const { agentConfig, token } = await createAgentConfig({
-    userId: user.id,
-    name: body.name,
-    type: body.type ?? 'mcp',
-    endpoint: body.endpoint,
-    allowedCollections: body.allowedCollections,
-    allowedRooms: body.allowedRooms ?? [],
-    permissions: body.permissions ?? 'read',
-    tokenExpiresAt: body.tokenExpiresAt ? new Date(body.tokenExpiresAt) : null,
-  });
-
-  const { tokenHash: _tokenHash, ...safeConfig } = agentConfig;
-
-  return c.json(
-    {
-      agent: safeConfig,
-      // Shown only once — the client must store this securely.
-      token,
-      warning:
-        'Store this token securely. It will not be shown again. Use it as a Bearer token for MCP authentication.',
-    },
-    201
-  );
-});
+);
 
 /**
  * GET /api/agents/:id
@@ -118,39 +176,64 @@ agentsRouter.get('/:id', requireAuth, async (c) => {
  * Revoke an agent — sets isActive=false and clears the token hash.
  * The agent will receive 401 on its next MCP call.
  */
-agentsRouter.post('/:id/revoke', requireAuth, async (c) => {
-  const user = c.get('user');
-  const agentId = c.req.param('id');
+agentsRouter.post(
+  '/:id/revoke',
+  requireAuth,
+  requireVerifiedEmail,
+  async (c) => {
+    const user = c.get('user');
+    const agentId = c.req.param('id');
 
-  const updated = await revokeAgentConfig(agentId, user.id);
-  if (!updated) {
-    return c.json({ error: 'Agent not found' }, 404);
+    const updated = await revokeAgentConfig(agentId, user.id);
+    if (!updated) {
+      return c.json({ error: 'Agent not found' }, 404);
+    }
+    await logSecurityEvent({
+      action: 'agent.token.revoked',
+      ipAddress: getClientIp(c.req.raw.headers),
+      level: 'warn',
+      metadata: { agentId },
+      userId: user.id,
+    });
+
+    const { tokenHash: _tokenHash, ...safeAgent } = updated;
+    return c.json({ agent: safeAgent, message: 'Agent revoked successfully' });
   }
-
-  const { tokenHash: _tokenHash, ...safeAgent } = updated;
-  return c.json({ agent: safeAgent, message: 'Agent revoked successfully' });
-});
+);
 
 /**
  * POST /api/agents/:id/rotate-token
  * Rotate the agent's token — generates a new token, old token is immediately invalid.
  */
-agentsRouter.post('/:id/rotate-token', requireAuth, async (c) => {
-  const user = c.get('user');
-  const agentId = c.req.param('id');
+agentsRouter.post(
+  '/:id/rotate-token',
+  requireAuth,
+  requireVerifiedEmail,
+  rotateTokenRateLimit,
+  async (c) => {
+    const user = c.get('user');
+    const agentId = c.req.param('id');
 
-  const result = await rotateAgentToken(agentId, user.id);
-  if (!result) {
-    return c.json({ error: 'Agent not found' }, 404);
+    const result = await rotateAgentToken(agentId, user.id);
+    if (!result) {
+      return c.json({ error: 'Agent not found' }, 404);
+    }
+    await logSecurityEvent({
+      action: 'agent.token.rotated',
+      ipAddress: getClientIp(c.req.raw.headers),
+      level: 'warn',
+      metadata: { agentId },
+      userId: user.id,
+    });
+
+    const { tokenHash: _tokenHash, ...safeAgent } = result.agentConfig;
+    return c.json({
+      agent: safeAgent,
+      token: result.token,
+      warning: 'Store this token securely. It will not be shown again.',
+    });
   }
-
-  const { tokenHash: _tokenHash, ...safeAgent } = result.agentConfig;
-  return c.json({
-    agent: safeAgent,
-    token: result.token,
-    warning: 'Store this token securely. It will not be shown again.',
-  });
-});
+);
 
 /**
  * DELETE /api/agents/:id
@@ -209,15 +292,7 @@ const verifyTokenRateLimiter = (() => {
   const getClientKey = (
     c: Parameters<ReturnType<typeof createMiddleware>>[0]
   ) => {
-    // Only trust x-forwarded-for when a known proxy set it; cf-connecting-ip and x-real-ip
-    // are client-supplied headers that can be spoofed to bypass rate limits.
-    // In production, Caddy (reverse proxy) sets x-forwarded-for; do not trust it from direct clients.
-    const xForwarded = c.req.header('x-forwarded-for');
-    const clientIp =
-      (xForwarded ? xForwarded.split(',')[0] : null) ??
-      c.req.header('x-real-ip') ??
-      'unknown';
-    return clientIp.trim().slice(0, 64) || 'unknown';
+    return getClientIp(c.req.raw.headers);
   };
 
   const evictStaleEntries = (now: number) => {
@@ -255,30 +330,46 @@ const verifyTokenRateLimiter = (() => {
 })();
 
 agentsRouter.post('/verify-token', verifyTokenRateLimiter, async (c) => {
-  let body: { token?: unknown };
-  try {
-    body = await c.req.json<{ token?: unknown }>();
-  } catch {
-    return c.json({ error: 'Invalid JSON body' }, 400);
-  }
-
-  if (typeof body.token !== 'string' || body.token.length === 0) {
+  const bodyResult = verifyTokenBodySchema.safeParse(
+    await c.req.json().catch(() => null)
+  );
+  if (!bodyResult.success) {
     return c.json({ error: 'token is required' }, 400);
   }
 
-  const tokenHash = hashToken(body.token);
+  const tokenHash = hashToken(bodyResult.data.token);
   const agent = await getAgentConfigByTokenHash(tokenHash);
 
   if (!agent) {
+    await logSecurityEvent({
+      action: 'agent.token.verify.failed',
+      ipAddress: getClientIp(c.req.raw.headers),
+      level: 'warn',
+      metadata: { reason: 'not_found_or_revoked' },
+    });
     return c.json({ error: 'Invalid or revoked token' }, 401);
   }
 
   if (!agent.isActive) {
+    await logSecurityEvent({
+      action: 'agent.token.verify.failed',
+      ipAddress: getClientIp(c.req.raw.headers),
+      level: 'warn',
+      metadata: { agentId: agent.id, reason: 'inactive' },
+      userId: agent.userId,
+    });
     return c.json({ error: 'Agent is revoked' }, 401);
   }
 
   // Check token expiry
   if (agent.tokenExpiresAt && agent.tokenExpiresAt < new Date()) {
+    await logSecurityEvent({
+      action: 'agent.token.verify.failed',
+      ipAddress: getClientIp(c.req.raw.headers),
+      level: 'warn',
+      metadata: { agentId: agent.id, reason: 'expired' },
+      userId: agent.userId,
+    });
     return c.json({ error: 'Token expired' }, 401);
   }
 
@@ -343,11 +434,13 @@ agentsRouter.post('/me/rooms', agentAuth, async (c) => {
  */
 agentsRouter.post('/me/sync-token', combinedAgentAuth, async (c) => {
   const agent = c.get('agent');
-  const body = await c.req.json<{ roomId: string }>();
-
-  if (!body.roomId) {
+  const bodyResult = syncTokenBodySchema.safeParse(
+    await c.req.json().catch(() => null)
+  );
+  if (!bodyResult.success) {
     return c.json({ error: 'roomId is required' }, 400);
   }
+  const body = bodyResult.data;
 
   // Get the owning user to find their room IDs
   const user = await getUserById(agent.userId);
@@ -404,22 +497,16 @@ agentsRouter.post('/me/sync-token', combinedAgentAuth, async (c) => {
  */
 agentsRouter.post('/me/log', agentAuth, async (c) => {
   const agent = c.get('agent');
-  const body = await c.req.json<{
-    roomId: string;
-    collectionKey: string;
-    action: 'read' | 'write';
-    documentCount?: number;
-  }>();
-
-  if (!body.roomId || !body.collectionKey || !body.action) {
+  const bodyResult = agentLogBodySchema.safeParse(
+    await c.req.json().catch(() => null)
+  );
+  if (!bodyResult.success) {
     return c.json(
       { error: 'roomId, collectionKey, and action are required' },
       400
     );
   }
-  if (body.action !== 'read' && body.action !== 'write') {
-    return c.json({ error: 'action must be read or write' }, 400);
-  }
+  const body = bodyResult.data;
 
   await logAgentAccess({
     agentId: agent.id,

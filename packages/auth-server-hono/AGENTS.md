@@ -21,16 +21,16 @@ Applies to: `packages/auth-server-hono/`
 
 ## Key Routes
 
-| Route | Purpose |
-|-------|---------|
-| `GET /health` | Health check |
-| `GET /.well-known/oauth-authorization-server` | OAuth metadata |
-| `/auth/*` | better-auth routes (login, signup, OAuth) |
-| `/account/*` | User account management |
-| `/access-grants/*` | Room access permissions |
-| `/agents/*` | AI agent management |
-| `/oauth/*` | OAuth 2.0 flows |
-| `/mcp/*` | MCP (Model Context Protocol) endpoints |
+| Route                                         | Purpose                                   |
+| --------------------------------------------- | ----------------------------------------- |
+| `GET /health`                                 | Health check                              |
+| `GET /.well-known/oauth-authorization-server` | OAuth metadata                            |
+| `/auth/*`                                     | better-auth routes (login, signup, OAuth) |
+| `/account/*`                                  | User account management                   |
+| `/access-grants/*`                            | Room access permissions                   |
+| `/agents/*`                                   | AI agent management                       |
+| `/oauth/*`                                    | OAuth 2.0 flows                           |
+| `/mcp/*`                                      | MCP (Model Context Protocol) endpoints    |
 
 ## Required Environment Variables
 

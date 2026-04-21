@@ -10,7 +10,6 @@ import {
   ChevronRight,
   ChevronDown,
   Settings,
-  Folder,
   Moon,
   Sun,
   Share,
@@ -285,7 +284,6 @@ function SidebarContent({
                           key={note.id}
                           note={note}
                           folderId={folder.id}
-                          onMove={moveNote}
                         />
                       ))}
                       {folderNotes.length > 10 && (
@@ -416,7 +414,11 @@ function FolderItem({
   onMove,
   onShareFolder,
 }: FolderItemProps) {
-  const [{ isOver }, drop] = useDrop<DraggedNoteItem, void, { isOver: boolean }>({
+  const [{ isOver }, drop] = useDrop<
+    DraggedNoteItem,
+    unknown,
+    { isOver: boolean }
+  >({
     accept: ItemTypes.NOTE,
     drop: (item) => {
       if (item.folderId !== folder.id) {
@@ -483,14 +485,17 @@ function FolderItem({
 interface NoteItemProps {
   note: NotesNote;
   folderId: string;
-  onMove: (noteId: string, targetFolder: string) => void;
 }
 
-function NoteItem({ note, folderId, onMove }: NoteItemProps) {
+function NoteItem({ note, folderId }: NoteItemProps) {
   const navigate = useNavigate();
   const { togglePinNote, updateNote, deleteNote } = useNotes();
 
-  const [{ isDragging }, drag] = useDrag<DraggedNoteItem, void, { isDragging: boolean }>({
+  const [{ isDragging }, drag] = useDrag<
+    DraggedNoteItem,
+    unknown,
+    { isDragging: boolean }
+  >({
     type: ItemTypes.NOTE,
     item: { noteId: note.id, folderId },
     collect: (monitor) => ({

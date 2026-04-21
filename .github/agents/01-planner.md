@@ -1,8 +1,8 @@
 ---
 description: 'Step 1 of 3 (plan → code → qa). Drafts a scoped implementation plan. Invokes code-explore (internal research) and web-explore (external research) as subagents, then architect as a subagent for architecture review. Presents the combined plan for user approval before handing off to the Coder.'
 model:
-    - 'Claude Sonnet 4.6 (copilot)'
-    - 'MiniMax: MiniMax M2.7 (openrouter)'
+  - 'Claude Sonnet 4.6 (copilot)'
+  - 'MiniMax: MiniMax M2.7 (openrouter)'
 tools:
   - vscode/memory
   - execute/getTerminalOutput
@@ -43,10 +43,10 @@ tools:
   - agent
 agents: [code-explore, web-explore, architect]
 handoffs:
-    - label: 'Start Run 1'
-      agent: 02-coder
-      prompt: 'Implement all runs from the plan file. Read the plan, find all runs, and implement them sequentially.'
-      send: false
+  - label: 'Start Run 1'
+    agent: 02-coder
+    prompt: 'Implement all runs from the plan file. Read the plan, find all runs, and implement them sequentially.'
+    send: false
 ---
 
 # Planner — Step 1 of 3

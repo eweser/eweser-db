@@ -38,7 +38,7 @@ services:
     environment:
       SYNC_PORT: 8080
       SYNC_DB_PATH: /data/sync.sqlite
-      SYNC_AUTH_SECRET: ${SYNC_AUTH_SECRET:-dev-secret}
+      SYNC_AUTH_SECRET: ${SYNC_AUTH_SECRET:-localsyncauthsecret1234567890abcd}
       AGGREGATOR_WEBHOOK_URL: http://aggregator:8090/webhooks/hocuspocus
       WEBHOOK_SECRET: ${WEBHOOK_SECRET:-dev-webhook-secret}
 
@@ -55,7 +55,7 @@ services:
     environment:
       SYNC_PORT: 8080
       SYNC_DB_PATH: /data/sync.sqlite
-      SYNC_AUTH_SECRET: ${SYNC_AUTH_SECRET:-dev-secret}
+      SYNC_AUTH_SECRET: ${SYNC_AUTH_SECRET:-localsyncauthsecret1234567890abcd}
       AGGREGATOR_WEBHOOK_URL: http://aggregator:8090/webhooks/hocuspocus
       WEBHOOK_SECRET: ${WEBHOOK_SECRET:-dev-webhook-secret}
 
@@ -78,7 +78,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-eweser}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-eweser}
       PORT: 8090
       SYNC_SERVER_URL: ws://sync-server:8080
-      SYNC_AUTH_SECRET: ${SYNC_AUTH_SECRET:-dev-secret}
+      SYNC_AUTH_SECRET: ${SYNC_AUTH_SECRET:-localsyncauthsecret1234567890abcd}
       WEBHOOK_SECRET: ${WEBHOOK_SECRET:-dev-webhook-secret}
       EWESER_AUTH_URL: http://auth-api:3000
 
@@ -95,13 +95,14 @@ services:
       - '${AUTH_API_HOST_PORT:-38101}:3000'
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-eweser}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-eweser}
-      SERVER_SECRET: ${SERVER_SECRET:-dev-secret}
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-change-me-in-production}
-      BETTER_AUTH_BASE_URL: ${AUTH_PUBLIC_URL:-http://localhost:38180}
-      AUTH_SERVER_DOMAIN: ${AUTH_PUBLIC_DOMAIN:-localhost:38180}
-      AUTH_SERVER_URL: ${AUTH_PUBLIC_URL:-http://localhost:38180}
-      SYNC_SERVER_URL: ${SYNC_PUBLIC_URL:-ws://localhost:38180/sync}
-      SYNC_AUTH_SECRET: ${SYNC_AUTH_SECRET:-dev-secret}
+      SERVER_SECRET: ${SERVER_SECRET:-localserversecret1234567890abcdef}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-localbetterauthsecret1234567890ab}
+      BETTER_AUTH_BASE_URL: ${AUTH_PUBLIC_URL:-http://localhost:38101}
+      AUTH_SERVER_DOMAIN: ${AUTH_PUBLIC_DOMAIN:-localhost:38101}
+      AUTH_SERVER_URL: ${AUTH_PUBLIC_URL:-http://localhost:38101}
+      AUTH_TRUSTED_ORIGINS: ${AUTH_TRUSTED_ORIGINS:-http://localhost:38101,http://localhost:38111,http://127.0.0.1:38111}
+      SYNC_SERVER_URL: ${SYNC_PUBLIC_URL:-ws://localhost:38181}
+      SYNC_AUTH_SECRET: ${SYNC_AUTH_SECRET:-localsyncauthsecret1234567890abcd}
       PORT: 3000
 
   # ─── Dev-only observability ────────────────────────────────────────────────

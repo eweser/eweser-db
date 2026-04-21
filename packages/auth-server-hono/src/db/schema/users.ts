@@ -5,6 +5,7 @@ export const users = pgTable('users', {
   email: text('email').notNull().unique(),
   passwordHash: text('password_hash'), // for email/password auth
   emailVerified: boolean('email_verified').default(false).notNull(),
+  twoFactorEnabled: boolean('two_factor_enabled').default(false).notNull(),
   image: text('image'),
   name: text('name'),
 

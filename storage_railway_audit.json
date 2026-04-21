@@ -1,0 +1,4 @@
+{
+  "query": "query($projectId:String!){ project(id:$projectId){ id name services{ edges{ node{ id name serviceInstances{ edges{ node{ id environmentId serviceDomains{ edges{ node{ id domain customDomain targetPort } } } } } } } } } } }",
+  "variables": { "projectId": "5aa02de6-d3d1-46c5-8b5e-c84927fb3784" }
+}

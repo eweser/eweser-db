@@ -83,6 +83,28 @@ jobs:
       - name: Run unit tests
         run: npm run test:unit
 
+  security:
+    name: Security Review
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.11.1
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Runtime dependency audit (triage report)
+        run: |
+          set -euo pipefail
+          npm audit --omit=dev --json > audit-report.json || true
+          node -e "const fs=require('fs');const report=JSON.parse(fs.readFileSync('audit-report.json','utf8'));const v=report.metadata?.vulnerabilities??{};console.log('audit vulnerabilities:',v);if((v.critical??0)>0){console.error('Critical vulnerabilities detected');process.exit(1)}"
+
   e2e-smoke:
     name: E2E Smoke
     runs-on: ubuntu-latest
@@ -91,6 +113,7 @@ jobs:
       - format
       - typecheck
       - unit-tests
+      - security
     timeout-minutes: 20
     steps:
       - name: Checkout repository
@@ -108,6 +131,7 @@ jobs:
       - name: Build example-basic
         run: |
           npm run build-example:basic
+          npm --workspace @eweser/auth-pages run build
 
       - name: Start Docker backend services
         run: |
@@ -143,4 +167,4 @@ jobs:
             sleep 2
           done
 
-          npm run test:e2e
+          CYPRESS_BASE_URL=http://127.0.0.1:38110 npm run test:e2e

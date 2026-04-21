@@ -67,18 +67,18 @@ auth-server-hono        ← independent (Hono, better-auth, Drizzle, PostgreSQL)
 
 ## Key Locations
 
-| Location | Purpose |
-|----------|---------|
-| `packages/db/src/` | Core SDK — rooms, documents, sync |
-| `packages/shared/src/` | Shared types & schemas (no runtime deps) |
-| `packages/auth-server-hono/` | Auth server (Hono + better-auth + Drizzle) |
-| `packages/ewe-note/src/` | Note-taking app |
-| `packages/sync-server/src/` | Hocuspocus sync server |
-| `packages/examples-components/src/` | Shared UI components |
-| `examples/example-basic/src/` | Demo app |
-| `packages/mcp-server/src/` | MCP server for AI agent access |
-| `docs/ai/plans/` | Implementation plans |
-| `e2e/cypress/tests/` | E2E test suite |
+| Location                            | Purpose                                    |
+| ----------------------------------- | ------------------------------------------ |
+| `packages/db/src/`                  | Core SDK — rooms, documents, sync          |
+| `packages/shared/src/`              | Shared types & schemas (no runtime deps)   |
+| `packages/auth-server-hono/`        | Auth server (Hono + better-auth + Drizzle) |
+| `packages/ewe-note/src/`            | Note-taking app                            |
+| `packages/sync-server/src/`         | Hocuspocus sync server                     |
+| `packages/examples-components/src/` | Shared UI components                       |
+| `examples/example-basic/src/`       | Demo app                                   |
+| `packages/mcp-server/src/`          | MCP server for AI agent access             |
+| `docs/ai/plans/`                    | Implementation plans                       |
+| `e2e/cypress/tests/`                | E2E test suite                             |
 
 ## Common Commands
 
@@ -105,11 +105,16 @@ This repo uses a three-phase workflow:
 
 ```markdown
 ## Goal
+
 ## Scope (In / Out)
+
 ## Runs
+
 ### Run N: <Title>
+
 - Recommended Agent: coder (strong/fast)
 - Steps / Files / Tests
+
 ## Execution Summary (table with parallelization)
 ```
 
@@ -118,20 +123,23 @@ This repo uses a three-phase workflow:
 ```typescript
 // Read
 const docs = room.getDocuments();
-docs.get(id)            // single doc
-docs.getUndeleted()     // non-deleted array
+docs.get(id); // single doc
+docs.getUndeleted(); // non-deleted array
 
 // Write — always through CRDT helpers
-docs.new({ text: 'hello' })     // create
-docs.set(doc)                   // update
-docs.delete(id, ttlMs)          // soft delete
+docs.new({ text: 'hello' }); // create
+docs.set(doc); // update
+docs.delete(id, ttlMs); // soft delete
 
 // Never direct mutation of Y.Map entries
 // Wrap multi-step writes:
-yDoc.transact(() => { yMap.set('a', 1); yMap.set('b', 2); });
+yDoc.transact(() => {
+  yMap.set('a', 1);
+  yMap.set('b', 2);
+});
 ```
 
-## _ref Format (Cross-Document References)
+## \_ref Format (Cross-Document References)
 
 ```
 ${authServer}|${collectionKey}|${roomId}|${documentId}
@@ -143,6 +151,7 @@ Use `buildRef()` from `@eweser/shared` to construct refs.
 ## Session Memory
 
 At the end of every session, save a summary using the eweser MCP tool:
+
 ```
 eweser_save_memory({ title: "Session: ...", summary: "...", memoryType: "session" })
 ```

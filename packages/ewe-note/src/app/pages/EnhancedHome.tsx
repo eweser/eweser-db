@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useNavigate, NavigateFunction } from 'react-router';
+import type { NavigateFunction } from 'react-router';
+import { useNavigate } from 'react-router';
 import {
   Clock,
   Star,
@@ -12,7 +13,8 @@ import {
 } from 'lucide-react';
 import { EnhancedSidebar } from '../components/EnhancedSidebar';
 import { EnhancedCommandPalette } from '../components/EnhancedCommandPalette';
-import { useNotes, Note, Folder, Task } from '../contexts/NotesContext';
+import type { Note, Folder, Task } from '../contexts/NotesContext';
+import { useNotes } from '../contexts/NotesContext';
 import { Badge } from '../components/ui/badge';
 import {
   DropdownMenu,
@@ -231,7 +233,7 @@ function NotesGridView({
           </div>
 
           <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-            {note.content.replace(/[#*\[\]]/g, '').substring(0, 150)}
+            {note.content.replace(/[#*[\]]/g, '').substring(0, 150)}
           </p>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -274,7 +276,7 @@ function NotesListView({
           <div className="flex-1 min-w-0">
             <h3 className="font-medium mb-1 truncate">{note.title}</h3>
             <p className="text-sm text-muted-foreground line-clamp-1">
-              {note.content.replace(/[#*\[\]]/g, '').substring(0, 200)}
+              {note.content.replace(/[#*[\]]/g, '').substring(0, 200)}
             </p>
             <div className="flex flex-wrap items-center gap-2 mt-2">
               <span className="px-2 py-0.5 bg-muted/50 rounded text-xs">
@@ -362,7 +364,7 @@ function TasksView({ tasks, notes, navigate }: TasksViewProps) {
               <h3 className="font-medium text-lg">{note.title}</h3>
             </button>
             <div className="space-y-2">
-              {noteTasks.map((task: any) => (
+              {noteTasks.map((task: Task) => (
                 <div
                   key={task.id}
                   data-cy={`ewe-note-task-item-${task.id}`}

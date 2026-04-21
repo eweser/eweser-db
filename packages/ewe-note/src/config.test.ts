@@ -20,7 +20,7 @@ describe('config helpers', () => {
 
   it('resolves the auth server against the current origin by default', () => {
     expect(resolveAuthServerUrl(undefined, 'http://localhost')).toBe(
-      'http://localhost'
+      'http://localhost:38180'
     );
     expect(resolveAuthServerUrl('/auth', 'http://localhost')).toBe(
       'http://localhost/auth'

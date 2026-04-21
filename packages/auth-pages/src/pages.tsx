@@ -12,6 +12,7 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 import { ProfileEditor } from './components/profile-editor';
+import { TurnstileCaptcha } from './components/turnstile';
 import {
   Button,
   Card,
@@ -27,7 +28,7 @@ import {
   type AccountBootstrapResponse,
 } from './lib/api';
 import { authClient } from './lib/auth-client';
-import { appAbsoluteUrl } from './lib/config';
+import { appAbsoluteUrl, authApiUrl, signUpCaptchaEnabled } from './lib/config';
 import {
   buildPermissionPath,
   clearStoredLoginQuery,
@@ -49,6 +50,9 @@ const signUpBullets = [
   'Profile rooms keep your account data portable and user-owned.',
   'Start with one identity, then reuse it across apps.',
 ];
+
+const passwordResetRequestedMessage =
+  'If an account exists, password reset instructions were sent.';
 
 function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
@@ -98,6 +102,12 @@ function SiteHeader() {
                 to="/sign-out"
               >
                 Sign out
+              </Link>
+              <Link
+                className="text-sm text-slate-300 no-underline transition-colors hover:text-white"
+                to="/account/security"
+              >
+                Security
               </Link>
             </>
           ) : (
@@ -242,6 +252,31 @@ function usePersistedLoginQuery() {
   }, [loginQuery]);
 
   return loginQuery;
+}
+
+async function postAuthJson<T>(
+  path: string,
+  body: Record<string, unknown>
+): Promise<T> {
+  const normalizedPath = path.startsWith('/') ? path.slice(1) : path;
+  const base = authApiUrl.endsWith('/') ? authApiUrl : `${authApiUrl}/`;
+  const response = await fetch(new URL(normalizedPath, base).toString(), {
+    body: JSON.stringify(body),
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    method: 'POST',
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message =
+      (payload as { error?: string; message?: string }).message ??
+      (payload as { error?: string; message?: string }).error ??
+      `Request failed with ${response.status}`;
+    throw new Error(message);
+  }
+  return payload as T;
 }
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -407,6 +442,14 @@ function SignInPage() {
             Create one
           </Link>
         </p>
+        <p className="text-center text-sm text-slate-400">
+          <Link
+            className="text-slate-300 hover:text-white"
+            to="/forgot-password"
+          >
+            Forgot your password?
+          </Link>
+        </p>
 
         <p className="text-center text-xs leading-5 text-slate-500">
           By continuing, you agree to our{' '}
@@ -438,6 +481,8 @@ function SignUpPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaKey, setCaptchaKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const session = authClient.useSession();
@@ -455,18 +500,57 @@ function SignUpPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setLoading(true);
     setError(null);
 
+    if (signUpCaptchaEnabled && !captchaToken) {
+      setError('Complete the captcha challenge before creating your account.');
+      return;
+    }
+
+    setLoading(true);
+
     const nextPath = resolvePostAuthPath(persistedLoginQuery, returnTo);
-    const result = await authClient.signUp.email({
-      callbackURL: appAbsoluteUrl(nextPath),
-      email,
-      name,
-      password,
-    });
+    let result;
+
+    try {
+      result = await authClient.signUp.email({
+        callbackURL: appAbsoluteUrl(nextPath),
+        email,
+        fetchOptions: captchaToken
+          ? {
+              headers: {
+                'x-captcha-response': captchaToken,
+                'x-auth-identifier': email,
+              },
+            }
+          : {
+              headers: {
+                'x-auth-identifier': email,
+              },
+            },
+        name,
+        password,
+      });
+    } catch (requestError) {
+      setLoading(false);
+      if (signUpCaptchaEnabled) {
+        setCaptchaToken(null);
+        setCaptchaKey((current) => current + 1);
+      }
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'Unable to create your account.'
+      );
+      return;
+    }
 
     setLoading(false);
+
+    if (signUpCaptchaEnabled) {
+      setCaptchaToken(null);
+      setCaptchaKey((current) => current + 1);
+    }
 
     if (result.error) {
       setError(result.error.message ?? 'Unable to create your account.');
@@ -531,11 +615,15 @@ function SignUpPage() {
           />
         </div>
 
+        {signUpCaptchaEnabled ? (
+          <TurnstileCaptcha key={captchaKey} onTokenChange={setCaptchaToken} />
+        ) : null}
+
         {error ? <p className="text-sm text-red-300">{error}</p> : null}
 
         <Button
           className="!h-12 !w-full !rounded-xl !bg-white !px-6 !text-sm !font-semibold !text-black shadow-[0_24px_48px_rgba(255,255,255,0.08)] transition-transform hover:-translate-y-0.5 hover:bg-slate-100"
-          disabled={loading}
+          disabled={loading || (signUpCaptchaEnabled && !captchaToken)}
           type="submit"
         >
           {loading ? (
@@ -657,6 +745,14 @@ function HomePage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
+      <div className="mb-4 flex justify-end">
+        <Link
+          className="text-sm text-slate-300 hover:text-white"
+          to="/account/security"
+        >
+          Account security
+        </Link>
+      </div>
       {bootstrap.profileRooms.length >= 2 ? (
         <ProfileEditor
           email={bootstrap.user.email}
@@ -1047,6 +1143,496 @@ function SignOutPage() {
   );
 }
 
+function ForgotPasswordPage() {
+  const [email, setEmail] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      await postAuthJson('/forget-password', {
+        email,
+        redirectTo: appAbsoluteUrl('/reset-password'),
+      });
+      setDone(true);
+    } catch (requestError) {
+      if (
+        requestError instanceof Error &&
+        requestError.message === passwordResetRequestedMessage
+      ) {
+        setDone(true);
+        return;
+      }
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'Unable to request password reset.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <AuthLayout
+      bullets={[
+        'Use this to recover access without creating another account.',
+        'We avoid disclosing whether an email exists.',
+        'Recovery links expire automatically.',
+      ]}
+      description="Request a password reset link."
+      eyebrow="Account recovery"
+      panelDescription="Enter your account email and we will send reset instructions."
+      panelTitle="Forgot password"
+      title="Reset your password"
+    >
+      <form className="space-y-4" onSubmit={handleSubmit}>
+        <div className="space-y-2">
+          <Label className="text-white/90" htmlFor="forgot-password-email">
+            Email
+          </Label>
+          <Input
+            id="forgot-password-email"
+            className="!h-12 !rounded-xl !border-white/10 !bg-white/5 !px-4 !text-base !text-white"
+            onChange={(event) => setEmail(event.target.value)}
+            type="email"
+            value={email}
+          />
+        </div>
+        {error ? <p className="text-sm text-red-300">{error}</p> : null}
+        {done ? (
+          <p className="text-sm text-emerald-300">
+            {passwordResetRequestedMessage}
+          </p>
+        ) : null}
+        <Button
+          className="!h-12 !w-full !rounded-xl"
+          disabled={loading}
+          type="submit"
+        >
+          {loading ? <InlineSpinner /> : 'Send reset link'}
+        </Button>
+      </form>
+    </AuthLayout>
+  );
+}
+
+function ResetPasswordPage() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const token = searchParams.get('token');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+
+    if (!token) {
+      setError('Password reset token is missing.');
+      return;
+    }
+
+    if (password.length < 10) {
+      setError('Password must be at least 10 characters.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await postAuthJson('/reset-password', {
+        newPassword: password,
+        token,
+      });
+      navigate('/sign-in', { replace: true });
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'Unable to reset password.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <AuthLayout
+      bullets={[
+        'Choose a strong password you do not reuse elsewhere.',
+        'Existing sessions are revoked after reset.',
+        'You can sign in again once this succeeds.',
+      ]}
+      description="Set a new password for your account."
+      eyebrow="Account recovery"
+      panelDescription="Enter and confirm your new password."
+      panelTitle="Reset password"
+      title="Set a new password"
+    >
+      <form className="space-y-4" onSubmit={handleSubmit}>
+        <div className="space-y-2">
+          <Label className="text-white/90" htmlFor="reset-password-new">
+            New password
+          </Label>
+          <Input
+            id="reset-password-new"
+            className="!h-12 !rounded-xl !border-white/10 !bg-white/5 !px-4 !text-base !text-white"
+            onChange={(event) => setPassword(event.target.value)}
+            type="password"
+            value={password}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-white/90" htmlFor="reset-password-confirm">
+            Confirm password
+          </Label>
+          <Input
+            id="reset-password-confirm"
+            className="!h-12 !rounded-xl !border-white/10 !bg-white/5 !px-4 !text-base !text-white"
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            type="password"
+            value={confirmPassword}
+          />
+        </div>
+        {error ? <p className="text-sm text-red-300">{error}</p> : null}
+        <Button
+          className="!h-12 !w-full !rounded-xl"
+          disabled={loading}
+          type="submit"
+        >
+          {loading ? <InlineSpinner /> : 'Reset password'}
+        </Button>
+      </form>
+    </AuthLayout>
+  );
+}
+
+function VerifyEmailPage() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+  const token = searchParams.get('token');
+
+  useEffect(() => {
+    if (!token) {
+      setError('Verification token is missing.');
+      return;
+    }
+
+    let active = true;
+    void postAuthJson('/verify-email', {
+      callbackURL: appAbsoluteUrl('/home'),
+      token,
+    })
+      .then(() => {
+        if (!active) return;
+        setDone(true);
+        setTimeout(() => navigate('/home', { replace: true }), 1200);
+      })
+      .catch((requestError) => {
+        if (!active) return;
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : 'Unable to verify email.'
+        );
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [navigate, token]);
+
+  return (
+    <AuthLayout
+      bullets={[
+        'Verification unlocks sensitive account actions.',
+        'Links are single-use and time-limited.',
+        'You can request another link from account security.',
+      ]}
+      description="We are validating your verification token now."
+      eyebrow="Email verification"
+      panelDescription="This page will redirect once verification is complete."
+      panelTitle="Verify email"
+      title="Confirming your email address"
+    >
+      {error ? <p className="text-sm text-red-300">{error}</p> : null}
+      {done ? (
+        <p className="text-sm text-emerald-300">Email verified.</p>
+      ) : null}
+      {!error && !done ? <InlineSpinner /> : null}
+    </AuthLayout>
+  );
+}
+
+function SecurityPage() {
+  const [bootstrap, setBootstrap] = useState<AccountBootstrapResponse | null>(
+    null
+  );
+  const [error, setError] = useState<string | null>(null);
+  const [password, setPassword] = useState('');
+  const [totpUri, setTotpUri] = useState<string | null>(null);
+  const [totpCode, setTotpCode] = useState('');
+  const [backupCodes, setBackupCodes] = useState<string[]>([]);
+  const [working, setWorking] = useState(false);
+
+  useEffect(() => {
+    void getAccountBootstrap()
+      .then(setBootstrap)
+      .catch((requestError: Error) => setError(requestError.message));
+  }, []);
+
+  async function runAction(action: () => Promise<void>) {
+    setError(null);
+    setWorking(true);
+    try {
+      await action();
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'Security action failed.'
+      );
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  return (
+    <div className="mx-auto max-w-3xl px-4 py-10">
+      <Card className="space-y-5 p-6">
+        <h2 className="text-2xl font-semibold">Account security</h2>
+        <p className="text-sm text-muted-foreground">
+          Email verification and two-factor protection controls.
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Passkeys/WebAuthn are deferred for this launch because current
+          `better-auth` workspace version does not expose stable passkey plugin
+          support.
+        </p>
+        <p className="text-sm">
+          Email verified:{' '}
+          <span className="font-medium">
+            {bootstrap?.user.emailVerified ? 'Yes' : 'No'}
+          </span>
+        </p>
+        {!bootstrap?.user.emailVerified ? (
+          <Button
+            disabled={working}
+            tone="outline"
+            type="button"
+            onClick={() =>
+              void runAction(async () => {
+                await postAuthJson('/send-verification-email', {
+                  callbackURL: appAbsoluteUrl('/verify-email'),
+                });
+              })
+            }
+          >
+            {working ? <InlineSpinner /> : 'Resend verification email'}
+          </Button>
+        ) : null}
+
+        <div className="space-y-2">
+          <Label htmlFor="security-password">Current password</Label>
+          <Input
+            id="security-password"
+            onChange={(event) => setPassword(event.target.value)}
+            type="password"
+            value={password}
+          />
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          <Button
+            disabled={working || password.length < 1}
+            type="button"
+            onClick={() =>
+              void runAction(async () => {
+                const result = await postAuthJson<{
+                  backupCodes: string[];
+                  totpURI: string;
+                }>('/two-factor/enable', {
+                  password,
+                });
+                setTotpUri(result.totpURI);
+                setBackupCodes(result.backupCodes);
+              })
+            }
+          >
+            Enable 2FA
+          </Button>
+          <Button
+            disabled={working || password.length < 1}
+            tone="outline"
+            type="button"
+            onClick={() =>
+              void runAction(async () => {
+                await postAuthJson('/two-factor/disable', { password });
+                setTotpUri(null);
+              })
+            }
+          >
+            Disable 2FA
+          </Button>
+          <Button
+            disabled={working || password.length < 1}
+            tone="outline"
+            type="button"
+            onClick={() =>
+              void runAction(async () => {
+                const result = await postAuthJson<{ backupCodes: string[] }>(
+                  '/two-factor/generate-backup-codes',
+                  { password }
+                );
+                setBackupCodes(result.backupCodes);
+              })
+            }
+          >
+            Regenerate backup codes
+          </Button>
+        </div>
+
+        {totpUri ? (
+          <div className="space-y-2 rounded-md border p-3">
+            <p className="text-sm font-medium">TOTP URI</p>
+            <p className="break-all text-xs text-muted-foreground">{totpUri}</p>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Enter TOTP code"
+                onChange={(event) => setTotpCode(event.target.value)}
+                value={totpCode}
+              />
+              <Button
+                disabled={working || totpCode.length < 6}
+                type="button"
+                onClick={() =>
+                  void runAction(async () => {
+                    await postAuthJson('/two-factor/verify-totp', {
+                      code: totpCode,
+                      trustDevice: true,
+                    });
+                  })
+                }
+              >
+                Verify code
+              </Button>
+            </div>
+          </div>
+        ) : null}
+
+        {backupCodes.length > 0 ? (
+          <div className="space-y-2 rounded-md border p-3">
+            <p className="text-sm font-medium">Backup codes</p>
+            <ul className="grid grid-cols-2 gap-2 text-xs">
+              {backupCodes.map((code) => (
+                <li key={code} className="rounded bg-muted px-2 py-1 font-mono">
+                  {code}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      </Card>
+    </div>
+  );
+}
+
+function TwoFactorChallengePage() {
+  const navigate = useNavigate();
+  const [mode, setMode] = useState<'totp' | 'backup'>('totp');
+  const [code, setCode] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [working, setWorking] = useState(false);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setWorking(true);
+
+    try {
+      if (mode === 'totp') {
+        await postAuthJson('/two-factor/verify-totp', {
+          code,
+          trustDevice: true,
+        });
+      } else {
+        await postAuthJson('/two-factor/verify-backup-code', { code });
+      }
+      navigate('/home', { replace: true });
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'Unable to verify two-factor code.'
+      );
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  return (
+    <AuthLayout
+      bullets={[
+        'Enter a code from your authenticator app.',
+        'Use a backup code if needed.',
+        'Codes expire quickly for safety.',
+      ]}
+      description="Second-factor verification is required to finish sign-in."
+      eyebrow="Two-factor authentication"
+      panelDescription="Complete this step to continue to your account."
+      panelTitle="Verify code"
+      title="Confirm it is you"
+    >
+      <form className="space-y-4" onSubmit={handleSubmit}>
+        <div className="space-y-2">
+          <Label className="text-white/90" htmlFor="two-factor-code">
+            {mode === 'totp' ? 'Authenticator code' : 'Backup code'}
+          </Label>
+          <Input
+            id="two-factor-code"
+            className="!h-12 !rounded-xl !border-white/10 !bg-white/5 !px-4 !text-base !text-white"
+            onChange={(event) => setCode(event.target.value)}
+            value={code}
+          />
+        </div>
+        {error ? <p className="text-sm text-red-300">{error}</p> : null}
+        <Button
+          className="!h-12 !w-full !rounded-xl"
+          disabled={working}
+          type="submit"
+        >
+          {working ? <InlineSpinner /> : 'Verify'}
+        </Button>
+        <Button
+          className="!h-12 !w-full !rounded-xl"
+          disabled={working}
+          tone="outline"
+          type="button"
+          onClick={() => setMode(mode === 'totp' ? 'backup' : 'totp')}
+        >
+          {mode === 'totp' ? 'Use backup code' : 'Use authenticator code'}
+        </Button>
+      </form>
+    </AuthLayout>
+  );
+}
+
 function TermsPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
@@ -1110,6 +1696,10 @@ export function AppRoutes() {
       <Route element={<SignInPage />} path="/" />
       <Route element={<SignInPage />} path="/sign-in" />
       <Route element={<SignUpPage />} path="/sign-up" />
+      <Route element={<TwoFactorChallengePage />} path="/two-factor" />
+      <Route element={<ForgotPasswordPage />} path="/forgot-password" />
+      <Route element={<ResetPasswordPage />} path="/reset-password" />
+      <Route element={<VerifyEmailPage />} path="/verify-email" />
       <Route element={<AwaitConfirmPage />} path="/await-confirm" />
       <Route
         element={
@@ -1136,6 +1726,14 @@ export function AppRoutes() {
         path="/access-grant/accept-room-invite"
       />
       <Route element={<SignOutPage />} path="/sign-out" />
+      <Route
+        element={
+          <ProtectedRoute>
+            <SecurityPage />
+          </ProtectedRoute>
+        }
+        path="/account/security"
+      />
       <Route element={<TermsPage />} path="/statement/terms-of-service" />
       <Route element={<PrivacyPage />} path="/statement/privacy" />
       <Route element={<NotFoundPage />} path="*" />

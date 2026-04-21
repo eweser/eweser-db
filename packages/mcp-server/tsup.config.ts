@@ -6,4 +6,3 @@ export default defineConfig({
   outDir: 'dist',
   splitting: false,
 });
-

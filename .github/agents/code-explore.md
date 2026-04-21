@@ -1,18 +1,18 @@
 ---
 description: 'Fast read-only codebase exploration and Q&A subagent. Use to search files, read source code, plans, notes, and docs without cluttering the main agent context. Safe to call in parallel. Specify thoroughness: quick, medium, or thorough.'
 model:
-    - 'MoonshotAI: Kimi K2.5 (openrouter)'
-    - 'Gemini 3 Flash (Preview) (copilot)'
+  - 'MoonshotAI: Kimi K2.5 (openrouter)'
+  - 'Gemini 3 Flash (Preview) (copilot)'
 tools:
-    - read/readFile
-    - read/problems
-    - search/codebase
-    - search/textSearch
-    - search/fileSearch
-    - search/listDirectory
-    - search/usages
-    - vscode/memory
-    - agent
+  - read/readFile
+  - read/problems
+  - search/codebase
+  - search/textSearch
+  - search/fileSearch
+  - search/listDirectory
+  - search/usages
+  - vscode/memory
+  - agent
 agents: [web-explore]
 ---
 

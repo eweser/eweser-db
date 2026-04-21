@@ -49,7 +49,6 @@ export type LogLevel =
 // ---------------------------------------------------------------------------
 
 let rootLogger: ReturnType<typeof pino> | null = null;
-let axiomStreamReady = false;
 
 /**
  * Convenience logger instance — a child of the root logger named 'app'.
@@ -152,7 +151,6 @@ export async function initLogger(
           stream: axiomStream as unknown as pino.DestinationStream,
           level: logLevel,
         });
-        axiomStreamReady = true;
       } catch (err) {
         console.error(
           '[eweser/logger] Failed to load @axiomhq/pino — Axiom logging disabled:',
@@ -191,7 +189,6 @@ export async function initLogger(
           stream: axiomStream as unknown as pino.DestinationStream,
           level: logLevel,
         });
-        axiomStreamReady = true;
       } catch (err) {
         console.error(
           '[eweser/logger] Failed to load @axiomhq/pino — Axiom logging disabled:',

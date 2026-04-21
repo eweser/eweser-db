@@ -31,6 +31,11 @@ export const authServerUrl = stripTrailingSlash(
     : resolveUrl('/')
 );
 
+export const turnstileSiteKey =
+  import.meta.env.VITE_TURNSTILE_SITE_KEY?.trim() ?? '';
+
+export const signUpCaptchaEnabled = turnstileSiteKey.length > 0;
+
 export function appPath(path = '/') {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   if (routerBase === '/') {

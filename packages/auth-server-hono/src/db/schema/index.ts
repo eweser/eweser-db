@@ -7,3 +7,5 @@ export * from './accounts.js';
 export * from './verifications.js';
 export * from './agents.js';
 export * from './oauth.js';
+export * from './security_events.js';
+export * from './two_factor.js';
