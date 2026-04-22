@@ -132,6 +132,9 @@ jobs:
 
       - name: Build example-basic
         run: |
+          npm run build:logger
+          npm run build:shared
+          npm run build:db
           npm run build-example:basic
           npm --workspace @eweser/auth-pages run build
 
