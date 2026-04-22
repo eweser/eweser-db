@@ -25,13 +25,13 @@
   },
   "source": "src/index.ts",
   "types": "./src/index.ts",
-  "main": "./dist/db.umd.cjs",
-  "module": "./dist/db.js",
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
   "exports": {
     ".": {
       "types": "./src/index.ts",
-      "import": "./dist/db.js",
-      "require": "./dist/db.umd.cjs"
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
     }
   },
   "scripts": {
