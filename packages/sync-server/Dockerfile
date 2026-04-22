@@ -1,4 +1,5 @@
 FROM node:22-slim AS builder
+ENV NPM_CONFIG_IGNORE_SCRIPTS=true
 
 WORKDIR /workspace
 
@@ -20,6 +21,8 @@ RUN npm run build --workspace @eweser/sync-server
 FROM node:22-slim
 
 WORKDIR /workspace
+
+ENV NPM_CONFIG_IGNORE_SCRIPTS=true
 
 # Copy package manifests and lockfile for production install
 COPY --from=builder /workspace/package.json /workspace/package-lock.json ./
