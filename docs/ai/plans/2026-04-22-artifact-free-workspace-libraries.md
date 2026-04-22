@@ -54,24 +54,24 @@ Remove the monorepo's dependence on committed generated library artifacts for `@
   - Runtime JS for published packages remains built from `dist`
   - Local workspace types resolve from source files rather than committed generated declarations
   - Root scripts/CI prebuild only the runtime artifacts actually needed by tests/apps
-- [ ] Audit `package.json` fields for all three packages:
+- [x] Audit `package.json` fields for all three packages:
   - `exports`
   - `types`
   - `typesVersions`
   - `files`
   - `main` / `module` / `bin`
-- [ ] Identify whether any consumer requires subpath exports or generated declaration-only packaging that would block source-based types
-- [ ] Define the cleanup target for committed artifacts:
+- [x] Identify whether any consumer requires subpath exports or generated declaration-only packaging that would block source-based types
+- [x] Define the cleanup target for committed artifacts:
   - `packages/mcp-server/dist/lib.d.ts`
   - `packages/shared/types/**`
   - `packages/db/types/**`
-- [ ] Files to change:
+- [x] Files to change:
   - `package.json`
   - `packages/mcp-server/package.json`
   - `packages/shared/package.json`
   - `packages/db/package.json`
   - possibly package-local tsconfig/build configs
-- [ ] Tests to write:
+- [x] Tests to write:
   - None in this run; this is packaging strategy and script alignment
 
 ### Run 2: Convert `@eweser/mcp` to Artifact-Free Local Types
@@ -79,17 +79,17 @@ Remove the monorepo's dependence on committed generated library artifacts for `@
 - **Recommended tier**: coder
 - **Reason**: A narrower package-level packaging refactor, but already partially implemented and needs to be reconciled with the final strategy.
 - [x] Reconcile the in-progress `@eweser/mcp` work with the chosen strategy from Run 1
-- [ ] Ensure `@eweser/mcp` local type resolution points at source, not committed generated declarations
-- [ ] Keep CLI/runtime packaging working from built JS in `dist`
-- [ ] Remove dependency on tracked `dist/lib.d.ts`
-- [ ] Confirm `auth-server-hono` can type-check and test against `@eweser/mcp` in a clean workspace
-- [ ] Files to change:
+- [x] Ensure `@eweser/mcp` local type resolution points at source, not committed generated declarations
+- [x] Keep CLI/runtime packaging working from built JS in `dist`
+- [x] Remove dependency on tracked `dist/lib.d.ts`
+- [x] Confirm `auth-server-hono` can type-check and test against `@eweser/mcp` in a clean workspace
+- [x] Files to change:
   - `packages/mcp-server/package.json`
   - `packages/mcp-server/tsconfig.json`
   - `packages/mcp-server/src/lib.ts`
   - any auxiliary mcp tsconfig/build files if still needed
   - remove `packages/mcp-server/dist/lib.d.ts`
-- [ ] Tests to write:
+- [x] Tests to write:
   - No new tests required unless package-level packaging tests are introduced
   - Verification via `npm run build --workspace @eweser/mcp`, `npm --workspace @eweser/mcp run type-check`, and downstream consumer checks
 
@@ -98,22 +98,22 @@ Remove the monorepo's dependence on committed generated library artifacts for `@
 - **Recommended tier**: strong
 - **Reason**: This package sits at the bottom of the dependency graph and changes here cascade everywhere.
 - [x] Change `@eweser/shared` to expose local workspace types from source instead of committed `types/**`
-- [ ] Preserve publish-time runtime packaging and publishable type availability
-- [ ] Remove reliance on committed `packages/shared/types/**` for local consumers
-- [ ] Verify direct consumers:
+- [x] Preserve publish-time runtime packaging and publishable type availability
+- [x] Remove reliance on committed `packages/shared/types/**` for local consumers
+- [x] Verify direct consumers:
   - `@eweser/db`
   - `auth-pages`
   - `auth-server-hono`
   - `ewe-note`
   - `mcp-server`
-- [ ] Remove generated tracked type files if no longer needed
-- [ ] Add changeset for `@eweser/shared`
-- [ ] Files to change:
+- [x] Remove generated tracked type files if no longer needed
+- [x] Add changeset for `@eweser/shared`
+- [x] Files to change:
   - `packages/shared/package.json`
   - `packages/shared/tsconfig.json`
   - package-local build scripts if needed
   - remove/update `packages/shared/types/**`
-- [ ] Tests to write:
+- [x] Tests to write:
   - No new unit tests expected
   - Verification through downstream `type-check` and test runs
 
@@ -122,21 +122,21 @@ Remove the monorepo's dependence on committed generated library artifacts for `@
 - **Recommended tier**: strong
 - **Reason**: This package is widely consumed by apps/examples and has both build and generated type trees.
 - [x] Change `@eweser/db` to expose local workspace types from source instead of committed `types/**`
-- [ ] Preserve publish-time JS bundle outputs in `dist`
-- [ ] Remove reliance on committed `packages/db/types/**` for local consumers
-- [ ] Verify direct consumers:
+- [x] Preserve publish-time JS bundle outputs in `dist`
+- [x] Remove reliance on committed `packages/db/types/**` for local consumers
+- [x] Verify direct consumers:
   - `auth-pages`
   - `ewe-note`
   - `examples-components`
   - example apps
-- [ ] Add changeset for `@eweser/db`
-- [ ] Files to change:
+- [x] Add changeset for `@eweser/db`
+- [x] Files to change:
   - `packages/db/package.json`
   - `packages/db/tsconfig.json`
   - `packages/db/tsconfig.build.json`
   - `packages/db/vite.config.js` if resolution changes require dedupe/aliasing updates
   - remove/update `packages/db/types/**`
-- [ ] Tests to write:
+- [x] Tests to write:
   - No new unit tests expected
   - Verification through downstream `type-check` and test runs
 
@@ -145,13 +145,13 @@ Remove the monorepo's dependence on committed generated library artifacts for `@
 - **Recommended tier**: coder
 - **Reason**: After package-level changes, the root workflow must reflect the new dependency model so clean checkouts behave deterministically.
 - [x] Update root scripts so local CI paths build only the required runtime artifacts ahead of workspace `type-check` / `test:unit`
-- [ ] Remove now-unnecessary artifact assumptions from root scripts
-- [ ] Confirm the workflow works when all generated package artifacts are deleted before execution
-- [ ] Files to change:
+- [x] Remove now-unnecessary artifact assumptions from root scripts
+- [x] Confirm the workflow works when all generated package artifacts are deleted before execution
+- [x] Files to change:
   - root `package.json`
   - possibly `.github/workflows/quality.yaml`
   - possibly `.github/workflows/pre-deploy.yaml`
-- [ ] Tests to write:
+- [x] Tests to write:
   - None; verification is command-level
 
 ### Run 6: Clean-Checkout Verification and Artifact Removal Sweep
@@ -164,16 +164,16 @@ Remove the monorepo's dependence on committed generated library artifacts for `@
   - `packages/shared/types/*`
   - `packages/db/dist/*`
   - `packages/db/types/*`
-- [ ] Run verification suite:
+- [x] Run verification suite:
   - `npm run type-check`
   - `npm run test:unit`
   - any package-specific build commands required by distribution packages
-- [ ] Confirm git diff only contains intentional source/package/script changes and removal of committed generated artifacts
-- [ ] Confirm the already-done `@eweser/mcp` work still holds under the unified strategy
-- [ ] Files to change:
+- [x] Confirm git diff only contains intentional source/package/script changes and removal of committed generated artifacts
+- [x] Confirm the already-done `@eweser/mcp` work still holds under the unified strategy
+- [x] Files to change:
   - cleanup/removal of committed generated artifacts
   - changesets directory if required
-- [ ] Tests to write:
+- [x] Tests to write:
   - None; this is verification and cleanup
 
 ## Execution Summary

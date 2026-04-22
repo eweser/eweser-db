@@ -42,6 +42,14 @@
     "/src"
   ],
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "types": "./dist/lib.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/lib.d.ts",
+        "import": "./dist/lib.js"
+      },
+      "./cli": "./dist/index.js"
+    }
   }
 }

@@ -48,7 +48,15 @@
     "url": "https://github.com/eweser/eweserdb/issues"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/db.js",
+        "require": "./dist/db.umd.cjs"
+      }
+    }
   },
   "devDependencies": {
     "@eweser/eslint-config-ts": "^1.15.0",
