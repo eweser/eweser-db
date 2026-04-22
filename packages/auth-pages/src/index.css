@@ -118,7 +118,7 @@ body,
       linear-gradient(180deg, #050505 0%, #070707 100%);
   }
 
-  .light html {
+  html.light {
     background:
       radial-gradient(
         circle at top left,

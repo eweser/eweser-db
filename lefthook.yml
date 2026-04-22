@@ -5,7 +5,9 @@ pre-commit:
       run: npm run precommit:staged
 
 pre-push:
-  parallel: false
+  parallel: true
   commands:
-    check:
-      run: npm run prepush:check
+    lint:
+      run: npm run lint
+    format-check:
+      run: npm run format:check

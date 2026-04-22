@@ -51,7 +51,6 @@
   "devDependencies": {
     "@eweser/eslint-config-ts": "^1.15.0",
     "eslint": "^9.39.1",
-    "request": "^2.88.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8",
     "yjs": "^13.6.30",

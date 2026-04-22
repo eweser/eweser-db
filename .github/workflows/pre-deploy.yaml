@@ -25,3 +25,5 @@ jobs:
 
       - name: Run quality gates
         run: npm run check
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
