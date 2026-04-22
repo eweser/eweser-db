@@ -1,5 +1,10 @@
 FROM node:22-slim AS builder
-ENV NPM_CONFIG_IGNORE_SCRIPTS=true
+
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends git \
+	&& rm -rf /var/lib/apt/lists/*
+
+ENV NPM_CONFIG_IGNORE_SCRIPTS=false
 
 WORKDIR /workspace
 
@@ -22,7 +27,11 @@ FROM node:22-slim
 
 WORKDIR /workspace
 
-ENV NPM_CONFIG_IGNORE_SCRIPTS=true
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends git \
+	&& rm -rf /var/lib/apt/lists/*
+
+ENV NPM_CONFIG_IGNORE_SCRIPTS=false
 
 # Copy package manifests and lockfile for production install
 COPY --from=builder /workspace/package.json /workspace/package-lock.json ./

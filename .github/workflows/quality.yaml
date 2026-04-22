@@ -140,7 +140,7 @@ jobs:
 
       - name: Start Docker backend services
         run: |
-          npm run dev:docker
+          npm run dev:docker -- -d
 
           # Wait for auth-api to be ready
           until bash -c '</dev/tcp/127.0.0.1/38101' 2>/dev/null; do
