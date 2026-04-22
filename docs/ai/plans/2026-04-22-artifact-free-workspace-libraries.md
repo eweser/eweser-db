@@ -50,7 +50,7 @@ Remove the monorepo's dependence on committed generated library artifacts for `@
 
 - **Recommended tier**: strong
 - **Reason**: Cross-cutting packaging decision affecting three libraries and all downstream consumers. This run sets the contract the rest of the implementation follows.
-- [ ] Decide and document one consistent local-consumption rule for all three packages:
+- [x] Decide and document one consistent local-consumption rule for all three packages:
   - Runtime JS for published packages remains built from `dist`
   - Local workspace types resolve from source files rather than committed generated declarations
   - Root scripts/CI prebuild only the runtime artifacts actually needed by tests/apps
@@ -78,7 +78,7 @@ Remove the monorepo's dependence on committed generated library artifacts for `@
 
 - **Recommended tier**: coder
 - **Reason**: A narrower package-level packaging refactor, but already partially implemented and needs to be reconciled with the final strategy.
-- [ ] Reconcile the in-progress `@eweser/mcp` work with the chosen strategy from Run 1
+- [x] Reconcile the in-progress `@eweser/mcp` work with the chosen strategy from Run 1
 - [ ] Ensure `@eweser/mcp` local type resolution points at source, not committed generated declarations
 - [ ] Keep CLI/runtime packaging working from built JS in `dist`
 - [ ] Remove dependency on tracked `dist/lib.d.ts`
@@ -97,7 +97,7 @@ Remove the monorepo's dependence on committed generated library artifacts for `@
 
 - **Recommended tier**: strong
 - **Reason**: This package sits at the bottom of the dependency graph and changes here cascade everywhere.
-- [ ] Change `@eweser/shared` to expose local workspace types from source instead of committed `types/**`
+- [x] Change `@eweser/shared` to expose local workspace types from source instead of committed `types/**`
 - [ ] Preserve publish-time runtime packaging and publishable type availability
 - [ ] Remove reliance on committed `packages/shared/types/**` for local consumers
 - [ ] Verify direct consumers:
@@ -121,7 +121,7 @@ Remove the monorepo's dependence on committed generated library artifacts for `@
 
 - **Recommended tier**: strong
 - **Reason**: This package is widely consumed by apps/examples and has both build and generated type trees.
-- [ ] Change `@eweser/db` to expose local workspace types from source instead of committed `types/**`
+- [x] Change `@eweser/db` to expose local workspace types from source instead of committed `types/**`
 - [ ] Preserve publish-time JS bundle outputs in `dist`
 - [ ] Remove reliance on committed `packages/db/types/**` for local consumers
 - [ ] Verify direct consumers:
@@ -144,7 +144,7 @@ Remove the monorepo's dependence on committed generated library artifacts for `@
 
 - **Recommended tier**: coder
 - **Reason**: After package-level changes, the root workflow must reflect the new dependency model so clean checkouts behave deterministically.
-- [ ] Update root scripts so local CI paths build only the required runtime artifacts ahead of workspace `type-check` / `test:unit`
+- [x] Update root scripts so local CI paths build only the required runtime artifacts ahead of workspace `type-check` / `test:unit`
 - [ ] Remove now-unnecessary artifact assumptions from root scripts
 - [ ] Confirm the workflow works when all generated package artifacts are deleted before execution
 - [ ] Files to change:
@@ -158,7 +158,7 @@ Remove the monorepo's dependence on committed generated library artifacts for `@
 
 - **Recommended tier**: coder
 - **Reason**: Final guardrail run to prove the repo no longer depends on committed generated package artifacts.
-- [ ] Delete generated package artifacts locally before validation:
+- [x] Delete generated package artifacts locally before validation:
   - `packages/mcp-server/dist/*`
   - `packages/shared/dist/*`
   - `packages/shared/types/*`

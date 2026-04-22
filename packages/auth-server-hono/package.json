@@ -9,7 +9,7 @@
     "start": "node dist/index.js",
     "clean": "rm -rf dist",
     "lint": "eslint .",
-    "type-check": "tsc --noEmit",
+    "type-check": "NODE_OPTIONS=--max-old-space-size=8192 tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:migrate": "tsx src/db/migrate.ts",

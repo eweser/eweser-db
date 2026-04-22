@@ -25,7 +25,7 @@
     "build:db": "npm run build --workspace @eweser/db",
     "build:mcp": "npm run build --workspace @eweser/mcp",
     "build:typecheck-deps": "run-s build:logger build:shared build:db build:mcp",
-    "type-check:workspaces": "npm run type-check --workspaces --if-present",
+    "type-check:workspaces": "NODE_OPTIONS=--max-old-space-size=8192 npm run type-check --workspaces --if-present",
     "type-check": "run-s build:typecheck-deps type-check:workspaces",
     "check": "run-s lint format:check type-check test:unit",
     "test": "run-s test:*",
