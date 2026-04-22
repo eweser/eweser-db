@@ -5,5 +5,5 @@ export default defineConfig({
   format: ['esm'],
   outDir: 'dist',
   splitting: false,
-  dts: true,
+  dts: false,
 });
