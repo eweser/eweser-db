@@ -4,7 +4,7 @@ RUN apt-get update \
 	&& apt-get install -y --no-install-recommends git \
 	&& rm -rf /var/lib/apt/lists/*
 
-ENV NPM_CONFIG_IGNORE_SCRIPTS=false
+ENV NPM_CONFIG_IGNORE_SCRIPTS=true
 
 WORKDIR /workspace
 
@@ -31,7 +31,7 @@ RUN apt-get update \
 	&& apt-get install -y --no-install-recommends git \
 	&& rm -rf /var/lib/apt/lists/*
 
-ENV NPM_CONFIG_IGNORE_SCRIPTS=false
+ENV NPM_CONFIG_IGNORE_SCRIPTS=true
 
 # Copy package manifests and lockfile for production install
 COPY --from=builder /workspace/package.json /workspace/package-lock.json ./

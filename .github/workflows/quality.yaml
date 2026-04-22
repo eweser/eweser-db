@@ -45,12 +45,12 @@ jobs:
             verify:
               - 'packages/**'
               - 'examples/**'
-              - 'scripts/**'
-              - 'e2e/**'
-              - 'cypress/**'
               - 'package.json'
               - 'package-lock.json'
               - 'tsconfig.json'
+              - 'eslint.config.js'
+              - 'scripts/migrate-export.ts'
+              - 'scripts/migrate-import.ts'
             e2e:
               - 'examples/**'
               - 'packages/ewe-note/**'
@@ -97,7 +97,7 @@ jobs:
     name: Typecheck + Unit
     runs-on: ubuntu-latest
     needs: changes
-    if: ${{ github.event_name == 'workflow_dispatch' || needs.changes.outputs.run_verify == 'true' || needs.changes.outputs.run_e2e == 'true' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.changes.outputs.run_verify == 'true' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
