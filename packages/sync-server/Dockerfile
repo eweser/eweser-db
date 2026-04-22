@@ -1,5 +1,5 @@
 FROM node:22-slim AS builder
-ENV NPM_CONFIG_IGNORE_SCRIPTS=true
+ENV NPM_CONFIG_IGNORE_SCRIPTS=false
 
 WORKDIR /workspace
 
@@ -22,7 +22,7 @@ FROM node:22-slim
 
 WORKDIR /workspace
 
-ENV NPM_CONFIG_IGNORE_SCRIPTS=true
+ENV NPM_CONFIG_IGNORE_SCRIPTS=false
 
 # Copy package manifests and lockfile for production install
 COPY --from=builder /workspace/package.json /workspace/package-lock.json ./
@@ -47,4 +47,3 @@ ENV SYNC_DB_PATH=/data/sync.sqlite
 EXPOSE 8080
 
 CMD ["node", "packages/sync-server/dist/index.js"]
-
