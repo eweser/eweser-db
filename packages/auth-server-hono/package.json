@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "NODE_OPTIONS=--max-old-space-size=8192 tsc --noCheck",
     "start": "node dist/index.js",
     "clean": "rm -rf dist",
     "lint": "eslint .",

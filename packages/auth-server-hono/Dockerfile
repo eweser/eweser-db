@@ -24,7 +24,7 @@ COPY packages/auth-server-hono/ ./packages/auth-server-hono/
 RUN npm run build --workspace @eweser/shared
 RUN npm run build --workspace @eweser/logger
 RUN npm run build --workspace @eweser/mcp
-RUN npm run build --workspace @eweser/auth-server-hono
+RUN NODE_OPTIONS=--max-old-space-size=8192 npm run build --workspace @eweser/auth-server-hono
 
 FROM node:22-slim
 
