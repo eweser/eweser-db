@@ -6,44 +6,44 @@ import type {
   indexedDBProviderPolyfill,
   ProviderOptions,
   Registry,
-} from './types';
-import type { NewRoomOptions, Room } from './room';
-import { roomToServerRoom } from './room';
-import { collections } from './types';
-import { setupLogger, TypedEventEmitter } from './events';
+} from './types.js';
+import type { NewRoomOptions, Room } from './room.js';
+import { roomToServerRoom } from './room.js';
+import { collections } from './types.js';
+import { setupLogger, TypedEventEmitter } from './events.js';
 
 import { collectionKeys, wait } from '@eweser/shared';
-import { getDocuments } from './utils/getDocuments';
-import { serverFetch } from './utils/connection/serverFetch';
-import { logout, logoutAndClear } from './methods/connection/logout';
-import { login } from './methods/connection/login';
-import type { DatabaseEvents } from './events';
-import { log } from './methods/log';
-import { generateLoginUrl } from './methods/connection/generateLoginUrl';
-import { getAccessGrantTokenFromUrl } from './methods/connection/getAccessGrantTokenFromUrl';
-import { getToken } from './methods/connection/getToken';
-import { getRegistry } from './methods/getRegistry';
-import { loadRoom } from './methods/connection/loadRoom';
-import { refreshSyncToken } from './methods/connection/refreshSyncToken';
-import { syncRegistry } from './methods/connection/syncRegistry';
-import { loadRooms } from './methods/connection/loadRooms';
+import { getDocuments } from './utils/getDocuments.js';
+import { serverFetch } from './utils/connection/serverFetch.js';
+import { logout, logoutAndClear } from './methods/connection/logout.js';
+import { login } from './methods/connection/login.js';
+import type { DatabaseEvents } from './events.js';
+import { log } from './methods/log.js';
+import { generateLoginUrl } from './methods/connection/generateLoginUrl.js';
+import { getAccessGrantTokenFromUrl } from './methods/connection/getAccessGrantTokenFromUrl.js';
+import { getToken } from './methods/connection/getToken.js';
+import { getRegistry } from './methods/getRegistry.js';
+import { loadRoom } from './methods/connection/loadRoom.js';
+import { refreshSyncToken } from './methods/connection/refreshSyncToken.js';
+import { syncRegistry } from './methods/connection/syncRegistry.js';
+import { loadRooms } from './methods/connection/loadRooms.js';
 import type {
   LocalStoragePolyfill,
   LocalStorageService,
-} from './utils/localStorageService';
+} from './utils/localStorageService.js';
 import {
   localStorageGet,
   localStorageRemove,
   localStorageSet,
-} from './utils/localStorageService';
-import { generateShareRoomLink } from './methods/connection/generateShareRoomLink';
-import { pingServer } from './utils/connection/pingServer';
-import { pollConnection } from './utils/connection/pollConnection';
-import { newRoom } from './methods/newRoom';
-import { renameRoom } from './methods/renameRoom';
+} from './utils/localStorageService.js';
+import { generateShareRoomLink } from './methods/connection/generateShareRoomLink.js';
+import { pingServer } from './utils/connection/pingServer.js';
+import { pollConnection } from './utils/connection/pollConnection.js';
+import { newRoom } from './methods/newRoom.js';
+import { renameRoom } from './methods/renameRoom.js';
 
-export * from './utils';
-export * from './types';
+export * from './utils/index.js';
+export * from './types.js';
 const defaultRtcPeers = [
   'wss://signaling.yjs.debv',
   'wss://y-webrtc-signaling-eu.herokuapp.com',

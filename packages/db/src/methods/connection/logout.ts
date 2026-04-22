@@ -1,8 +1,8 @@
-import type { Database } from '../..';
+import type { Database } from '../../index.js';
 import {
   clearLocalAccessGrantToken,
   clearLocalRegistry,
-} from '../../utils/localStorageService';
+} from '../../utils/localStorageService.js';
 
 export const logout =
   (db: Database) =>

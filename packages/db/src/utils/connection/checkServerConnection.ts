@@ -1,4 +1,4 @@
-import type { Database } from '../..';
+import type { Database } from '../../index.js';
 
 /** pings the matrix server and sets the result to db.online. emits an event on change */
 export const checkServerConnection = async (db: Database) => {

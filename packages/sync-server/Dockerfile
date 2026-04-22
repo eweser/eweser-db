@@ -41,6 +41,7 @@ COPY --from=builder /workspace/packages/sync-server/package.json ./packages/sync
 
 # Install only production deps
 RUN npm ci --workspace @eweser/shared --workspace @eweser/logger --workspace @eweser/sync-server --include-workspace-root --omit=dev
+RUN npm_config_ignore_scripts=false npm rebuild sqlite3 --workspace @eweser/sync-server
 
 # Copy built dist files
 COPY --from=builder /workspace/packages/sync-server/dist ./packages/sync-server/dist

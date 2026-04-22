@@ -1,7 +1,7 @@
 import type { UpdateRoomPostBody, UpdateRoomResponse } from '@eweser/shared';
-import type { Database } from '..';
-import type { EweDocument, Room } from '../types';
-import { setLocalRegistry } from '../utils/localStorageService';
+import type { Database } from '../index.js';
+import type { EweDocument, Room } from '../types.js';
+import { setLocalRegistry } from '../utils/localStorageService.js';
 
 export const renameRoom =
   (db: Database) => async (room: Room<EweDocument>, newName: string) => {

@@ -1,6 +1,6 @@
 import type { TypedMap } from 'yjs-types';
-import type { CollectionKey, Room, Documents, EweDocument } from '../types';
-import type { Database } from '..';
+import type { CollectionKey, Room, Documents, EweDocument } from '../types.js';
+import type { Database } from '../index.js';
 
 export { newDocument, buildRef, randomString } from '@eweser/shared';
 

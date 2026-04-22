@@ -15,10 +15,10 @@ import type {
 } from '@eweser/shared';
 import type { TypedDoc, TypedMap } from 'yjs-types';
 
-import type { Room } from './room';
+import type { Room } from './room.js';
 import type { IndexeddbPersistence } from 'y-indexeddb';
 import type { Doc } from 'yjs';
-import type { GetDocuments } from './utils/getDocuments';
+import type { GetDocuments } from './utils/getDocuments.js';
 
 export type ProviderOptions = 'WebRTC' | 'Hocuspocus' | 'IndexedDB';
 export type indexedDBProviderPolyfill = (

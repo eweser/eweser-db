@@ -1,5 +1,5 @@
-import type { Registry } from '../../types';
-import type { Database } from '../..';
+import type { Registry } from '../../types.js';
+import type { Database } from '../../index.js';
 import { wait } from '@eweser/shared';
 
 /** in order not to overwhelm the requests for remote server collect, loading the server connections will be staggered with a default 1 second gap

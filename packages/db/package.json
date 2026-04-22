@@ -23,15 +23,16 @@
     "type": "git",
     "url": "git+https://github.com/eweser/eweserdb.git"
   },
-  "source": "src/index.ts",
-  "types": "./src/index.ts",
-  "main": "./src/index.ts",
-  "module": "./src/index.ts",
+  "source": "./src/index.ts",
+  "types": "./dist/index.d.ts",
+  "main": "./dist/db.umd.cjs",
+  "module": "./dist/db.js",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "import": "./src/index.ts",
-      "default": "./src/index.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/db.js",
+      "require": "./dist/db.umd.cjs",
+      "default": "./dist/db.js"
     }
   },
   "scripts": {
@@ -48,15 +49,7 @@
     "url": "https://github.com/eweser/eweserdb/issues"
   },
   "publishConfig": {
-    "access": "public",
-    "types": "./dist/index.d.ts",
-    "exports": {
-      ".": {
-        "types": "./dist/index.d.ts",
-        "import": "./dist/db.js",
-        "require": "./dist/db.umd.cjs"
-      }
-    }
+    "access": "public"
   },
   "devDependencies": {
     "@eweser/eslint-config-ts": "^1.15.0",

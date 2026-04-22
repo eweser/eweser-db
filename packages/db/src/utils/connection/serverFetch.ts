@@ -1,4 +1,4 @@
-import type { Database } from '../..';
+import type { Database } from '../../index.js';
 
 export type Options = Omit<RequestInit, 'body'> & {
   body?: BodyInit | object | null;

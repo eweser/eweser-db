@@ -2,8 +2,8 @@
   "name": "@eweser/shared",
   "version": "1.15.0",
   "description": "shared types and helpers for @eweser/db and other @eweser packages",
-  "main": "./src/index.ts",
-  "module": "./src/index.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "homepage": "https://github.com/eweser/eweserdb",
   "author": "jacobcoro",
   "type": "module",
@@ -13,15 +13,7 @@
   },
   "license": "MIT",
   "publishConfig": {
-    "access": "public",
-    "types": "./dist/index.d.ts",
-    "exports": {
-      ".": {
-        "types": "./dist/index.d.ts",
-        "import": "./dist/index.js",
-        "require": "./dist/index.js"
-      }
-    }
+    "access": "public"
   },
   "files": [
     "/dist",
@@ -29,13 +21,14 @@
   ],
   "exports": {
     ".": {
-      "import": "./src/index.ts",
-      "default": "./src/index.ts",
-      "types": "./src/index.ts"
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     }
   },
-  "source": "src/index.ts",
-  "types": "./src/index.ts",
+  "source": "./src/index.ts",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "build": "rm -rf ./dist; tsc && node ./fix-esm-extensions.mjs dist",
     "dev": "tsc -w",

@@ -1,11 +1,11 @@
-import { Room } from '../../room';
+import { Room } from '../../room.js';
 
 import type { ServerRoom } from '@eweser/shared';
 import { HocuspocusProvider, WebSocketStatus } from '@hocuspocus/provider';
-import { initializeDocAndLocalProvider } from '../../utils/connection/initializeDoc';
+import { initializeDocAndLocalProvider } from '../../utils/connection/initializeDoc.js';
 import type { Doc } from 'yjs';
-import type { Database } from '../..';
-import type { RoomConnectionStatus } from '../../events';
+import type { Database } from '../../index.js';
+import type { RoomConnectionStatus } from '../../events.js';
 import { wait } from '@eweser/shared';
 import { Awareness } from 'y-protocols/awareness';
 import type { EweDocument } from '@eweser/shared';

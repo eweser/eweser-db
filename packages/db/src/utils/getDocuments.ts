@@ -1,6 +1,6 @@
 import type { Doc } from 'yjs';
-import type { Database } from '..';
-import type { EweDocument, Room } from '../types';
+import type { Database } from '../index.js';
+import type { EweDocument, Room } from '../types.js';
 import { getDocuments as sharedGetDocuments } from '@eweser/shared';
 
 export type { GetDocuments } from '@eweser/shared';

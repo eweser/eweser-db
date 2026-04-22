@@ -1,8 +1,8 @@
 import type { EweDocument } from '@eweser/shared';
-import type { Database } from '..';
-import type { NewRoomOptions } from '../room';
-import { Room, roomToServerRoom } from '../room';
-import { setLocalRegistry } from '../utils/localStorageService';
+import type { Database } from '../index.js';
+import type { NewRoomOptions } from '../room.js';
+import { Room, roomToServerRoom } from '../room.js';
+import { setLocalRegistry } from '../utils/localStorageService.js';
 
 type NewRoomHelperOptions<T extends EweDocument> = Omit<
   NewRoomOptions<T>,

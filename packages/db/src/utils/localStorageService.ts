@@ -1,5 +1,5 @@
-import type { Database } from '..';
-import type { Registry } from '../types';
+import type { Database } from '../index.js';
+import type { Registry } from '../types.js';
 
 export enum LocalStorageKey {
   roomRegistry = 'room_registry',

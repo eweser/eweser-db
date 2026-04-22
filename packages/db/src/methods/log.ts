@@ -1,5 +1,5 @@
-import type { Database } from '..';
-import type { DatabaseEvents } from '../events';
+import type { Database } from '../index.js';
+import type { DatabaseEvents } from '../events.js';
 
 export const log: (db: Database) => DatabaseEvents['log'] =
   (db) =>

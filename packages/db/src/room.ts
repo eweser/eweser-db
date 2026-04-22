@@ -2,13 +2,13 @@ import type { CollectionKey, EweDocument, ServerRoom } from '@eweser/shared';
 import type { HocuspocusProvider } from '@hocuspocus/provider';
 import type { IndexeddbPersistence } from 'y-indexeddb';
 import type { WebrtcProvider } from 'y-webrtc';
-import type { RoomConnectionStatus, RoomEvents } from './events';
-import { TypedEventEmitter } from './events';
-import type { Database, YDoc } from '.';
-import type { GetDocuments } from './utils/getDocuments';
-import { getDocuments } from './utils/getDocuments';
-import type { RemoteLoadOptions } from './methods/connection/loadRoom';
-import { loadSync } from './methods/connection/loadRoom';
+import type { RoomConnectionStatus, RoomEvents } from './events.js';
+import { TypedEventEmitter } from './events.js';
+import type { Database, YDoc } from './index.js';
+import type { GetDocuments } from './utils/getDocuments.js';
+import { getDocuments } from './utils/getDocuments.js';
+import type { RemoteLoadOptions } from './methods/connection/loadRoom.js';
+import { loadSync } from './methods/connection/loadRoom.js';
 
 export type NewRoomOptions<T extends EweDocument> = {
   db: Database;

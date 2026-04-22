@@ -1,7 +1,11 @@
 import { IndexeddbPersistence } from 'y-indexeddb';
-import { Doc } from '../../utils/yjsWrapper';
+import { Doc } from '../../utils/yjsWrapper.js';
 import type { Doc as YDocType } from 'yjs';
-import type { EweDocument, YDoc, indexedDBProviderPolyfill } from '../../types';
+import type {
+  EweDocument,
+  YDoc,
+  indexedDBProviderPolyfill,
+} from '../../types.js';
 
 export const initializeDocAndLocalProvider = async <T extends EweDocument>(
   roomId: string,

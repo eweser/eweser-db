@@ -1,6 +1,6 @@
-import type { Database } from '../..';
-import type { EweDocument, Room } from '../../types';
-import { pollConnection } from '../../utils/connection/pollConnection';
+import type { Database } from '../../index.js';
+import type { EweDocument, Room } from '../../types.js';
+import { pollConnection } from '../../utils/connection/pollConnection.js';
 
 export const login =
   (db: Database) =>
