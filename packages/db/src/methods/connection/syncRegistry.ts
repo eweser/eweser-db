@@ -5,8 +5,8 @@ import type {
 import {
   setLocalAccessGrantToken,
   setLocalRegistry,
-} from '../../utils/localStorageService';
-import type { Database } from '../..';
+} from '../../utils/localStorageService.js';
+import type { Database } from '../../index.js';
 
 export const syncRegistry =
   (db: Database) =>

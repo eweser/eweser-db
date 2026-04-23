@@ -26,9 +26,10 @@ services:
       retries: 5
 
   sync-server:
+    image: eweser/sync-server:ci
     build:
-      context: packages/sync-server
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: packages/sync-server/Dockerfile
     volumes:
       - sync-data:/data
     expose:
@@ -43,9 +44,10 @@ services:
       WEBHOOK_SECRET: ${WEBHOOK_SECRET:-dev-webhook-secret}
 
   sync-server-2:
+    image: eweser/sync-server:ci
     build:
-      context: packages/sync-server
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: packages/sync-server/Dockerfile
     volumes:
       - sync-data-2:/data
     expose:
@@ -60,9 +62,10 @@ services:
       WEBHOOK_SECRET: ${WEBHOOK_SECRET:-dev-webhook-secret}
 
   aggregator:
+    image: eweser/aggregator:ci
     build:
-      context: packages/aggregator
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: packages/aggregator/Dockerfile
     depends_on:
       postgres:
         condition: service_healthy
@@ -83,6 +86,7 @@ services:
       EWESER_AUTH_URL: http://auth-api:3000
 
   auth-api:
+    image: eweser/auth-api:ci
     build:
       context: .
       dockerfile: packages/auth-server-hono/Dockerfile

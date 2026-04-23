@@ -5,6 +5,13 @@ import { env } from '../env.js';
 const log = createLogger('request-hardening');
 
 const WRITE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+const ALLOWED_CORS_METHODS = 'GET, POST, PUT, PATCH, DELETE, OPTIONS';
+const DEFAULT_ALLOWED_CORS_HEADERS = [
+  'Content-Type',
+  'Authorization',
+  'X-Captcha-Response',
+  'X-Auth-Identifier',
+].join(', ');
 const SENSITIVE_QUERY_KEYS = new Set([
   'token',
   'code',
@@ -33,6 +40,30 @@ export const requestHardening = createMiddleware(async (c, next) => {
   const method = c.req.method.toUpperCase();
   const origin = c.req.header('origin');
   const requestUrl = new URL(c.req.url);
+  const isTrustedOrigin = Boolean(
+    origin && env.AUTH_TRUSTED_ORIGINS.includes(origin)
+  );
+
+  if (method === 'OPTIONS') {
+    const requestedMethod = c.req.header('access-control-request-method');
+    if (requestedMethod) {
+      if (!isTrustedOrigin || !origin) {
+        return c.json({ error: 'Origin is not allowed' }, 403);
+      }
+
+      c.res.headers.set('Access-Control-Allow-Origin', origin);
+      c.res.headers.set('Access-Control-Allow-Credentials', 'true');
+      c.res.headers.set('Access-Control-Allow-Methods', ALLOWED_CORS_METHODS);
+      c.res.headers.set(
+        'Access-Control-Allow-Headers',
+        c.req.header('access-control-request-headers') ??
+          DEFAULT_ALLOWED_CORS_HEADERS
+      );
+      c.res.headers.set('Access-Control-Max-Age', '600');
+      c.res.headers.set('Vary', 'Origin');
+      return c.body(null, 204);
+    }
+  }
 
   if (WRITE_METHODS.has(method) && hasOriginMismatch(origin)) {
     return c.json({ error: 'Origin is not allowed' }, 403);

@@ -1,7 +1,7 @@
-import type { Room } from '../../types';
+import type { Room } from '../../types.js';
 import type { EweDocument } from '@eweser/shared';
 import type { RefreshSyncTokenRouteResponse } from '@eweser/shared';
-import type { Database } from '../..';
+import type { Database } from '../../index.js';
 
 export const refreshSyncToken =
   (db: Database) =>

@@ -1,6 +1,7 @@
 FROM node:22-slim AS builder
 
 WORKDIR /workspace
+ENV NPM_CONFIG_IGNORE_SCRIPTS=true
 
 COPY package.json package-lock.json ./
 COPY packages/shared/package.json ./packages/shared/
@@ -23,11 +24,12 @@ COPY packages/auth-server-hono/ ./packages/auth-server-hono/
 RUN npm run build --workspace @eweser/shared
 RUN npm run build --workspace @eweser/logger
 RUN npm run build --workspace @eweser/mcp
-RUN npm run build --workspace @eweser/auth-server-hono
+RUN NODE_OPTIONS=--max-old-space-size=8192 npm run build --workspace @eweser/auth-server-hono
 
 FROM node:22-slim
 
 WORKDIR /workspace
+ENV NPM_CONFIG_IGNORE_SCRIPTS=true
 
 # Copy package manifests and lockfile for production install
 COPY --from=builder /workspace/package.json /workspace/package-lock.json ./
@@ -56,4 +58,3 @@ ENV PORT=3000
 EXPOSE 3000
 
 CMD ["sh", "-c", "node packages/auth-server-hono/dist/db/migrate.js && node packages/auth-server-hono/dist/index.js"]
-

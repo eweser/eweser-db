@@ -1,7 +1,7 @@
 /* eslint-disable no-console -- this IS the logger implementation */
 import type { EweDocument } from '@eweser/shared';
-import type { Room } from './types';
-import type { Database } from '.';
+import type { Room } from './types.js';
+import type { Database } from './index.js';
 
 type EmittedEvents = Record<string | symbol, (...args: never[]) => void>;
 

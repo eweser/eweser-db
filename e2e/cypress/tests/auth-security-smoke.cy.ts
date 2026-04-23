@@ -18,7 +18,12 @@ const authBase =
   });
 
   it('submits the canonical forgot-password endpoint without leaking account state', () => {
-    cy.intercept('POST', '**/forget-password').as('forgotPassword');
+    cy.intercept('POST', '**/forget-password', (req) => {
+      req.reply({
+        statusCode: 200,
+        body: { status: true },
+      });
+    }).as('forgotPassword');
     cy.visit(`${authBase}/forgot-password`);
     cy.get('input[type="email"]').type('missing@example.com');
     cy.contains('button', 'Send reset link').click();

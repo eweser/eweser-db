@@ -53,7 +53,10 @@ export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
 export function Label(props: LabelHTMLAttributes<HTMLLabelElement>) {
   return (
     <label
-      className={cx('text-sm font-medium text-foreground', props.className)}
+      className={cx(
+        'mb-2 block text-sm font-medium text-foreground',
+        props.className
+      )}
       {...props}
     />
   );

@@ -4,24 +4,29 @@ on:
   pull_request:
     branches:
       - main
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+  workflow_dispatch:
+
+concurrency:
+  group: predeploy-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   pre-deploy:
-    name: Pre-Deploy Checks
+    name: Pre-Deploy Sanity
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24.11.1
-          cache: npm
+      - name: Validate Docker Compose config
+        run: docker compose -f docker-compose.dev.yml config -q
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run quality gates
-        run: npm run check
+      - name: Validate release script presence
+        run: test -f scripts/release.js

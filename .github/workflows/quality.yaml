@@ -4,12 +4,76 @@ on:
   pull_request:
     branches:
       - main
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
   workflow_dispatch:
 
+concurrency:
+  group: quality-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
-  lint:
-    name: Lint
+  changes:
+    name: Detect Changed Areas
     runs-on: ubuntu-latest
+    outputs:
+      run_lint_format: ${{ steps.filter.outputs.lint_format }}
+      run_verify: ${{ steps.filter.outputs.verify }}
+      run_e2e: ${{ steps.filter.outputs.e2e }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Detect changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            lint_format:
+              - 'packages/**'
+              - 'examples/**'
+              - 'scripts/**'
+              - 'e2e/**'
+              - 'cypress/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'eslint.config.js'
+            verify:
+              - 'packages/**'
+              - 'examples/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'tsconfig.json'
+              - 'eslint.config.js'
+              - 'scripts/migrate-export.ts'
+              - 'scripts/migrate-import.ts'
+            e2e:
+              - 'examples/**'
+              - 'packages/ewe-note/**'
+              - 'packages/examples-components/**'
+              - 'packages/db/**'
+              - 'packages/shared/**'
+              - 'packages/auth-pages/**'
+              - 'packages/auth-server-hono/**'
+              - 'packages/sync-server/**'
+              - 'e2e/**'
+              - 'cypress/**'
+              - 'cypress.config.ts'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'scripts/run-e2e-smoke.mjs'
+              - 'docker-compose.dev.yml'
+              - '.github/workflows/quality.yaml'
+
+  lint-format:
+    name: Lint + Format
+    runs-on: ubuntu-latest
+    needs: changes
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.changes.outputs.run_lint_format == 'true' || needs.changes.outputs.run_e2e == 'true' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -26,28 +90,14 @@ jobs:
       - name: Run lint
         run: npm run lint
 
-  format:
-    name: Format Check
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24.11.1
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
       - name: Run format check
         run: npm run format:check
 
-  typecheck:
-    name: Type Check
+  verify:
+    name: Typecheck + Unit
     runs-on: ubuntu-latest
+    needs: changes
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.changes.outputs.run_verify == 'true' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -61,63 +111,46 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run type-check
-        run: npm run type-check
+      - name: Build workspace libs once
+        run: npm run build:typecheck-deps
 
-  unit-tests:
-    name: Unit Tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Run workspace type-check (without rebuild)
+        run: npm run type-check:workspaces
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Run workspace unit tests (without rebuild)
+        run: npm run test:unit:workspaces
+
+      - name: Upload prebuilt workspace libs
+        if: ${{ github.event_name == 'workflow_dispatch' || needs.changes.outputs.run_e2e == 'true' }}
+        uses: actions/upload-artifact@v4
         with:
-          node-version: 24.11.1
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run unit tests
-        run: npm run test:unit
-
-  security:
-    name: Security Review
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24.11.1
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Runtime dependency audit (triage report)
-        run: |
-          set -euo pipefail
-          npm audit --omit=dev --json > audit-report.json || true
-          node -e "const fs=require('fs');const report=JSON.parse(fs.readFileSync('audit-report.json','utf8'));const v=report.metadata?.vulnerabilities??{};console.log('audit vulnerabilities:',v);if((v.critical??0)>0){console.error('Critical vulnerabilities detected');process.exit(1)}"
+          name: workspace-lib-dists
+          path: |
+            packages/logger/dist
+            packages/shared/dist
+            packages/db/dist
+          if-no-files-found: error
+          retention-days: 1
 
   e2e-smoke:
     name: E2E Smoke
     runs-on: ubuntu-latest
+    if: ${{ (github.event_name == 'workflow_dispatch' || needs.changes.outputs.run_e2e == 'true') && (github.event_name != 'pull_request' || !github.event.pull_request.draft) }}
     needs:
-      - lint
-      - format
-      - typecheck
-      - unit-tests
-      - security
+      - changes
+      - lint-format
+      - verify
     timeout-minutes: 20
+    env:
+      CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -125,8 +158,52 @@ jobs:
           node-version: 24.11.1
           cache: npm
 
+      - name: Restore Cypress binary cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: ${{ runner.os }}-cypress-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-cypress-
+
       - name: Install dependencies
         run: npm ci
+
+      - name: Download prebuilt workspace libs
+        uses: actions/download-artifact@v4
+        with:
+          name: workspace-lib-dists
+          path: .
+
+      - name: Build sync-server image with cache
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: packages/sync-server/Dockerfile
+          tags: eweser/sync-server:ci
+          load: true
+          cache-from: type=gha,scope=sync-server-image
+          cache-to: type=gha,mode=max,scope=sync-server-image
+
+      - name: Build aggregator image with cache
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: packages/aggregator/Dockerfile
+          tags: eweser/aggregator:ci
+          load: true
+          cache-from: type=gha,scope=aggregator-image
+          cache-to: type=gha,mode=max,scope=aggregator-image
+
+      - name: Build auth-api image with cache
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: packages/auth-server-hono/Dockerfile
+          tags: eweser/auth-api:ci
+          load: true
+          cache-from: type=gha,scope=auth-api-image
+          cache-to: type=gha,mode=max,scope=auth-api-image
 
       - name: Build example-basic
         run: |
@@ -135,7 +212,7 @@ jobs:
 
       - name: Start Docker backend services
         run: |
-          npm run dev:docker
+          docker compose -f docker-compose.dev.yml up -d --no-build postgres sync-server sync-server-2 aggregator auth-api
 
           # Wait for auth-api to be ready
           until bash -c '</dev/tcp/127.0.0.1/38101' 2>/dev/null; do

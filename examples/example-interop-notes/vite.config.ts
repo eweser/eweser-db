@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { resolve } from 'path';
 
 const port = Number(process.env.EXAMPLE_INTEROP_NOTES_PORT ?? '38130');
 
@@ -10,8 +11,15 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@eweser/examples-components':
-        '../../packages/examples-components/src/components/index.ts',
+      '@eweser/db': resolve(__dirname, '../../packages/db/src/index.ts'),
+      '@eweser/examples-components': resolve(
+        __dirname,
+        '../../packages/examples-components/src/components/index.ts'
+      ),
+      '@eweser/shared': resolve(
+        __dirname,
+        '../../packages/shared/src/index.ts'
+      ),
     },
   },
 

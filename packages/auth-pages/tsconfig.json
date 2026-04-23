@@ -19,7 +19,11 @@
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo",
     "jsx": "react-jsx",
     "types": ["vite/client"],
-    "baseUrl": "./src"
+    "baseUrl": "./src",
+    "paths": {
+      "@eweser/db": ["../../db/src/index.ts"],
+      "@eweser/shared": ["../../shared/src/index.ts"]
+    }
   },
   "include": ["src", "vite-env.d.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]

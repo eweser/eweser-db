@@ -2,8 +2,8 @@
   "name": "@eweser/shared",
   "version": "1.15.0",
   "description": "shared types and helpers for @eweser/db and other @eweser packages",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "homepage": "https://github.com/eweser/eweserdb",
   "author": "jacobcoro",
   "type": "module",
@@ -17,21 +17,22 @@
   },
   "files": [
     "/dist",
-    "/types"
+    "/src"
   ],
   "exports": {
     ".": {
       "import": "./dist/index.js",
       "require": "./dist/index.js",
-      "types": "./types/index.d.ts"
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     }
   },
-  "source": "src/index.ts",
-  "types": "./types/index.d.ts",
+  "source": "./src/index.ts",
+  "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "rm -rf ./dist; rm -rf ./types; tsc && node ./fix-esm-extensions.mjs dist",
+    "build": "rm -rf ./dist; tsc && node ./fix-esm-extensions.mjs dist",
     "dev": "tsc -w",
-    "clean": "rm -rf ./dist; rm -rf ./types",
+    "clean": "rm -rf ./dist",
     "lint": "eslint .",
     "type-check": "tsc --noEmit",
     "test-watch": "vitest",
@@ -43,7 +44,6 @@
   "devDependencies": {
     "@eweser/eslint-config-ts": "^1.15.0",
     "eslint": "^9.39.1",
-    "request": "^2.88.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8",
     "yjs": "^13.6.30",

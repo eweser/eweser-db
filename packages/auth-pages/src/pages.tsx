@@ -53,6 +53,18 @@ const signUpBullets = [
 
 const passwordResetRequestedMessage =
   'If an account exists, password reset instructions were sent.';
+const authRequestTimeoutMs = 15_000;
+
+const authFieldClass =
+  '!h-12 !rounded-xl !border-border !bg-background/80 !px-4 !text-base !text-foreground placeholder:text-muted-foreground shadow-[0_1px_0_rgba(15,23,42,0.03)] focus-visible:ring-emerald-400/40';
+
+const authPrimaryButtonClass =
+  '!h-12 !w-full !rounded-xl !bg-primary !px-6 !text-sm !font-semibold !text-primary-foreground shadow-[0_24px_48px_rgba(15,23,42,0.12)] transition-transform hover:-translate-y-0.5 hover:opacity-95';
+
+const authOutlineButtonClass =
+  '!h-12 !rounded-xl !border-border !bg-background/70 !text-foreground transition-colors hover:bg-accent';
+
+const authLabelClass = 'text-foreground/90';
 
 function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
@@ -74,16 +86,16 @@ function SiteHeader() {
   const session = authClient.useSession();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#050505]/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-border/70 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
         <Link className="flex items-center gap-3 no-underline" to="/">
           <span
             aria-hidden="true"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground"
           >
-            <span className="h-2.5 w-2.5 rounded-full bg-white/80" />
+            <span className="h-2.5 w-2.5 rounded-full bg-foreground/80" />
           </span>
-          <span className="text-lg font-semibold tracking-tight text-white">
+          <span className="text-lg font-semibold tracking-tight text-foreground">
             EweserDB
           </span>
         </Link>
@@ -92,19 +104,19 @@ function SiteHeader() {
           {session.data?.user ? (
             <>
               <Link
-                className="text-sm text-slate-300 no-underline transition-colors hover:text-white"
+                className="text-sm text-muted-foreground no-underline transition-colors hover:text-foreground"
                 to="/home"
               >
                 Home
               </Link>
               <Link
-                className="text-sm text-slate-300 no-underline transition-colors hover:text-white"
+                className="text-sm text-muted-foreground no-underline transition-colors hover:text-foreground"
                 to="/sign-out"
               >
                 Sign out
               </Link>
               <Link
-                className="text-sm text-slate-300 no-underline transition-colors hover:text-white"
+                className="text-sm text-muted-foreground no-underline transition-colors hover:text-foreground"
                 to="/account/security"
               >
                 Security
@@ -113,13 +125,13 @@ function SiteHeader() {
           ) : (
             <>
               <Link
-                className="text-sm text-slate-300 no-underline transition-colors hover:text-white"
+                className="text-sm text-muted-foreground no-underline transition-colors hover:text-foreground"
                 to="/sign-in"
               >
                 Sign in
               </Link>
               <Link
-                className="text-sm text-slate-300 no-underline transition-colors hover:text-white"
+                className="text-sm text-muted-foreground no-underline transition-colors hover:text-foreground"
                 to="/sign-up"
               >
                 Sign up
@@ -127,7 +139,7 @@ function SiteHeader() {
             </>
           )}
           <a
-            className="text-sm text-slate-300 no-underline transition-colors hover:text-white"
+            className="text-sm text-muted-foreground no-underline transition-colors hover:text-foreground"
             href="https://github.com/eweser/eweser-db"
             rel="noreferrer"
             target="_blank"
@@ -158,34 +170,39 @@ function AuthLayout({
   panelTitle: string;
   title: React.ReactNode;
 }) {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme !== 'light';
+
   return (
-    <div className="relative isolate min-h-[calc(100svh-5rem)] overflow-hidden bg-[#050505] text-white">
+    <div className="relative isolate min-h-[calc(100svh-5rem)] overflow-hidden bg-background text-foreground">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
         style={{
-          background:
-            'radial-gradient(circle at top, rgba(255,255,255,0.11), transparent 34%), radial-gradient(circle at 85% 78%, rgba(74,222,128,0.16), transparent 26%), radial-gradient(circle at 18% 86%, rgba(255,255,255,0.06), transparent 20%)',
+          background: isDark
+            ? 'radial-gradient(circle at top, rgba(255,255,255,0.11), transparent 34%), radial-gradient(circle at 85% 78%, rgba(74,222,128,0.16), transparent 26%), radial-gradient(circle at 18% 86%, rgba(255,255,255,0.06), transparent 20%)'
+            : 'radial-gradient(circle at top, rgba(255,255,255,0.95), transparent 32%), radial-gradient(circle at 85% 78%, rgba(74,222,128,0.12), transparent 24%), radial-gradient(circle at 18% 86%, rgba(148,163,184,0.14), transparent 20%)',
         }}
       />
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-0 top-0 h-[420px]"
         style={{
-          background:
-            'linear-gradient(180deg, rgba(74,222,128,0.08) 0%, rgba(5,5,5,0) 72%)',
+          background: isDark
+            ? 'linear-gradient(180deg, rgba(74,222,128,0.08) 0%, rgba(5,5,5,0) 72%)'
+            : 'linear-gradient(180deg, rgba(74,222,128,0.06) 0%, rgba(255,255,255,0) 72%)',
         }}
       />
 
       <main className="mx-auto grid w-full max-w-7xl gap-12 px-6 py-10 lg:min-h-[calc(100svh-5rem)] lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:py-16">
         <section className="relative max-w-2xl">
-          <p className="mb-5 text-sm font-medium uppercase tracking-[0.32em] text-slate-400">
+          <p className="mb-5 text-sm font-medium uppercase tracking-[0.32em] text-muted-foreground">
             {eyebrow}
           </p>
-          <h1 className="max-w-xl text-4xl font-bold tracking-tight leading-[1.02] text-white sm:text-6xl lg:text-7xl">
+          <h1 className="max-w-xl text-4xl font-bold tracking-tight leading-[1.02] text-foreground sm:text-6xl lg:text-7xl">
             {title}
           </h1>
-          <p className="mt-6 max-w-xl text-lg leading-8 text-slate-400 sm:text-xl">
+          <p className="mt-6 max-w-xl text-lg leading-8 text-muted-foreground sm:text-xl">
             {description}
           </p>
 
@@ -193,7 +210,7 @@ function AuthLayout({
             {bullets.map((bullet) => (
               <li
                 key={bullet}
-                className="flex gap-4 text-sm leading-7 text-slate-300 sm:text-base"
+                className="flex gap-4 text-sm leading-7 text-muted-foreground sm:text-base"
               >
                 <span className="mt-3 h-2 w-2 shrink-0 rounded-full bg-emerald-400" />
                 <span>{bullet}</span>
@@ -209,25 +226,25 @@ function AuthLayout({
           />
           <div
             aria-hidden="true"
-            className="absolute -right-4 bottom-12 h-32 w-32 rounded-full bg-white/10 blur-3xl float-fast"
+            className="absolute -right-4 bottom-12 h-32 w-32 rounded-full bg-foreground/10 blur-3xl float-fast"
           />
 
-          <div className="relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#101010]/95 shadow-2xl shadow-black/40">
-            <div className="flex items-center gap-2 border-b border-white/10 bg-[#151515] px-4 py-3">
-              <span className="h-3 w-3 rounded-full bg-white/20" />
-              <span className="h-3 w-3 rounded-full bg-white/20" />
-              <span className="h-3 w-3 rounded-full bg-white/20" />
+          <div className="relative overflow-hidden rounded-[1.75rem] border border-border bg-card/95 shadow-2xl shadow-black/10">
+            <div className="flex items-center gap-2 border-b border-border bg-muted/60 px-4 py-3">
+              <span className="h-3 w-3 rounded-full bg-foreground/20" />
+              <span className="h-3 w-3 rounded-full bg-foreground/20" />
+              <span className="h-3 w-3 rounded-full bg-foreground/20" />
             </div>
 
             <div className="p-6 sm:p-8">
               <div className="mb-8">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground">
                   {eyebrow}
                 </p>
-                <h2 className="mt-3 text-2xl font-semibold tracking-tight text-white">
+                <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
                   {panelTitle}
                 </h2>
-                <p className="mt-2 text-sm leading-6 text-slate-400">
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
                   {panelDescription}
                 </p>
               </div>
@@ -252,6 +269,29 @@ function usePersistedLoginQuery() {
   }, [loginQuery]);
 
   return loginQuery;
+}
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs = authRequestTimeoutMs) {
+  return new Promise<T>((resolve, reject) => {
+    const timeout = window.setTimeout(() => {
+      reject(
+        new Error(
+          'Authentication request timed out. Please try again in a moment.'
+        )
+      );
+    }, timeoutMs);
+
+    promise.then(
+      (value) => {
+        window.clearTimeout(timeout);
+        resolve(value);
+      },
+      (error) => {
+        window.clearTimeout(timeout);
+        reject(error);
+      }
+    );
+  });
 }
 
 async function postAuthJson<T>(
@@ -326,39 +366,60 @@ function SignInPage() {
     setLoading(true);
     setError(null);
 
-    const nextPath = resolvePostAuthPath(persistedLoginQuery, returnTo);
-    const result = await authClient.signIn.email({
-      callbackURL: appAbsoluteUrl(nextPath),
-      email,
-      password,
-      rememberMe: true,
-    });
+    try {
+      const nextPath = resolvePostAuthPath(persistedLoginQuery, returnTo);
+      const result = await withTimeout(
+        authClient.signIn.email({
+          callbackURL: appAbsoluteUrl(nextPath),
+          email,
+          password,
+          rememberMe: true,
+        })
+      );
 
-    setLoading(false);
+      if (result.error) {
+        setError(result.error.message ?? 'Unable to sign in.');
+        return;
+      }
 
-    if (result.error) {
-      setError(result.error.message ?? 'Unable to sign in.');
-      return;
+      navigate(nextPath, { replace: true });
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'Unable to sign in.'
+      );
+    } finally {
+      setLoading(false);
     }
-
-    navigate(nextPath, { replace: true });
   }
 
   async function handleSocial(provider: 'github' | 'google') {
     setLoading(true);
     setError(null);
 
-    const nextPath = resolvePostAuthPath(persistedLoginQuery, returnTo);
-    const result = await authClient.signIn.social({
-      callbackURL: appAbsoluteUrl(nextPath),
-      errorCallbackURL: appAbsoluteUrl('/sign-in'),
-      newUserCallbackURL: appAbsoluteUrl(nextPath),
-      provider,
-    });
+    try {
+      const nextPath = resolvePostAuthPath(persistedLoginQuery, returnTo);
+      const result = await withTimeout(
+        authClient.signIn.social({
+          callbackURL: appAbsoluteUrl(nextPath),
+          errorCallbackURL: appAbsoluteUrl('/sign-in'),
+          newUserCallbackURL: appAbsoluteUrl(nextPath),
+          provider,
+        })
+      );
 
-    if (result.error) {
+      if (result.error) {
+        setError(result.error.message ?? 'Unable to continue with OAuth.');
+      }
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'Unable to continue with OAuth.'
+      );
+    } finally {
       setLoading(false);
-      setError(result.error.message ?? 'Unable to continue with OAuth.');
     }
   }
 
@@ -373,12 +434,12 @@ function SignInPage() {
     >
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-2">
-          <Label className="text-white/90" htmlFor="sign-in-email">
+          <Label className={authLabelClass} htmlFor="sign-in-email">
             Email
           </Label>
           <Input
             id="sign-in-email"
-            className="!h-12 !rounded-xl !border-white/10 !bg-white/5 !px-4 !text-base !text-white shadow-[0_1px_0_rgba(255,255,255,0.03)] placeholder:text-slate-500 focus-visible:ring-emerald-400/40"
+            className={authFieldClass}
             name="email"
             onChange={(event) => setEmail(event.target.value)}
             placeholder="name@example.com"
@@ -388,12 +449,12 @@ function SignInPage() {
         </div>
 
         <div className="space-y-2">
-          <Label className="text-white/90" htmlFor="sign-in-password">
+          <Label className={authLabelClass} htmlFor="sign-in-password">
             Password
           </Label>
           <Input
             id="sign-in-password"
-            className="!h-12 !rounded-xl !border-white/10 !bg-white/5 !px-4 !text-base !text-white shadow-[0_1px_0_rgba(255,255,255,0.03)] placeholder:text-slate-500 focus-visible:ring-emerald-400/40"
+            className={authFieldClass}
             name="password"
             onChange={(event) => setPassword(event.target.value)}
             placeholder="Password"
@@ -405,16 +466,20 @@ function SignInPage() {
         {error ? <p className="text-sm text-red-300">{error}</p> : null}
 
         <Button
-          className="!h-12 !w-full !rounded-xl !bg-white !px-6 !text-sm !font-semibold !text-black shadow-[0_24px_48px_rgba(255,255,255,0.08)] transition-transform hover:-translate-y-0.5 hover:bg-slate-100"
+          className={authPrimaryButtonClass}
           disabled={loading}
           type="submit"
         >
-          {loading ? <InlineSpinner className="text-black" /> : 'Sign in'}
+          {loading ? (
+            <InlineSpinner className="text-primary-foreground" />
+          ) : (
+            'Sign in'
+          )}
         </Button>
 
         <div className="grid gap-2 sm:grid-cols-2">
           <Button
-            className="!h-12 !rounded-xl !border-white/10 !bg-white/5 !text-white transition-colors hover:bg-white/10"
+            className={authOutlineButtonClass}
             disabled={loading}
             tone="outline"
             type="button"
@@ -423,7 +488,7 @@ function SignInPage() {
             Google
           </Button>
           <Button
-            className="!h-12 !rounded-xl !border-white/10 !bg-white/5 !text-white transition-colors hover:bg-white/10"
+            className={authOutlineButtonClass}
             disabled={loading}
             tone="outline"
             type="button"
@@ -433,35 +498,35 @@ function SignInPage() {
           </Button>
         </div>
 
-        <p className="pt-2 text-center text-sm text-slate-400">
+        <p className="pt-2 text-center text-sm text-muted-foreground">
           Need an account?{' '}
           <Link
-            className="text-emerald-300 hover:text-emerald-200"
+            className="text-emerald-500 hover:text-emerald-400"
             to="/sign-up"
           >
             Create one
           </Link>
         </p>
-        <p className="text-center text-sm text-slate-400">
+        <p className="text-center text-sm text-muted-foreground">
           <Link
-            className="text-slate-300 hover:text-white"
+            className="text-foreground hover:text-foreground/80"
             to="/forgot-password"
           >
             Forgot your password?
           </Link>
         </p>
 
-        <p className="text-center text-xs leading-5 text-slate-500">
+        <p className="text-center text-xs leading-5 text-muted-foreground">
           By continuing, you agree to our{' '}
           <Link
-            className="text-slate-300 hover:text-white"
+            className="text-foreground hover:text-foreground/80"
             to="/statement/terms-of-service"
           >
             Terms
           </Link>{' '}
           and{' '}
           <Link
-            className="text-slate-300 hover:text-white"
+            className="text-foreground hover:text-foreground/80"
             to="/statement/privacy"
           >
             Privacy
@@ -513,24 +578,26 @@ function SignUpPage() {
     let result;
 
     try {
-      result = await authClient.signUp.email({
-        callbackURL: appAbsoluteUrl(nextPath),
-        email,
-        fetchOptions: captchaToken
-          ? {
-              headers: {
-                'x-captcha-response': captchaToken,
-                'x-auth-identifier': email,
+      result = await withTimeout(
+        authClient.signUp.email({
+          callbackURL: appAbsoluteUrl(nextPath),
+          email,
+          fetchOptions: captchaToken
+            ? {
+                headers: {
+                  'x-captcha-response': captchaToken,
+                  'x-auth-identifier': email,
+                },
+              }
+            : {
+                headers: {
+                  'x-auth-identifier': email,
+                },
               },
-            }
-          : {
-              headers: {
-                'x-auth-identifier': email,
-              },
-            },
-        name,
-        password,
-      });
+          name,
+          password,
+        })
+      );
     } catch (requestError) {
       setLoading(false);
       if (signUpCaptchaEnabled) {
@@ -578,24 +645,24 @@ function SignUpPage() {
     >
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-2">
-          <Label className="text-white/90" htmlFor="sign-up-name">
+          <Label className={authLabelClass} htmlFor="sign-up-name">
             Name
           </Label>
           <Input
             id="sign-up-name"
-            className="!h-12 !rounded-xl !border-white/10 !bg-white/5 !px-4 !text-base !text-white shadow-[0_1px_0_rgba(255,255,255,0.03)] placeholder:text-slate-500 focus-visible:ring-emerald-400/40"
+            className={authFieldClass}
             onChange={(event) => setName(event.target.value)}
             value={name}
           />
         </div>
 
         <div className="space-y-2">
-          <Label className="text-white/90" htmlFor="sign-up-email">
+          <Label className={authLabelClass} htmlFor="sign-up-email">
             Email
           </Label>
           <Input
             id="sign-up-email"
-            className="!h-12 !rounded-xl !border-white/10 !bg-white/5 !px-4 !text-base !text-white shadow-[0_1px_0_rgba(255,255,255,0.03)] placeholder:text-slate-500 focus-visible:ring-emerald-400/40"
+            className={authFieldClass}
             onChange={(event) => setEmail(event.target.value)}
             type="email"
             value={email}
@@ -603,12 +670,12 @@ function SignUpPage() {
         </div>
 
         <div className="space-y-2">
-          <Label className="text-white/90" htmlFor="sign-up-password">
+          <Label className={authLabelClass} htmlFor="sign-up-password">
             Password
           </Label>
           <Input
             id="sign-up-password"
-            className="!h-12 !rounded-xl !border-white/10 !bg-white/5 !px-4 !text-base !text-white shadow-[0_1px_0_rgba(255,255,255,0.03)] placeholder:text-slate-500 focus-visible:ring-emerald-400/40"
+            className={authFieldClass}
             onChange={(event) => setPassword(event.target.value)}
             type="password"
             value={password}
@@ -622,21 +689,21 @@ function SignUpPage() {
         {error ? <p className="text-sm text-red-300">{error}</p> : null}
 
         <Button
-          className="!h-12 !w-full !rounded-xl !bg-white !px-6 !text-sm !font-semibold !text-black shadow-[0_24px_48px_rgba(255,255,255,0.08)] transition-transform hover:-translate-y-0.5 hover:bg-slate-100"
+          className={authPrimaryButtonClass}
           disabled={loading || (signUpCaptchaEnabled && !captchaToken)}
           type="submit"
         >
           {loading ? (
-            <InlineSpinner className="text-black" />
+            <InlineSpinner className="text-primary-foreground" />
           ) : (
             'Create account'
           )}
         </Button>
 
-        <p className="pt-2 text-center text-sm text-slate-400">
+        <p className="pt-2 text-center text-sm text-muted-foreground">
           Already have an account?{' '}
           <Link
-            className="text-emerald-300 hover:text-emerald-200"
+            className="text-emerald-500 hover:text-emerald-400"
             to="/sign-in"
           >
             Sign in

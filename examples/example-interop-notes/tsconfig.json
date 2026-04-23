@@ -21,9 +21,11 @@
     "types": ["vite/client"],
     "baseUrl": "./src",
     "paths": {
+      "@eweser/db": ["../../../packages/db/src/index.ts"],
       "@eweser/examples-components": [
         "../../../packages/examples-components/src/components/index.ts"
-      ]
+      ],
+      "@eweser/shared": ["../../../packages/shared/src/index.ts"]
     }
   },
 

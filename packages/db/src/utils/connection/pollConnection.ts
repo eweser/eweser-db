@@ -1,5 +1,5 @@
-import type { Database } from '../..';
-import { checkServerConnection } from './checkServerConnection';
+import type { Database } from '../../index.js';
+import { checkServerConnection } from './checkServerConnection.js';
 
 /** by default polls often (2000ms) trying to check for return of connection after connection loss, and less often (10000ms) checking to make sure connection is still there */
 export const pollConnection = (

@@ -23,6 +23,8 @@
     "baseUrl": ".",
     "types": ["vite/client"],
     "paths": {
+      "@eweser/db": ["../db/src/index.ts"],
+      "@eweser/shared": ["../shared/src/index.ts"],
       "react-vite-library": ["src/components/index.ts"]
     },
     "typeRoots": ["node_modules/@types", "src/components/index.d.ts"]

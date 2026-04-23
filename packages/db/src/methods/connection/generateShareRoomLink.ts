@@ -5,7 +5,7 @@ import type {
   RoomAccessType,
 } from '@eweser/shared';
 import { loginOptionsToQueryParams } from '@eweser/shared';
-import type { Database } from '../..';
+import type { Database } from '../../index.js';
 
 export const generateShareRoomLink =
   (db: Database) =>

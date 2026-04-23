@@ -1,5 +1,5 @@
 import type { Note as DbNote, Room } from '@eweser/db';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import removeMarkdown from 'markdown-to-text';
 import { useDb } from '@/db';
 import { useFolders } from '@/notes-room';

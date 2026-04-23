@@ -95,6 +95,13 @@ npm run format     # Auto-fix formatting
 npm run changeset  # Create a changeset for publishing
 ```
 
+### Git Hooks
+
+Git hooks are installed automatically during `npm install` via Lefthook.
+
+- `pre-commit` runs staged-file checks only: ESLint auto-fix for JS/TS files and Prettier for supported staged files.
+- `pre-push` runs `npm run check`, which executes lint, format check, workspace type-check, and unit tests before the push completes.
+
 ## VS Code Tasks
 
 Open Command Palette → "Tasks: Run Task" → select one of:

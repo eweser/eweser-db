@@ -9,13 +9,13 @@
     "declarationDir": "./dist",
     "sourceMap": true,
     "skipLibCheck": true,
-    "lib": ["ESNext"],
+    "lib": ["ESNext", "DOM"],
     "strict": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "noEmit": false,
-    "types": []
+    "types": ["node"]
   },
   "include": ["src"],
   "exclude": ["**/*.test.ts", "dist"]

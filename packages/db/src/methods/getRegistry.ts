@@ -1,5 +1,5 @@
-import { getLocalRegistry } from '../utils/localStorageService';
-import type { Database } from '..';
+import { getLocalRegistry } from '../utils/localStorageService.js';
+import type { Database } from '../index.js';
 
 /** if the registry doesn't exist, look for it in the localstorage */
 export const getRegistry = (db: Database) => () => {

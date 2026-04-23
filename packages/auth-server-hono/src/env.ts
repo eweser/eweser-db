@@ -110,7 +110,7 @@ const envSchema = z
 
     if (isProduction) {
       const placeholderRegex =
-        /(changeme|change-me|replace-me|example|test-secret|dev-secret)/i;
+        /(changeme|change-me|replace(?:-with-random)?|example|test-secret|dev-secret)/i;
       for (const [key, secret] of [
         ['SERVER_SECRET', value.SERVER_SECRET],
         ['BETTER_AUTH_SECRET', value.BETTER_AUTH_SECRET],

@@ -7,26 +7,20 @@
     "eweser-mcp": "./dist/index.js"
   },
   "main": "./dist/index.js",
+  "types": "./src/lib.ts",
   "exports": {
     ".": {
-      "types": "./dist/lib.d.ts",
+      "types": "./src/lib.ts",
       "import": "./dist/lib.js"
     },
     "./cli": "./dist/index.js"
   },
-  "typesVersions": {
-    "*": {
-      ".": [
-        "./dist/lib.d.ts"
-      ]
-    }
-  },
   "scripts": {
-    "build": "tsup",
+    "build": "npm run build --workspace @eweser/logger && tsup",
     "dev": "tsx src/index.ts",
     "test": "vitest run",
     "test-watch": "vitest",
-    "type-check": "tsc --noEmit"
+    "type-check": "NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.typecheck.json"
   },
   "dependencies": {
     "@eweser/logger": "*",
@@ -44,9 +38,18 @@
     "yjs-types": "^0.0.1"
   },
   "files": [
-    "/dist"
+    "/dist",
+    "/src"
   ],
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "types": "./dist/lib.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/lib.d.ts",
+        "import": "./dist/lib.js"
+      },
+      "./cli": "./dist/index.js"
+    }
   }
 }

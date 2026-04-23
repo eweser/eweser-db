@@ -1,5 +1,5 @@
-import type { Database } from '../..';
-import { setLocalAccessGrantToken } from '../../utils/localStorageService';
+import type { Database } from '../../index.js';
+import { setLocalAccessGrantToken } from '../../utils/localStorageService.js';
 
 export const getAccessGrantTokenFromUrl =
   (db: Database) =>

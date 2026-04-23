@@ -1,8 +1,8 @@
 import type { Flashcard, Note, Profile, DocumentBase } from '@eweser/shared';
-import type { Collections, Documents, YDoc } from '../types';
-import { buildRef } from '../utils';
-import { Room } from '../room';
-import { Database } from '..';
+import type { Collections, Documents, YDoc } from '../types.js';
+import { buildRef } from '../utils/index.js';
+import { Room } from '../room.js';
+import { Database } from '../index.js';
 
 const db = new Database();
 

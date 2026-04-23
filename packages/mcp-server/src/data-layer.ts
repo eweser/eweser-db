@@ -35,7 +35,7 @@ export class DataLayer {
   private agentConfig: AgentConfig;
   private authUrl: string;
   private agentToken: string;
-  private syncUrlOverride?: string;
+  private syncUrlOverride: string | undefined;
 
   constructor(
     agentConfig: AgentConfig,
@@ -144,8 +144,8 @@ export class DataLayer {
       this.scheduleTokenRefresh(roomId, connected);
     } catch (err) {
       log.error(
-        `[eweser-mcp] Failed to refresh token for room ${roomId}:`,
-        err
+        { err, roomId },
+        `[eweser-mcp] Failed to refresh token for room ${roomId}`
       );
     }
   }
