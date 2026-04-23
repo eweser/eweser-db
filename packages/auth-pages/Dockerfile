@@ -12,7 +12,8 @@ RUN npm ci \
   --workspace @eweser/shared \
   --workspace @eweser/db \
   --workspace @eweser/auth-pages \
-  --include-workspace-root
+  --include-workspace-root \
+  --ignore-scripts
 
 COPY packages/shared/ ./packages/shared/
 COPY packages/db/ ./packages/db/
