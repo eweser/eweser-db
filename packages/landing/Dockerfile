@@ -6,7 +6,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY packages/landing/package.json ./packages/landing/
 
-RUN npm ci --workspace=packages/landing --include-workspace-root
+RUN npm ci --workspace=packages/landing --include-workspace-root --ignore-scripts
 
 COPY packages/landing ./packages/landing
 
