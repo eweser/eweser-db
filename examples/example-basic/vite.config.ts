@@ -11,9 +11,14 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
+      '@eweser/db': resolve(__dirname, '../../packages/db/src/index.ts'),
       '@eweser/examples-components': resolve(
         __dirname,
         '../../packages/examples-components/src/components/index.ts'
+      ),
+      '@eweser/shared': resolve(
+        __dirname,
+        '../../packages/shared/src/index.ts'
       ),
     },
   },
