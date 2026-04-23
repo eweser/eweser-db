@@ -52,6 +52,24 @@ describe('app health routes', () => {
     await expect(response.text()).resolves.toBe('pong');
   });
 
+  it('serves account routes under the /api prefix used by auth-pages', async () => {
+    const response = await app.fetch(
+      new Request('http://localhost/api/account/bootstrap')
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ ok: true });
+  });
+
+  it('serves access grant routes under the /api prefix used by the SDK', async () => {
+    const response = await app.fetch(
+      new Request('http://localhost/api/access-grant/health')
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ ok: true });
+  });
+
   it('starts the node server with configured port', () => {
     expect(serveMock).toHaveBeenCalled();
     const firstCallArg = serveMock.mock.calls[0]?.[0] as { port: number };

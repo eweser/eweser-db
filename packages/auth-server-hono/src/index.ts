@@ -44,10 +44,13 @@ app.get('/.well-known/oauth-authorization-server', (c) =>
 );
 
 app.route('/account', accountRouter);
+app.route('/api/account', accountRouter);
 app.route('/auth', authRouter);
 app.route('/api/auth', authRouter);
 app.route('/agents', agentsRouter);
+app.route('/api/agents', agentsRouter);
 app.route('/access-grants', accessGrantRouter);
+app.route('/api/access-grant', accessGrantRouter);
 app.route('/oauth', oauthRouter);
 app.route('/mcp', mcpRouter);
 
