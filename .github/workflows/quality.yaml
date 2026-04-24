@@ -183,7 +183,6 @@ jobs:
           tags: eweser/sync-server:ci
           load: true
           cache-from: type=gha,scope=sync-server-image
-          cache-to: type=gha,mode=max,scope=sync-server-image
 
       - name: Build aggregator image with cache
         uses: docker/build-push-action@v6
@@ -193,7 +192,6 @@ jobs:
           tags: eweser/aggregator:ci
           load: true
           cache-from: type=gha,scope=aggregator-image
-          cache-to: type=gha,mode=max,scope=aggregator-image
 
       - name: Build auth-api image with cache
         uses: docker/build-push-action@v6
@@ -203,7 +201,6 @@ jobs:
           tags: eweser/auth-api:ci
           load: true
           cache-from: type=gha,scope=auth-api-image
-          cache-to: type=gha,mode=max,scope=auth-api-image
 
       - name: Build example-basic
         run: |
