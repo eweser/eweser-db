@@ -140,6 +140,8 @@ describe('connectAiRouter', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.clientId).toBe('claude-desktop');
+    expect(res.headers.get('cache-control')).toBe('no-store');
+    expect(res.headers.get('pragma')).toBe('no-cache');
     expect(body.payload.snippet).toContain('@eweser/mcp');
     expect(body.payload.snippet).toContain('EWESER_AGENT_TOKEN');
   });

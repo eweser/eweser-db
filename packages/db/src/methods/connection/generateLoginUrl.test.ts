@@ -74,6 +74,6 @@ describe('generateLoginUrl', () => {
     const url = generateLoginUrl(db)({ name: 'Example App' });
     const parsed = new URL(url);
 
-    expect(parsed.toString()).toContain('/auth/sign-in?');
+    expect(parsed.pathname).toBe('/base/auth/sign-in');
   });
 });

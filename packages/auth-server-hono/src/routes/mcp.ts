@@ -52,6 +52,7 @@ const mcpRequestRateLimit = createRateLimit({
 // session store or switch to stateless mode (re-initialize DataLayer on every request,
 // which is slower but correct). See docs/ai/plans/2026-04-08-chatgpt-web-mcp.md.
 const sessionCache = new Map<string, McpSession>();
+const OAUTH_LAST_USED_UPDATE_INTERVAL_MS = 5 * 60 * 1000;
 
 // Prune sessions idle for more than 30 minutes
 const SESSION_TTL_MS = 30 * 60 * 1000;
@@ -89,7 +90,18 @@ async function resolveAuth(
   // 1. Try OAuth access token
   const oauthToken = await getValidOAuthAccessToken(token);
   if (oauthToken) {
-    void touchOAuthAccessToken(oauthToken.id);
+    const shouldTouchLastUsedAt =
+      !oauthToken.lastUsedAt ||
+      Date.now() - oauthToken.lastUsedAt.getTime() >=
+        OAUTH_LAST_USED_UPDATE_INTERVAL_MS;
+    if (shouldTouchLastUsedAt) {
+      void touchOAuthAccessToken(oauthToken.id).catch((error) => {
+        log.warn('Failed to update OAuth access token last-used timestamp', {
+          oauthAccessTokenId: oauthToken.id,
+          error,
+        });
+      });
+    }
     const permissions = oauthToken.scopes.includes('readwrite')
       ? 'readwrite'
       : 'read';

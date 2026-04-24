@@ -1,4 +1,4 @@
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import { COLLECTION_KEYS } from '@eweser/shared';
 import { z } from 'zod';
 import { requireAuth } from '../middleware/auth.js';
@@ -39,6 +39,18 @@ type ConnectAiClientId =
 const tokenClientIdSet = new Set<ConnectAiClientId>(tokenClientIds);
 const oauthClientIdSet = new Set<ConnectAiClientId>(oauthClientIds);
 const onboardingTtlMs = 7 * 24 * 60 * 60 * 1000;
+
+function isTokenClientId(
+  clientId: ConnectAiClientId
+): clientId is (typeof tokenClientIds)[number] {
+  return tokenClientIdSet.has(clientId);
+}
+
+function noStoreJson(c: Context, body: unknown, status?: number) {
+  c.header('Cache-Control', 'no-store');
+  c.header('Pragma', 'no-cache');
+  return c.json(body, status);
+}
 
 function getAuthServerBaseUrl() {
   const candidate = env.AUTH_SERVER_URL || env.BETTER_AUTH_BASE_URL;
@@ -306,7 +318,7 @@ connectAiRouter.post(
     }
 
     const { clientId } = parsedBody.data;
-    if (!tokenClientIdSet.has(clientId)) {
+    if (!isTokenClientId(clientId)) {
       return c.json({ error: 'This client uses OAuth onboarding' }, 400);
     }
 
@@ -337,7 +349,7 @@ connectAiRouter.post(
     }
 
     const { tokenHash: _tokenHash, ...agent } = result.agentConfig;
-    return c.json({
+    return noStoreJson(c, {
       agent,
       clientId,
       payload: buildTokenSnippet(clientId, result.token),
@@ -363,7 +375,7 @@ connectAiRouter.post(
     }
 
     const { clientId } = parsedBody.data;
-    if (!tokenClientIdSet.has(clientId)) {
+    if (!isTokenClientId(clientId)) {
       return c.json({ error: 'This client uses OAuth onboarding' }, 400);
     }
 
@@ -382,7 +394,7 @@ connectAiRouter.post(
     }
 
     const { tokenHash: _tokenHash, ...agent } = rotated.agentConfig;
-    return c.json({
+    return noStoreJson(c, {
       agent,
       clientId,
       payload: buildTokenSnippet(clientId, rotated.token),
@@ -410,7 +422,7 @@ connectAiRouter.post(
       return c.json({ clientId, status: 'revoked' });
     }
 
-    if (tokenClientIdSet.has(clientId)) {
+    if (isTokenClientId(clientId)) {
       const existingAgents = await getAgentConfigsByUserId(user.id);
       const existing = existingAgents.find(
         (candidate) => candidate.name === getAgentName(clientId)

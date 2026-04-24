@@ -151,11 +151,16 @@ oauthRouter.post('/register', oauthTokenRateLimit, async (c) => {
   }
 
   const metadata = parsedBody.data;
-  const client = await registerOAuthClient({
+  const registration = {
     clientName: metadata.client_name,
     redirectUris: metadata.redirect_uris,
-    softwareId: metadata.software_id,
-    softwareVersion: metadata.software_version,
+    ...(metadata.software_id ? { softwareId: metadata.software_id } : {}),
+    ...(metadata.software_version
+      ? { softwareVersion: metadata.software_version }
+      : {}),
+  };
+  const client = await registerOAuthClient({
+    ...registration,
   });
 
   return c.json(

@@ -48,6 +48,7 @@ export const useGetUserFromDb = (db: Database, canFetchAccount = false) => {
     };
 
     db.on('roomLoaded', handleRoomLoaded);
+    handleRoomLoaded();
 
     return () => {
       db.off('roomLoaded', handleRoomLoaded);
