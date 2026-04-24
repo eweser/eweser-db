@@ -1,160 +1,148 @@
-# Architecture — EweserDB
+# Architecture - EweserDB
 
-> **Status:** Active — Core migration complete. Hono + better-auth auth server is production-ready.
+> **Status:** Active. The Next.js/Supabase migration is complete; the current auth stack is Hono + better-auth.
 
-## Philosophy
+## Overview
 
-EweserDB flips data ownership: **users own their data**, not apps. Apps interoperate over shared, strongly-typed Yjs CRDT documents. Local-first, offline-first, real-time sync.
+EweserDB is a local-first, user-owned database SDK built on Yjs CRDTs. Users own their data, and apps interoperate over shared schemas.
 
-## High-Level Architecture
+## Runtime Topology
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    User's Browser                       │
-│  ┌──────────┐  ┌──────────┐  ┌───────────────────────┐ │
-│  │ Any App  │  │ Ewe Note │  │ Example / 3rd-party   │ │
-│  │ using    │  │ (full    │  │ apps using @eweser/db  │ │
-│  │ @eweser/db│ │  app)    │  │                       │ │
-│  └────┬─────┘  └────┬─────┘  └────────┬──────────────┘ │
-│       │              │                 │                │
-│       └──────────────┼─────────────────┘                │
-│                      │                                  │
-│              ┌───────▼────────┐                         │
-│              │  @eweser/db    │  ← Yjs CRDT, IndexedDB  │
-│              │  (core SDK)   │    local persistence     │
-│              └───────┬────────┘                         │
-└──────────────────────┼──────────────────────────────────┘
-                       │ WebSocket (Hocuspocus)
-              ┌────────▼─────────┐
-              │ Hocuspocus Server│  ← CRDT sync relay
-              └────────┬─────────┘
-                       │
-         ┌─────────────┼──────────────┐
-         │             │              │
-  ┌──────▼──────┐ ┌────▼─────┐ ┌─────▼──────────┐
-  │ Auth Server │ │ Auth     │ │ Aggregator     │
-  │ (API)       │ │ Pages    │ │                │
-  │ Hono +      │ │ Login/   │ │ Server-side    │
-  │ better-auth │ │ Signup   │ │ data indexing  │
-  └─────────────┘ └──────────┘ └────────────────┘
+```mermaid
+graph TD
+  Browser["Browser / App SPA"]
+  Db["@eweser/db<br/>Yjs + IndexedDB"]
+  AuthPages["@eweser/auth-pages<br/>React SPA"]
+  AuthApi["@eweser/auth-server-hono<br/>Hono + better-auth"]
+  SyncServer["@eweser/sync-server<br/>Hocuspocus relay"]
+  Aggregator["@eweser/aggregator<br/>Public indexing and search"]
+  Postgres[("PostgreSQL")]
+
+  Browser --> Db
+  Browser --> AuthPages
+  Db <--> SyncServer
+  AuthPages <--> AuthApi
+  SyncServer <--> AuthApi
+  AuthApi <--> Postgres
+  Aggregator <--> Postgres
+  SyncServer --> Aggregator
 ```
 
 ## Monorepo Structure
 
 ```
 packages/
-  db/                  ← @eweser/db — core SDK (Yjs, IndexedDB, Hocuspocus provider)
-  shared/              ← @eweser/shared — shared types, utilities, and document CRUD helpers
-  auth-server-hono/    ← @eweser/auth-server — new Hono + better-auth implementation
-  auth-pages/          ← React SPA for login/signup/account
-  sync-server/         ← @eweser/sync-server — Hocuspocus sync relay
-  aggregator/          ← @eweser/aggregator — Server-side data indexing
-  mcp-server/          ← @eweser/mcp — stdio MCP server for AI agent access
-  ewe-note/            ← Full note-taking app (BlockNote editor, Yjs sync)
-  examples-components/ ← Reusable UI components for examples
-  eslint-config-*/     ← Shared lint configs
+  db/                  -> @eweser/db
+  shared/              -> @eweser/shared
+  auth-server-hono/    -> @eweser/auth-server-hono
+  auth-pages/          -> @eweser/auth-pages
+  sync-server/         -> @eweser/sync-server
+  aggregator/          -> @eweser/aggregator
+  ewe-note/            -> @eweser/ewe-note
+  examples-components/ -> @eweser/examples-components
+  mcp-server/          -> @eweser/mcp
+  eslint-config-*/     -> shared lint configs
 
 examples/
-  example-basic/       ← Minimal demo app (React + Vite)
-  react-native/        ← React Native example (Expo)
+  example-basic/
+  example-multi-room/
+  example-interop-notes/
+  example-interop-flashcards/
+  example-aggregator/
+  react-native/
 
-e2e/                   ← Cypress integration tests
+e2e/
+  cypress/
 ```
 
-## Core Tech Stack
+## Current Stack
 
-| Layer            | Current                                    | Migration Target |
-| ---------------- | ------------------------------------------ | ---------------- |
-| **Core SDK**     | Yjs, y-indexeddb, @hocuspocus/provider     | No change        |
-| **Auth Backend** | Hono + better-auth + Drizzle               | No change        |
-| **Auth UI**      | React SPA (Vite)                           | No change        |
-| **Sync Server**  | Hocuspocus (self-hosted in Docker Compose) | No change        |
-| **Database**     | Self-hosted PostgreSQL in Docker Compose   | No change        |
-| **Auth**         | better-auth (email/password + OAuth)       | No change        |
-| **Frontend**     | React 18-19, Vite, Tailwind, Radix UI      | No change        |
-| **Testing**      | Vitest (unit), Cypress (E2E)               | No change        |
-| **Build**        | Vite, tsc                                  | No change        |
-| **Monorepo**     | npm workspaces                             | No change        |
-| **CI/CD**        | GitHub Actions                             | No change        |
+| Layer         | Current                                              |
+| ------------- | ---------------------------------------------------- |
+| Core SDK      | TypeScript, Yjs, y-indexeddb, `@hocuspocus/provider` |
+| Auth API      | Hono, better-auth, Drizzle ORM                       |
+| Auth UI       | React SPA built with Vite                            |
+| Sync server   | Hocuspocus with SQLite-backed persistence            |
+| Aggregation   | Server-side indexing over webhook-fed documents      |
+| Frontend apps | React 18-19, Vite, Tailwind CSS, Radix UI            |
+| Editor        | BlockNote in `packages/ewe-note`                     |
+| Testing       | Vitest and Cypress                                   |
+| Build         | Vite, `tsc`, npm workspaces                          |
+
+## Deployment Shape
+
+- `docker-compose.dev.yml` runs the backend stack locally: PostgreSQL, two sync servers, the aggregator, auth API, and Dozzle.
+- Frontend apps run on the host for hot reloading.
+- `docker-compose.prod.yml` is the full stack: backend services plus Caddy and the frontend SPA containers.
 
 ## Development Workflow
 
-The project uses a hybrid approach: **backend services** run in Docker, while **frontend apps** run on the host for hot reloading.
+1. Start backend services:
 
-### 1. Start Backend Services
+   ```bash
+   npm run dev:docker
+   ```
 
-```bash
-npm run dev:docker
-```
+2. Start the frontend workspaces you need:
 
-This starts PostgreSQL, Hocuspocus (sync-server), the Aggregator, and the Auth API.
+   ```bash
+   npm run dev
+   npm run dev --workspace @eweser/auth-pages
+   npm run dev --workspace @eweser/ewe-note
+   ```
 
-### 2. Start Frontend Apps
+3. Use workspace-specific scripts when you need a narrower watch loop:
+   - `npm run dev --workspace @eweser/db`
+   - `npm run dev --workspace @eweser/shared`
+   - `npm run dev --workspace @eweser/example-basic`
 
-In separate terminals, run the apps you want to work on:
+## Data Flow
 
-```bash
-npm run dev:shared        # Watch shared types
-npm run dev:db            # Watch core SDK
-npm run dev:example-basic # Start the basic demo
-```
-
-### 3. Useful Commands
-
-- `npm run dev:docker:stop` — Stop backend services
-- `npm run dev:docker:clean` — Stop and remove volumes (reset DB)
-- `npm run dev:docker:logs` — View backend logs
-
-## Planned Migration: Docker Compose Consolidation
-
-**Goal:** One Docker Compose file to run the entire stack locally and in production. Eventually a one-click deploy on DigitalOcean / other cloud providers.
-
-Services in the compose:
-
-1. **Auth API** — Hono server + better-auth replacing Next.js backend
-2. **Auth Pages** — React SPA served statically (login, signup, account management)
-3. **Ewe Note** — React SPA + PWA (the polished note-taking app, installable)
-4. **Example App** — React SPA (basic demo, no PWA needed)
-5. **Hocuspocus** — CRDT sync server (TypeScript, SQLite/Postgres persistence)
-6. **PostgreSQL** — Self-hosted (no Supabase dependency)
-7. **Aggregator** — Server-side data indexing via Hocuspocus webhooks (revived from old-code)
-8. **Caddy** — Reverse proxy with auto-HTTPS
-
-**SEO Strategy (TBD):** Static landing pages served by the Node server or nginx, with the app itself as a SPA/PWA.
+1. A browser app loads local state from IndexedDB through `@eweser/db`.
+2. The app redirects to or embeds the auth-pages SPA for sign-in, signup, and access grants.
+3. The auth API issues session state, room access grants, and sync tokens.
+4. The sync server authenticates the token and relays Yjs updates.
+5. The aggregator receives Hocuspocus webhooks and indexes public data for search.
 
 ## Key Concepts
 
 ### Rooms
 
-A "room" is like a folder — a Yjs document with access control. Each room has a collection type (notes, flashcards, etc.) and an access list of authorized users.
+A room is a Yjs-backed container with access control. It groups documents that share a collection key and schema.
 
-### Collections & Schemas
+### Collections and Schemas
 
-Strongly-typed schemas define document shapes. Apps that share a schema can interoperate on the same data.
+Collections define strongly typed document shapes. Apps that share a schema can interoperate on the same data.
 
-### Sync Flow
+### References
 
-1. App creates/opens a room via `@eweser/db`
-2. SDK loads from IndexedDB (offline-first)
-3. SDK connects to Hocuspocus for real-time sync
-4. Auth server issues JWT tokens for room access
-5. Changes propagate via Yjs CRDT (conflict-free)
+Documents can be linked by reference using `_ref` values in the form:
 
-## Data Flow
+`${authServer}|${collectionKey}|${roomId}|${documentId}`
 
-```
-User action → @eweser/db SDK
-  → Local: IndexedDB (immediate)
-  → Remote: Hocuspocus WebSocket (background sync)
-  → Auth: JWT token validated by Hocuspocus onAuthenticate hook
-  → Other clients: receive Yjs updates via Hocuspocus
-```
+Use `buildRef()` from `@eweser/shared` to construct refs.
+
+### Access Control
+
+The auth API handles ACL, auth sessions, room access grants, and sync token issuance.
+
+### Aggregation
+
+Aggregator services index public room data so apps can search shared content without querying every client directly.
 
 ## Key Files
 
-- `packages/db/src/` — Core SDK implementation
-- `packages/db/src/examples/dbShape.ts` — Data structure reference
-- `packages/shared/src/` — Shared types
-- `packages/auth-server-hono/` — Auth server (Hono + better-auth)
-- `packages/ewe-note/` — Note app
-- `LOCAL_DEVELOPMENT.md` — Dev setup guide
+- `package.json` - root workspace scripts
+- `docker-compose.dev.yml` - backend-only local compose
+- `docker-compose.prod.yml` - production compose with Caddy and SPAs
+- `packages/db/src/` - core SDK implementation
+- `packages/shared/src/` - shared types and helpers
+- `packages/auth-server-hono/src/` - auth API
+- `packages/auth-pages/src/` - auth SPA
+- `packages/sync-server/src/` - sync relay
+- `packages/aggregator/src/` - public indexing/search
+- `LOCAL_DEVELOPMENT.md` - local setup guide
+
+## Historical Notes
+
+Migration plans and ADRs live under `docs/ai/`. Treat them as historical context unless a file explicitly says it is current guidance.

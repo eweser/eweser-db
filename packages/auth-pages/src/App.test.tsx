@@ -211,13 +211,7 @@ describe('auth-pages app', () => {
 
     await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
     await userEvent.type(screen.getByLabelText(/password/i), 'password123');
-    const signInButtons = screen.getAllByRole('button', { name: /sign in/i });
-    const signInButton = signInButtons[0];
-    expect(signInButton).toBeDefined();
-    if (!signInButton) {
-      throw new Error('Expected sign-in submit button to exist');
-    }
-    await userEvent.click(signInButton);
+    await userEvent.click(screen.getByRole('button', { name: /^sign in$/i }));
 
     await waitFor(() => {
       expect(authMocks.signInEmail).toHaveBeenCalledOnce();
@@ -266,14 +260,11 @@ describe('auth-pages app', () => {
     await userEvent.type(getRequiredInput('sign-up-name'), 'Test User');
     await userEvent.type(getRequiredInput('sign-up-email'), 'test@example.com');
     await userEvent.type(getRequiredInput('sign-up-password'), 'password123');
-    const captchaButtons = screen.getAllByRole('button', {
-      name: /complete captcha/i,
-    });
-    const captchaButton = captchaButtons[0];
-    if (!captchaButton) {
-      throw new Error('Expected captcha button to exist');
-    }
-    await userEvent.click(captchaButton);
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /complete captcha/i,
+      })
+    );
     await userEvent.click(
       screen.getByRole('button', { name: /create account/i })
     );

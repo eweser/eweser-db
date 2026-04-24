@@ -7,14 +7,24 @@ const authBase =
 (authBase ? describe : describe.skip)('auth security smoke', () => {
   it('renders sign-in with recovery/security links', () => {
     cy.visit(`${authBase}/sign-in`);
-    cy.contains('Forgot your password?').should('be.visible');
-    cy.contains('Create one').should('be.visible');
+    cy.get('#sign-in-email').should('be.visible');
+    cy.get('#sign-in-password').should('be.visible');
+    cy.contains('a', 'Forgot your password?').should('be.visible');
+    cy.contains('a', 'Create one').should('be.visible');
+  });
+
+  it('renders the sign-up page with all account creation fields', () => {
+    cy.visit(`${authBase}/sign-up`);
+    cy.get('#sign-up-name').should('be.visible');
+    cy.get('#sign-up-email').should('be.visible');
+    cy.get('#sign-up-password').should('be.visible');
+    cy.contains('button', 'Create account').should('be.visible');
   });
 
   it('renders password recovery page', () => {
     cy.visit(`${authBase}/forgot-password`);
-    cy.contains('Reset your password').should('be.visible');
-    cy.contains('Send reset link').should('be.visible');
+    cy.get('#forgot-password-email').should('be.visible');
+    cy.contains('button', 'Send reset link').should('be.visible');
   });
 
   it('submits the canonical forgot-password endpoint without leaking account state', () => {
@@ -25,7 +35,7 @@ const authBase =
       });
     }).as('forgotPassword');
     cy.visit(`${authBase}/forgot-password`);
-    cy.get('input[type="email"]').type('missing@example.com');
+    cy.get('#forgot-password-email').type('missing@example.com');
     cy.contains('button', 'Send reset link').click();
     cy.wait('@forgotPassword')
       .its('response.statusCode')

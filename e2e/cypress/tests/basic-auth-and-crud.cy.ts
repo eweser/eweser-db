@@ -1,5 +1,14 @@
 /// <reference types="cypress" />
 
+function getNotesRoomId() {
+  return cy.window().then((win) => {
+    const roomId = win.localStorage.getItem('ks-notes-room-id');
+    expect(typeof roomId, 'notes room id').to.equal('string');
+    expect(roomId, 'notes room id').to.not.equal('');
+    return roomId as string;
+  });
+}
+
 describe('basic auth entry and note CRUD', () => {
   beforeEach(() => {
     cy.visit('/', {
@@ -10,20 +19,22 @@ describe('basic auth entry and note CRUD', () => {
   });
 
   it('shows auth entrypoint and supports create/edit/delete note flow', () => {
-    cy.getBySel('basic-app-root').should('exist');
-    cy.contains('Login').should('exist');
+    getNotesRoomId().then((notesRoomId) => {
+      cy.getBySel('basic-app-root').should('exist');
+      cy.getBySel('basic-login-button').should('exist');
 
-    // Notes tab is active by default
-    cy.getBySel('basic-notes-tab').should('exist');
+      // Notes tab is active by default
+      cy.getBySel('basic-notes-tab').should('exist');
 
-    cy.get('button[data-cy^="basic-new-note-"]').first().click();
-    cy.get('textarea[data-cy^="basic-note-editor-"]')
-      .first()
-      .type(' hello-world')
-      .should('contain.value', 'hello-world');
+      cy.getBySel(`basic-new-note-${notesRoomId}`).click();
+      cy.get('textarea[data-cy^="basic-note-editor-"]')
+        .first()
+        .type(' hello-world')
+        .should('contain.value', 'hello-world');
 
-    cy.get('button[data-cy^="basic-delete-note-"]').first().click();
-    cy.contains('No notes found').should('exist');
+      cy.get('button[data-cy^="basic-delete-note-"]').first().click();
+      cy.getBySel(`basic-empty-state-${notesRoomId}`).should('exist');
+    });
   });
 
   it('can switch tabs to flashcards, profile, and status', () => {
@@ -38,5 +49,29 @@ describe('basic auth entry and note CRUD', () => {
 
     cy.getBySel('basic-tab-notes').click();
     cy.getBySel('basic-notes-tab').should('exist');
+  });
+
+  it('renames the default room and keeps the title after reload', () => {
+    const renamedRoom = `Renamed notes ${Date.now()}`;
+
+    getNotesRoomId().then((notesRoomId) => {
+      cy.getBySel(`basic-room-name-${notesRoomId}`).click();
+      cy.getBySel(`basic-room-name-input-${notesRoomId}`)
+        .clear()
+        .type(renamedRoom)
+        .type('{enter}');
+
+      cy.getBySel(`basic-room-select-${notesRoomId}`).should(
+        'contain.text',
+        renamedRoom
+      );
+
+      cy.reload();
+
+      cy.getBySel(`basic-room-select-${notesRoomId}`).should(
+        'contain.text',
+        renamedRoom
+      );
+    });
   });
 });
