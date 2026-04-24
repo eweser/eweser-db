@@ -46,10 +46,10 @@ function isTokenClientId(
   return tokenClientIdSet.has(clientId);
 }
 
-function noStoreJson(c: Context, body: unknown, status?: number) {
+function noStoreJson(c: Context, body: unknown) {
   c.header('Cache-Control', 'no-store');
   c.header('Pragma', 'no-cache');
-  return c.json(body, status);
+  return c.json(body);
 }
 
 function getAuthServerBaseUrl() {

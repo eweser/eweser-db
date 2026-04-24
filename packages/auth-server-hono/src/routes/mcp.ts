@@ -96,10 +96,13 @@ async function resolveAuth(
         OAUTH_LAST_USED_UPDATE_INTERVAL_MS;
     if (shouldTouchLastUsedAt) {
       void touchOAuthAccessToken(oauthToken.id).catch((error) => {
-        log.warn('Failed to update OAuth access token last-used timestamp', {
-          oauthAccessTokenId: oauthToken.id,
-          error,
-        });
+        log.warn(
+          {
+            oauthAccessTokenId: oauthToken.id,
+            error,
+          },
+          'Failed to update OAuth access token last-used timestamp'
+        );
       });
     }
     const permissions = oauthToken.scopes.includes('readwrite')
