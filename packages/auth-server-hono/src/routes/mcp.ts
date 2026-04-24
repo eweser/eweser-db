@@ -16,7 +16,10 @@ import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/
 import { DataLayer, registerTools } from '@eweser/mcp';
 import type { AgentConfig, AgentRoom } from '@eweser/mcp';
 import { createRateLimit, getClientIp } from '../middleware/rate-limit.js';
-import { getValidOAuthAccessToken } from '../model/oauth.js';
+import {
+  getValidOAuthAccessToken,
+  touchOAuthAccessToken,
+} from '../model/oauth.js';
 import {
   getAgentConfigByTokenHash,
   hashToken,
@@ -86,6 +89,7 @@ async function resolveAuth(
   // 1. Try OAuth access token
   const oauthToken = await getValidOAuthAccessToken(token);
   if (oauthToken) {
+    void touchOAuthAccessToken(oauthToken.id);
     const permissions = oauthToken.scopes.includes('readwrite')
       ? 'readwrite'
       : 'read';

@@ -2,7 +2,7 @@
  * OAuth 2.0 model — DB operations for clients, codes, and access tokens.
  */
 import crypto from 'node:crypto';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '../db/drizzle.js';
 import {
   oauthAccessTokens,
@@ -28,6 +28,10 @@ export function hashToken(token: string): string {
 /** Generate a cryptographically random opaque token */
 function generateToken(): string {
   return crypto.randomBytes(40).toString('hex');
+}
+
+function generateClientId(): string {
+  return `mcp_${crypto.randomUUID().replace(/-/g, '')}`;
 }
 
 /**
@@ -62,6 +66,34 @@ export async function getOAuthClient(
     .where(eq(oauthClients.clientId, clientId))
     .limit(1);
   return rows[0];
+}
+
+export async function registerOAuthClient(params: {
+  clientName: string;
+  redirectUris: string[];
+  softwareId?: string;
+  softwareVersion?: string;
+}): Promise<OAuthClient> {
+  const clientId = generateClientId();
+  const rows = await db
+    .insert(oauthClients)
+    .values({
+      clientId,
+      clientName: params.clientName,
+      isFirstParty: false,
+      redirectUris: params.redirectUris,
+      registrationSource: 'dynamic',
+      softwareId: params.softwareId,
+      softwareVersion: params.softwareVersion,
+    })
+    .returning();
+
+  const client = rows[0];
+  if (!client) {
+    throw new Error('Failed to register OAuth client');
+  }
+
+  return client;
 }
 
 // ---------------------------------------------------------------------------
@@ -195,4 +227,49 @@ export async function revokeOAuthAccessToken(
     .update(oauthAccessTokens)
     .set({ revokedAt: new Date() })
     .where(eq(oauthAccessTokens.tokenHash, tokenHash));
+}
+
+export async function touchOAuthAccessToken(id: string): Promise<void> {
+  await db
+    .update(oauthAccessTokens)
+    .set({ lastUsedAt: new Date() })
+    .where(eq(oauthAccessTokens.id, id));
+}
+
+export async function getOAuthAccessTokensByUserId(
+  userId: string,
+  clientIds?: string[]
+): Promise<OAuthAccessToken[]> {
+  const baseWhere = and(
+    eq(oauthAccessTokens.userId, userId),
+    isNull(oauthAccessTokens.revokedAt)
+  );
+
+  return clientIds && clientIds.length > 0
+    ? db
+        .select()
+        .from(oauthAccessTokens)
+        .where(and(baseWhere, inArray(oauthAccessTokens.clientId, clientIds)))
+        .orderBy(desc(oauthAccessTokens.createdAt))
+    : db
+        .select()
+        .from(oauthAccessTokens)
+        .where(baseWhere)
+        .orderBy(desc(oauthAccessTokens.createdAt));
+}
+
+export async function revokeOAuthAccessTokensForUserClient(
+  userId: string,
+  clientId: string
+): Promise<void> {
+  await db
+    .update(oauthAccessTokens)
+    .set({ revokedAt: new Date() })
+    .where(
+      and(
+        eq(oauthAccessTokens.userId, userId),
+        eq(oauthAccessTokens.clientId, clientId),
+        isNull(oauthAccessTokens.revokedAt)
+      )
+    );
 }

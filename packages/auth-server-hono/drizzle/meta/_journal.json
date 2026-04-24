@@ -43,6 +43,13 @@
       "when": 1776700800000,
       "tag": "0005_rename_two_factor_table",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1777000000000,
+      "tag": "0006_mcp_connect_clients",
+      "breakpoints": true
     }
   ]
 }

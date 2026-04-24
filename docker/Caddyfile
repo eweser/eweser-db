@@ -13,8 +13,6 @@
     @legacy_login {
         path /
         query redirect=*
-        query domain=*
-        query name=*
     }
     redir @legacy_login /auth/sign-in?{query} 302
 

@@ -20,6 +20,7 @@ describe('generateLoginUrl', () => {
     const parsed = new URL(url);
 
     expect(parsed.origin).toBe('https://auth.example.com');
+    expect(parsed.pathname).toBe('/auth/sign-in');
     expect(parsed.searchParams.get('name')).toBe('Example App');
     expect(parsed.searchParams.get('domain')).toBe('app.example.com');
     expect(parsed.searchParams.get('collections')).toBe('all');
@@ -49,10 +50,30 @@ describe('generateLoginUrl', () => {
     });
 
     const parsed = new URL(url);
+    expect(parsed.pathname).toBe('/auth/sign-in');
     expect(parsed.searchParams.get('domain')).toBe('custom.example.com');
     expect(parsed.searchParams.get('redirect')).toBe(
       'https://custom.example.com/return'
     );
     expect(parsed.searchParams.get('collections')).toBe('notes|profiles');
+  });
+
+  it('preserves a nested auth server base path', () => {
+    const db = { authServer: 'https://auth.example.com/base/' } as Database;
+
+    Object.defineProperty(globalThis, 'window', {
+      value: {
+        location: {
+          href: 'https://app.example.com/notes',
+          host: 'app.example.com',
+        },
+      },
+      configurable: true,
+    });
+
+    const url = generateLoginUrl(db)({ name: 'Example App' });
+    const parsed = new URL(url);
+
+    expect(parsed.toString()).toContain('/auth/sign-in?');
   });
 });

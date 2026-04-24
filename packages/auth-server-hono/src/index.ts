@@ -7,6 +7,7 @@ import { accountRouter } from './routes/account.js';
 import { agentsRouter } from './routes/agents.js';
 import { authRouter } from './routes/auth.js';
 import { accessGrantRouter } from './routes/access-grant.js';
+import { connectAiRouter } from './routes/connect-ai.js';
 import { oauthRouter, oauthServerMetadata } from './routes/oauth.js';
 import { mcpRouter } from './routes/mcp.js';
 import { createLogger, initTelemetry } from '@eweser/logger';
@@ -16,6 +17,27 @@ await initTelemetry('auth-api');
 const log = createLogger('auth-server');
 
 export const app = new Hono();
+
+function resolveAuthPagesOrigin() {
+  const configured =
+    process.env.AUTH_PAGES_URL ?? process.env.RAILWAY_SERVICE_AUTH_PAGES_URL;
+
+  if (configured) {
+    return configured.startsWith('http')
+      ? configured.replace(/\/+$/, '')
+      : `https://${configured.replace(/\/+$/, '')}`;
+  }
+
+  return env.AUTH_SERVER_URL.replace(/\/+$/, '');
+}
+
+function redirectToAuthPages(path: string, search = '') {
+  return new URL(`${path}${search}`, `${resolveAuthPagesOrigin()}/`).toString();
+}
+
+function isBrowserNavigation(method: string) {
+  return method === 'GET' || method === 'HEAD';
+}
 
 app.use(
   '*',
@@ -35,6 +57,29 @@ app.use(
 );
 app.use('*', requestHardening);
 
+app.use('*', async (c, next) => {
+  if (!isBrowserNavigation(c.req.method)) {
+    await next();
+    return;
+  }
+
+  const requestUrl = new URL(c.req.url);
+
+  if (c.req.path === '/' && requestUrl.searchParams.has('redirect')) {
+    return c.redirect(redirectToAuthPages('/auth/sign-in', requestUrl.search));
+  }
+
+  if (c.req.path === '/') {
+    return c.redirect(redirectToAuthPages('/auth/'));
+  }
+
+  if (c.req.path === '/auth' || c.req.path.startsWith('/auth/')) {
+    return c.redirect(redirectToAuthPages(c.req.path, requestUrl.search));
+  }
+
+  await next();
+});
+
 app.get('/health', (c) => c.json({ status: 'ok' }));
 app.get('/ping', (c) => c.text('pong'));
 
@@ -45,6 +90,8 @@ app.get('/.well-known/oauth-authorization-server', (c) =>
 
 app.route('/account', accountRouter);
 app.route('/api/account', accountRouter);
+app.route('/account/connect-ai', connectAiRouter);
+app.route('/api/account/connect-ai', connectAiRouter);
 app.route('/auth', authRouter);
 app.route('/api/auth', authRouter);
 app.route('/agents', agentsRouter);

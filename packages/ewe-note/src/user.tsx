@@ -1,27 +1,101 @@
 import type { Database } from '@eweser/db';
 import { useEffect, useMemo, useState } from 'react';
 
-export const useGetUserFromDb = (db: Database) => {
-  const [user, setUser] = useState({
+type UserState = {
+  firstName: string;
+  lastName: string;
+  avatar: string;
+};
+
+type AccountBootstrapResponse = {
+  user?: {
+    image?: string | null;
+    name?: string | null;
+  };
+};
+
+function splitDisplayName(name?: string | null) {
+  const trimmed = name?.trim() ?? '';
+  if (!trimmed) {
+    return { firstName: '', lastName: '' };
+  }
+
+  const [firstName = '', ...rest] = trimmed.split(/\s+/);
+
+  return {
+    firstName,
+    lastName: rest.join(' '),
+  };
+}
+
+export const useGetUserFromDb = (db: Database, canFetchAccount = false) => {
+  const [user, setUser] = useState<UserState>({
     firstName: '',
     lastName: '',
     avatar: '',
   });
+  const [accountUser, setAccountUser] = useState<UserState | null>(null);
   const [profilesLoaded, setProfilesLoaded] = useState(false);
 
   useEffect(() => {
-    if (db) {
-      db.on('roomLoaded', () => {
-        if (db.getRooms('profiles').length > 1) {
-          const profileRoom = db
-            .getRooms('profiles')
-            .find((room) => room.publicAccess === 'read');
-          // console.log('profileRoom', profileRoom);
-          if (profileRoom?.ydoc) setProfilesLoaded(true);
-        }
-      });
-    }
+    const handleRoomLoaded = () => {
+      if (db.getRooms('profiles').length > 1) {
+        const profileRoom = db
+          .getRooms('profiles')
+          .find((room) => room.publicAccess === 'read');
+        if (profileRoom?.ydoc) setProfilesLoaded(true);
+      }
+    };
+
+    db.on('roomLoaded', handleRoomLoaded);
+
+    return () => {
+      db.off('roomLoaded', handleRoomLoaded);
+    };
   }, [db]);
+
+  useEffect(() => {
+    if (!canFetchAccount) {
+      return;
+    }
+
+    const controller = new AbortController();
+
+    async function loadAccountUser() {
+      try {
+        const response = await fetch(
+          new URL('/api/account/bootstrap', db.authServer).toString(),
+          {
+            credentials: 'include',
+            signal: controller.signal,
+          }
+        );
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = (await response.json()) as AccountBootstrapResponse;
+        const names = splitDisplayName(data.user?.name);
+
+        setAccountUser({
+          firstName: names.firstName,
+          lastName: names.lastName,
+          avatar: data.user?.image ?? '',
+        });
+      } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+          return;
+        }
+      }
+    }
+
+    void loadAccountUser();
+
+    return () => {
+      controller.abort();
+    };
+  }, [canFetchAccount, db.authServer]);
 
   const PublicProfile = useMemo(
     () =>
@@ -36,9 +110,24 @@ export const useGetUserFromDb = (db: Database) => {
   const [publicProfile, setPublicProfile] = useState(
     PublicProfile?.get('default')
   );
-  PublicProfile?.onChange(() =>
-    setPublicProfile(PublicProfile?.getAllToArray()[0])
-  );
+
+  useEffect(() => {
+    if (!PublicProfile) {
+      setPublicProfile(undefined);
+      return;
+    }
+
+    const handlePublicProfileChange = () => {
+      setPublicProfile(PublicProfile.getAllToArray()[0]);
+    };
+
+    handlePublicProfileChange();
+    PublicProfile.onChange(handlePublicProfileChange);
+
+    return () => {
+      PublicProfile.documents.unobserve(handlePublicProfileChange);
+    };
+  }, [PublicProfile]);
 
   const PrivateProfile = useMemo(
     () =>
@@ -54,38 +143,58 @@ export const useGetUserFromDb = (db: Database) => {
   const [privateProfile, setPrivateProfile] = useState(
     PrivateProfile?.get('default')
   );
-  PrivateProfile?.onChange(() =>
-    setPrivateProfile(PrivateProfile?.getAllToArray()[0])
-  );
 
   useEffect(() => {
-    const updatedUser = { ...user };
-    let updated = false;
+    if (!PrivateProfile) {
+      setPrivateProfile(undefined);
+      return;
+    }
+
+    const handlePrivateProfileChange = () => {
+      setPrivateProfile(PrivateProfile.getAllToArray()[0]);
+    };
+
+    handlePrivateProfileChange();
+    PrivateProfile.onChange(handlePrivateProfileChange);
+
+    return () => {
+      PrivateProfile.documents.unobserve(handlePrivateProfileChange);
+    };
+  }, [PrivateProfile]);
+
+  useEffect(() => {
+    const nextUser: UserState = {
+      firstName: accountUser?.firstName ?? '',
+      lastName: accountUser?.lastName ?? '',
+      avatar: accountUser?.avatar ?? '',
+    };
+
     for (const profile of [publicProfile, privateProfile]) {
       if (profile) {
         if (profile?.firstName) {
-          updatedUser.firstName = profile?.firstName;
-          updated = true;
+          nextUser.firstName = profile?.firstName;
         }
         if (profile?.lastName) {
-          updatedUser.lastName = profile?.lastName;
-          updated = true;
+          nextUser.lastName = profile?.lastName;
         }
         if (profile?.avatarUrl) {
-          updatedUser.avatar = profile?.avatarUrl;
-          updated = true;
+          nextUser.avatar = profile?.avatarUrl;
         }
       }
     }
-    if (updated) setUser(updatedUser);
-  }, [publicProfile, privateProfile, user]);
-  // console.log(PublicProfile?.getAll(), {
-  //   profilesLoaded,
-  //   publicProfile,
-  //   PublicProfile,
-  //   privateProfile,
-  //   PrivateProfile,
-  //   user,
-  // });
+
+    setUser((currentUser) => {
+      if (
+        currentUser.firstName === nextUser.firstName &&
+        currentUser.lastName === nextUser.lastName &&
+        currentUser.avatar === nextUser.avatar
+      ) {
+        return currentUser;
+      }
+
+      return nextUser;
+    });
+  }, [accountUser, publicProfile, privateProfile]);
+
   return user;
 };

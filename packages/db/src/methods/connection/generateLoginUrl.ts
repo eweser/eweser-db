@@ -12,7 +12,7 @@ export const generateLoginUrl =
    * @returns a string you can use to redirect the user to the auth server's login page
    */
   (options: Partial<LoginQueryOptions> & { name: string }): string => {
-    const url = new URL(db.authServer);
+    const url = new URL('/auth/sign-in', db.authServer);
 
     const params: LoginQueryParams = loginOptionsToQueryParams({
       redirect:

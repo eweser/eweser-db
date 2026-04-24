@@ -80,6 +80,18 @@ export const loginUrl = db.generateLoginUrl({
   redirect: config.appAbsoluteUrl('/'),
 });
 
+const loginUrlParams = new URLSearchParams({
+  collections: 'all',
+  domain: window.location.host,
+  name: config.APP_NAME,
+  redirect: config.appAbsoluteUrl('/'),
+});
+
+export const appLoginUrl = new URL(
+  `/auth/sign-in?${loginUrlParams.toString()}`,
+  config.AUTH_PAGES_SERVER
+).toString();
+
 export type DbContextType = {
   db: Database;
   loginUrl: string;
@@ -226,12 +238,12 @@ export const DbProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  const user = useGetUserFromDb(db);
+  const user = useGetUserFromDb(db, loggedIn || hasToken);
 
   const contextValue = useMemo(
     () => ({
       db,
-      loginUrl,
+      loginUrl: appLoginUrl,
       loaded,
       loggedIn,
       hasToken,
