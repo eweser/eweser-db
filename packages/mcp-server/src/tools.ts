@@ -468,7 +468,7 @@ export function registerTools(
         agentId: agentId ?? 'unknown',
         date: date ?? new Date().toISOString().slice(0, 10),
         tags:
-          (tags?.some((tag) => tag.startsWith('worktree:')) ?? false)
+          (tags?.some((tag: string) => tag.startsWith('worktree:')) ?? false)
             ? tags
             : [...(tags ?? []), buildWorktreeTag(worktreeTag)],
         ...(cappedTurns !== undefined && { turns: cappedTurns }),
