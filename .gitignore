@@ -43,6 +43,7 @@ vite.config.ts.timestamp*.mjs
 .expo/metro/polyfill.js
 .expo/metro/polyfill.*.js
 .expo/metro/externals/
+packages/landing/.astro/*.json
 **/**/dist
 dist.*
 

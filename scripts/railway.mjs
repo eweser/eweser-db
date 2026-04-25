@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 import { readFileSync } from 'fs';
+import { homedir } from 'os';
+import { join } from 'path';
 
-const TOKEN_FILE = '/home/jacob/.railway/config.json';
-const {
-  user: { token },
-} = JSON.parse(readFileSync(TOKEN_FILE, 'utf8'));
+const token =
+  process.env.RAILWAY_TOKEN ??
+  JSON.parse(readFileSync(join(homedir(), '.railway/config.json'), 'utf8')).user
+    .token;
 
 const CONFIG_FILES = {
+  landing: 'packages/landing/railway.toml',
   'ewe-note': 'packages/ewe-note/railway.toml',
   aggregator: 'packages/aggregator/railway.toml',
   'auth-api': 'packages/auth-server-hono/railway.toml',
