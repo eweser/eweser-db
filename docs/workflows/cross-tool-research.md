@@ -50,6 +50,21 @@ save session: implemented the aggregator search endpoint, added GIN index on sea
 
 The session summary survives in EweserDB even after the worktree is gone. Next time you're in a different worktree or a new session, search for it.
 
+Each worktree now persists sessions with an automatic `worktree:*` tag, so you can scope recalls:
+
+```json
+{
+  "tool": "eweser_search",
+  "args": {
+    "query": "session framework decision",
+    "filters": {
+      "memoryType": ["session"],
+      "tags": ["worktree:eweser-db-worktree-name"]
+    }
+  }
+}
+```
+
 ## Sensitive Data
 
 Store cross-repo reference docs (VPN setup, tunneling configs, dev environment notes) in EweserDB notes. They're accessible from any repo via `eweser_search` without being checked into git.

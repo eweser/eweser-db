@@ -9,6 +9,7 @@ export default [
       'examples/react-native/**',
       // Build outputs, type stubs, generated files
       '**/dist/**',
+      '**/dist.root-owned/**',
       '**/build/**',
       '**/types/**',
       '**/*.d.ts',

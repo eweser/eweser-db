@@ -26,11 +26,12 @@ Copy `example.env` and fill in your credentials:
 cp example.env .env
 ```
 
-| Variable             | Required | Description                                               |
-| -------------------- | -------- | --------------------------------------------------------- |
-| `EWESER_AGENT_TOKEN` | ✅       | Agent bearer token from auth server                       |
-| `EWESER_AUTH_URL`    | ✅       | Base URL of the auth server, e.g. `http://localhost:3001` |
-| `EWESER_SYNC_URL`    | optional | Override sync WebSocket URL                               |
+| Variable              | Required | Description                                                          |
+| --------------------- | -------- | -------------------------------------------------------------------- |
+| `EWESER_AGENT_TOKEN`  | ✅       | Agent bearer token from auth server                                  |
+| `EWESER_AUTH_URL`     | ✅       | Base URL of the auth server, e.g. `http://localhost:3001`            |
+| `EWESER_WORKTREE_TAG` | optional | Workspace/tag label used to scope saved memory docs to this worktree |
+| `EWESER_SYNC_URL`     | optional | Override sync WebSocket URL                                          |
 
 ## Available Tools
 

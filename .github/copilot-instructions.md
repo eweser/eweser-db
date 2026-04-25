@@ -97,14 +97,19 @@ At the end of every coding session, save a session summary using `eweser_save_me
 "save session: <brief description of what was accomplished>"
 ```
 
-This calls `eweser_save_memory` with `memoryType: "session"` and stores it in the configured conversations room. To recall past decisions and sessions, use `eweser_search`:
+This calls `eweser_save_memory` with `memoryType: "session"` and stores it in the configured conversations room.
+
+The MCP server adds a default `worktree:<workspace-folder-name>` tag to saved session docs, so recall stays in the current worktree context by default. To recall past decisions and sessions, use `eweser_search`:
 
 ```json
 {
   "tool": "eweser_search",
   "args": {
     "query": "your topic",
-    "filters": { "memoryType": ["decision", "session"] }
+    "filters": {
+      "memoryType": ["decision", "session"],
+      "tags": ["worktree:eweser-db"]
+    }
   }
 }
 ```

@@ -6,6 +6,8 @@ const envSchema = z.object({
   EWESER_AGENT_TOKEN: z.string().min(1),
   /** Base URL of the EweserDB auth server, e.g. http://localhost:38101 */
   EWESER_AUTH_URL: z.string().url(),
+  /** Optional override tag used to namespace memory docs by worktree */
+  EWESER_WORKTREE_TAG: z.string().optional(),
   /** Optional override for the Hocuspocus sync server WebSocket URL */
   EWESER_SYNC_URL: z.string().optional(),
   /** Optional aggregator URL for PostgreSQL-backed search. Falls back to in-memory if omitted. */

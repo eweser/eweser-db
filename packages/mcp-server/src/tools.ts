@@ -6,6 +6,7 @@ import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { DataLayer } from './data-layer.js';
 import type { EweDocument } from '@eweser/shared';
+import path from 'node:path';
 
 type LogFn = (entry: {
   roomId: string;
@@ -63,6 +64,24 @@ function formatAggregatorResults(results: AggregatorSearchResult[]): string {
     .join('\n\n');
 }
 
+function normalizeTagValue(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[/\\]+/g, '-')
+    .replace(/\\s+/g, '-')
+    .replace(/[^a-z0-9-_.]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
+}
+
+function buildWorktreeTag(explicitTag?: string): string {
+  const raw = explicitTag ?? path.basename(process.cwd());
+  const normalized = normalizeTagValue(raw);
+  return `worktree:${normalized || 'default'}`;
+}
+
 const SearchFiltersSchema = z
   .object({
     collectionKey: z
@@ -90,7 +109,8 @@ export function registerTools(
   server: McpServer,
   dataLayer: DataLayer,
   log: LogFn,
-  aggregatorUrl?: string
+  aggregatorUrl?: string,
+  worktreeTag?: string
 ): void {
   // -------------------------------------------------------------------------
   // eweser_list_rooms
@@ -447,7 +467,10 @@ export function registerTools(
         memoryType,
         agentId: agentId ?? 'unknown',
         date: date ?? new Date().toISOString().slice(0, 10),
-        tags: tags ?? [],
+        tags:
+          (tags?.some((tag) => tag.startsWith('worktree:')) ?? false)
+            ? tags
+            : [...(tags ?? []), buildWorktreeTag(worktreeTag)],
         ...(cappedTurns !== undefined && { turns: cappedTurns }),
         ...(relatedDocIds !== undefined && { relatedDocIds }),
       };
