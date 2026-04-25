@@ -17,5 +17,7 @@ old-code/**
 examples/react-native/.expo/**
 # Supabase generated temp files
 packages/auth-server/supabase/.temp/**
+# Astro generated cache files
+packages/landing/.astro/**
 # Changeset metadata files
 .changeset/**
