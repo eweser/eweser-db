@@ -12,6 +12,7 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 import { ProfileEditor } from './components/profile-editor';
+import { ConnectAiPage } from './components/connect-ai-page';
 import { TurnstileCaptcha } from './components/turnstile';
 import {
   Button,
@@ -120,6 +121,12 @@ function SiteHeader() {
                 to="/account/security"
               >
                 Security
+              </Link>
+              <Link
+                className="text-sm text-muted-foreground no-underline transition-colors hover:text-foreground"
+                to="/account/connect-ai"
+              >
+                Connect AI
               </Link>
             </>
           ) : (
@@ -813,12 +820,20 @@ function HomePage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
       <div className="mb-4 flex justify-end">
-        <Link
-          className="text-sm text-slate-300 hover:text-white"
-          to="/account/security"
-        >
-          Account security
-        </Link>
+        <div className="flex gap-4">
+          <Link
+            className="text-sm text-slate-300 hover:text-white"
+            to="/account/connect-ai"
+          >
+            Connect AI
+          </Link>
+          <Link
+            className="text-sm text-slate-300 hover:text-white"
+            to="/account/security"
+          >
+            Account security
+          </Link>
+        </div>
       </div>
       {bootstrap.profileRooms.length >= 2 ? (
         <ProfileEditor
@@ -859,7 +874,7 @@ function PermissionPage() {
     loginQuery?.collections.includes('all') ?? true
   );
   const [selectedCollections, setSelectedCollections] = useState<string[]>(
-    loginQuery?.collections ?? ['all']
+    loginQuery ? [...loginQuery.collections] : ['all']
   );
   const [selectedRoomIds, setSelectedRoomIds] = useState<string[]>([]);
   const [keepAliveDays, setKeepAliveDays] = useState(3);
@@ -1793,6 +1808,14 @@ export function AppRoutes() {
         path="/access-grant/accept-room-invite"
       />
       <Route element={<SignOutPage />} path="/sign-out" />
+      <Route
+        element={
+          <ProtectedRoute>
+            <ConnectAiPage />
+          </ProtectedRoute>
+        }
+        path="/account/connect-ai"
+      />
       <Route
         element={
           <ProtectedRoute>

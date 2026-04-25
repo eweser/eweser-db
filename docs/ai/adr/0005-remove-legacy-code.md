@@ -1,37 +1,32 @@
-# ADR-0005: Remove Legacy Code — Next.js/Supabase/Y-Sweet
+# ADR-0005: Remove Legacy Code
 
-**Status:** Accepted & Implemented  
+**Status:** Accepted; historical migration record
 **Date:** 2026-04-03
 
 ## Context
 
-Migration from Next.js + Supabase + Y-Sweet to Hono + better-auth + Hocuspocus is complete. Legacy code must be removed.
+This ADR records the cutover away from the old Next.js + Supabase auth stack. The current repository uses Hono + better-auth for auth and Hocuspocus for sync.
 
 ## Decision
 
-Delete the following in a single coordinated effort:
+Remove the legacy runtime pieces that belonged to the old auth stack:
 
-| Item                                           | Reason                                                                                        |
-| ---------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `packages/auth-server/`                        | Next.js + Supabase auth server — fully replaced by `auth-server-hono` + `auth-pages`          |
-| `old-code/`                                    | Pre-Hocuspocus era: Matrix + y-webrtc + MongoDB aggregator, 6 old examples, old Cypress tests |
-| `.github/workflows/auth-sever-sdb-deploy.yaml` | Supabase migration deploy — no longer needed                                                  |
-| Stale `package.json` scripts                   | `dev:auth-server`, `build-auth-server`, `run-auth-server`                                     |
+| Item                                           | Reason                                                                                                  |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `packages/auth-server/`                        | Old Next.js + Supabase auth server, replaced by `packages/auth-server-hono/` and `packages/auth-pages/` |
+| `old-code/`                                    | Pre-Hocuspocus era code, examples, and migration-only tests                                             |
+| `.github/workflows/auth-sever-sdb-deploy.yaml` | Supabase-era deploy workflow no longer used                                                             |
+| Stale root scripts                             | `dev:auth-server`, `build-auth-server`, `run-auth-server`                                               |
 
-## CI Update
+## Result
 
-Replace `npm run dev:auth-server` with `docker compose -f docker-compose.dev.yml up -d` in e2e-smoke workflow.
+- The current auth surface is `packages/auth-server-hono` plus `packages/auth-pages`.
+- The root workspace scripts now point at the Docker compose stack and the active frontend workspaces.
+- Historical migration notes remain in `docs/ai/plans/` and this ADR.
 
-## Minor Updates
+## Follow-Up
 
-- `packages/db/src/room.ts`: Remove `WebrtcProvider` type import (breaking change — needs changeset)
-- `packages/db/package.json`: Remove `y-webrtc` dependency
-
-## Consequences
-
-- Monorepo contains only active packages
-- No legacy runtime to maintain
-- y-webrtc removed from published SDK
+The earlier migration plan also discussed removing `y-webrtc` from `@eweser/db`, but that dependency is still present in the current source tree. Treat that removal as a separate follow-up if and when the compatibility path is actually dropped.
 
 ## Related
 

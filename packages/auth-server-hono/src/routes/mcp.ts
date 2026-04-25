@@ -16,7 +16,10 @@ import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/
 import { DataLayer, registerTools } from '@eweser/mcp';
 import type { AgentConfig, AgentRoom } from '@eweser/mcp';
 import { createRateLimit, getClientIp } from '../middleware/rate-limit.js';
-import { getValidOAuthAccessToken } from '../model/oauth.js';
+import {
+  getValidOAuthAccessToken,
+  touchOAuthAccessToken,
+} from '../model/oauth.js';
 import {
   getAgentConfigByTokenHash,
   hashToken,
@@ -49,6 +52,7 @@ const mcpRequestRateLimit = createRateLimit({
 // session store or switch to stateless mode (re-initialize DataLayer on every request,
 // which is slower but correct). See docs/ai/plans/2026-04-08-chatgpt-web-mcp.md.
 const sessionCache = new Map<string, McpSession>();
+const OAUTH_LAST_USED_UPDATE_INTERVAL_MS = 5 * 60 * 1000;
 
 // Prune sessions idle for more than 30 minutes
 const SESSION_TTL_MS = 30 * 60 * 1000;
@@ -86,6 +90,21 @@ async function resolveAuth(
   // 1. Try OAuth access token
   const oauthToken = await getValidOAuthAccessToken(token);
   if (oauthToken) {
+    const shouldTouchLastUsedAt =
+      !oauthToken.lastUsedAt ||
+      Date.now() - oauthToken.lastUsedAt.getTime() >=
+        OAUTH_LAST_USED_UPDATE_INTERVAL_MS;
+    if (shouldTouchLastUsedAt) {
+      void touchOAuthAccessToken(oauthToken.id).catch((error) => {
+        log.warn(
+          {
+            oauthAccessTokenId: oauthToken.id,
+            error,
+          },
+          'Failed to update OAuth access token last-used timestamp'
+        );
+      });
+    }
     const permissions = oauthToken.scopes.includes('readwrite')
       ? 'readwrite'
       : 'read';

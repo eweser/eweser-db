@@ -17,7 +17,7 @@ Claude Desktop and Claude Code do **not** have automatic session-end hooks (as o
 "Save session: we decided to use Hono for the auth server migration and completed run 1 of the aggregator search plan."
 ```
 
-This will call:
+This will call (the MCP server also auto-adds a `worktree:<path>` tag when saving):
 
 ```json
 {
@@ -27,11 +27,13 @@ This will call:
     "title": "Session: auth server migration decision",
     "summary": "We decided to use Hono for the auth server migration and completed run 1 of the aggregator search plan.",
     "memoryType": "session",
-    "agentId": "claude",
-    "tags": ["auth-server", "migration"]
+    "agentId": "claude"
   }
 }
 ```
+
+The generated worktree tag uses the MCP server current working directory by default (typically
+`worktree:<workspace-folder-name>`), and can be overridden with `EWESER_WORKTREE_TAG` if needed.
 
 ### Recalling Past Sessions
 
@@ -42,7 +44,10 @@ Use `eweser_search` to recall decisions and session notes:
   "tool": "eweser_search",
   "args": {
     "query": "auth server framework decision",
-    "filters": { "memoryType": ["decision", "memory"] }
+    "filters": {
+      "memoryType": ["decision", "memory", "session"],
+      "tags": ["worktree:eweser-db"]
+    }
   }
 }
 ```

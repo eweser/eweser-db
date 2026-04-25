@@ -1,0 +1,166 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Hono } from 'hono';
+
+vi.mock('../env.js', () => ({
+  env: {
+    AGENT_TOKEN_DEFAULT_TTL_SECONDS: 2_592_000,
+    AGENT_TOKEN_MAX_TTL_SECONDS: 7_776_000,
+    AUTH_DOMAIN: 'auth.local',
+    AUTH_TRUSTED_ORIGINS: ['http://localhost:3000'],
+    AUTH_SERVER_DOMAIN: 'auth.local',
+    AUTH_SERVER_URL: 'https://www.eweser.com',
+    BETTER_AUTH_BASE_URL: 'http://localhost:3000',
+    BETTER_AUTH_SECRET: 'test-auth-secret',
+    DATABASE_URL: 'postgres://test:test@localhost:5432/test',
+    MCP_ALLOWED_ORIGINS: ['https://chatgpt.com'],
+    NODE_ENV: 'test',
+    PORT: 3000,
+    SERVER_SECRET: 'test-secret-test-secret-test-secret',
+    SYNC_SERVER_URL: 'ws://localhost:38181',
+    TRUST_PROXY: false,
+    AUTH_ENABLE_2FA: true,
+  },
+}));
+
+const mockGetSession = vi.fn();
+
+vi.mock('../auth.js', () => ({
+  auth: {
+    handler: vi.fn(),
+    api: { getSession: mockGetSession },
+    $Infer: { Session: {} },
+  },
+}));
+
+const mockCreateAgentConfig = vi.fn();
+const mockGetAgentConfigsByUserId = vi.fn();
+const mockRevokeAgentConfig = vi.fn();
+const mockRotateAgentToken = vi.fn();
+
+vi.mock('../model/agents.js', () => ({
+  createAgentConfig: mockCreateAgentConfig,
+  getAgentConfigsByUserId: mockGetAgentConfigsByUserId,
+  revokeAgentConfig: mockRevokeAgentConfig,
+  rotateAgentToken: mockRotateAgentToken,
+}));
+
+const mockGetOAuthAccessTokensByUserId = vi.fn();
+const mockRevokeOAuthAccessTokensForUserClient = vi.fn();
+
+vi.mock('../model/oauth.js', () => ({
+  getOAuthAccessTokensByUserId: mockGetOAuthAccessTokensByUserId,
+  revokeOAuthAccessTokensForUserClient:
+    mockRevokeOAuthAccessTokensForUserClient,
+}));
+
+const { connectAiRouter } = await import('./connect-ai.js');
+
+const mockUser = {
+  id: 'user-uuid-1',
+  email: 'test@example.com',
+  name: 'Test User',
+  emailVerified: true,
+  image: null,
+};
+
+function makeApp() {
+  const app = new Hono();
+  app.route('/api/account/connect-ai', connectAiRouter);
+  return app;
+}
+
+function authenticatedFetch(
+  app: Hono,
+  path: string,
+  init?: RequestInit
+): Promise<Response> {
+  mockGetSession.mockResolvedValueOnce({
+    user: mockUser,
+    session: { id: 'session-1' },
+  });
+
+  return Promise.resolve(
+    app.fetch(new Request(`http://localhost${path}`, init))
+  );
+}
+
+describe('connectAiRouter', () => {
+  let app: Hono;
+
+  beforeEach(() => {
+    app = makeApp();
+    vi.clearAllMocks();
+  });
+
+  it('returns the six supported clients with connection metadata', async () => {
+    mockGetAgentConfigsByUserId.mockResolvedValueOnce([]);
+    mockGetOAuthAccessTokensByUserId.mockResolvedValueOnce([]);
+
+    const res = await authenticatedFetch(app, '/api/account/connect-ai');
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.clients).toHaveLength(6);
+    expect(body.mcpUrl).toBe('https://www.eweser.com/mcp');
+    expect(body.smartLinkRule).toContain('Never place bearer tokens in URLs');
+  });
+
+  it('creates a token setup payload for Claude Desktop', async () => {
+    mockGetAgentConfigsByUserId.mockResolvedValueOnce([]);
+    mockCreateAgentConfig.mockResolvedValueOnce({
+      agentConfig: {
+        id: 'agent-uuid-1',
+        userId: mockUser.id,
+        name: 'Connect AI: Claude Desktop',
+        type: 'mcp',
+        endpoint: 'https://www.eweser.com',
+        allowedCollections: ['notes'],
+        allowedRooms: [],
+        permissions: 'read',
+        isActive: true,
+        tokenHash: 'secret-hash',
+        tokenExpiresAt: new Date('2026-05-01T00:00:00.000Z'),
+        lastAccessAt: null,
+        createdAt: new Date('2026-04-24T00:00:00.000Z'),
+        updatedAt: null,
+      },
+      token: 'agent-token-123',
+    });
+
+    const res = await authenticatedFetch(
+      app,
+      '/api/account/connect-ai/setup-token',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ clientId: 'claude-desktop' }),
+      }
+    );
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.clientId).toBe('claude-desktop');
+    expect(res.headers.get('cache-control')).toBe('no-store');
+    expect(res.headers.get('pragma')).toBe('no-cache');
+    expect(body.payload.snippet).toContain('@eweser/mcp');
+    expect(body.payload.snippet).toContain('EWESER_AGENT_TOKEN');
+  });
+
+  it('revokes OAuth-backed client access', async () => {
+    const res = await authenticatedFetch(
+      app,
+      '/api/account/connect-ai/revoke',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ clientId: 'chatgpt-web' }),
+      }
+    );
+
+    expect(res.status).toBe(200);
+    expect(mockRevokeOAuthAccessTokensForUserClient).toHaveBeenCalledWith(
+      mockUser.id,
+      'chatgpt-web'
+    );
+  });
+});

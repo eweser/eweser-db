@@ -20,6 +20,15 @@ export const oauthClients = pgTable('oauth_clients', {
   /** First-party clients skip the consent page */
   isFirstParty: boolean('is_first_party').notNull().default(false),
 
+  /** How this client registration entered the system */
+  registrationSource: text('registration_source').notNull().default('seeded'),
+
+  /** Optional software identifier for dynamically registered public clients */
+  softwareId: text('software_id'),
+
+  /** Optional software version for dynamically registered public clients */
+  softwareVersion: text('software_version'),
+
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
     .defaultNow()
     .notNull(),
@@ -90,6 +99,9 @@ export const oauthAccessTokens = pgTable('oauth_access_tokens', {
 
   /** Set when the token is revoked */
   revokedAt: timestamp('revoked_at', { withTimezone: true, mode: 'date' }),
+
+  /** Last time this access token was used against /mcp */
+  lastUsedAt: timestamp('last_used_at', { withTimezone: true, mode: 'date' }),
 
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
     .defaultNow()

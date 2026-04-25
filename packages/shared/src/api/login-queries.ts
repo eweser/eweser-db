@@ -3,7 +3,7 @@ import type { CollectionKeyOrAll } from '../collections/index.js';
 export type LoginQueryOptions = {
   redirect: string;
   domain: string;
-  collections: CollectionKeyOrAll[];
+  collections: readonly CollectionKeyOrAll[];
   /** app name */
   name: string;
 };

@@ -59,6 +59,12 @@ export const routerBase = normalizeBase(import.meta.env.BASE_URL ?? '/');
 
 export const AUTH_SERVER = resolveAuthServerUrl();
 
+export const AUTH_PAGES_SERVER = stripTrailingSlash(
+  import.meta.env.VITE_AUTH_PAGES_URL
+    ? resolveUrl(import.meta.env.VITE_AUTH_PAGES_URL)
+    : AUTH_SERVER
+);
+
 export function appPath(path = '/') {
   return buildAppPath(routerBase, path);
 }

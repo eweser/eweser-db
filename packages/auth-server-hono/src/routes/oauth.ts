@@ -17,6 +17,7 @@ import {
   createAuthCode,
   createOAuthAccessToken,
   getOAuthClient,
+  registerOAuthClient,
   revokeOAuthAccessToken,
   verifyPKCE,
 } from '../model/oauth.js';
@@ -73,6 +74,16 @@ const revokeBodySchema = z.object({
   token: z.string().min(1),
 });
 
+const registerBodySchema = z.object({
+  client_name: z.string().min(1).max(200),
+  grant_types: z.array(z.literal('authorization_code')).optional(),
+  redirect_uris: z.array(z.string().url()).min(1).max(20),
+  response_types: z.array(z.literal('code')).optional(),
+  software_id: z.string().min(1).max(200).optional(),
+  software_version: z.string().min(1).max(100).optional(),
+  token_endpoint_auth_method: z.literal('none').optional(),
+});
+
 function isRegisteredRedirectUri(
   redirectUri: string,
   registeredUris: string[]
@@ -113,6 +124,7 @@ export function oauthServerMetadata() {
   return {
     issuer: BASE_URL,
     authorization_endpoint: `${BASE_URL}/oauth/authorize`,
+    registration_endpoint: `${BASE_URL}/oauth/register`,
     token_endpoint: `${BASE_URL}/oauth/token`,
     revocation_endpoint: `${BASE_URL}/oauth/revoke`,
     response_types_supported: ['code'],
@@ -122,6 +134,50 @@ export function oauthServerMetadata() {
     scopes_supported: ['read', 'readwrite'],
   };
 }
+
+oauthRouter.post('/register', oauthTokenRateLimit, async (c) => {
+  const parsedBody = registerBodySchema.safeParse(
+    await c.req.json().catch(() => null)
+  );
+  if (!parsedBody.success) {
+    return c.json(
+      {
+        error: 'invalid_client_metadata',
+        error_description:
+          parsedBody.error.issues[0]?.message ?? 'Invalid client metadata',
+      },
+      400
+    );
+  }
+
+  const metadata = parsedBody.data;
+  const registration = {
+    clientName: metadata.client_name,
+    redirectUris: metadata.redirect_uris,
+    ...(metadata.software_id ? { softwareId: metadata.software_id } : {}),
+    ...(metadata.software_version
+      ? { softwareVersion: metadata.software_version }
+      : {}),
+  };
+  const client = await registerOAuthClient({
+    ...registration,
+  });
+
+  return c.json(
+    {
+      client_id: client.clientId,
+      client_id_issued_at: Math.floor(client.createdAt.getTime() / 1000),
+      client_name: client.clientName,
+      grant_types: ['authorization_code'],
+      redirect_uris: client.redirectUris,
+      response_types: ['code'],
+      software_id: client.softwareId ?? undefined,
+      software_version: client.softwareVersion ?? undefined,
+      token_endpoint_auth_method: 'none',
+    },
+    201
+  );
+});
 
 // ---------------------------------------------------------------------------
 // GET /oauth/authorize

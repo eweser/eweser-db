@@ -24,6 +24,7 @@ RUN npm run build --workspace @eweser/db
 
 # Build-time env vars for Vite (passed via Railway service env vars or --build-arg)
 ARG VITE_AUTH_SERVER
+ARG VITE_AUTH_PAGES_URL
 RUN cd packages/ewe-note && npx vite build
 
 FROM nginx:1.29-alpine

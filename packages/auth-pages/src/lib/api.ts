@@ -24,6 +24,61 @@ export interface PermissionsRequestBody {
   keepAliveDays: number;
 }
 
+export type ConnectAiClientId =
+  | 'claude-desktop'
+  | 'claude-web'
+  | 'chatgpt-web'
+  | 'copilot'
+  | 'codex'
+  | 'openclaw';
+
+export interface ConnectAiConnection {
+  expiresAt: string | null;
+  id?: string;
+  lastUsedAt: string | null;
+  permissions: 'read' | 'readwrite';
+  status: 'connected' | 'revoked';
+}
+
+export interface ConnectAiClientOverview {
+  clientId: ConnectAiClientId;
+  connection: ConnectAiConnection | null;
+  description: string;
+  fallbackReason: string | null;
+  title: string;
+  type: 'oauth' | 'token' | 'token-fallback';
+}
+
+export interface ConnectAiOverviewResponse {
+  clients: ConnectAiClientOverview[];
+  defaults: {
+    allowedCollections: string;
+    permissions: 'read' | 'readwrite';
+    tokenTtlSeconds: number;
+  };
+  dynamicClientRegistrationUrl: string;
+  mcpUrl: string;
+  oauthMetadataUrl: string;
+  smartLinkRule: string;
+}
+
+export interface ConnectAiSetupResponse {
+  agent: {
+    expiresAt?: string;
+    id: string;
+    permissions: 'read' | 'readwrite';
+    tokenExpiresAt?: string | null;
+  };
+  clientId: ConnectAiClientId;
+  payload: {
+    configFormat: 'json' | 'toml';
+    instructions: string;
+    snippet: string;
+  };
+  token: string;
+  warning?: string;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(new URL(path, `${authServerUrl}/`).toString(), {
     credentials: 'include',
@@ -63,6 +118,40 @@ export function acceptInvite(token: string) {
     '/api/access-grant/accept-room-invite',
     {
       body: JSON.stringify({ token }),
+      method: 'POST',
+    }
+  );
+}
+
+export function getConnectAiOverview() {
+  return request<ConnectAiOverviewResponse>('/api/account/connect-ai');
+}
+
+export function setupConnectAiToken(clientId: ConnectAiClientId) {
+  return request<ConnectAiSetupResponse>(
+    '/api/account/connect-ai/setup-token',
+    {
+      body: JSON.stringify({ clientId }),
+      method: 'POST',
+    }
+  );
+}
+
+export function rotateConnectAiToken(clientId: ConnectAiClientId) {
+  return request<ConnectAiSetupResponse>(
+    '/api/account/connect-ai/rotate-token',
+    {
+      body: JSON.stringify({ clientId }),
+      method: 'POST',
+    }
+  );
+}
+
+export function revokeConnectAi(clientId: ConnectAiClientId) {
+  return request<{ clientId: ConnectAiClientId; status: 'revoked' }>(
+    '/api/account/connect-ai/revoke',
+    {
+      body: JSON.stringify({ clientId }),
       method: 'POST',
     }
   );

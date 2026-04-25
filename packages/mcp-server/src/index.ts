@@ -56,7 +56,13 @@ async function main() {
     documentCount?: number;
   }) => logAccess(env.EWESER_AGENT_TOKEN, env.EWESER_AUTH_URL, entry);
 
-  registerTools(server, dataLayer, logFn, env.EWESER_AGGREGATOR_URL);
+  registerTools(
+    server,
+    dataLayer,
+    logFn,
+    env.EWESER_AGGREGATOR_URL,
+    env.EWESER_WORKTREE_TAG
+  );
 
   // 5. Connect to stdio transport
   const transport = new StdioServerTransport();

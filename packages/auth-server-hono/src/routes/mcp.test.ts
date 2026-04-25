@@ -13,6 +13,7 @@ vi.mock('../env.js', () => ({
 
 vi.mock('../model/oauth.js', () => ({
   getValidOAuthAccessToken: vi.fn().mockResolvedValue(null),
+  touchOAuthAccessToken: vi.fn(),
 }));
 
 vi.mock('../model/agents.js', () => ({

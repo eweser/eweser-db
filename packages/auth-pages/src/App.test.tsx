@@ -18,6 +18,10 @@ const authMocks = vi.hoisted(() => ({
 const apiMocks = vi.hoisted(() => ({
   acceptInvite: vi.fn(),
   getAccountBootstrap: vi.fn(),
+  getConnectAiOverview: vi.fn(),
+  revokeConnectAi: vi.fn(),
+  rotateConnectAiToken: vi.fn(),
+  setupConnectAiToken: vi.fn(),
   submitPermissions: vi.fn(),
 }));
 
@@ -57,6 +61,10 @@ vi.mock('./lib/auth-client', () => ({
 vi.mock('./lib/api', () => ({
   acceptInvite: apiMocks.acceptInvite,
   getAccountBootstrap: apiMocks.getAccountBootstrap,
+  getConnectAiOverview: apiMocks.getConnectAiOverview,
+  revokeConnectAi: apiMocks.revokeConnectAi,
+  rotateConnectAiToken: apiMocks.rotateConnectAiToken,
+  setupConnectAiToken: apiMocks.setupConnectAiToken,
   submitPermissions: apiMocks.submitPermissions,
 }));
 
@@ -122,6 +130,31 @@ describe('auth-pages app', () => {
         ok: true,
       }))
     );
+    Object.defineProperty(window, 'open', {
+      configurable: true,
+      value: vi.fn(),
+      writable: true,
+    });
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: vi.fn().mockResolvedValue(undefined),
+      },
+    });
+    apiMocks.getConnectAiOverview.mockResolvedValue({
+      clients: [],
+      defaults: {
+        allowedCollections: 'all-supported-collections',
+        permissions: 'read',
+        tokenTtlSeconds: 604800,
+      },
+      dynamicClientRegistrationUrl: 'https://www.eweser.com/oauth/register',
+      mcpUrl: 'https://www.eweser.com/mcp',
+      oauthMetadataUrl:
+        'https://www.eweser.com/.well-known/oauth-authorization-server',
+      smartLinkRule:
+        'Never place bearer tokens in URLs. All setup flows stay on authenticated Eweser pages and mint or rotate tokens server-side.',
+    });
     vi.clearAllMocks();
   });
 
@@ -178,13 +211,7 @@ describe('auth-pages app', () => {
 
     await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
     await userEvent.type(screen.getByLabelText(/password/i), 'password123');
-    const signInButtons = screen.getAllByRole('button', { name: /sign in/i });
-    const signInButton = signInButtons[0];
-    expect(signInButton).toBeDefined();
-    if (!signInButton) {
-      throw new Error('Expected sign-in submit button to exist');
-    }
-    await userEvent.click(signInButton);
+    await userEvent.click(screen.getByRole('button', { name: /^sign in$/i }));
 
     await waitFor(() => {
       expect(authMocks.signInEmail).toHaveBeenCalledOnce();
@@ -233,14 +260,11 @@ describe('auth-pages app', () => {
     await userEvent.type(getRequiredInput('sign-up-name'), 'Test User');
     await userEvent.type(getRequiredInput('sign-up-email'), 'test@example.com');
     await userEvent.type(getRequiredInput('sign-up-password'), 'password123');
-    const captchaButtons = screen.getAllByRole('button', {
-      name: /complete captcha/i,
-    });
-    const captchaButton = captchaButtons[0];
-    if (!captchaButton) {
-      throw new Error('Expected captcha button to exist');
-    }
-    await userEvent.click(captchaButton);
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /complete captcha/i,
+      })
+    );
     await userEvent.click(
       screen.getByRole('button', { name: /create account/i })
     );
@@ -259,6 +283,185 @@ describe('auth-pages app', () => {
       name: 'Test User',
       password: 'password123',
     });
+  });
+
+  it('renders the Connect AI page for signed-in users', async () => {
+    sessionState = {
+      data: {
+        session: { id: 'session-1' },
+        user: { email: 'test@example.com', id: 'user-1' },
+      },
+      error: null,
+      isPending: false,
+      isRefetching: false,
+      refetch: vi.fn().mockResolvedValue(undefined),
+    };
+
+    apiMocks.getConnectAiOverview.mockResolvedValue({
+      clients: [
+        {
+          clientId: 'claude-desktop',
+          connection: null,
+          description:
+            'Local stdio setup with @eweser/mcp and a short-lived agent token.',
+          fallbackReason: null,
+          title: 'Claude Desktop',
+          type: 'token',
+        },
+      ],
+      defaults: {
+        allowedCollections: 'all-supported-collections',
+        permissions: 'read',
+        tokenTtlSeconds: 604800,
+      },
+      dynamicClientRegistrationUrl: 'https://www.eweser.com/oauth/register',
+      mcpUrl: 'https://www.eweser.com/mcp',
+      oauthMetadataUrl:
+        'https://www.eweser.com/.well-known/oauth-authorization-server',
+      smartLinkRule:
+        'Never place bearer tokens in URLs. All setup flows stay on authenticated Eweser pages and mint or rotate tokens server-side.',
+    });
+
+    renderApp('/account/connect-ai');
+
+    expect(
+      await screen.findByRole('heading', { name: /connect ai/i, level: 2 })
+    ).toBeInTheDocument();
+    expect(screen.getByText(/claude desktop/i)).toBeInTheDocument();
+  });
+
+  it('creates a setup payload from the Connect AI page', async () => {
+    sessionState = {
+      data: {
+        session: { id: 'session-1' },
+        user: { email: 'test@example.com', id: 'user-1' },
+      },
+      error: null,
+      isPending: false,
+      isRefetching: false,
+      refetch: vi.fn().mockResolvedValue(undefined),
+    };
+
+    apiMocks.getConnectAiOverview.mockResolvedValue({
+      clients: [
+        {
+          clientId: 'claude-desktop',
+          connection: null,
+          description:
+            'Local stdio setup with @eweser/mcp and a short-lived agent token.',
+          fallbackReason: null,
+          title: 'Claude Desktop',
+          type: 'token',
+        },
+      ],
+      defaults: {
+        allowedCollections: 'all-supported-collections',
+        permissions: 'read',
+        tokenTtlSeconds: 604800,
+      },
+      dynamicClientRegistrationUrl: 'https://www.eweser.com/oauth/register',
+      mcpUrl: 'https://www.eweser.com/mcp',
+      oauthMetadataUrl:
+        'https://www.eweser.com/.well-known/oauth-authorization-server',
+      smartLinkRule:
+        'Never place bearer tokens in URLs. All setup flows stay on authenticated Eweser pages and mint or rotate tokens server-side.',
+    });
+    apiMocks.setupConnectAiToken.mockResolvedValue({
+      agent: { id: 'agent-1', permissions: 'read', tokenExpiresAt: null },
+      clientId: 'claude-desktop',
+      payload: {
+        configFormat: 'json',
+        instructions: 'Paste this into Claude Desktop config.',
+        snippet: '{\n  "mcpServers": {}\n}',
+      },
+      token: 'raw-token',
+      warning: 'This token is shown only on this authenticated page.',
+    });
+
+    renderApp('/account/connect-ai');
+
+    const buttons = await screen.findAllByRole('button', {
+      name: /prepare setup/i,
+    });
+    const button = buttons[0];
+    if (!button) {
+      throw new Error('Expected connect AI setup button to exist');
+    }
+    await userEvent.click(button);
+
+    await waitFor(() => {
+      expect(apiMocks.setupConnectAiToken).toHaveBeenCalledWith(
+        'claude-desktop'
+      );
+    });
+
+    expect(
+      await screen.findByText(/paste this into claude desktop config/i)
+    ).toBeInTheDocument();
+  });
+
+  it('launches OAuth setup from the Connect AI page', async () => {
+    sessionState = {
+      data: {
+        session: { id: 'session-1' },
+        user: { email: 'test@example.com', id: 'user-1' },
+      },
+      error: null,
+      isPending: false,
+      isRefetching: false,
+      refetch: vi.fn().mockResolvedValue(undefined),
+    };
+
+    apiMocks.getConnectAiOverview.mockResolvedValue({
+      clients: [
+        {
+          clientId: 'chatgpt-web',
+          connection: null,
+          description:
+            'Remote HTTP MCP on /mcp with OAuth in ChatGPT developer mode.',
+          fallbackReason: null,
+          title: 'ChatGPT web',
+          type: 'oauth',
+        },
+      ],
+      defaults: {
+        allowedCollections: 'all-supported-collections',
+        permissions: 'read',
+        tokenTtlSeconds: 604800,
+      },
+      dynamicClientRegistrationUrl: 'https://www.eweser.com/oauth/register',
+      mcpUrl: 'https://www.eweser.com/mcp',
+      oauthMetadataUrl:
+        'https://www.eweser.com/.well-known/oauth-authorization-server',
+      smartLinkRule:
+        'Never place bearer tokens in URLs. All setup flows stay on authenticated Eweser pages and mint or rotate tokens server-side.',
+    });
+
+    renderApp('/account/connect-ai');
+
+    const buttons = await screen.findAllByRole('button', {
+      name: /open connector flow/i,
+    });
+    const button = buttons[0];
+    if (!button) {
+      throw new Error('Expected OAuth connect button to exist');
+    }
+    await userEvent.click(button);
+
+    await waitFor(() => {
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+        'https://www.eweser.com/mcp'
+      );
+      expect(window.open).toHaveBeenCalledWith(
+        'https://chatgpt.com/',
+        '_blank',
+        'noopener,noreferrer'
+      );
+    });
+
+    expect(
+      await screen.findByText(/copied the eweser mcp url/i)
+    ).toBeInTheDocument();
   });
 
   it('requests password reset from forgot-password page', async () => {

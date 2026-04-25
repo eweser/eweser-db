@@ -1,11 +1,11 @@
 # @eweser/mcp — EweserDB MCP Server
 
-Lets AI agents (Claude Desktop, GitHub Copilot, OpenClaw PA) read and write the user's EweserDB data through the [Model Context Protocol](https://modelcontextprotocol.io/) over stdio.
+Lets AI clients connect to EweserDB through the [Model Context Protocol](https://modelcontextprotocol.io/). Eweser currently ships six supported setup paths: Claude Desktop, Claude web, ChatGPT web, GitHub Copilot, Codex, and OpenClaw.
 
 ## Prerequisites
 
 1. **EweserDB auth server** running (local or remote)
-2. **An agent token** created via the auth-server API (`POST /api/agents`)
+2. **Either** an OAuth-capable remote MCP client **or** an agent token created from the signed-in Connect AI page
 3. **Node.js 20+**
 
 ## Installation
@@ -26,11 +26,12 @@ Copy `example.env` and fill in your credentials:
 cp example.env .env
 ```
 
-| Variable             | Required | Description                                               |
-| -------------------- | -------- | --------------------------------------------------------- |
-| `EWESER_AGENT_TOKEN` | ✅       | Agent bearer token from auth server                       |
-| `EWESER_AUTH_URL`    | ✅       | Base URL of the auth server, e.g. `http://localhost:3001` |
-| `EWESER_SYNC_URL`    | optional | Override sync WebSocket URL                               |
+| Variable              | Required | Description                                                          |
+| --------------------- | -------- | -------------------------------------------------------------------- |
+| `EWESER_AGENT_TOKEN`  | ✅       | Agent bearer token from auth server                                  |
+| `EWESER_AUTH_URL`     | ✅       | Base URL of the auth server, e.g. `http://localhost:3001`            |
+| `EWESER_WORKTREE_TAG` | optional | Workspace/tag label used to scope saved memory docs to this worktree |
+| `EWESER_SYNC_URL`     | optional | Override sync WebSocket URL                                          |
 
 ## Available Tools
 
@@ -44,11 +45,11 @@ cp example.env .env
 | `eweser_update_document` | Update fields on an existing document                                  |
 | `eweser_delete_document` | Soft-delete a document (sets `_deleted = true`)                        |
 
-## Client Configuration
+## Supported Clients
 
 ### Claude Desktop
 
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+Primary path: local stdio with an agent token. The signed-in Connect AI page generates this exact config for you.
 
 ```json
 {
@@ -58,47 +59,87 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
       "args": ["-y", "@eweser/mcp"],
       "env": {
         "EWESER_AGENT_TOKEN": "your-agent-token",
-        "EWESER_AUTH_URL": "http://localhost:3001"
+        "EWESER_AUTH_URL": "https://www.eweser.com"
       }
     }
   }
 }
 ```
 
-### VS Code (GitHub Copilot)
+### Claude Web
 
-Add to `.vscode/mcp.json` in your project, or to User settings under `github.copilot.mcpServers`:
+Primary path: remote HTTP MCP with OAuth.
+
+- MCP URL: `https://www.eweser.com/mcp`
+- OAuth metadata: `https://www.eweser.com/.well-known/oauth-authorization-server`
+- Add the connector in Claude.ai and complete the OAuth flow when prompted.
+
+### ChatGPT Web
+
+Primary path: remote HTTP MCP with OAuth.
+
+- MCP URL: `https://www.eweser.com/mcp`
+- OAuth metadata: `https://www.eweser.com/.well-known/oauth-authorization-server`
+- Enable ChatGPT developer mode before importing the connector.
+
+### GitHub Copilot
+
+Current launch path: token-backed remote HTTP fallback.
 
 ```json
 {
   "servers": {
     "eweser": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@eweser/mcp"],
-      "env": {
-        "EWESER_AGENT_TOKEN": "your-agent-token",
-        "EWESER_AUTH_URL": "http://localhost:3001"
+      "type": "http",
+      "url": "https://www.eweser.com/mcp",
+      "headers": {
+        "Authorization": "Bearer your-agent-token"
+      },
+      "tools": ["*"]
+    }
+  }
+}
+```
+
+This is the shipped fallback because current GitHub Copilot cloud agent docs explicitly call out that remote OAuth-backed MCP servers are not supported there.
+
+### Codex
+
+Current launch path: token-backed remote HTTP fallback using `bearer_token_env_var`.
+
+```toml
+[mcp_servers.eweser]
+url = "https://www.eweser.com/mcp"
+bearer_token_env_var = "EWESER_MCP_TOKEN"
+```
+
+```bash
+export EWESER_MCP_TOKEN="your-agent-token"
+```
+
+### OpenClaw
+
+Current launch path: token-backed remote HTTP config with explicit headers.
+
+```json
+{
+  "mcpServers": {
+    "eweser": {
+      "type": "http",
+      "url": "https://www.eweser.com/mcp",
+      "headers": {
+        "Authorization": "Bearer your-agent-token"
       }
     }
   }
 }
 ```
 
-### OpenClaw PA
+## OAuth vs Token Paths
 
-Set environment variables in the OpenClaw PA skill config:
-
-```env
-EWESER_AGENT_TOKEN=your-agent-token
-EWESER_AUTH_URL=https://auth.youreweserdomain.com
-```
-
-Then reference the server binary as the MCP command:
-
-```
-eweser-mcp
-```
+- OAuth: Claude web and ChatGPT web use `https://www.eweser.com/mcp` plus the OAuth discovery document at `https://www.eweser.com/.well-known/oauth-authorization-server`.
+- Token bootstrap: Claude Desktop uses local stdio, while Copilot, Codex, and OpenClaw use token-backed remote HTTP fallback snippets from the signed-in Connect AI page.
+- Smart-link rule: bearer tokens are never placed in URLs. Tokens are minted or rotated only from authenticated Eweser pages.
 
 ## Permissions
 
@@ -111,9 +152,10 @@ Every tool call is audit-logged to the auth server (room, action, document count
 
 ## Troubleshooting
 
-| Error                                  | Fix                                                              |
-| -------------------------------------- | ---------------------------------------------------------------- |
-| `Token verification failed: 401`       | Check `EWESER_AGENT_TOKEN` is correct and not expired            |
-| `Room not connected or not accessible` | The room ID may not be in the agent's `allowedRooms` list        |
-| `Agent does not have write permission` | The token has `permissions: "read"` — create a `readwrite` token |
-| WebSocket connection errors            | Check `EWESER_AUTH_URL` / `EWESER_SYNC_URL` are reachable        |
+| Error                                  | Fix                                                                                                        |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `Token verification failed: 401`       | Check `EWESER_AGENT_TOKEN` is correct and not expired                                                      |
+| OAuth client not connecting            | Verify the client is using `https://www.eweser.com/mcp` and the OAuth metadata document on the same origin |
+| `Room not connected or not accessible` | The room ID may not be in the agent's `allowedRooms` list                                                  |
+| `Agent does not have write permission` | The token has `permissions: "read"` — create a `readwrite` token                                           |
+| WebSocket connection errors            | Check `EWESER_AUTH_URL` / `EWESER_SYNC_URL` are reachable                                                  |

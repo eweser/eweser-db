@@ -276,7 +276,7 @@ describe('eweser_save_memory', () => {
         summary: 'Chose Hono for auth server — smaller bundle, native fetch.',
         memoryType: 'decision',
         agentId: 'unknown',
-        tags: [],
+        tags: ['worktree:mcp-server'],
       })
     );
   });
@@ -377,6 +377,24 @@ describe('eweser_save_memory', () => {
       unknown
     >;
     expect(callArgs?.agentId).toBe('unknown');
+  });
+
+  it('adds a worktree tag when saving memories', async () => {
+    await callTool('eweser_save_memory', {
+      roomId: 'room-1',
+      title: 'Test',
+      summary: 'A test memory',
+      memoryType: 'session',
+    });
+
+    const callArgs = mockCrudApi.new.mock.calls.at(-1)?.[0] as Record<
+      string,
+      unknown
+    >;
+    const tags = callArgs?.tags as string[] | undefined;
+
+    expect(Array.isArray(tags)).toBe(true);
+    expect(tags?.some((tag) => tag.startsWith('worktree:'))).toBe(true);
   });
 
   it('uses provided agentId', async () => {

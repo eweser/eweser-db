@@ -141,4 +141,120 @@ describe('loadRoom', () => {
     expect(room.syncUrl).toBe('ws://localhost:8080');
     expect(refreshSyncToken).toHaveBeenCalledWith(room as Room<EweDocument>);
   });
+
+  it('loads local IndexedDB data first and skips remote sync when disabled', async () => {
+    const refreshSyncToken = vi.fn();
+    const db = {
+      collections: {
+        notes: {},
+        flashcards: {},
+        profiles: {},
+      },
+      indexedDBProviderPolyfill: undefined,
+      getToken: () => 'access-grant-token',
+      useSync: true,
+      refreshSyncToken,
+      emit: vi.fn(),
+      info: vi.fn(),
+      debug: vi.fn(),
+      error: vi.fn(),
+    } as unknown as Database;
+
+    const serverRoom: ServerRoom = {
+      id: 'room-2',
+      name: 'Room 2',
+      collectionKey: 'notes',
+      tokenExpiry: null,
+      syncUrl: 'ws://localhost:8080',
+      publicAccess: 'private',
+      readAccess: [],
+      writeAccess: [],
+      adminAccess: [],
+      createdAt: null,
+      updatedAt: null,
+      _deleted: false,
+      _ttl: null,
+    };
+
+    const room = await loadRoom(db)(serverRoom, {
+      loadRemote: false,
+      withAwareness: true,
+    });
+
+    expect(initializeDocAndLocalProviderMock).toHaveBeenCalledWith(
+      'room-2',
+      undefined,
+      undefined
+    );
+    expect(providerInstances).toHaveLength(0);
+    expect(room.ydoc).toBeInstanceOf(Y.Doc);
+    expect(room.indexedDbProvider).toBeDefined();
+    expect(room.syncProvider).toBeUndefined();
+    expect(refreshSyncToken).not.toHaveBeenCalled();
+    expect(db.emit).toHaveBeenCalledWith('roomLoaded', room);
+  });
+
+  it('returns an already loaded room without rebuilding local state', async () => {
+    const refreshSyncToken = vi.fn().mockResolvedValue({
+      syncUrl: 'ws://localhost:8080',
+      syncToken: 'sync-token',
+      tokenExpiry: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+    });
+
+    const db = {
+      collections: {
+        notes: {},
+        flashcards: {},
+        profiles: {},
+      },
+      indexedDBProviderPolyfill: undefined,
+      getToken: () => 'access-grant-token',
+      useSync: true,
+      refreshSyncToken,
+      emit: vi.fn(),
+      info: vi.fn(),
+      debug: vi.fn(),
+      error: vi.fn(),
+    } as unknown as Database;
+
+    const serverRoom: ServerRoom = {
+      id: 'room-3',
+      name: 'Room 3',
+      collectionKey: 'notes',
+      tokenExpiry: null,
+      syncUrl: 'ws://localhost:8080',
+      publicAccess: 'private',
+      readAccess: [],
+      writeAccess: [],
+      adminAccess: [],
+      createdAt: null,
+      updatedAt: null,
+      _deleted: false,
+      _ttl: null,
+    };
+
+    const room = await loadRoom(db)(serverRoom, {
+      loadRemote: false,
+      withAwareness: true,
+    });
+
+    room.connectionStatus = 'connected';
+    room.syncUrl = 'ws://localhost:8080';
+    room.syncProvider = { status: 'connected' } as never;
+    db.collections.notes[room.id] = room as never;
+
+    vi.clearAllMocks();
+    providerInstances.length = 0;
+
+    const loadedRoom = await loadRoom(db)(serverRoom, {
+      loadRemote: true,
+      awaitLoadRemote: true,
+    });
+
+    expect(loadedRoom).toBe(room);
+    expect(initializeDocAndLocalProviderMock).not.toHaveBeenCalled();
+    expect(providerInstances).toHaveLength(0);
+    expect(refreshSyncToken).not.toHaveBeenCalled();
+    expect(db.emit).not.toHaveBeenCalledWith('roomLoaded', expect.anything());
+  });
 });

@@ -15,30 +15,41 @@ describe('kitchen-sink: multi-room', () => {
   });
 
   it('creates a second room and switches between them', () => {
-    // Create a new room
-    cy.getBySel('basic-new-room-input').type('Work Notes');
-    cy.getBySel('basic-create-room-button').click();
+    cy.window().then((win) => {
+      const defaultRoomId = win.localStorage.getItem('ks-notes-room-id');
+      expect(typeof defaultRoomId, 'default notes room id').to.equal('string');
+      expect(defaultRoomId, 'default notes room id').to.not.equal('');
 
-    // Should show both rooms in the list
-    cy.getBySel('basic-room-list').within(() => {
-      cy.get('button').should('have.length.at.least', 2);
+      // Create a new room
+      cy.getBySel('basic-new-room-input').type('Work Notes');
+      cy.getBySel('basic-create-room-button').click();
+
+      // Should show both rooms in the list
+      cy.getBySel('basic-room-list').within(() => {
+        cy.get('button').should('have.length.at.least', 2);
+      });
+
+      cy.contains('button', 'Work Notes')
+        .should('have.attr', 'data-cy')
+        .then((dataCy) => {
+          const roomId = String(dataCy).replace('basic-room-select-', '');
+
+          cy.getBySel(`basic-room-select-${roomId}`).click();
+          cy.getBySel(`basic-room-${roomId}`).should('exist');
+
+          cy.getBySel(`basic-new-note-${roomId}`).click();
+          cy.get('textarea[data-cy^="basic-note-editor-"]')
+            .first()
+            .clear()
+            .type('work note content');
+
+          cy.getBySel(`basic-room-select-${String(defaultRoomId)}`).click();
+          cy.contains('work note content').should('not.exist');
+
+          cy.getBySel(`basic-room-select-${roomId}`).click();
+          cy.contains('work note content').should('exist');
+        });
     });
-
-    // Wait for room ydoc to initialize, then create a note
-    cy.wait(500); // required: Yjs doc needs time to initialize before note creation
-    cy.get('button[data-cy^="basic-new-note-"]').first().click();
-    cy.get('textarea[data-cy^="basic-note-editor-"]')
-      .first()
-      .clear()
-      .type('work note content');
-
-    // Switch to first room
-    cy.getBySel('basic-room-list').within(() => {
-      cy.get('button').first().click();
-    });
-
-    // Should NOT see the work note content (it's in the other room)
-    cy.contains('work note content').should('not.exist');
   });
 });
 

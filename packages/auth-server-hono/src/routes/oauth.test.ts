@@ -40,6 +40,7 @@ const mockCreateAuthCode = vi.fn();
 const mockConsumeAuthCode = vi.fn();
 const mockCreateOAuthAccessToken = vi.fn();
 const mockGetValidOAuthAccessToken = vi.fn();
+const mockRegisterOAuthClient = vi.fn();
 const mockRevokeOAuthAccessToken = vi.fn();
 const mockVerifyPKCE = vi.fn();
 
@@ -49,6 +50,7 @@ vi.mock('../model/oauth.js', () => ({
   consumeAuthCode: mockConsumeAuthCode,
   createOAuthAccessToken: mockCreateOAuthAccessToken,
   getValidOAuthAccessToken: mockGetValidOAuthAccessToken,
+  registerOAuthClient: mockRegisterOAuthClient,
   revokeOAuthAccessToken: mockRevokeOAuthAccessToken,
   verifyPKCE: mockVerifyPKCE,
 }));
@@ -220,6 +222,68 @@ describe('oauthRouter', () => {
         const location = res.headers.get('location') ?? '';
         expect(location).toContain('/auth/oauth-consent');
       }
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // POST /oauth/register
+  // -------------------------------------------------------------------------
+
+  describe('POST /oauth/register', () => {
+    it('registers a dynamic public client', async () => {
+      mockRegisterOAuthClient.mockResolvedValueOnce({
+        id: 'client-uuid-3',
+        clientId: 'mcp_dynamic_client',
+        clientName: 'Codex',
+        redirectUris: ['http://127.0.0.1:3456/callback'],
+        isFirstParty: false,
+        registrationSource: 'dynamic',
+        softwareId: 'codex',
+        softwareVersion: '1.2.3',
+        createdAt: new Date('2026-04-24T10:00:00.000Z'),
+      });
+
+      const res = await app.fetch(
+        new Request('http://localhost/oauth/register', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            client_name: 'Codex',
+            redirect_uris: ['http://127.0.0.1:3456/callback'],
+            software_id: 'codex',
+            software_version: '1.2.3',
+            token_endpoint_auth_method: 'none',
+          }),
+        })
+      );
+
+      expect(res.status).toBe(201);
+      const body = await res.json();
+      expect(body.client_id).toBe('mcp_dynamic_client');
+      expect(body.token_endpoint_auth_method).toBe('none');
+      expect(mockRegisterOAuthClient).toHaveBeenCalledWith(
+        expect.objectContaining({
+          clientName: 'Codex',
+          redirectUris: ['http://127.0.0.1:3456/callback'],
+        })
+      );
+    });
+
+    it('rejects unsupported client metadata', async () => {
+      const res = await app.fetch(
+        new Request('http://localhost/oauth/register', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            client_name: 'Bad Client',
+            redirect_uris: ['not-a-url'],
+          }),
+        })
+      );
+
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.error).toBe('invalid_client_metadata');
     });
   });
 
@@ -439,6 +503,7 @@ describe('oauthRouter', () => {
       const meta = oauthServerMetadata();
       expect(meta.issuer).toBeDefined();
       expect(meta.authorization_endpoint).toContain('/oauth/authorize');
+      expect(meta.registration_endpoint).toContain('/oauth/register');
       expect(meta.token_endpoint).toContain('/oauth/token');
       expect(meta.code_challenge_methods_supported).toContain('S256');
       expect(meta.response_types_supported).toContain('code');
