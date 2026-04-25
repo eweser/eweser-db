@@ -276,7 +276,7 @@ describe('eweser_save_memory', () => {
         summary: 'Chose Hono for auth server — smaller bundle, native fetch.',
         memoryType: 'decision',
         agentId: 'unknown',
-        tags: [],
+        tags: ['worktree:mcp-server'],
       })
     );
   });
