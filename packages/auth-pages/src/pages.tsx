@@ -874,7 +874,7 @@ function PermissionPage() {
     loginQuery?.collections.includes('all') ?? true
   );
   const [selectedCollections, setSelectedCollections] = useState<string[]>(
-    loginQuery?.collections ?? ['all']
+    loginQuery ? [...loginQuery.collections] : ['all']
   );
   const [selectedRoomIds, setSelectedRoomIds] = useState<string[]>([]);
   const [keepAliveDays, setKeepAliveDays] = useState(3);

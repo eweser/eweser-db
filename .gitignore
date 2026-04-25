@@ -44,6 +44,7 @@ vite.config.ts.timestamp*.mjs
 .expo/metro/polyfill.*.js
 .expo/metro/externals/
 **/**/dist
+dist.*
 
 # TypeScript incremental build artifacts
 *.tsbuildinfo
