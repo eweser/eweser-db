@@ -79,8 +79,12 @@ const Notes = room.getDocuments();
 Notes.new({ text: 'Hello from any app' });`;
 
 const noteUrl = 'https://note.eweser.com/';
-const loginUrl =
-  'https://www.eweser.com/auth/sign-in?collections=all&redirect=https%3A%2F%2Fnote.eweser.com%2F&domain=note.eweser.com&name=Ewe+Note';
+const authPagesUrl = (
+  import.meta.env.RAILWAY_SERVICE_AUTH_PAGES_URL ??
+  import.meta.env.AUTH_PAGES_URL ??
+  'https://login.eweser.com'
+).replace(/\/$/, '');
+const loginUrl = `${authPagesUrl}/auth/sign-in?collections=all&redirect=https%3A%2F%2Fnote.eweser.com%2F&domain=note.eweser.com&name=Ewe+Note`;
 ---
 
 <Layout
