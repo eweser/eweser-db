@@ -108,12 +108,20 @@ export function ConnectAiPage() {
 
     const clipboard = window.navigator.clipboard;
     if (clipboard?.writeText) {
-      await clipboard.writeText(mcpUrl);
-      setOauthNotices((current) => ({
-        ...current,
-        [clientId]:
-          'Copied the Eweser MCP URL. Paste it into the client connector flow that opened in a new tab.',
-      }));
+      try {
+        await clipboard.writeText(mcpUrl);
+        setOauthNotices((current) => ({
+          ...current,
+          [clientId]:
+            'Copied the Eweser MCP URL. Paste it into the client connector flow that opened in a new tab.',
+        }));
+      } catch {
+        setOauthNotices((current) => ({
+          ...current,
+          [clientId]:
+            'Your browser did not allow clipboard access. Copy the Eweser MCP URL from this card and paste it into the client connector flow.',
+        }));
+      }
     } else {
       setOauthNotices((current) => ({
         ...current,
