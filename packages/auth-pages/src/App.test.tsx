@@ -464,6 +464,71 @@ describe('auth-pages app', () => {
     ).toBeInTheDocument();
   });
 
+  it('keeps OAuth setup usable when clipboard permission is denied', async () => {
+    sessionState = {
+      data: {
+        session: { id: 'session-1' },
+        user: { email: 'test@example.com', id: 'user-1' },
+      },
+      error: null,
+      isPending: false,
+      isRefetching: false,
+      refetch: vi.fn().mockResolvedValue(undefined),
+    };
+    vi.mocked(navigator.clipboard.writeText).mockRejectedValueOnce(
+      new DOMException('Write permission denied.', 'NotAllowedError')
+    );
+
+    apiMocks.getConnectAiOverview.mockResolvedValue({
+      clients: [
+        {
+          clientId: 'chatgpt-web',
+          connection: null,
+          description:
+            'Remote HTTP MCP on /mcp with OAuth in ChatGPT developer mode.',
+          fallbackReason: null,
+          title: 'ChatGPT web',
+          type: 'oauth',
+        },
+      ],
+      defaults: {
+        allowedCollections: 'all-supported-collections',
+        permissions: 'read',
+        tokenTtlSeconds: 604800,
+      },
+      dynamicClientRegistrationUrl: 'https://www.eweser.com/oauth/register',
+      mcpUrl: 'https://www.eweser.com/mcp',
+      oauthMetadataUrl:
+        'https://www.eweser.com/.well-known/oauth-authorization-server',
+      smartLinkRule:
+        'Never place bearer tokens in URLs. All setup flows stay on authenticated Eweser pages and mint or rotate tokens server-side.',
+    });
+
+    renderApp('/account/connect-ai');
+
+    const buttons = await screen.findAllByRole('button', {
+      name: /open connector flow/i,
+    });
+    const button = buttons[0];
+    if (!button) {
+      throw new Error('Expected OAuth connect button to exist');
+    }
+    await userEvent.click(button);
+
+    await waitFor(() => {
+      expect(window.open).toHaveBeenCalledWith(
+        'https://chatgpt.com/',
+        '_blank',
+        'noopener,noreferrer'
+      );
+    });
+
+    expect(
+      await screen.findByText(/copy the eweser mcp url from this card/i)
+    ).toBeInTheDocument();
+    expect(screen.getByText('https://www.eweser.com/mcp')).toBeInTheDocument();
+  });
+
   it('requests password reset from forgot-password page', async () => {
     (
       fetch as unknown as { mockResolvedValueOnce: (value: unknown) => void }
