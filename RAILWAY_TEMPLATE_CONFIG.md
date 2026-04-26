@@ -77,7 +77,7 @@ VITE_AUTH_SERVER=https://${{auth-api.RAILWAY_PUBLIC_DOMAIN}}
 ```env
 RAILWAY_DOCKERFILE_PATH=packages/auth-pages/Dockerfile
 VITE_AUTH_SERVER_URL=https://${{auth-api.RAILWAY_PUBLIC_DOMAIN}}
-VITE_AUTH_API_URL=https://${{auth-api.RAILWAY_PUBLIC_DOMAIN}}
+VITE_AUTH_API_URL=https://${{auth-api.RAILWAY_PUBLIC_DOMAIN}}/api/auth
 ```
 
 ## Postgres
