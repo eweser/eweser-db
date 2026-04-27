@@ -49,6 +49,22 @@ function makeDataLayer(
   return dataLayer;
 }
 
+function connectTestRoom(dataLayer: DataLayer, room: AgentRoom): void {
+  const rooms = (
+    dataLayer as unknown as {
+      rooms: Map<string, unknown>;
+    }
+  ).rooms;
+
+  rooms.set(room.id, {
+    meta: room,
+    ydoc: {},
+    provider: {},
+    syncToken: 'sync-token',
+    tokenExpiry: new Date(Date.now() + 60_000),
+  });
+}
+
 describe('DataLayer permission enforcement', () => {
   it('preserves legacy readwrite access when no explicit write scope is set', () => {
     const dataLayer = makeDataLayer({ permissions: 'readwrite' });
@@ -73,6 +89,21 @@ describe('DataLayer permission enforcement', () => {
     expect(() => dataLayer.assertReadAccess('room-1')).toThrow(
       'Agent does not have read permission'
     );
+  });
+
+  it('hides connected rooms outside the explicit read scope', () => {
+    const dataLayer = makeDataLayer({
+      allowedRooms: [],
+      readAllowedCollections: ['notes'],
+      readAllowedRooms: ['room-2'],
+    });
+    connectTestRoom(dataLayer, {
+      ...baseRoom,
+      id: 'room-2',
+      name: 'Readable Notes',
+    });
+
+    expect(dataLayer.listRooms().map((room) => room.id)).toEqual(['room-2']);
   });
 
   it('allows explicit room-scoped writes', () => {
@@ -124,6 +155,18 @@ describe('DataLayer permission enforcement', () => {
       dataLayer.assertWriteAccess('room-1', {
         text: 'outside',
         sourcePath: 'AINotes/session.md',
+      })
+    ).toThrow('note folder or path');
+    expect(() =>
+      dataLayer.assertWriteAccess('room-1', {
+        text: 'traversal',
+        sourcePath: 'AI/../other/session.md',
+      })
+    ).toThrow('note folder or path');
+    expect(() =>
+      dataLayer.assertWriteAccess('room-1', {
+        text: 'absolute',
+        sourcePath: '/AI/session.md',
       })
     ).toThrow('note folder or path');
   });

@@ -71,6 +71,22 @@ const agentLogBodySchema = z.object({
   roomId: z.string().min(1),
 });
 
+function compactScope(values: string[] | undefined): string[] {
+  return Array.from(new Set((values ?? []).filter(Boolean)));
+}
+
+function effectiveScope(
+  nextScope: string[] | undefined,
+  legacyScope: string[] | undefined
+): string[] {
+  const next = compactScope(nextScope);
+  return next.length > 0 ? next : compactScope(legacyScope);
+}
+
+function scopeIncludes(scope: string[], value: string): boolean {
+  return scope.length === 0 || scope.includes(value);
+}
+
 /**
  * GET /api/agents
  * List all agent configs for the authenticated user.
@@ -149,7 +165,7 @@ agentsRouter.post(
       type: body.type ?? 'mcp',
       endpoint: body.endpoint,
       allowedCollections,
-      allowedRooms: body.allowedRooms ?? [],
+      allowedRooms: body.allowedRooms ?? body.readAllowedRooms ?? [],
       permissions: body.permissions ?? 'read',
       readAllowedCollections: body.readAllowedCollections,
       readAllowedRooms: body.readAllowedRooms,
@@ -432,17 +448,20 @@ agentsRouter.post('/me/rooms', agentAuth, async (c) => {
 
   let allRooms = await getRoomsByIds(userRoomIds);
 
-  // Filter by allowedCollections
-  if (agent.allowedCollections.length > 0) {
-    allRooms = allRooms.filter((r) =>
-      agent.allowedCollections.includes(r.collectionKey)
-    );
-  }
+  const readAllowedCollections = effectiveScope(
+    agent.readAllowedCollections,
+    agent.allowedCollections
+  );
+  const readAllowedRooms = effectiveScope(
+    agent.readAllowedRooms,
+    agent.allowedRooms
+  );
 
-  // Filter by allowedRooms (if non-empty, restrict to specific room IDs)
-  if (agent.allowedRooms.length > 0) {
-    allRooms = allRooms.filter((r) => agent.allowedRooms.includes(r.id));
-  }
+  allRooms = allRooms.filter(
+    (room) =>
+      scopeIncludes(readAllowedCollections, room.collectionKey) &&
+      scopeIncludes(readAllowedRooms, room.id)
+  );
 
   // Return only safe fields
   const rooms = allRooms.map(
@@ -491,19 +510,22 @@ agentsRouter.post('/me/sync-token', combinedAgentAuth, async (c) => {
   }
 
   // Validate agent is allowed access to this room
-  if (
-    agent.allowedCollections.length > 0 &&
-    !agent.allowedCollections.includes(room.collectionKey)
-  ) {
+  const readAllowedCollections = effectiveScope(
+    agent.readAllowedCollections,
+    agent.allowedCollections
+  );
+  const readAllowedRooms = effectiveScope(
+    agent.readAllowedRooms,
+    agent.allowedRooms
+  );
+
+  if (!scopeIncludes(readAllowedCollections, room.collectionKey)) {
     return c.json(
       { error: 'Agent not allowed to access this collection' },
       403
     );
   }
-  if (
-    agent.allowedRooms.length > 0 &&
-    !agent.allowedRooms.includes(body.roomId)
-  ) {
+  if (!scopeIncludes(readAllowedRooms, body.roomId)) {
     return c.json({ error: 'Agent not allowed to access this room' }, 403);
   }
 

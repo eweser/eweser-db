@@ -2,6 +2,7 @@
  * DataLayer — manages Yjs documents + Hocuspocus connections for the MCP server.
  * Uses @eweser/shared's getDocuments for CRUD operations (same as browser SDK).
  */
+import { posix as posixPath } from 'node:path';
 import * as Y from 'yjs';
 import { HocuspocusProvider } from '@hocuspocus/provider';
 import type { AgentConfig, AgentRoom, SyncTokenResult } from './auth.js';
@@ -224,6 +225,12 @@ export class DataLayer {
     );
   }
 
+  private getReadableRooms(): ConnectedRoom[] {
+    return Array.from(this.rooms.values()).filter((connected) =>
+      this.canReadRoom(connected)
+    );
+  }
+
   private canWriteRoom(connected: ConnectedRoom): boolean {
     const writeScope = getWriteScope(this.agentConfig);
 
@@ -269,7 +276,7 @@ export class DataLayer {
   // ---------------------------------------------------------------------------
 
   listRooms(collectionKey?: string): AgentRoom[] {
-    const all = Array.from(this.rooms.values()).map((r) => r.meta);
+    const all = this.getReadableRooms().map((r) => r.meta);
     if (!collectionKey) return all;
     return all.filter((r) => r.collectionKey === collectionKey);
   }
@@ -390,13 +397,32 @@ function noteHasAllowedPath(
   if (typeof document.sourcePath !== 'string') return false;
 
   const sourcePath = normalizePathForScope(document.sourcePath);
-  return allowedPathPrefixes.some((prefix) =>
-    pathMatchesPrefix(sourcePath, normalizePathForScope(prefix))
-  );
+  if (!sourcePath) return false;
+
+  return allowedPathPrefixes.some((prefix) => {
+    const normalizedPrefix = normalizePathForScope(prefix);
+    return normalizedPrefix
+      ? pathMatchesPrefix(sourcePath, normalizedPrefix)
+      : false;
+  });
 }
 
-function normalizePathForScope(value: string): string {
-  return value.trim().replace(/^\/+/, '').replace(/\\/g, '/');
+function normalizePathForScope(value: string): string | null {
+  const cleaned = value.trim().replace(/\\/g, '/');
+  if (!cleaned) return null;
+  if (posixPath.isAbsolute(cleaned)) return null;
+  if (cleaned.split('/').includes('..')) return null;
+
+  const normalized = posixPath.normalize(cleaned);
+  if (
+    normalized === '.' ||
+    normalized === '..' ||
+    normalized.startsWith('../') ||
+    posixPath.isAbsolute(normalized)
+  ) {
+    return null;
+  }
+  return normalized;
 }
 
 function pathMatchesPrefix(sourcePath: string, prefix: string): boolean {

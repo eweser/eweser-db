@@ -271,11 +271,43 @@ describe('agentsRouter', () => {
       expect(mockCreateAgentConfig).toHaveBeenCalledWith(
         expect.objectContaining({
           allowedCollections: ['notes'],
+          allowedRooms: [],
           readAllowedCollections: ['notes'],
           writeAllowedCollections: ['notes'],
           writeAllowedRooms: ['room-1'],
           writeAllowedFolderIds: ['folder-ai'],
           writeAllowedPathPrefixes: ['AI/'],
+        })
+      );
+    });
+
+    it('keeps legacy allowedRooms aligned with explicit read rooms', async () => {
+      mockCreateAgentConfig.mockResolvedValueOnce({
+        agentConfig: {
+          ...baseAgent,
+          allowedRooms: ['room-1'],
+          readAllowedRooms: ['room-1'],
+        },
+        token: 'raw-token-value',
+      });
+
+      const res = await authenticatedFetch(app, '/api/agents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: 'Claude Code',
+          readAllowedCollections: ['notes'],
+          readAllowedRooms: ['room-1'],
+        }),
+      });
+
+      expect(res.status).toBe(201);
+      expect(mockCreateAgentConfig).toHaveBeenCalledWith(
+        expect.objectContaining({
+          allowedCollections: ['notes'],
+          allowedRooms: ['room-1'],
+          readAllowedCollections: ['notes'],
+          readAllowedRooms: ['room-1'],
         })
       );
     });
@@ -635,6 +667,7 @@ describe('agent-authenticated endpoints', () => {
       mockGetAgentConfigByTokenHash.mockResolvedValue({
         ...safeAgent,
         allowedCollections: ['flashcards'],
+        readAllowedCollections: ['flashcards'],
         tokenHash: 'hashed:agent-raw-token',
       });
       mockGetUserById.mockResolvedValueOnce(mockUserWithRooms);
@@ -644,6 +677,22 @@ describe('agent-authenticated endpoints', () => {
       expect(res.status).toBe(200);
       const data = await res.json<{ rooms: unknown[] }>();
       expect(data.rooms).toHaveLength(0); // filtered out
+    });
+
+    it('filters rooms by explicit readAllowedRooms before legacy allowedRooms', async () => {
+      mockGetAgentConfigByTokenHash.mockResolvedValue({
+        ...safeAgent,
+        allowedRooms: [],
+        readAllowedRooms: ['room-other'],
+        tokenHash: 'hashed:agent-raw-token',
+      });
+      mockGetUserById.mockResolvedValueOnce(mockUserWithRooms);
+      mockGetRoomsByIds.mockResolvedValueOnce([mockRoom]);
+
+      const res = await agentFetch(app, '/api/agents/me/rooms', {});
+      expect(res.status).toBe(200);
+      const data = await res.json<{ rooms: unknown[] }>();
+      expect(data.rooms).toHaveLength(0);
     });
 
     it('returns 401 without agent token', async () => {
@@ -687,6 +736,23 @@ describe('agent-authenticated endpoints', () => {
       mockGetAgentConfigByTokenHash.mockResolvedValue({
         ...safeAgent,
         allowedCollections: ['flashcards'],
+        readAllowedCollections: ['flashcards'],
+        tokenHash: 'hashed:agent-raw-token',
+      });
+      mockGetUserById.mockResolvedValueOnce(mockUserWithRooms);
+      mockGetRoomsByIds.mockResolvedValueOnce([mockRoom]);
+
+      const res = await agentFetch(app, '/api/agents/me/sync-token', {
+        roomId: 'room-uuid-1',
+      });
+      expect(res.status).toBe(403);
+    });
+
+    it('returns 403 if explicit readAllowedRooms excludes the room', async () => {
+      mockGetAgentConfigByTokenHash.mockResolvedValue({
+        ...safeAgent,
+        allowedRooms: [],
+        readAllowedRooms: ['room-other'],
         tokenHash: 'hashed:agent-raw-token',
       });
       mockGetUserById.mockResolvedValueOnce(mockUserWithRooms);
