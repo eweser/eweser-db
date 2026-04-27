@@ -74,7 +74,7 @@ const connectAiClientSchema = z.enum([
 
 const setupBodySchema = z.object({
   clientId: connectAiClientSchema,
-  writeRoomIds: z.array(z.string()).optional().default([]),
+  writeRoomIds: z.array(z.string()).optional(),
 });
 
 function getAgentName(clientId: (typeof tokenClientIds)[number]): string {
@@ -233,8 +233,26 @@ function getClientCatalog() {
   ] as const;
 }
 
-async function buildTokenScope(userId: string, writeRoomIds: string[]) {
+function getRecommendedWriteRoomIds(
+  writableRooms: Awaited<ReturnType<typeof getWritableRoomsByUserId>>
+): string[] {
+  return writableRooms
+    .filter(
+      (room) =>
+        room.collectionKey === 'conversations' ||
+        (room.collectionKey === 'notes' &&
+          /\bai\b|codex|assistant/i.test(room.name))
+    )
+    .map((room) => room.id);
+}
+
+async function buildTokenScope(
+  userId: string,
+  requestedWriteRoomIds?: string[]
+) {
   const writableRooms = await getWritableRoomsByUserId(userId);
+  const writeRoomIds =
+    requestedWriteRoomIds ?? getRecommendedWriteRoomIds(writableRooms);
   const writableRoomById = new Map(
     writableRooms.map((room) => [room.id, room])
   );
@@ -318,8 +336,8 @@ connectAiRouter.get('/', requireAuth, async (c) => {
     defaults: {
       allowedCollections: 'all-supported-collections',
       permissions: 'read',
-      recommendedWritableTarget: 'dedicated-ai-room',
-      writeScope: 'none',
+      recommendedWritableTarget: 'memory-and-ai-rooms',
+      writeScope: 'room',
       tokenTtlSeconds: Math.floor(onboardingTtlMs / 1000),
     },
     dynamicClientRegistrationUrl: `${getAuthServerBaseUrl()}/oauth/register`,

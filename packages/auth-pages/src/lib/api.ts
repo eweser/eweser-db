@@ -63,7 +63,7 @@ export interface ConnectAiOverviewResponse {
   defaults: {
     allowedCollections: string;
     permissions: 'read' | 'readwrite';
-    recommendedWritableTarget?: 'dedicated-ai-room';
+    recommendedWritableTarget?: 'dedicated-ai-room' | 'memory-and-ai-rooms';
     tokenTtlSeconds: number;
     writeScope?: 'none' | 'room';
   };

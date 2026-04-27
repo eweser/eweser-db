@@ -329,6 +329,13 @@ describe('auth-pages app', () => {
         'Never place bearer tokens in URLs. All setup flows stay on authenticated Eweser pages and mint or rotate tokens server-side.',
       writableRooms: [
         {
+          id: 'room-conversations',
+          name: 'Conversations',
+          collectionKey: 'conversations',
+          syncUrl: null,
+          syncBaseUrl: null,
+        },
+        {
           id: 'room-ai',
           name: 'AI Notes',
           collectionKey: 'notes',
@@ -385,6 +392,13 @@ describe('auth-pages app', () => {
         'Never place bearer tokens in URLs. All setup flows stay on authenticated Eweser pages and mint or rotate tokens server-side.',
       writableRooms: [
         {
+          id: 'room-conversations',
+          name: 'Conversations',
+          collectionKey: 'conversations',
+          syncUrl: null,
+          syncBaseUrl: null,
+        },
+        {
           id: 'room-ai',
           name: 'AI Notes',
           collectionKey: 'notes',
@@ -419,7 +433,7 @@ describe('auth-pages app', () => {
     await waitFor(() => {
       expect(apiMocks.setupConnectAiToken).toHaveBeenCalledWith(
         'claude-desktop',
-        { writeRoomIds: ['room-ai'] }
+        { writeRoomIds: ['room-conversations', 'room-ai'] }
       );
     });
 

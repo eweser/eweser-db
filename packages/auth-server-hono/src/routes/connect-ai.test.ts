@@ -186,7 +186,7 @@ describe('connectAiRouter', () => {
       {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ clientId: 'claude-desktop' }),
+        body: JSON.stringify({ clientId: 'claude-desktop', writeRoomIds: [] }),
       }
     );
 
@@ -202,6 +202,76 @@ describe('connectAiRouter', () => {
         readAllowedCollections: expect.any(Array),
         writeAllowedCollections: [],
         writeAllowedRooms: [],
+      })
+    );
+  });
+
+  it('defaults token setup writes to memory and dedicated AI rooms', async () => {
+    mockGetWritableRoomsByUserId.mockResolvedValueOnce([
+      {
+        id: 'room-conversations',
+        name: 'Conversations',
+        collectionKey: 'conversations',
+        syncUrl: 'wss://sync.eweser.com',
+        syncBaseUrl: null,
+      },
+      {
+        id: 'room-ai',
+        name: 'AI Notes',
+        collectionKey: 'notes',
+        syncUrl: 'wss://sync.eweser.com',
+        syncBaseUrl: null,
+      },
+      {
+        id: 'room-private',
+        name: 'Private Notes',
+        collectionKey: 'notes',
+        syncUrl: 'wss://sync.eweser.com',
+        syncBaseUrl: null,
+      },
+    ]);
+    mockGetAgentConfigsByUserId.mockResolvedValueOnce([]);
+    mockCreateAgentConfig.mockResolvedValueOnce({
+      agentConfig: {
+        id: 'agent-uuid-1',
+        userId: mockUser.id,
+        name: 'Connect AI: Codex',
+        type: 'mcp',
+        endpoint: 'https://www.eweser.com/mcp',
+        allowedCollections: ['notes'],
+        allowedRooms: [],
+        permissions: 'read',
+        readAllowedCollections: ['notes'],
+        readAllowedRooms: [],
+        isActive: true,
+        tokenHash: 'secret-hash',
+        tokenExpiresAt: new Date('2026-05-01T00:00:00.000Z'),
+        lastAccessAt: null,
+        writeAllowedCollections: ['conversations', 'notes'],
+        writeAllowedFolderIds: [],
+        writeAllowedPathPrefixes: [],
+        writeAllowedRooms: ['room-conversations', 'room-ai'],
+        createdAt: new Date('2026-04-24T00:00:00.000Z'),
+        updatedAt: null,
+      },
+      token: 'agent-token-123',
+    });
+
+    const res = await authenticatedFetch(
+      app,
+      '/api/account/connect-ai/setup-token',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ clientId: 'codex' }),
+      }
+    );
+
+    expect(res.status).toBe(200);
+    expect(mockCreateAgentConfig).toHaveBeenCalledWith(
+      expect.objectContaining({
+        writeAllowedCollections: ['conversations', 'notes'],
+        writeAllowedRooms: ['room-conversations', 'room-ai'],
       })
     );
   });

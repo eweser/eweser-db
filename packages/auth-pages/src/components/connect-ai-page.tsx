@@ -304,10 +304,14 @@ function getRecommendedWriteRoomIds(
   overview: ConnectAiOverviewResponse
 ): string[] {
   const writableRooms = overview.writableRooms ?? [];
-  const aiRoom = writableRooms.find((room) =>
-    /\bai\b|codex|assistant/i.test(room.name)
-  );
-  return aiRoom ? [aiRoom.id] : [];
+  return writableRooms
+    .filter(
+      (room) =>
+        room.collectionKey === 'conversations' ||
+        (room.collectionKey === 'notes' &&
+          /\bai\b|codex|assistant/i.test(room.name))
+    )
+    .map((room) => room.id);
 }
 
 function WritableRoomSelector({
@@ -325,9 +329,9 @@ function WritableRoomSelector({
         <div>
           <h3 className="text-sm font-semibold">Writable AI area</h3>
           <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-            Token clients are read-only by default. Select a dedicated AI Notes
-            room if you want them to save memories, session summaries, or draft
-            notes without opening write access across your database.
+            Token clients can read your allowed database by default. Select only
+            the rooms where they may save memories, session summaries, or draft
+            notes.
           </p>
         </div>
         <span className="rounded-full border border-border px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
@@ -360,8 +364,8 @@ function WritableRoomSelector({
         </div>
       ) : (
         <p className="mt-4 text-sm text-muted-foreground">
-          Create a room named AI Notes in Eweser, then return here and select it
-          as the only writable room for local token clients.
+          Create a Conversations room or a dedicated AI Notes room in Eweser,
+          then return here and select it as a writable room for token clients.
         </p>
       )}
     </div>
