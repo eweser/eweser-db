@@ -9,6 +9,12 @@ export interface AgentConfig {
   type: 'mcp' | 'openclaw' | 'custom';
   allowedCollections: string[];
   allowedRooms: string[];
+  readAllowedCollections?: string[];
+  readAllowedRooms?: string[];
+  writeAllowedCollections?: string[];
+  writeAllowedRooms?: string[];
+  writeAllowedFolderIds?: string[];
+  writeAllowedPathPrefixes?: string[];
   permissions: 'read' | 'readwrite';
   isActive: boolean;
   tokenExpiresAt: string | null;

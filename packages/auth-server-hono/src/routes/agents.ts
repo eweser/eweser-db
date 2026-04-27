@@ -41,13 +41,19 @@ const rotateTokenRateLimit = createRateLimit({
 });
 
 const createAgentBodySchema = z.object({
-  allowedCollections: z.array(z.string()).min(1),
+  allowedCollections: z.array(z.string()).min(1).optional(),
   allowedRooms: z.array(z.string()).optional(),
   endpoint: z.string().url().optional(),
   name: z.string().min(2).max(120),
   permissions: z.enum(['read', 'readwrite']).optional(),
+  readAllowedCollections: z.array(z.string()).optional(),
+  readAllowedRooms: z.array(z.string()).optional(),
   tokenExpiresAt: z.number().int().positive().optional(),
   type: z.enum(['mcp', 'openclaw', 'custom']).optional(),
+  writeAllowedCollections: z.array(z.string()).optional(),
+  writeAllowedFolderIds: z.array(z.string()).optional(),
+  writeAllowedPathPrefixes: z.array(z.string()).optional(),
+  writeAllowedRooms: z.array(z.string()).optional(),
 });
 
 const verifyTokenBodySchema = z.object({
@@ -99,9 +105,28 @@ agentsRouter.post(
     }
     const body = bodyResult.data;
 
-    const invalidCollections = body.allowedCollections.filter(
-      (k) => !COLLECTION_KEYS.includes(k as (typeof COLLECTION_KEYS)[number])
+    const allowedCollections =
+      body.allowedCollections ?? body.readAllowedCollections ?? [];
+    const invalidCollections = [
+      ...allowedCollections,
+      ...(body.readAllowedCollections ?? []),
+      ...(body.writeAllowedCollections ?? []),
+    ].filter(
+      (k, index, all) =>
+        all.indexOf(k) === index &&
+        !COLLECTION_KEYS.includes(k as (typeof COLLECTION_KEYS)[number])
     );
+
+    if (allowedCollections.length === 0 && invalidCollections.length === 0) {
+      return c.json(
+        {
+          error:
+            'At least one readable collection is required via allowedCollections or readAllowedCollections.',
+        },
+        400
+      );
+    }
+
     if (invalidCollections.length > 0) {
       return c.json(
         {
@@ -123,10 +148,16 @@ agentsRouter.post(
       name: body.name,
       type: body.type ?? 'mcp',
       endpoint: body.endpoint,
-      allowedCollections: body.allowedCollections,
+      allowedCollections,
       allowedRooms: body.allowedRooms ?? [],
       permissions: body.permissions ?? 'read',
+      readAllowedCollections: body.readAllowedCollections,
+      readAllowedRooms: body.readAllowedRooms,
       tokenExpiresAt,
+      writeAllowedCollections: body.writeAllowedCollections,
+      writeAllowedFolderIds: body.writeAllowedFolderIds,
+      writeAllowedPathPrefixes: body.writeAllowedPathPrefixes,
+      writeAllowedRooms: body.writeAllowedRooms,
     });
     await logSecurityEvent({
       action: 'agent.token.created',

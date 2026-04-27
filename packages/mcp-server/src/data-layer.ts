@@ -30,6 +30,11 @@ interface ConnectedRoom {
   refreshTimer?: ReturnType<typeof setTimeout>;
 }
 
+type DocumentWriteCandidate = Partial<EweDocument> & {
+  folderIds?: unknown;
+  sourcePath?: unknown;
+};
+
 export class DataLayer {
   private rooms: Map<string, ConnectedRoom> = new Map();
   private agentConfig: AgentConfig;
@@ -176,14 +181,87 @@ export class DataLayer {
     if (!connected) {
       throw new Error(`Room not connected or not accessible: ${roomId}`);
     }
+    if (!this.canReadRoom(connected)) {
+      throw new Error(
+        `Agent does not have read permission for room: ${roomId}`
+      );
+    }
     return connected;
   }
 
-  assertWriteAccess(roomId: string): ConnectedRoom {
-    if (this.agentConfig.permissions !== 'readwrite') {
+  assertWriteAccess(
+    roomId: string,
+    document?: DocumentWriteCandidate
+  ): ConnectedRoom {
+    const connected = this.assertReadAccess(roomId);
+    if (!this.canWriteRoom(connected)) {
       throw new Error('Agent does not have write permission');
     }
-    return this.assertReadAccess(roomId);
+    if (
+      connected.meta.collectionKey === 'notes' &&
+      !this.canWriteNoteDocument(document)
+    ) {
+      throw new Error(
+        'Agent does not have write permission for this note folder or path'
+      );
+    }
+    return connected;
+  }
+
+  private canReadRoom(connected: ConnectedRoom): boolean {
+    const collections = effectiveReadScope(
+      this.agentConfig.readAllowedCollections,
+      this.agentConfig.allowedCollections
+    );
+    const rooms = effectiveReadScope(
+      this.agentConfig.readAllowedRooms,
+      this.agentConfig.allowedRooms
+    );
+
+    return (
+      scopeIncludes(collections, connected.meta.collectionKey) &&
+      scopeIncludes(rooms, connected.meta.id)
+    );
+  }
+
+  private canWriteRoom(connected: ConnectedRoom): boolean {
+    const writeScope = getWriteScope(this.agentConfig);
+
+    if (!writeScope.explicit) {
+      if (this.agentConfig.permissions !== 'readwrite') return false;
+      return (
+        scopeIncludes(
+          this.agentConfig.allowedCollections,
+          connected.meta.collectionKey
+        ) && scopeIncludes(this.agentConfig.allowedRooms, connected.meta.id)
+      );
+    }
+
+    if (writeScope.collections.length === 0 && writeScope.rooms.length === 0) {
+      return false;
+    }
+
+    return (
+      scopeIncludes(writeScope.collections, connected.meta.collectionKey) &&
+      scopeIncludes(writeScope.rooms, connected.meta.id)
+    );
+  }
+
+  private canWriteNoteDocument(document?: DocumentWriteCandidate): boolean {
+    const writeScope = getWriteScope(this.agentConfig);
+    const allowedFolderIds = writeScope.folderIds;
+    const allowedPathPrefixes = writeScope.pathPrefixes;
+
+    if (allowedFolderIds.length === 0 && allowedPathPrefixes.length === 0) {
+      return true;
+    }
+
+    if (!document) return false;
+
+    return (
+      noteHasAllowedFolder(document, allowedFolderIds) ||
+      noteHasAllowedPath(document, allowedPathPrefixes)
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -253,4 +331,76 @@ export class DataLayer {
 
     return results;
   }
+}
+
+function compactScope(values: string[] | undefined): string[] {
+  return Array.from(new Set((values ?? []).filter(Boolean)));
+}
+
+function effectiveReadScope(
+  nextScope: string[] | undefined,
+  legacyScope: string[]
+): string[] {
+  const next = compactScope(nextScope);
+  return next.length > 0 ? next : compactScope(legacyScope);
+}
+
+function scopeIncludes(scope: string[], value: string): boolean {
+  return scope.length === 0 || scope.includes(value);
+}
+
+function getWriteScope(agentConfig: AgentConfig): {
+  explicit: boolean;
+  collections: string[];
+  rooms: string[];
+  folderIds: string[];
+  pathPrefixes: string[];
+} {
+  const collections = compactScope(agentConfig.writeAllowedCollections);
+  const rooms = compactScope(agentConfig.writeAllowedRooms);
+  const folderIds = compactScope(agentConfig.writeAllowedFolderIds);
+  const pathPrefixes = compactScope(agentConfig.writeAllowedPathPrefixes);
+  const explicit =
+    collections.length > 0 ||
+    rooms.length > 0 ||
+    folderIds.length > 0 ||
+    pathPrefixes.length > 0 ||
+    agentConfig.permissions !== 'readwrite';
+
+  return { explicit, collections, rooms, folderIds, pathPrefixes };
+}
+
+function noteHasAllowedFolder(
+  document: DocumentWriteCandidate,
+  allowedFolderIds: string[]
+): boolean {
+  if (allowedFolderIds.length === 0) return false;
+  if (!Array.isArray(document.folderIds)) return false;
+  return document.folderIds.some(
+    (folderId) =>
+      typeof folderId === 'string' && allowedFolderIds.includes(folderId)
+  );
+}
+
+function noteHasAllowedPath(
+  document: DocumentWriteCandidate,
+  allowedPathPrefixes: string[]
+): boolean {
+  if (allowedPathPrefixes.length === 0) return false;
+  if (typeof document.sourcePath !== 'string') return false;
+
+  const sourcePath = normalizePathForScope(document.sourcePath);
+  return allowedPathPrefixes.some((prefix) =>
+    pathMatchesPrefix(sourcePath, normalizePathForScope(prefix))
+  );
+}
+
+function normalizePathForScope(value: string): string {
+  return value.trim().replace(/^\/+/, '').replace(/\\/g, '/');
+}
+
+function pathMatchesPrefix(sourcePath: string, prefix: string): boolean {
+  if (!prefix) return false;
+  if (prefix.endsWith('/')) return sourcePath.startsWith(prefix);
+  return sourcePath === prefix || sourcePath.startsWith(`${prefix}/`);
 }

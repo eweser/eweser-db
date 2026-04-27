@@ -9,7 +9,9 @@ import {
   getAgentConfigsByUserId,
   revokeAgentConfig,
   rotateAgentToken,
+  updateAgentConfigScope,
 } from '../model/agents.js';
+import { getWritableRoomsByUserId } from '../model/rooms/calls.js';
 import {
   getOAuthAccessTokensByUserId,
   revokeOAuthAccessTokensForUserClient,
@@ -72,6 +74,7 @@ const connectAiClientSchema = z.enum([
 
 const setupBodySchema = z.object({
   clientId: connectAiClientSchema,
+  writeRoomIds: z.array(z.string()).optional().default([]),
 });
 
 function getAgentName(clientId: (typeof tokenClientIds)[number]): string {
@@ -140,7 +143,7 @@ function buildTokenSnippet(
       return {
         configFormat: 'toml',
         instructions:
-          'Add this to ~/.codex/config.toml and export the token as EWESER_MCP_TOKEN.',
+          'Add this to ~/.codex/config.toml, set EWESER_MCP_TOKEN in the environment that launches Codex, then fully restart Codex. A repo .env file alone is not enough for native MCP startup.',
         snippet: [
           '[mcp_servers.eweser]',
           `url = "${getPublicMcpUrl()}"`,
@@ -230,11 +233,43 @@ function getClientCatalog() {
   ] as const;
 }
 
+async function buildTokenScope(userId: string, writeRoomIds: string[]) {
+  const writableRooms = await getWritableRoomsByUserId(userId);
+  const writableRoomById = new Map(
+    writableRooms.map((room) => [room.id, room])
+  );
+  const unauthorizedWriteRoom = writeRoomIds.find(
+    (roomId) => !writableRoomById.has(roomId)
+  );
+  if (unauthorizedWriteRoom) {
+    return null;
+  }
+
+  const writeAllowedCollections = Array.from(
+    new Set(
+      writeRoomIds.map((roomId) => writableRoomById.get(roomId)?.collectionKey)
+    )
+  ).filter((collectionKey): collectionKey is string => Boolean(collectionKey));
+
+  return {
+    allowedCollections: [...COLLECTION_KEYS],
+    allowedRooms: [],
+    permissions: 'read' as const,
+    readAllowedCollections: [...COLLECTION_KEYS],
+    readAllowedRooms: [],
+    writeAllowedCollections,
+    writeAllowedFolderIds: [],
+    writeAllowedPathPrefixes: [],
+    writeAllowedRooms: writeRoomIds,
+  };
+}
+
 connectAiRouter.get('/', requireAuth, async (c) => {
   const user = c.get('user');
-  const [agentConfigs, oauthTokens] = await Promise.all([
+  const [agentConfigs, oauthTokens, writableRooms] = await Promise.all([
     getAgentConfigsByUserId(user.id),
     getOAuthAccessTokensByUserId(user.id, [...oauthClientIds]),
+    getWritableRoomsByUserId(user.id),
   ]);
 
   const tokenConnections = new Map(
@@ -251,6 +286,7 @@ connectAiRouter.get('/', requireAuth, async (c) => {
               lastUsedAt: agent.lastAccessAt?.toISOString() ?? null,
               permissions: agent.permissions,
               status: agent.isActive ? 'connected' : 'revoked',
+              writeRoomCount: agent.writeAllowedRooms.length,
             }
           : null,
       ];
@@ -282,6 +318,8 @@ connectAiRouter.get('/', requireAuth, async (c) => {
     defaults: {
       allowedCollections: 'all-supported-collections',
       permissions: 'read',
+      recommendedWritableTarget: 'dedicated-ai-room',
+      writeScope: 'none',
       tokenTtlSeconds: Math.floor(onboardingTtlMs / 1000),
     },
     dynamicClientRegistrationUrl: `${getAuthServerBaseUrl()}/oauth/register`,
@@ -289,6 +327,15 @@ connectAiRouter.get('/', requireAuth, async (c) => {
     oauthMetadataUrl: `${getAuthServerBaseUrl()}/.well-known/oauth-authorization-server`,
     smartLinkRule:
       'Never place bearer tokens in URLs. All setup flows stay on authenticated Eweser pages and mint or rotate tokens server-side.',
+    writableRooms: writableRooms.map(
+      ({ id, name, collectionKey, syncUrl, syncBaseUrl }) => ({
+        id,
+        name,
+        collectionKey,
+        syncUrl,
+        syncBaseUrl,
+      })
+    ),
     clients: getClientCatalog().map((client) => ({
       ...client,
       connection:
@@ -317,9 +364,14 @@ connectAiRouter.post(
       return c.json({ error: 'Invalid request body' }, 400);
     }
 
-    const { clientId } = parsedBody.data;
+    const { clientId, writeRoomIds } = parsedBody.data;
     if (!isTokenClientId(clientId)) {
       return c.json({ error: 'This client uses OAuth onboarding' }, 400);
+    }
+
+    const scope = await buildTokenScope(user.id, writeRoomIds);
+    if (!scope) {
+      return c.json({ error: 'Invalid writable room' }, 403);
     }
 
     const agentName = getAgentName(clientId);
@@ -329,16 +381,17 @@ connectAiRouter.post(
     );
 
     const result = existing
-      ? await rotateAgentToken(existing.id, user.id)
+      ? await updateAgentConfigScope(existing.id, user.id, scope).then(
+          (updated) => (updated ? rotateAgentToken(existing.id, user.id) : null)
+        )
       : await createAgentConfig({
+          ...scope,
           allowedCollections: [...COLLECTION_KEYS],
-          allowedRooms: [],
           endpoint:
             clientId === 'claude-desktop'
               ? getAuthServerBaseUrl()
               : getPublicMcpUrl(),
           name: agentName,
-          permissions: 'read',
           tokenExpiresAt: new Date(Date.now() + onboardingTtlMs),
           type: clientId === 'openclaw' ? 'openclaw' : 'mcp',
           userId: user.id,
@@ -374,7 +427,7 @@ connectAiRouter.post(
       return c.json({ error: 'Invalid request body' }, 400);
     }
 
-    const { clientId } = parsedBody.data;
+    const { clientId, writeRoomIds } = parsedBody.data;
     if (!isTokenClientId(clientId)) {
       return c.json({ error: 'This client uses OAuth onboarding' }, 400);
     }
@@ -385,6 +438,16 @@ connectAiRouter.post(
     );
 
     if (!existing) {
+      return c.json({ error: 'Connection not found' }, 404);
+    }
+
+    const scope = await buildTokenScope(user.id, writeRoomIds);
+    if (!scope) {
+      return c.json({ error: 'Invalid writable room' }, 403);
+    }
+
+    const updated = await updateAgentConfigScope(existing.id, user.id, scope);
+    if (!updated) {
       return c.json({ error: 'Connection not found' }, 404);
     }
 

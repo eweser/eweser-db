@@ -38,6 +38,7 @@ export interface ConnectAiConnection {
   lastUsedAt: string | null;
   permissions: 'read' | 'readwrite';
   status: 'connected' | 'revoked';
+  writeRoomCount?: number;
 }
 
 export interface ConnectAiClientOverview {
@@ -49,17 +50,28 @@ export interface ConnectAiClientOverview {
   type: 'oauth' | 'token' | 'token-fallback';
 }
 
+export interface ConnectAiWritableRoom {
+  collectionKey: string;
+  id: string;
+  name: string;
+  syncBaseUrl: string | null;
+  syncUrl: string | null;
+}
+
 export interface ConnectAiOverviewResponse {
   clients: ConnectAiClientOverview[];
   defaults: {
     allowedCollections: string;
     permissions: 'read' | 'readwrite';
+    recommendedWritableTarget?: 'dedicated-ai-room';
     tokenTtlSeconds: number;
+    writeScope?: 'none' | 'room';
   };
   dynamicClientRegistrationUrl: string;
   mcpUrl: string;
   oauthMetadataUrl: string;
   smartLinkRule: string;
+  writableRooms?: ConnectAiWritableRoom[];
 }
 
 export interface ConnectAiSetupResponse {
@@ -127,21 +139,27 @@ export function getConnectAiOverview() {
   return request<ConnectAiOverviewResponse>('/api/account/connect-ai');
 }
 
-export function setupConnectAiToken(clientId: ConnectAiClientId) {
+export function setupConnectAiToken(
+  clientId: ConnectAiClientId,
+  options?: { writeRoomIds?: string[] }
+) {
   return request<ConnectAiSetupResponse>(
     '/api/account/connect-ai/setup-token',
     {
-      body: JSON.stringify({ clientId }),
+      body: JSON.stringify({ clientId, ...(options ?? {}) }),
       method: 'POST',
     }
   );
 }
 
-export function rotateConnectAiToken(clientId: ConnectAiClientId) {
+export function rotateConnectAiToken(
+  clientId: ConnectAiClientId,
+  options?: { writeRoomIds?: string[] }
+) {
   return request<ConnectAiSetupResponse>(
     '/api/account/connect-ai/rotate-token',
     {
-      body: JSON.stringify({ clientId }),
+      body: JSON.stringify({ clientId, ...(options ?? {}) }),
       method: 'POST',
     }
   );

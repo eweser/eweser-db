@@ -35,6 +35,10 @@ function formatDate(value: string | null) {
   return new Date(value).toLocaleString();
 }
 
+type WritableRoom = NonNullable<
+  ConnectAiOverviewResponse['writableRooms']
+>[number];
+
 export function ConnectAiPage() {
   const [overview, setOverview] = useState<ConnectAiOverviewResponse | null>(
     null
@@ -50,6 +54,9 @@ export function ConnectAiPage() {
   const [oauthNotices, setOauthNotices] = useState<
     Partial<Record<'claude-web' | 'chatgpt-web', string>>
   >({});
+  const [selectedWriteRoomIds, setSelectedWriteRoomIds] = useState<string[]>(
+    []
+  );
 
   async function refreshOverview() {
     const result = await getConnectAiOverview();
@@ -63,6 +70,7 @@ export function ConnectAiPage() {
       .then((result) => {
         if (active) {
           setOverview(result);
+          setSelectedWriteRoomIds(getRecommendedWriteRoomIds(result));
         }
       })
       .catch((requestError: Error) => {
@@ -98,6 +106,15 @@ export function ConnectAiPage() {
     } finally {
       setActiveClient(null);
     }
+  }
+
+  function toggleWriteRoom(roomId: string, checked: boolean) {
+    setSelectedWriteRoomIds((current) => {
+      if (checked) {
+        return Array.from(new Set(current.concat(roomId)));
+      }
+      return current.filter((id) => id !== roomId);
+    });
   }
 
   async function launchOAuthSetup(clientId: 'claude-web' | 'chatgpt-web') {
@@ -189,6 +206,12 @@ export function ConnectAiPage() {
 
       {error ? <p className="mb-4 text-sm text-destructive">{error}</p> : null}
 
+      <WritableRoomSelector
+        rooms={overview.writableRooms ?? []}
+        selectedRoomIds={selectedWriteRoomIds}
+        onToggleRoom={toggleWriteRoom}
+      />
+
       <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
         {overview.clients.map((client) => {
           const setup = setupPayloads[client.clientId];
@@ -212,7 +235,8 @@ export function ConnectAiPage() {
                   onRotate: () =>
                     void withClientAction(client.clientId, async () => {
                       const result = await rotateConnectAiToken(
-                        client.clientId
+                        client.clientId,
+                        { writeRoomIds: selectedWriteRoomIds }
                       );
                       setSetupPayloads((current) => ({
                         ...current,
@@ -245,7 +269,9 @@ export function ConnectAiPage() {
                     await launchOAuthSetup(client.clientId);
                     return;
                   }
-                  const result = await setupConnectAiToken(client.clientId);
+                  const result = await setupConnectAiToken(client.clientId, {
+                    writeRoomIds: selectedWriteRoomIds,
+                  });
                   setSetupPayloads((current) => ({
                     ...current,
                     [client.clientId]: result,
@@ -270,6 +296,74 @@ export function ConnectAiPage() {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function getRecommendedWriteRoomIds(
+  overview: ConnectAiOverviewResponse
+): string[] {
+  const writableRooms = overview.writableRooms ?? [];
+  const aiRoom = writableRooms.find((room) =>
+    /\bai\b|codex|assistant/i.test(room.name)
+  );
+  return aiRoom ? [aiRoom.id] : [];
+}
+
+function WritableRoomSelector({
+  rooms,
+  selectedRoomIds,
+  onToggleRoom,
+}: {
+  rooms: WritableRoom[];
+  selectedRoomIds: string[];
+  onToggleRoom: (roomId: string, checked: boolean) => void;
+}) {
+  return (
+    <div className="mb-6 rounded-lg border border-border bg-background/50 p-4">
+      <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h3 className="text-sm font-semibold">Writable AI area</h3>
+          <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
+            Token clients are read-only by default. Select a dedicated AI Notes
+            room if you want them to save memories, session summaries, or draft
+            notes without opening write access across your database.
+          </p>
+        </div>
+        <span className="rounded-full border border-border px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+          Recommended
+        </span>
+      </div>
+
+      {rooms.length > 0 ? (
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {rooms.map((room) => (
+            <label
+              key={room.id}
+              className="flex min-h-16 items-center justify-between gap-3 rounded-md border border-border/80 px-3 py-2 text-sm"
+            >
+              <span className="min-w-0">
+                <span className="block truncate font-medium">{room.name}</span>
+                <span className="block text-xs text-muted-foreground">
+                  {room.collectionKey}
+                </span>
+              </span>
+              <input
+                checked={selectedRoomIds.includes(room.id)}
+                onChange={(event) =>
+                  onToggleRoom(room.id, event.target.checked)
+                }
+                type="checkbox"
+              />
+            </label>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-4 text-sm text-muted-foreground">
+          Create a room named AI Notes in Eweser, then return here and select it
+          as the only writable room for local token clients.
+        </p>
+      )}
     </div>
   );
 }
@@ -324,6 +418,14 @@ function ClientCard({
         <p className="mt-2 text-muted-foreground">
           Permission: {client.connection?.permissions ?? 'Not issued'}
         </p>
+        {client.type !== 'oauth' ? (
+          <p className="mt-2 text-muted-foreground">
+            Write scope:{' '}
+            {client.connection
+              ? formatWriteScope(client.connection.writeRoomCount)
+              : 'Not issued'}
+          </p>
+        ) : null}
         <p className="mt-2 text-muted-foreground">
           Expires: {formatDate(client.connection?.expiresAt ?? null)}
         </p>
@@ -392,4 +494,9 @@ function ClientCard({
       </div>
     </Card>
   );
+}
+
+function formatWriteScope(writeRoomCount?: number): string {
+  if (!writeRoomCount) return 'None';
+  return `${writeRoomCount} room${writeRoomCount === 1 ? '' : 's'}`;
 }

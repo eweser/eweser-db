@@ -205,7 +205,9 @@ describe('eweser_create_document', () => {
       roomId: 'room-1',
       data: { text: 'x' },
     });
-    expect(mockDataLayer.assertWriteAccess).toHaveBeenCalledWith('room-1');
+    expect(mockDataLayer.assertWriteAccess).toHaveBeenCalledWith('room-1', {
+      text: 'x',
+    });
   });
 });
 
@@ -252,7 +254,10 @@ describe('eweser_delete_document', () => {
       roomId: 'room-1',
       documentId: 'doc-1',
     });
-    expect(mockDataLayer.assertWriteAccess).toHaveBeenCalledWith('room-1');
+    expect(mockDataLayer.assertWriteAccess).toHaveBeenCalledWith(
+      'room-1',
+      mockDoc1
+    );
   });
 });
 
@@ -322,7 +327,13 @@ describe('eweser_save_memory', () => {
       summary: 'Test.',
       memoryType: 'memory',
     });
-    expect(mockDataLayer.assertWriteAccess).toHaveBeenCalledWith('room-1');
+    expect(mockDataLayer.assertWriteAccess).toHaveBeenCalledWith(
+      'room-1',
+      expect.objectContaining({
+        title: 'Test',
+        memoryType: 'memory',
+      })
+    );
   });
 
   it('logs access after creation', async () => {
@@ -362,7 +373,13 @@ describe('eweser_save_memory', () => {
       summary: 'A test memory',
       memoryType: 'memory',
     });
-    expect(mockDataLayer.assertWriteAccess).toHaveBeenCalledWith('room-1');
+    expect(mockDataLayer.assertWriteAccess).toHaveBeenCalledWith(
+      'room-1',
+      expect.objectContaining({
+        title: 'Test',
+        memoryType: 'memory',
+      })
+    );
   });
 
   it('defaults agentId to "unknown" when not provided', async () => {
@@ -467,5 +484,35 @@ describe('eweser_save_memory', () => {
       unknown
     >;
     expect(callArgs?.turns).toHaveLength(2);
+  });
+
+  it('redacts secret-like content before saving memory', async () => {
+    const accessKey = `AKIA${'1234567890ABCDEF'}`;
+    await callTool('eweser_save_memory', {
+      roomId: 'room-1',
+      title: 'Incident note',
+      summary: `Rotated AWS_ACCESS_KEY_ID=${accessKey} and token=super-secret-value`,
+      memoryType: 'session',
+      turns: [
+        {
+          role: 'user' as const,
+          content: `aws_${'secret'}_access_key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY`,
+          timestamp: '2025-01-01T00:00:00.000Z',
+        },
+      ],
+    });
+
+    const callArgs = mockCrudApi.new.mock.calls.at(-1)?.[0] as Record<
+      string,
+      unknown
+    >;
+    const turns = callArgs?.turns as Array<{ content: string }>;
+
+    expect(callArgs?.summary).toContain('[REDACTED_SECRET]');
+    expect(callArgs?.summary).not.toContain(accessKey);
+    expect(turns[0].content).toBe('[REDACTED_SECRET]');
+    expect(callArgs?.redactionWarnings).toEqual([
+      'secret-like content redacted before save',
+    ]);
   });
 });

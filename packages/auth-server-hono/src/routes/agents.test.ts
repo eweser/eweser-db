@@ -132,10 +132,16 @@ const baseAgent = {
   allowedCollections: ['notes'],
   allowedRooms: [],
   permissions: 'read' as const,
+  readAllowedCollections: ['notes'],
+  readAllowedRooms: [],
   isActive: true,
   tokenHash: 'secret-hash',
   tokenExpiresAt: null,
   lastAccessAt: null,
+  writeAllowedCollections: [],
+  writeAllowedFolderIds: [],
+  writeAllowedPathPrefixes: [],
+  writeAllowedRooms: [],
   createdAt: new Date('2026-04-03'),
   updatedAt: null,
 };
@@ -226,6 +232,52 @@ describe('agentsRouter', () => {
       expect(body.token).toBe('raw-token-value');
       expect(body.warning).toContain('Store this token securely');
       expect(body.agent).not.toHaveProperty('tokenHash');
+      expect(mockCreateAgentConfig).toHaveBeenCalledWith(
+        expect.objectContaining({
+          allowedCollections: ['notes'],
+          readAllowedCollections: undefined,
+          writeAllowedCollections: undefined,
+        })
+      );
+    });
+
+    it('accepts explicit read and write scope fields', async () => {
+      mockCreateAgentConfig.mockResolvedValueOnce({
+        agentConfig: {
+          ...baseAgent,
+          readAllowedCollections: ['notes'],
+          writeAllowedCollections: ['notes'],
+          writeAllowedRooms: ['room-1'],
+          writeAllowedFolderIds: ['folder-ai'],
+          writeAllowedPathPrefixes: ['AI/'],
+        },
+        token: 'raw-token-value',
+      });
+
+      const res = await authenticatedFetch(app, '/api/agents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: 'Claude Code',
+          readAllowedCollections: ['notes'],
+          writeAllowedCollections: ['notes'],
+          writeAllowedRooms: ['room-1'],
+          writeAllowedFolderIds: ['folder-ai'],
+          writeAllowedPathPrefixes: ['AI/'],
+        }),
+      });
+
+      expect(res.status).toBe(201);
+      expect(mockCreateAgentConfig).toHaveBeenCalledWith(
+        expect.objectContaining({
+          allowedCollections: ['notes'],
+          readAllowedCollections: ['notes'],
+          writeAllowedCollections: ['notes'],
+          writeAllowedRooms: ['room-1'],
+          writeAllowedFolderIds: ['folder-ai'],
+          writeAllowedPathPrefixes: ['AI/'],
+        })
+      );
     });
 
     it('returns 400 when name is missing', async () => {
@@ -515,9 +567,15 @@ const safeAgent = {
   allowedCollections: ['notes'],
   allowedRooms: [],
   permissions: 'readwrite' as const,
+  readAllowedCollections: ['notes'],
+  readAllowedRooms: [],
   isActive: true,
   tokenExpiresAt: null,
   lastAccessAt: null,
+  writeAllowedCollections: ['notes'],
+  writeAllowedFolderIds: [],
+  writeAllowedPathPrefixes: [],
+  writeAllowedRooms: [],
   createdAt: new Date('2026-04-04'),
   updatedAt: null,
 };

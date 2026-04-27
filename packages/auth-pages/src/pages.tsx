@@ -1000,6 +1000,11 @@ function PermissionPage() {
             {loginQuery.name} at {loginQuery.domain} is requesting access to
             your database.
           </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Start with read access. For AI clients that need to save notes,
+            prefer a dedicated AI Notes room instead of granting broad write
+            access.
+          </p>
         </div>
 
         <div className="space-y-6">
@@ -1014,14 +1019,14 @@ function PermissionPage() {
                 }}
                 type="checkbox"
               />
-              All folders
+              Read all collections and rooms
             </label>
           </div>
 
           {!allowAll ? (
             <div className="grid gap-6 lg:grid-cols-2">
               <div className="rounded-lg border p-4">
-                <h3 className="text-sm font-semibold">Collections</h3>
+                <h3 className="text-sm font-semibold">Readable collections</h3>
                 <div className="mt-4 space-y-3">
                   {availableCollections.map((collectionKey) => (
                     <label
@@ -1042,7 +1047,7 @@ function PermissionPage() {
               </div>
 
               <div className="rounded-lg border p-4">
-                <h3 className="text-sm font-semibold">Specific rooms</h3>
+                <h3 className="text-sm font-semibold">Readable rooms</h3>
                 <div className="mt-4 space-y-3">
                   {bootstrap.rooms.map((room) => (
                     <label
