@@ -22,20 +22,38 @@ jobs:
           node-version: 20
           cache: npm
 
+      - name: Check npm token
+        id: npm-token
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$NPM_TOKEN" ]; then
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::NPM_TOKEN is not configured; skipping npm package release."
+          else
+            echo "has_token=true" >> "$GITHUB_OUTPUT"
+          fi
+
       # Step 3: Authenticate with npm
       - name: Authenticate with npm
-        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+        if: steps.npm-token.outputs.has_token == 'true'
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
 
       # Step 4: Install dependencies
       - name: Install dependencies
+        if: steps.npm-token.outputs.has_token == 'true'
         run: npm ci
 
       # Step 5: Create a default changeset if none exists
       - name: Create default changeset (if needed)
+        if: steps.npm-token.outputs.has_token == 'true'
         run: npm run default-changeset
 
       # Step 6: Run the release script
       - name: Run release script
+        if: steps.npm-token.outputs.has_token == 'true'
         env:
           CI: true
         run: npm run release
