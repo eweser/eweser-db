@@ -1,7 +1,10 @@
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
-const inquirer = require('inquirer');
+import { execSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import inquirer from 'inquirer';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const runCommand = (cmd, cwd = process.cwd()) => {
   try {
