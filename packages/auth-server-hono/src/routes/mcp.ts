@@ -15,6 +15,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import { DataLayer, registerTools } from '@eweser/mcp';
 import type { AgentConfig, AgentRoom } from '@eweser/mcp';
+import type { AgentConfig as DbAgentConfig } from '../db/schema/agents.js';
 import { createRateLimit, getClientIp } from '../middleware/rate-limit.js';
 import {
   getValidOAuthAccessToken,
@@ -68,6 +69,62 @@ setInterval(
   },
   5 * 60 * 1000
 );
+
+function compactScope(values: string[] | undefined): string[] {
+  return Array.from(new Set((values ?? []).filter(Boolean)));
+}
+
+function effectiveScope(
+  nextScope: string[] | undefined,
+  legacyScope: string[] | undefined
+): string[] {
+  const next = compactScope(nextScope);
+  return next.length > 0 ? next : compactScope(legacyScope);
+}
+
+function scopeIncludes(scope: string[], value: string): boolean {
+  return scope.length === 0 || scope.includes(value);
+}
+
+export function mapDbAgentConfigForMcp(agent: DbAgentConfig): AgentConfig {
+  return {
+    id: agent.id,
+    userId: agent.userId,
+    name: agent.name,
+    type: agent.type,
+    allowedCollections: agent.allowedCollections,
+    allowedRooms: agent.allowedRooms,
+    permissions: agent.permissions,
+    readAllowedCollections: agent.readAllowedCollections,
+    readAllowedRooms: agent.readAllowedRooms,
+    writeAllowedCollections: agent.writeAllowedCollections,
+    writeAllowedRooms: agent.writeAllowedRooms,
+    writeAllowedFolderIds: agent.writeAllowedFolderIds,
+    writeAllowedPathPrefixes: agent.writeAllowedPathPrefixes,
+    isActive: agent.isActive,
+    tokenExpiresAt: agent.tokenExpiresAt?.toISOString() ?? null,
+  };
+}
+
+export function filterRoomsForAgentConfig(
+  rooms: AgentRoom[],
+  agentConfig: AgentConfig
+): AgentRoom[] {
+  const readAllowedCollections = effectiveScope(
+    agentConfig.readAllowedCollections,
+    agentConfig.allowedCollections
+  );
+  const readAllowedRooms = effectiveScope(
+    agentConfig.readAllowedRooms,
+    agentConfig.allowedRooms
+  );
+
+  return rooms.filter(
+    (room) =>
+      scopeIncludes(readAllowedCollections, room.collectionKey) &&
+      scopeIncludes(readAllowedRooms, room.id)
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Auth resolution — try OAuth token first, then legacy agent token
@@ -125,18 +182,7 @@ async function resolveAuth(
     return {
       userId: agent.userId,
       permissions: agent.permissions,
-      // Map DB AgentConfig to mcp-server AgentConfig (tokenExpiresAt is Date | null in DB, string | null in mcp)
-      agentConfig: {
-        id: agent.id,
-        userId: agent.userId,
-        name: agent.name,
-        type: agent.type,
-        allowedCollections: agent.allowedCollections,
-        allowedRooms: agent.allowedRooms,
-        permissions: agent.permissions,
-        isActive: agent.isActive,
-        tokenExpiresAt: agent.tokenExpiresAt?.toISOString() ?? null,
-      },
+      agentConfig: mapDbAgentConfigForMcp(agent),
       agentToken: token,
     };
   }
@@ -259,12 +305,7 @@ mcpRouter.all('/', async (c) => {
         auth.userId,
         auth.permissions
       );
-      // Filter to allowedRooms if configured
-      const allowedRooms = auth.agentConfig.allowedRooms;
-      agentRooms =
-        allowedRooms.length > 0
-          ? ar.filter((r) => allowedRooms.includes(r.id))
-          : ar;
+      agentRooms = filterRoomsForAgentConfig(ar, agentConfig);
     } else {
       // OAuth token path
       const built = await buildAgentConfigForUser(

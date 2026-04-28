@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Hono } from 'hono';
+import type { AgentConfig as DbAgentConfig } from '../db/schema/agents.js';
 
 vi.mock('../env.js', () => ({
   env: {
@@ -34,7 +35,8 @@ vi.mock('../model/security-events.js', () => ({
   logSecurityEvent: vi.fn(),
 }));
 
-const { mcpRouter } = await import('./mcp.js');
+const { mcpRouter, filterRoomsForAgentConfig, mapDbAgentConfigForMcp } =
+  await import('./mcp.js');
 
 function makeApp() {
   const app = new Hono();
@@ -45,6 +47,98 @@ function makeApp() {
 describe('mcpRouter', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('preserves split read and write scopes when mapping DB agent configs', () => {
+    const tokenExpiresAt = new Date('2026-05-01T00:00:00.000Z');
+    const dbAgent: DbAgentConfig = {
+      id: 'agent-1',
+      userId: 'user-1',
+      name: 'Codex',
+      type: 'mcp',
+      endpoint: null,
+      allowedCollections: [],
+      allowedRooms: [],
+      readAllowedCollections: ['notes', 'conversations'],
+      readAllowedRooms: ['room-readable'],
+      writeAllowedCollections: ['conversations'],
+      writeAllowedRooms: ['room-conversations'],
+      writeAllowedFolderIds: ['folder-ai'],
+      writeAllowedPathPrefixes: ['AI/'],
+      permissions: 'read',
+      isActive: true,
+      tokenHash: 'token-hash',
+      tokenExpiresAt,
+      lastAccessAt: null,
+      createdAt: new Date('2026-04-28T00:00:00.000Z'),
+      updatedAt: null,
+    };
+
+    expect(mapDbAgentConfigForMcp(dbAgent)).toMatchObject({
+      id: 'agent-1',
+      userId: 'user-1',
+      name: 'Codex',
+      type: 'mcp',
+      allowedCollections: [],
+      allowedRooms: [],
+      readAllowedCollections: ['notes', 'conversations'],
+      readAllowedRooms: ['room-readable'],
+      writeAllowedCollections: ['conversations'],
+      writeAllowedRooms: ['room-conversations'],
+      writeAllowedFolderIds: ['folder-ai'],
+      writeAllowedPathPrefixes: ['AI/'],
+      permissions: 'read',
+      isActive: true,
+      tokenExpiresAt: tokenExpiresAt.toISOString(),
+    });
+  });
+
+  it('filters MCP session rooms with explicit read scope before legacy scope', () => {
+    const agentConfig = {
+      id: 'agent-1',
+      userId: 'user-1',
+      name: 'Codex',
+      type: 'mcp' as const,
+      allowedCollections: [],
+      allowedRooms: [],
+      readAllowedCollections: ['conversations'],
+      readAllowedRooms: ['room-conversations'],
+      writeAllowedCollections: ['conversations'],
+      writeAllowedRooms: ['room-conversations'],
+      permissions: 'read' as const,
+      isActive: true,
+      tokenExpiresAt: null,
+    };
+
+    const rooms = filterRoomsForAgentConfig(
+      [
+        {
+          id: 'room-notes',
+          name: 'Notes',
+          collectionKey: 'notes',
+          syncUrl: null,
+          syncBaseUrl: null,
+        },
+        {
+          id: 'room-conversations',
+          name: 'Conversations',
+          collectionKey: 'conversations',
+          syncUrl: null,
+          syncBaseUrl: null,
+        },
+      ],
+      agentConfig
+    );
+
+    expect(rooms).toEqual([
+      {
+        id: 'room-conversations',
+        name: 'Conversations',
+        collectionKey: 'conversations',
+        syncUrl: null,
+        syncBaseUrl: null,
+      },
+    ]);
   });
 
   it('returns 401 for unauthenticated MCP request', async () => {
