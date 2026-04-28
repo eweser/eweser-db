@@ -29,7 +29,7 @@ describe('ewe-note app', () => {
     visitHome();
 
     cy.contains('h1', 'All Notes').should('exist');
-    cy.getBySel('ewe-note-login').should('exist');
+    cy.getBySel('ewe-note-account-link').should('exist');
     cy.getBySel('ewe-note-settings-link').should('exist');
   });
 
@@ -113,5 +113,15 @@ describe('ewe-note app', () => {
     cy.url().should('include', '/settings');
     cy.getBySel('ewe-note-settings-page', { timeout: 10000 }).should('exist');
     cy.getBySel('ewe-note-settings-homeserver').should('exist');
+  });
+
+  it('opens account settings from the profile row', () => {
+    visitHome();
+
+    cy.getBySel('ewe-note-account-link').click();
+    cy.url().should('include', '/settings#account');
+    cy.getBySel('ewe-note-settings-account', { timeout: 10000 }).should(
+      'exist'
+    );
   });
 });

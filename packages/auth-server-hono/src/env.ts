@@ -56,6 +56,8 @@ const envSchema = z
     AUTH_TRUSTED_ORIGINS: z.string().optional(),
     /** Explicit OAuth/public auth domain shown to users and used by cookie policy */
     AUTH_DOMAIN: z.string().optional(),
+    /** Optional cookie Domain attribute for cross-subdomain sessions, e.g. ".eweser.com" */
+    COOKIE_DOMAIN: z.string().optional(),
 
     /** Reverse proxy trust toggle. Keep false unless requests come through Caddy/known proxy */
     TRUST_PROXY: z
@@ -89,6 +91,7 @@ const envSchema = z
   .superRefine((value, ctx) => {
     const isProduction = value.NODE_ENV === 'production';
     const normalizedAuthDomain = value.AUTH_DOMAIN ?? value.AUTH_SERVER_DOMAIN;
+    const cookieDomain = value.COOKIE_DOMAIN;
     const authServerUrl = new URL(value.AUTH_SERVER_URL);
     const authBaseUrl = new URL(value.BETTER_AUTH_BASE_URL);
     const trustedOrigins = (value.AUTH_TRUSTED_ORIGINS ?? authServerUrl.origin)
@@ -133,6 +136,27 @@ const envSchema = z
           'AUTH_SERVER_DOMAIN/AUTH_DOMAIN must match AUTH_SERVER_URL host',
         path: ['AUTH_SERVER_DOMAIN'],
       });
+    }
+
+    if (cookieDomain) {
+      const normalizedCookieDomain = cookieDomain.replace(/^\./, '');
+      if (!authServerUrl.hostname.endsWith(normalizedCookieDomain)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message:
+            'COOKIE_DOMAIN must match AUTH_SERVER_URL host or a parent domain',
+          path: ['COOKIE_DOMAIN'],
+        });
+      }
+
+      if (isProduction && !cookieDomain.startsWith('.')) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message:
+            'COOKIE_DOMAIN should start with "." in production for cross-subdomain sessions',
+          path: ['COOKIE_DOMAIN'],
+        });
+      }
     }
 
     for (const origin of trustedOrigins) {

@@ -25,7 +25,7 @@ You are the **Documenter** for EweserDB. You audit and update project documentat
 ## Key Documentation Files
 
 - `README.md` — Project overview and API usage
-- `ARCHITECTURE.md` — System design and migration plan
+- `ARCHITECTURE.md` — Current system design and package layout
 - `LOCAL_DEVELOPMENT.md` — Dev environment setup
 - `packages/*/README.md` — Package-specific docs
 - `.github/copilot-instructions.md` — AI agent instructions
@@ -34,7 +34,7 @@ You are the **Documenter** for EweserDB. You audit and update project documentat
 
 1. **Accuracy** — Do docs match current code?
 2. **Gaps** — Is anything undocumented?
-3. **Migration state** — Do docs reflect the current migration status?
+3. **Current state** — Do docs reflect the current package names, commands, ports, and auth stack?
 4. **Developer onboarding** — Can a new dev get started from the docs?
 
 ## Output

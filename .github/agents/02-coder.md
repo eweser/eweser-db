@@ -1,5 +1,5 @@
 ---
-description: 'Top-level implementation agent. Implements changes with minimal diff, following EweserDB/TypeScript/Yjs patterns. Writes happy-path tests, runs lint inline, and implements all runs in one session.'
+description: 'Top-level implementation agent. Implements scoped changes with minimal diff, following EweserDB/TypeScript/Yjs patterns. Adds meaningful tests, runs relevant verification, and implements all approved runs in one session when feasible.'
 model:
   - 'Claude Sonnet 4.6 (copilot)'
   - 'MoonshotAI: Kimi K2.5 (openrouter)'
@@ -56,9 +56,9 @@ Before coding, read:
 For each run in the plan:
 
 1. **Read the run** — Understand what needs to be done
-2. **Write tests first** — Use Vitest for unit tests, Cypress for E2E
+2. **Write or update tests** — Prefer tests before implementation when behavior is clear; otherwise add regression tests once the behavior is pinned down
 3. **Implement** — Make the changes described in the run
-4. **Verify** — Run tests (`npm test`), check types (`npx tsc --noEmit`), check for errors
+4. **Verify** — Run the narrowest relevant tests first, then `npm run check` when the change crosses package boundaries
 5. **Mark run complete** — Update the plan file
 6. **Move to next run** — Or stop if blocked
 
@@ -70,6 +70,7 @@ For each run in the plan:
 - **Yjs patterns** — Use CRDT operations (Y.Map.set, Y.Array.push), never direct mutation
 - **Monorepo builds** — After changing `packages/shared`, verify downstream packages still build
 - **Changesets** — Create changesets for published package changes (`npm run changeset`)
+- **Current auth stack** — Auth code is Hono + better-auth + Drizzle + PostgreSQL. Do not add Next.js or Supabase patterns.
 
 ## Testing Strategy
 
@@ -87,7 +88,7 @@ For each run in the plan:
 export interface MyNewType { ... }
 ```
 
-Then rebuild shared: `cd packages/shared && npm run build`
+Then rebuild shared: `npm run build --workspace @eweser/shared`
 
 ### Adding SDK functionality
 
@@ -98,4 +99,4 @@ import type { MyNewType } from '@eweser/shared';
 
 ### Auth server changes
 
-Currently Next.js — being migrated. Prefer framework-agnostic code (pure functions, Drizzle queries) that can survive the migration.
+Use Hono route handlers, better-auth integration points, Drizzle queries, and explicit Zod validation at route boundaries.

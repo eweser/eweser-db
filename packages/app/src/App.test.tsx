@@ -171,6 +171,59 @@ describe('auth-pages app', () => {
     ).toBeInTheDocument();
   });
 
+  it('should redirect unauthenticated users away from the root app route', async () => {
+    renderApp('/');
+
+    expect(
+      await screen.findByRole('heading', { name: /welcome back/i })
+    ).toBeInTheDocument();
+  });
+
+  it('renders the Personal Data Home route for signed-in users', async () => {
+    sessionState = {
+      data: {
+        session: { id: 'session-1' },
+        user: { email: 'test@example.com', id: 'user-1' },
+      },
+      error: null,
+      isPending: false,
+      isRefetching: false,
+      refetch: vi.fn().mockResolvedValue(undefined),
+    };
+
+    renderApp('/');
+
+    expect(
+      await screen.findByRole('heading', { name: /sign in and own your data/i })
+    ).toBeInTheDocument();
+    expect(screen.getByText(/connected apps/i)).toBeInTheDocument();
+    expect(screen.getByText(/mcp \/ ai access/i)).toBeInTheDocument();
+  });
+
+  it('uses local redirect query params after normal sign-in', async () => {
+    authMocks.signInEmail.mockResolvedValue({
+      data: {
+        token: 'token-1',
+        user: { email: 'test@example.com', id: 'user-1' },
+      },
+      error: null,
+    });
+
+    renderApp('/sign-in?redirect=/ai');
+
+    await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
+    await userEvent.type(screen.getByLabelText(/password/i), 'password123');
+    await userEvent.click(screen.getByRole('button', { name: /^sign in$/i }));
+
+    await waitFor(() => {
+      expect(authMocks.signInEmail).toHaveBeenCalledOnce();
+    });
+
+    expect(authMocks.signInEmail.mock.calls[0]?.[0]).toMatchObject({
+      callbackURL: 'http://localhost:3000/ai',
+    });
+  });
+
   it('should sign in and redirect to the permission page when a login query is present', async () => {
     authMocks.signInEmail.mockImplementation(async () => {
       sessionState = {

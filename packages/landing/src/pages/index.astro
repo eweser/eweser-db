@@ -4,68 +4,113 @@ import Layout from '../layouts/Layout.astro';
 const features = [
   {
     glyph: '01',
-    title: 'Works Offline, Always',
+    title: 'AI + MCP Access',
     description:
-      'Your data lives in your browser first. Notes sync when you are back online, automatically and silently.',
+      'Give agents controlled access to your data without copy-pasting your life into chat windows.',
   },
   {
     glyph: '02',
-    title: 'Use Multiple Apps, Share One Dataset',
+    title: 'Collaborative Notes',
     description:
-      'Take notes in Ewe Note. Review flashcards in another app. Both read the same data with no export step.',
+      'Work together in real time with offline-first sync and conflict-free CRDT merging.',
   },
   {
     glyph: '03',
-    title: 'Real-Time Collaboration',
+    title: 'Knowledge Base',
     description:
-      'Share a room with a teammate. Edit together live. Conflict-free CRDT merging keeps every change intact.',
+      'Keep structured notes, links, and documents in a system other apps can understand.',
   },
   {
     glyph: '04',
-    title: 'Skip the Onboarding',
+    title: 'Study Tools',
     description:
-      'Try a new app with your existing data already loaded. No friction. No vendor lock-in. No cold start.',
+      'Turn notes into flashcards, summaries, and spaced repetition flows without export gymnastics.',
   },
   {
     glyph: '05',
-    title: 'Self-Host or Use Our Server',
+    title: 'Publishing',
     description:
-      'One-click deploy on Railway or run it on your own VPS. You own the server, so you own the data.',
+      'Reuse the same data across sites, docs, newsletters, and knowledge portals.',
   },
   {
     glyph: '06',
-    title: 'AI on Your Terms',
+    title: 'Team Memory',
     description:
-      'Give Claude, Copilot, or any MCP-compatible agent access to your notes. You control what it can see and write.',
+      'Share decisions, references, and working knowledge without locking the team into one interface forever.',
   },
 ];
 
 const devFeatures = [
   {
-    title: 'TypeScript-native',
-    description: 'Strongly typed schemas for notes, flashcards, profiles, and _ref links between collections.',
+    title: 'Type-safe schemas',
+    description: 'Strongly typed collections, documents, and _ref links keep interop practical instead of theoretical.',
   },
   {
-    title: 'Yjs CRDT under the hood',
-    description: 'Conflict-free offline sync with IndexedDB locally and Hocuspocus over WebSocket in real time.',
+    title: 'Real-time CRDT sync',
+    description: 'IndexedDB locally, Yjs for conflict-free collaboration, and Hocuspocus for live transport.',
   },
   {
-    title: 'MCP server built in',
-    description: 'Claude Desktop and VS Code Copilot can connect through @eweser/mcp with no extra backend.',
+    title: 'MCP-ready access',
+    description: 'Connect Claude Desktop, ChatGPT, or your own agent workflows through scoped MCP access.',
   },
   {
-    title: 'No backend required',
-    description: 'Point your app at eweser.com or any self-hosted homeserver. Auth and sync are already handled.',
+    title: 'No prison backend',
+    description: 'Point apps at eweser.com or a self-hosted homeserver without inventing another proprietary island.',
   },
   {
-    title: 'Shared schemas',
-    description: 'Interoperate with other EweserDB apps out of the box or extend with your own document types.',
+    title: 'Shared app interop',
+    description: 'Build against shared schemas when you want ecosystem compatibility, or extend with private models.',
   },
   {
-    title: 'Open source, MIT',
-    description: 'The whole monorepo is public. Self-host the stack and stay independent of our servers.',
+    title: 'Self-hostable stack',
+    description: 'Own the infra, run your own auth and sync services, and stay independent of anyone else’s moat.',
   },
 ];
+
+const appsMcpCards = [
+  {
+    label: 'Live App',
+    title: 'User-owned auth',
+    description: 'Sign in, approve scopes, and keep trust visible.',
+    accentClass: 'bg-[#d62d20]',
+    metaClass: 'bg-[#a8a29e]',
+    tileClass: 'bg-[#d62d20]',
+    lineWidth: 'w-28',
+    tailWidth: 'w-24',
+  },
+  {
+    label: 'System View',
+    title: 'Personal data',
+    description: 'Collections, schemas, rooms, sync, sharing, and storage.',
+    accentClass: 'bg-[#111111]',
+    metaClass: 'bg-[#a8a29e]',
+    tileClass: 'bg-[#f5f5f4]',
+    lineWidth: 'w-20',
+    tailWidth: 'w-20',
+  },
+  {
+    label: 'Live App',
+    title: 'Connected apps',
+    description: 'Installed tools, granted access, recent usage, and revoke controls.',
+    accentClass: 'bg-[#d62d20]',
+    metaClass: 'bg-[#d62d20]',
+    tileClass: 'bg-[#f5f5f4]',
+    lineWidth: 'w-20',
+    tailWidth: 'w-24',
+  },
+  {
+    label: 'System View',
+    title: 'MCP / AI access',
+    description: 'Clients, permissions, metadata, audit-style visibility, and setup.',
+    accentClass: 'bg-[#111111]',
+    metaClass: 'bg-[#a8a29e]',
+    tileClass: 'bg-[#f5f5f4]',
+    lineWidth: 'w-20',
+    tailWidth: 'w-24',
+  },
+];
+
+const developerPills = ['Type-safe schemas', 'Real-time CRDT sync', 'Shared app interop', 'Self-hostable stack'];
 
 const codeSnippet = `import { Database } from '@eweser/db';
 
@@ -79,17 +124,18 @@ const Notes = room.getDocuments();
 Notes.new({ text: 'Hello from any app' });`;
 
 const noteUrl = 'https://note.eweser.com/';
-const authPagesUrl = (
-  import.meta.env.RAILWAY_SERVICE_AUTH_PAGES_URL ??
-  import.meta.env.AUTH_PAGES_URL ??
-  'https://login.eweser.com'
+const appUrl = (
+  import.meta.env.RAILWAY_SERVICE_APP_URL ??
+  import.meta.env.APP_URL ??
+  'https://app.eweser.com'
 ).replace(/\/$/, '');
-const loginUrl = `${authPagesUrl}/auth/sign-in?collections=all&redirect=https%3A%2F%2Fnote.eweser.com%2F&domain=note.eweser.com&name=Ewe+Note`;
+const signInUrl = `${appUrl}/sign-in`;
+const connectAiUrl = `${appUrl}/sign-in?redirect=%2Fai`;
 ---
 
 <Layout
-  title="EweserDB — Your notes. Your data. Every app."
-  description="EweserDB is a local-first, user-owned database. Write in one app, read in another. No lock-in, no vendor dependency, works offline."
+  title="EweserDB — Your data is not their moat."
+  description="EweserDB is a local-first interoperable database for apps that refuse lock-in. Notes, agents, study tools, publishing workflows, and collaborative workspaces can all connect to the same user-owned data."
 >
   <header class="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#050505]/80 backdrop-blur-xl">
     <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
@@ -99,27 +145,28 @@ const loginUrl = `${authPagesUrl}/auth/sign-in?collections=all&redirect=https%3A
       </a>
 
       <nav class="hidden items-center gap-6 md:flex">
-        <a href="#features" class="text-sm text-slate-300 transition-colors hover:text-white">Features</a>
+        <a href="#problem" class="text-sm text-slate-300 transition-colors hover:text-white">Manifesto</a>
+        <a href="/connected-tools" class="text-sm text-slate-300 transition-colors hover:text-white">Connected Tools</a>
         <a href="#developers" class="text-sm text-slate-300 transition-colors hover:text-white">Developers</a>
         <a
-          href="https://github.com/eweser/eweser-db"
+          href="https://docs.eweser.com"
           target="_blank"
           rel="noreferrer"
           class="text-sm text-slate-300 transition-colors hover:text-white"
         >
-          GitHub
+          Docs
         </a>
       </nav>
 
       <div class="flex items-center gap-3">
-        <a href={loginUrl} class="hidden text-sm text-slate-300 transition-colors hover:text-white md:inline-flex">
+        <a href={signInUrl} class="hidden text-sm text-slate-300 transition-colors hover:text-white md:inline-flex">
           Sign in
         </a>
         <a
-          href={noteUrl}
+          href={connectAiUrl}
           class="hidden items-center justify-center rounded-xl bg-white px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-slate-100 sm:inline-flex"
         >
-          Open Ewe Note
+          Connect my AI
         </a>
       </div>
     </div>
@@ -136,40 +183,40 @@ const loginUrl = `${authPagesUrl}/auth/sign-in?collections=all&redirect=https%3A
         style="background: linear-gradient(180deg, rgba(74,222,128,0.12) 0%, rgba(5,5,5,0) 72%);"
       ></div>
 
-      <div class="mx-auto grid max-w-6xl gap-14 px-6 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:gap-12">
-        <div class="max-w-2xl">
-          <p class="mb-5 text-sm font-medium uppercase tracking-[0.32em] text-slate-400">
-            Local-first database SDK
+      <div class="mx-auto grid w-full max-w-6xl gap-14 px-6 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:gap-12">
+        <div class="min-w-0 max-w-2xl">
+          <p class="mb-5 text-sm font-medium uppercase tracking-[0.28em] text-slate-400 sm:tracking-[0.32em]">
+            Local-first database for user-owned software
           </p>
           <h1 class="max-w-xl text-4xl font-bold tracking-tight leading-[1.02] text-white sm:text-6xl lg:text-7xl">
-            Your notes.
+            Your data
             <br />
-            <span class="text-slate-400">Your data.</span>
+            <span class="text-slate-400">is not</span>
             <br />
-            Every app.
+            their moat.
           </h1>
           <p class="mt-6 max-w-xl text-lg leading-8 text-slate-400 sm:text-xl">
-            EweserDB is a local-first, user-owned database. Write in one app, read in another. No lock-in, no vendor
-            dependency, works offline.
+            EweserDB is a local-first interoperable database for apps that refuse lock-in. Notes, agents, study
+            tools, publishing workflows, and collaborative workspaces can all connect to the same user-owned data.
           </p>
 
-          <div class="mt-10 flex flex-col gap-4 sm:flex-row">
+          <div class="mt-10 flex min-w-0 flex-col gap-4 sm:flex-row">
             <a
-              href={noteUrl}
-              class="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 font-medium text-black transition-colors hover:bg-slate-100"
+              href={connectAiUrl}
+              class="inline-flex w-full items-center justify-center rounded-xl bg-white px-6 py-3 font-medium text-black transition-colors hover:bg-slate-100 sm:w-auto"
             >
-              Try Ewe Note
+              Connect my AI
             </a>
             <a
-              href="#developers"
-              class="inline-flex items-center justify-center rounded-xl border border-white/15 px-6 py-3 font-medium text-white transition-colors hover:bg-white/5"
+              href={noteUrl}
+              class="inline-flex w-full items-center justify-center rounded-xl border border-white/15 px-6 py-3 font-medium text-white transition-colors hover:bg-white/5 sm:w-auto"
             >
-              For Developers
+              Try Ewe Note
             </a>
           </div>
         </div>
 
-        <div class="relative">
+        <div class="relative min-w-0">
           <div
             class="absolute -left-6 top-10 h-24 w-24 rounded-full bg-emerald-400/20 blur-3xl float-slow"
             aria-hidden="true"
@@ -179,7 +226,7 @@ const loginUrl = `${authPagesUrl}/auth/sign-in?collections=all&redirect=https%3A
             aria-hidden="true"
           ></div>
 
-          <div class="relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#101010] shadow-2xl shadow-black/40">
+          <div class="relative w-full max-w-full overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#101010] shadow-2xl shadow-black/40">
             <div class="flex items-center gap-2 border-b border-white/10 bg-[#151515] px-4 py-3">
               <span class="h-3 w-3 rounded-full bg-white/20"></span>
               <span class="h-3 w-3 rounded-full bg-white/20"></span>
@@ -188,13 +235,13 @@ const loginUrl = `${authPagesUrl}/auth/sign-in?collections=all&redirect=https%3A
 
             <div class="grid gap-6 p-6 sm:p-8">
               <div class="rounded-[1.35rem] border border-white/10 bg-[#151515] p-4 shadow-2xl float-slow">
-                <div class="mb-4 text-xs font-mono uppercase tracking-[0.24em] text-slate-500">Ewe Note</div>
+                <div class="mb-4 text-xs font-mono uppercase tracking-[0.24em] text-slate-500">User Auth</div>
                 <div class="space-y-3">
-                  <div class="h-4 w-3/4 rounded bg-white/10"></div>
+                  <div class="h-4 w-2/3 rounded bg-white/10"></div>
                   <div class="relative h-4 overflow-hidden rounded bg-emerald-400/15">
                     <div class="sheen absolute inset-y-0 left-0 w-1/2 bg-emerald-300/45"></div>
                   </div>
-                  <div class="h-4 w-5/6 rounded bg-white/10"></div>
+                  <div class="h-4 w-3/5 rounded bg-white/10"></div>
                 </div>
               </div>
 
@@ -202,17 +249,30 @@ const loginUrl = `${authPagesUrl}/auth/sign-in?collections=all&redirect=https%3A
                 <div class="flex h-12 w-12 items-center justify-center rounded-full border border-emerald-400/30">
                   <div class="h-2.5 w-2.5 rounded-full bg-emerald-400"></div>
                 </div>
-                <span class="text-xs font-mono uppercase tracking-[0.26em] text-emerald-300/80">CRDT Sync</span>
+                <span class="text-xs font-mono uppercase tracking-[0.26em] text-emerald-300/80">User-owned data core</span>
               </div>
 
               <div class="rounded-[1.35rem] border border-white/10 bg-[#151515] p-4 shadow-2xl float-fast">
-                <div class="mb-4 text-xs font-mono uppercase tracking-[0.24em] text-slate-500">Flashcard App</div>
+                <div class="mb-4 text-xs font-mono uppercase tracking-[0.24em] text-slate-500">MCP Access</div>
                 <div class="space-y-3">
                   <div class="h-4 w-3/4 rounded bg-white/10"></div>
                   <div class="relative h-4 overflow-hidden rounded bg-emerald-400/15">
                     <div class="sheen absolute inset-y-0 left-0 w-1/2 bg-emerald-300/45"></div>
                   </div>
                   <div class="h-4 w-5/6 rounded bg-white/10"></div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <div class="rounded-[1.1rem] border border-white/10 bg-white/5 p-3">
+                  <div class="text-[10px] font-mono uppercase tracking-[0.22em] text-slate-500">Personal Data</div>
+                  <div class="mt-3 h-3 w-3/4 rounded bg-white/10"></div>
+                  <div class="mt-2 h-3 w-1/2 rounded bg-emerald-400/20"></div>
+                </div>
+                <div class="rounded-[1.1rem] border border-white/10 bg-white/5 p-3">
+                  <div class="text-[10px] font-mono uppercase tracking-[0.22em] text-slate-500">Connected Apps</div>
+                  <div class="mt-3 h-3 w-2/3 rounded bg-white/10"></div>
+                  <div class="mt-2 h-3 w-1/2 rounded bg-emerald-400/20"></div>
                 </div>
               </div>
             </div>
@@ -221,11 +281,13 @@ const loginUrl = `${authPagesUrl}/auth/sign-in?collections=all&redirect=https%3A
       </div>
     </section>
 
-    <section class="bg-white px-6 py-24 text-slate-900">
+    <section id="problem" class="bg-white px-6 py-24 text-slate-900">
       <div class="mx-auto max-w-6xl">
         <div class="mb-16 text-center">
-          <h2 class="text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">The Data Dilemma</h2>
-          <p class="mx-auto mt-4 max-w-2xl text-lg text-slate-500 sm:text-xl">Apps should not hold your notes hostage.</p>
+          <h2 class="text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">Apps became landlords.</h2>
+          <p class="mx-auto mt-4 max-w-3xl text-lg text-slate-500 sm:text-xl">
+            Modern software treats your notes, decisions, documents, and knowledge like platform property.
+          </p>
         </div>
 
         <div class="grid gap-6 md:grid-cols-2 lg:gap-10">
@@ -234,19 +296,19 @@ const loginUrl = `${authPagesUrl}/auth/sign-in?collections=all&redirect=https%3A
             <ul class="space-y-5">
               <li class="flex gap-4 text-lg leading-8 text-slate-700">
                 <span class="mt-3 h-2 w-2 shrink-0 rounded-full bg-rose-400"></span>
-                You ask Notion: "Can I have my notes?"
+                Your work gets trapped in product-specific databases
               </li>
               <li class="flex gap-4 text-lg leading-8 text-slate-700">
                 <span class="mt-3 h-2 w-2 shrink-0 rounded-full bg-rose-400"></span>
-                Switching apps means starting over
+                Switching tools means rebuilding context from scratch
               </li>
               <li class="flex gap-4 text-lg leading-8 text-slate-700">
                 <span class="mt-3 h-2 w-2 shrink-0 rounded-full bg-rose-400"></span>
-                Offline? Hope the app cached something
+                Collaboration requires everyone to join the same silo
               </li>
               <li class="flex gap-4 text-lg leading-8 text-slate-700">
                 <span class="mt-3 h-2 w-2 shrink-0 rounded-full bg-rose-400"></span>
-                Your AI assistant cannot see your PKM
+                AI agents cannot help unless your data is accessible
               </li>
             </ul>
           </div>
@@ -256,11 +318,11 @@ const loginUrl = `${authPagesUrl}/auth/sign-in?collections=all&redirect=https%3A
             <ul class="space-y-5">
               <li class="flex gap-4 text-lg leading-8 text-slate-200">
                 <span class="mt-3 h-2 w-2 shrink-0 rounded-full bg-emerald-400"></span>
-                Notion asks you: "Can I see your notes?"
+                You own the database
               </li>
               <li class="flex gap-4 text-lg leading-8 text-slate-200">
                 <span class="mt-3 h-2 w-2 shrink-0 rounded-full bg-emerald-400"></span>
-                All your data follows you to any app
+                Apps compete to serve you
               </li>
               <li class="flex gap-4 text-lg leading-8 text-slate-200">
                 <span class="mt-3 h-2 w-2 shrink-0 rounded-full bg-emerald-400"></span>
@@ -268,14 +330,14 @@ const loginUrl = `${authPagesUrl}/auth/sign-in?collections=all&redirect=https%3A
               </li>
               <li class="flex gap-4 text-lg leading-8 text-slate-200">
                 <span class="mt-3 h-2 w-2 shrink-0 rounded-full bg-emerald-400"></span>
-                AI agents access your data via MCP, while you stay in control
+                AI agents plug into user space through scoped MCP access
               </li>
             </ul>
           </div>
         </div>
 
         <p class="mx-auto mt-12 max-w-3xl text-center text-lg italic text-slate-500 sm:text-xl">
-          "It is like decentralized Firebase, but users own the data, not the platform."
+          "Own the substrate. Swap the interface."
         </p>
       </div>
     </section>
@@ -283,9 +345,10 @@ const loginUrl = `${authPagesUrl}/auth/sign-in?collections=all&redirect=https%3A
     <section id="features" class="bg-white px-6 py-24 text-slate-900">
       <div class="mx-auto max-w-6xl">
         <div class="mb-16">
-          <h2 class="text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">Your data, liberated.</h2>
+          <h2 class="text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">A bigger playground for your data.</h2>
           <p class="mt-4 max-w-2xl text-lg text-slate-500 sm:text-xl">
-            Features built for true data ownership and seamless interoperability.
+            Notes are one proof point. The larger story is one user-owned data layer feeding AI tools, collaborative
+            workspaces, study flows, publishing workflows, and team memory.
           </p>
         </div>
 
@@ -303,6 +366,42 @@ const loginUrl = `${authPagesUrl}/auth/sign-in?collections=all&redirect=https%3A
       </div>
     </section>
 
+    <section id="apps-mcp" class="bg-[#f5f2ec] px-6 py-24 text-slate-900">
+      <div class="mx-auto max-w-6xl">
+        <div class="max-w-3xl">
+          <p class="mb-5 text-xs font-semibold uppercase tracking-[0.28em] text-[#d62d20]">04 // Connected Tools</p>
+          <h2 class="text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">Let apps and agents ask permission.</h2>
+          <p class="mt-4 text-lg text-slate-600 sm:text-xl">
+            The landing page should preview the actual product: entry, ownership, permissions, and agent access.
+          </p>
+        </div>
+
+        <div class="mt-12 grid gap-6 lg:grid-cols-4">
+          {appsMcpCards.map((card) => (
+            <article class="rounded-[1.5rem] border border-stone-300 bg-white p-5 shadow-[6px_6px_0px_rgba(17,17,17,0.08)]">
+              <span class:list={[
+                'inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]',
+                card.label === 'Live App' ? 'bg-[#d62d20] text-white' : 'border border-black bg-[#f6f6f1] text-black',
+              ]}>
+                {card.label}
+              </span>
+              <h3 class="mt-4 text-lg font-semibold uppercase text-slate-950">{card.title}</h3>
+              <p class="mt-2 text-sm leading-6 text-stone-600">{card.description}</p>
+
+              <div class="mt-5 rounded-2xl bg-[#0f0f10] p-4">
+                <div class:list={['h-2 rounded-full', card.accentClass, 'w-[70px]']}></div>
+                <div class="mt-4 flex items-center gap-3">
+                  <div class:list={['h-2 rounded-full bg-[#f5f5f4]', card.lineWidth]}></div>
+                  <div class:list={['h-2 rounded-full', card.metaClass, card.tailWidth]}></div>
+                  <div class:list={['h-4 w-4 rounded-md', card.tileClass]}></div>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
     <section id="developers" class="border-y border-white/10 bg-[#050505] px-6 py-24 text-white">
       <div class="mx-auto max-w-6xl">
         <div class="mb-16">
@@ -310,17 +409,17 @@ const loginUrl = `${authPagesUrl}/auth/sign-in?collections=all&redirect=https%3A
             For Developers
           </p>
           <h2 class="text-4xl font-bold tracking-tight text-white sm:text-5xl">
-            Build interoperable apps in minutes
+            Build the app. Not the prison.
           </h2>
           <p class="mt-4 max-w-2xl text-lg text-slate-400 sm:text-xl">
-            Add <span class="text-emerald-300">@eweser/db</span> to your app. Users bring their own data. No backend
-            required.
+            Add <span class="text-emerald-300">@eweser/db</span> to your app. Shared schemas, CRDT sync, and
+            MCP-ready access patterns give builders useful software without another proprietary island.
           </p>
         </div>
 
-        <div class="grid items-start gap-8 lg:grid-cols-[0.9fr_1.1fr]">
-          <div class="space-y-6">
-            <div class="overflow-hidden rounded-[1.5rem] border border-white/10 bg-[#0c0c0c] shadow-2xl shadow-black/30">
+        <div class="grid min-w-0 items-start gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+          <div class="min-w-0 space-y-6">
+            <div class="min-w-0 overflow-hidden rounded-[1.5rem] border border-white/10 bg-[#111111] shadow-2xl shadow-black/30">
               <div class="flex items-center gap-2 border-b border-white/10 bg-white/5 px-4 py-3">
                 <span class="h-3 w-3 rounded-full bg-rose-500/90"></span>
                 <span class="h-3 w-3 rounded-full bg-amber-400/90"></span>
@@ -332,7 +431,7 @@ const loginUrl = `${authPagesUrl}/auth/sign-in?collections=all&redirect=https%3A
               </div>
             </div>
 
-            <div class="overflow-hidden rounded-[1.5rem] border border-white/10 bg-[#0c0c0c] shadow-2xl shadow-black/30">
+            <div class="min-w-0 overflow-hidden rounded-[1.5rem] border border-white/10 bg-[#0c0c0c] shadow-2xl shadow-black/30">
               <div class="flex items-center gap-2 border-b border-white/10 bg-white/5 px-4 py-3">
                 <span class="h-3 w-3 rounded-full bg-rose-500/90"></span>
                 <span class="h-3 w-3 rounded-full bg-amber-400/90"></span>
@@ -343,9 +442,9 @@ const loginUrl = `${authPagesUrl}/auth/sign-in?collections=all&redirect=https%3A
             </div>
           </div>
 
-          <div class="grid gap-4 sm:grid-cols-2">
+          <div class="grid min-w-0 gap-4 sm:grid-cols-2">
             {devFeatures.map((feature) => (
-              <article class="rounded-[1.35rem] border border-white/10 bg-white/[0.03] p-6 transition-colors hover:bg-white/[0.06]">
+              <article class="min-w-0 rounded-[1.35rem] border border-white/10 bg-white/[0.03] p-6 transition-colors hover:bg-white/[0.06]">
                 <h3 class="text-lg font-semibold text-white">{feature.title}</h3>
                 <p class="mt-3 text-sm leading-7 text-slate-400">{feature.description}</p>
               </article>
@@ -353,66 +452,56 @@ const loginUrl = `${authPagesUrl}/auth/sign-in?collections=all&redirect=https%3A
           </div>
         </div>
 
-        <div class="mx-auto mt-16 max-w-4xl border-l-4 border-slate-600 pl-6">
-          <p class="text-lg italic leading-8 text-slate-300">
-            "Apps must compete on experience, not lock-in. Third parties can build on your users' data without needing
-            permission from the original developer."
-          </p>
-          <p class="mt-3 text-sm text-slate-500">EweserDB philosophy</p>
+        <div class="mt-12 flex flex-wrap gap-3">
+          {developerPills.map((pill) => (
+            <span class="rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-200">
+              {pill}
+            </span>
+          ))}
         </div>
       </div>
     </section>
 
-    <section id="try" class="bg-white px-6 py-24 text-slate-900">
-      <div class="mx-auto max-w-5xl">
-        <div class="grid gap-6 lg:grid-cols-2 lg:gap-10">
-          <article class="flex h-full flex-col justify-between rounded-[1.75rem] border border-slate-200 bg-white p-8 shadow-sm sm:p-10">
-            <div>
-              <p class="mb-6 inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-mono font-medium uppercase tracking-[0.28em] text-slate-500">
-                For Users
-              </p>
-              <h3 class="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">Try Ewe Note free</h3>
-              <p class="mt-4 max-w-md text-lg leading-8 text-slate-500">
-                No sign-up friction. Works on our hosted server. Your data stays local in your browser first.
-              </p>
-            </div>
-            <a
-              href={noteUrl}
-              class="mt-8 inline-flex items-center justify-center rounded-xl bg-slate-950 px-6 py-3 font-medium text-white transition-colors hover:bg-slate-800"
-            >
-              Open Ewe Note
-            </a>
-          </article>
+    <section id="try" class="bg-[#050505] px-6 py-24 text-white">
+      <div class="mx-auto max-w-6xl rounded-[2rem] border border-white/10 bg-[#0b0b0b] px-8 py-14 shadow-2xl shadow-black/40 sm:px-12">
+        <div class="grid gap-10 lg:grid-cols-[0.7fr_1.3fr] lg:items-center">
+          <div class="flex items-center gap-4">
+            <img src="/eweser-logo-white.svg" alt="" aria-hidden="true" class="h-14 w-14" />
+            <span class="text-xl font-semibold tracking-tight text-white">EweserDB</span>
+          </div>
 
-          <article class="flex h-full flex-col justify-between rounded-[1.75rem] border border-slate-200 bg-white p-8 shadow-sm sm:p-10">
-            <div>
-              <p class="mb-6 inline-flex rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-mono font-medium uppercase tracking-[0.28em] text-emerald-700">
-                For Developers
-              </p>
-              <h3 class="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">Deploy your own homeserver</h3>
-              <p class="mt-4 max-w-md text-lg leading-8 text-slate-500">
-                Railway one-click or VPS script. Around five dollars per month if you self-host.
-              </p>
-            </div>
+          <div>
+            <h2 class="max-w-3xl text-4xl font-bold tracking-tight text-white sm:text-5xl">
+              Better tools should not require starting over.
+            </h2>
+            <p class="mt-4 max-w-2xl text-lg leading-8 text-slate-400">
+              Try the ecosystem, read the docs, or deploy your own user-owned stack.
+            </p>
             <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+              <a
+                href={noteUrl}
+                class="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 font-medium text-black transition-colors hover:bg-slate-100"
+              >
+                Try the demo
+              </a>
+              <a
+                href="https://docs.eweser.com"
+                target="_blank"
+                rel="noreferrer"
+                class="inline-flex items-center justify-center rounded-xl border border-white/15 px-6 py-3 font-medium text-white transition-colors hover:bg-white/5"
+              >
+                Read the docs
+              </a>
               <a
                 href="https://railway.app/new/template?template=https://github.com/eweser/eweser-db"
                 target="_blank"
                 rel="noreferrer"
-                class="inline-flex items-center justify-center rounded-xl bg-slate-950 px-6 py-3 font-medium text-white transition-colors hover:bg-slate-800"
+                class="inline-flex items-center justify-center rounded-xl border border-white/15 px-6 py-3 font-medium text-white transition-colors hover:bg-white/5"
               >
-                Deploy on Railway
-              </a>
-              <a
-                href="https://github.com/eweser/eweser-db"
-                target="_blank"
-                rel="noreferrer"
-                class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-3 font-medium text-slate-700 transition-colors hover:bg-slate-50"
-              >
-                View on GitHub
+                Self-host it
               </a>
             </div>
-          </article>
+          </div>
         </div>
       </div>
     </section>
@@ -435,7 +524,7 @@ const loginUrl = `${authPagesUrl}/auth/sign-in?collections=all&redirect=https%3A
         <a href="https://www.npmjs.com/package/@eweser/db" target="_blank" rel="noreferrer" class="transition-colors hover:text-slate-950">
           npm
         </a>
-        <a href={loginUrl} class="transition-colors hover:text-slate-950">Sign in</a>
+        <a href={signInUrl} class="transition-colors hover:text-slate-950">Sign in</a>
         <a href={noteUrl} class="transition-colors hover:text-slate-950">Ewe Note</a>
       </div>
 

@@ -20,6 +20,10 @@ handoffs:
     agent: pr-reviewer
     prompt: 'Perform final PR review before merging.'
     send: false
+  - label: '→ Watch PR Checks'
+    agent: pr-checks
+    prompt: 'Watch the current PR checks and fix small CI failures on this branch.'
+    send: false
 ---
 
 # Create PR Agent
@@ -53,7 +57,7 @@ You create a GitHub Pull Request summarizing the completed work.
 
 ## Migration Notes
 
-[Any notes about the Next.js → Docker Compose migration relevance]
+[Any deployment, data migration, or package publishing notes]
 ```
 
-**Never** push or commit on the user's behalf — only open the PR.
+Commit and push only when the user asked for a PR workflow or explicitly approves publishing the branch. Never push directly to `main`.

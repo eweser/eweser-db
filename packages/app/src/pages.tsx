@@ -67,6 +67,33 @@ const authOutlineButtonClass =
 
 const authLabelClass = 'text-foreground/90';
 
+const appShellCards = [
+  {
+    description:
+      'Review your profile rooms, connected collections, and app-owned data.',
+    href: '/home',
+    title: 'Account home',
+  },
+  {
+    description:
+      'Inspect installed tools, granted app access, and upcoming revoke controls.',
+    href: '/apps',
+    title: 'Connected apps',
+  },
+  {
+    description:
+      'Set up MCP clients and manage scoped agent access from one place.',
+    href: '/ai',
+    title: 'MCP / AI access',
+  },
+  {
+    description:
+      'Manage email verification, passwords, and two-factor authentication.',
+    href: '/security',
+    title: 'Account security',
+  },
+];
+
 function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
@@ -106,9 +133,21 @@ function SiteHeader() {
             <>
               <Link
                 className="text-sm text-muted-foreground no-underline transition-colors hover:text-foreground"
-                to="/home"
+                to="/"
               >
-                Home
+                Data Home
+              </Link>
+              <Link
+                className="text-sm text-muted-foreground no-underline transition-colors hover:text-foreground"
+                to="/apps"
+              >
+                Apps
+              </Link>
+              <Link
+                className="text-sm text-muted-foreground no-underline transition-colors hover:text-foreground"
+                to="/ai"
+              >
+                AI
               </Link>
               <Link
                 className="text-sm text-muted-foreground no-underline transition-colors hover:text-foreground"
@@ -118,15 +157,9 @@ function SiteHeader() {
               </Link>
               <Link
                 className="text-sm text-muted-foreground no-underline transition-colors hover:text-foreground"
-                to="/account/security"
+                to="/security"
               >
                 Security
-              </Link>
-              <Link
-                className="text-sm text-muted-foreground no-underline transition-colors hover:text-foreground"
-                to="/account/connect-ai"
-              >
-                Connect AI
               </Link>
             </>
           ) : (
@@ -335,10 +368,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!session.data?.user) {
+    const redirectPath = `${location.pathname}${location.search}`;
     return (
       <Navigate
         replace
-        to={`/sign-in?returnTo=${encodeURIComponent(`${location.pathname}${location.search}`)}`}
+        to={`/sign-in?redirect=${encodeURIComponent(redirectPath)}`}
       />
     );
   }
@@ -356,7 +390,7 @@ function SignInPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const session = authClient.useSession();
-  const returnTo = searchParams.get('returnTo');
+  const returnTo = searchParams.get('returnTo') ?? searchParams.get('redirect');
 
   useEffect(() => {
     if (!session.data?.user) {
@@ -558,7 +592,7 @@ function SignUpPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const session = authClient.useSession();
-  const returnTo = searchParams.get('returnTo');
+  const returnTo = searchParams.get('returnTo') ?? searchParams.get('redirect');
 
   useEffect(() => {
     if (!session.data?.user) {
@@ -760,7 +794,78 @@ function AwaitConfirmPage() {
   );
 }
 
-function HomePage() {
+function PersonalDataHomePage() {
+  const session = authClient.useSession();
+
+  return (
+    <div className="mx-auto max-w-6xl px-4 py-10">
+      <div className="mb-8 max-w-3xl">
+        <p className="text-sm font-medium uppercase tracking-[0.22em] text-muted-foreground">
+          Personal data home
+        </p>
+        <h1 className="mt-3 text-4xl font-semibold tracking-tight text-foreground">
+          Sign in and own your data.
+        </h1>
+        <p className="mt-4 text-lg leading-8 text-muted-foreground">
+          Open Ewe Note, connect an AI client, and manage what your apps can
+          access from one account.
+        </p>
+        {session.data?.user.email ? (
+          <p className="mt-3 text-sm text-muted-foreground">
+            Signed in as {session.data.user.email}
+          </p>
+        ) : null}
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        {appShellCards.map((card) => (
+          <Link key={card.href} className="no-underline" to={card.href}>
+            <Card className="h-full p-6 transition-colors hover:bg-accent">
+              <h2 className="text-xl font-semibold text-foreground">
+                {card.title}
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                {card.description}
+              </p>
+            </Card>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ConnectedAppsPage() {
+  return (
+    <div className="mx-auto max-w-5xl px-4 py-10">
+      <div className="mb-8 max-w-3xl">
+        <p className="text-sm font-medium uppercase tracking-[0.22em] text-muted-foreground">
+          Connected apps
+        </p>
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
+          Apps connect. You stay in control.
+        </h1>
+        <p className="mt-4 text-sm leading-6 text-muted-foreground">
+          This launch shell reserves the authenticated Connected Apps route for
+          installed tools, granted access, recent usage, and revoke controls.
+        </p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        {['Ewe Note', 'AI clients', 'Developer apps'].map((title) => (
+          <Card key={title} className="p-5">
+            <h2 className="text-lg font-semibold">{title}</h2>
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">
+              Management controls are coming here as the app shell fills in.
+            </p>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AccountHomePage() {
   const navigate = useNavigate();
   const [bootstrap, setBootstrap] = useState<AccountBootstrapResponse | null>(
     null
@@ -821,15 +926,12 @@ function HomePage() {
     <div className="mx-auto max-w-6xl px-4 py-10">
       <div className="mb-4 flex justify-end">
         <div className="flex gap-4">
-          <Link
-            className="text-sm text-slate-300 hover:text-white"
-            to="/account/connect-ai"
-          >
+          <Link className="text-sm text-slate-300 hover:text-white" to="/ai">
             Connect AI
           </Link>
           <Link
             className="text-sm text-slate-300 hover:text-white"
-            to="/account/security"
+            to="/security"
           >
             Account security
           </Link>
@@ -1421,13 +1523,13 @@ function VerifyEmailPage() {
 
     let active = true;
     void postAuthJson('/verify-email', {
-      callbackURL: appAbsoluteUrl('/home'),
+      callbackURL: appAbsoluteUrl('/'),
       token,
     })
       .then(() => {
         if (!active) return;
         setDone(true);
-        setTimeout(() => navigate('/home', { replace: true }), 1200);
+        setTimeout(() => navigate('/', { replace: true }), 1200);
       })
       .catch((requestError) => {
         if (!active) return;
@@ -1661,7 +1763,7 @@ function TwoFactorChallengePage() {
       } else {
         await postAuthJson('/two-factor/verify-backup-code', { code });
       }
-      navigate('/home', { replace: true });
+      navigate('/', { replace: true });
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -1770,7 +1872,7 @@ function NotFoundPage() {
       <Card className="p-6">
         <h2 className="text-2xl font-semibold">Page not found</h2>
         <p className="mt-3 text-sm text-muted-foreground">
-          The route you requested is not part of the auth-pages SPA.
+          The route you requested is not part of this app.
         </p>
       </Card>
     </div>
@@ -1780,7 +1882,14 @@ function NotFoundPage() {
 export function AppRoutes() {
   return (
     <Routes>
-      <Route element={<SignInPage />} path="/" />
+      <Route
+        element={
+          <ProtectedRoute>
+            <PersonalDataHomePage />
+          </ProtectedRoute>
+        }
+        path="/"
+      />
       <Route element={<SignInPage />} path="/sign-in" />
       <Route element={<SignUpPage />} path="/sign-up" />
       <Route element={<TwoFactorChallengePage />} path="/two-factor" />
@@ -1791,10 +1900,18 @@ export function AppRoutes() {
       <Route
         element={
           <ProtectedRoute>
-            <HomePage />
+            <AccountHomePage />
           </ProtectedRoute>
         }
         path="/home"
+      />
+      <Route
+        element={
+          <ProtectedRoute>
+            <ConnectedAppsPage />
+          </ProtectedRoute>
+        }
+        path="/apps"
       />
       <Route
         element={
@@ -1819,7 +1936,23 @@ export function AppRoutes() {
             <ConnectAiPage />
           </ProtectedRoute>
         }
+        path="/ai"
+      />
+      <Route
+        element={
+          <ProtectedRoute>
+            <ConnectAiPage />
+          </ProtectedRoute>
+        }
         path="/account/connect-ai"
+      />
+      <Route
+        element={
+          <ProtectedRoute>
+            <SecurityPage />
+          </ProtectedRoute>
+        }
+        path="/security"
       />
       <Route
         element={

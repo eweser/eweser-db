@@ -57,7 +57,23 @@ export class DataLayer {
 
   /** Connect to all provided rooms and wait for initial sync. */
   async init(rooms: AgentRoom[]): Promise<void> {
-    await Promise.all(rooms.map((r) => this.connectRoom(r)));
+    const results = await Promise.allSettled(
+      rooms.map((r) => this.connectRoom(r))
+    );
+    const failures = results.filter(
+      (result): result is PromiseRejectedResult => result.status === 'rejected'
+    );
+
+    if (failures.length > 0) {
+      log.warn(
+        { failedRoomCount: failures.length, roomCount: rooms.length },
+        '[eweser-mcp] Failed to connect one or more rooms; continuing with accessible rooms'
+      );
+    }
+
+    if (rooms.length > 0 && failures.length === rooms.length) {
+      throw new Error('[eweser-mcp] Failed to connect any rooms');
+    }
   }
 
   /** Connect a single room: fetch sync token, create Y.Doc + HocuspocusProvider. */
@@ -92,7 +108,15 @@ export class DataLayer {
     this.scheduleTokenRefresh(room.id, connected);
 
     // Wait for initial sync
-    await this.waitForSync(provider, room.id);
+    try {
+      await this.waitForSync(provider, room.id);
+    } catch (err) {
+      clearTimeout(connected.refreshTimer);
+      provider.disconnect();
+      provider.destroy();
+      this.rooms.delete(room.id);
+      throw err;
+    }
   }
 
   private waitForSync(

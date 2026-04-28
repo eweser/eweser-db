@@ -112,6 +112,8 @@ export function EnhancedEditor() {
         {/* Minimal focus mode header */}
         <header className="px-6 py-4 border-b border-border/50 flex items-center justify-between">
           <button
+            type="button"
+            aria-label="Exit focus mode"
             onClick={() => setFocusMode(false)}
             className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2"
           >
@@ -158,6 +160,8 @@ export function EnhancedEditor() {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <button
+                type="button"
+                aria-label="Back to all notes"
                 onClick={() => navigate('/')}
                 className="p-2 hover:bg-accent rounded-lg transition-colors"
               >
@@ -165,22 +169,32 @@ export function EnhancedEditor() {
               </button>
 
               {/* Breadcrumb */}
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <FolderOpen className="w-4 h-4" />
-                <span>{folder?.name || 'Notes'}</span>
-                <ChevronRight className="w-3.5 h-3.5" />
+              <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
+                <FolderOpen className="w-4 h-4 shrink-0" />
+                <span
+                  className="max-w-[18rem] truncate"
+                  title={folder?.name || 'Notes'}
+                >
+                  {folder?.name || 'Notes'}
+                </span>
+                <ChevronRight className="w-3.5 h-3.5 shrink-0" />
                 <input
+                  aria-label="Note title"
                   value={note.title}
                   onChange={(e) =>
                     updateNote(note.id, { title: e.target.value })
                   }
-                  className="bg-transparent outline-none text-foreground font-medium min-w-[200px]"
+                  className="min-w-[12rem] max-w-[24rem] truncate bg-transparent font-medium text-foreground outline-none"
                 />
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               <button
+                type="button"
+                aria-label={
+                  rightPanelOpen ? 'Close note info' : 'Open note info'
+                }
                 data-cy="ewe-note-info-panel-toggle"
                 onClick={() => setRightPanelOpen((v) => !v)}
                 className="p-2 hover:bg-accent rounded-lg transition-colors"
@@ -193,6 +207,8 @@ export function EnhancedEditor() {
                 )}
               </button>
               <button
+                type="button"
+                aria-label="Enter focus mode"
                 data-cy="ewe-note-focus-mode"
                 onClick={() => setFocusMode(true)}
                 className="p-2 hover:bg-accent rounded-lg transition-colors"
@@ -201,6 +217,8 @@ export function EnhancedEditor() {
                 <Maximize2 className="w-4 h-4" />
               </button>
               <button
+                type="button"
+                aria-label={note.pinned ? 'Unpin note' : 'Pin note'}
                 onClick={() => togglePinNote(note.id)}
                 className="p-2 hover:bg-accent rounded-lg transition-colors"
                 title={note.pinned ? 'Unpin note' : 'Pin note'}
@@ -214,6 +232,8 @@ export function EnhancedEditor() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
+                    type="button"
+                    aria-label="Open note actions"
                     data-cy="ewe-note-editor-menu-trigger"
                     className="p-2 hover:bg-accent rounded-lg transition-colors"
                   >

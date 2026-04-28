@@ -334,7 +334,7 @@ Ewe Note must be a genuinely good notes app, not just a tech demo. Current gaps 
 ### Run 2.5: Agent Permission System (Privacy Gate — MUST ship before MCP server)
 
 **Recommended Agent:** `02-coder` (Smart)
-**Reason:** Security-critical. No shortcuts. See full spec in [privacy-and-autonomy.md](./2026-04-03-privacy-and-autonomy.md#run-p3-agent-permission-system-ai-privacy-layer).
+**Reason:** Security-critical. No shortcuts. See full spec in [privacy-and-autonomy.md](./completed/2026-04-03-privacy-and-autonomy.md#run-p3-agent-permission-system-ai-privacy-layer).
 
 **The rule:** The MCP server cannot launch publicly until this is complete. An MCP server with no permissions is full data access with no revocation.
 
@@ -342,7 +342,7 @@ Ewe Note must be a genuinely good notes app, not just a tech demo. Current gaps 
 - [ ] Per-collection, per-room permission enforcement in MCP server
 - [ ] Short-lived agent tokens (configurable expiry, default 30 days)
 - [ ] `agentAccessLog` writes on every MCP tool call
-- [ ] Agent management UI in `packages/auth-pages/src/pages/agent-settings.tsx`
+- [ ] Agent management UI in `packages/app/src/pages/agent-settings.tsx`
   - List registered agents
   - Show: last access, collections accessible, rooms accessible
   - Revoke button per agent

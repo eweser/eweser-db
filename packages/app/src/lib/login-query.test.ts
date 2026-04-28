@@ -98,9 +98,9 @@ describe('login query helpers', () => {
     expect(resolvePostAuthPath(null, '/account/security')).toBe(
       '/account/security'
     );
-    expect(resolvePostAuthPath(null, 'https://example.com/security')).toBe(
-      '/home'
-    );
+    expect(resolvePostAuthPath(null, 'https://example.com/security')).toBe('/');
+    expect(resolvePostAuthPath(null, null)).toBe('/');
+    expect(resolvePostAuthPath(null, '//evil.example.com')).toBe('/');
   });
 
   it('parses login query params from the URL search string', () => {

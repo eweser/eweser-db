@@ -1,117 +1,88 @@
-# EweserDB — Copilot Instructions
+# EweserDB - Copilot Instructions
 
-> ⚠️ **REQUIRED READING** before any work in this repo.
+> Required reading before work in this repo.
 
 ## Project Overview
 
-EweserDB is a local-first, user-owned database SDK built on Yjs CRDTs. Users own their data; apps interoperate over shared schemas. See [ARCHITECTURE.md](../ARCHITECTURE.md) for full system design.
+EweserDB is a local-first, user-owned database SDK built on Yjs CRDTs. Users own their data; apps interoperate over shared schemas and room-scoped access grants. See [ARCHITECTURE.md](../ARCHITECTURE.md) for current system design.
 
 ## Must-Read Files
 
-1. [ARCHITECTURE.md](../ARCHITECTURE.md) — System design, tech stack, migration plan
-2. [LOCAL_DEVELOPMENT.md](../LOCAL_DEVELOPMENT.md) — Dev environment setup
-3. [README.md](../README.md) — Project philosophy and API overview
+1. [ARCHITECTURE.md](../ARCHITECTURE.md) - Current system design and package layout
+2. [LOCAL_DEVELOPMENT.md](../LOCAL_DEVELOPMENT.md) - Dev environment setup
+3. [README.md](../README.md) - Project philosophy and API overview
+4. [AGENTS.md](../AGENTS.md) - Repo-wide agent rules
 
 ## Hard Stops
 
-- **Never** commit secrets, API keys, or `.env` files
-- **Never** push directly to `main` — always use PRs
-- **Never** modify published package APIs without a changeset (`npm run changeset`)
-- **Never** delete Supabase migrations — only add new ones
+- Never commit secrets, API keys, cookies, tokens, provider dashboard screenshots, or `.env` files.
+- Never push directly to `main`. Use a branch and PR.
+- Never delete database migrations. Only add new migrations.
+- Never modify a published package API without a changeset.
 
-## Current State: Migration In Progress
+## Current Architecture
 
-The project is undergoing a major migration:
+The Next.js/Supabase migration is complete. Do not treat old migration plans as current guidance unless they are explicitly marked current.
 
-- **Removing:** Next.js from auth-server
-- **Adding:** Docker Compose for all services (auth API, auth pages, ewe-note, example app, Hocuspocus, Caddy, Postgres, aggregator)
-- **Auth backend replacement:** Hono + better-auth (decided)
-- **Frontend apps:** Converting to React SPAs (Vite)
-- **SEO:** Static landing pages + SPA/PWA for app functionality (approach TBD)
-
-When working on auth-server code, be aware it's being migrated away from Next.js. Prefer changes that are framework-agnostic where possible.
-
-## Tech Stack
-
-| Layer           | Tech                                                             |
-| --------------- | ---------------------------------------------------------------- |
-| **Core SDK**    | TypeScript, Yjs, y-indexeddb, @hocuspocus/provider               |
-| **Auth**        | better-auth + Drizzle ORM + PostgreSQL (migrating from Supabase) |
-| **Sync Server** | Hocuspocus (TypeScript, SQLite/Postgres persistence)             |
-| **Frontend**    | React 18-19, Vite, Tailwind CSS, Radix UI                        |
-| **Editor**      | BlockNote (in ewe-note)                                          |
-| **Testing**     | Vitest (unit), Cypress (E2E)                                     |
-| **Build**       | Vite, tsc, npm workspaces                                        |
-| **CI/CD**       | GitHub Actions                                                   |
+| Layer               | Current stack                                                       |
+| ------------------- | ------------------------------------------------------------------- |
+| Core SDK            | TypeScript, Yjs, `y-indexeddb`, `@hocuspocus/provider`              |
+| Shared package      | TypeScript types, schemas, and helpers with no runtime dependencies |
+| Auth API            | Hono, better-auth, Drizzle ORM, PostgreSQL                          |
+| Auth UI / app shell | `@eweser/app`, React SPA built with Vite                            |
+| Sync server         | Hocuspocus relay with persistence                                   |
+| Aggregator          | Server-side public indexing and search                              |
+| Apps                | React 18-19, Vite, Tailwind CSS, Radix UI                           |
+| Editor              | BlockNote in `packages/ewe-note`                                    |
+| Testing             | Vitest and Cypress                                                  |
+| Build               | npm workspaces, Vite, `tsc`                                         |
 
 ## Working Rules
 
-1. **Monorepo awareness** — This is an npm workspaces monorepo. Changes in `packages/shared` affect all consumers. Run `npm run build` from root to verify.
-2. **Type safety** — All packages use TypeScript. No `any` unless absolutely necessary.
-3. **Changesets** — Any change to a published package (`@eweser/db`, `@eweser/shared`, `@eweser/examples-components`) needs a changeset.
-4. **Tests** — Run `npm test` before committing. E2E tests via `npm run test:e2e`.
-5. **Yjs patterns** — Understand Yjs documents, Y.Map, Y.Array, Y.Text before modifying `packages/db`. Changes are CRDT operations, not direct mutations.
-6. **Library Versions** — Always use the latest stable versions of libraries. Ensure versions are unified across all workspace packages to prevent duplicate bundles and type mismatches.
+1. Monorepo awareness: changes in `packages/shared` affect downstream packages.
+2. Type safety: no `any` unless there is a specific documented reason.
+3. Changesets: behavior or API changes to `@eweser/db`, `@eweser/shared`, or `@eweser/examples-components` need `npm run changeset`.
+4. Tests: run the narrowest relevant tests first, then `npm run check` when changes cross package boundaries.
+5. Yjs patterns: use CRDT operations and room/document helpers; never mutate Yjs-observed objects directly.
+6. Dependency hygiene: keep versions unified across workspaces where practical.
 
 ## Package Relationships
 
-```
-@eweser/shared          ← types, schemas (no deps)
-    ↑
-@eweser/db              ← core SDK (depends on shared, yjs)
-    ↑
-@eweser/examples-components  ← UI components (depends on db)
-    ↑
-example-basic / ewe-note     ← apps (depend on db, components)
+```text
+@eweser/shared
+    -> @eweser/db
+        -> @eweser/examples-components
+            -> examples / packages/ewe-note
 
-auth-server-hono        ← independent (Hono, better-auth, Drizzle, PostgreSQL)
+packages/auth-server-hono is the Hono + better-auth auth API.
+packages/app is the auth/account/access-grant React SPA.
+packages/sync-server is the Hocuspocus sync relay.
+packages/aggregator indexes public room data.
 ```
 
 ## Common Commands
 
 ```bash
-npm install              # Install all workspace deps
-npm run dev              # Start all dev servers
-npm run build            # Build all packages
-npm test                 # Run all tests
-npm run test:e2e         # Cypress E2E tests
-npm run changeset        # Create a changeset for publishing
-npm run release          # Publish changed packages to npm
+npm install
+npm run dev:docker
+npm run dev
+npm run build
+npm run check
+npm test
+npm run test:e2e
+npm run changeset
 ```
 
-## Agent Architecture
+## Agent Workflow
 
-This repo uses a three-phase agent workflow:
+Use the three-phase workflow for substantial or ambiguous work:
 
-1. **@planner** — Research, ask questions, produce a scoped plan
-2. **@coder** — Implement the approved plan with tests
-3. **@qa** — Run tests, review code, verify quality
+1. `01-planner` / `planner` - research and write a scoped plan
+2. `02-coder` / `coder` - implement the approved plan with tests
+3. `03-quality-assurance` / `qa` - run verification and review the branch
 
-See `.github/agents/` for all agent configurations.
+For small, clear fixes, implement directly and summarize the verification.
 
 ## Session Memory
 
-At the end of every coding session, save a session summary using `eweser_save_memory`:
-
-```
-"save session: <brief description of what was accomplished>"
-```
-
-This calls `eweser_save_memory` with `memoryType: "session"` and stores it in the configured conversations room.
-
-The MCP server adds a default `worktree:<workspace-folder-name>` tag to saved session docs, so recall stays in the current worktree context by default. To recall past decisions and sessions, use `eweser_search`:
-
-```json
-{
-  "tool": "eweser_search",
-  "args": {
-    "query": "your topic",
-    "filters": {
-      "memoryType": ["decision", "session"],
-      "tags": ["worktree:eweser-db"]
-    }
-  }
-}
-```
-
-See [CLAUDE.md](../CLAUDE.md) for full manual workflow details.
+At the end of a coding session, save a concise session summary with `eweser_save_memory` when the MCP conversations room is available. Never save secrets, `.env` contents, tokens, cookies, JWTs, or credential-bearing terminal output.

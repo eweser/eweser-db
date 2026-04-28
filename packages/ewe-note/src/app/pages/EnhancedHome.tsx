@@ -101,6 +101,10 @@ export function EnhancedHome() {
               {activeView !== 'tasks' && (
                 <div className="flex items-center gap-1 bg-muted rounded-lg p-1 mr-2">
                   <button
+                    type="button"
+                    aria-label="Show notes as grid"
+                    aria-pressed={viewMode === 'grid'}
+                    title="Grid view"
                     onClick={() => setViewMode('grid')}
                     className={`p-1.5 rounded transition-colors ${
                       viewMode === 'grid'
@@ -111,6 +115,10 @@ export function EnhancedHome() {
                     <Grid3x3 className="w-4 h-4" />
                   </button>
                   <button
+                    type="button"
+                    aria-label="Show notes as list"
+                    aria-pressed={viewMode === 'list'}
+                    title="List view"
                     onClick={() => setViewMode('list')}
                     className={`p-1.5 rounded transition-colors ${
                       viewMode === 'list'
@@ -123,6 +131,7 @@ export function EnhancedHome() {
                 </div>
               )}
               <button
+                type="button"
                 data-cy="ewe-note-new-note"
                 onClick={handleNewNote}
                 className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity"
@@ -192,7 +201,7 @@ function NotesGridView({
         <div
           key={note.id}
           onClick={() => navigate(`/editor/${note.id}`)}
-          className="bg-card border border-border rounded-xl p-5 hover:shadow-md hover:border-foreground/10 transition-all cursor-pointer group"
+          className="bg-card text-card-foreground border border-border rounded-xl p-5 hover:shadow-md hover:border-foreground/15 transition-all cursor-pointer group"
         >
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -200,7 +209,11 @@ function NotesGridView({
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                <button className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-accent rounded flex items-center gap-1">
+                <button
+                  type="button"
+                  aria-label={`Open actions for ${note.title}`}
+                  className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100 transition-opacity p-1 hover:bg-accent rounded flex items-center gap-1"
+                >
                   {note.pinned && (
                     <Star className="w-3.5 h-3.5 text-muted-foreground/60 fill-muted-foreground/60" />
                   )}
@@ -271,7 +284,7 @@ function NotesListView({
         <div
           key={note.id}
           onClick={() => navigate(`/editor/${note.id}`)}
-          className="w-full bg-card border border-border rounded-lg p-4 hover:shadow-sm hover:border-foreground/10 transition-all cursor-pointer group flex items-center gap-4"
+          className="w-full bg-card text-card-foreground border border-border rounded-lg p-4 hover:shadow-sm hover:border-foreground/15 transition-all cursor-pointer group flex items-center gap-4"
         >
           <div className="flex-1 min-w-0">
             <h3 className="font-medium mb-1 truncate">{note.title}</h3>
@@ -296,7 +309,11 @@ function NotesListView({
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                <button className="opacity-0 group-hover:opacity-100 transition-opacity p-2 hover:bg-accent rounded">
+                <button
+                  type="button"
+                  aria-label={`Open actions for ${note.title}`}
+                  className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100 transition-opacity p-2 hover:bg-accent rounded"
+                >
                   <MoreVertical className="w-4 h-4 text-muted-foreground" />
                 </button>
               </DropdownMenuTrigger>

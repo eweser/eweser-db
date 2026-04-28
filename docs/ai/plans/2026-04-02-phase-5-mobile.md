@@ -1,6 +1,6 @@
 # Phase 5: Mobile (Capacitor)
 
-> **Plan:** [Big Refactor Index](./2026-04-02-big-refactor.md)
+> **Plan:** [Big Refactor Index](./historical/2026-04-02-big-refactor.md)
 > **Prerequisite:** Run 2.3 complete (ewe-note works as a standalone SPA + PWA)
 > **Goal:** Wrap ewe-note as a native mobile app using Capacitor. `@eweser/db` runs unchanged in the WebView — IndexedDB, WebSocket, Hocuspocus provider all work natively.
 
@@ -113,7 +113,7 @@ _Note: This run is aspirational — the core mobile story is complete after Run 
 - App icons and splash screens (all required sizes)
 - `packages/ewe-note/ios/App/App/Info.plist` — permissions, descriptions
 - `packages/ewe-note/android/app/src/main/AndroidManifest.xml` — permissions
-- Privacy policy URL (already exists from auth-pages)
+- Privacy policy URL (already exists from packages/app)
 - Screenshots for store listings
 
 **Done when:** Builds pass App Store / Play Store review.

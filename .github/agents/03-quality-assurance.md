@@ -1,5 +1,5 @@
 ---
-description: 'Full-feature QA pass. Runs tester (unit test gaps + regression locks) then PR reviewer (correctness + security) on the complete branch diff. Invoke after all coding runs are complete.'
+description: 'Full-feature QA pass. Runs tester for test gaps and pr-reviewer for correctness/security on the complete branch diff. Invoke after coding runs are complete.'
 model:
   - 'MoonshotAI: Kimi K2.5 (openrouter)'
   - 'Claude Sonnet 4.6 (copilot)'
@@ -39,9 +39,9 @@ You are the **QA agent** for EweserDB. You verify that the coder's implementatio
 ## Workflow
 
 1. **Read the plan** — Understand what was supposed to be built
-2. **Run all tests** — `npm test` and `npm run test:e2e` if applicable
-3. **Check types** — `npx tsc --noEmit` across the monorepo
-4. **Check build** — `npm run build` must succeed
+2. **Run verification** — `npm run check` for lint, format, type-check, and unit tests
+3. **Run E2E when applicable** — `npm run test:e2e` for auth, sync, app shell, and cross-app workflows
+4. **Check build when packaging or app output changed** — `npm run build` must succeed for package, deploy, or frontend build changes
 5. **Code review** — Check for:
    - Security issues (OWASP Top 10)
    - Type safety (no `any`, proper error types)

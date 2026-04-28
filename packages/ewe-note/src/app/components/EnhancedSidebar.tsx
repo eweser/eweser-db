@@ -85,7 +85,7 @@ function SidebarContent({
     getPinnedNotes,
     togglePinNote,
   } = useNotes();
-  const { loggedIn, loginUrl, signOut, user } = useDb();
+  const { loggedIn, user } = useDb();
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
     new Set(['work', 'personal', 'development', 'daily'])
   );
@@ -312,15 +312,9 @@ function SidebarContent({
         </button>
 
         <button
-          data-cy={loggedIn ? 'ewe-note-logout' : 'ewe-note-login'}
+          data-cy="ewe-note-account-link"
           className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sidebar-accent transition-colors text-left"
-          onClick={() => {
-            if (!loggedIn) {
-              window.location.href = loginUrl;
-              return;
-            }
-            signOut();
-          }}
+          onClick={() => navigate('/settings#account')}
         >
           <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-sm font-medium">
             {(user.firstName || 'G').slice(0, 1).toUpperCase()}
@@ -332,7 +326,7 @@ function SidebarContent({
                 : 'Sign In'}
             </div>
             <div className="text-xs text-muted-foreground truncate">
-              {loggedIn ? 'Sign out' : 'Connect your account'}
+              {loggedIn ? 'Account settings' : 'Connect your account'}
             </div>
           </div>
         </button>

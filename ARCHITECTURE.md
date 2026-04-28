@@ -12,7 +12,7 @@ EweserDB is a local-first, user-owned database SDK built on Yjs CRDTs. Users own
 graph TD
   Browser["Browser / App SPA"]
   Db["@eweser/db<br/>Yjs + IndexedDB"]
-  AuthPages["@eweser/auth-pages<br/>React SPA"]
+  AuthPages["@eweser/app<br/>React SPA"]
   AuthApi["@eweser/auth-server-hono<br/>Hono + better-auth"]
   SyncServer["@eweser/sync-server<br/>Hocuspocus relay"]
   Aggregator["@eweser/aggregator<br/>Public indexing and search"]
@@ -35,7 +35,7 @@ packages/
   db/                  -> @eweser/db
   shared/              -> @eweser/shared
   auth-server-hono/    -> @eweser/auth-server-hono
-  auth-pages/          -> @eweser/auth-pages
+  app/                -> @eweser/app
   sync-server/         -> @eweser/sync-server
   aggregator/          -> @eweser/aggregator
   ewe-note/            -> @eweser/ewe-note
@@ -87,7 +87,7 @@ e2e/
 
    ```bash
    npm run dev
-   npm run dev --workspace @eweser/auth-pages
+   npm run dev --workspace @eweser/app
    npm run dev --workspace @eweser/ewe-note
    ```
 
@@ -99,7 +99,7 @@ e2e/
 ## Data Flow
 
 1. A browser app loads local state from IndexedDB through `@eweser/db`.
-2. The app redirects to or embeds the auth-pages SPA for sign-in, signup, and access grants.
+2. The app redirects to or embeds the app SPA for sign-in, signup, and access grants.
 3. The auth API issues session state, room access grants, and sync tokens.
 4. The sync server authenticates the token and relays Yjs updates.
 5. The aggregator receives Hocuspocus webhooks and indexes public data for search.
@@ -138,7 +138,7 @@ Aggregator services index public room data so apps can search shared content wit
 - `packages/db/src/` - core SDK implementation
 - `packages/shared/src/` - shared types and helpers
 - `packages/auth-server-hono/src/` - auth API
-- `packages/auth-pages/src/` - auth SPA
+- `packages/app/src/` - app SPA
 - `packages/sync-server/src/` - sync relay
 - `packages/aggregator/src/` - public indexing/search
 - `LOCAL_DEVELOPMENT.md` - local setup guide

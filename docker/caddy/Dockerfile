@@ -10,11 +10,11 @@ RUN npm ci
 RUN npm run build --workspace @eweser/shared
 RUN npm run build --workspace @eweser/db
 RUN npm run build --workspace @eweser/examples-components
-RUN npm run build --workspace @eweser/auth-pages
+RUN npm run build --workspace @eweser/app
 RUN npm run build --workspace @eweser/landing
 
 FROM caddy:2.10-alpine
 
 COPY docker/Caddyfile /etc/caddy/Caddyfile
-COPY --from=builder /workspace/packages/auth-pages/dist /srv/auth-pages
+COPY --from=builder /workspace/packages/app/dist /srv/app
 COPY --from=builder /workspace/packages/landing/dist /srv/landing

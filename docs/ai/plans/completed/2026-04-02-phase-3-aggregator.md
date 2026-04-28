@@ -1,6 +1,6 @@
 # Phase 3: Aggregator & Search
 
-> **Plan:** [Big Refactor Index](./2026-04-02-big-refactor.md)
+> **Plan:** [Big Refactor Index](../historical/2026-04-02-big-refactor.md)
 > **Prerequisite:** Run 1.2 complete (Hono auth API running with Postgres)
 > **Goal:** Revive the aggregator pattern with Hocuspocus webhooks + PostgreSQL for searchable public document indexing.
 

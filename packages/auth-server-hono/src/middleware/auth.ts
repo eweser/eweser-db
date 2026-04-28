@@ -1,10 +1,12 @@
 import type { Context, Next } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import { auth } from '../auth.js';
+import type { Session } from '../db/schema/sessions.js';
+import type { User } from '../db/schema/users.js';
 
 type AuthVariables = {
-  user: typeof auth.$Infer.Session.user;
-  session: typeof auth.$Infer.Session.session;
+  user: User;
+  session: Session;
 };
 
 /**

@@ -1,5 +1,5 @@
 ---
-description: 'Step 1 of 3 (plan → code → qa). Drafts a scoped implementation plan. Invokes code-explore (internal research) and web-explore (external research) as subagents, then architect as a subagent for architecture review. Presents the combined plan for user approval before handing off to the Coder.'
+description: 'Step 1 of 3 (plan -> code -> qa). Drafts a scoped implementation plan. Uses code-explore for internal research, web-explore for external research when needed, and architect for architecture review on risky designs.'
 model:
   - 'Claude Sonnet 4.6 (copilot)'
   - 'MiniMax: MiniMax M2.7 (openrouter)'
@@ -69,11 +69,11 @@ Before planning, read:
 4. **Draft plan** — Produce a structured plan with:
    - **Goal**: One sentence
    - **Scope**: What's in / what's out
-   - **Runs**: Numbered implementation steps (each should be a focused, testable unit of work). **Each run must specify a Recommended Agent (Smart/Fast/Specialized) and a Reason.**
+   - **Runs**: Numbered implementation steps (each should be a focused, testable unit of work). Each run must specify a Recommended Agent (`coder` fast/strong/specialized) and a reason.
    - **Files to change**: List of files that will be created/modified/deleted
    - **Tests**: What tests need to be written or updated
    - **Risks**: Known risks or unknowns
-   - **Execution Summary**: A table at the bottom summarizing the sequence of runs, the recommended model tier, and **parallelization opportunities** (which runs can be executed concurrently).
+   - **Execution Summary**: A table at the bottom summarizing the sequence of runs, the recommended agent tier, and parallelization opportunities.
 5. **Present for approval** — Ask the user to review and approve before handing off to @coder
 
 ## Rules
@@ -81,9 +81,9 @@ Before planning, read:
 - **Read-only** — Do not modify source code. You may create/update plan documents.
 - **Be specific** — Plans should reference exact files, functions, and types
 - **Parallelization** — Explicitly identify runs that do not depend on each other. For example, UI porting can often happen in parallel with backend refactoring if the API contract is defined.
-- **Model Tiers** — Use "Smart" (Gemini 1.5 Pro / Claude 3.5 Sonnet) for complex logic/infra and "Fast" (Gemini 2.0 Flash) for porting/boilerplate.
+- **Model Tiers** — Use "strong" for complex logic/security/data migrations and "fast" for small, mechanical, or low-risk changes.
 - **Consider the monorepo** — Changes in `packages/shared` affect all consumers
-- **Migration awareness** — The project is migrating away from Next.js. Prefer framework-agnostic approaches.
+- **Current architecture** — The Next.js/Supabase migration is complete. Prefer Hono, better-auth, Drizzle, PostgreSQL, Vite, and React SPA patterns.
 - **Changesets** — Flag if any published package APIs will change (needs changeset)
 
 ## Plan Format
@@ -106,7 +106,7 @@ Save approved plans to `docs/ai/plans/YYYY-MM-DD-<slug>.md` with this structure:
 
 ### Run 1: <Title>
 
-- **Recommended Agent**: `02-coder` (Smart/Fast)
+- **Recommended Agent**: `02-coder` (strong/fast)
 - **Reason**: ...
 - [ ] Step details
 - [ ] Files: ...

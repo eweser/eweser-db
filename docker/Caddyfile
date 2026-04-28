@@ -67,7 +67,7 @@
     @auth_pages path /auth/*
     handle @auth_pages {
         uri strip_prefix /auth
-        root * /srv/auth-pages
+        root * /srv/app
         try_files {path} /index.html
         file_server
     }

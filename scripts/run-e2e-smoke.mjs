@@ -104,7 +104,7 @@ async function main() {
         'npm',
         [
           '--workspace',
-          '@eweser/auth-pages',
+          '@eweser/app',
           'run',
           'dev',
           '--',

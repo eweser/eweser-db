@@ -59,14 +59,15 @@ You are the **Architect** for EweserDB. You review proposed plans for architectu
 ### Auth & Security
 
 - [ ] JWT token handling follows secure patterns
-- [ ] Supabase RLS policies considered
+- [ ] Drizzle queries are parameterized; raw SQL does not interpolate user input
+- [ ] Room grants, agent scopes, and sync-token boundaries are explicit
 - [ ] No secrets in client-side code
 
-### Migration Alignment
+### Current Stack Alignment
 
 - [ ] No new Next.js dependencies
 - [ ] Design is Docker Compose-compatible
-- [ ] Auth logic is framework-agnostic (portable to Express/Hono/etc.)
+- [ ] Auth logic fits Hono + better-auth + Drizzle + PostgreSQL
 
 ### Data Flow
 
