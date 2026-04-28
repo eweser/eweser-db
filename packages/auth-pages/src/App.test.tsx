@@ -154,6 +154,7 @@ describe('auth-pages app', () => {
         'https://www.eweser.com/.well-known/oauth-authorization-server',
       smartLinkRule:
         'Never place bearer tokens in URLs. All setup flows stay on authenticated Eweser pages and mint or rotate tokens server-side.',
+      writableRooms: [],
     });
     vi.clearAllMocks();
   });
@@ -301,7 +302,13 @@ describe('auth-pages app', () => {
       clients: [
         {
           clientId: 'claude-desktop',
-          connection: null,
+          connection: {
+            expiresAt: null,
+            lastUsedAt: null,
+            permissions: 'read',
+            status: 'connected',
+            writeRoomCount: 1,
+          },
           description:
             'Local stdio setup with @eweser/mcp and a short-lived agent token.',
           fallbackReason: null,
@@ -320,6 +327,22 @@ describe('auth-pages app', () => {
         'https://www.eweser.com/.well-known/oauth-authorization-server',
       smartLinkRule:
         'Never place bearer tokens in URLs. All setup flows stay on authenticated Eweser pages and mint or rotate tokens server-side.',
+      writableRooms: [
+        {
+          id: 'room-conversations',
+          name: 'Conversations',
+          collectionKey: 'conversations',
+          syncUrl: null,
+          syncBaseUrl: null,
+        },
+        {
+          id: 'room-ai',
+          name: 'AI Notes',
+          collectionKey: 'notes',
+          syncUrl: null,
+          syncBaseUrl: null,
+        },
+      ],
     });
 
     renderApp('/account/connect-ai');
@@ -328,6 +351,8 @@ describe('auth-pages app', () => {
       await screen.findByRole('heading', { name: /connect ai/i, level: 2 })
     ).toBeInTheDocument();
     expect(screen.getByText(/claude desktop/i)).toBeInTheDocument();
+    expect(screen.getByText(/writable ai area/i)).toBeInTheDocument();
+    expect(screen.getByText(/write scope: 1 room/i)).toBeInTheDocument();
   });
 
   it('creates a setup payload from the Connect AI page', async () => {
@@ -365,6 +390,22 @@ describe('auth-pages app', () => {
         'https://www.eweser.com/.well-known/oauth-authorization-server',
       smartLinkRule:
         'Never place bearer tokens in URLs. All setup flows stay on authenticated Eweser pages and mint or rotate tokens server-side.',
+      writableRooms: [
+        {
+          id: 'room-conversations',
+          name: 'Conversations',
+          collectionKey: 'conversations',
+          syncUrl: null,
+          syncBaseUrl: null,
+        },
+        {
+          id: 'room-ai',
+          name: 'AI Notes',
+          collectionKey: 'notes',
+          syncUrl: null,
+          syncBaseUrl: null,
+        },
+      ],
     });
     apiMocks.setupConnectAiToken.mockResolvedValue({
       agent: { id: 'agent-1', permissions: 'read', tokenExpiresAt: null },
@@ -391,7 +432,8 @@ describe('auth-pages app', () => {
 
     await waitFor(() => {
       expect(apiMocks.setupConnectAiToken).toHaveBeenCalledWith(
-        'claude-desktop'
+        'claude-desktop',
+        { writeRoomIds: ['room-conversations', 'room-ai'] }
       );
     });
 
@@ -435,6 +477,7 @@ describe('auth-pages app', () => {
         'https://www.eweser.com/.well-known/oauth-authorization-server',
       smartLinkRule:
         'Never place bearer tokens in URLs. All setup flows stay on authenticated Eweser pages and mint or rotate tokens server-side.',
+      writableRooms: [],
     });
 
     renderApp('/account/connect-ai');
@@ -502,6 +545,7 @@ describe('auth-pages app', () => {
         'https://www.eweser.com/.well-known/oauth-authorization-server',
       smartLinkRule:
         'Never place bearer tokens in URLs. All setup flows stay on authenticated Eweser pages and mint or rotate tokens server-side.',
+      writableRooms: [],
     });
 
     renderApp('/account/connect-ai');

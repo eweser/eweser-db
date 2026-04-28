@@ -41,13 +41,19 @@ const rotateTokenRateLimit = createRateLimit({
 });
 
 const createAgentBodySchema = z.object({
-  allowedCollections: z.array(z.string()).min(1),
+  allowedCollections: z.array(z.string()).min(1).optional(),
   allowedRooms: z.array(z.string()).optional(),
   endpoint: z.string().url().optional(),
   name: z.string().min(2).max(120),
   permissions: z.enum(['read', 'readwrite']).optional(),
+  readAllowedCollections: z.array(z.string()).optional(),
+  readAllowedRooms: z.array(z.string()).optional(),
   tokenExpiresAt: z.number().int().positive().optional(),
   type: z.enum(['mcp', 'openclaw', 'custom']).optional(),
+  writeAllowedCollections: z.array(z.string()).optional(),
+  writeAllowedFolderIds: z.array(z.string()).optional(),
+  writeAllowedPathPrefixes: z.array(z.string()).optional(),
+  writeAllowedRooms: z.array(z.string()).optional(),
 });
 
 const verifyTokenBodySchema = z.object({
@@ -64,6 +70,22 @@ const agentLogBodySchema = z.object({
   documentCount: z.number().int().nonnegative().optional(),
   roomId: z.string().min(1),
 });
+
+function compactScope(values: string[] | undefined): string[] {
+  return Array.from(new Set((values ?? []).filter(Boolean)));
+}
+
+function effectiveScope(
+  nextScope: string[] | undefined,
+  legacyScope: string[] | undefined
+): string[] {
+  const next = compactScope(nextScope);
+  return next.length > 0 ? next : compactScope(legacyScope);
+}
+
+function scopeIncludes(scope: string[], value: string): boolean {
+  return scope.length === 0 || scope.includes(value);
+}
 
 /**
  * GET /api/agents
@@ -99,9 +121,28 @@ agentsRouter.post(
     }
     const body = bodyResult.data;
 
-    const invalidCollections = body.allowedCollections.filter(
-      (k) => !COLLECTION_KEYS.includes(k as (typeof COLLECTION_KEYS)[number])
+    const allowedCollections =
+      body.allowedCollections ?? body.readAllowedCollections ?? [];
+    const invalidCollections = [
+      ...allowedCollections,
+      ...(body.readAllowedCollections ?? []),
+      ...(body.writeAllowedCollections ?? []),
+    ].filter(
+      (k, index, all) =>
+        all.indexOf(k) === index &&
+        !COLLECTION_KEYS.includes(k as (typeof COLLECTION_KEYS)[number])
     );
+
+    if (allowedCollections.length === 0 && invalidCollections.length === 0) {
+      return c.json(
+        {
+          error:
+            'At least one readable collection is required via allowedCollections or readAllowedCollections.',
+        },
+        400
+      );
+    }
+
     if (invalidCollections.length > 0) {
       return c.json(
         {
@@ -123,10 +164,16 @@ agentsRouter.post(
       name: body.name,
       type: body.type ?? 'mcp',
       endpoint: body.endpoint,
-      allowedCollections: body.allowedCollections,
-      allowedRooms: body.allowedRooms ?? [],
+      allowedCollections,
+      allowedRooms: body.allowedRooms ?? body.readAllowedRooms ?? [],
       permissions: body.permissions ?? 'read',
+      readAllowedCollections: body.readAllowedCollections,
+      readAllowedRooms: body.readAllowedRooms,
       tokenExpiresAt,
+      writeAllowedCollections: body.writeAllowedCollections,
+      writeAllowedFolderIds: body.writeAllowedFolderIds,
+      writeAllowedPathPrefixes: body.writeAllowedPathPrefixes,
+      writeAllowedRooms: body.writeAllowedRooms,
     });
     await logSecurityEvent({
       action: 'agent.token.created',
@@ -401,17 +448,20 @@ agentsRouter.post('/me/rooms', agentAuth, async (c) => {
 
   let allRooms = await getRoomsByIds(userRoomIds);
 
-  // Filter by allowedCollections
-  if (agent.allowedCollections.length > 0) {
-    allRooms = allRooms.filter((r) =>
-      agent.allowedCollections.includes(r.collectionKey)
-    );
-  }
+  const readAllowedCollections = effectiveScope(
+    agent.readAllowedCollections,
+    agent.allowedCollections
+  );
+  const readAllowedRooms = effectiveScope(
+    agent.readAllowedRooms,
+    agent.allowedRooms
+  );
 
-  // Filter by allowedRooms (if non-empty, restrict to specific room IDs)
-  if (agent.allowedRooms.length > 0) {
-    allRooms = allRooms.filter((r) => agent.allowedRooms.includes(r.id));
-  }
+  allRooms = allRooms.filter(
+    (room) =>
+      scopeIncludes(readAllowedCollections, room.collectionKey) &&
+      scopeIncludes(readAllowedRooms, room.id)
+  );
 
   // Return only safe fields
   const rooms = allRooms.map(
@@ -460,19 +510,22 @@ agentsRouter.post('/me/sync-token', combinedAgentAuth, async (c) => {
   }
 
   // Validate agent is allowed access to this room
-  if (
-    agent.allowedCollections.length > 0 &&
-    !agent.allowedCollections.includes(room.collectionKey)
-  ) {
+  const readAllowedCollections = effectiveScope(
+    agent.readAllowedCollections,
+    agent.allowedCollections
+  );
+  const readAllowedRooms = effectiveScope(
+    agent.readAllowedRooms,
+    agent.allowedRooms
+  );
+
+  if (!scopeIncludes(readAllowedCollections, room.collectionKey)) {
     return c.json(
       { error: 'Agent not allowed to access this collection' },
       403
     );
   }
-  if (
-    agent.allowedRooms.length > 0 &&
-    !agent.allowedRooms.includes(body.roomId)
-  ) {
+  if (!scopeIncludes(readAllowedRooms, body.roomId)) {
     return c.json({ error: 'Agent not allowed to access this room' }, 403);
   }
 

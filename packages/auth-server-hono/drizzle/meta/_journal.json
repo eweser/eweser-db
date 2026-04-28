@@ -50,6 +50,13 @@
       "when": 1777000000000,
       "tag": "0006_mcp_connect_clients",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1777248000000,
+      "tag": "0007_agent_scope_split",
+      "breakpoints": true
     }
   ]
 }

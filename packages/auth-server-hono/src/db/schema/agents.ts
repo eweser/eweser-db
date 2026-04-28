@@ -41,6 +41,34 @@ export const agentConfigs = pgTable('agent_configs', {
    */
   allowedRooms: text('allowed_rooms').array().notNull().default([]),
 
+  /**
+   * Explicit read scope. Empty arrays fall back to the legacy allowedCollections/allowedRooms
+   * semantics until all callers are migrated.
+   */
+  readAllowedCollections: text('read_allowed_collections')
+    .array()
+    .notNull()
+    .default([]),
+  readAllowedRooms: text('read_allowed_rooms').array().notNull().default([]),
+
+  /**
+   * Explicit write scope. Empty arrays mean "no explicit write scope" unless legacy
+   * readwrite compatibility rules are applied by higher layers.
+   */
+  writeAllowedCollections: text('write_allowed_collections')
+    .array()
+    .notNull()
+    .default([]),
+  writeAllowedRooms: text('write_allowed_rooms').array().notNull().default([]),
+  writeAllowedFolderIds: text('write_allowed_folder_ids')
+    .array()
+    .notNull()
+    .default([]),
+  writeAllowedPathPrefixes: text('write_allowed_path_prefixes')
+    .array()
+    .notNull()
+    .default([]),
+
   /** Access level */
   permissions: text('permissions', { enum: AGENT_PERMISSIONS })
     .notNull()

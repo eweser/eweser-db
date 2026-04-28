@@ -4,6 +4,10 @@ RUN apt-get update \
 	&& apt-get install -y --no-install-recommends git \
 	&& rm -rf /var/lib/apt/lists/*
 
+ENV NPM_CONFIG_FETCH_RETRIES=5
+ENV NPM_CONFIG_FETCH_RETRY_FACTOR=2
+ENV NPM_CONFIG_FETCH_RETRY_MINTIMEOUT=20000
+ENV NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=120000
 ENV NPM_CONFIG_IGNORE_SCRIPTS=true
 
 WORKDIR /workspace
@@ -31,6 +35,10 @@ RUN apt-get update \
 	&& apt-get install -y --no-install-recommends git \
 	&& rm -rf /var/lib/apt/lists/*
 
+ENV NPM_CONFIG_FETCH_RETRIES=5
+ENV NPM_CONFIG_FETCH_RETRY_FACTOR=2
+ENV NPM_CONFIG_FETCH_RETRY_MINTIMEOUT=20000
+ENV NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=120000
 ENV NPM_CONFIG_IGNORE_SCRIPTS=true
 
 # Copy package manifests and lockfile for production install

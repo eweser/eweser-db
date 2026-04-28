@@ -30,9 +30,17 @@ export async function getRoomsByIds(ids: string[]): Promise<Room[]> {
 export async function getWritableRoomsByUserId(
   userId: string,
   dbInstance?: DBInstance
-): Promise<Pick<Room, 'id' | 'collectionKey'>[]> {
+): Promise<
+  Pick<Room, 'id' | 'name' | 'collectionKey' | 'syncUrl' | 'syncBaseUrl'>[]
+> {
   return await (dbInstance ?? db)
-    .select({ id: rooms.id, collectionKey: rooms.collectionKey })
+    .select({
+      id: rooms.id,
+      name: rooms.name,
+      collectionKey: rooms.collectionKey,
+      syncUrl: rooms.syncUrl,
+      syncBaseUrl: rooms.syncBaseUrl,
+    })
     .from(rooms)
     .where(
       and(

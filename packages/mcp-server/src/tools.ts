@@ -3,7 +3,6 @@
  * Each tool wraps DataLayer methods with Zod validation.
  */
 import { z } from 'zod';
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { DataLayer } from './data-layer.js';
 import type { EweDocument } from '@eweser/shared';
 import path from 'node:path';
@@ -14,6 +13,59 @@ type LogFn = (entry: {
   action: 'read' | 'write';
   documentCount?: number;
 }) => Promise<void>;
+
+type ToolResult = {
+  content: Array<{ type: 'text'; text: string }>;
+  isError?: boolean;
+};
+
+type ToolRegistrar = <TShape extends z.ZodRawShape>(
+  name: string,
+  description: string,
+  inputSchema: TShape,
+  handler: (
+    args: z.infer<z.ZodObject<TShape>>
+  ) => ToolResult | Promise<ToolResult>
+) => void;
+
+export type ToolServer = {
+  tool: unknown;
+};
+
+function getToolRegistrar(server: ToolServer): ToolRegistrar {
+  if (typeof server.tool !== 'function') {
+    throw new TypeError('MCP server is missing a tool registration method.');
+  }
+
+  return (server.tool as (...args: unknown[]) => unknown).bind(
+    server
+  ) as ToolRegistrar;
+}
+
+const SECRET_PATTERNS: RegExp[] = [
+  /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/g,
+  /\baws_secret_access_key\s*=\s*[^\s]+/gi,
+  /\b(?:api[_-]?key|secret|token|password)\s*[:=]\s*["']?[^\s"',}]+/gi,
+  /-----BEGIN (?:RSA |OPENSSH |EC |DSA )?PRIVATE KEY-----[\s\S]*?-----END (?:RSA |OPENSSH |EC |DSA )?PRIVATE KEY-----/g,
+  /\bsk-[A-Za-z0-9_-]{20,}\b/g,
+];
+
+function redactSecretLikeText(text: string): {
+  text: string;
+  redacted: boolean;
+} {
+  let redacted = false;
+  let next = text;
+
+  for (const pattern of SECRET_PATTERNS) {
+    next = next.replace(pattern, () => {
+      redacted = true;
+      return '[REDACTED_SECRET]';
+    });
+  }
+
+  return { text: next, redacted };
+}
 
 /** Extract a short text summary from a document (first 200 chars of JSON). */
 function summarize(doc: EweDocument): string {
@@ -106,18 +158,19 @@ const SearchFiltersSchema = z
   .optional();
 
 export function registerTools(
-  server: McpServer,
+  server: ToolServer,
   dataLayer: DataLayer,
   log: LogFn,
   aggregatorUrl?: string,
   worktreeTag?: string
 ): void {
+  const tool = getToolRegistrar(server);
+
   // -------------------------------------------------------------------------
   // eweser_list_rooms
   // -------------------------------------------------------------------------
 
-  // @ts-ignore TS2589: deep Zod overload inference
-  server.tool(
+  tool(
     'eweser_list_rooms',
     'List rooms the agent can access, optionally filtered by collection type.',
     {
@@ -142,8 +195,7 @@ export function registerTools(
   // -------------------------------------------------------------------------
   // eweser_list_documents
   // -------------------------------------------------------------------------
-  // @ts-ignore TS2589: deep Zod overload inference
-  server.tool(
+  tool(
     'eweser_list_documents',
     'List documents in a room (returns IDs + summaries).',
     {
@@ -184,7 +236,7 @@ export function registerTools(
   // -------------------------------------------------------------------------
   // eweser_read_document
   // -------------------------------------------------------------------------
-  server.tool(
+  tool(
     'eweser_read_document',
     'Read a full document by room ID and document ID.',
     {
@@ -229,8 +281,7 @@ export function registerTools(
   // -------------------------------------------------------------------------
   // eweser_search
   // -------------------------------------------------------------------------
-  // @ts-ignore TS2589: deep Zod overload inference
-  server.tool(
+  tool(
     'eweser_search',
     'Full-text search across documents in allowed rooms. ' +
       'When connected to the aggregator, uses PostgreSQL full-text search with result ranking ' +
@@ -295,8 +346,7 @@ export function registerTools(
   // -------------------------------------------------------------------------
   // eweser_create_document
   // -------------------------------------------------------------------------
-  // @ts-ignore TS2589: deep Zod overload inference
-  server.tool(
+  tool(
     'eweser_create_document',
     'Create a new document in a room.',
     {
@@ -306,7 +356,7 @@ export function registerTools(
         .describe('Document fields (excluding metadata)'),
     },
     async ({ roomId, data }) => {
-      const connected = dataLayer.assertWriteAccess(roomId);
+      const connected = dataLayer.assertWriteAccess(roomId, data);
       const crudApi = dataLayer.getDocumentsForRoom(roomId);
       const newDoc = crudApi.new(data as Parameters<typeof crudApi.new>[0]);
 
@@ -331,7 +381,7 @@ export function registerTools(
   // -------------------------------------------------------------------------
   // eweser_update_document
   // -------------------------------------------------------------------------
-  server.tool(
+  tool(
     'eweser_update_document',
     'Update fields on an existing document.',
     {
@@ -340,7 +390,6 @@ export function registerTools(
       updates: z.record(z.unknown()).describe('Fields to update'),
     },
     async ({ roomId, documentId, updates }) => {
-      const connected = dataLayer.assertWriteAccess(roomId);
       const crudApi = dataLayer.getDocumentsForRoom(roomId);
       const existing = crudApi.get(documentId);
 
@@ -356,7 +405,10 @@ export function registerTools(
         };
       }
 
-      const updated = crudApi.set({ ...existing, ...updates } as EweDocument);
+      dataLayer.assertWriteAccess(roomId, existing);
+      const candidate = { ...existing, ...updates } as EweDocument;
+      const connected = dataLayer.assertWriteAccess(roomId, candidate);
+      const updated = crudApi.set(candidate);
 
       void log({
         roomId,
@@ -379,10 +431,8 @@ export function registerTools(
   // -------------------------------------------------------------------------
   // eweser_save_memory
   // -------------------------------------------------------------------------
-  // @ts-ignore TS2589: deep Zod overload inference
-  server.tool(
+  tool(
     'eweser_save_memory',
-    // @ts-ignore TS2769: SDK overload inference picks schema overload for this long description form
     'Save a memory note, session summary, decision, or bookmark to a conversations room. ' +
       'A convenience wrapper around eweser_create_document with sensible defaults for AI agents. ' +
       'Requires readwrite access on the target room (collectionKey: "conversations"). ' +
@@ -445,7 +495,6 @@ export function registerTools(
       turns,
       relatedDocIds,
     }) => {
-      const connected = dataLayer.assertWriteAccess(roomId);
       const crudApi = dataLayer.getDocumentsForRoom(roomId);
 
       const MAX_TURNS = 100;
@@ -461,9 +510,17 @@ export function registerTools(
         ];
       }
 
+      const redactedSummary = redactSecretLikeText(summary);
+      let redactedTurns = false;
+      const sanitizedTurns = cappedTurns?.map((turn) => {
+        const redacted = redactSecretLikeText(turn.content);
+        redactedTurns = redactedTurns || redacted.redacted;
+        return { ...turn, content: redacted.text };
+      });
+
       const docData = {
         title,
-        summary,
+        summary: redactedSummary.text,
         memoryType,
         agentId: agentId ?? 'unknown',
         date: date ?? new Date().toISOString().slice(0, 10),
@@ -471,10 +528,14 @@ export function registerTools(
           (tags?.some((tag: string) => tag.startsWith('worktree:')) ?? false)
             ? tags
             : [...(tags ?? []), buildWorktreeTag(worktreeTag)],
-        ...(cappedTurns !== undefined && { turns: cappedTurns }),
+        ...(sanitizedTurns !== undefined && { turns: sanitizedTurns }),
         ...(relatedDocIds !== undefined && { relatedDocIds }),
+        ...((redactedSummary.redacted || redactedTurns) && {
+          redactionWarnings: ['secret-like content redacted before save'],
+        }),
       };
 
+      const connected = dataLayer.assertWriteAccess(roomId, docData);
       const newDoc = crudApi.new(docData as Parameters<typeof crudApi.new>[0]);
 
       void log({
@@ -498,7 +559,7 @@ export function registerTools(
   // -------------------------------------------------------------------------
   // eweser_delete_document
   // -------------------------------------------------------------------------
-  server.tool(
+  tool(
     'eweser_delete_document',
     'Soft-delete a document (sets _deleted = true).',
     {
@@ -506,8 +567,22 @@ export function registerTools(
       documentId: z.string().describe('The document ID to delete'),
     },
     async ({ roomId, documentId }) => {
-      const connected = dataLayer.assertWriteAccess(roomId);
       const crudApi = dataLayer.getDocumentsForRoom(roomId);
+      const existing = crudApi.get(documentId);
+
+      if (!existing) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: 'text' as const,
+              text: `Document not found: ${documentId}`,
+            },
+          ],
+        };
+      }
+
+      const connected = dataLayer.assertWriteAccess(roomId, existing);
       crudApi.delete(documentId);
 
       void log({

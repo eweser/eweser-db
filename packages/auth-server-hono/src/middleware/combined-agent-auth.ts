@@ -62,6 +62,12 @@ export const combinedAgentAuth = createMiddleware<{
       endpoint: null,
       allowedCollections: [],
       allowedRooms: user.rooms ?? [],
+      readAllowedCollections: [],
+      readAllowedRooms: [],
+      writeAllowedCollections: [],
+      writeAllowedRooms: [],
+      writeAllowedFolderIds: [],
+      writeAllowedPathPrefixes: [],
       permissions: oauthToken.scopes.includes('readwrite')
         ? 'readwrite'
         : 'read',
