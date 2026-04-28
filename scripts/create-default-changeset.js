@@ -1,7 +1,8 @@
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const changesetDir = path.resolve(__dirname, '../.changeset');
 if (!fs.existsSync(changesetDir)) {
   fs.mkdirSync(changesetDir);
