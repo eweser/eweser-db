@@ -157,6 +157,65 @@ const SearchFiltersSchema = z
   })
   .optional();
 
+type SearchFilters = z.infer<typeof SearchFiltersSchema>;
+
+type InMemorySearchResult = {
+  roomId: string;
+  collectionKey: string;
+  doc: EweDocument;
+};
+
+function getStringField(doc: EweDocument, key: string): string | undefined {
+  const value = (doc as Record<string, unknown>)[key];
+  return typeof value === 'string' ? value : undefined;
+}
+
+function getStringArrayField(
+  doc: EweDocument,
+  key: string
+): string[] | undefined {
+  const value = (doc as Record<string, unknown>)[key];
+  if (!Array.isArray(value)) return undefined;
+  return value.filter((entry): entry is string => typeof entry === 'string');
+}
+
+function matchesSearchFilters(
+  result: InMemorySearchResult,
+  filters: SearchFilters
+): boolean {
+  if (!filters) return true;
+
+  if (
+    filters.collectionKey?.length &&
+    !filters.collectionKey.includes(result.collectionKey)
+  ) {
+    return false;
+  }
+
+  const memoryType = getStringField(result.doc, 'memoryType');
+  if (filters.memoryType?.length && !memoryType) return false;
+  if (
+    filters.memoryType?.length &&
+    !filters.memoryType.some((type) => type === memoryType)
+  ) {
+    return false;
+  }
+
+  const agentId = getStringField(result.doc, 'agentId');
+  if (filters.agentId && agentId !== filters.agentId) return false;
+
+  const tags = getStringArrayField(result.doc, 'tags') ?? [];
+  if (filters.tags?.length && !filters.tags.some((tag) => tags.includes(tag))) {
+    return false;
+  }
+
+  const date = getStringField(result.doc, 'date');
+  if (filters.dateFrom && (!date || date < filters.dateFrom)) return false;
+  if (filters.dateTo && (!date || date > filters.dateTo)) return false;
+
+  return true;
+}
+
 export function registerTools(
   server: ToolServer,
   dataLayer: DataLayer,
@@ -331,6 +390,7 @@ export function registerTools(
           : undefined;
       const results = dataLayer
         .searchDocuments(query, collectionFilter)
+        .filter((result) => matchesSearchFilters(result, filters))
         .slice(0, 10);
       return {
         content: [
@@ -536,6 +596,10 @@ export function registerTools(
       };
 
       const connected = dataLayer.assertWriteAccess(roomId, docData);
+      if (connected.meta.collectionKey !== 'conversations') {
+        throw new Error('eweser_save_memory requires a conversations room');
+      }
+
       const newDoc = crudApi.new(docData as Parameters<typeof crudApi.new>[0]);
 
       void log({

@@ -37,12 +37,25 @@ const mockRoom = {
   syncBaseUrl: null,
 };
 
+const mockConversationRoom = {
+  id: 'conversation-room',
+  name: 'Conversations',
+  collectionKey: 'conversations',
+  syncUrl: 'ws://localhost:1234',
+  syncBaseUrl: null,
+};
+
 const mockConnectedRoom = {
   meta: mockRoom,
   ydoc: {},
   provider: {},
   syncToken: 'token',
   tokenExpiry: new Date(Date.now() + 3600_000),
+};
+
+const mockConnectedConversationRoom = {
+  ...mockConnectedRoom,
+  meta: mockConversationRoom,
 };
 
 const mockDoc1 = {
@@ -52,6 +65,10 @@ const mockDoc1 = {
   _updated: '2024-01-01T00:00:00.000Z',
   _deleted: false,
   text: 'Hello world',
+  memoryType: 'memory',
+  agentId: 'codex',
+  date: '2026-04-28',
+  tags: ['mcp-audit'],
 };
 
 const mockCrudApi = {
@@ -65,12 +82,16 @@ const mockCrudApi = {
 const mockDataLayer = {
   listRooms: vi.fn(() => [mockRoom]),
   assertReadAccess: vi.fn(() => mockConnectedRoom),
-  assertWriteAccess: vi.fn(() => mockConnectedRoom),
+  assertWriteAccess: vi.fn((roomId: string) =>
+    roomId === 'conversation-room'
+      ? mockConnectedConversationRoom
+      : mockConnectedRoom
+  ),
   getRawDocuments: vi.fn(() => ({ 'doc-1': mockDoc1 })),
   getDocumentsForRoom: vi.fn(() => mockCrudApi),
   getAgentToken: vi.fn(() => 'mock-agent-token'),
   searchDocuments: vi.fn(() => [
-    { roomId: 'room-1', document: mockDoc1, score: 1 },
+    { roomId: 'room-1', collectionKey: 'notes', doc: mockDoc1 },
   ]),
 } as unknown as DataLayer;
 
@@ -170,7 +191,7 @@ describe('eweser_search', () => {
     const text = result.content[0].text;
     const results = JSON.parse(text);
     expect(results).toHaveLength(1);
-    expect(results[0].document._id).toBe('doc-1');
+    expect(results[0].doc._id).toBe('doc-1');
   });
 
   it('passes collectionKey filter to searchDocuments fallback', async () => {
@@ -182,6 +203,37 @@ describe('eweser_search', () => {
       'hello',
       'notes'
     );
+  });
+
+  it('applies all documented filters to in-memory fallback results', async () => {
+    const result = await callTool('eweser_search', {
+      query: 'hello',
+      filters: {
+        collectionKey: ['notes'],
+        memoryType: ['memory'],
+        agentId: 'codex',
+        tags: ['mcp-audit'],
+        dateFrom: '2026-04-01',
+        dateTo: '2026-04-30',
+      },
+    });
+
+    expect(JSON.parse(result.content[0].text)).toHaveLength(1);
+  });
+
+  it('filters out in-memory fallback results that do not match filters', async () => {
+    const result = await callTool('eweser_search', {
+      query: 'hello',
+      filters: {
+        collectionKey: ['conversations'],
+        memoryType: ['decision'],
+        agentId: 'other-agent',
+        tags: ['missing-tag'],
+        dateFrom: '2026-05-01',
+      },
+    });
+
+    expect(JSON.parse(result.content[0].text)).toEqual([]);
   });
 });
 
@@ -267,7 +319,7 @@ describe('eweser_delete_document', () => {
 describe('eweser_save_memory', () => {
   it('creates a conversation document with required fields', async () => {
     const result = await callTool('eweser_save_memory', {
-      roomId: 'room-1',
+      roomId: 'conversation-room',
       title: 'Decision: Hono over Express',
       summary: 'Chose Hono for auth server — smaller bundle, native fetch.',
       memoryType: 'decision',
@@ -289,7 +341,7 @@ describe('eweser_save_memory', () => {
   it('auto-sets agentId from caller and date to today', async () => {
     const today = new Date().toISOString().slice(0, 10);
     await callTool('eweser_save_memory', {
-      roomId: 'room-1',
+      roomId: 'conversation-room',
       title: 'PA session',
       summary: 'Discussed deployment.',
       memoryType: 'session',
@@ -307,7 +359,7 @@ describe('eweser_save_memory', () => {
       timestamp: new Date().toISOString(),
     }));
     await callTool('eweser_save_memory', {
-      roomId: 'room-1',
+      roomId: 'conversation-room',
       title: 'Long session',
       summary: 'Many turns.',
       memoryType: 'session',
@@ -322,13 +374,13 @@ describe('eweser_save_memory', () => {
 
   it('enforces write access', async () => {
     await callTool('eweser_save_memory', {
-      roomId: 'room-1',
+      roomId: 'conversation-room',
       title: 'Test',
       summary: 'Test.',
       memoryType: 'memory',
     });
     expect(mockDataLayer.assertWriteAccess).toHaveBeenCalledWith(
-      'room-1',
+      'conversation-room',
       expect.objectContaining({
         title: 'Test',
         memoryType: 'memory',
@@ -338,13 +390,13 @@ describe('eweser_save_memory', () => {
 
   it('logs access after creation', async () => {
     await callTool('eweser_save_memory', {
-      roomId: 'room-1',
+      roomId: 'conversation-room',
       title: 'Bookmark',
       summary: 'Useful link.',
       memoryType: 'bookmark',
     });
     expect(mockLog).toHaveBeenCalledWith(
-      expect.objectContaining({ roomId: 'room-1', action: 'write' })
+      expect.objectContaining({ roomId: 'conversation-room', action: 'write' })
     );
   });
 });
@@ -355,7 +407,7 @@ describe('eweser_save_memory', () => {
 describe('eweser_save_memory', () => {
   it('creates a conversation doc and returns id', async () => {
     const result = await callTool('eweser_save_memory', {
-      roomId: 'room-1',
+      roomId: 'conversation-room',
       title: 'Decision: Use Hono',
       summary: 'Decided to use Hono for auth server.',
       memoryType: 'decision',
@@ -368,13 +420,13 @@ describe('eweser_save_memory', () => {
 
   it('calls assertWriteAccess', async () => {
     await callTool('eweser_save_memory', {
-      roomId: 'room-1',
+      roomId: 'conversation-room',
       title: 'Test',
       summary: 'A test memory',
       memoryType: 'memory',
     });
     expect(mockDataLayer.assertWriteAccess).toHaveBeenCalledWith(
-      'room-1',
+      'conversation-room',
       expect.objectContaining({
         title: 'Test',
         memoryType: 'memory',
@@ -384,7 +436,7 @@ describe('eweser_save_memory', () => {
 
   it('defaults agentId to "unknown" when not provided', async () => {
     await callTool('eweser_save_memory', {
-      roomId: 'room-1',
+      roomId: 'conversation-room',
       title: 'Test',
       summary: 'A test memory',
       memoryType: 'memory',
@@ -398,7 +450,7 @@ describe('eweser_save_memory', () => {
 
   it('adds a worktree tag when saving memories', async () => {
     await callTool('eweser_save_memory', {
-      roomId: 'room-1',
+      roomId: 'conversation-room',
       title: 'Test',
       summary: 'A test memory',
       memoryType: 'session',
@@ -416,7 +468,7 @@ describe('eweser_save_memory', () => {
 
   it('uses provided agentId', async () => {
     await callTool('eweser_save_memory', {
-      roomId: 'room-1',
+      roomId: 'conversation-room',
       title: 'Test',
       summary: 'A test memory',
       memoryType: 'session',
@@ -441,7 +493,7 @@ describe('eweser_save_memory', () => {
     }>;
 
     await callTool('eweser_save_memory', {
-      roomId: 'room-1',
+      roomId: 'conversation-room',
       title: 'Long session',
       summary: 'Session with many turns',
       memoryType: 'session',
@@ -473,7 +525,7 @@ describe('eweser_save_memory', () => {
       },
     ];
     await callTool('eweser_save_memory', {
-      roomId: 'room-1',
+      roomId: 'conversation-room',
       title: 'Short session',
       summary: 'Brief exchange',
       memoryType: 'session',
@@ -489,7 +541,7 @@ describe('eweser_save_memory', () => {
   it('redacts secret-like content before saving memory', async () => {
     const accessKey = `AKIA${'1234567890ABCDEF'}`;
     await callTool('eweser_save_memory', {
-      roomId: 'room-1',
+      roomId: 'conversation-room',
       title: 'Incident note',
       summary: `Rotated AWS_ACCESS_KEY_ID=${accessKey} and token=super-secret-value`,
       memoryType: 'session',
@@ -514,5 +566,16 @@ describe('eweser_save_memory', () => {
     expect(callArgs?.redactionWarnings).toEqual([
       'secret-like content redacted before save',
     ]);
+  });
+
+  it('rejects non-conversation rooms', async () => {
+    await expect(
+      callTool('eweser_save_memory', {
+        roomId: 'room-1',
+        title: 'Wrong room',
+        summary: 'This should not be saved as a memory in notes.',
+        memoryType: 'memory',
+      })
+    ).rejects.toThrow('requires a conversations room');
   });
 });
