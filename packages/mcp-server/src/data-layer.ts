@@ -57,22 +57,42 @@ export class DataLayer {
 
   /** Connect to all provided rooms and wait for initial sync. */
   async init(rooms: AgentRoom[]): Promise<void> {
-    const results = await Promise.allSettled(
-      rooms.map((r) => this.connectRoom(r))
+    const results = await Promise.all(
+      rooms.map(async (room) => {
+        try {
+          await this.connectRoom(room);
+          return { room, result: { status: 'fulfilled' as const } };
+        } catch (reason) {
+          return { room, result: { status: 'rejected' as const, reason } };
+        }
+      })
     );
     const failures = results.filter(
-      (result): result is PromiseRejectedResult => result.status === 'rejected'
+      (entry): entry is { room: AgentRoom; result: PromiseRejectedResult } =>
+        entry.result.status === 'rejected'
     );
 
     if (failures.length > 0) {
       log.warn(
-        { failedRoomCount: failures.length, roomCount: rooms.length },
+        {
+          failedRoomCount: failures.length,
+          roomCount: rooms.length,
+          roomIds: failures.map(({ room }) => room.id),
+        },
         '[eweser-mcp] Failed to connect one or more rooms; continuing with accessible rooms'
       );
     }
 
     if (rooms.length > 0 && failures.length === rooms.length) {
-      throw new Error('[eweser-mcp] Failed to connect any rooms');
+      const failureDetails = failures
+        .map(
+          ({ room, result }) => `${room.id}: ${getErrorMessage(result.reason)}`
+        )
+        .join('; ');
+      throw new AggregateError(
+        failures.map(({ result }) => result.reason),
+        `[eweser-mcp] Failed to connect any rooms: ${failureDetails}`
+      );
     }
   }
 
@@ -105,18 +125,18 @@ export class DataLayer {
     };
 
     this.rooms.set(room.id, connected);
-    this.scheduleTokenRefresh(room.id, connected);
 
     // Wait for initial sync
     try {
       await this.waitForSync(provider, room.id);
     } catch (err) {
-      clearTimeout(connected.refreshTimer);
       provider.disconnect();
       provider.destroy();
       this.rooms.delete(room.id);
       throw err;
     }
+
+    this.scheduleTokenRefresh(room.id, connected);
   }
 
   private waitForSync(
@@ -168,6 +188,7 @@ export class DataLayer {
         this.authUrl,
         roomId
       );
+      if (this.rooms.get(roomId) !== connected) return;
       connected.syncToken = result.syncToken;
       connected.tokenExpiry = new Date(result.tokenExpiry);
       connected.provider.setConfiguration({ token: result.syncToken });
@@ -378,6 +399,10 @@ function effectiveReadScope(
 
 function scopeIncludes(scope: string[], value: string): boolean {
   return scope.length === 0 || scope.includes(value);
+}
+
+function getErrorMessage(reason: unknown): string {
+  return reason instanceof Error ? reason.message : String(reason);
 }
 
 function getWriteScope(agentConfig: AgentConfig): {

@@ -101,8 +101,9 @@ describe('DataLayer permission enforcement', () => {
       throw new Error('sync timeout');
     };
 
+    await expect(dataLayer.init([baseRoom])).rejects.toThrow(AggregateError);
     await expect(dataLayer.init([baseRoom])).rejects.toThrow(
-      'Failed to connect any rooms'
+      'room-1: sync timeout'
     );
   });
 
