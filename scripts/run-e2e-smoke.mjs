@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process';
 
 const exampleBaseUrl = process.env.CYPRESS_BASE_URL ?? 'http://127.0.0.1:38110';
 const authPagesBaseUrl =
-  process.env.AUTH_PAGES_BASE_URL ?? 'http://127.0.0.1:38111/auth';
+  process.env.AUTH_PAGES_BASE_URL ?? 'http://127.0.0.1:38111';
 const authApiUrl = process.env.AUTH_API_URL ?? 'http://127.0.0.1:38101/auth';
 const specs = [
   'e2e/cypress/tests/basic-returning-user.cy.ts',
