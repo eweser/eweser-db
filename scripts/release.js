@@ -60,6 +60,27 @@ const updateDependencyInOtherProject = (
     );
   }
 };
+
+const updateOtherProjectIfAvailable = (
+  packageName,
+  newVersion,
+  projectPath
+) => {
+  const packageJsonPath = path.join(projectPath, 'package.json');
+  if (!fs.existsSync(packageJsonPath)) {
+    console.log(
+      `Skipping external project update: package.json not found at ${packageJsonPath}`
+    );
+    return;
+  }
+
+  updateDependencyInOtherProject(packageName, newVersion, projectPath);
+
+  console.log('Installing updated dependencies in the other project...');
+  runCommand('npm install', projectPath);
+
+  commitAndPushChanges(projectPath, packageName, newVersion);
+};
 const commitAndPushChanges = (projectPath, packageName, newVersion) => {
   console.log('Committing and pushing changes to the other project...');
   runCommand('git add package.json package-lock.json', projectPath);
@@ -98,13 +119,7 @@ const commitAndPushChanges = (projectPath, packageName, newVersion) => {
 
   // Update @eweser/db in the other project
   const otherProjectPath = '/home/jacob/ewe-note';
-  updateDependencyInOtherProject('@eweser/db', newVersion, otherProjectPath);
-
-  // Install updated dependencies in the other project
-  console.log('Installing updated dependencies in the other project...');
-  runCommand('npm install', otherProjectPath);
-
-  commitAndPushChanges(otherProjectPath, '@eweser/db', newVersion);
+  updateOtherProjectIfAvailable('@eweser/db', newVersion, otherProjectPath);
 
   console.log('Dependency update completed.');
 })();
