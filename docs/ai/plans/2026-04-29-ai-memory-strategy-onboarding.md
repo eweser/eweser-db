@@ -13,6 +13,69 @@ The core product claim should stay narrow and defensible:
 
 > Your AI memory lives in your Eweser database, follows you across agents and apps, and stays portable if you leave.
 
+<!-- eweser-orchestration -->
+
+```yaml
+orchestration:
+  enabled: true
+  maxParallel: 2
+  baseBranch: main
+  finalStages: []
+runs:
+  - id: run-1
+    title: Product Spec And Strategy Schema
+    agent: eweser-code
+    model: strong
+    parallel: false
+    dependsOn: []
+    writeScope:
+      - docs/ai/plans/2026-04-29-ai-memory-strategy-onboarding.md
+      - packages/shared/src/collections/*
+      - packages/auth-server-hono/src/db/schema/agents.ts
+      - packages/auth-server-hono/drizzle/*
+      - .changeset/memory-strategy-types.md
+    tests:
+      - shared type tests if collection changes are added
+      - auth-server migration/schema tests if DB fields are added
+    changeset: maybe
+  - id: run-2
+    title: Connect AI Strategy Onboarding
+    agent: eweser-code
+    model: strong
+    parallel: true
+    dependsOn:
+      - run-1
+    writeScope:
+      - packages/auth-server-hono/src/routes/connect-ai.ts
+      - packages/auth-server-hono/src/routes/connect-ai.test.ts
+      - packages/app/src/components/connect-ai-page.tsx
+      - packages/app/src/lib/api.ts
+      - packages/app/src/App.test.tsx
+    tests:
+      - auth-server route tests for strategy defaults, invalid strategy, invalid writable room
+      - app tests for default card, advanced selection, token setup payload preservation
+    changeset: no
+  - id: run-3
+    title: Strategy-Aware MCP Defaults
+    agent: eweser-code
+    model: strong
+    parallel: true
+    dependsOn:
+      - run-1
+    writeScope:
+      - packages/mcp-server/src/tools.ts
+      - packages/mcp-server/src/data-layer.ts
+      - packages/mcp-server/src/auth.ts
+      - packages/mcp-server/src/tools.test.ts
+      - packages/mcp-server/README.md
+    tests:
+      - save without roomId when one writable memory room exists
+      - error when multiple writable rooms and no scope/room disambiguation
+      - strategy lookup response shape
+      - redaction still happens before write
+    changeset: no
+```
+
 ## Scope (In / Out)
 
 ### In

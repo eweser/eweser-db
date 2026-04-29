@@ -22,6 +22,12 @@ folder is the working set; finished implementation plans live in
 | [2026-04-19-go-live-security-hardening.md](./2026-04-19-go-live-security-hardening.md)       | Launch blocker      | Run 1 complete; final security/go-live closure still open.                                          |
 | [2026-04-03-ai-first-launch-strategy.md](./2026-04-03-ai-first-launch-strategy.md)           | Strategic reference | Partly shipped through MCP/Connect AI; use as positioning and launch-story context.                 |
 
+### AI Workflow / Tooling
+
+| Plan                                                                                         | Status         | Notes                                                                                                                                                              |
+| -------------------------------------------------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [2026-04-29-large-coding-run-orchestrator.md](./2026-04-29-large-coding-run-orchestrator.md) | Implemented v1 | Supervised plan-run orchestrator scripts, metadata contract, dry-run validation, monitor, worker isolation, integration, stop/resume, and QA/review handoff exist. |
+
 ### Design / Copy
 
 | Plan                                                                                                   | Status            | Notes                                                                                 |
