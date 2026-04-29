@@ -14,20 +14,20 @@ if command -v trufflehog >/dev/null 2>&1; then
   exit 0
 fi
 
-echo "gitleaks/trufflehog not installed; running fallback staged-diff scan." >&2
+echo "gitleaks/trufflehog not installed; running fallback secret scan." >&2
+
+secret_pattern='AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9]{32,}|-----BEGIN (RSA|OPENSSH|PRIVATE) KEY-----'
 
 if ! git diff --cached --quiet; then
-  scan_target=(git diff --cached -U0)
+  if git diff --cached -U0 | grep -E "^\+.*(${secret_pattern})" >&2; then
+    echo "Potential high-risk secret detected. Install gitleaks or trufflehog for full details." >&2
+    exit 1
+  fi
 else
-  scan_target=(git grep -n -I -E)
+  if git grep -n -I -E "$secret_pattern" -- . >&2; then
+    echo "Potential high-risk secret detected. Install gitleaks or trufflehog for full details." >&2
+    exit 1
+  fi
 fi
 
-pattern='^\+.*(AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9]{32,}|-----BEGIN (RSA|OPENSSH|PRIVATE) KEY-----)'
-
-if "${scan_target[@]}" | grep -E "$pattern" >/dev/null; then
-  echo "Potential high-risk secret detected. Install gitleaks or trufflehog for full details." >&2
-  "${scan_target[@]}" | grep -E "$pattern" >&2
-  exit 1
-fi
-
-echo "Fallback staged-diff secret scan passed." >&2
+echo "Fallback secret scan passed." >&2

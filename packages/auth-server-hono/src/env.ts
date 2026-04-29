@@ -140,7 +140,10 @@ const envSchema = z
 
     if (cookieDomain) {
       const normalizedCookieDomain = cookieDomain.replace(/^\./, '');
-      if (!authServerUrl.hostname.endsWith(normalizedCookieDomain)) {
+      const cookieDomainMatchesAuthHost =
+        authServerUrl.hostname === normalizedCookieDomain ||
+        authServerUrl.hostname.endsWith(`.${normalizedCookieDomain}`);
+      if (!cookieDomainMatchesAuthHost) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message:

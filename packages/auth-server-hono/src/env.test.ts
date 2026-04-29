@@ -101,6 +101,19 @@ describe('parseEnv', () => {
     ).toThrowError();
   });
 
+  it('rejects cookie domains that only suffix-match the auth host', async () => {
+    const parseEnv = await loadParseEnv();
+    expect(() =>
+      parseEnv({
+        ...base,
+        AUTH_SERVER_DOMAIN: 'badeweser.com',
+        AUTH_SERVER_URL: 'https://badeweser.com',
+        BETTER_AUTH_BASE_URL: 'https://badeweser.com',
+        COOKIE_DOMAIN: '.eweser.com',
+      })
+    ).toThrowError();
+  });
+
   it('requires MCP_REDIS_URL when redis mode is selected', async () => {
     const parseEnv = await loadParseEnv();
     expect(() =>
