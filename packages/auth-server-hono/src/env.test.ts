@@ -78,7 +78,7 @@ describe('parseEnv', () => {
       NODE_ENV: 'production',
       AUTH_EMAIL_FROM: 'EweserDB <no-reply@eweser.com>',
       AUTH_EMAIL_PROVIDER: 'resend',
-      RESEND_API_KEY: 're_12345678901234567890123456789012',
+      RESEND_API_KEY: 'RESEND_API_KEY_PLACEHOLDER',
       SERVER_SECRET: 'prod_server_secret_123456789012345',
       BETTER_AUTH_SECRET: 'prod_better_auth_secret_123456789',
       SYNC_AUTH_SECRET: 'prod_sync_secret_1234567890123456',
