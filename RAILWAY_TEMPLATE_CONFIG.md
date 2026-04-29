@@ -18,7 +18,7 @@ For each service in the Railway template, set:
 | sync-server | _(empty)_      | `packages/sync-server/Dockerfile`      |
 | aggregator  | _(empty)_      | `packages/aggregator/Dockerfile`       |
 | ewe-note    | _(empty)_      | `packages/ewe-note/Dockerfile`         |
-| auth-pages  | _(empty)_      | `packages/auth-pages/Dockerfile`       |
+| app         | _(empty)_      | `packages/app/Dockerfile`              |
 
 **Why**: Railway resolves `deployfilePath` in `railway.toml` relative to the service root directory.
 If root directory is a subdirectory (e.g. `packages/auth-server-hono`), the path gets double-prefixed.
@@ -72,10 +72,10 @@ RAILWAY_DOCKERFILE_PATH=packages/ewe-note/Dockerfile
 VITE_AUTH_SERVER=https://${{auth-api.RAILWAY_PUBLIC_DOMAIN}}
 ```
 
-## auth-pages
+## app
 
 ```env
-RAILWAY_DOCKERFILE_PATH=packages/auth-pages/Dockerfile
+RAILWAY_DOCKERFILE_PATH=packages/app/Dockerfile
 VITE_AUTH_SERVER_URL=https://${{auth-api.RAILWAY_PUBLIC_DOMAIN}}
 VITE_AUTH_API_URL=https://${{auth-api.RAILWAY_PUBLIC_DOMAIN}}
 ```

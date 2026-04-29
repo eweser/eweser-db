@@ -2,9 +2,11 @@ import type { Context, Next } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import { auth } from '../auth.js';
 
+type BetterAuthSession = typeof auth.$Infer.Session;
+
 type AuthVariables = {
-  user: typeof auth.$Infer.Session.user;
-  session: typeof auth.$Infer.Session.session;
+  user: BetterAuthSession['user'];
+  session: BetterAuthSession['session'];
 };
 
 /**

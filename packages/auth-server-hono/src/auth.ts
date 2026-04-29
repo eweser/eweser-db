@@ -24,7 +24,7 @@ export const auth = betterAuth({
       sameSite: 'lax',
       secure: env.NODE_ENV === 'production',
       path: '/',
-      ...(env.NODE_ENV === 'production' ? { domain: env.AUTH_DOMAIN } : {}),
+      ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),
     },
     database: {
       generateId: () => randomUUID(),

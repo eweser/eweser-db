@@ -115,9 +115,9 @@ export function resolvePostAuthPath(
     return buildPermissionPath(loginQuery);
   }
 
-  if (returnTo?.startsWith('/')) {
+  if (returnTo?.startsWith('/') && !returnTo.startsWith('//')) {
     return returnTo;
   }
 
-  return '/home';
+  return '/';
 }

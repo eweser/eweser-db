@@ -27,7 +27,7 @@ That command runs lint, format check, type-check, and unit tests across the acti
 | `packages/db`                         | Yes  | Root check | Yes        | Yes        | Indirect via examples    | Published package, changesets required |
 | `packages/shared`                     | Yes  | Root check | Yes        | Yes        | Indirect via examples    | Published package, changesets required |
 | `packages/auth-server-hono`           | Yes  | Root check | Yes        | Yes        | Auth flows               | Current auth API                       |
-| `packages/auth-pages`                 | Yes  | Root check | Yes        | Yes        | Auth flows               | Current auth SPA                       |
+| `packages/app`                        | Yes  | Root check | Yes        | Yes        | Auth flows               | App SPA                                |
 | `packages/sync-server`                | Yes  | Root check | Yes        | Yes        | Sync backend             | Hocuspocus relay                       |
 | `packages/aggregator`                 | Yes  | Root check | Yes        | Yes        | Public-data backend      | Search/indexing service                |
 | `packages/examples-components`        | Yes  | Root check | Yes        | Yes        | Example UI support       | Published package, changesets required |
@@ -49,5 +49,5 @@ That command runs lint, format check, type-check, and unit tests across the acti
 ## Notes for Maintainers
 
 - `packages/auth-server-hono` is the current auth backend; there is no active Next.js auth-server workspace.
-- `packages/auth-pages` and `packages/ewe-note` are frontend apps, so they are built and tested like apps rather than libraries.
+- `packages/app` and `packages/ewe-note` are frontend apps, so they are built and tested like apps rather than libraries.
 - Historical planning docs live in `docs/ai/plans/` and should not be treated as runtime policy unless they are explicitly marked current.

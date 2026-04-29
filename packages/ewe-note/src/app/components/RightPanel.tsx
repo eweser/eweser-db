@@ -81,13 +81,15 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
   return (
     <aside
       data-cy="ewe-note-right-panel"
-      className="w-80 bg-card border-l border-border flex flex-col h-screen overflow-hidden"
+      className="fixed inset-y-0 right-0 z-40 flex h-screen w-80 flex-col overflow-hidden border-l border-border bg-card shadow-2xl xl:relative xl:z-auto xl:shadow-none"
     >
       {/* Header */}
       <div className="px-4 py-4 border-b border-border flex items-center justify-between">
         <h2 className="text-sm font-medium">Note Info</h2>
         {onClose && (
           <button
+            type="button"
+            aria-label="Close note info"
             onClick={onClose}
             className="p-1 hover:bg-accent rounded transition-colors"
           >
@@ -238,6 +240,8 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
                     <Hash className="w-3 h-3 mr-0.5" />
                     {tag}
                     <button
+                      type="button"
+                      aria-label={`Remove tag ${tag}`}
                       onClick={() => handleRemoveTag(tag)}
                       className="ml-1 p-0.5 rounded hover:bg-background opacity-0 group-hover:opacity-100 transition-opacity"
                     >
@@ -260,6 +264,8 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
                   className="h-8 text-sm"
                 />
                 <button
+                  type="button"
+                  aria-label="Add tag"
                   data-cy="ewe-note-add-tag-btn"
                   onClick={handleAddTag}
                   className="px-3 h-8 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity flex items-center gap-1 text-sm"
@@ -287,6 +293,8 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
                       </div>
                     </div>
                     <button
+                      type="button"
+                      aria-label={`Remove property ${key}`}
                       onClick={() => handleRemoveProperty(key)}
                       className="p-1 rounded hover:bg-background opacity-0 group-hover:opacity-100 transition-opacity"
                     >
@@ -317,6 +325,8 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
                     className="h-8 text-sm"
                   />
                   <button
+                    type="button"
+                    aria-label="Add property"
                     data-cy="ewe-note-add-property-btn"
                     onClick={handleAddProperty}
                     className="px-3 h-8 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity flex items-center gap-1 text-sm"

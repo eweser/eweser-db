@@ -66,6 +66,46 @@ function connectTestRoom(dataLayer: DataLayer, room: AgentRoom): void {
 }
 
 describe('DataLayer permission enforcement', () => {
+  it('continues when one room fails to connect during init', async () => {
+    const dataLayer = new DataLayer(
+      { ...baseAgent, allowedRooms: [] },
+      'http://auth.test',
+      'agent-token'
+    );
+    const connectCalls: string[] = [];
+    const connectedRoom = { ...baseRoom, id: 'room-ok' };
+    const failedRoom = { ...baseRoom, id: 'room-timeout' };
+
+    dataLayer.connectRoom = async (room) => {
+      connectCalls.push(room.id);
+      if (room.id === failedRoom.id) {
+        throw new Error('sync timeout');
+      }
+      connectTestRoom(dataLayer, room);
+    };
+
+    await expect(dataLayer.init([connectedRoom, failedRoom])).resolves.toBe(
+      undefined
+    );
+    expect(connectCalls).toEqual(['room-ok', 'room-timeout']);
+    expect(dataLayer.listRooms().map((room) => room.id)).toEqual(['room-ok']);
+  });
+
+  it('fails init when every requested room fails to connect', async () => {
+    const dataLayer = new DataLayer(
+      baseAgent,
+      'http://auth.test',
+      'agent-token'
+    );
+    dataLayer.connectRoom = async () => {
+      throw new Error('sync timeout');
+    };
+
+    await expect(dataLayer.init([baseRoom])).rejects.toThrow(
+      'Failed to connect any rooms'
+    );
+  });
+
   it('preserves legacy readwrite access when no explicit write scope is set', () => {
     const dataLayer = makeDataLayer({ permissions: 'readwrite' });
 

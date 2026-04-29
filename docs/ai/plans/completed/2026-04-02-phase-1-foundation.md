@@ -1,6 +1,6 @@
 # Phase 1: Foundation
 
-> **Plan:** [Big Refactor Index](./2026-04-02-big-refactor.md)
+> **Plan:** [Big Refactor Index](../historical/2026-04-02-big-refactor.md)
 > **Goal:** Get Docker Compose running with Postgres, Hocuspocus, and a new Hono auth API with better-auth. Unblocks everything.
 
 ## Progress

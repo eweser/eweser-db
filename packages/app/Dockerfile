@@ -2,22 +2,22 @@ FROM node:22-slim AS builder
 
 WORKDIR /workspace
 
-# Selective install — only the workspaces needed for the auth-pages build
+# Selective install — only the workspaces needed for the app build
 COPY package.json package-lock.json ./
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/db/package.json ./packages/db/
-COPY packages/auth-pages/package.json ./packages/auth-pages/
+COPY packages/app/package.json ./packages/app/
 
 RUN npm ci \
   --workspace @eweser/shared \
   --workspace @eweser/db \
-  --workspace @eweser/auth-pages \
+  --workspace @eweser/app \
   --include-workspace-root \
   --ignore-scripts
 
 COPY packages/shared/ ./packages/shared/
 COPY packages/db/ ./packages/db/
-COPY packages/auth-pages/ ./packages/auth-pages/
+COPY packages/app/ ./packages/app/
 
 RUN npm run build --workspace @eweser/shared
 RUN npm run build --workspace @eweser/db
@@ -26,14 +26,14 @@ RUN npm run build --workspace @eweser/db
 ARG VITE_AUTH_SERVER_URL
 ARG VITE_AUTH_API_URL
 ARG VITE_TURNSTILE_SITE_KEY
-RUN cd packages/auth-pages && npx vite build
+RUN cd packages/app && npx vite build
 
 FROM nginx:1.29-alpine
 
 RUN apk add --no-cache gettext
 
-COPY packages/auth-pages/nginx.conf /etc/nginx/templates/default.conf.template
-COPY --from=builder /workspace/packages/auth-pages/dist /usr/share/nginx/html/auth
+COPY packages/app/nginx.conf /etc/nginx/templates/default.conf.template
+COPY --from=builder /workspace/packages/app/dist /usr/share/nginx/html
 
 EXPOSE 80
 

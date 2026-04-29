@@ -19,4 +19,5 @@ COPY --from=build /app/packages/landing/dist /usr/share/nginx/html
 COPY packages/landing/nginx.conf /etc/nginx/templates/default.conf.template
 EXPOSE 80
 ENV PORT=80
-CMD ["sh", "-c", "envsubst '${PORT}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
+ENV AUTH_API_PROXY_URL=https://auth.eweser.com
+CMD ["sh", "-c", "envsubst '${PORT} ${AUTH_API_PROXY_URL}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]

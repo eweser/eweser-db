@@ -22,6 +22,8 @@ services:
         value: ${APP_DOMAIN}
       - key: AUTH_SERVER_URL
         value: ${APP_URL}
+      - key: COOKIE_DOMAIN
+        value: ${COOKIE_DOMAIN}
       - key: SYNC_SERVER_URL
         value: ${SYNC_SERVER_URL}
       - key: SYNC_AUTH_SECRET
@@ -73,14 +75,21 @@ services:
     health_check:
       http_path: /health
 
-  - name: auth-pages
-    dockerfile_path: packages/auth-pages/Dockerfile
+  - name: app
+    dockerfile_path: packages/app/Dockerfile
     source_dir: /
     http_port: 80
     instance_count: 1
     instance_size_slug: basic-xxs
     routes:
-      - path: /auth
+      - path: /
+    envs:
+      - key: VITE_AUTH_SERVER_URL
+        value: ${APP_URL}
+        scope: BUILD_TIME
+      - key: VITE_AUTH_API_URL
+        value: ${APP_URL}/api/auth
+        scope: BUILD_TIME
 
   - name: ewe-note
     dockerfile_path: packages/ewe-note/Dockerfile
@@ -97,13 +106,16 @@ services:
 
 envs:
   - key: APP_URL
-    value: https://app.example.com
+    value: https://app.eweser.com
     scope: RUN_AND_BUILD_TIME
   - key: APP_DOMAIN
-    value: app.example.com
+    value: app.eweser.com
+    scope: RUN_AND_BUILD_TIME
+  - key: COOKIE_DOMAIN
+    value: .eweser.com
     scope: RUN_AND_BUILD_TIME
   - key: SYNC_SERVER_URL
-    value: wss://app.example.com/sync
+    value: wss://app.eweser.com/sync
     scope: RUN_AND_BUILD_TIME
   - key: SYNC_AUTH_SECRET
     type: SECRET

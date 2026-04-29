@@ -1,6 +1,6 @@
 # Phase 2: Frontend Migration
 
-> **Plan:** [Big Refactor Index](./2026-04-02-big-refactor.md)
+> **Plan:** [Big Refactor Index](../historical/2026-04-02-big-refactor.md)
 > **Prerequisite:** Phase 1 complete (Hono auth API running, SDK updated)
 > **Goal:** Extract auth UI into a React SPA. Port ewe-note (with PWA). Update example-basic. All behind Caddy.
 

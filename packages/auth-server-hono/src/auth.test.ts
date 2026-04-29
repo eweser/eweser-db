@@ -57,6 +57,7 @@ vi.mock('./env.js', () => ({
     AUTH_TRUSTED_ORIGINS: ['https://app.example.com'],
     BETTER_AUTH_BASE_URL: 'https://auth.example.com',
     BETTER_AUTH_SECRET: '12345678901234567890123456789012',
+    COOKIE_DOMAIN: '.example.com',
     GITHUB_CLIENT_ID: undefined,
     GITHUB_CLIENT_SECRET: undefined,
     GOOGLE_CLIENT_ID: undefined,
@@ -74,6 +75,15 @@ vi.mock('./model/security-events.js', () => ({
 
 const { auth } = await import('./auth.js');
 const config = betterAuth.mock.calls[0]?.[0] as {
+  advanced: {
+    defaultCookieAttributes: {
+      domain?: string;
+      httpOnly: boolean;
+      path: string;
+      sameSite: string;
+      secure: boolean;
+    };
+  };
   emailAndPassword: {
     sendResetPassword: (input: {
       token: string;
@@ -153,6 +163,10 @@ describe('auth email delivery', () => {
     expect(captchaPlugin?.options.endpoints).toEqual(
       expect.arrayContaining(['/forget-password', '/request-password-reset'])
     );
+  });
+
+  it('sets the configured cross-subdomain cookie domain', () => {
+    expect(config.advanced.defaultCookieAttributes.domain).toBe('.example.com');
   });
 });
 

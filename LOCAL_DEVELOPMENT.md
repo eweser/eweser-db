@@ -23,7 +23,7 @@ npm run dev:docker
 
 # 3. Start the frontend workspaces you need
 npm run dev
-npm run dev --workspace @eweser/auth-pages
+npm run dev --workspace @eweser/app
 npm run dev --workspace @eweser/ewe-note
 ```
 
@@ -53,7 +53,7 @@ npm run dev:docker:clean # Stop and remove volumes
 
 ```bash
 npm run dev                               # Shared SDK + example workspaces
-npm run dev --workspace @eweser/auth-pages # Auth SPA
+npm run dev --workspace @eweser/app     # App SPA
 npm run dev --workspace @eweser/ewe-note   # Note app
 npm run dev --workspace @eweser/db         # Core SDK only
 npm run dev --workspace @eweser/shared     # Shared types only
@@ -105,7 +105,7 @@ packages/
   db/
   shared/
   auth-server-hono/
-  auth-pages/
+  app/
   sync-server/
   aggregator/
   examples-components/

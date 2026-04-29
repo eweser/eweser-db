@@ -5,7 +5,7 @@
 
 ## Context
 
-Migration complete. Need high-confidence test strategy for the new stack (example-basic, packages/db, auth-server-hono, auth-pages).
+Migration complete. Need high-confidence test strategy for the new stack (example-basic, packages/db, auth-server-hono, packages/app).
 
 ## Decision
 

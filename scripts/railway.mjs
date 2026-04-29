@@ -14,7 +14,7 @@ const CONFIG_FILES = {
   aggregator: 'packages/aggregator/railway.toml',
   'auth-api': 'packages/auth-server-hono/railway.toml',
   'sync-server': 'packages/sync-server/railway.toml',
-  'auth-pages': 'packages/auth-pages/railway.toml',
+  app: 'packages/app/railway.toml',
 };
 
 async function gql(query, variables = {}) {

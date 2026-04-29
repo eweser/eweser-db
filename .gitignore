@@ -28,6 +28,11 @@ types
 
 # secrets
 .env
+.env.*
+!.env.example
+!**/example.env
+.ai-secrets/
+.agent-secrets/
 
 # cypress
 e2e/cypress/videos
@@ -59,3 +64,8 @@ storage_railway_*.json
 docs/ai/plans/railway-deployment-handoff.md
 
 .playwright-mcp/
+.codex/
+
+#temporary files and scratch paths
+.tmp/
+tmp/

@@ -1,15 +1,16 @@
-# @eweser/auth-pages
+# @eweser/app
 
-React SPA for authentication pages (login, signup, account management).
+React SPA for the authenticated Eweser app shell at `app.eweser.com`.
 
 ## Overview
 
-This is a standalone Vite + React application that provides the UI for the auth server:
+This is a standalone Vite + React application that provides authenticated product surfaces:
 
-- **Login page** — Email/password and OAuth sign-in
-- **Signup page** — New user registration
-- **Account management** — Profile, password change, connected accounts
-- **Forgot password** — Password reset flow
+- **Personal Data Home** — Signed-in landing page
+- **Login and signup** — Email/password and OAuth sign-in
+- **Connected Apps** — Route shell for app access management
+- **MCP / AI Access** — Agent setup and scoped access management
+- **Account Security** — Profile, password, email, and 2FA controls
 
 ## Tech Stack
 
@@ -40,7 +41,7 @@ npm run dev
 
 ## Docker
 
-Served as a static site via Docker Compose. The Caddy reverse proxy routes auth-related paths to this service.
+Served as a static site. The production app is intended to live at the root of `app.eweser.com`.
 
 ## Related Packages
 
