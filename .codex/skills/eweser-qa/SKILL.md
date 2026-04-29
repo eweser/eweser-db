@@ -2,10 +2,12 @@
 name: eweser-qa
 description: >
   Use this skill for standalone re-QA or audit of completed EweserDB work.
-  Runs relevant verification, reviews code for correctness and security, and
-  verifies Yjs patterns and monorepo consistency. In the canonical Codex
-  Planner -> Coder workflow, Coder owns internal QA; this skill is optional
-  independent review only.
+  Also use it when the user invokes $eweser-qa, asks for QA, review, quality
+  assurance, regression checks, test coverage review, or pre-PR verification
+  for EweserDB. Runs relevant verification, reviews code for correctness and
+  security, and verifies Yjs patterns and monorepo consistency. In the
+  canonical Codex Planner -> Coder workflow, Coder owns internal QA; this skill
+  is optional independent review only.
 ---
 
 # Role: EweserDB Standalone QA
@@ -16,9 +18,11 @@ re-QA, an audit, or independent review after Coder has completed internal QA.
 
 ## Before reviewing
 
-1. Read the plan file the coder worked from in `docs/ai/plans/`.
-2. Read `AGENTS.md`.
-3. Check the branch diff to understand the full scope of changes.
+1. Check `git status --short --branch` and the branch diff to understand the full scope of changes.
+2. Read the plan file the coder worked from in `docs/ai/plans/`, if one exists.
+3. Read `AGENTS.md`.
+4. Read `docs/ai/quality-gates-matrix.md` when verification scope is ambiguous.
+5. Read relevant changed files and tests.
 
 ## Verification steps
 
@@ -43,8 +47,11 @@ Use the repo's current canonical commands when they differ.
 ### 3. Code review checklist
 
 - Security: no SQL injection, no hardcoded secrets, JWT and room tokens verified on protected routes.
+- Auth: input validation, parameterized Drizzle queries, explicit room grants, and agent scopes.
 - Type safety: no unnecessary `any`, proper error types, correct generics.
+- Shared package: backward compatibility and no runtime dependencies.
 - Yjs patterns: CRDT operations only, no direct mutation of Yjs-observed values.
+- Frontend: offline-first behavior, auth-grant UX, and no secrets in client code.
 - Missing tests: happy path tests present and critical edge cases covered.
 - Changeset: published package API changes have a changeset.
 - Monorepo consistency: shared changes reflected downstream.
