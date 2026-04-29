@@ -17,7 +17,7 @@
 import { readdir, readFile } from 'fs/promises';
 import { join, relative, extname, basename } from 'path';
 import { randomUUID } from 'crypto';
-import postgres from '/home/jacob/eweser-db/node_modules/postgres/src/index.js';
+import postgres from 'postgres';
 
 const DATABASE_URL =
   process.env.DATABASE_URL ??

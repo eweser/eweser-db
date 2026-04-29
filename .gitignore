@@ -64,7 +64,9 @@ storage_railway_*.json
 docs/ai/plans/railway-deployment-handoff.md
 
 .playwright-mcp/
-.codex/
+.codex/*
+!.codex/skills/
+!.codex/skills/**
 
 #temporary files and scratch paths
 .tmp/

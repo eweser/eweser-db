@@ -72,12 +72,12 @@ Default onboarding should not mention Karpathy, OpenClaw, Mem0, Graphiti, or Cog
 
 Every memory strategy setting should be scoped. Do not make one global strategy carry every use case.
 
-| Scope          | Examples                                                            | Default behavior                                           |
-| -------------- | ------------------------------------------------------------------- | ---------------------------------------------------------- |
-| User/global    | personal preferences, response style, common tools                  | `agent-journal`, read by all granted agents                |
-| Project/repo   | `/Users/jacob/eweser/eweser-db`, a client project, a research topic | inherit global strategy, default `agent-journal` for repos |
-| Workspace/team | Lark workspace, company knowledge base                              | `workspace-intelligence` or `knowledge-graph` when enabled |
-| Agent/client   | Codex, Claude Code, ChatGPT web, OpenClaw, Copilot                  | inherits project/global, may have read/write limits        |
+| Scope          | Examples                                                 | Default behavior                                           |
+| -------------- | -------------------------------------------------------- | ---------------------------------------------------------- |
+| User/global    | personal preferences, response style, common tools       | `agent-journal`, read by all granted agents                |
+| Project/repo   | `/path/to/eweser-db`, a client project, a research topic | inherit global strategy, default `agent-journal` for repos |
+| Workspace/team | Lark workspace, company knowledge base                   | `workspace-intelligence` or `knowledge-graph` when enabled |
+| Agent/client   | Codex, Claude Code, ChatGPT web, OpenClaw, Copilot       | inherits project/global, may have read/write limits        |
 
 Project detection should be pragmatic:
 

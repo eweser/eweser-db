@@ -17,14 +17,14 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.jacobcoro.ewenotenativey"
+      "bundleIdentifier": "com.eweser.ewenotenativey"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.jacobcoro.ewenotenative"
+      "package": "com.eweser.ewenotenative"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -34,6 +34,6 @@
         "projectId": "7d8d1b5c-17f9-428e-9c35-29d3b332f5a5"
       }
     },
-    "owner": "jacobcoro"
+    "owner": "eweser"
   }
 }

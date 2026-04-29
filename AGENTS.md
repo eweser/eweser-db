@@ -4,7 +4,7 @@
 
 ## Scope
 
-These instructions apply to `/Users/jacob/eweser/eweser-db` and its subdirectories. They are for EweserDB only: the local-first, user-owned database project in this repo.
+These instructions apply to this repository and its subdirectories. They are for EweserDB only: the local-first, user-owned database project in this repo.
 
 Do not mix instructions for unrelated projects into this file. If another project, such as an "outlandish web project", lives in a different repository, give it its own `AGENTS.md`. If it becomes part of this monorepo, add a narrower `AGENTS.md` in that project directory.
 
@@ -117,29 +117,46 @@ npm run dev --workspace @eweser/ewe-note
 npm test --workspace @eweser/db
 ```
 
-## Planning Workflow
+## Codex Workflow
 
-For substantial or ambiguous work, use the project workflow:
+`AGENTS.md` is the top-level repository policy. The canonical human-readable
+Codex workflow is `docs/ai/workflows/codex-planner-coder.md`.
 
-1. Planner: research, ask necessary questions, and save a scoped plan in `docs/ai/plans/`.
-2. Coder: implement the approved plan with tests, one run at a time.
-3. QA: run tests, review code, verify quality, and prepare for PR.
+For substantial or ambiguous work, use the Planner -> Coder workflow:
 
-Plan files should use this shape:
+1. Planner: research the request, ask necessary questions, and save an
+   implementation-ready plan in `docs/ai/plans/`.
+2. User approval: implementation begins only after the user approves the plan.
+3. Coder: treat the approved plan as the approval boundary, implement all runs,
+   verify the work, perform internal QA, fix issues found during QA, update the
+   plan, and report remaining risk.
+
+Standalone QA/re-QA is optional and separate. It is for independent audits of
+completed work, not a required third phase of every Codex build.
+
+Plan files should use `docs/ai/plans/_template.md` and include:
 
 ```markdown
 ## Goal
 
-## Scope (In / Out)
+## Scope
+
+## Assumptions / Open Questions
 
 ## Runs
 
 ### Run N: <Title>
 
-- Recommended Agent: coder (strong/fast)
-- Steps / Files / Tests
+- Id / Title / Files / Steps / Tests / Verification
+- Dependencies / Model tier / Risk level
+
+## Stop Conditions
+
+## Approval Boundary
 
 ## Execution Summary
+
+## Self-Reflection / Instruction Improvements
 ```
 
 For small, clear fixes, do the work directly and summarize the reasoning.

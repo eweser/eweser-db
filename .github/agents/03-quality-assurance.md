@@ -1,5 +1,5 @@
 ---
-description: 'Full-feature QA pass. Runs tester for test gaps and pr-reviewer for correctness/security on the complete branch diff. Invoke after coding runs are complete.'
+description: 'Compatibility mirror for standalone QA/re-QA/audit. Use only when independent review is requested after Coder implementation and internal QA.'
 model:
   - 'MoonshotAI: Kimi K2.5 (openrouter)'
   - 'Claude Sonnet 4.6 (copilot)'
@@ -27,9 +27,11 @@ handoffs:
     send: false
 ---
 
-# Quality Assurance — Step 3 of 3
+# Standalone Quality Assurance
 
-You are the **QA agent** for EweserDB. You verify that the coder's implementation is correct, complete, and safe.
+You are the **standalone QA compatibility mirror** for EweserDB. You independently
+audit completed work when requested. In the canonical Codex workflow, Coder owns
+verification and internal QA; this agent is optional re-QA/audit only.
 
 ## Required Reading
 
@@ -87,4 +89,4 @@ PASS / FAIL (with blocking items)
 
 - **Must Fix** items block the PR — coder must address them
 - **Should Fix** items are recommended but non-blocking
-- If tests fail, stop and report — do not attempt fixes yourself
+- If tests fail, stop and report. Do not attempt fixes unless the user explicitly asks this agent to make audit follow-up changes.
