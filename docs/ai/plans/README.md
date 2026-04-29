@@ -4,6 +4,29 @@ Active, completed, and historical planning notes for EweserDB. The top-level
 folder is the working set; finished implementation plans live in
 `./completed/`, and superseded handoffs/strategy notes live in `./historical/`.
 
+## Canonical Planning Format
+
+The canonical Codex workflow is Planner -> Coder, documented in
+[`../workflows/codex-planner-coder.md`](../workflows/codex-planner-coder.md).
+Use [`./_template.md`](./_template.md) for new implementation plans.
+
+Every new plan must include:
+
+- Goal
+- Scope
+- Assumptions / open questions
+- Runs with id, title, files, steps, tests, verification, dependencies, model
+  tier, and risk level
+- Stop conditions
+- Approval boundary
+- Execution summary
+- Self-reflection / instruction improvements
+
+Planner creates implementation-ready plans and stops for approval. Coder treats
+the approved plan as the approval boundary, implements all runs, verifies,
+performs internal QA, fixes issues found inside the boundary, and updates the
+plan. Standalone QA is reserved for independent re-QA or audit work.
+
 ## Status Categories
 
 - **Current** - Active work or planned work that is still useful as guidance.

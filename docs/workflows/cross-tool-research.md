@@ -1,5 +1,10 @@
 # Cross-Tool Research Workflow
 
+> Historical/non-canonical note: this document captures a personal cross-tool
+> research and memory workflow from an earlier agent setup. It is optional
+> background, not the canonical Codex workflow. For EweserDB Codex work, follow
+> `AGENTS.md` and `docs/ai/workflows/codex-planner-coder.md`.
+
 > **Memory MCP boundary:** The shipped target is structured cross-agent memory recall — not universal automatic context sync. Keep `eweser_save_memory` and `eweser_search`; do not invest in broader sync infrastructure for now.
 
 Save money on AI credits by doing research in flat-subscription tools and bridging context to Copilot via EweserDB.

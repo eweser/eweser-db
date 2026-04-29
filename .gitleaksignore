@@ -1,0 +1,6 @@
+# Historical mkcert dev keypair used for the old aggregator TLS setup.
+6a23509433bf96003063eaecd2243cf04909b930:packages/aggregator/certs/key.pem:private-key:1
+1f748dce6f18a7527200aab8646c3c370c8d552a:packages/auth-server-hono/src/env.test.ts:generic-api-key:81
+a6174a18cb572bd9e5f4999baac4df6fa7abd6ae:packages/auth-server-hono/src/env.test.ts:generic-api-key:151
+67d18dd7c94fceb873ef04488796af366d07f20d:scripts/railway.mjs:generic-api-key:14
+67d18dd7c94fceb873ef04488796af366d07f20d:scripts/railway.mjs:generic-api-key:16

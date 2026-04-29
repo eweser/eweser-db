@@ -1,9 +1,14 @@
 #!/usr/bin/env node
 import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
 
 const mcp = spawn(
   'node',
-  ['/home/jacob/eweser-db/packages/mcp-server/dist/index.js'],
+  [
+    fileURLToPath(
+      new URL('../packages/mcp-server/dist/index.js', import.meta.url)
+    ),
+  ],
   {
     env: {
       ...process.env,

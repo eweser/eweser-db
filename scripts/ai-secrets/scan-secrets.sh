@@ -5,7 +5,7 @@ root="$(git rev-parse --show-toplevel)"
 cd "$root"
 
 if command -v gitleaks >/dev/null 2>&1; then
-  gitleaks detect --source "$root" --redact --no-banner
+  gitleaks protect --source "$root" --staged --redact --no-banner
   exit 0
 fi
 

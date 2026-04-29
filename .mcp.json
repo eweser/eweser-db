@@ -1,24 +1,24 @@
 {
   "mcpServers": {
     "tavily-mcp": {
-      "command": "/home/jacob/.nvm/versions/node/v24.11.1/bin/tavily-mcp",
+      "command": "tavily-mcp",
       "env": {
         "TAVILY_API_KEY": "${env:TAVILY_API_KEY}"
       }
     },
     "fetch-mcp": {
-      "command": "/home/jacob/.local/bin/mcp-server-fetch",
+      "command": "mcp-server-fetch",
       "args": ["--ignore-robots-txt"],
       "env": {
         "SSL_CERT_FILE": "/etc/ssl/certs/ca-certificates.crt"
       }
     },
     "playwright": {
-      "command": "/home/jacob/.nvm/versions/node/v24.11.1/bin/playwright-mcp",
+      "command": "playwright-mcp",
       "args": ["--headless"]
     },
     "brave-search": {
-      "command": "/home/jacob/.nvm/versions/node/v24.11.1/bin/mcp-server-brave-search",
+      "command": "mcp-server-brave-search",
       "env": {
         "BRAVE_API_KEY": "${env:BRAVE_API_KEY}"
       }
