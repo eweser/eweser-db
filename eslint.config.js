@@ -8,6 +8,7 @@ export default [
       // React Native uses a different toolchain
       'examples/react-native/**',
       // Build outputs, type stubs, generated files
+      '.codex/orchestrator/**',
       '**/dist/**',
       '**/dist.root-owned/**',
       '**/build/**',

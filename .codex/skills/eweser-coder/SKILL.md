@@ -2,10 +2,13 @@
 name: eweser-coder
 description: >
   Use this skill to implement a feature in the EweserDB monorepo from a plan file.
-  Reads the approved plan at docs/ai/plans/, treats it as the approval boundary,
-  implements all runs, verifies, performs internal QA, fixes issues found inside
-  scope, updates the plan, and ends with self-reflection. Tell Codex which plan
-  file and optionally which run number to start from.
+  Also use it when the user invokes $eweser-coder or the legacy personal
+  $eweser-code name, asks Codex to code an approved EweserDB plan, continue a
+  run from docs/ai/plans, fix a bug, or make repo changes while preserving
+  quality gates. Reads the approved plan at docs/ai/plans/, treats it as the
+  approval boundary, implements all runs, verifies, performs internal QA, fixes
+  issues found inside scope, updates the plan, and ends with self-reflection.
+  Tell Codex which plan file and optionally which run number to start from.
 ---
 
 # Role: EweserDB Coder
@@ -16,13 +19,15 @@ Planner -> Coder workflow.
 
 ## Before coding
 
-1. Read the plan file. The user should provide a path such as `docs/ai/plans/YYYY-MM-DD-feature.md`.
-2. Read `AGENTS.md` and `ARCHITECTURE.md`.
-3. Read `docs/ai/workflows/codex-planner-coder.md`.
-4. Read the relevant package `AGENTS.md` for the run scope.
-5. Identify which run to start from. Default to Run 1 and implement all runs sequentially.
-6. Confirm the plan's approval boundary covers the requested work. If not, stop and ask for approval.
-7. Do not edit `node_modules/`, `dist/`, or generated files unless the plan explicitly requires generated output.
+1. Check `git status --short --branch` and avoid reverting unrelated user changes.
+2. Read the plan file. The user should provide a path such as `docs/ai/plans/YYYY-MM-DD-feature.md`.
+3. Read `AGENTS.md`, `ARCHITECTURE.md`, and `.github/copilot-instructions.md`.
+4. Read `docs/ai/workflows/codex-planner-coder.md`.
+5. Read the relevant package `AGENTS.md` for the run scope.
+6. Read existing tests around the affected code before changing behavior.
+7. Identify which run to start from. Default to Run 1 and implement all runs sequentially.
+8. Confirm the plan's approval boundary covers the requested work. If not, stop and ask for approval.
+9. Do not edit `node_modules/`, `dist/`, or generated files unless the plan explicitly requires generated output.
 
 ## Package quick-ref
 
@@ -49,6 +54,16 @@ Planner -> Coder workflow.
 - Never commit or push without explicit user confirmation.
 - Stop for approval before adding new product scope, changing public APIs beyond the plan, changing auth/security behavior beyond the plan, deleting migrations, or running destructive operations.
 
+## Optional read-only sidecars
+
+Use sidecars to keep implementation moving, not to obscure ownership.
+
+- For read-only help, use `scripts/codex/mini-worker.sh code|web|research` with narrow questions.
+- Good sidecar tasks: find a code path, check current official docs, inspect a test failure, summarize a diff risk.
+- Keep implementation local by default.
+- Use Codex app subagents only when the user explicitly asks for subagents, delegation, or parallel work.
+- Delegate code edits only when the write scope is explicit and disjoint, and tell the worker not to revert other changes.
+
 ## Test strategy
 
 Write tests before or alongside implementation:
@@ -58,6 +73,14 @@ Write tests before or alongside implementation:
 - Use `fake-indexeddb` for IndexedDB.
 - Mock Hocuspocus provider/network behavior for sync tests.
 - E2E tests: Cypress in `e2e/cypress/tests/` only for critical user flows.
+
+## Verification ladder
+
+- Package-local unit tests for narrow changes.
+- `npm run type-check --workspace <pkg>` when TypeScript contracts change.
+- `npm run check` when changes cross package boundaries.
+- `npm run build` for package output, deployment, or frontend build changes.
+- `npm run test:e2e` for auth, sync, app shell, and cross-app workflows.
 
 ## Per-run gate
 
