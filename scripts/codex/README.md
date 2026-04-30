@@ -63,22 +63,22 @@ runs:
 
 Supported fields:
 
-| Field                       | Required | Notes                                                                                                   |
-| --------------------------- | -------- | ------------------------------------------------------------------------------------------------------- |
-| `orchestration.enabled`     | yes      | Must be `true`.                                                                                         |
-| `orchestration.maxParallel` | no       | Positive integer. CLI `--max-parallel` overrides it.                                                    |
-| `orchestration.baseBranch`  | no       | Defaults to the current branch.                                                                         |
-| `orchestration.finalStages` | no       | Allowed values are `qa` and `review`. They run after all coding runs integrate.                         |
-| `runs[].id`                 | yes      | Unique slug-like ID: letters, numbers, dots, underscores, or dashes.                                    |
-| `runs[].title`              | yes      | Human-readable run title.                                                                               |
-| `runs[].agent`              | yes      | Currently `eweser-code` for coding runs.                                                                |
-| `runs[].model`              | no       | Defaults to `coding`. `coding`/`strong` map to `gpt-5.4`; `simple`/`fast`/`mini` map to `gpt-5.4-mini`. |
-| `runs[].parallel`           | no       | Defaults to `false`. Parallel runs still need disjoint write scopes.                                    |
-| `runs[].dependsOn`          | no       | Run IDs that must finish before this run starts.                                                        |
-| `runs[].writeScope`         | yes      | Glob-like path list. Used for conflict avoidance and scope checks.                                      |
-| `runs[].tests`              | no       | Commands the worker is expected to run and the integrator reruns after merge.                           |
-| `runs[].changeset`          | no       | `yes`, `no`, or `maybe`; documentation signal only.                                                     |
-| `runs[].allowSharedScope`   | no       | Escape hatch for conservative serialization. Use sparingly and document why in the plan.                |
+| Field                       | Required | Notes                                                                                                                                                                 |
+| --------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `orchestration.enabled`     | yes      | Must be `true`.                                                                                                                                                       |
+| `orchestration.maxParallel` | no       | Positive integer. CLI `--max-parallel` overrides it.                                                                                                                  |
+| `orchestration.baseBranch`  | no       | Defaults to the current branch.                                                                                                                                       |
+| `orchestration.finalStages` | no       | Allowed values are `qa` and `review`. They run after all coding runs integrate.                                                                                       |
+| `runs[].id`                 | yes      | Unique slug-like ID: letters, numbers, dots, underscores, or dashes.                                                                                                  |
+| `runs[].title`              | yes      | Human-readable run title.                                                                                                                                             |
+| `runs[].agent`              | yes      | Currently `eweser-code` for coding runs.                                                                                                                              |
+| `runs[].model`              | no       | Defaults to `coding`. `coding`/`strong` map to `gpt-5.4`; `simple`/`fast`/`mini` map to `gpt-5.4-mini`.                                                               |
+| `runs[].parallel`           | no       | Defaults to `false`. Parallel runs still need disjoint write scopes.                                                                                                  |
+| `runs[].dependsOn`          | no       | Run IDs that must finish before this run starts. Runs with multiple dependencies merge those completed worker branches into the worker worktree before coding starts. |
+| `runs[].writeScope`         | yes      | Glob-like path list. Used for conflict avoidance and scope checks.                                                                                                    |
+| `runs[].tests`              | no       | Commands the worker is expected to run and the integrator reruns after merge.                                                                                         |
+| `runs[].changeset`          | no       | `yes`, `no`, or `maybe`; documentation signal only.                                                                                                                   |
+| `runs[].allowSharedScope`   | no       | Escape hatch for conservative serialization. Use sparingly and document why in the plan.                                                                              |
 
 Validation rules:
 
@@ -121,4 +121,4 @@ summary.md        Human-readable monitor summary
 - The orchestrator refuses mutating runs on a dirty working tree unless `--allow-dirty` is passed. Dirty integration branches are risky because worker merges and per-run verification become ambiguous.
 - `--stop` kills the active orchestrator process tree for the plan and marks in-progress state files as `interrupted`.
 - `--resume` reuses existing state and skips completed runs.
-- The default integration mode merges worker branches into the current branch without committing. Use `--commit` only when you want per-run integration commits.
+- The default integration mode creates temporary per-run squash commits so multi-run integration can proceed with a clean index, then resets back to the starting commit and leaves the combined diff in the working tree for review. Use `--commit` when you want to keep per-run integration commits.

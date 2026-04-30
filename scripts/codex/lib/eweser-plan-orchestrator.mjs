@@ -4,6 +4,7 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
+  readdirSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
@@ -199,8 +200,6 @@ function preflight(plan, options) {
     const result = spawnSync(tool, ['--version'], { encoding: 'utf8' });
     if (result.status !== 0) throw new Error(`Missing required tool: ${tool}`);
   }
-  const jq = spawnSync('jq', ['--version'], { encoding: 'utf8' });
-  if (jq.status !== 0) throw new Error('Missing required tool: jq');
   if (!plan.metadata.orchestration?.enabled)
     throw new Error('Plan orchestration.enabled must be true');
   if (options.maxParallel !== undefined && options.sequential)
@@ -601,12 +600,15 @@ async function startWorker(run, context) {
     worktree,
   });
   try {
-    ensureWorktree(
+    const createdWorktree = ensureWorktree(
       context.repoRoot,
       worktree,
       branch,
       workerBaseBranch(context.plan, run)
     );
+    if (createdWorktree)
+      mergeDependenciesIntoWorktree(context.plan, run, worktree, logFile);
+    const workerStartRef = gitOutput(['rev-parse', 'HEAD'], worktree);
     materializePlanForWorker(context.plan, run, worktree);
     const prompt = workerPrompt(context.plan, run);
     const args = [
@@ -676,7 +678,7 @@ async function startWorker(run, context) {
     const changedFiles = changedFilesForBranch(
       context.repoRoot,
       branch,
-      context.plan.orchestration.baseBranch || currentBranch()
+      workerStartRef
     );
     const violations = changedFiles.filter(
       (file) => !isWithinScopes(file, run.writeScope)
@@ -728,19 +730,31 @@ async function startWorker(run, context) {
 }
 
 function ensureWorktree(repoRoot, worktree, branch, baseBranch) {
-  if (existsSync(worktree)) return;
+  if (existsSync(worktree)) return false;
   mkdirSync(dirname(worktree), { recursive: true });
   runGit(
     ['worktree', 'add', '-B', branch, worktree, baseBranch],
     repoRoot,
     join(repoRoot, '.codex', 'orchestrator-worktree-add.log')
   );
+  return true;
 }
 
 function workerBaseBranch(plan, run) {
   if (run.dependsOn.length === 1)
     return workerBranch(plan.slug, run.dependsOn[0]);
   return plan.orchestration.baseBranch || currentBranch();
+}
+
+function mergeDependenciesIntoWorktree(plan, run, worktree, logFile) {
+  if (run.dependsOn.length <= 1) return;
+  for (const dep of run.dependsOn) {
+    runGit(
+      ['merge', '--no-edit', workerBranch(plan.slug, dep)],
+      worktree,
+      logFile
+    );
+  }
 }
 
 function materializePlanForWorker(plan, run, worktree) {
@@ -777,6 +791,12 @@ Finish with: files changed, verification commands and outcomes, blockers, and re
 }
 
 function integrateRuns(plan, options, layout, repoRoot) {
+  const startRef = options.commit
+    ? null
+    : gitOutput(['rev-parse', 'HEAD'], repoRoot);
+  const resetLogFile = join(layout.logsDir, 'integration-reset.log');
+  let integratedCount = 0;
+
   for (const run of topologicalRuns(plan.runs)) {
     const state = readJson(join(layout.stateDir, `${run.id}.state`));
     if (state.status !== 'completed')
@@ -788,15 +808,19 @@ function integrateRuns(plan, options, layout, repoRoot) {
       status: 'in_progress',
       startedAt: new Date().toISOString(),
     });
+    let phase = 'merge';
     try {
       runGit(['merge', '--squash', state.branch], repoRoot, logFile);
+      phase = 'tests';
       for (const command of run.tests) runShell(command, repoRoot, logFile);
-      if (options.commit)
-        runGit(
-          ['commit', '-m', `Integrate orchestrator run ${run.id}`],
-          repoRoot,
-          logFile
-        );
+      phase = 'commit';
+      const commitMessage = options.commit
+        ? `Integrate orchestrator run ${run.id}`
+        : `Temporary orchestrator integration ${run.id}`;
+      if (hasStagedChanges(repoRoot)) {
+        runGit(['commit', '-m', commitMessage], repoRoot, logFile);
+        integratedCount += 1;
+      }
       writeJson(join(layout.stateDir, `${run.id}.integration.state`), {
         branch: state.branch,
         runId: run.id,
@@ -809,6 +833,7 @@ function integrateRuns(plan, options, layout, repoRoot) {
         repoRoot,
         false
       ).trim();
+      if (phase === 'merge') cleanupFailedMerge(repoRoot, logFile);
       writeJson(join(layout.stateDir, `${run.id}.integration.state`), {
         branch: state.branch,
         conflicts: conflicts ? conflicts.split(/\r?\n/) : [],
@@ -822,6 +847,8 @@ function integrateRuns(plan, options, layout, repoRoot) {
       );
     }
   }
+  if (!options.commit && integratedCount > 0)
+    runGit(['reset', '--mixed', startRef], repoRoot, resetLogFile);
 }
 
 function runFinalStages(plan, layout, repoRoot) {
@@ -970,13 +997,7 @@ function stopPlan(layout) {
 
 function markInterrupted(layout) {
   if (!existsSync(layout.stateDir)) return;
-  const entries = spawnSync(
-    'find',
-    [layout.stateDir, '-maxdepth', '1', '-name', '*.state'],
-    { encoding: 'utf8' }
-  ).stdout.trim();
-  if (!entries) return;
-  for (const file of entries.split(/\r?\n/)) {
+  for (const file of stateFiles(layout)) {
     const state = readJson(file);
     if (state.status === 'in_progress' || state.status === 'starting') {
       writeJson(file, {
@@ -1005,15 +1026,7 @@ function printMonitor(plan, layout) {
     console.log('No state directory yet.');
     return;
   }
-  const files = spawnSync(
-    'find',
-    [layout.stateDir, '-maxdepth', '1', '-name', '*.state'],
-    { encoding: 'utf8' }
-  )
-    .stdout.trim()
-    .split(/\r?\n/)
-    .filter(Boolean)
-    .sort();
+  const files = stateFiles(layout);
   if (files.length === 0) {
     console.log('No state files yet.');
     return;
@@ -1047,15 +1060,7 @@ function writeSummary(plan, layout) {
     '',
   ];
   if (existsSync(layout.stateDir)) {
-    const files = spawnSync(
-      'find',
-      [layout.stateDir, '-maxdepth', '1', '-name', '*.state'],
-      { encoding: 'utf8' }
-    )
-      .stdout.trim()
-      .split(/\r?\n/)
-      .filter(Boolean)
-      .sort();
+    const files = stateFiles(layout);
     for (const file of files) {
       const state = readJson(file);
       lines.push(`- ${state.runId || state.stage || file}: ${state.status}`);
@@ -1080,8 +1085,12 @@ function changedFilesForBranch(repoRoot, branch, baseBranch) {
 }
 
 function dirtyFilesForWorktree(worktree) {
-  const output = gitOutput(['status', '--porcelain'], worktree, false).trim();
-  if (!output) return [];
+  const result = spawnSync('git', ['status', '--porcelain'], {
+    cwd: worktree,
+    encoding: 'utf8',
+  });
+  const output = (result.stdout ?? '').trimEnd();
+  if (!output.trim()) return [];
   return output
     .split(/\r?\n/)
     .map((line) => {
@@ -1095,7 +1104,7 @@ function dirtyFilesForWorktree(worktree) {
 }
 
 function commitWorkerChanges(run, worktree, logFile, files) {
-  runGit(['add', '--', ...files], worktree, logFile);
+  runGit(['add', '-A', '--', ...files], worktree, logFile);
   runGit(
     ['commit', '-m', `Orchestrator ${run.id}: ${run.title}`],
     worktree,
@@ -1115,17 +1124,18 @@ function isWithinScopes(file, scopes) {
 
 function readCompletedRunIds(layout) {
   if (!existsSync(layout.stateDir)) return [];
-  const entries = spawnSync(
-    'find',
-    [layout.stateDir, '-maxdepth', '1', '-name', '*.state'],
-    { encoding: 'utf8' }
-  ).stdout.trim();
-  if (!entries) return [];
-  return entries
-    .split(/\r?\n/)
+  return stateFiles(layout)
     .map((file) => readJson(file))
     .filter((state) => state.runId && state.status === 'completed')
     .map((state) => state.runId);
+}
+
+function stateFiles(layout) {
+  if (!existsSync(layout.stateDir)) return [];
+  return readdirSync(layout.stateDir)
+    .filter((entry) => entry.endsWith('.state'))
+    .map((entry) => join(layout.stateDir, entry))
+    .sort();
 }
 
 function workerBranch(slug, runId) {
@@ -1157,6 +1167,21 @@ function runGit(args, cwd, logFile) {
   return result.stdout;
 }
 
+function runGitOptional(args, cwd, logFile) {
+  const result = spawnSync('git', args, { cwd, encoding: 'utf8' });
+  appendLog(
+    logFile,
+    `$ git ${args.join(' ')}\n${result.stdout ?? ''}${result.stderr ?? ''}`
+  );
+  return result;
+}
+
+function cleanupFailedMerge(repoRoot, logFile) {
+  const abort = runGitOptional(['merge', '--abort'], repoRoot, logFile);
+  if (abort.status !== 0)
+    runGitOptional(['reset', '--merge'], repoRoot, logFile);
+}
+
 function gitOutput(args, cwd, required = true) {
   const result = spawnSync('git', args, { cwd, encoding: 'utf8' });
   if (required && result.status !== 0)
@@ -1164,6 +1189,11 @@ function gitOutput(args, cwd, required = true) {
       (result.stderr || result.stdout || `git ${args.join(' ')} failed`).trim()
     );
   return (result.stdout ?? '').trim();
+}
+
+function hasStagedChanges(cwd) {
+  const result = spawnSync('git', ['diff', '--cached', '--quiet'], { cwd });
+  return result.status === 1;
 }
 
 function runShell(command, cwd, logFile) {
@@ -1177,6 +1207,12 @@ function runShell(command, cwd, logFile) {
 
 function spawnLogged(command, args, logFile, options = {}) {
   return new Promise((resolvePromise) => {
+    let resolved = false;
+    const resolveOnce = (result) => {
+      if (resolved) return;
+      resolved = true;
+      resolvePromise(result);
+    };
     const child = spawn(command, args, {
       cwd: options.cwd,
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -1184,7 +1220,11 @@ function spawnLogged(command, args, logFile, options = {}) {
     options.onSpawn?.(child);
     child.stdout.on('data', (chunk) => appendLog(logFile, chunk.toString()));
     child.stderr.on('data', (chunk) => appendLog(logFile, chunk.toString()));
-    child.on('close', (code) => resolvePromise({ code }));
+    child.on('error', (error) => {
+      appendLog(logFile, `Failed to spawn ${command}: ${error.message}\n`);
+      resolveOnce({ code: 127, error: error.message });
+    });
+    child.on('close', (code) => resolveOnce({ code }));
   });
 }
 

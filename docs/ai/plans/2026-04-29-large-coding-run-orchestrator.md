@@ -141,7 +141,7 @@ The orchestrator should pass explicit `--model` values. It should not let coding
   - Preflight:
     - confirm repo root
     - check `git status --short`
-    - verify `codex`, `git`, `jq`, and Node runtime
+    - verify `codex`, `git`, and Node runtime
     - parse and validate the plan
     - refuse to start if another orchestrator is active for the same plan
 - Files:
@@ -177,7 +177,7 @@ The orchestrator should pass explicit `--model` values. It should not let coding
   - Detect conflicts and stop with exact paths and worker branch names.
   - Run per-run tests after merge when listed.
   - Update the plan Execution Summary with completed run status, commands, and blockers.
-  - Keep commit creation optional. Default to leaving a working tree diff for review unless a `--commit` flag is passed.
+- Keep persistent commit creation optional. Default to temporary per-run squash commits followed by a reset that leaves a working tree diff for review unless a `--commit` flag is passed.
 - Files:
   - `scripts/codex/eweser-plan-orchestrator.sh`
   - `docs/ai/plans/<active-plan>.md` during actual feature runs
