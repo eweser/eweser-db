@@ -15,7 +15,7 @@ applyTo: 'packages/ewe-note/**,examples/**,packages/examples-components/**'
 
 - Apps are Vite-powered React SPAs
 - Use `@eweser/db` Database class for all data operations
-- Connect to auth server via env var (`AUTH_SERVER` or similar)
+- Connect to auth server via the package's existing Vite env var, usually `VITE_AUTH_SERVER`
 - Handle offline state gracefully — local-first means the app works without network
 
 ## Component Library (`examples-components`)

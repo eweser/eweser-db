@@ -66,6 +66,13 @@ const updateOtherProjectIfAvailable = (
   newVersion,
   projectPath
 ) => {
+  if (process.env.EWESER_RELEASE_UPDATE_OTHER_PROJECT !== 'true') {
+    console.log(
+      'Skipping external project update: set EWESER_RELEASE_UPDATE_OTHER_PROJECT=true to update another checkout.'
+    );
+    return;
+  }
+
   const packageJsonPath = path.join(projectPath, 'package.json');
   if (!fs.existsSync(packageJsonPath)) {
     console.log(
@@ -118,7 +125,7 @@ const commitAndPushChanges = (projectPath, packageName, newVersion) => {
   console.log(`New version of @eweser/db: ${newVersion}`);
 
   // Update @eweser/db in the other project
-  const otherProjectPath = '/home/jacob/ewe-note';
+  const otherProjectPath = path.resolve(__dirname, '..', '..', 'ewe-note');
   updateOtherProjectIfAvailable('@eweser/db', newVersion, otherProjectPath);
 
   console.log('Dependency update completed.');

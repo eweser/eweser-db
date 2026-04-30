@@ -130,6 +130,7 @@ export class DataLayer {
     try {
       await this.waitForSync(provider, room.id);
     } catch (err) {
+      clearTimeout(connected.refreshTimer);
       provider.disconnect();
       provider.destroy();
       this.rooms.delete(room.id);

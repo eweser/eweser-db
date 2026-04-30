@@ -5,7 +5,7 @@
 > **Prerequisites:**
 >
 > - Aggregator service with PostgreSQL (complete)
-> - Search endpoint (complete — see [2026-04-04-cross-agent-memory-search.md](./2026-04-04-cross-agent-memory-search.md))
+> - Search endpoint (complete — see [2026-04-04-cross-agent-memory-search.md](./completed/2026-04-04-cross-agent-memory-search.md))
 > - MCP server with read/write tools (complete)
 
 ## Problem

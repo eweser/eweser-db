@@ -18,7 +18,7 @@ Ship a safe, understandable AI access model for Eweser MCP where users can conne
 
 - In:
   - `packages/auth-server-hono` token and scope model for agent-based MCP access
-  - `packages/auth-pages` Connect AI and approval UX for choosing readable vs writable scope
+  - `packages/app` Connect AI and approval UX for choosing readable vs writable scope
   - `packages/mcp-server` enforcement of note-level read/write restrictions
   - room and folder-aware policy design for notes
   - short-term production-safe fallback using a dedicated writable AI room
@@ -281,13 +281,13 @@ The first UI pass does not need to expose the full folder selector if backend su
     - option A: room-only UI first, folder-aware backend hidden
     - option B: basic folder selector for notes in the same launch
 - Files:
-  - `packages/auth-pages/src/components/connect-ai-page.tsx`
-  - `packages/auth-pages/src/pages.tsx`
-  - `packages/auth-pages/src/lib/api.ts`
-  - `packages/auth-pages/src/App.test.tsx`
+  - `packages/app/src/components/connect-ai-page.tsx`
+  - `packages/app/src/pages.tsx`
+  - `packages/app/src/lib/api.ts`
+  - `packages/app/src/App.test.tsx`
 - Tests:
-  - `npm run build --workspace @eweser/auth-pages`
-  - `npm test --workspace @eweser/auth-pages`
+  - `npm run build --workspace @eweser/app`
+  - `npm test --workspace @eweser/app`
 
 ### Run 5: Short-Term Production Fallback with AI Room
 
@@ -300,7 +300,7 @@ The first UI pass does not need to expose the full folder selector if backend su
   - optionally add a one-click helper to create the AI room if product boundaries allow it
 - Files:
   - `packages/auth-server-hono/src/routes/connect-ai.ts`
-  - `packages/auth-pages/src/components/connect-ai-page.tsx`
+  - `packages/app/src/components/connect-ai-page.tsx`
   - `packages/mcp-server/README.md`
 - Verification:
   - production token setup can be safely recommended before folder-scoped enforcement ships

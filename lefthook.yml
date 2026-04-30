@@ -3,6 +3,8 @@ pre-commit:
   commands:
     staged-checks:
       run: npm run precommit:staged
+    secrets-scan:
+      run: npm run secrets:scan
 
 pre-push:
   parallel: true

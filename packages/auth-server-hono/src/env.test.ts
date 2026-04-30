@@ -64,6 +64,56 @@ describe('parseEnv', () => {
     expect(parsed.AUTH_TRUSTED_ORIGINS).toEqual(['http://localhost:49000']);
   });
 
+  it('accepts a parent cookie domain for cross-subdomain sessions', async () => {
+    const parseEnv = await loadParseEnv();
+    const parsed = parseEnv({
+      ...base,
+      AUTH_DOMAIN: 'app.eweser.com',
+      AUTH_SERVER_DOMAIN: 'app.eweser.com',
+      AUTH_SERVER_URL: 'https://app.eweser.com',
+      AUTH_TRUSTED_ORIGINS: 'https://app.eweser.com,https://note.eweser.com',
+      BETTER_AUTH_BASE_URL: 'https://app.eweser.com',
+      COOKIE_DOMAIN: '.eweser.com',
+      MCP_ALLOWED_ORIGINS: 'https://app.eweser.com',
+      NODE_ENV: 'production',
+      AUTH_EMAIL_FROM: 'EweserDB <no-reply@eweser.com>',
+      AUTH_EMAIL_PROVIDER: 'resend',
+      RESEND_API_KEY: 'RESEND_API_KEY_PLACEHOLDER',
+      SERVER_SECRET: 'prod_server_secret_123456789012345',
+      BETTER_AUTH_SECRET: 'prod_better_auth_secret_123456789',
+      SYNC_AUTH_SECRET: 'prod_sync_secret_1234567890123456',
+      TRUST_PROXY: 'true',
+    });
+
+    expect(parsed.COOKIE_DOMAIN).toBe('.eweser.com');
+  });
+
+  it('rejects unrelated cookie domains', async () => {
+    const parseEnv = await loadParseEnv();
+    expect(() =>
+      parseEnv({
+        ...base,
+        AUTH_SERVER_DOMAIN: 'app.eweser.com',
+        AUTH_SERVER_URL: 'https://app.eweser.com',
+        BETTER_AUTH_BASE_URL: 'https://app.eweser.com',
+        COOKIE_DOMAIN: '.example.com',
+      })
+    ).toThrowError();
+  });
+
+  it('rejects cookie domains that only suffix-match the auth host', async () => {
+    const parseEnv = await loadParseEnv();
+    expect(() =>
+      parseEnv({
+        ...base,
+        AUTH_SERVER_DOMAIN: 'badeweser.com',
+        AUTH_SERVER_URL: 'https://badeweser.com',
+        BETTER_AUTH_BASE_URL: 'https://badeweser.com',
+        COOKIE_DOMAIN: '.eweser.com',
+      })
+    ).toThrowError();
+  });
+
   it('requires MCP_REDIS_URL when redis mode is selected', async () => {
     const parseEnv = await loadParseEnv();
     expect(() =>

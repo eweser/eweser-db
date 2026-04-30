@@ -1,10 +1,10 @@
 {
   "name": "@eweser/example-react-native",
-  "author": "jacobcoro",
+  "author": "EweserDB",
   "version": "1.15.0",
   "main": "../../node_modules/expo/AppEntry.js",
   "description": "eweser-db example mini app using react-native",
-  "homepage": "https://github.com/jacobcoro/eweserdb",
+  "homepage": "https://github.com/eweser/eweserdb",
   "license": "MIT",
   "keywords": [
     "user-owned",

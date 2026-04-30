@@ -1,6 +1,6 @@
 # Phase 4: Deploy & Polish
 
-> **Plan:** [Big Refactor Index](./2026-04-02-big-refactor.md)
+> **Plan:** [Big Refactor Index](./historical/2026-04-02-big-refactor.md)
 > **Prerequisite:** Phases 1–3 complete
 > **Goal:** Production readiness, static landing pages for SEO, documentation rewrite, code cleanup.
 

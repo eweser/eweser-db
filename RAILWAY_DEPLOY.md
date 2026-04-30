@@ -34,6 +34,7 @@ For each service below, click **New** → **Empty Service**, then configure:
   - `BETTER_AUTH_BASE_URL` (your Railway URL)
   - `AUTH_SERVER_DOMAIN` (your Railway URL)
   - `AUTH_SERVER_URL` (your Railway URL)
+  - `COOKIE_DOMAIN` (`.eweser.com` for production cross-subdomain sessions)
   - `SYNC_SERVER_URL` (sync-server Railway URL)
 
 #### Sync Server (`sync-server`)
@@ -63,10 +64,10 @@ For each service below, click **New** → **Empty Service**, then configure:
 - **Dockerfile Path**: `packages/ewe-note/Dockerfile`
 - **Port**: 80
 
-#### Auth Pages (`auth-pages`)
+#### App (`app`)
 
-- **Root Directory**: `packages/auth-pages`
-- **Dockerfile Path**: `packages/auth-pages/Dockerfile`
+- **Root Directory**: `packages/app`
+- **Dockerfile Path**: `packages/app/Dockerfile`
 - **Port**: 80
 
 ### 4. Generate Public Domains
@@ -93,6 +94,7 @@ Add your custom domain in Railway, then create CNAME records in your DNS provide
 | `BETTER_AUTH_BASE_URL`   | Public auth API URL            | auth-api                          |
 | `AUTH_SERVER_DOMAIN`     | Auth server domain             | auth-api                          |
 | `AUTH_SERVER_URL`        | Full auth server URL           | auth-api                          |
+| `COOKIE_DOMAIN`          | Cookie parent domain           | auth-api                          |
 | `SYNC_SERVER_URL`        | WebSocket sync URL             | auth-api, aggregator              |
 | `AGGREGATOR_WEBHOOK_URL` | Aggregator webhook endpoint    | sync-server                       |
 

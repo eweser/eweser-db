@@ -36,7 +36,7 @@ Key locations:
 - `packages/ewe-note/src/` — Note app
 - `packages/examples-components/src/` — Shared UI components
 - `examples/example-basic/src/` — Basic demo app
-- `old-code/` — Historical implementations (reference only)
+- `docs/ai/plans/historical/` — Superseded plans and migration history (reference only)
 
 ## Thoroughness Levels
 

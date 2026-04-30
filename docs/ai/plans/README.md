@@ -1,56 +1,121 @@
 # AI Plans
 
-Active, in-progress, and historical plans for EweserDB AI features. These are implementation handoffs and historical notes, not the system-of-record for current architecture.
+Active, completed, and historical planning notes for EweserDB. The top-level
+folder is the working set; finished implementation plans live in
+`./completed/`, and superseded handoffs/strategy notes live in `./historical/`.
+
+## Canonical Planning Format
+
+The canonical Codex workflow is Planner -> Coder, documented in
+[`../workflows/codex-planner-coder.md`](../workflows/codex-planner-coder.md).
+Use [`./_template.md`](./_template.md) for new implementation plans.
+
+Every new plan must include:
+
+- Goal
+- Scope
+- Assumptions / open questions
+- Runs with id, title, files, steps, tests, verification, dependencies, model
+  tier, and risk level
+- Stop conditions
+- Approval boundary
+- Execution summary
+- Self-reflection / instruction improvements
+
+Planner creates implementation-ready plans and stops for approval. Coder treats
+the approved plan as the approval boundary, implements all runs, verifies,
+performs internal QA, fixes issues found inside the boundary, and updates the
+plan. Standalone QA is reserved for independent re-QA or audit work.
 
 ## Status Categories
 
-- **Current** - Active work or planned but not yet started.
-- **Completed** - Fully implemented; see the corresponding ADR in `../adr/`.
-- **Historical** - Useful as context, but no longer current guidance.
+- **Current** - Active work or planned work that is still useful as guidance.
+- **Completed** - Implemented or delivered; archived in `./completed/`.
+- **Historical** - Useful context, but superseded by newer plans or current code.
 
 ## Current Plans
 
-### In Progress
+### Launch / Product Direction
 
-| Plan                                                                           | Phase                            | Last Updated |
-| ------------------------------------------------------------------------------ | -------------------------------- | ------------ |
-| [2026-04-05-dogfood-personal-brain.md](./2026-04-05-dogfood-personal-brain.md) | Run 1 complete, runs 2-3 pending | 2026-04-05   |
-| [2026-04-06-tiptap-migration.md](./2026-04-06-tiptap-migration.md)             | Runs 1-3 in progress             | 2026-04-06   |
-| [2026-04-08-one-click-deploy.md](./2026-04-08-one-click-deploy.md)             | Runs 1-3 pending                 | 2026-04-08   |
+| Plan                                                                                         | Status              | Notes                                                                                               |
+| -------------------------------------------------------------------------------------------- | ------------------- | --------------------------------------------------------------------------------------------------- |
+| [2026-04-28-app-shell-migration.md](./2026-04-28-app-shell-migration.md)                     | Next big build      | Expand `packages/app` into the app shell for Data Home, Connected Apps, MCP/AI Access, and account. |
+| [2026-04-29-ai-memory-strategy-onboarding.md](./2026-04-29-ai-memory-strategy-onboarding.md) | Current plan        | Add default cross-platform AI memory onboarding plus advanced per-project memory strategies.        |
+| [2026-04-28-compliance-and-legal.md](./2026-04-28-compliance-and-legal.md)                   | Launch blocker      | Terms/privacy/abuse/DMCA work remains before public launch.                                         |
+| [2026-04-19-go-live-security-hardening.md](./2026-04-19-go-live-security-hardening.md)       | Launch blocker      | Run 1 complete; final security/go-live closure still open.                                          |
+| [2026-04-03-ai-first-launch-strategy.md](./2026-04-03-ai-first-launch-strategy.md)           | Strategic reference | Partly shipped through MCP/Connect AI; use as positioning and launch-story context.                 |
 
-### Draft / Not Started
+### Design / Copy
 
-| Plan                                                                               | Priority | Notes                                   |
-| ---------------------------------------------------------------------------------- | -------- | --------------------------------------- |
-| [2026-04-03-ai-first-launch-strategy.md](./2026-04-03-ai-first-launch-strategy.md) | P1       | Awaiting approval                       |
-| [2026-04-03-file-storage.md](./2026-04-03-file-storage.md)                         | P2       | Depends on AI-first launch              |
-| [2026-04-04-mcp-server.md](./2026-04-04-mcp-server.md)                             | P1       | MCP server MVP done; full scope pending |
-| [2026-04-04-obsidian-vault-sync.md](./2026-04-04-obsidian-vault-sync.md)           | P1       | Awaiting TipTap migration               |
-| [2026-04-05-auto-knowledge-graph.md](./2026-04-05-auto-knowledge-graph.md)         | P2       | After doc split complete                |
-| [2026-04-08-chatgpt-web-mcp.md](./2026-04-08-chatgpt-web-mcp.md)                   | P2       | Depends on MCP server full scope        |
-| [2026-04-08-share-folder-ux.md](./2026-04-08-share-folder-ux.md)                   | P1       | Awaiting approval                       |
+| Plan                                                                                                   | Status            | Notes                                                                                 |
+| ------------------------------------------------------------------------------------------------------ | ----------------- | ------------------------------------------------------------------------------------- |
+| [2026-04-27-core-figma-design-system-recovery.md](./2026-04-27-core-figma-design-system-recovery.md)   | Next big design   | Redesign eweser.com landing, auth pages, Data Home/app shell, and app-store surfaces. |
+| [2026-04-27-full-text-page-copy.md](./2026-04-27-full-text-page-copy.md)                               | Current source    | Canonical copy target for landing, app shell, auth, permissions, and MCP pages.       |
+| [2026-04-27-core-copy-deck.md](./2026-04-27-core-copy-deck.md)                                         | Superseded source | Kept because it explains the copy process; exact copy moved to full-text page copy.   |
+| [2026-04-27-landing-page-story-pass.md](./2026-04-27-landing-page-story-pass.md)                       | Reference         | Narrative direction for the current landing work.                                     |
+| [2026-04-27-authenticated-surfaces-design-pass.md](./2026-04-27-authenticated-surfaces-design-pass.md) | Reference         | IA/design guidance for Personal Data Home, Connected Apps, MCP, and auth.             |
 
-## Completed Plans -> ADRs
+### Ewe Note UX
 
-These plans are fully implemented. See `../adr/` for the permanent records.
+| Plan                                                                           | Status        | Notes                                                                             |
+| ------------------------------------------------------------------------------ | ------------- | --------------------------------------------------------------------------------- |
+| [2026-04-06-tiptap-migration.md](./2026-04-06-tiptap-migration.md)             | Later / maybe | BlockNote is still present; treat TipTap as an optional deeper editor investment. |
+| [2026-04-11-ewe-note-feature-tests.md](./2026-04-11-ewe-note-feature-tests.md) | Later QA      | Useful after the UX pass; current Cypress coverage is partial.                    |
 
-| Plan                                                                                         | ADR                                                  | Completed  |
-| -------------------------------------------------------------------------------------------- | ---------------------------------------------------- | ---------- |
-| [2026-04-04-cross-agent-memory-search.md](./2026-04-04-cross-agent-memory-search.md)         | [ADR-0001](../adr/0001-cross-agent-memory-search.md) | Yes        |
-| [2026-04-06-memory-mcp-wrap-up.md](./2026-04-06-memory-mcp-wrap-up.md)                       | [ADR-0002](../adr/0002-memory-mcp-wrap-up.md)        | Yes        |
-| [2026-04-04-conversations-collection.md](./2026-04-04-conversations-collection.md)           | [ADR-0003](../adr/0003-conversations-collection.md)  | Yes        |
-| [2026-04-03-privacy-and-autonomy.md](./2026-04-03-privacy-and-autonomy.md)                   | [ADR-0004](../adr/0004-privacy-and-autonomy.md)      | Yes        |
-| [2026-04-03-remove-legacy-code.md](./2026-04-03-remove-legacy-code.md)                       | [ADR-0005](../adr/0005-remove-legacy-code.md)        | Yes        |
-| [2026-04-02-quality-gates-hardening.md](./2026-04-02-quality-gates-hardening.md)             | [ADR-0006](../adr/0006-quality-gates-hardening.md)   | Yes        |
-| [2026-04-02-quality-gates-run-3-handoff.md](./2026-04-02-quality-gates-run-3-handoff.md)     | [ADR-0006](../adr/0006-quality-gates-hardening.md)   | Yes        |
-| [2026-04-03-testing-plan-examples-db-auth.md](./2026-04-03-testing-plan-examples-db-auth.md) | [ADR-0008](../adr/0008-testing-examples-db-auth.md)  | Yes        |
-| [2026-04-07-topology-comparison.md](./2026-04-07-topology-comparison.md)                     | [ADR-0007](../adr/0007-rooms-topology-refactor.md)   | Yes        |
-| [2026-04-07-rooms-topology-and-doc-split.md](./2026-04-07-rooms-topology-and-doc-split.md)   | [ADR-0007](../adr/0007-rooms-topology-refactor.md)   | Yes        |
-| [2026-04-06-rooms-architecture-refactor.md](./2026-04-06-rooms-architecture-refactor.md)     | [ADR-0007](../adr/0007-rooms-topology-refactor.md)   | Superseded |
+### Deferred Backlog
+
+| Plan                                                                       | Status      | Notes                                                     |
+| -------------------------------------------------------------------------- | ----------- | --------------------------------------------------------- |
+| [2026-04-02-phase-4-deploy.md](./2026-04-02-phase-4-deploy.md)             | Mostly done | Keep only for remaining production polish/cleanup notes.  |
+| [2026-04-02-phase-5-mobile.md](./2026-04-02-phase-5-mobile.md)             | Deferred    | PWA exists; Capacitor/native app work is not launch-path. |
+| [2026-04-03-file-storage.md](./2026-04-03-file-storage.md)                 | Deferred    | Object storage and file APIs are not launch-path.         |
+| [2026-04-05-auto-knowledge-graph.md](./2026-04-05-auto-knowledge-graph.md) | Deferred    | Later graph/search layer concept.                         |
+
+## Completed Plans
+
+These were moved to `./completed/` because the repo now contains the corresponding
+implementation or delivered artifact.
+
+| Plan                                                                                                           | Evidence / Notes                                                                                   |
+| -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| [2026-04-02-phase-1-foundation.md](./completed/2026-04-02-phase-1-foundation.md)                               | Hono auth API, sync server, Postgres/Compose, better-auth, and SDK Hocuspocus cutover exist.       |
+| [2026-04-02-phase-2-frontend.md](./completed/2026-04-02-phase-2-frontend.md)                                   | `packages/app`, Ewe Note SPA/PWA, example app routing, and Caddy wiring exist.                     |
+| [2026-04-02-phase-3-aggregator.md](./completed/2026-04-02-phase-3-aggregator.md)                               | `packages/aggregator` and search/webhook indexing routes exist.                                    |
+| [2026-04-02-quality-gates-hardening.md](./completed/2026-04-02-quality-gates-hardening.md)                     | Quality workflow, lint/format/type/test scripts, Cypress smoke, and Lefthook checks exist.         |
+| [2026-04-04-mcp-server.md](./completed/2026-04-04-mcp-server.md)                                               | `packages/mcp-server`, agent endpoints, MCP CRUD/search/memory tools, and docs exist.              |
+| [2026-04-04-obsidian-vault-sync.md](./completed/2026-04-04-obsidian-vault-sync.md)                             | Vault fixtures, import/export/sync CLI, source paths, attachments, and OFM helpers exist.          |
+| [2026-04-05-dogfood-personal-brain.md](./completed/2026-04-05-dogfood-personal-brain.md)                       | Conversations collection, memory tools, and cross-tool workflow docs exist.                        |
+| [2026-04-07-rooms-topology-and-doc-split.md](./completed/2026-04-07-rooms-topology-and-doc-split.md)           | Superseded by/recorded in ADR-0007.                                                                |
+| [2026-04-08-one-click-deploy.md](./completed/2026-04-08-one-click-deploy.md)                                   | Railway/DO deployment assets and docs are considered complete.                                     |
+| [2026-04-08-chatgpt-web-mcp.md](./completed/2026-04-08-chatgpt-web-mcp.md)                                     | OAuth metadata/routes, dynamic clients, token flow, `/mcp`, and consent/Connect AI surfaces exist. |
+| [2026-04-08-share-folder-ux.md](./completed/2026-04-08-share-folder-ux.md)                                     | Folder context-menu sharing and share dialog exist in Ewe Note.                                    |
+| [2026-04-09-axiom-log-transport.md](./completed/2026-04-09-axiom-log-transport.md)                             | `@eweser/logger`, Axiom pino transport, OTel host metrics, Dozzle, env/docs wiring exist.          |
+| [2026-04-11-2fa-user-security.md](./completed/2026-04-11-2fa-user-security.md)                                 | Better-auth 2FA, migrations, account security UI, and challenge flow exist.                        |
+| [2026-04-11-landing-page.md](./completed/2026-04-11-landing-page.md)                                           | `packages/landing` Astro site and Docker/nginx integration exist.                                  |
+| [2026-04-22-artifact-free-workspace-libraries.md](./completed/2026-04-22-artifact-free-workspace-libraries.md) | Root prebuild/typecheck flow and artifact-free workspace strategy are in place.                    |
+| [2026-04-24-mcp-connect-ux-and-oauth.md](./completed/2026-04-24-mcp-connect-ux-and-oauth.md)                   | Marked completed in file; Connect AI/OAuth implementation exists.                                  |
+| [2026-04-27-mcp-folder-scoped-ai-access.md](./completed/2026-04-27-mcp-folder-scoped-ai-access.md)             | Marked implemented in file; read/write scope split and MCP enforcement exist.                      |
+
+Older completed plans already archived here are kept as-is:
+
+- [2026-04-02-quality-gates-run-3-handoff.md](./completed/2026-04-02-quality-gates-run-3-handoff.md)
+- [2026-04-03-privacy-and-autonomy.md](./completed/2026-04-03-privacy-and-autonomy.md)
+- [2026-04-03-remove-legacy-code.md](./completed/2026-04-03-remove-legacy-code.md)
+- [2026-04-03-testing-plan-examples-db-auth.md](./completed/2026-04-03-testing-plan-examples-db-auth.md)
+- [2026-04-04-conversations-collection.md](./completed/2026-04-04-conversations-collection.md)
+- [2026-04-04-cross-agent-memory-search.md](./completed/2026-04-04-cross-agent-memory-search.md)
+- [2026-04-06-memory-mcp-wrap-up.md](./completed/2026-04-06-memory-mcp-wrap-up.md)
+- [2026-04-06-rooms-architecture-refactor.md](./completed/2026-04-06-rooms-architecture-refactor.md)
+- [2026-04-07-topology-comparison.md](./completed/2026-04-07-topology-comparison.md)
 
 ## Historical
 
-| Plan                                                                                                   | Notes                                                             |
-| ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
-| [2026-04-02-big-refactor.md](./2026-04-02-big-refactor.md)                                             | Historical migration plan; the auth migration portion is complete |
-| [2025-04-02-federation-and-aggregator-strategy.md](./2025-04-02-federation-and-aggregator-strategy.md) | Pre-migration; superseded                                         |
+These were moved to `./historical/` because they are superseded by newer plans,
+current code, or newer copy artifacts.
+
+| Plan                                                                                                              | Notes                                                                           |
+| ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| [2025-04-02-federation-and-aggregator-strategy.md](./historical/2025-04-02-federation-and-aggregator-strategy.md) | Pre-migration federation strategy; not current guidance.                        |
+| [2026-04-02-big-refactor.md](./historical/2026-04-02-big-refactor.md)                                             | High-level migration index; detailed phase plans and current code supersede it. |
+| [2026-04-27-core-design-session-handoff.md](./historical/2026-04-27-core-design-session-handoff.md)               | Superseded by current full-text copy and app-shell/design-system plans.         |
+| [2026-04-27-next-step-copy-to-figma-handoff.md](./historical/2026-04-27-next-step-copy-to-figma-handoff.md)       | Superseded after the full text-only copy deliverable was created.               |

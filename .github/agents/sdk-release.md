@@ -42,7 +42,7 @@ You manage npm releases for EweserDB published packages.
 git status          # clean working tree
 npm test            # all tests pass
 npm run build       # succeeds
-npx tsc --noEmit    # no type errors
+npm run type-check  # no type errors
 ```
 
 ## Workflow
@@ -91,3 +91,4 @@ git tag v<version>
 - Major bumps need explicit user confirmation before proceeding
 - `@eweser/shared` changes cascade to `@eweser/db` — bump both
 - **Never `git push` without explicit user confirmation**
+- Before running `npm run release`, inspect `scripts/release.js`; it may update external local projects if present. Do not let release automation push unrelated repositories without explicit user approval.

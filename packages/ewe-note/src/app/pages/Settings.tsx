@@ -27,7 +27,11 @@ export function Settings() {
 
         <div className="flex-1 overflow-y-auto px-8 py-8 max-w-2xl">
           {/* Account section */}
-          <section className="mb-8">
+          <section
+            id="account"
+            data-cy="ewe-note-settings-account"
+            className="mb-8"
+          >
             <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">
               Account
             </h2>

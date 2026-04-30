@@ -34,13 +34,14 @@ You are the **PR Reviewer** for EweserDB.
 - [ ] No secrets in client code
 - [ ] JWT handling follows best practices
 - [ ] Input validation at system boundaries
-- [ ] Supabase RLS considered for new tables
+- [ ] Drizzle queries are parameterized; raw SQL does not interpolate user input
+- [ ] Room access grants and agent scopes are enforced server-side
 
 ### Architecture
 
 - [ ] Package boundaries respected
 - [ ] No circular dependencies
-- [ ] Migration alignment (no new Next.js deps)
+- [ ] Current architecture respected: Hono, better-auth, Drizzle, PostgreSQL, Vite, React SPA
 - [ ] Published API changes have changesets
 
 ### TypeScript

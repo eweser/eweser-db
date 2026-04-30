@@ -9,16 +9,16 @@
     "interoperable",
     "local-first"
   ],
-  "author": "jacobcoro",
+  "author": "EweserDB",
   "type": "module",
-  "homepage": "https://github.com/jacobcoro/eweserdb",
+  "homepage": "https://github.com/eweser/eweserdb",
   "license": "MIT",
   "directories": {
     "src": "src"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jacobcoro/eweserdb.git"
+    "url": "git+https://github.com/eweser/eweserdb.git"
   },
   "scripts": {
     "dev": "vite",
@@ -30,7 +30,7 @@
     "test": "vitest --run --passWithNoTests"
   },
   "bugs": {
-    "url": "https://github.com/jacobcoro/eweserdb/issues"
+    "url": "https://github.com/eweser/eweserdb/issues"
   },
   "dependencies": {
     "@eweser/db": "^1.15.0",

@@ -96,29 +96,6 @@ export function EnhancedCommandPalette({
             </div>
 
             <Command.List className="max-h-[60vh] overflow-y-auto p-3">
-              {/* Create new note - always show when searching */}
-              {search && (
-                <Command.Group className="mb-3">
-                  <Command.Item
-                    onSelect={() => handleNewNote(search)}
-                    className="flex items-center gap-4 px-4 py-3.5 rounded-lg cursor-pointer bg-primary/5 border border-primary/20 hover:bg-primary/10 hover:border-primary/30 transition-all data-[selected=true]:bg-primary/10 data-[selected=true]:border-primary/30"
-                  >
-                    <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
-                      <Plus className="w-5 h-5 text-primary-foreground" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-[15px] truncate">
-                        Create "{search}"
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Press Enter to create new note
-                      </div>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-primary flex-shrink-0" />
-                  </Command.Item>
-                </Command.Group>
-              )}
-
               {/* Search Results */}
               {search && searchResults.length > 0 && (
                 <Command.Group
@@ -157,6 +134,29 @@ export function EnhancedCommandPalette({
                       </div>
                     </Command.Item>
                   ))}
+                </Command.Group>
+              )}
+
+              {/* Create new note - show after matches so search retrieval wins by default */}
+              {search && (
+                <Command.Group className="mt-3">
+                  <Command.Item
+                    onSelect={() => handleNewNote(search)}
+                    className="flex items-center gap-4 px-4 py-3.5 rounded-lg cursor-pointer bg-primary/5 border border-primary/20 hover:bg-primary/10 hover:border-primary/30 transition-all data-[selected=true]:bg-primary/10 data-[selected=true]:border-primary/30"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
+                      <Plus className="w-5 h-5 text-primary-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-[15px] truncate">
+                        Create "{search}"
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Press Enter to create a new note
+                      </div>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-primary flex-shrink-0" />
+                  </Command.Item>
                 </Command.Group>
               )}
 

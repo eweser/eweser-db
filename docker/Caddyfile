@@ -14,10 +14,13 @@
         path /
         query redirect=*
     }
-    redir @legacy_login /auth/sign-in?{query} 302
+    redir @legacy_login /sign-in?{query} 302
 
     @auth_root path /auth
-    redir @auth_root /auth/ 302
+    redir @auth_root /sign-in 302
+
+    @auth_root_slash path /auth/
+    redir @auth_root_slash /sign-in 302
 
     handle /api/auth/* {
         reverse_proxy auth-api:3000
@@ -64,11 +67,22 @@
         reverse_proxy aggregator:8090
     }
 
-    @auth_pages path /auth/*
-    handle @auth_pages {
+    @legacy_auth_pages path /auth/*
+    handle @legacy_auth_pages {
         uri strip_prefix /auth
-        root * /srv/auth-pages
+        redir {uri} 302
+    }
+
+    @app_pages path /sign-in /sign-up /two-factor /forgot-password /reset-password /verify-email /await-confirm /home /apps /ai /security /sign-out /account/* /access-grant/* /statement/*
+    handle @app_pages {
+        root * /srv/app
         try_files {path} /index.html
+        file_server
+    }
+
+    # The app is built with Vite base "/" and emits root-relative /assets/* URLs.
+    handle /assets/* {
+        root * /srv/app
         file_server
     }
 

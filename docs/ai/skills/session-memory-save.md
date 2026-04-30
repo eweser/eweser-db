@@ -1,5 +1,11 @@
 # session-memory-save
 
+> Historical/non-canonical note: this document records an OpenClaw PA-specific
+> session memory experiment. It is not part of the canonical Codex workflow. For
+> Codex work, follow `AGENTS.md` and `docs/ai/workflows/codex-planner-coder.md`;
+> save memory only when the relevant Eweser MCP tool is available and the active
+> agent instructions require it.
+
 Automatic session-end memory save skill for OpenClaw PA agents.
 
 ## Description
@@ -17,7 +23,7 @@ When a PA session closes, this skill generates a summary of the session and save
 Copy this skill to the OpenClaw PA skills directory:
 
 ```bash
-cp session-memory-save.skill.md /home/openclaw/.openclaw/workspace-pa-jacob/skills/session-memory-save.md
+cp session-memory-save.skill.md /home/openclaw/.openclaw/workspace-pa-user/skills/session-memory-save.md
 ```
 
 ## Trigger
@@ -36,7 +42,7 @@ When triggered, the PA agent should:
    - `title`: Short descriptive title (e.g. "Session: auth server migration 2026-04-04")
    - `summary`: The generated summary
    - `memoryType`: `"session"`
-   - `agentId`: The agent's identifier (e.g. `"openclaw-pa-jacob"`)
+   - `agentId`: The agent's identifier (e.g. `"openclaw-pa-user"`)
    - `date`: Today's ISO date
    - `tags`: Inferred from topics discussed (e.g. `["auth-server", "migration"]`)
 4. Confirm the save was successful
@@ -51,7 +57,7 @@ When triggered, the PA agent should:
     "title": "Session: completed aggregator search endpoint 2026-04-04",
     "summary": "Implemented POST /api/agent-search on the aggregator with agent bearer token auth and PostgreSQL FTS. Also enhanced eweser_search MCP tool to call the aggregator with fallback to in-memory scan.",
     "memoryType": "session",
-    "agentId": "openclaw-pa-jacob",
+    "agentId": "openclaw-pa-user",
     "date": "2026-04-04",
     "tags": ["aggregator", "mcp-server", "search"]
   }

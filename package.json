@@ -74,6 +74,8 @@
     "ci-build": "rm -rf package-lock.json && npm install @esbuild/linux-x64 && npm run build",
     "ci-start": "run-p run-example-previews",
     "prepush:check": "npm run check",
+    "ai:aws-session": "bash scripts/ai-secrets/aws-agent-session.sh",
+    "secrets:scan": "bash scripts/ai-secrets/scan-secrets.sh",
     "start-test-rpc-server": "cd test-rpc-server; node server.js",
     "run-example-previews": "run-p run-example-preview:*",
     "precommit:staged": "lint-staged",
@@ -100,7 +102,7 @@
     "vitest": "^4.0.9"
   },
   "volta": {
-    "node": "20.11.0"
+    "node": "22.22.2"
   },
   "overrides": {
     "protobufjs": "^7.5.5"

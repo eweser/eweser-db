@@ -21,7 +21,7 @@ curl -fsSL https://raw.githubusercontent.com/eweser/eweser-db/main/scripts/setup
 - `@eweser/db` - core JavaScript client for local-first rooms and documents
 - `@eweser/shared` - shared types, schemas, and helpers
 - `@eweser/auth-server-hono` - Hono + better-auth auth API
-- `@eweser/auth-pages` - React SPA for login, signup, account management, and access grants
+- `@eweser/app` - React SPA for login, signup, account management, and access grants
 - `@eweser/aggregator` - server-side indexing and public search
 - `@eweser/sync-server` - Hocuspocus sync relay
 - `@eweser/ewe-note` - BlockNote-based note-taking app
@@ -131,7 +131,7 @@ In separate terminals, run the frontend workspaces you need:
 
 ```bash
 npm run dev
-npm run dev --workspace @eweser/auth-pages
+npm run dev --workspace @eweser/app
 npm run dev --workspace @eweser/ewe-note
 ```
 

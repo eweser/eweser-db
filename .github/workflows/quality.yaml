@@ -57,7 +57,7 @@ jobs:
               - 'packages/examples-components/**'
               - 'packages/db/**'
               - 'packages/shared/**'
-              - 'packages/auth-pages/**'
+              - 'packages/app/**'
               - 'packages/auth-server-hono/**'
               - 'packages/sync-server/**'
               - 'e2e/**'
@@ -81,7 +81,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 24.11.1
+          node-version: 22.22.2
           cache: npm
 
       - name: Install dependencies
@@ -105,7 +105,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 24.11.1
+          node-version: 22.22.2
           cache: npm
 
       - name: Install dependencies
@@ -155,7 +155,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 24.11.1
+          node-version: 22.22.2
           cache: npm
 
       - name: Restore Cypress binary cache
@@ -205,7 +205,7 @@ jobs:
       - name: Build example-basic
         run: |
           npm run build-example:basic
-          npm --workspace @eweser/auth-pages run build
+          npm --workspace @eweser/app run build
 
       - name: Start Docker backend services
         run: |

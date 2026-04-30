@@ -1,8 +1,0 @@
-[build]
-dockerfilePath = "packages/auth-pages/Dockerfile"
-buildCommand = ""
-
-[deploy]
-healthcheckPath = "/auth/"
-healthcheckTimeout = 30
-restartPolicyMaxRetries = 3

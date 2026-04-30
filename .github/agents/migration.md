@@ -69,8 +69,8 @@ docker compose -f docker-compose.dev.yml exec auth-api npx drizzle-kit migrate
 ### 4. Verify
 
 ```bash
-cd packages/auth-server-hono && npm test
-npx tsc --noEmit
+npm test --workspace @eweser/auth-server-hono
+npm run type-check --workspace @eweser/auth-server-hono
 ```
 
 ## Safety rules
