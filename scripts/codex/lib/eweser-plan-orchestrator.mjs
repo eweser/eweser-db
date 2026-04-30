@@ -491,8 +491,11 @@ function normalizeScope(scope) {
 function scopePrefix(scope) {
   const normalized = normalizeScope(scope);
   const star = normalized.indexOf('*');
-  const prefix = star === -1 ? normalized : normalized.slice(0, star);
-  return prefix.replace(/\/+$/, '') + (prefix.endsWith('/') ? '' : '/');
+  if (star === -1) {
+    return normalized;
+  }
+  const prefix = normalized.slice(0, star).replace(/\/+$/, '');
+  return prefix === '' ? '' : `${prefix}/`;
 }
 
 function printDryRun(plan, options, layout) {
