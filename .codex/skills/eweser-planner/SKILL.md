@@ -39,6 +39,23 @@ Read:
 6. For small, clear work, produce a concise implementation outline instead of a plan file.
 7. Present the plan or outline for approval and stop. Do not begin implementation.
 
+## Research rules
+
+- Keep research read-only unless creating or updating the plan document.
+- Separate verified code findings, external facts, and inference.
+- Use external research for current docs, APIs, changelogs, libraries, standards, or version-sensitive facts. Prefer official docs, primary repositories, release notes, and source code.
+- Include source URLs in the plan or response when external facts materially affect the design.
+- If current external docs conflict with repo assumptions, call out the mismatch directly.
+
+## Optional read-only sidecars
+
+Use sidecars only for separable research questions.
+
+- Use `scripts/codex/mini-worker.sh code "..."` for local code exploration.
+- Use `scripts/codex/mini-worker.sh web "..."` for current external documentation checks.
+- Use `scripts/codex/mini-worker.sh research "..."` when the question needs both local and external context.
+- Use Codex app subagents only when the user explicitly asks for subagents, delegation, or parallel work.
+
 ## Questions to ask first
 
 - Goal: What user-visible behavior changes?
