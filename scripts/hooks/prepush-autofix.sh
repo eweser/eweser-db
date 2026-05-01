@@ -10,7 +10,10 @@ else
   range="HEAD"
 fi
 
-mapfile -t changed_files < <(git diff --name-only --diff-filter=ACMR "$range")
+changed_files=()
+while IFS= read -r file; do
+  [[ -n "$file" ]] && changed_files+=("$file")
+done < <(git diff --name-only --diff-filter=ACMR "$range")
 
 if [[ ${#changed_files[@]} -eq 0 ]]; then
   exit 0

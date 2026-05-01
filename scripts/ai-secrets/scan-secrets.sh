@@ -7,13 +7,15 @@ cd "$root"
 mode="${1:---staged}"
 
 if command -v gitleaks >/dev/null 2>&1; then
-  if [[ "$mode" == "--all" || "$mode" == "--tracked" ]]; then
+  if [[ "$mode" == "--all" ]]; then
     gitleaks dir "$root" --redact --no-banner
-  else
+  elif [[ "$mode" == "--staged" ]]; then
     gitleaks protect --source "$root" --staged --redact --no-banner
   fi
 elif command -v trufflehog >/dev/null 2>&1; then
-  trufflehog filesystem "$root" --no-update --fail --exclude-paths .gitignore
+  if [[ "$mode" == "--all" || "$mode" == "--staged" ]]; then
+    trufflehog filesystem "$root" --no-update --fail --exclude-paths .gitignore
+  fi
 else
   echo "gitleaks/trufflehog not installed; running fallback secret scan." >&2
 fi
