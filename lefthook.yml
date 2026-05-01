@@ -4,14 +4,14 @@ pre-commit:
     staged-checks:
       run: npm run precommit:staged
     secrets-scan:
-      run: npm run secrets:scan
+      run: npm run secrets:scan -- --tracked
 
 pre-push:
-  parallel: true
+  parallel: false
   commands:
+    autofix:
+      run: npm run prepush:autofix
     secrets-scan:
       run: npm run secrets:scan -- --tracked
-    lint:
-      run: npm run lint
-    format-check:
-      run: npm run format:check
+    verify:
+      run: npm run prepush:verify
