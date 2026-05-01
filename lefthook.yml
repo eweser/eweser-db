@@ -9,6 +9,8 @@ pre-commit:
 pre-push:
   parallel: true
   commands:
+    secrets-scan:
+      run: npm run secrets:scan -- --tracked
     lint:
       run: npm run lint
     format-check:

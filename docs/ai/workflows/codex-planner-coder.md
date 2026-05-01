@@ -49,6 +49,10 @@ Coder must:
 - Stop and ask for approval when implementation requires scope outside the
   approved plan.
 - Update the plan execution summary and self-reflection sections.
+- After each completed run, add a manual-test handoff to the plan. The handoff
+  should state what was delivered, how to start the needed local services, the
+  manual steps a separate tester should run, expected results, known gaps, and
+  any useful evidence paths or screenshots.
 
 ### Standalone QA
 
@@ -67,6 +71,8 @@ include:
 - Assumptions / open questions
 - Runs with id, title, files, steps, tests, verification, dependencies, model
   tier, and risk level
+- Run order and manual-test handoff expectations when the work is user-visible
+  or crosses app/API/MCP behavior
 - Stop conditions
 - Approval boundary
 - Execution summary
@@ -88,5 +94,7 @@ Coder is done when:
 - Relevant tests/checks have run, or skipped checks are documented with reasons.
 - Internal QA findings are fixed or reported as remaining risks.
 - The plan's execution summary reflects what changed and what was verified.
+- The plan contains enough manual-test handoff detail for a separate manual
+  tester to exercise each completed user-visible run without re-planning.
 - The plan's self-reflection section records useful instruction or process
   improvements found during the work.

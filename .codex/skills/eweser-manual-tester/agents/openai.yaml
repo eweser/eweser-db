@@ -1,0 +1,7 @@
+interface:
+  display_name: 'Eweser Manual Tester'
+  short_description: 'Manual QA for EweserDB plan handoffs'
+  default_prompt: 'Use $eweser-manual-tester to manually test the completed run in this EweserDB plan.'
+
+policy:
+  allow_implicit_invocation: true

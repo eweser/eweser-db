@@ -58,6 +58,7 @@ dist.*
 
 # gitleaks
 .gitleaks-report.json
+.cache_ggshield
 storage_railway_*.json
 
 .mcp.json

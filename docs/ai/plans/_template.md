@@ -16,10 +16,26 @@
 
 ## Runs
 
+## Run Order And Manual Test Handoffs
+
+Run order: <Sequential by default, or describe allowed concurrency.>
+
+After each completed run, Coder must update the Execution Summary and add a
+manual-test handoff with:
+
+- delivered behavior;
+- local services/commands needed;
+- test data/account assumptions, without secrets;
+- manual steps;
+- expected results;
+- known gaps or residual risk.
+
 ### Run 1: <Title>
 
 - **Id**: `run-1`
 - **Title**: `<Title>`
+- **Deliverable**:
+  - <Concrete result this run leaves behind.>
 - **Files**:
   - `<path>`: <expected change>
 - **Steps**:
@@ -28,6 +44,8 @@
   - <Test file or command>
 - **Verification**:
   - <Narrow command or manual verification>
+- **Manual test handoff**:
+  - <What a separate tester should do after this run, or "Not needed: <reason>".>
 - **Dependencies**:
   - <None | run id | external prerequisite>
 - **Model tier**: `fast | coder | strong`

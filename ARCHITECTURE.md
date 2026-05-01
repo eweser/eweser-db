@@ -126,6 +126,21 @@ Use `buildRef()` from `@eweser/shared` to construct refs.
 
 The auth API handles ACL, auth sessions, room access grants, and sync token issuance.
 
+### Product Configuration
+
+User-owned product configuration that should be visible across apps, agents, or
+self-hosted deployments belongs in EweserDB rooms and shared schemas. PostgreSQL
+in the auth server is for auth operations: users, sessions, grants, OAuth,
+agent tokens, security events, and audit metadata needed to enforce access. Do
+not make PostgreSQL the canonical store for interoperable user memory, strategy,
+or workspace configuration unless the plan explicitly documents why an auth-only
+operational mirror is needed.
+
+EweserDB is still pre-live. Current-state docs and plans may choose clean schema
+changes over prototype-data compatibility when that improves the long-term
+model. PostgreSQL migrations are still append-only, and published package API
+changes still need changesets.
+
 ### Aggregation
 
 Aggregator services index public room data so apps can search shared content without querying every client directly.

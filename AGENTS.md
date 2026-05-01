@@ -16,6 +16,15 @@ EweserDB is a local-first, user-owned database SDK built on Yjs CRDTs. Users own
 - Read `ARCHITECTURE.md` for current system design.
 - Read `LOCAL_DEVELOPMENT.md` for setup and local service details.
 - Treat `docs/ai/` and `docs/ai/adr/` as historical context unless a file explicitly says it is current guidance.
+- Product/user configuration that must interoperate across apps should live in
+  EweserDB rooms or shared schemas. PostgreSQL in `packages/auth-server-hono`
+  should be reserved for auth, grants, sessions, OAuth, operational tokens, and
+  security/audit metadata needed by the auth service.
+- The product is not live with real users yet. When a plan explicitly touches
+  pre-live product schemas or UX, prefer the clean long-term model over
+  compatibility with unused prototype data. Still document intentional breaking
+  changes, add migrations where PostgreSQL is involved, and keep published
+  package changesets accurate.
 
 ## Current Architecture
 
@@ -145,9 +154,12 @@ Plan files should use `docs/ai/plans/_template.md` and include:
 
 ## Runs
 
+## Run Order And Manual Test Handoffs
+
 ### Run N: <Title>
 
-- Id / Title / Files / Steps / Tests / Verification
+- Id / Title / Deliverable / Files / Steps / Tests / Verification
+- Manual test handoff for user-visible or cross-surface work
 - Dependencies / Model tier / Risk level
 
 ## Stop Conditions
