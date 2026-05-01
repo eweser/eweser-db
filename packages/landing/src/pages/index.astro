@@ -131,6 +131,9 @@ const appUrl = (
 ).replace(/\/$/, '');
 const signInUrl = `${appUrl}/sign-in`;
 const connectAiUrl = `${appUrl}/sign-in?redirect=%2Fai`;
+const termsUrl = `${appUrl}/statement/terms-of-service`;
+const privacyUrl = `${appUrl}/statement/privacy`;
+const abuseEmail = 'abuse@eweser.com';
 ---
 
 <Layout
@@ -526,6 +529,9 @@ const connectAiUrl = `${appUrl}/sign-in?redirect=%2Fai`;
         </a>
         <a href={signInUrl} class="transition-colors hover:text-slate-950">Sign in</a>
         <a href={noteUrl} class="transition-colors hover:text-slate-950">Ewe Note</a>
+        <a href={termsUrl} class="transition-colors hover:text-slate-950">Terms</a>
+        <a href={privacyUrl} class="transition-colors hover:text-slate-950">Privacy</a>
+        <a href={`mailto:${abuseEmail}`} class="transition-colors hover:text-slate-950">Abuse</a>
       </div>
 
       <div class="flex flex-wrap justify-center gap-2">

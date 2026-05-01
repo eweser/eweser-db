@@ -17,11 +17,11 @@ The current ToS and Privacy stubs in `packages/app/src/pages.tsx` (lines 1723–
 
 | Item                           | Location                                     | Status                                         |
 | ------------------------------ | -------------------------------------------- | ---------------------------------------------- |
-| Terms of Service               | `packages/app` `/statement/terms-of-service` | Stub — 3 paragraphs                            |
-| Privacy Policy                 | `packages/app` `/statement/privacy`          | Stub — 3 paragraphs                            |
+| Terms of Service               | `packages/app` `/statement/terms-of-service` | Expanded policy draft shipped in app           |
+| Privacy Policy                 | `packages/app` `/statement/privacy`          | Expanded policy draft shipped in app           |
 | DMCA Agent                     | US Copyright Office                          | Not registered                                 |
-| Abuse contact                  | Anywhere                                     | Not published                                  |
-| Prohibited content policy      | ToS                                          | Not present                                    |
+| Abuse contact                  | App legal pages and landing footer           | Published as `abuse@eweser.com`                |
+| Prohibited content policy      | ToS                                          | Present in expanded policy draft               |
 | Account deletion / data export | Auth server                                  | Partial (delete account exists in better-auth) |
 | GDPR data subject rights       | Auth server                                  | Partial                                        |
 
@@ -100,7 +100,13 @@ The current ToS and Privacy stubs in `packages/app/src/pages.tsx` (lines 1723–
   - Costs ~$6/year
   - Required before safe harbor applies
 
-- [ ] **Publish abuse contact** (`abuse@eweser.com` or equivalent) in footer and ToS
+- [x] **Publish abuse contact** (`abuse@eweser.com` or equivalent) in footer and ToS
+
+- [ ] **Create and monitor legal/contact mailboxes or aliases**
+  - `abuse@eweser.com`
+  - `privacy@eweser.com`
+  - `copyright@eweser.com`
+  - `support@eweser.com`
 
 ### Should-do before or shortly after launch
 
@@ -143,6 +149,21 @@ Before launch:
 
 ## Related Files
 
-- `packages/app/src/pages.tsx` lines 1723–1776 — current stubs
+- `packages/app/src/pages.tsx` — Terms and Privacy policy pages
+- `packages/landing/src/pages/index.astro` — public footer legal/abuse links
+- `packages/landing/src/pages/connected-tools.astro` — public footer legal/abuse links
 - `docs/security-go-live-checklist.md` — security checks (separate from legal compliance)
 - `docs/security-incident-response.md` — incident response (covers breach notification, relevant to GDPR)
+
+## Execution Update — 2026-05-01
+
+- Replaced the hosted app Terms and Privacy stubs with expanded policy drafts covering account rules, data ownership, hosted server-side room storage limits, prohibited content, abuse reports, copyright/DMCA notices, privacy rights, retention, service providers, and contact channels.
+- Published footer links from the public landing pages to Terms, Privacy, and `abuse@eweser.com`.
+- Verification:
+  - `npm run build --workspace @eweser/landing` passed.
+  - `npm run secrets:scan -- --tracked` passed.
+  - `npm run build --workspace @eweser/app` did not complete because the workspace currently has unrelated pre-existing TypeScript errors around `better-auth` type resolution and `unknown` auth result handling in `packages/app/src/pages.tsx`.
+- Remaining external launch tasks:
+  - Register the DMCA designated agent with the U.S. Copyright Office and keep the public contact in sync.
+  - Ensure `abuse@eweser.com`, `privacy@eweser.com`, `copyright@eweser.com`, and `support@eweser.com` mailboxes or aliases exist and are monitored.
+  - Decide whether account deletion and data export can remain manual for launch or need product endpoints before public signup.

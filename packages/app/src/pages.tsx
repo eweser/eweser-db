@@ -94,6 +94,12 @@ const appShellCards = [
   },
 ];
 
+const lastUpdatedLabel = 'Last updated: May 1, 2026';
+const supportEmail = 'support@eweser.com';
+const abuseEmail = 'abuse@eweser.com';
+const privacyEmail = 'privacy@eweser.com';
+const copyrightEmail = 'copyright@eweser.com';
+
 function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
@@ -1824,21 +1830,136 @@ function TwoFactorChallengePage() {
 
 function TermsPage() {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
-      <Card className="space-y-4 p-6 text-sm leading-6">
-        <h2 className="text-2xl font-semibold">Terms of Service</h2>
-        <p>
-          You must provide accurate account information and are responsible for
-          activity under your account.
-        </p>
-        <p>
-          You retain ownership of your stored data. We only process and host it
-          to provide the service.
-        </p>
-        <p>
-          Service availability is best-effort and may change as the platform
-          evolves.
-        </p>
+    <div className="mx-auto max-w-4xl px-4 py-10">
+      <Card className="space-y-8 p-6 text-sm leading-6 sm:p-8">
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            {lastUpdatedLabel}
+          </p>
+          <h2 className="text-3xl font-semibold">Terms of Service</h2>
+          <p className="text-muted-foreground">
+            These terms govern use of the hosted EweserDB service at eweser.com
+            and app.eweser.com. Self-hosted deployments are governed by the
+            open-source license and by the operator of that deployment.
+          </p>
+        </div>
+
+        <section className="space-y-3">
+          <h3 className="text-lg font-semibold">Account and Service Use</h3>
+          <p>
+            You must provide accurate account information, keep your credentials
+            secure, and remain responsible for activity under your account. You
+            may not use EweserDB to break the law, attack the service, bypass
+            access controls, interfere with other users, or reverse engineer
+            hosted infrastructure except where allowed by law or the open-source
+            license.
+          </p>
+          <p>
+            We may suspend or terminate accounts, revoke sessions or agent
+            tokens, remove hosted content, or limit access when we reasonably
+            believe these terms, law, platform security, or another user's
+            rights are at risk.
+          </p>
+        </section>
+
+        <section className="space-y-3">
+          <h3 className="text-lg font-semibold">Your Data and Permissions</h3>
+          <p>
+            You retain ownership of content you store in EweserDB. You grant us
+            the limited rights needed to host, sync, back up, secure, debug, and
+            operate the service. EweserDB is local-first, but synced rooms are
+            stored server-side in readable form unless a future end-to-end
+            encrypted mode is explicitly enabled.
+          </p>
+          <p>
+            You control app and AI agent access through scoped grants and
+            revocable tokens. You are responsible for tools you connect and for
+            content those tools write into your rooms.
+          </p>
+        </section>
+
+        <section className="space-y-3">
+          <h3 className="text-lg font-semibold">Prohibited Content</h3>
+          <p>
+            You may not store, sync, publish, or distribute content that is
+            illegal, exploitative, abusive, or harmful. This includes child
+            sexual abuse material or child exploitation content, non-consensual
+            intimate imagery, credible threats, targeted harassment, malware,
+            phishing, spam, copyright-infringing material, or content that
+            violates another person's rights.
+          </p>
+          <p>
+            Report abuse to{' '}
+            <a className="underline" href={`mailto:${abuseEmail}`}>
+              {abuseEmail}
+            </a>
+            . We may preserve and disclose information when required to comply
+            with law, protect users, investigate abuse, or report suspected
+            child exploitation to the appropriate authorities.
+          </p>
+        </section>
+
+        <section className="space-y-3">
+          <h3 className="text-lg font-semibold">Copyright and DMCA Notices</h3>
+          <p>
+            If you believe hosted content infringes your copyright, send a
+            notice to{' '}
+            <a className="underline" href={`mailto:${copyrightEmail}`}>
+              {copyrightEmail}
+            </a>
+            . Include your contact information, identification of the
+            copyrighted work, the allegedly infringing material and its
+            location, a statement that you have a good-faith belief the use is
+            not authorized, a statement that the notice is accurate under
+            penalty of perjury, and a physical or electronic signature.
+          </p>
+          <p>
+            Users may send counter-notices to the same address. Repeat
+            infringers may have accounts terminated. Safe-harbor eligibility
+            also requires keeping the service's designated agent information
+            current with the U.S. Copyright Office.
+          </p>
+        </section>
+
+        <section className="space-y-3">
+          <h3 className="text-lg font-semibold">
+            Service Changes and Availability
+          </h3>
+          <p>
+            The hosted service is provided on a best-effort basis while the
+            platform evolves. We may change, suspend, or discontinue parts of
+            the service. We will try to give reasonable notice for changes that
+            materially affect user data, export, or paid features.
+          </p>
+        </section>
+
+        <section className="space-y-3">
+          <h3 className="text-lg font-semibold">Disclaimers and Liability</h3>
+          <p>
+            The service is provided "as is" without warranties to the maximum
+            extent allowed by law. We are not liable for indirect, incidental,
+            consequential, special, exemplary, or punitive damages. Our total
+            liability for claims relating to the hosted service is limited to
+            the greater of the amount you paid for the service in the prior
+            twelve months or 100 USD, except where law does not allow that
+            limitation.
+          </p>
+        </section>
+
+        <section className="space-y-3">
+          <h3 className="text-lg font-semibold">Contact</h3>
+          <p>
+            For account or service questions, contact{' '}
+            <a className="underline" href={`mailto:${supportEmail}`}>
+              {supportEmail}
+            </a>
+            . For privacy requests, contact{' '}
+            <a className="underline" href={`mailto:${privacyEmail}`}>
+              {privacyEmail}
+            </a>
+            .
+          </p>
+        </section>
       </Card>
     </div>
   );
@@ -1846,21 +1967,138 @@ function TermsPage() {
 
 function PrivacyPage() {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
-      <Card className="space-y-4 p-6 text-sm leading-6">
-        <h2 className="text-2xl font-semibold">Privacy</h2>
-        <p>
-          We collect the account information and app metadata needed to
-          authenticate users and manage access grants.
-        </p>
-        <p>
-          Your data is used to operate the service, secure access, and improve
-          reliability. We do not sell it.
-        </p>
-        <p>
-          You can access, update, or delete your account data according to the
-          capabilities of the deployed auth server.
-        </p>
+    <div className="mx-auto max-w-4xl px-4 py-10">
+      <Card className="space-y-8 p-6 text-sm leading-6 sm:p-8">
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            {lastUpdatedLabel}
+          </p>
+          <h2 className="text-3xl font-semibold">Privacy Policy</h2>
+          <p className="text-muted-foreground">
+            This policy explains what the hosted EweserDB service collects, why
+            it is collected, and how to request access, export, correction, or
+            deletion. It does not cover independently operated self-hosted
+            deployments.
+          </p>
+        </div>
+
+        <section className="space-y-3">
+          <h3 className="text-lg font-semibold">Information We Collect</h3>
+          <p>
+            We collect account information such as email address, name, password
+            authentication metadata, session identifiers, email verification
+            state, two-factor settings, and security event metadata. We also
+            collect operational data such as IP address, user agent, request
+            timestamps, rate-limit events, error logs, and abuse-prevention
+            signals.
+          </p>
+          <p>
+            When you sync rooms through eweser.com, hosted services store Yjs
+            room state, room metadata, access grants, agent tokens, OAuth client
+            records, public indexing metadata, and audit-style access logs
+            needed to provide sync, search, app access, and MCP/AI agent access.
+          </p>
+        </section>
+
+        <section className="space-y-3">
+          <h3 className="text-lg font-semibold">How We Use Information</h3>
+          <p>
+            We use information to operate accounts, authenticate users, sync and
+            restore data, issue and revoke access grants, route MCP requests,
+            secure the service, investigate abuse, improve reliability, respond
+            to support requests, and comply with legal obligations. We do not
+            sell user data or use synced room content to train AI models.
+          </p>
+        </section>
+
+        <section className="space-y-3">
+          <h3 className="text-lg font-semibold">Service Providers</h3>
+          <p>
+            The hosted service may rely on infrastructure, database, email,
+            logging, deployment, and security providers. These providers process
+            data only as needed to deliver their services to EweserDB. Specific
+            providers may change as the hosted service matures.
+          </p>
+        </section>
+
+        <section className="space-y-3">
+          <h3 className="text-lg font-semibold">Retention</h3>
+          <p>
+            Account records are retained while your account is active. Synced
+            room content is retained while you keep it in the hosted service or
+            until deletion is processed. Security logs, rate-limit events, and
+            operational logs are retained for a limited period needed for
+            security, debugging, abuse response, and legal compliance. Backups
+            may retain deleted data for a short operational window before
+            rotation.
+          </p>
+        </section>
+
+        <section className="space-y-3">
+          <h3 className="text-lg font-semibold">Your Choices and Rights</h3>
+          <p>
+            You can review and change account settings in the app. You can
+            revoke connected apps and agent tokens where those controls are
+            available. You can request access, export, correction, deletion, or
+            restriction of personal data by contacting{' '}
+            <a className="underline" href={`mailto:${privacyEmail}`}>
+              {privacyEmail}
+            </a>
+            .
+          </p>
+          <p>
+            If you are in a jurisdiction with specific privacy rights, including
+            the European Economic Area, United Kingdom, California, or other
+            U.S. states with privacy laws, you may have additional rights to
+            know, access, delete, correct, port, or object to certain
+            processing. We will respond to verifiable requests as required by
+            applicable law.
+          </p>
+        </section>
+
+        <section className="space-y-3">
+          <h3 className="text-lg font-semibold">Security and Limits</h3>
+          <p>
+            EweserDB uses local-first architecture, scoped access grants,
+            revocable tokens, rate limits, security logging, and transport
+            encryption. Hosted synced room content is not currently end-to-end
+            encrypted against the server. For an adversarial threat model,
+            self-hosting gives you control over the infrastructure that stores
+            synced room state.
+          </p>
+        </section>
+
+        <section className="space-y-3">
+          <h3 className="text-lg font-semibold">Children</h3>
+          <p>
+            The hosted service is not intended for children. Do not use the
+            service to store or distribute content involving child exploitation.
+            Reports of suspected exploitation should be sent to{' '}
+            <a className="underline" href={`mailto:${abuseEmail}`}>
+              {abuseEmail}
+            </a>
+            .
+          </p>
+        </section>
+
+        <section className="space-y-3">
+          <h3 className="text-lg font-semibold">Contact</h3>
+          <p>
+            Privacy requests:{' '}
+            <a className="underline" href={`mailto:${privacyEmail}`}>
+              {privacyEmail}
+            </a>
+            . Abuse reports:{' '}
+            <a className="underline" href={`mailto:${abuseEmail}`}>
+              {abuseEmail}
+            </a>
+            . Copyright notices:{' '}
+            <a className="underline" href={`mailto:${copyrightEmail}`}>
+              {copyrightEmail}
+            </a>
+            .
+          </p>
+        </section>
       </Card>
     </div>
   );

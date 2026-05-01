@@ -13,8 +13,7 @@ const mcp = spawn(
     env: {
       ...process.env,
       EWESER_AGENT_TOKEN:
-        process.env.EWESER_AGENT_TOKEN ??
-        'a7f886f07a6f0a36f98e37cf47e7bd3a35ca2c88fb9f6979db0c9559bb5ebd00',
+        process.env.EWESER_AGENT_TOKEN ?? 'test-agent-token-not-real',
       EWESER_AUTH_URL: 'http://localhost:38101',
       EWESER_AGGREGATOR_URL: 'http://localhost:38190',
     },

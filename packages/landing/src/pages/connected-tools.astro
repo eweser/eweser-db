@@ -9,6 +9,9 @@ const appUrl = (
 const signInUrl = `${appUrl}/sign-in`;
 const aiSignInUrl = `${appUrl}/sign-in?redirect=%2Fai`;
 const noteUrl = 'https://note.eweser.com/';
+const termsUrl = `${appUrl}/statement/terms-of-service`;
+const privacyUrl = `${appUrl}/statement/privacy`;
+const abuseEmail = 'abuse@eweser.com';
 
 const availableTools = [
   {
@@ -158,4 +161,20 @@ const comingLater = ['More focused apps', 'Richer app permission dashboard', 'Fi
       </div>
     </section>
   </main>
+
+  <footer class="border-t border-slate-200 bg-white px-6 py-10 text-slate-600">
+    <div class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 md:flex-row">
+      <div class="flex items-center gap-2">
+        <img src="/eweser-logo.svg" alt="" aria-hidden="true" class="h-6 w-6" />
+        <span class="font-semibold tracking-tight text-slate-950">EweserDB</span>
+      </div>
+      <div class="flex flex-wrap items-center justify-center gap-6 text-sm font-medium">
+        <a href={signInUrl} class="transition-colors hover:text-slate-950">Sign in</a>
+        <a href={noteUrl} class="transition-colors hover:text-slate-950">Ewe Note</a>
+        <a href={termsUrl} class="transition-colors hover:text-slate-950">Terms</a>
+        <a href={privacyUrl} class="transition-colors hover:text-slate-950">Privacy</a>
+        <a href={`mailto:${abuseEmail}`} class="transition-colors hover:text-slate-950">Abuse</a>
+      </div>
+    </div>
+  </footer>
 </Layout>

@@ -13,6 +13,7 @@ const CONFIG_FILES = {
   'ewe-note': 'packages/ewe-note/railway.toml',
   aggregator: 'packages/aggregator/railway.toml',
   'auth-api': 'packages/auth-server-hono/railway.toml',
+  'auth-pages': 'packages/app/railway.toml',
   'sync-server': 'packages/sync-server/railway.toml',
   app: 'packages/app/railway.toml',
 };
@@ -34,9 +35,9 @@ async function gql(query, variables = {}) {
 function usage() {
   console.log(`Usage:
   node scripts/railway.mjs projects
-  node scripts/railway.mjs info <project-id>
-  node scripts/railway.mjs status <project-id> [environment-id-or-name]
-  node scripts/railway.mjs redeploy <project-id> [environment-id-or-name]
+  node scripts/railway.mjs info <project-id-or-name>
+  node scripts/railway.mjs status <project-id-or-name> [environment-id-or-name]
+  node scripts/railway.mjs redeploy <project-id-or-name> [environment-id-or-name]
   node scripts/railway.mjs logs <deployment-id> [limit]
 
 Environment fallback:
@@ -61,6 +62,35 @@ async function getProject(projectId) {
     { id: projectId }
   );
   return data.project;
+}
+
+async function getProjectByIdOrName(projectInput) {
+  if (
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      projectInput
+    )
+  ) {
+    return getProject(projectInput);
+  }
+
+  const data = await gql(
+    `query {
+      projects(first: 100) {
+        edges { node { id name } }
+      }
+    }`
+  );
+  const projects = toEdges(data.projects);
+  const found = projects.find((project) => project.name === projectInput);
+  if (!found) {
+    throw new Error(
+      `Project '${projectInput}' not found. Available: ${projects
+        .map((project) => project.name)
+        .join(', ')}`
+    );
+  }
+
+  return getProject(found.id);
 }
 
 function resolveEnvironment(project, envInput) {
@@ -117,7 +147,7 @@ if (cmd === 'projects') {
     usage();
     process.exit(1);
   }
-  const project = await getProject(projectId);
+  const project = await getProjectByIdOrName(projectId);
   const env = resolveEnvironment(project, envInput);
   const services = targetServices(project);
 
@@ -138,7 +168,7 @@ if (cmd === 'projects') {
     usage();
     process.exit(1);
   }
-  const project = await getProject(projectId);
+  const project = await getProjectByIdOrName(projectId);
   console.log(`Project: ${project.name} (${project.id})`);
   console.log('Environments:');
   for (const env of toEdges(project.environments)) {
@@ -160,7 +190,7 @@ if (cmd === 'projects') {
     usage();
     process.exit(1);
   }
-  const project = await getProject(projectId);
+  const project = await getProjectByIdOrName(projectId);
   const env = resolveEnvironment(project, envInput);
   const services = targetServices(project);
 
