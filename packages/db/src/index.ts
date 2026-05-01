@@ -1,3 +1,9 @@
+/**
+ * Purpose: Public SDK entry point for local-first database clients.
+ * Exports: Database, SDK types, and utility re-exports.
+ * Touches: Room loading, auth-server calls, local persistence, and sync setup.
+ * Read before editing: packages/db/INDEX.md and packages/db/AGENTS.md.
+ */
 import type {
   CollectionKey,
   Collections,

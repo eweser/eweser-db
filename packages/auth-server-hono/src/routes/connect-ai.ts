@@ -1,3 +1,9 @@
+/**
+ * Purpose: Signed-in Connect AI API for token and OAuth client setup.
+ * Exports: connectAiRouter.
+ * Touches: Agent configs, OAuth token revocation, room scopes, and rate limits.
+ * Read before editing: packages/auth-server-hono/src/INDEX.md and AGENTS.md.
+ */
 import { Hono, type Context } from 'hono';
 import { COLLECTION_KEYS } from '@eweser/shared';
 import { z } from 'zod';

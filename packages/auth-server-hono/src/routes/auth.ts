@@ -1,3 +1,9 @@
+/**
+ * Purpose: better-auth route mounting and auth endpoint rate limiting.
+ * Exports: authRouter.
+ * Touches: Email auth, OAuth callbacks, sessions, password reset, and rate limits.
+ * Read before editing: packages/auth-server-hono/src/INDEX.md and AGENTS.md.
+ */
 import { Hono } from 'hono';
 import { auth } from '../auth.js';
 import {

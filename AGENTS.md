@@ -131,6 +131,12 @@ npm test --workspace @eweser/db
 `AGENTS.md` is the top-level repository policy. The canonical human-readable
 Codex workflow is `docs/ai/workflows/codex-planner-coder.md`.
 
+## Code Navigation Index
+
+Before broad exploration, read the nearest `INDEX.md`.
+If you are creating, updating, or reviewing index files or source headers,
+also read `docs/ai/code-indexing.md` and apply its contract in the same change.
+
 For substantial or ambiguous work, use the Planner -> Coder workflow:
 
 1. Planner: research the request, ask necessary questions, and save an
@@ -221,6 +227,11 @@ Use `buildRef()` from `@eweser/shared` to construct refs.
 - Run `npm run check` or `npm run build` from the root when changes affect shared code, package boundaries, or build config.
 - Run `npm test` before committing when practical.
 - Run Cypress tests for auth flows, sync flows, or cross-app user workflows.
+- Before local tests or local environment checks, run runtime orientation first:
+  - `~/.codex/skills/eweser-runtime-orientation/scripts/eweser-runtime-orientation.sh status`
+  - If any expected endpoint is unknown or appears incorrect for the worktree, run:
+    `~/.codex/skills/eweser-runtime-orientation/scripts/eweser-runtime-orientation.sh refresh`
+  - If notes and live discovery conflict, trust live discovery and refresh notes before running tests.
 - If tests cannot be run, state exactly why and what risk remains.
 
 ## Documentation Expectations

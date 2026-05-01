@@ -33,6 +33,7 @@ types
 !**/example.env
 .ai-secrets/
 .agent-secrets/
+.ai/
 
 # cypress
 e2e/cypress/videos

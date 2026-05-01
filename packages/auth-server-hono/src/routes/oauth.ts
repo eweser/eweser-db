@@ -1,10 +1,8 @@
 /**
- * OAuth 2.0 Authorization Server routes.
- *
- * GET  /.well-known/oauth-authorization-server  — RFC 8414 metadata
- * GET  /oauth/authorize                          — Authorization endpoint
- * POST /oauth/token                             — Token endpoint
- * POST /oauth/revoke                            — Revocation endpoint
+ * Purpose: OAuth 2.0 authorization-server metadata, authorize, token, and revoke routes.
+ * Exports: oauthRouter and oauthServerMetadata.
+ * Touches: OAuth clients, auth codes, access tokens, PKCE, scopes, and sessions.
+ * Read before editing: packages/auth-server-hono/src/INDEX.md and AGENTS.md.
  */
 import { Hono } from 'hono';
 import { z } from 'zod';

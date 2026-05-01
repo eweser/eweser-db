@@ -1,3 +1,9 @@
+/**
+ * Purpose: Hocuspocus WebSocket sync relay entry point.
+ * Exports: Side-effect server startup.
+ * Touches: Yjs sync, SQLite persistence, JWT auth, and aggregator webhooks.
+ * Read before editing: packages/sync-server/INDEX.md and ARCHITECTURE.md.
+ */
 import { Server } from '@hocuspocus/server';
 import type { Extension } from '@hocuspocus/server';
 import { SQLite } from '@hocuspocus/extension-sqlite';

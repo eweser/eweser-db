@@ -49,6 +49,7 @@ plan. Standalone QA is reserved for independent re-QA or audit work.
 
 | Plan                                                                                         | Status         | Notes                                                                                                                                                              |
 | -------------------------------------------------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [2026-05-01-codebase-navigation-index.md](./2026-05-01-codebase-navigation-index.md)         | Implemented    | Added maintained folder indexes, selected source headers, validation, and CI for trunk-to-leaf codebase navigation.                                                |
 | [2026-04-29-large-coding-run-orchestrator.md](./2026-04-29-large-coding-run-orchestrator.md) | Implemented v1 | Supervised plan-run orchestrator scripts, metadata contract, dry-run validation, monitor, worker isolation, integration, stop/resume, and QA/review handoff exist. |
 
 ### Design / Copy

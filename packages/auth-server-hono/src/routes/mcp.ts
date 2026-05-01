@@ -1,12 +1,8 @@
 /**
- * HTTP MCP endpoint — POST /mcp
- *
- * Accepts both OAuth 2.0 Bearer tokens (from ChatGPT / Claude web) and
- * legacy agent Bearer tokens, then serves EweserDB data via the
- * Model Context Protocol Streamable HTTP transport.
- *
- * Session management: a DataLayer instance (Hocuspocus WS connections) is
- * cached per `mcp-session-id` header so reconnections are reused across calls.
+ * Purpose: Remote HTTP MCP endpoint for OAuth and legacy agent bearer clients.
+ * Exports: mcpRouter.
+ * Touches: MCP tools, OAuth tokens, agent tokens, DataLayer sessions, and logs.
+ * Read before editing: packages/auth-server-hono/src/INDEX.md and AGENTS.md.
  */
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';

@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * EweserDB MCP Server — stdio transport entry point.
- *
- * Claude Desktop / Copilot / OpenClaw PA spawn this process and communicate
- * via stdin/stdout JSON-RPC (Model Context Protocol).
+ * Purpose: Local stdio MCP server entry point for agent room access.
+ * Exports: Side-effect CLI startup.
+ * Touches: Agent-token auth, room discovery, DataLayer sync, MCP tools, and logs.
+ * Read before editing: packages/mcp-server/INDEX.md and README.md.
  */
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';

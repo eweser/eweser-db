@@ -1,3 +1,9 @@
+/**
+ * Purpose: Room model for client-side document storage and sync providers.
+ * Exports: Room class and room option types.
+ * Touches: Yjs docs, IndexedDB, WebRTC, Hocuspocus sync, and access grants.
+ * Read before editing: packages/db/src/INDEX.md and packages/db/AGENTS.md.
+ */
 import type { CollectionKey, EweDocument, ServerRoom } from '@eweser/shared';
 import type { HocuspocusProvider } from '@hocuspocus/provider';
 import type { IndexeddbPersistence } from 'y-indexeddb';

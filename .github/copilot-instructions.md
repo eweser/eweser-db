@@ -75,6 +75,11 @@ npm run changeset
 
 ## Agent Workflow
 
+Before broad exploration, read the nearest `INDEX.md`.
+If you are creating, updating, or reviewing index files or source headers,
+also read [`docs/ai/code-indexing.md`](../docs/ai/code-indexing.md) and apply
+its contract in the same change.
+
 Use the three-phase workflow for substantial or ambiguous work:
 
 1. `01-planner` / `planner` - research and write a scoped plan

@@ -4,9 +4,6 @@ on:
   pull_request:
     branches:
       - main
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
   workflow_dispatch:
 
 concurrency:
@@ -39,6 +36,8 @@ jobs:
               - 'scripts/**'
               - 'e2e/**'
               - 'cypress/**'
+              - '**/INDEX.md'
+              - 'docs/ai/code-indexing.md'
               - 'package.json'
               - 'package-lock.json'
               - 'eslint.config.js'
@@ -86,6 +85,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Run code index check
+        run: npm run code-index:check
 
       - name: Run lint
         run: npm run lint

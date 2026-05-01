@@ -1,3 +1,9 @@
+/**
+ * Purpose: Shared SDK type bridge from collection keys to document and room types.
+ * Exports: Provider, collection, document, YDoc, registry, and room types.
+ * Touches: @eweser/shared contracts consumed by the public SDK.
+ * Read before editing: packages/db/src/INDEX.md and packages/shared/src/INDEX.md.
+ */
 import type {
   DocumentBase,
   Note,

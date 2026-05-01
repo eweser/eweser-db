@@ -1,3 +1,9 @@
+/**
+ * Purpose: Aggregator Hono service entry point for public indexing and search.
+ * Exports: Hono app and side-effect server startup outside tests.
+ * Touches: Webhooks, indexed documents, search routes, CORS, and telemetry.
+ * Read before editing: packages/aggregator/INDEX.md and ARCHITECTURE.md.
+ */
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';

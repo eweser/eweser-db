@@ -1,3 +1,9 @@
+/**
+ * Purpose: Public shared package entry point for cross-package contracts.
+ * Exports: Collection, utility, API, and ServerRoom contracts.
+ * Touches: SDK, auth server, sync server, aggregator, apps, and examples.
+ * Read before editing: packages/shared/INDEX.md and packages/db/AGENTS.md.
+ */
 import type { CollectionKey, PublicAccessType } from './collections/index.js';
 
 export * from './collections/index.js';

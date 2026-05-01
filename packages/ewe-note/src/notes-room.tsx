@@ -1,3 +1,9 @@
+/**
+ * Purpose: React hook for note room state, CRUD, awareness, and folder maps.
+ * Exports: NotesRoomType and useNotesRoom.
+ * Touches: @eweser/db room documents, Yjs folder maps, and selected note state.
+ * Read before editing: packages/ewe-note/src/INDEX.md and AGENTS.md.
+ */
 import type { Room, Note, Documents } from '@eweser/db';
 import { useState, useEffect, useMemo } from 'react';
 import { useDb } from './db';

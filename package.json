@@ -20,6 +20,8 @@
     "lint:fix": "eslint . --fix",
     "format:check": "npx prettier --check .",
     "format": "npx prettier --write .",
+    "code-index:check": "node scripts/code-index/check-code-index.mjs",
+    "code-map": "node scripts/code-map/generate-code-map.mjs --out .ai/code-map.json --pretty",
     "build:logger": "npm run build --workspace @eweser/logger",
     "build:shared": "npm run build --workspace @eweser/shared",
     "build:db": "npm run build --workspace @eweser/db",

@@ -1,6 +1,8 @@
 /**
- * MCP Tool definitions for EweserDB.
- * Each tool wraps DataLayer methods with Zod validation.
+ * Purpose: MCP tool registration and validation for EweserDB document access.
+ * Exports: ToolServer, registerTools, and tool helper types.
+ * Touches: DataLayer reads/writes, Zod schemas, access logging, and redaction.
+ * Read before editing: packages/mcp-server/src/INDEX.md and README.md.
  */
 import { z } from 'zod';
 import type { DataLayer } from './data-layer.js';

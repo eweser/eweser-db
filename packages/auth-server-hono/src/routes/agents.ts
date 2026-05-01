@@ -1,3 +1,9 @@
+/**
+ * Purpose: Agent token and scoped-room management API.
+ * Exports: agentsRouter.
+ * Touches: Agent configs, access logs, rate limits, sync tokens, and security events.
+ * Read before editing: packages/auth-server-hono/src/INDEX.md and AGENTS.md.
+ */
 import { Hono } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import { z } from 'zod';

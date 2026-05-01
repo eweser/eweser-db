@@ -1,3 +1,9 @@
+/**
+ * Purpose: Room access grant, registry sync, invite, and sync-token routes.
+ * Exports: accessGrantRouter.
+ * Touches: Room grants, sync tokens, JWT auth, verified email, and shared APIs.
+ * Read before editing: packages/auth-server-hono/src/INDEX.md and AGENTS.md.
+ */
 import { Hono } from 'hono';
 import { requireJwtAuth } from '../middleware/jwt-auth.js';
 import { requireAuth } from '../middleware/auth.js';

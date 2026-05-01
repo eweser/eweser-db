@@ -1,3 +1,9 @@
+/**
+ * Purpose: Central collection registry and document union definitions.
+ * Exports: Collection keys, access types, document unions, and schema exports.
+ * Touches: Shared schemas used by SDK, apps, auth grants, and agents.
+ * Read before editing: packages/shared/src/INDEX.md and packages/db/AGENTS.md.
+ */
 import type { AgentConfig, AgentAccessLogEntry } from './agent-config.js';
 import type { Note } from './note.js';
 import type { Flashcard } from './flashcard.js';

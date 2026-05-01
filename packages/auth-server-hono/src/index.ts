@@ -1,3 +1,9 @@
+/**
+ * Purpose: Auth API runtime entry point and Hono route composition.
+ * Exports: Hono app and side-effect server startup outside tests.
+ * Touches: Auth, account, access-grant, OAuth, Connect AI, and MCP routes.
+ * Read before editing: packages/auth-server-hono/INDEX.md and AGENTS.md.
+ */
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
