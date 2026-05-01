@@ -63,10 +63,11 @@ plan. Standalone QA is reserved for independent re-QA or audit work.
 
 ### Ewe Note UX
 
-| Plan                                                                           | Status        | Notes                                                                             |
-| ------------------------------------------------------------------------------ | ------------- | --------------------------------------------------------------------------------- |
-| [2026-04-06-tiptap-migration.md](./2026-04-06-tiptap-migration.md)             | Later / maybe | BlockNote is still present; treat TipTap as an optional deeper editor investment. |
-| [2026-04-11-ewe-note-feature-tests.md](./2026-04-11-ewe-note-feature-tests.md) | Later QA      | Useful after the UX pass; current Cypress coverage is partial.                    |
+| Plan                                                                                           | Status   | Notes                                                                                                  |
+| ---------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------ |
+| [2026-04-06-tiptap-migration.md](./2026-04-06-tiptap-migration.md)                             | Planned  | Lower-level ProseMirror migration to replace BlockNote and fix editor/title/task serialization issues. |
+| [2026-05-01-ewe-note-ux-feature-completion.md](./2026-05-01-ewe-note-ux-feature-completion.md) | Proposed | App-shell, mobile, PWA/offline, sync-status, folders, settings, tasks, and tester handoff pass.        |
+| [2026-04-11-ewe-note-feature-tests.md](./2026-04-11-ewe-note-feature-tests.md)                 | Later QA | Useful after the UX pass; current Cypress coverage is partial.                                         |
 
 ### Deferred Backlog
 

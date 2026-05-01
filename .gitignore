@@ -65,6 +65,8 @@ storage_railway_*.json
 docs/ai/plans/railway-deployment-handoff.md
 
 .playwright-mcp/
+.playwright-cli/
+output/playwright/
 .codex/*
 !.codex/skills/
 !.codex/skills/**

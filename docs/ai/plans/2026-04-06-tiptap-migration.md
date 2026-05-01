@@ -1,191 +1,399 @@
-# Plan: TipTap Migration + Obsidian Feature Build-Out
+# Plan: EweNote Editor Migration With TipTap And ProseMirror Escape Hatches
 
 ## Goal
 
-Replace BlockNote with TipTap 2.x directly in ewe-note, then build the Obsidian-compatible feature set (wiki-links, callouts, highlight, frontmatter, slash menu, backlinks index) as proper TipTap extensions.
+Replace BlockNote in EweNote with a TipTap 2.x editor layer that preserves local-first note persistence, supports EweserDB/Yjs collaboration, and fixes the editor/title/task/OFM failures exposed by UX testing while using direct ProseMirror primitives only where TipTap's abstraction is not enough.
 
 ## Scope
 
-- **In:** `packages/ewe-note` editor layer only — TipTap extension builds, Markdown serialization, Yjs wiring migration
-- **In:** Note index for wiki-link resolution and backlinks (client-side, in-memory with IndexedDB persistence)
-- **Out:** Graph view (separate plan after backlinks index exists)
-- **Out:** ewe-note UX polish (sync status badge, delete/rename, search) — those are downstream of editor stability
-- **Out:** Packages outside `ewe-note` (shared schema changes deferred unless required)
-- **No changeset required** — ewe-note is an app, not a published package
+- In:
+  - `packages/ewe-note` editor layer.
+  - TipTap 2.x React editor, extensions, commands, input/paste rules, keyboard behavior, and node/mark views.
+  - Direct ProseMirror APIs for schema constraints, plugin state, transaction metadata, `Y.XmlFragment` binding details, Markdown/OFM parser and serializer fidelity, and heading/block-position navigation.
+  - Yjs collaboration through TipTap's collaboration extensions backed by `y-prosemirror` and the existing room/provider lifecycle.
+  - Migration or reseeding bridge from existing note markdown/BlockNote fragments into the new TipTap/ProseMirror document model.
+  - Editor-owned acceptance checks for title/body consistency, markdown task persistence, outline anchors, wiki links, backlinks, and export fidelity.
+- Out:
+  - Broad EweNote app-shell UX polish such as mobile sidebar, settings redesign, folder dialog, command palette, and PWA manifest fixes. Those belong in `docs/ai/plans/2026-05-01-ewe-note-ux-feature-completion.md`.
+  - Graph view.
+  - Packages outside `packages/ewe-note` unless implementation proves a shared type or SDK boundary change is required.
+  - Published package API changes.
 
-## Reference Material
+## Assumptions / Open Questions
 
-[docs/ai/research/2026-04-06-editor-reference-sweep.md](../research/2026-04-06-editor-reference-sweep.md)
+- Assumption: TipTap 2.x is the default abstraction because no verified EweNote requirement is blocked by TipTap, and it removes substantial React editor lifecycle, command, node-view, input-rule, and collaboration wiring work compared with direct ProseMirror.
+- Assumption: EweNote still needs ProseMirror fluency. The migration must treat TipTap as a ProseMirror framework, not as a complete product editor.
+- Assumption: EweNote is pre-live enough that a clean editor document model is preferable to preserving every prototype artifact, but the migration must avoid silent data loss for notes stored in EweserDB markdown strings.
+- Assumption: Current user-facing notes are primarily persisted as markdown text in EweserDB documents; BlockNote/Yjs fragments may exist and must be inspected before implementation chooses a migration path.
+- Open question: Should the new editor keep a separate explicit title field in frontmatter, derive title from the first heading, or enforce one canonical title model in the editor UI? UX testing shows the current split is confusing, so this must be decided in Run 1 before coding beyond the baseline.
 
----
+## Prior Research Re-Read
+
+`docs/ai/research/2026-04-06-editor-reference-sweep.md` recommended "TipTap 2.x directly" after comparing BlockNote, Notesnook/TipTap, Noteriv/CodeMirror, AFFiNE/BlockSuite, and SiYuan/custom contenteditable. Its core reasoning still holds:
+
+- BlockNote is the wrong layer for OFM fidelity because EweNote is already compensating with lossy pre/post string transforms.
+- TipTap gives direct access to ProseMirror's schema, extensions, node views, input rules, commands, and Yjs collaboration stack without making EweNote own a full editor framework.
+- Direct ProseMirror gives maximum control but also forces EweNote to build its own React integration, extension conventions, menus, lifecycle boundaries, commands, selection UX, and collaboration wiring.
+- The April research already called out places where TipTap still requires ProseMirror-level work: custom wiki-link/callout/frontmatter nodes or marks, Markdown tokenizer/serializer code, Yjs fragment migration, duplicate ProseMirror dependency checks, and disabling TipTap history when Yjs collaboration owns undo.
+
+The current plan had drifted too far toward direct ProseMirror. That direct approach is not supported by a concrete blocker in TipTap.
+
+## Verified Current Failures
+
+- `packages/ewe-note/src/components/editor.tsx` uses BlockNote, saves via `blocksToMarkdownLossy()` for normal notes, and uses `blocksToOfm()` only for vault notes. This creates separate editor-state and markdown-state paths.
+- `packages/ewe-note/src/components/editor.tsx` binds collaboration to `doc.getXmlFragment(selectedNoteId)`, but the app also persists note text separately through `updateNoteText()`. Migration must define which source is canonical during seed, collaboration, save, and reload.
+- `packages/ewe-note/src/app/contexts/NotesContext.tsx` derives display title from `frontmatter.title`, first markdown H1, then plaintext. `packages/ewe-note/src/app/pages/EnhancedEditor.tsx` edits the header title as frontmatter. This explains title/body split and stale preview behavior.
+- `packages/ewe-note/src/app/contexts/NotesContext.tsx` extracts tasks with a markdown regex. If the editor serializes task items differently or lossy, the Tasks view becomes stale or wrong.
+- `packages/ewe-note/src/extensions/ofm-serializer.ts` converts wiki links to `wiki://` markdown links, converts image embeds to `vault://`, strips comments, and converts highlights to bold. Highlight round-trip is explicitly lossy.
+- `packages/ewe-note/src/extensions/wiki-link.ts`, `callout.ts`, and `highlight.ts` are helper/parsing modules, not real editor schema extensions. BlockNote v0.23 is the limiting abstraction here.
+- `packages/ewe-note/src/app/components/RightPanel.tsx` extracts headings from persisted markdown and renders outline buttons without navigation behavior. The editor migration must expose stable heading positions or anchors.
+- `packages/ewe-note/src/app/contexts/NotesContext.tsx` computes backlinks from markdown wiki-link text and aliases. The editor must serialize canonical `[[Name]]` / `[[Name|Alias]]` syntax so this index remains reliable.
+- `packages/ewe-note/src/cli/import-vault.ts` and `export-vault.ts` preserve frontmatter separately from note text. The editor migration must keep that contract or explicitly change it.
+
+## External Facts Checked
+
+- TipTap collaboration supports passing an initialized Yjs document, a field name, or a raw Yjs fragment, and its collaboration extension owns history; StarterKit undo/history must be disabled for collaborative documents. Source: https://tiptap.dev/docs/editor/extensions/functionality/collaboration
+- Yjs describes TipTap as a ProseMirror-based editor that integrates Yjs for collaboration. Source: https://docs.yjs.dev/ecosystem/editor-bindings/tiptap2
+- `y-prosemirror` maps a `Y.XmlFragment` to ProseMirror state; its GitHub README now notes the main branch is for unstable `@y/prosemirror` / Yjs v14 work and most users should keep using stable `y-prosemirror` with Yjs v13. Source: https://github.com/yjs/y-prosemirror
+- `prosemirror-markdown` provides CommonMark schema/parser/serializer primitives and is MIT licensed, but the GitHub repository was archived on 2026-04-01 and moved to `code.haverbeke.berlin`. Source: https://github.com/ProseMirror/prosemirror-markdown
+- ProseMirror itself exposes schema, node, mark, DOM parse/serialize, and JSON document primitives; direct use is powerful but lower-level than EweNote needs for the whole editor. Source: https://prosemirror.net/docs/guide/
+- Current npm metadata on 2026-05-01: `@tiptap/core` latest is `3.22.5`, with `v2-latest` at `2.27.2`; TipTap packages are MIT. `@tiptap/markdown` has only 3.x releases and no `@tiptap/markdown@2`, so a TipTap 2.x migration must not depend on the current TipTap Markdown extension.
+- Current npm metadata on 2026-05-01: `@tiptap/pm@2.27.2` depends on `prosemirror-markdown`, `prosemirror-view`, `prosemirror-state`, `prosemirror-model`, and related ProseMirror packages. Pinning/checking the ProseMirror graph remains necessary.
+- Current npm metadata on 2026-05-01: `y-prosemirror@1.3.7` is MIT and peers on Yjs v13, matching the repo's current `yjs` major.
+
+## Decision Table
+
+| Feature                             | TipTap 2.x fit                                                                            | Direct ProseMirror fit                                      | Recommendation                                      | Reason                                                                                    |
+| ----------------------------------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Title/body split and stale previews | Clean with app-level canonical title contract plus TipTap update hooks                    | Clean but requires custom editor lifecycle and commands     | TipTap plus direct transaction discipline           | The bug is data-contract drift, not a TipTap limitation.                                  |
+| Markdown task serialization         | Native task list/item extensions help editing; custom serializer still required           | Fully custom schema/serializer                              | TipTap plus custom Markdown serializer              | TipTap handles UI/schema enough; OFM fidelity belongs in serializer tests.                |
+| OFM round-trip                      | Custom nodes/marks/tokenizers required                                                    | Custom nodes/marks/tokenizers required                      | TipTap plus direct ProseMirror/Markdown parser work | Direct ProseMirror does not remove the hard part; it only removes TipTap conveniences.    |
+| Wiki links/backlinks                | Custom inline node/mark and Suggestion UI fit TipTap well                                 | Custom plugin/node/decoration stack                         | TipTap                                              | Backlinks are mostly app indexing over canonical markdown; TipTap does not block them.    |
+| Callouts/highlights/frontmatter     | Custom extensions required; highlight has existing extension baseline                     | Custom schema/node views required                           | TipTap plus direct schema/serializer control        | TipTap extensions are the right packaging; ProseMirror primitives still define semantics. |
+| Yjs/Hocuspocus collaboration        | Official TipTap collaboration extension backed by `y-prosemirror`                         | Direct `ySyncPlugin`, `yCursorPlugin`, `yUndoPlugin` wiring | TipTap, inspect `y-prosemirror` behavior directly   | Existing provider/fragment lifecycle maps cleanly to TipTap collaboration.                |
+| Mobile/PWA editor behavior          | TipTap React editor plus responsive toolbar/menu work                                     | Direct ProseMirror gives no inherent mobile advantage       | TipTap                                              | Mobile issues are shell/toolbar/contenteditable UX, not direct ProseMirror blockers.      |
+| Outline heading navigation          | TipTap commands can set selection/scroll; may need ProseMirror positions and plugin state | Full direct access                                          | TipTap plus direct ProseMirror positions            | This is a good escape-hatch case, not a reason to own the whole editor stack.             |
+| Dependency/version risk             | Medium: TipTap 3 is latest, but v2-latest exists; Markdown 3-only gotcha                  | Medium: must manually coordinate ProseMirror package graph  | TipTap 2.x pinned to `v2-latest` family             | TipTap centralizes the graph through `@tiptap/pm`; still run duplicate checks.            |
+| Long-term maintainability           | Better for React UI and extensions if kept on 2.x intentionally                           | Higher custom maintenance burden                            | TipTap plus escape hatches                          | EweNote needs editor features, not a private editor framework.                            |
+
+## Recommendation
+
+Use TipTap plus direct ProseMirror escape hatches.
+
+Default to TipTap 2.x for the editor shell, React lifecycle, extension packaging, commands, menus, node/mark views, selection commands, task/list editing, and Yjs collaboration. Use direct ProseMirror primitives for the parts that actually require lower-level control:
+
+- schema invariants for OFM nodes/marks, especially callouts, wiki links, embeds, task items, frontmatter representation, and block IDs;
+- parser/serializer fixtures using `prosemirror-markdown`, `markdown-it`, or a small dedicated OFM bridge instead of TipTap 3's `@tiptap/markdown`;
+- `Y.XmlFragment` migration/reseed behavior, undo boundaries, and transaction metadata;
+- heading position/index plugin state for outline navigation;
+- duplicate ProseMirror dependency checks and version pinning through `@tiptap/pm`;
+- direct ProseMirror debugging when TipTap commands obscure transaction behavior.
+
+Do not choose direct ProseMirror for the full editor unless implementation discovers a concrete TipTap blocker such as impossible schema representation, collaboration corruption caused by TipTap's wrapper, or an extension/transaction limitation that materially risks OFM fidelity more than a direct ProseMirror build would.
+
+## Local Reference Source Checkouts
+
+For source-level implementation help, keep editor library checkouts outside the
+`eweser-db` repo so they are never staged or committed. On this Mac, the
+reference tree is:
+
+```text
+/Users/jacob/eweser/editor-reference-src/
+```
+
+Current local references:
+
+| Reference               | Path                                                                   | Version / ref                           | Purpose                                                                                       |
+| ----------------------- | ---------------------------------------------------------------------- | --------------------------------------- | --------------------------------------------------------------------------------------------- |
+| TipTap                  | `/Users/jacob/eweser/editor-reference-src/tiptap-2.27.2`               | `@tiptap/core@2.27.2`, commit `4b8d4e9` | TipTap 2 extension, React, collaboration, task, suggestion, and command patterns.             |
+| BlockNote               | `/Users/jacob/eweser/editor-reference-src/blocknote-0.23.6`            | `v0.23.6`, commit `4a168cb`             | Migration reference for current BlockNote/Yjs behavior. Sparse checkout excludes XL packages. |
+| y-prosemirror           | `/Users/jacob/eweser/editor-reference-src/y-prosemirror-1.3.7`         | `v1.3.7`, commit `f89fadd`              | Yjs fragment, cursor, undo, and ProseMirror binding internals.                                |
+| prosemirror-markdown    | `/Users/jacob/eweser/editor-reference-src/prosemirror-markdown-1.13.4` | `1.13.4`, commit `d86eff3`              | Markdown parser/serializer source and tests.                                                  |
+| prosemirror-model       | `/Users/jacob/eweser/editor-reference-src/prosemirror-model`           | `1.23.0`                                | Schema, node, mark, and document JSON internals.                                              |
+| prosemirror-state       | `/Users/jacob/eweser/editor-reference-src/prosemirror-state`           | `1.4.3`                                 | Plugin state, transactions, selections.                                                       |
+| prosemirror-view        | `/Users/jacob/eweser/editor-reference-src/prosemirror-view`            | `1.37.0`                                | EditorView, DOM events, decorations, composition behavior.                                    |
+| prosemirror-transform   | `/Users/jacob/eweser/editor-reference-src/prosemirror-transform`       | `1.10.2`                                | Steps, mapping, transaction transform behavior.                                               |
+| prosemirror-inputrules  | `/Users/jacob/eweser/editor-reference-src/prosemirror-inputrules`      | `1.4.0`                                 | Input rule behavior for markdown-ish shortcuts.                                               |
+| prosemirror-schema-list | `/Users/jacob/eweser/editor-reference-src/prosemirror-schema-list`     | `1.4.1`                                 | List and task-list-adjacent schema/commands.                                                  |
+
+Set up the same tree on macOS/Linux from the directory that contains
+`eweser-db`:
+
+```bash
+mkdir -p editor-reference-src
+cd editor-reference-src
+
+git clone --depth 1 --branch '@tiptap/core@2.27.2' https://github.com/ueberdosis/tiptap.git tiptap-2.27.2
+git clone --depth 1 --filter=blob:none --sparse --branch v0.23.6 https://github.com/TypeCellOS/BlockNote.git blocknote-0.23.6
+git -C blocknote-0.23.6 sparse-checkout set packages/core packages/react packages/shadcn packages/server-util shared docs
+git clone --depth 1 --branch v1.3.7 https://github.com/yjs/y-prosemirror.git y-prosemirror-1.3.7
+git clone --depth 1 --branch 1.13.4 https://github.com/ProseMirror/prosemirror-markdown.git prosemirror-markdown-1.13.4
+
+git clone --depth 1 --branch 1.23.0 https://github.com/ProseMirror/prosemirror-model.git prosemirror-model
+git clone --depth 1 --branch 1.4.3 https://github.com/ProseMirror/prosemirror-state.git prosemirror-state
+git clone --depth 1 --branch 1.37.0 https://github.com/ProseMirror/prosemirror-view.git prosemirror-view
+git clone --depth 1 --branch 1.10.2 https://github.com/ProseMirror/prosemirror-transform.git prosemirror-transform
+git clone --depth 1 --branch 1.4.0 https://github.com/ProseMirror/prosemirror-inputrules.git prosemirror-inputrules
+git clone --depth 1 --branch 1.4.1 https://github.com/ProseMirror/prosemirror-schema-list.git prosemirror-schema-list
+```
+
+Set up the same tree on Windows PowerShell from the directory that contains
+`eweser-db`:
+
+```powershell
+New-Item -ItemType Directory -Force editor-reference-src | Out-Null
+Set-Location editor-reference-src
+
+git clone --depth 1 --branch '@tiptap/core@2.27.2' https://github.com/ueberdosis/tiptap.git tiptap-2.27.2
+git clone --depth 1 --filter=blob:none --sparse --branch v0.23.6 https://github.com/TypeCellOS/BlockNote.git blocknote-0.23.6
+git -C blocknote-0.23.6 sparse-checkout set packages/core packages/react packages/shadcn packages/server-util shared docs
+git clone --depth 1 --branch v1.3.7 https://github.com/yjs/y-prosemirror.git y-prosemirror-1.3.7
+git clone --depth 1 --branch 1.13.4 https://github.com/ProseMirror/prosemirror-markdown.git prosemirror-markdown-1.13.4
+
+git clone --depth 1 --branch 1.23.0 https://github.com/ProseMirror/prosemirror-model.git prosemirror-model
+git clone --depth 1 --branch 1.4.3 https://github.com/ProseMirror/prosemirror-state.git prosemirror-state
+git clone --depth 1 --branch 1.37.0 https://github.com/ProseMirror/prosemirror-view.git prosemirror-view
+git clone --depth 1 --branch 1.10.2 https://github.com/ProseMirror/prosemirror-transform.git prosemirror-transform
+git clone --depth 1 --branch 1.4.0 https://github.com/ProseMirror/prosemirror-inputrules.git prosemirror-inputrules
+git clone --depth 1 --branch 1.4.1 https://github.com/ProseMirror/prosemirror-schema-list.git prosemirror-schema-list
+```
+
+When using these references, Coder should read from the local checkout paths but
+must not copy license headers, package internals, or large source chunks into
+EweNote. Use them to verify APIs, behavior, and patterns, then implement
+EweNote-specific code inside `packages/ewe-note`.
+
+## Implementation Risk Comparison
+
+| Risk area                    | TipTap 2.x                                                                                        | Direct ProseMirror                                 | Conclusion                                |
+| ---------------------------- | ------------------------------------------------------------------------------------------------- | -------------------------------------------------- | ----------------------------------------- |
+| Development time             | Lower: React integration, extension shell, commands, node views, and collaboration wrappers exist | Higher: EweNote owns all editor scaffolding        | TipTap wins unless blocked                |
+| Editor correctness           | Good if serialization has fixtures and transaction saves are disciplined                          | Good but more surface for lifecycle/selection bugs | Tie on core model; TipTap less app code   |
+| Yjs collaboration complexity | Lower: TipTap collaboration wraps `y-prosemirror`, but history config must be correct             | Higher: direct plugin setup and awareness wiring   | TipTap wins                               |
+| Markdown/OFM fidelity        | Requires custom parser/serializer anyway                                                          | Requires custom parser/serializer anyway           | Tie; direct ProseMirror is not a shortcut |
+| Dependency/version risk      | Must pin TipTap 2.x and avoid 3.x docs/Markdown assumptions                                       | Must coordinate many ProseMirror packages manually | Slight TipTap edge via `@tiptap/pm`       |
+| Long-term maintainability    | Better app-level ergonomics; some dependency drift risk                                           | Maximum control but private framework burden       | TipTap wins                               |
+| Debug/customization          | Good if coder understands ProseMirror internals                                                   | Best                                               | Hybrid gives enough control               |
 
 ## Runs
 
-### Run 1: TipTap baseline — replace BlockNote, restore functional editor
+## Run Order And Manual Test Handoffs
 
-**Recommended Agent:** `02-coder` (Smart)  
-**Reason:** Architectural swap — requires careful Yjs wiring, content migration bridge, and verifying no regressions.
+Run order: sequential. Runs 1-3 are the editor foundation and must land before OFM/backlinks polish. Runs 4-5 can only proceed after Run 3 has stable serialization.
 
-- [ ] Remove `@blocknote/*` packages from `packages/ewe-note/package.json`
-- [ ] Install:
-  ```
-  @tiptap/core @tiptap/react @tiptap/starter-kit
-  @tiptap/extension-collaboration @tiptap/extension-collaboration-cursor
-  @tiptap/extension-placeholder @tiptap/extension-character-count
-  ```
-- [ ] Rewrite `packages/ewe-note/src/components/editor.tsx`:
-  - Replace `useCreateBlockNote` + `BlockNoteView` with `useEditor` + `EditorContent`
-  - Wire `Collaboration.configure({ document: ydoc })` and `CollaborationCursor`
-  - **Set `StarterKit.configure({ undoRedo: false })`** — critical
-  - Keep same `HocuspocusProvider` wiring from `notes-room.tsx`
-- [ ] Update Y.Doc fragment name: BlockNote used `blocknote` fragment; raw TipTap uses a different fragment. **Write a migration shim** that checks if the ydoc has BlockNote-format data and converts to TipTap JSON on first load, OR start fresh (preferred — note content is already stored as OFM strings in the eweser-db Y.Map, not in the raw ydoc fragment directly — confirm this assumption).
-- [ ] Remove `ofm-serializer.ts` usage from editor.tsx (temporarily) — keep the file, but the editor no longer uses BlockNote's block format
-- [ ] Add basic Tailwind prose styling to the editor div
-- [ ] Files:
-  - `packages/ewe-note/src/components/editor.tsx` (rewrite)
-  - `packages/ewe-note/package.json` (dep swap)
-  - `packages/ewe-note/src/extensions/` (clean up BlockNote extension files)
-- [ ] Tests: Manual smoke test — can create note, type content, collaboration cursor appears
+After each completed run, Coder must update the Execution Summary and add a manual-test handoff with:
 
-### Run 2: OFM serialization — `==highlight==`, callouts, wiki-link mark
+- delivered behavior;
+- local services/commands needed;
+- test data/account assumptions, without secrets;
+- manual steps;
+- expected results;
+- known gaps or residual risk.
 
-**Recommended Agent:** `02-coder` (Smart)  
-**Reason:** Custom TipTap Node/Mark authoring with Markdown tokenizer integration — requires ProseMirror API knowledge.
+### Run 1: Editor Data Contract and Migration Decision
 
-- [ ] Install `@tiptap/extension-highlight` (for `==highlight==` mark with multicolor support)
-- [ ] Rewrite OFM serializer as a set of proper TipTap extensions (`addMarkdown()`) rather than pre/post string processing:
+- **Id**: `run-1`
+- **Title**: `Editor Data Contract and Migration Decision`
+- **Deliverable**:
+  - A documented editor data contract for title/body/frontmatter/tasks and a confirmed migration strategy for existing EweNote notes.
+- **Files**:
+  - `docs/ai/plans/2026-04-06-tiptap-migration.md`: update Execution Summary with the chosen contract.
+  - `packages/ewe-note/src/components/editor.tsx`: inspect current BlockNote/Yjs seed/save behavior and replace only in later runs.
+  - `packages/ewe-note/src/app/contexts/NotesContext.tsx`: inspect title/task/link derivation and define post-migration expectations.
+  - `packages/ewe-note/src/extensions/ofm-serializer.ts`: inspect current BlockNote-dependent serialization.
+- **Steps**:
+  - [ ] Inspect how current notes persist markdown text, frontmatter, tags, aliases, and BlockNote collaboration fragments.
+  - [ ] Decide the canonical title model and document it in the plan execution notes before editor replacement begins.
+  - [ ] Define how markdown task checkboxes map to TipTap task/list nodes and back to markdown.
+  - [ ] Decide whether existing BlockNote fragments are converted, ignored after markdown reseed, or preserved behind a one-time fallback.
+  - [ ] Identify manual migration risks for prototype notes and document any intentional breaking behavior.
+- **Tests**:
+  - Read-only inspection plus targeted local fixture/probe if needed.
+- **Verification**:
+  - Confirm a coder can state exactly how an existing note becomes a TipTap/ProseMirror document and how it serializes back to EweserDB markdown.
+- **Manual test handoff**:
+  - Not needed: this is an implementation contract run.
+- **Dependencies**:
+  - None.
+- **Model tier**: `strong`
+- **Risk level**: `high`
 
-  **a) `==Highlight==` mark** — add custom inline MD tokenizer to the Highlight extension; serializes back to `==text==`
+### Run 2: TipTap 2.x Baseline Editor
 
-  **b) `WikiLinkNode`** — inline atom Node:
-  - Attributes: `{ name: string, alias?: string }` (no UUID — resolve name at render time)
-  - `renderHTML`: `<span data-wiki-link="true" data-name="...">[[name]]</span>`
-  - Input rule: `[[` opens a suggestion (see Run 3); completed wiki-link inserts the node
-  - Markdown tokenizer: `[[Name]]` and `[[Name|Alias]]` → WikiLinkNode; serializes back to `[[name]]` or `[[name|alias]]`
-  - Click handler: `options.onWikiLinkClick(name)` — navigate to note (wired later)
-  - Reference: `aarkue/tiptap-wikilink-extension` pattern + alias extension
+- **Id**: `run-2`
+- **Title**: `TipTap 2.x Baseline Editor`
+- **Deliverable**:
+  - BlockNote is replaced by a TipTap 2.x editor that can create, load, edit, save, reload, and export ordinary notes with normal paragraph rhythm and title/body consistency.
+- **Files**:
+  - `packages/ewe-note/package.json`: remove BlockNote dependencies and add pinned TipTap 2.x/Yjs/markdown dependencies.
+  - `packages/ewe-note/src/components/editor.tsx`: replace BlockNote view with TipTap `useEditor`/`EditorContent`.
+  - `packages/ewe-note/src/components/tiptap-editor.tsx`: create if useful to keep lifecycle isolated.
+  - `packages/ewe-note/src/editor/schema.ts`: create only for shared extension/schema constants that need direct ProseMirror semantics.
+  - `packages/ewe-note/src/editor/markdown.ts`: parser/serializer bridge for baseline markdown.
+  - `packages/ewe-note/src/index.css`: replace BlockNote-specific editor CSS with TipTap/ProseMirror styling.
+- **Steps**:
+  - [ ] Install TipTap packages pinned to the same 2.x family, starting from `@tiptap/*@2.27.2` unless dependency resolution proves a narrower pin is needed.
+  - [ ] Do not install or depend on `@tiptap/markdown`; current package metadata shows Markdown is 3.x-only.
+  - [ ] Run `npm ls @tiptap/pm prosemirror-view prosemirror-state prosemirror-model y-prosemirror` after install to check duplicate versions.
+  - [ ] Build an editor lifecycle that creates/destroys cleanly when `selectedNoteId` changes.
+  - [ ] Use TipTap update/transaction hooks as the single save trigger and debounce markdown serialization to `updateNoteText`.
+  - [ ] Seed the editor from persisted note markdown according to Run 1's migration decision.
+  - [ ] Ensure header title and editor content do not produce conflicting titles or stale previews.
+  - [ ] Remove BlockNote CSS/imports from the active editor path.
+- **Tests**:
+  - `npm run type-check --workspace @eweser/ewe-note`
+  - `npm run test --workspace @eweser/ewe-note`
+- **Verification**:
+  - Manual browser smoke: create note, edit title/body, reload editor route, return home, verify title and preview agree.
+- **Manual test handoff**:
+  - Tester should rerun checklist sections 2, 3, 9, 11, and 12 against the new editor.
+- **Dependencies**:
+  - `run-1`.
+- **Model tier**: `strong`
+- **Risk level**: `high`
 
-  **c) `CalloutNode`** — block Node (Notesnook `content: "heading block*"` pattern):
-  - Attributes: `{ type: 'note'|'tip'|'warning'|'danger'|'info'|'success'|'question'|'bug', collapsed: boolean }`
-  - Input rule: `> [!NOTE] Title\n` at start of line → creates callout node
-  - Markdown tokenizer: OFM-style `> [!TYPE]\n> content` (see research doc tokenizer code)
-  - Serializer: renders back to OFM callout format
+### Run 3: Yjs Collaboration, Undo, and Presence
 
-  **d) `FrontmatterNode`** — block Node, must be first child of document:
-  - Renders as a read-only table/panel showing YAML key-value pairs
-  - Stored as a TipTap Node (not stripped out) so it survives Yjs sync
-  - Parsed from `---\n...\n---` at document start on initial load
-  - Serialized back to `---\n...\n---` on markdown export
-  - NOT editable inline initially — show a "Edit Properties" panel (phase 2)
+- **Id**: `run-3`
+- **Title**: `Yjs Collaboration, Undo, and Presence`
+- **Deliverable**:
+  - The TipTap editor uses existing EweserDB room/provider state for Yjs sync, shared cursors, and local-client undo/redo without reintroducing BlockNote.
+- **Files**:
+  - `packages/ewe-note/src/components/tiptap-editor.tsx`: wire `@tiptap/extension-collaboration` and `@tiptap/extension-collaboration-cursor`.
+  - `packages/ewe-note/src/editor/yjs.ts`: create helper for fragment names, provider awareness, and migration/reseed behavior if useful.
+  - `packages/ewe-note/src/index.css`: cursor/presence styling.
+- **Steps**:
+  - [ ] Bind each note to a stable raw `Y.XmlFragment` or document/field mapping matching the Run 1 contract.
+  - [ ] Disable TipTap/StarterKit history for collaborative documents so Yjs collaboration owns undo/redo.
+  - [ ] Set awareness user name/color from the same source the current BlockNote path used.
+  - [ ] Confirm offline/local-only editing still works when there is no provider.
+  - [ ] Avoid writing programmatic seed transactions into user undo history.
+  - [ ] Inspect `y-prosemirror` behavior directly if TipTap collaboration obscures seed/sync transactions.
+- **Tests**:
+  - `npm run type-check --workspace @eweser/ewe-note`
+  - Add or update Vitest coverage for editor markdown/Yjs helpers where practical.
+- **Verification**:
+  - Manual browser smoke with two tabs when local sync is available; otherwise document why collaboration verification was skipped.
+- **Manual test handoff**:
+  - Tester should verify local editing while signed out and, if services are running, sync/cursor behavior while signed in.
+- **Dependencies**:
+  - `run-2`.
+- **Model tier**: `strong`
+- **Risk level**: `high`
 
-- [ ] Rewrite `ofm-serializer.ts` to use TipTap's JSON↔OFM path via the new extensions
-- [ ] Files:
-  - `packages/ewe-note/src/extensions/highlight.ts` (new or updated)
-  - `packages/ewe-note/src/extensions/wiki-link.ts` (rewrite to TipTap Node)
-  - `packages/ewe-note/src/extensions/callout.ts` (new)
-  - `packages/ewe-note/src/extensions/frontmatter.ts` (new)
-  - `packages/ewe-note/src/extensions/ofm-serializer.ts` (rewrite)
-- [ ] Tests: Load an existing Obsidian vault `.md` file (with callouts, wiki-links, frontmatter, highlights) and verify round-trip fidelity
+### Run 4: OFM, Wiki Links, Backlinks, Outline, and Tasks
 
-### Run 3: Slash menu + wiki-link autocomplete
+- **Id**: `run-4`
+- **Title**: `OFM, Wiki Links, Backlinks, Outline, and Tasks`
+- **Deliverable**:
+  - The new editor supports EweNote's current Obsidian-style features without lossy BlockNote conversion.
+- **Files**:
+  - `packages/ewe-note/src/editor/markdown.ts`: extend parser/serializer for OFM using direct Markdown/ProseMirror APIs.
+  - `packages/ewe-note/src/extensions/wiki-link.ts`: rewrite or replace as a TipTap extension backed by ProseMirror node/mark specs.
+  - `packages/ewe-note/src/extensions/callout.ts`: rewrite or replace as a TipTap extension backed by ProseMirror node specs.
+  - `packages/ewe-note/src/extensions/highlight.ts`: rewrite or replace as a TipTap mark extension with OFM serialization.
+  - `packages/ewe-note/src/extensions/frontmatter.ts`: create if Run 1 chooses an editor-visible frontmatter node.
+  - `packages/ewe-note/src/app/contexts/NotesContext.tsx`: align task/link extraction with new canonical markdown.
+  - `packages/ewe-note/src/app/components/RightPanel.tsx`: make outline heading clicks select/scroll to headings through editor commands, block IDs, or anchors.
+- **Steps**:
+  - [ ] Add task-list parsing/serialization that preserves `- [ ]` and `- [x]`.
+  - [ ] Add wiki-link parsing for `[[Name]]` and `[[Name|Alias]]`, with click navigation hooks.
+  - [ ] Add highlight and callout parsing/serialization with fallback behavior for unsupported OFM.
+  - [ ] Keep frontmatter round-trip behavior compatible with tags/properties UI.
+  - [ ] Add an outline index based on stable heading positions, block IDs, or serialized anchors.
+  - [ ] Add tests against existing Obsidian vault fixtures.
+- **Tests**:
+  - `npm run test --workspace @eweser/ewe-note -- --run src/cli/import-vault.test.ts src/cli/vault-sync.test.ts`
+  - New editor parser/serializer unit tests.
+- **Verification**:
+  - Manual browser smoke: type tasks, headings, wiki links, tags/properties, reload, verify Tasks view and right panel reflect them.
+- **Manual test handoff**:
+  - Tester should rerun checklist sections 8-12 with screenshots of tasks, outline, backlinks, and export output.
+- **Dependencies**:
+  - `run-3`.
+- **Model tier**: `strong`
+- **Risk level**: `high`
 
-**Recommended Agent:** `02-coder` (Smart)  
-**Reason:** TipTap `Suggestion` API wiring + React dropdown UI.
+### Run 5: Editor Controls and Regression Coverage
 
-- [ ] Install `@tiptap/extension-suggestion` + `tippy.js` (or Radix Popover — already in deps)
+- **Id**: `run-5`
+- **Title**: `Editor Controls and Regression Coverage`
+- **Deliverable**:
+  - The editor has stable keyboard behavior, toolbar/menu affordances, accessibility labels, and regression tests for the bugs found in UX audits.
+- **Files**:
+  - `packages/ewe-note/src/components/editor.tsx`: final API surface and labels.
+  - `packages/ewe-note/src/components/tiptap-editor.tsx`: final editor controls and event boundary.
+  - `packages/ewe-note/src/app/pages/EnhancedEditor.tsx`: align header/actions with canonical title and editor state.
+  - `e2e/cypress/tests/ewe-note.cy.ts`: add or update editor regression coverage if Cypress selectors are ready.
+  - `docs/ai/testing/ewe-note-ux-feature-audit-checklist.md`: update known editor expectations after migration.
+- **Steps**:
+  - [ ] Add keyboard shortcuts for common editor commands only where they are discoverable and expected.
+  - [ ] Verify command palette Escape behavior is not broken by editor focus or overlay handling.
+  - [ ] Add regression tests for title/body preview agreement and markdown task extraction.
+  - [ ] Update manual tester checklist so it no longer references BlockNote as the expected editor.
+- **Tests**:
+  - `npm run test --workspace @eweser/ewe-note`
+  - `npm run type-check --workspace @eweser/ewe-note`
+  - Relevant Cypress E2E if local app services are available.
+- **Verification**:
+  - Manual checklist sample for editor, command palette, tasks, and export.
+- **Manual test handoff**:
+  - Tester should rerun editor-heavy checklist paths and include any remaining visual regressions with screenshots.
+- **Dependencies**:
+  - `run-4`.
+- **Model tier**: `coder`
+- **Risk level**: `medium`
 
-- [ ] **Slash menu** (`/` at line start):
-  - Use `Suggestion` utility with `char: '/'`, `startOfLine: true`
-  - Items: Heading 1/2/3, Bullet List, Ordered List, Task List, Callout (types), Table, Code Block, Divider, Image
-  - UI: Radix/shadcn `Command` component for the popover (already in deps — reuse sidebar pattern)
+## Stop Conditions
 
-- [ ] **Wiki-link autocomplete** (`[[` trigger):
-  - Use `Suggestion` utility with `char: '[['` (double bracket — configure `startOfLine: false`)
-  - Items: all note names from current room (from `useNotesRoom` hook — export note list)
-  - Support `|` for alias: `[[PageName|Display Text]]`
-  - Smart double-close prevention (don't add `]]` if already typed)
-  - On selection → insert `WikiLinkNode` via `editor.commands.insertContent`
+Stop and ask for user approval if:
 
-- [ ] Files:
-  - `packages/ewe-note/src/extensions/slash-commands.ts` (new)
-  - `packages/ewe-note/src/extensions/wiki-link-suggestion.ts` (new)
-  - `packages/ewe-note/src/components/slash-menu.tsx` (new UI component)
-  - `packages/ewe-note/src/components/wiki-link-picker.tsx` (new UI component)
-  - `packages/ewe-note/src/components/editor.tsx` (wire new extensions)
+- Implementation requires changing published `@eweser/db`, `@eweser/shared`, or `@eweser/examples-components` APIs.
+- Existing notes contain BlockNote/Yjs data that cannot be safely migrated or intentionally dropped under this plan.
+- TipTap 2.x proves insufficient and the implementation needs direct ProseMirror for the full editor, TipTap 3, Pro/premium TipTap packages, or another wrapper.
+- A security/auth or database migration change is needed.
+- Verification exposes content-loss risk outside the approved editor migration boundary.
 
-### Run 4: Note index + backlinks panel
+## Approval Boundary
 
-**Recommended Agent:** `02-coder` (Smart)  
-**Reason:** Requires designing and implementing an in-memory/IndexedDB index of all notes' wiki-link references, plus a backlinks sidebar panel.
+Approval of this plan authorizes Coder to replace BlockNote with a TipTap 2.x editor inside `packages/ewe-note`, add focused dependencies, use direct ProseMirror primitives for the escape-hatch areas listed above, update editor parser/serializer code and tests, run relevant verification, perform internal QA, fix issues found inside this boundary, and update this plan's execution summary.
 
-- [ ] **Note index service** (`src/lib/note-index.ts`):
-  - Maintain: `Map<noteId, { outboundLinks: string[], title: string }>`
-  - Maintained by: scanning OFM content of all notes in the current room on load + on save
-  - Reverse index: `Map<noteTitle, noteId[]>` (for wiki-link resolution)
-  - Backlinks: `Map<noteId, noteId[]>` (notes that link TO this note)
-  - Persistence: store in `sessionStorage` (rebuild on reload — fast enough for <1000 notes; add IndexedDB later for larger vaults)
-  - Expose via React context: `useNoteIndex()`
-
-- [ ] **Wiki-link resolution** — when a `WikiLinkNode` is clicked:
-  - Look up `noteTitle` in reverse index
-  - Navigate to that note (select it in sidebar)
-  - If not found: show toast "Note not found — create it?"
-
-- [ ] **Backlinks panel** — new sidebar section below the notes list:
-  - Shows: `{N} notes link here` when a note is selected
-  - Expand to list linking note titles (clickable)
-  - Source: `useNoteIndex().getBacklinks(selectedNoteId)`
-
-- [ ] Files:
-  - `packages/ewe-note/src/lib/note-index.ts` (new)
-  - `packages/ewe-note/src/components/backlinks-panel.tsx` (new)
-  - `packages/ewe-note/src/components/app-sidebar.tsx` (add backlinks section)
-  - `packages/ewe-note/src/notes-room.tsx` (expose note content list to index)
-
-### Run 5: UX polish wave
-
-**Recommended Agent:** `02-coder` (Fast)  
-**Reason:** Mechanical wiring of features that already have all underlying hooks implemented — mostly component/UI work.
-
-- [ ] **Sync status badge** — wire `connectionStatus` from `useNotesRoom` to a visible indicator in the editor header or breadcrumb
-- [ ] **Offline indicator** — listen to `eweser:pwa-offline-ready` event in a component, show persistent "Offline" badge when triggered
-- [ ] **Delete note** — add context menu (right-click or `...` button) to note items in sidebar, wire `deleteNote()` from `useNotesRoom`
-- [ ] **Inline rename** — double-click note title → editable input, saves on blur/Enter
-- [ ] **Sidebar search/filter** — uncomment + implement `SearchForm`, filter notes by title (simple string match for now)
-- [ ] **Non-blocking load** — instead of full-screen spinner, show sidebar immediately with skeleton notes list; spinner only in editor pane
-
----
-
-## Risks
-
-1. **Y.Doc fragment migration** — BlockNote may have written content to a specific ydoc fragment (`blocknote`). If existing notes have synced content in that fragment, raw TipTap won't read it. Mitigation: the current ewe-note likely stores note content as OFM strings in the Y.Map (not in the raw ydoc fragment), so a clean start on the TipTap collab fragment may work. **Confirm before Run 1.**
-
-2. **TipTap 2.x vs 3.x** — TipTap 3.x is in beta and has breaking changes + Markdown extension behind Pro license. Stick to **2.x LTS** for all runs.
-
-3. **ProseMirror duplicate instance** — multiple packages importing different versions of `prosemirror-view` causes silent failures. **Pin `prosemirror-*` to exact versions** in `package.json` (Notesnook pins to `1.34.2`). Run `npm ls prosemirror-view` to check after installing.
-
-4. **`@tiptap/extension-collaboration` and undo history** — must set `StarterKit.configure({ history: false })` (or `undoRedo: false`). Missing this causes double-undo bugs with Yjs.
-
-5. **Callout OFM syntax in existing notes** — if users have existing notes with `> [!NOTE]` callouts, the current OFM serializer silently converts them to blockquotes. The new callout extension will correctly parse them — this is an upgrade, but the ydoc stored content (if in block format) would need the same migration care as risk #1.
-
-6. **`@tiptap/markdown` Pro requirement in v3** — do NOT upgrade to TipTap 3 to get the built-in Markdown extension. Write custom tokenizers on 2.x (the `addMarkdown()` hook is available via `@tiptap/markdown` on 2.x without Pro).
-
----
+Approval does not authorize broad app-shell UX work, unrelated EweserDB SDK changes, destructive migrations, direct pushes to `main`, secret handling, TipTap 3 adoption, TipTap Pro dependencies, or published package API changes not explicitly called out above.
 
 ## Execution Summary
 
-```
-Run 1: TipTap baseline (Smart) — swap BlockNote, restore functional collab editor
-└── Run 2: OFM extension suite (Smart) — wiki-link Node, callout, highlight, frontmatter
-    └── Run 3: Slash menu + wiki autocomplete (Smart) — needs wiki-link Node from Run 2
-        └── Run 4: Note index + backlinks (Smart) — needs wiki-link Node + full note list
-            └── Run 5: UX polish (Fast) — polish after core editor is stable
-```
+| Run     | Status      | Files Changed | Verification | Notes |
+| ------- | ----------- | ------------- | ------------ | ----- |
+| `run-1` | Not started |               |              |       |
+| `run-2` | Not started |               |              |       |
+| `run-3` | Not started |               |              |       |
+| `run-4` | Not started |               |              |       |
+| `run-5` | Not started |               |              |       |
 
-All runs are sequential (each depends on the previous). Estimated total effort: 2–3 weeks of focused coding.
+## Files Inspected During 2026-05-01 Decision Update
 
----
+- `AGENTS.md`
+- `ARCHITECTURE.md`
+- `.github/copilot-instructions.md`
+- `docs/ai/workflows/codex-planner-coder.md`
+- `docs/ai/plans/_template.md`
+- `docs/ai/research/2026-04-06-editor-reference-sweep.md`
+- `docs/ai/plans/2026-04-06-tiptap-migration.md`
+- `docs/ai/plans/2026-05-01-ewe-note-ux-feature-completion.md`
+- `packages/ewe-note/AGENTS.md`
+- `packages/ewe-note/package.json`
+- `packages/ewe-note/src/components/editor.tsx`
+- `packages/ewe-note/src/notes-room.tsx`
+- `packages/ewe-note/src/app/contexts/NotesContext.tsx`
+- `packages/ewe-note/src/app/pages/EnhancedEditor.tsx`
+- `packages/ewe-note/src/app/components/RightPanel.tsx`
+- `packages/ewe-note/src/extensions/ofm-serializer.ts`
+- `packages/ewe-note/src/extensions/wiki-link.ts`
+- `packages/ewe-note/src/extensions/callout.ts`
+- `packages/ewe-note/src/extensions/highlight.ts`
+- `packages/ewe-note/src/cli/import-vault.ts`
+- `packages/ewe-note/src/cli/export-vault.ts`
 
-## Status
+## Self-Reflection / Instruction Improvements
 
-- [ ] Approved by user
+- 2026-05-01 decision update: "Drop down as low as needed" should be encoded as a hybrid abstraction rule, not as a blanket move from BlockNote to direct ProseMirror. The plan now defaults to TipTap 2.x and names the exact ProseMirror escape hatches the coder must understand.

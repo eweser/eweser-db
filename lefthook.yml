@@ -4,7 +4,7 @@ pre-commit:
     staged-checks:
       run: npm run precommit:staged
     secrets-scan:
-      run: npm run secrets:scan -- --tracked
+      run: npm run secrets:scan -- --staged
 
 pre-push:
   parallel: false

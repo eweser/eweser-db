@@ -8,7 +8,7 @@ mode="${1:---staged}"
 
 if command -v gitleaks >/dev/null 2>&1; then
   if [[ "$mode" == "--all" || "$mode" == "--tracked" ]]; then
-    gitleaks detect --source "$root" --redact --no-banner
+    gitleaks dir "$root" --redact --no-banner
   else
     gitleaks protect --source "$root" --staged --redact --no-banner
   fi

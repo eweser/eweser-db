@@ -19,12 +19,81 @@ Read:
 
 1. `AGENTS.md`
 2. `ARCHITECTURE.md`
-3. the relevant plan file in `docs/ai/plans/`
-4. the plan's Execution Summary and manual-test handoff notes
-5. relevant package `AGENTS.md` files for touched areas
+3. `LOCAL_DEVELOPMENT.md` when local services, ports, auth, or browser flows
+   matter
+4. the relevant plan file in `docs/ai/plans/` or checklist under
+   `docs/ai/testing/`
+5. the plan's Execution Summary and manual-test handoff notes, when present
+6. relevant package `AGENTS.md` files for touched areas
 
 If the plan lacks a manual-test handoff, create a best-effort checklist from the
 run deliverables and report that the handoff is missing.
+
+## Fast Local Orientation
+
+Start by verifying what is already running before broad repo spelunking:
+
+```bash
+git status --short
+lsof -nP -iTCP -sTCP:LISTEN | rg ':(3001|38101|38110|38180|38181|38182|38190|5181|9999)\b|node|vite'
+curl -sS -I http://127.0.0.1:5181/ | head
+curl -sS http://127.0.0.1:38101/health || true
+```
+
+Canonical local URLs from current repo docs:
+
+| Surface           | URL                                            |
+| ----------------- | ---------------------------------------------- |
+| Ewe Note          | `http://localhost:5181/`                       |
+| Auth pages        | `http://localhost:3001/auth/`                  |
+| Auth API health   | `http://localhost:38101/health`                |
+| Example basic app | `http://localhost:38110`                       |
+| Sync servers      | `ws://localhost:38181`, `ws://localhost:38182` |
+| Aggregator        | `http://localhost:38190`                       |
+| Dozzle            | `http://localhost:9999`                        |
+
+Start only missing services:
+
+```bash
+npm run dev:docker
+npm run dev --workspace @eweser/app
+npm run dev --workspace @eweser/ewe-note
+```
+
+Check the app's actual config before assuming an auth URL. For example,
+`packages/ewe-note/src/config.ts` currently defaults dev `VITE_AUTH_SERVER` to
+`http://localhost:38180`, while `LOCAL_DEVELOPMENT.md` documents the auth API
+health port as `38101`. Treat mismatches as findings or setup blockers, not as
+facts to paper over.
+
+## Test Data and Accounts
+
+Prefer disposable, per-run test identities for manual QA. Use a deterministic
+prefix plus timestamp, such as `manual-test+<yyyymmdd-hhmmss>@example.test`, so
+test data is traceable and isolated. Avoid a long-lived shared user by default:
+it accumulates stale rooms, notes, sessions, and sync state that make bugs hard
+to reproduce.
+
+Use browser signup only when testing signup/login UX. For tests that merely need
+an authenticated state, create or seed the local user with code/API first, then
+open the browser already authenticated if the repo has a helper for that. Before
+writing new setup code, search for existing helpers:
+
+```bash
+rg -n "seed|test user|sign-up/email|sign-in/email|create.*user" packages e2e scripts
+```
+
+If there is no helper, use the local auth API endpoints from tests as the source
+of truth rather than hand-editing database rows:
+
+- `POST /api/auth/sign-up/email`
+- `POST /api/auth/sign-in/email`
+- `GET /api/auth/session`
+
+Never store real passwords, tokens, cookies, JWTs, or `.env` contents in the
+report. If a long-lived local smoke user is intentionally introduced later, keep
+its credentials outside the skill and repo, seed/reset it by code, and document
+its purpose and cleanup policy in repo docs.
 
 ## Scope
 
@@ -49,15 +118,43 @@ Manual Tester must not:
 
 1. Identify the run or full-plan flow to test.
 2. Extract the expected deliverable and manual-test handoff from the plan.
-3. Start only the required local services.
-4. Run the manual steps exactly first; then add exploratory checks for edge
+3. Verify the live local URLs, ports, and app config before opening the browser.
+4. Start only the required local services.
+5. Create disposable local test data by code/API when authenticated state is a
+   prerequisite rather than the behavior under test.
+6. Run the manual steps exactly first; then add exploratory checks for edge
    cases, auth boundaries, offline/local-first behavior, and secret redaction
    where relevant.
-5. Record concise evidence: commands, URLs, screenshots, observed UI/API/MCP
+7. Record concise evidence: commands, URLs, screenshots, observed UI/API/MCP
    results, and timestamps when useful.
-6. Report findings first, ordered by severity, with reproduction steps and
+8. Report findings first, ordered by severity, with reproduction steps and
    expected vs actual behavior.
-7. If no findings, say that clearly and list residual risk or untested areas.
+9. If no findings, say that clearly and list residual risk or untested areas.
+
+## Ewe Note Manual Testing Shortcuts
+
+When testing `packages/ewe-note`, use the checklist in
+`docs/ai/testing/ewe-note-ux-feature-audit-checklist.md` if no plan-specific
+handoff exists.
+
+Useful existing Cypress selectors and patterns live in
+`e2e/cypress/tests/ewe-note.cy.ts`. Prefer those selectors over guessing labels
+when using browser automation. Current useful selectors include:
+
+- `ewe-note-sidebar`
+- `ewe-note-new-note`
+- `ewe-note-editor`
+- `ewe-note-new-folder-trigger`
+- `ewe-note-focus-mode`
+- `ewe-note-editor-menu-trigger`
+- `ewe-note-delete-note`
+- `ewe-note-tasks-link`
+- `ewe-note-settings-link`
+- `ewe-note-account-link`
+
+For folder creation, note that existing Cypress tests stub `window.prompt()`;
+manual browser testing should explicitly report whether the visible UX depends
+on a native prompt or an in-app dialog.
 
 ## Report Format
 
