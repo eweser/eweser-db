@@ -2,233 +2,194 @@
 
 ## Goal
 
-Turn the cross-agent memory direction into a shippable product path:
+Ship the Eweser-native foundation for cross-agent AI memory: users can choose a
+memory strategy and capture mode, agents can discover the active memory scope,
+and memory strategy configuration remains user-owned and interoperable through
+EweserDB rather than being locked in auth-server PostgreSQL.
 
-- Give users one default path: **cross-platform AI memory in one click**.
-- Let power users choose a memory strategy per user, project, repo, or workspace.
-- Keep EweserDB as the canonical user-owned database, sync, permission, audit, and portability layer.
-- Treat external memory systems such as Mem0, Graphiti, and Cognee as optional derived processors, not as the source of truth.
+## Scope
 
-The core product claim should stay narrow and defensible:
+- In: Eweser-native memory strategy schema, capture-mode settings, Connect AI
+  onboarding updates, strategy-aware MCP defaults, Obsidian-compatible Agent
+  Journal Markdown import/export, scenario-based strategy evaluation tests,
+  docs, and changesets.
+- In: support `manual`, `suggest`, and `auto` as capture-mode settings at the
+  schema/API/UI level, with implementation tests for every mode that ships in
+  this plan.
+- In: define the full product roadmap and create separate draft plans for
+  Project Wiki, automatic capture if it cannot fit safely here, Mem0-style
+  processing, Graphiti-style temporal graph memory, Cognee-style workspace
+  intelligence, strategy recommendation evidence, and launch/legal readiness.
+- Out: production integration of Mem0, Graphiti, Cognee, or any external
+  processor.
+- Out: closed-web-UI capture where an upstream client exposes no hook.
+- Out: secret storage in ordinary searchable memory. Secrets remain outside
+  ordinary memory and belong in a separate encrypted vault/secure-note path.
+- Out: a polished standalone `/memory` app shell unless it is required to make
+  the Connect AI settings coherent.
 
-> Your AI memory lives in your Eweser database, follows you across agents and apps, and stays portable if you leave.
+## Assumptions / Open Questions
 
-<!-- eweser-orchestration -->
-
-```yaml
-orchestration:
-  enabled: true
-  maxParallel: 2
-  baseBranch: main
-  finalStages: []
-runs:
-  - id: run-1
-    title: Product Spec And Strategy Schema
-    agent: eweser-code
-    model: strong
-    parallel: false
-    dependsOn: []
-    writeScope:
-      - docs/ai/plans/2026-04-29-ai-memory-strategy-onboarding.md
-      - packages/shared/src/collections/*
-      - packages/auth-server-hono/src/db/schema/agents.ts
-      - packages/auth-server-hono/drizzle/*
-      - .changeset/memory-strategy-types.md
-    tests:
-      - shared type tests if collection changes are added
-      - auth-server migration/schema tests if DB fields are added
-    changeset: maybe
-  - id: run-2
-    title: Connect AI Strategy Onboarding
-    agent: eweser-code
-    model: strong
-    parallel: true
-    dependsOn:
-      - run-1
-    writeScope:
-      - packages/auth-server-hono/src/routes/connect-ai.ts
-      - packages/auth-server-hono/src/routes/connect-ai.test.ts
-      - packages/app/src/components/connect-ai-page.tsx
-      - packages/app/src/lib/api.ts
-      - packages/app/src/App.test.tsx
-    tests:
-      - auth-server route tests for strategy defaults, invalid strategy, invalid writable room
-      - app tests for default card, advanced selection, token setup payload preservation
-    changeset: no
-  - id: run-3
-    title: Strategy-Aware MCP Defaults
-    agent: eweser-code
-    model: strong
-    parallel: true
-    dependsOn:
-      - run-1
-    writeScope:
-      - packages/mcp-server/src/tools.ts
-      - packages/mcp-server/src/data-layer.ts
-      - packages/mcp-server/src/auth.ts
-      - packages/mcp-server/src/tools.test.ts
-      - packages/mcp-server/README.md
-    tests:
-      - save without roomId when one writable memory room exists
-      - error when multiple writable rooms and no scope/room disambiguation
-      - strategy lookup response shape
-      - redaction still happens before write
-    changeset: no
-```
-
-## Scope (In / Out)
-
-### In
-
-- Product model for memory strategies:
-  - `agent-journal` as the default.
-  - `project-wiki` for Karpathy-style/Obsidian-style project memory.
-  - `auto-curated` for Mem0-style extraction and retrieval.
-  - `knowledge-graph` for Graphiti/Zep-style temporal graph memory.
-  - `workspace-intelligence` for Cognee-style workspace/document intelligence.
-- Per-scope strategy settings:
-  - global user memory
-  - project/repo memory
-  - workspace/team memory
-  - agent-specific overrides
-- Eweser-native canonical schema for memory settings, source records, derived artifacts, and access/audit records.
-- Connect AI onboarding UX that starts with the default strategy and exposes advanced configuration without making ordinary users choose infrastructure.
-- MCP behavior updates so agents can discover the active memory strategy and write to the correct room with fewer manual choices.
-- Import/export plan for Markdown/OpenClaw/Obsidian-compatible memory.
-- Legal/open-source boundary for using Apache-2.0 memory engines commercially.
-
-### Out
-
-- Product-code implementation in this planning run.
-- Committing to a single external processor as a hard dependency.
-- Building a benchmark suite against Mem0/Zep/Cognee in this pass.
-- Automatic capture from closed web UIs when an upstream client does not expose hooks.
-- Secret storage inside ordinary memory. Secrets remain out of normal searchable memory and belong in a separate encrypted vault/secure-note path.
-
-## Current Repo Context
-
-- `README.md` and `ARCHITECTURE.md` define EweserDB as a local-first, user-owned database SDK built on Yjs rooms and shared schemas.
-- `packages/mcp-server` already exposes the agent-facing surface: list/read/write/search and `eweser_save_memory`.
-- `packages/mcp-server/src/tools.ts` currently saves memory into `conversations` rooms with `memoryType: 'session' | 'memory' | 'decision' | 'bookmark'`, redacts secret-like content, caps transcript turns, and adds a worktree tag.
-- `packages/app/src/components/connect-ai-page.tsx` already has the Connect AI setup UI and writable room selector.
-- `packages/auth-server-hono/src/routes/connect-ai.ts` already owns client catalog, token/OAuth setup, recommended writable rooms, token rotation, and Connect AI overview data.
-- `packages/auth-server-hono/src/db/schema/agents.ts` already stores read/write scopes and per-agent token state, but not memory strategy metadata.
-- `docs/ai/plans/completed/2026-04-04-cross-agent-memory-search.md` and `docs/ai/plans/completed/2026-04-06-memory-mcp-wrap-up.md` document the shipped memory/search baseline.
-- `docs/ai/plans/2026-04-05-auto-knowledge-graph.md` is a useful deferred concept, but this plan should start with user-facing strategy selection before graph infrastructure.
+- Assumption: strategy configuration that other apps should see must be stored
+  as EweserDB user-owned data, not only in auth-server PostgreSQL.
+- Assumption: auth-server PostgreSQL may store auth-only operational mirrors or
+  pointers when needed for token issuance, authorization, audit, or migration
+  compatibility, but it must not become the canonical strategy/config database.
+- Assumption: because EweserDB is not live with real users yet, Coder can make
+  clean breaking schema changes to pre-live memory strategy shapes when the plan
+  calls them out and changesets/migrations are handled.
+- Assumption: `agent-journal` remains the default strategy because it matches
+  the existing `eweser_save_memory` behavior and the user-owned portable memory
+  story.
+- Assumption: Agent Journal remains canonically stored as EweserDB records, but
+  its default portable Markdown representation is Obsidian-compatible Markdown:
+  YAML frontmatter, stable `#` tags, `[[wikilinks]]`, deterministic filenames,
+  and import/export metadata that can round-trip without losing memory scope or
+  provenance.
+- Assumption: project scoping starts with `EWESER_WORKTREE_TAG` and
+  user-selected project names; automatic repo-root detection can come later.
+- Assumption: `manual`, `suggest`, and `auto` should be representable settings.
+  If true automatic capture needs background processing or client hooks beyond
+  this plan, Coder must stop and move that implementation to the automatic
+  capture follow-up draft plan.
+- Open question: none for the first implementation pass.
 
 ## Product Model
 
 ### Memory Strategy Options
 
-| Strategy                 | User-facing label      | Default? | Best for                                                                    | Behavior                                                                                                  | Implementation stance                                        |
-| ------------------------ | ---------------------- | -------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| `agent-journal`          | Agent Journal          | Yes      | coding agents, daily assistant continuity, "remember what we did yesterday" | Daily/session notes, decisions, preferences, bookmarks, searchable summaries, Markdown export             | Eweser-native over `conversations` plus notes/export helpers |
-| `project-wiki`           | Project Wiki           | No       | research, writing, product planning, source-heavy topics                    | LLM-maintained wiki pages, project index, concept/person/project/decision pages, Obsidian/OpenClaw export | Eweser-native first; compatible with Karpathy-style Markdown |
-| `auto-curated`           | Auto-Curated Memory    | Advanced | users who want automatic fact extraction and preference recall              | Extracted facts, dedupe, semantic retrieval, user review/edit                                             | Optional Mem0-style processor over Eweser canonical records  |
-| `knowledge-graph`        | Knowledge Graph        | Advanced | changing requirements, Lark/workspace memory, temporal questions            | Source episodes, entities, relationships, validity windows, provenance                                    | Optional Graphiti/Zep-style derived graph                    |
-| `workspace-intelligence` | Workspace Intelligence | Advanced | docs, tables, transcripts, Lark workspace, team knowledge                   | Multi-source ingestion, graph/vector reasoning, workspace search                                          | Optional Cognee-style processor                              |
-| `custom`                 | Custom                 | Advanced | power users and self-hosters                                                | User chooses storage, processor, export, capture rules                                                    | Use same canonical schema and processor contract             |
+| Strategy                 | User-facing label      | Default? | Best for                                                 | Implementation stance                                                             |
+| ------------------------ | ---------------------- | -------- | -------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `agent-journal`          | Shared Agent Memory    | Yes      | coding agents, daily continuity, decisions, preferences  | Eweser-native over `conversations` plus scope metadata and Markdown import/export |
+| `project-wiki`           | Project Wiki           | No       | research, writing, source-heavy projects                 | Follow-up draft plan; Eweser-native artifacts derived from canonical sources      |
+| `auto-curated`           | Auto-Curated Memory    | Advanced | automatic fact extraction and preference recall          | Follow-up draft plan; optional Mem0-style processor over Eweser canonical records |
+| `knowledge-graph`        | Knowledge Graph        | Advanced | temporal questions, changing requirements, relationships | Follow-up draft plan; optional Graphiti-style derived graph                       |
+| `workspace-intelligence` | Workspace Intelligence | Advanced | docs, tables, transcripts, team knowledge                | Follow-up draft plan; optional Cognee-style processor                             |
+| `custom`                 | Custom                 | Advanced | power users and self-hosters                             | Same canonical schema and processor contract                                      |
 
-Default onboarding should not mention Karpathy, OpenClaw, Mem0, Graphiti, or Cognee. Those names belong in docs and advanced settings.
+Default onboarding must not mention Karpathy, OpenClaw, Mem0, Graphiti, or
+Cognee. Those names belong in docs and advanced settings.
+
+### Strategy Evaluation Scenarios
+
+Automated tests should evaluate memory strategies against realistic scenario
+fixtures so product recommendations are evidence-based, not only conceptual.
+The first pass does not need to prove external processors are production-ready;
+it must create the harness and baseline scenarios that future Project Wiki,
+Mem0-style, Graphiti-style, and Cognee-style plans can extend.
+
+Initial scenarios:
+
+| Scenario                     | What it tests                                             | Expected strongest fit                              |
+| ---------------------------- | --------------------------------------------------------- | --------------------------------------------------- |
+| Coding continuity            | preferences, project decisions, recurring repo workflows  | `agent-journal`                                     |
+| Research and source tracking | source-backed notes, drafts, citations, synthesis         | `project-wiki` once implemented                     |
+| Preference extraction        | durable user preferences from noisy conversation history  | `auto-curated` once implemented                     |
+| Requirement changes          | temporal facts, superseded decisions, relationship lookup | `knowledge-graph` once implemented                  |
+| Team knowledge retrieval     | docs, tables, meeting notes, cross-workspace search       | `workspace-intelligence` once implemented           |
+| Secret/adversarial content   | redaction, ignored credentials, memory poisoning attempts | all strategies must reject or mark unsafe correctly |
+
+Evaluation dimensions:
+
+- Recall quality: retrieves the right durable context for a realistic prompt.
+- Precision/noise: avoids irrelevant or outdated memories.
+- Temporal correctness: handles superseded facts and effective dates.
+- Provenance: can explain where the memory came from when the strategy supports
+  it.
+- Safety: does not store or recommend secrets, credentials, or unsafe durable
+  instructions.
+- Portability: exports/imports expected user-owned artifacts where applicable.
+- Fit score: produces a stable strategy recommendation for the scenario's
+  user/use-case profile.
+
+The harness should use deterministic fixtures and assertions first. Optional
+LLM-as-judge scoring can be added later only if outputs are versioned, prompts
+are checked in, and CI has a deterministic fallback path.
+
+### Capture Modes
+
+| Mode      | Meaning                                               | MVP behavior                                                                                                                                                                         |
+| --------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `manual`  | Memory is saved only by explicit user/agent action.   | Must work end-to-end and remain the safest default.                                                                                                                                  |
+| `suggest` | Agent can stage proposed memories for review.         | Must be represented and tested if review UI/API is implemented; otherwise Coder must stop before claiming it is functional.                                                          |
+| `auto`    | System captures memory automatically based on policy. | Must be configurable as a future-capable setting; if real auto-capture requires new hooks/background services, defer implementation to `2026-04-29-ai-memory-auto-capture-draft.md`. |
 
 ### Scope Levels
-
-Every memory strategy setting should be scoped. Do not make one global strategy carry every use case.
 
 | Scope          | Examples                                                 | Default behavior                                           |
 | -------------- | -------------------------------------------------------- | ---------------------------------------------------------- |
 | User/global    | personal preferences, response style, common tools       | `agent-journal`, read by all granted agents                |
 | Project/repo   | `/path/to/eweser-db`, a client project, a research topic | inherit global strategy, default `agent-journal` for repos |
-| Workspace/team | Lark workspace, company knowledge base                   | `workspace-intelligence` or `knowledge-graph` when enabled |
+| Workspace/team | Lark workspace, company knowledge base                   | later `workspace-intelligence` or `knowledge-graph`        |
 | Agent/client   | Codex, Claude Code, ChatGPT web, OpenClaw, Copilot       | inherits project/global, may have read/write limits        |
 
-Project detection should be pragmatic:
+### Connect AI Access UX
 
-- token clients can pass `EWESER_WORKTREE_TAG` today; keep using it as the first repo/project namespace.
-- Connect AI should let users select or create a project during setup.
-- Web/OAuth clients should default to global memory unless they provide a project hint or the user chooses one in Eweser.
-- A future local helper can detect git repo root and propose a project automatically.
+The Connect AI UX should treat project-level access as the primary mental model
+and a dedicated AI memory room as the safe default write target.
 
-## UX Plan
+Recommended default:
 
-### First-Run Onboarding
+- Create or recommend a dedicated **AI Memory / Agent Journal** room backed by
+  the `conversations` collection.
+- Grant connected AI agents read/write access to that AI memory room by default.
+- Do not grant access to personal note rooms unless the user explicitly approves
+  them.
+- Let `eweser_save_memory` default to the dedicated AI memory room when the
+  token has exactly one writable memory target.
 
-Primary path:
+Project access should be shown as a top-level scope. A project can group one or
+more EweserDB rooms, such as memory, notes, bookmarks, repo metadata, and later
+project-wiki/source rooms. For each project, the user should be able to choose:
 
-1. User signs in at `eweser.com`.
-2. App shows: "Get cross-platform AI memory in one click."
-3. Default selected: **Shared Agent Memory** / `agent-journal`.
-4. User chooses first agent to connect: Codex, Claude Desktop, Claude web, ChatGPT web, Copilot, OpenClaw.
-5. Eweser creates or selects:
-   - a global memory room,
-   - a project memory room if project context is known,
-   - write scope limited to the selected memory room(s).
-6. Setup page shows the existing MCP/OAuth/token instructions.
-7. User lands on a Memory page showing recent saves, connected agents, strategy, and export options.
+| Choice         | Meaning                                                                 |
+| -------------- | ----------------------------------------------------------------------- |
+| `Off`          | Agent cannot read or write rooms in this project.                       |
+| `Read only`    | Agent can use selected project rooms as context but cannot write there. |
+| `Read + write` | Agent can read selected project rooms and write to approved targets.    |
 
-Suggested user-facing copy:
+The project picker should include an **Allow all current rooms in this project**
+shortcut. A later follow-up can add **Include future rooms added to this
+project**, but this first plan should avoid implicit future-room access unless
+that behavior is stored and surfaced explicitly.
 
-> Shared memory for your AI tools. Codex, Claude, ChatGPT, Copilot, OpenClaw, and other MCP clients can remember the same decisions, preferences, and project context. You can review, edit, revoke, and export everything.
+Personal notes should be represented as protected room scopes, defaulting to
+`Off`. The user may opt individual personal rooms into `Read only` for context
+or `Read + write` for intentional AI editing/capture. Granting AI Memory access
+must not imply access to personal notes.
 
-Advanced link:
+This requires separate read and write room grants. The current Connect AI token
+scope already has writable room controls, but implementation must ensure MCP
+search/list/read tools only see approved readable rooms while save/edit tools
+only affect approved writable rooms. In practice:
 
-> Choose a memory style
+- `readableRoomIds` is the context boundary.
+- `writableRoomIds` is the mutation boundary.
+- `defaultWriteRoomId` must be one of `writableRoomIds`.
+- A room may be readable without being writable.
+- A room may not be writable without also being readable unless a later plan
+  explicitly supports blind-write dropboxes.
 
-Advanced choices:
+## Data Model Decisions
 
-- **Agent Journal**: best for coding assistants and day-to-day continuity.
-- **Project Wiki**: best for research, writing, and source-heavy projects.
-- **Auto-Curated Memory**: best when you want Eweser to extract stable facts automatically.
-- **Knowledge Graph**: best for teams, changing requirements, and relationship-heavy work.
-- **Workspace Intelligence**: best for Lark/docs/tables/transcripts.
+- Add shared exported types for:
+  - `MemoryStrategyKind`
+  - `MemoryScopeType`
+  - `MemoryCaptureMode`
+  - `MemoryStrategyConfig`
+  - `MemoryStrategyScope`
+  - review status/provenance helpers needed by `suggest` and later processors.
+- Store canonical strategy configuration as EweserDB documents in a shared
+  collection so apps and agents can sync/export it.
+- Auth-server PostgreSQL may store only auth-operational fields needed for
+  token setup and enforcement, such as default strategy document refs,
+  default writable room ids, scope refs, and audit timestamps.
+- Keep `conversations` as the canonical MVP memory item collection, but extend
+  it with scoped strategy/provenance fields as needed.
+- Because `@eweser/shared` is published, add a changeset for exported type or
+  collection changes even though the app is pre-live.
 
-### Connect AI Page Changes
-
-`packages/app/src/components/connect-ai-page.tsx` should evolve from "choose writable room, then connect client" to:
-
-1. Memory strategy summary card:
-   - active default strategy
-   - global/project scope
-   - "change strategy" advanced action
-2. Writable AI area:
-   - still visible, but subordinate to memory strategy
-   - default room selection should come from strategy config
-3. Client cards:
-   - include which memory scope this client can write to
-   - include "project memory" when available
-4. Audit/access link:
-   - show last used, write scope, and memory saves.
-
-Do not remove the explicit writable room selector. It is the user's safety control.
-
-### Memory Settings Page
-
-Add a dedicated settings surface in the app shell:
-
-- `/memory`
-  - recent memory items
-  - active scopes
-  - connected agents
-  - import/export
-- `/memory/settings`
-  - strategy selection
-  - per-project overrides
-  - auto-save policy
-  - processor settings
-  - retention/delete controls
-- `/memory/projects/:projectId`
-  - project memory strategy
-  - connected rooms and agents
-  - Markdown export/import
-  - review queue for suggested memories
-
-This can be a later app-shell run if the first implementation keeps controls inside Connect AI.
-
-## Data Model Plan
-
-### Add Shared Types
-
-Add shared types in `packages/shared/src/collections/`:
+Candidate shared shape:
 
 ```ts
 export type MemoryStrategyKind =
@@ -240,7 +201,6 @@ export type MemoryStrategyKind =
   | 'custom';
 
 export type MemoryScopeType = 'global' | 'project' | 'workspace' | 'agent';
-
 export type MemoryCaptureMode = 'manual' | 'suggest' | 'auto';
 
 export type MemoryStrategyConfigBase = {
@@ -249,353 +209,476 @@ export type MemoryStrategyConfigBase = {
   scopeType: MemoryScopeType;
   scopeKey: string;
   enabled: boolean;
+  captureMode: MemoryCaptureMode;
   defaultWriteRoomId?: string;
+  readableRoomIds?: string[];
+  writableRoomIds?: string[];
   sourceRoomIds?: string[];
   exportFormats?: Array<'markdown' | 'openclaw' | 'obsidian' | 'json'>;
-  captureMode: MemoryCaptureMode;
   processorIds?: string[];
   retentionDays?: number;
   reviewRequired?: boolean;
 };
 ```
 
-Add `MemoryStrategyConfig` as a collection only if user apps and agents need to sync it as user-owned data. Otherwise keep initial strategy rows in auth-server Postgres and expose them through authenticated API. The likely better long-term shape is both:
+Default Agent Journal strategy configs should include `obsidian` in
+`exportFormats`, and generated exports should prefer the Obsidian-compatible
+layout unless the caller explicitly asks for another supported format. Generic
+`markdown` remains a compatibility alias for plain Markdown consumers, not the
+primary memory vault contract.
 
-- auth-server stores operational setup metadata for onboarding and token defaults.
-- Eweser rooms store user-owned strategy documents that self-hosters and apps can sync/export.
+## API And MCP Contract
 
-### Extend Agent Config Metadata
+### Connect AI Overview Additions
 
-Add strategy linkage to agent configs, likely in auth-server DB:
-
-- `memoryStrategyId`
-- `defaultMemoryScopeKey`
-- `defaultWriteRoomId`
-- optional `projectScopeKey`
-
-This needs a Drizzle migration. Never delete existing migrations.
-
-### Canonical Memory Records
-
-Do not replace `Conversation`; extend it or add companion collections carefully.
-
-Minimum change:
-
-- Keep `conversations` as the canonical memory item collection for MVP.
-- Add optional fields to `ConversationBase` only if needed:
-  - `scopeType?: 'global' | 'project' | 'workspace' | 'agent'`
-  - `scopeKey?: string`
-  - `strategy?: MemoryStrategyKind`
-  - `sourceRefs?: string[]`
-  - `derivedFromIds?: string[]`
-  - `confidence?: number`
-  - `reviewStatus?: 'accepted' | 'suggested' | 'rejected'`
-
-Because `@eweser/shared` is published, behavior/API changes need a changeset.
-
-For richer future work, add separate derived collections:
-
-- `memorySources`: raw imported/captured episodes and source metadata.
-- `memoryArtifacts`: generated wiki pages, extracted facts, graph summaries.
-- `memoryProcessorRuns`: processor run metadata, errors, and provenance.
-
-Do not put this all into `Conversation` if it starts turning into an untyped dumping ground.
-
-## MCP Plan
-
-### New/Updated Tools
-
-Keep existing tools. Add a thin strategy-aware layer:
-
-| Tool                         | Purpose                                                                                 |
-| ---------------------------- | --------------------------------------------------------------------------------------- |
-| `eweser_get_memory_strategy` | Return active memory strategy and writable targets for the current token/project.       |
-| `eweser_save_memory` update  | Allow optional `scopeType`, `scopeKey`, and `strategy`; default them from token config. |
-| `eweser_list_memory_scopes`  | Show available global/project/workspace scopes the agent can use.                       |
-| `eweser_export_memory`       | Later: generate Markdown/OpenClaw/Obsidian export for a scope.                          |
-| `eweser_suggest_memory`      | Later: stage a suggested memory for user review instead of saving directly.             |
-
-Important: strategy-aware defaults should reduce the need for agents to know room IDs. The user should not have to paste a room UUID into every agent instruction.
-
-### Tool Behavior
-
-- If the agent has one writable memory room, `eweser_save_memory` should default to it when `roomId` is omitted.
-- If multiple writable memory rooms exist, require either `roomId` or `scopeKey`.
-- If the active strategy is `project-wiki`, saves should prefer project-scoped tags and artifact generation.
-- If the active strategy is `agent-journal`, saves should behave like current `conversations` memory.
-- External processors must write derived outputs with provenance back to source memory IDs.
-
-## Processor Integration Plan
-
-### Processor Contract
-
-Define an internal processor interface before integrating any external engine:
+The Connect AI overview response should include strategy data shaped like:
 
 ```ts
-type MemoryProcessorKind = 'mem0' | 'graphiti' | 'cognee' | 'local-markdown';
-
-interface MemoryProcessor {
-  id: string;
-  kind: MemoryProcessorKind;
-  displayName: string;
-  ingest(input: MemorySourceRecord): Promise<MemoryArtifact[]>;
-  search(query: MemoryQuery): Promise<MemorySearchResult[]>;
-  rebuild(scope: MemoryScope): Promise<MemoryProcessorRun>;
-}
+type ConnectAiMemoryStrategyOverview = {
+  defaultStrategy: MemoryStrategyKind;
+  defaultCaptureMode: MemoryCaptureMode;
+  scopes: Array<{
+    scopeType: MemoryScopeType;
+    scopeKey: string;
+    label: string;
+    strategy: MemoryStrategyKind;
+    captureMode: MemoryCaptureMode;
+    defaultWriteRoomId?: string;
+    readableRoomIds: string[];
+    writableRoomIds: string[];
+  }>;
+  choices: Array<{
+    strategy: MemoryStrategyKind;
+    label: string;
+    description: string;
+    advanced: boolean;
+  }>;
+  captureModes: Array<{
+    mode: MemoryCaptureMode;
+    label: string;
+    description: string;
+    enabled: boolean;
+  }>;
+};
 ```
 
-Eweser responsibilities:
+Setup/rotate-token requests should accept optional `memoryScopeKey`,
+`memoryStrategy`, `captureMode`, `defaultWriteRoomId`, `readableRoomIds`, and
+`writableRoomIds`. Auth routes must validate that requested readable rooms are
+owned/granted to the user, requested writable rooms are inside the user's
+granted writable rooms, and `defaultWriteRoomId` is included in
+`writableRoomIds`.
 
-- canonical storage
-- auth/grants
-- sync
-- audit logs
-- export/delete
-- source provenance
+### MCP Tools
 
-Processor responsibilities:
+Keep existing tools and add strategy-aware behavior:
 
-- extraction
-- ranking
-- graph construction
-- semantic retrieval
-- summarization
+| Tool                         | Purpose                                                                                                                                                          |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `eweser_get_memory_strategy` | Return active strategy, capture mode, scope, and writable targets for the current token/project.                                                                 |
+| `eweser_save_memory` update  | Allow optional `scopeType`, `scopeKey`, `strategy`, and `captureMode`; infer writable room when unambiguous.                                                     |
+| `eweser_list_memory_scopes`  | Show available global/project/workspace scopes the agent can use.                                                                                                |
+| `eweser_export_memory`       | Export Agent Journal memory for a selected scope; default format is Obsidian-compatible Markdown unless the caller explicitly requests another supported format. |
+| `eweser_suggest_memory`      | Stage suggested memory when `captureMode: 'suggest'` is active, if implemented in this plan.                                                                     |
 
-### External Engine Notes
+Error semantics:
 
-- Mem0/OpenMemory:
-  - Apache-2.0, commercially friendly with notices.
-  - Best first optional processor for auto-curated memory.
-  - Do not require users to sign up for Mem0 Cloud.
-  - Prefer self-hosted/library mode inside Eweser hosted/self-hosted environments.
-- Graphiti/Zep:
-  - Graphiti is Apache-2.0.
-  - Best for temporal graph memory and Lark/workspace facts.
-  - Treat Graphiti graph as derived; Eweser episodes remain canonical.
-  - Disable telemetry by default in self-host/privacy-sensitive profile.
-- Cognee:
-  - Apache-2.0.
-  - Best for workspace intelligence over docs/tables/transcripts.
-  - Heavier storage model; keep as advanced/later.
+- If the token has exactly one writable memory room and no `roomId` is supplied,
+  save to that room.
+- If multiple writable memory rooms exist and neither `roomId` nor `scopeKey`
+  disambiguates the target, return a typed MCP error explaining the available
+  scopes.
+- If `captureMode: 'manual'`, `eweser_save_memory` writes accepted memory.
+- If `captureMode: 'suggest'`, `eweser_suggest_memory` writes reviewable
+  suggestions and `eweser_save_memory` still writes accepted memory.
+- If `captureMode: 'auto'` cannot be implemented without new capture hooks,
+  API/UI must mark it as planned/disabled and tests must assert the exact
+  behavior.
+- Secret redaction and transcript caps must remain in force before writes.
 
-Legal detail to verify before implementation:
+## Run Order And Manual Test Handoffs
 
-- current licenses in the exact package versions used;
-- attribution/NOTICE requirements;
-- trademarks and product naming;
-- hosted-service terms if any cloud API is used;
-- whether optional containers/images include non-Apache transitive dependencies that affect distribution.
+Run order is sequential unless Coder explicitly records why a non-dependent
+documentation-only task can move earlier:
+
+1. `run-1`: shared schema and changeset.
+2. `run-2`: Connect AI strategy settings.
+3. `run-3`: MCP strategy defaults.
+4. `run-4`: Agent Journal Markdown import/export.
+5. `run-5`: scenario-based strategy evaluation harness.
+6. `run-6`: full verification, manual-test handoff, and follow-up plan updates.
+
+After each run, Coder must update that run's Execution Summary row and add a
+short manual-test handoff in the Notes column or an adjacent note. The handoff
+must include:
+
+- what was delivered;
+- exact local services/commands needed to exercise it;
+- test account or seed-data assumptions, without secrets;
+- 3-7 manual test steps a separate tester can follow;
+- expected results and known gaps;
+- screenshots or file paths only when useful.
+
+The user should be able to point a later Codex session at the plan and say
+"run the manual test for run N" without requiring the tester to reconstruct the
+feature from code.
 
 ## Runs
 
-### Run 1: Product Spec And Strategy Schema
+### Run 1: Shared Memory Strategy Schema
 
-- Recommended Agent: planner/coder (strong)
-- Steps:
-  - Write a product spec for memory strategy UX, default behavior, and advanced settings.
-  - Decide whether strategy config first lives in auth-server Postgres, Eweser rooms, or both.
-  - Add shared TypeScript types for strategy kinds and memory scopes.
-  - Draft migration shape for agent strategy metadata if DB-backed.
-  - Define exact default: `agent-journal`, `captureMode: manual` or `suggest`, global scope plus optional project scope.
-- Files:
-  - `docs/ai/plans/2026-04-29-ai-memory-strategy-onboarding.md`
-  - `packages/shared/src/collections/*`
-  - `packages/auth-server-hono/src/db/schema/agents.ts`
-  - `packages/auth-server-hono/drizzle/*`
-- Tests:
-  - shared type tests if collection changes are added
-  - auth-server migration/schema tests if DB fields are added
-- Changeset:
-  - required if published `@eweser/shared` API changes.
+- **Id**: `run-1`
+- **Title**: `Shared Memory Strategy Schema`
+- **Deliverable**: Shared strategy/capture/scope types and memory metadata
+  compile, are exported, and preserve old conversation compatibility.
+- **Files**:
+  - `packages/shared/src/collections/*`: add strategy config/scope types and
+    collection exports.
+  - `packages/shared/src/collections/conversation.ts`: add scoped strategy and
+    review/provenance fields where needed.
+  - `packages/shared/src/collections/index.ts`: export new memory strategy
+    types.
+  - `.changeset/*`: document published shared API changes.
+- **Steps**:
+  - [ ] Add strict shared types for strategy kinds, scopes, capture modes,
+        strategy config docs, and review status.
+  - [ ] Keep canonical strategy config user-owned in EweserDB collection docs.
+  - [ ] Extend conversation memory records only for MVP scope/provenance fields.
+  - [ ] Add tests for defaults, accepted values, and backwards-compatible
+        conversation parsing.
+  - [ ] Add a changeset for `@eweser/shared`.
+- **Tests**:
+  - `npm test --workspace @eweser/shared`
+  - `npm run type-check --workspace @eweser/shared`
+- **Verification**:
+  - Confirm new exports compile for downstream workspaces.
+  - Confirm old conversation documents without new fields remain valid.
+- **Manual test handoff**:
+  - Record how a tester can inspect the exported shared types and verify old
+    conversation data still parses through existing app/MCP paths.
+- **Dependencies**: None.
+- **Model tier**: `strong`
+- **Risk level**: `medium`
 
-### Run 2: Connect AI Strategy Onboarding
+### Run 2: Connect AI Strategy Settings
 
-- Recommended Agent: coder (strong)
-- Steps:
-  - Extend Connect AI overview API to return memory strategy defaults and available strategy choices.
-  - Add strategy selection state to setup/rotate token requests.
-  - Ensure token creation links the agent to a strategy/scope and default write room.
-  - Update Connect AI page with default "Shared Agent Memory" card and advanced strategy picker.
-  - Preserve explicit writable-room controls.
-  - Make default copy concrete and non-technical.
-- Files:
-  - `packages/auth-server-hono/src/routes/connect-ai.ts`
-  - `packages/auth-server-hono/src/routes/connect-ai.test.ts` or route tests where present
-  - `packages/app/src/components/connect-ai-page.tsx`
-  - `packages/app/src/lib/api.ts`
-  - `packages/app/src/App.test.tsx` or component tests
-- Tests:
-  - auth-server route tests for strategy defaults, invalid strategy, invalid writable room
-  - app tests for default card, advanced selection, token setup payload preservation
+- **Id**: `run-2`
+- **Title**: `Connect AI Strategy Settings`
+- **Deliverable**: Connect AI exposes Shared Agent Memory defaults, advanced
+  strategy/capture controls, and valid scoped read/write room payloads.
+- **Files**:
+  - `packages/auth-server-hono/src/routes/connect-ai.ts`: expose strategy
+    overview, validate setup/rotate strategy/read/write scope fields, and store
+    auth-only operational refs if needed.
+  - `packages/auth-server-hono/src/routes/connect-ai.test.ts`: cover overview,
+    invalid strategy/capture mode, invalid readable room, invalid writable room,
+    and migration default behavior for existing agents.
+  - `packages/app/src/components/connect-ai-page.tsx`: add Shared Agent Memory
+    summary, project/personal room access controls, advanced strategy picker,
+    capture-mode setting, and scoped read/write room display.
+  - `packages/app/src/lib/api.ts`: add typed strategy request/response shapes.
+  - `packages/app/src/App.test.tsx` or component tests: cover UI defaults and
+    payload preservation.
+- **Steps**:
+  - [ ] Extend overview response with memory strategy scopes, choices, and
+        capture modes.
+  - [ ] Add separate readable-room and writable-room controls so MCP context
+        access and mutation access have distinct boundaries.
+  - [ ] Preserve explicit writable-room controls as the user's mutation safety
+        control.
+  - [ ] Default to a dedicated AI Memory / Agent Journal writable room and keep
+        personal note rooms off until explicitly approved.
+  - [ ] Present projects as top-level access scopes with `Off`, `Read only`, and
+        `Read + write` choices plus an "allow all current rooms" shortcut.
+  - [ ] Add setup/rotate-token payload fields for scope, strategy, capture mode,
+        readable rooms, writable rooms, and default write room.
+  - [ ] Store only auth-operational pointers or mirrors in PostgreSQL if route
+        enforcement needs them.
+  - [ ] Display `manual`, `suggest`, and `auto` according to implemented status.
+- **Tests**:
+  - `npm test --workspace @eweser/auth-server-hono -- connect-ai`
+  - `npm test --workspace @eweser/app`
+- **Verification**:
+  - Manual Connect AI check: default Shared Agent Memory is selected, advanced
+    settings preserve writable room selection, and invalid combinations are
+    rejected.
+- **Manual test handoff**:
+  - Record browser URL, required dev services, setup state, and manual steps for
+    changing strategy/capture settings and creating/rotating a client token.
+- **Dependencies**: `run-1`
+- **Model tier**: `strong`
+- **Risk level**: `high`
 
 ### Run 3: Strategy-Aware MCP Defaults
 
-- Recommended Agent: coder (strong)
-- Steps:
-  - Add `eweser_get_memory_strategy`.
-  - Allow `eweser_save_memory` to infer writable memory room from token/strategy when unambiguous.
-  - Add optional `scopeType`, `scopeKey`, and `strategy` fields to saved memory docs if approved in Run 1.
-  - Keep secret redaction and 100-turn cap.
-  - Add strategy-aware tags such as `scope:<key>` and `strategy:<kind>` only if they do not clutter user-facing notes.
-- Files:
-  - `packages/mcp-server/src/tools.ts`
-  - `packages/mcp-server/src/data-layer.ts`
-  - `packages/mcp-server/src/auth.ts`
-  - `packages/mcp-server/src/tools.test.ts`
-  - `packages/mcp-server/README.md`
-- Tests:
-  - save without `roomId` when one writable memory room exists
-  - error when multiple writable rooms and no scope/room disambiguation
-  - strategy lookup response shape
-  - redaction still happens before write
-
-### Run 4: Agent Journal Default And Markdown Export
-
-- Recommended Agent: coder (fast/strong)
-- Steps:
-  - Formalize default Agent Journal document shapes.
-  - Add export helpers for OpenClaw-style and Obsidian-style Markdown:
-    - `MEMORY.md`
-    - `memory/YYYY-MM-DD.md`
-    - project index
-    - decisions page
-  - Add import helpers for existing Markdown memory where feasible.
-  - Keep export deterministic and human-editable.
-- Files:
-  - `packages/shared/src/utils/*`
-  - `packages/mcp-server/src/tools.ts` if export is an MCP tool
-  - `packages/app/src/*` if export is app UI
-  - docs under `docs/workflows/`
-- Tests:
-  - Markdown export snapshots
-  - import/parser round trip for supported subset
-  - no secrets included beyond already-redacted ordinary memory
-
-### Run 5: Project Wiki Strategy
-
-- Recommended Agent: coder (strong)
-- Steps:
-  - Add project-scoped wiki artifact model.
-  - Generate or update pages for:
-    - project overview
-    - decisions
-    - people/apps/tools
-    - active questions
-    - source index
-  - Keep raw sources immutable and generated wiki pages clearly marked as derived.
-  - Add review/edit flow before generated pages become canonical if needed.
-- Files:
-  - likely `packages/shared/src/collections/*`
-  - `packages/app/src/*`
-  - optional background worker package if generation is server-side
-- Tests:
-  - generated artifact provenance
-  - project scoping
-  - export compatibility
-
-### Run 6: Processor Adapter Spike - Mem0
-
-- Recommended Agent: coder (strong)
-- Steps:
-  - Prototype a Mem0-style processor behind an internal adapter.
-  - Use Eweser memory records as input and write derived extracted facts back with provenance.
-  - Do not expose Mem0 branding in default UX.
-  - Verify license files and attribution.
-  - Keep hosted and self-host deployment modes clear.
-- Files:
-  - new processor package or service, exact path TBD
-  - `docker-compose.dev.yml` only if local service is needed
-  - docs under `docs/deployment/` and `docs/workflows/`
-- Tests:
-  - adapter unit tests with fake processor client
-  - provenance tests
-  - processor disabled fallback
-
-### Run 7: Processor Adapter Spike - Graphiti / Cognee
-
-- Recommended Agent: coder (strong)
-- Steps:
-  - Choose one second advanced processor based on immediate product need:
-    - Graphiti for temporal project/workspace memory.
-    - Cognee for Lark/docs/workspace intelligence.
-  - Build a narrow adapter spike, not a full product integration.
-  - Confirm infra footprint for hosted and self-host.
-  - Confirm telemetry/offline/privacy defaults.
-- Files:
-  - new processor package or service, exact path TBD
-  - deployment docs
-  - optional worker config
-- Tests:
-  - can ingest source episode
-  - can query derived results
-  - Eweser source deletion/revocation removes or invalidates derived index
-
-### Run 8: QA, Legal, And Launch Readiness
-
-- Recommended Agent: qa (strong)
-- Steps:
-  - Review permissions and audit logs for every memory write/read path.
-  - Verify no ordinary memory path stores secrets intentionally.
-  - Verify hosted/self-host copy is accurate.
-  - Verify attribution/NOTICE obligations for bundled processors.
-  - Run app, auth-server, MCP, shared, and root checks appropriate to touched files.
-  - Update launch/compliance plans if paid hosted memory changes privacy/terms scope.
-- Files:
-  - `docs/ai/plans/2026-04-28-compliance-and-legal.md`
-  - `docs/security/*`
-  - package READMEs
-- Tests:
+- **Id**: `run-3`
+- **Title**: `Strategy-Aware MCP Defaults`
+- **Deliverable**: MCP clients can discover memory strategy/scopes and save or
+  suggest memory without manually supplying a room id when the target is
+  unambiguous.
+- **Files**:
+  - `packages/mcp-server/src/tools.ts`: add strategy tools and save/suggest
+    behavior.
+  - `packages/mcp-server/src/data-layer.ts`: load strategy docs/scopes and
+    resolve writable targets.
+  - `packages/mcp-server/src/auth.ts`: expose token/project context needed for
+    strategy defaults.
+  - `packages/mcp-server/src/tools.test.ts`: add MCP behavior coverage.
+  - `packages/mcp-server/README.md`: document strategy-aware memory usage.
+- **Steps**:
+  - [ ] Add `eweser_get_memory_strategy`.
+  - [ ] Add `eweser_list_memory_scopes`.
+  - [ ] Let `eweser_save_memory` infer the writable memory room when
+        unambiguous.
+  - [ ] Add optional `scopeType`, `scopeKey`, `strategy`, and `captureMode`
+        fields to saved memory docs.
+  - [ ] Add `eweser_suggest_memory` only if suggestion persistence/review state
+        is in scope after Run 2.
+  - [ ] Preserve secret redaction, transcript caps, and worktree tagging.
+- **Tests**:
   - `npm test --workspace @eweser/mcp`
+  - Targeted tests for single writable room inference, multi-room ambiguity,
+    strategy lookup shape, redaction-before-write, and capture mode behavior.
+- **Verification**:
+  - Run a local MCP save with omitted `roomId` for one writable memory room and
+    confirm the saved document has expected scope/strategy metadata.
+- **Manual test handoff**:
+  - Record exact MCP command/tool calls for strategy lookup, scope listing,
+    one-room save inference, multi-room ambiguity, and redaction behavior.
+- **Dependencies**: `run-1`, `run-2`
+- **Model tier**: `strong`
+- **Risk level**: `high`
+
+### Run 4: Agent Journal Markdown Import And Export
+
+- **Id**: `run-4`
+- **Title**: `Agent Journal Markdown Import And Export`
+- **Deliverable**: Agent Journal memory exports Obsidian-compatible Markdown by
+  default and supported Markdown can be imported back into scoped memory records
+  without losing scope, tags, crosslinks, or provenance.
+- **Files**:
+  - `packages/shared/src/utils/*`: add deterministic Agent Journal Markdown
+    import/export helpers.
+  - `packages/shared/src/utils/*.test.ts`: snapshot and round-trip tests.
+  - `packages/mcp-server/src/tools.ts`: add `eweser_export_memory` if export is
+    exposed through MCP in this pass.
+  - `packages/app/src/*`: add minimal import/export UI only if it fits the
+    Connect AI surface cleanly.
+  - `docs/workflows/*` or package READMEs: document supported Markdown layout.
+- **Steps**:
+  - [ ] Define deterministic Agent Journal export files:
+        `MEMORY.md`, `memory/YYYY-MM-DD.md`, `projects/<scope>.md`,
+        `decisions.md`, and per-memory detail pages when needed for stable
+        wikilink targets.
+  - [ ] Make `obsidian` the default Agent Journal export format; keep
+        `markdown` as an explicit compatibility format only.
+  - [ ] Add YAML frontmatter to every generated Markdown file with stable keys
+        such as `title`, `type`, `memoryType`, `scopeType`, `scopeKey`,
+        `strategy`, `captureMode`, `createdAt`, `updatedAt`, `sourceMemoryIds`,
+        `tags`, `aliases`, and `provenance` where available.
+  - [ ] Generate stable Obsidian-style tags from memory metadata, including
+        memory type, strategy, scope, project/worktree, and safety status when
+        present; preserve user-authored tags without duplicating or rewriting
+        them unpredictably.
+  - [ ] Generate `[[wikilinks]]` between the root memory index, daily journal
+        pages, project/scope indexes, decisions page, source/detail pages, and
+        related memory references where source metadata exists.
+  - [ ] Import Obsidian-compatible Markdown by parsing frontmatter, inline
+        `#tags`, aliases, and `[[wikilinks]]`; map supported metadata back to
+        scoped memory records and preserve unsupported frontmatter in provenance
+        or import metadata rather than dropping it silently.
+  - [ ] Export only redacted ordinary memory fields already allowed for search.
+  - [ ] Add import helpers for the supported Markdown subset.
+  - [ ] Keep output human-editable and stable for snapshot tests.
+- **Tests**:
   - `npm test --workspace @eweser/shared`
-  - auth-server tests
-  - app tests
+  - `npm test --workspace @eweser/mcp` if MCP export is added.
+  - Snapshot tests proving the default export contains YAML frontmatter, stable
+    tags, deterministic filenames, and expected `[[wikilinks]]`.
+  - Round-trip tests proving exported Obsidian-compatible Markdown imports back
+    into equivalent scoped memory records for title, summary, memory type,
+    scope, strategy, capture mode, tags, aliases, crosslinks, and provenance.
+- **Verification**:
+  - Export a sample project/global scope and confirm deterministic output across
+    repeated runs.
+  - Confirm the default MCP/app export path returns Obsidian-compatible
+    Markdown unless another format is explicitly requested.
+  - Confirm exported files open as a usable Obsidian vault/index: links resolve
+    for generated pages, tags are visible, and frontmatter is valid YAML for the
+    supported subset.
+- **Manual test handoff**:
+  - Record how to create seed memories, run export/import, compare generated
+    Markdown, inspect the output in Obsidian or an Obsidian-compatible parser,
+    verify crosslinks/tags/frontmatter, and confirm no unredacted secrets
+    appear.
+- **Dependencies**: `run-1`, `run-3`
+- **Model tier**: `coder`
+- **Risk level**: `medium`
+
+### Run 5: Scenario-Based Strategy Evaluation Harness
+
+- **Id**: `run-5`
+- **Title**: `Scenario-Based Strategy Evaluation Harness`
+- **Deliverable**: Automated, deterministic scenario tests compare available
+  memory strategies against realistic user/use-case fixtures and produce stable
+  evidence for strategy recommendations.
+- **Files**:
+  - `packages/shared/src/memory-evaluation/*`: add strategy evaluation types,
+    scenario fixture helpers, scoring helpers, and recommendation result shapes.
+  - `packages/shared/src/memory-evaluation/*.test.ts`: cover deterministic
+    scenario scoring, safety failures, and recommendation ranking.
+  - `packages/mcp-server/src/tools.test.ts`: add coverage that MCP-visible
+    strategy metadata can be evaluated through the same scenario fixtures where
+    practical.
+  - `docs/ai/memory-strategy-evaluation.md`: document scenario design, scoring
+    dimensions, fixture conventions, and how future strategy plans should add
+    new cases.
+  - Follow-up draft plans listed below: add explicit tasks to extend the
+    harness when Project Wiki, Mem0-style, Graphiti-style, or Cognee-style
+    processors are implemented.
+- **Steps**:
+  - [ ] Define a small, typed scenario fixture format with user profile,
+        project/workspace context, conversation/source inputs, expected recall
+        targets, expected exclusions, temporal facts, and safety traps.
+  - [ ] Add deterministic scoring dimensions for recall quality,
+        precision/noise, temporal correctness, provenance, safety, portability,
+        and use-case fit.
+  - [ ] Add baseline fixtures for coding continuity, research/source tracking,
+        preference extraction, requirement changes, team knowledge retrieval,
+        and secret/adversarial content.
+  - [ ] Score `agent-journal` as the only fully implemented strategy in this
+        plan, and represent future strategies with skipped or expected-pending
+        cases rather than false pass/fail claims.
+  - [ ] Add a stable recommendation result shape that can later power product
+        copy such as "recommended for coding agents" without hard-coding claims
+        directly in UI components.
+  - [ ] Ensure the harness can run in CI without network access, hosted APIs, or
+        nondeterministic LLM evaluation.
+  - [ ] Document how future processor plans must add scenario fixtures before
+        claiming a strategy is recommended for a user segment.
+- **Tests**:
+  - `npm test --workspace @eweser/shared -- memory-evaluation`
+  - `npm test --workspace @eweser/mcp` if MCP-facing strategy metadata is
+    exercised by the harness.
+- **Verification**:
+  - Confirm scenario results recommend `agent-journal` for coding-continuity
+    fixtures and mark unimplemented strategies as pending evidence.
+  - Confirm secret/adversarial fixtures fail if credentials or unsafe durable
+    instructions would be stored or recommended.
+- **Manual test handoff**:
+  - Record how a tester can run the scenario suite, inspect the generated
+    recommendation output, and add a new fixture for a future memory strategy.
+- **Dependencies**: `run-1`, `run-3`, `run-4`
+- **Model tier**: `strong`
+- **Risk level**: `medium`
+
+### Run 6: Verification, Manual Testing, And Plan Split Handoff
+
+- **Id**: `run-6`
+- **Title**: `Verification, Manual Testing, And Plan Split Handoff`
+- **Deliverable**: Main feature is ready for user manual testing, with each
+  follow-up draft updated from implementation findings.
+- **Files**:
+  - `docs/ai/plans/2026-04-29-ai-memory-strategy-onboarding.md`: update
+    execution summary and scenario evaluation results.
+  - Follow-up draft plans listed below: update based on implementation findings.
+- **Steps**:
+  - [ ] Run narrow workspace tests first, then root checks if cross-package
+        changes require them.
+  - [ ] Perform internal QA for auth boundaries, Yjs/CRDT usage, changesets,
+        interoperability, and secret redaction.
+  - [ ] Review scenario evaluation output and confirm product recommendation
+        claims match implemented evidence.
+  - [ ] Record manual testing instructions for the user before expanding later
+        phases.
+  - [ ] Update follow-up draft plans with concrete implementation discoveries.
+- **Tests**:
+  - `npm test --workspace @eweser/shared`
+  - `npm test --workspace @eweser/auth-server-hono -- connect-ai`
+  - `npm test --workspace @eweser/app`
+  - `npm test --workspace @eweser/mcp`
+  - `npm test --workspace @eweser/shared -- memory-evaluation`
   - `npm run check`
+- **Verification**:
+  - User can manually test Connect AI, MCP memory save, strategy lookup, Agent
+    Journal export, and scenario-based strategy evaluation before any processor
+    work begins.
+- **Manual test handoff**:
+  - Add a consolidated "Manual Test Script" note to this plan covering the full
+    end-to-end flow and the safest order for a separate manual tester to run it.
+- **Dependencies**: `run-1`, `run-2`, `run-3`, `run-4`, `run-5`
+- **Model tier**: `strong`
+- **Risk level**: `high`
+
+## Follow-Up Draft Plans
+
+- `docs/ai/plans/2026-04-29-ai-memory-auto-capture-draft.md`
+- `docs/ai/plans/2026-04-29-ai-memory-project-wiki-draft.md`
+- `docs/ai/plans/2026-04-29-ai-memory-mem0-processor-draft.md`
+- `docs/ai/plans/2026-04-29-ai-memory-graphiti-processor-draft.md`
+- `docs/ai/plans/2026-04-29-ai-memory-cognee-processor-draft.md`
+- `docs/ai/plans/2026-04-29-ai-memory-launch-readiness-draft.md`
+
+These drafts are not approved for coding by approval of this main plan. Expand
+and approve them separately after the main feature is manually tested.
+
+## Stop Conditions
+
+Stop and ask for user approval if:
+
+- Implementation requires external processor dependencies, containers, hosted
+  APIs, or telemetry configuration.
+- Real `auto` capture needs background services, client hooks, or capture
+  policies that are not already described in this plan.
+- Strategy config cannot be stored canonically in EweserDB rooms without
+  re-planning the data model.
+- Auth-server PostgreSQL would become the canonical store for user-owned memory
+  strategy/configuration rather than auth-operational metadata.
+- A destructive migration, migration deletion, secret handling, or direct push
+  to `main` is needed.
+- Verification exposes a blocking issue that cannot be fixed inside this
+  approval boundary.
+
+## Approval Boundary
+
+Approval of this plan authorizes Coder to implement Runs 1-6, make focused
+supporting edits needed for those runs, update tests and docs, add required
+changesets, run relevant verification, perform internal QA, fix issues found
+inside this boundary, and update this plan's execution summary.
+
+Approval does not authorize Project Wiki implementation, Mem0/Graphiti/Cognee
+integration, background automatic capture services, unrelated app-shell
+redesigns, destructive git operations, direct pushes to `main`, secret handling,
+or making PostgreSQL the canonical store for user-owned memory strategy data.
 
 ## Risks
 
-| Risk                                                    | Why it matters                                                                    | Mitigation                                                                                            |
-| ------------------------------------------------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| UX exposes infrastructure choices too early             | Users should not need to understand Mem0/Graphiti/Cognee during onboarding        | Default to "Shared Agent Memory"; hide engines under advanced settings                                |
-| Strategy config splits between auth DB and Eweser rooms | Drift can make agent setup disagree with user-owned data                          | Define operational vs user-owned fields explicitly; keep Eweser docs canonical long term              |
-| Existing `Conversation` type becomes overloaded         | Too many optional fields will make memory data hard to reason about               | Extend only for scope/provenance basics; add separate collections for sources/artifacts/processors    |
-| External processor becomes source of truth              | Violates Eweser user-owned thesis and makes export/delete unreliable              | Store sources in Eweser; processors only write derived artifacts with provenance                      |
-| Hosted service legal ambiguity                          | Apache-2.0 is permissive, but cloud terms/trademarks/transitive deps still matter | Verify exact versions and NOTICE/trademark obligations before shipping adapters                       |
-| Memory poisoning                                        | Agents can write misleading durable context                                       | Add review mode, source/provenance, audit logs, and per-agent write scopes                            |
-| Secret leakage into memory                              | Ordinary memory is searchable and may be exported                                 | Keep redaction, add explicit vault boundary, do not allow "remember this password" in ordinary memory |
-| Per-project scoping fails for web clients               | Web clients may not know repo/worktree context                                    | Default to global memory; let user set scope in Eweser or use explicit MCP tool arguments             |
-
-## Assumptions / Questions
-
-- Assumption: the MVP should ship without requiring Mem0, Graphiti, or Cognee.
-- Assumption: `agent-journal` should be the default because it best matches existing `eweser_save_memory` and the user-owned/portable philosophy.
-- Assumption: project scoping can start with `EWESER_WORKTREE_TAG` and user-selected project names before adding automatic repo detection.
-- Assumption: ordinary memory remains searchable/redacted; intentional secrets stay out of scope for this plan.
-- Question for implementation approval: should memory strategy documents be a new published `@eweser/shared` collection immediately, or should Run 1 start with auth-server operational config plus docs until the shape hardens?
-- Question for implementation approval: should default capture mode be `manual` or `suggest`? `manual` is safer; `suggest` is more magical but needs a review queue.
-
-## Open-Source / Commercial Boundary
-
-Apache-2.0 projects such as Mem0, Graphiti, and Cognee are plausible for a paid hosted Eweser service and self-host distribution, subject to normal obligations:
-
-- preserve copyright/license notices;
-- include NOTICE files where required;
-- do not imply endorsement;
-- review trademarks/product naming;
-- review transitive dependencies;
-- avoid depending on third-party hosted APIs unless their terms permit the intended use.
-
-Product copy should say "powered by Eweser memory" by default. Advanced settings can say "Mem0-compatible processor" or "Graphiti processor" only after legal/product naming is reviewed.
+| Risk                        | Why it matters                                            | Mitigation                                                                                   |
+| --------------------------- | --------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Strategy config split-brain | Auth setup can disagree with user-owned strategy docs     | EweserDB rooms are canonical; PostgreSQL stores only auth-operational refs/mirrors           |
+| Capture modes overpromise   | `suggest` and `auto` imply review/capture workflows       | Test every shipped mode; mark or defer `auto` if real capture needs another plan             |
+| Conversation type overload  | Too many optional fields make memory hard to reason about | Add only scope/provenance basics; use follow-up collections for sources/artifacts/processors |
+| Secret leakage              | Ordinary memory is searchable/exportable                  | Keep redaction before write and keep secrets out of ordinary memory                          |
+| Memory poisoning            | Agents can write misleading durable context               | Use review mode, provenance, audit links, and per-agent write scopes                         |
+| Recommendation overclaiming | Strategy labels can imply evidence that tests do not show | Use scenario results as the source of recommendation claims; mark future strategies pending  |
+| Cross-package cascade       | Shared schema changes affect SDK, app, MCP, examples      | Use narrow tests first, then root checks; add changeset                                      |
 
 ## Execution Summary
 
-```text
-Run 1: Product spec and strategy schema
-└── Run 2: Connect AI strategy onboarding
-    └── Run 3: Strategy-aware MCP defaults
-        ├── Run 4: Agent Journal + Markdown export
-        ├── Run 5: Project Wiki strategy
-        └── Run 6/7: Optional processor adapter spikes
-Run 8: QA, legal, and launch readiness
-```
+| Run     | Status      | Files Changed | Verification | Notes |
+| ------- | ----------- | ------------- | ------------ | ----- |
+| `run-1` | Not started |               |              |       |
+| `run-2` | Not started |               |              |       |
+| `run-3` | Not started |               |              |       |
+| `run-4` | Not started |               |              |       |
+| `run-5` | Not started |               |              |       |
+| `run-6` | Not started |               |              |       |
 
-The near-term implementation should stop after Runs 1-4 unless there is a concrete user need for automatic extraction or temporal graph behavior. Runs 6-7 are advanced processor spikes, not launch blockers for the core "same memory everywhere" promise.
+## Self-Reflection / Instruction Improvements
+
+- Added repo guidance that interoperable user-owned product configuration
+  belongs in EweserDB rooms/shared schemas, while auth-server PostgreSQL remains
+  auth-operational.
+- Added repo guidance that EweserDB is pre-live, so plans may prefer clean
+  long-term schema changes over prototype-data compatibility when explicitly
+  documented.
