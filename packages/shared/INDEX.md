@@ -3,7 +3,7 @@
 ## Plain English
 
 This package contains shared TypeScript types, collection schemas, API payload
-types, constants, and pure helpers for the EweserDB ecosystem.
+types, and pure helpers for the EweserDB ecosystem.
 
 ## Owns
 
@@ -23,7 +23,6 @@ types, constants, and pure helpers for the EweserDB ecosystem.
 ## Children
 
 - [`src/`](./src/): Shared types, schemas, API contracts, and utilities.
-- [`constants/`](./constants/): Shared constants when present.
 
 ## Key Contracts
 

@@ -1,8 +1,7 @@
 /**
  * Wiki-link extension for Obsidian Flavored Markdown.
  *
- * BlockNote doesn't provide a simple custom inline mark API in v0.23.
- * Instead, wiki-links are handled at the serialization layer:
+ * Wiki-links are handled at the serialization layer:
  *   - On load: [[Note]] → [Note](wiki://Note) via ofmToMarkdown()
  *   - On save: [Note](wiki://Note) → [[Note]] via markdownToOfm()
  *
@@ -14,6 +13,7 @@ export interface WikiLinkResolution {
   noteId: string | null;
   noteName: string;
   heading?: string;
+  blockRef?: string;
 }
 
 /**
@@ -29,9 +29,17 @@ export function parseWikiHref(href: string): WikiLinkResolution | null {
   const heading = encodedHeading
     ? decodeURIComponent(encodedHeading)
     : undefined;
+  const blockRef = heading?.startsWith('^') ? heading.slice(1) : undefined;
+  const noteHeading = heading?.startsWith('^') ? undefined : heading;
 
-  const result: WikiLinkResolution = { noteId: null, noteName };
-  if (heading !== undefined) result.heading = heading;
+  const result: WikiLinkResolution = {
+    noteId: null,
+    noteName,
+    heading: noteHeading,
+  };
+  if (blockRef !== undefined) {
+    result.blockRef = blockRef;
+  }
   return result;
 }
 

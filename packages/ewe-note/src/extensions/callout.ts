@@ -10,8 +10,8 @@
  *   > [!type]+ Title   (expanded by default)
  *   > [!type]- Title   (collapsed by default)
  *
- * At the serialization layer, callouts are preserved as blockquotes in
- * BlockNote and rendered with callout styling via CSS class detection.
+ * At the serialization layer, callouts are preserved as blockquotes and
+ * rendered with callout styling via CSS class detection.
  */
 
 /** All built-in Obsidian callout types */

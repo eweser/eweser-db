@@ -11,6 +11,8 @@ import {
   ChevronDown,
   Settings,
   Moon,
+  PanelLeftClose,
+  PanelLeftOpen,
   Sun,
   Share,
   Pencil,
@@ -96,6 +98,7 @@ function SidebarContent({
   } | null>(null);
   const [hoveredFolder, setHoveredFolder] = useState<string | null>(null);
   const [pinnedExpanded, setPinnedExpanded] = useState(true);
+  const [collapsed, setCollapsed] = useState(false);
 
   const toggleFolder = (folderId: string) => {
     setExpandedFolders((prev) => {
@@ -126,36 +129,76 @@ function SidebarContent({
   const incompleteTasks = tasks.filter((t) => !t.completed);
   const pinnedNotes = getPinnedNotes();
 
+  if (collapsed) {
+    return (
+      <button
+        type="button"
+        aria-label="Show left sidebar"
+        title="Show left sidebar"
+        onClick={() => setCollapsed(false)}
+        className="group h-screen w-3 shrink-0 border-r border-sidebar-border bg-sidebar/70 transition-colors hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <span className="sr-only">Show left sidebar</span>
+        <PanelLeftOpen className="pointer-events-none fixed left-2 top-3 h-4 w-4 -translate-x-1/2 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" />
+      </button>
+    );
+  }
+
   return (
     <aside
       data-cy="ewe-note-sidebar"
-      className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col h-screen"
+      className="relative flex h-screen w-[15rem] flex-col border-r border-white/6 bg-[oklch(0.17_0.01_95)]/98"
     >
+      <button
+        type="button"
+        aria-label="Hide left sidebar"
+        title="Hide left sidebar"
+        onClick={() => setCollapsed(true)}
+        className="group absolute inset-y-0 -right-2 z-20 hidden w-4 cursor-w-resize sm:block"
+      >
+        <span className="absolute inset-y-0 left-1/2 w-px bg-transparent transition-colors group-hover:bg-sidebar-border" />
+        <span className="sr-only">Hide left sidebar</span>
+      </button>
+
       {/* Logo */}
-      <div className="p-6 border-b border-sidebar-border">
+      <div className="border-b border-white/6 px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <EweserLogo className="w-8 h-8 shrink-0 text-sidebar-foreground" />
-            <span className="text-lg tracking-tight font-medium">EweNote</span>
+            <EweserLogo className="h-7 w-7 shrink-0 text-sidebar-foreground" />
+            <span className="text-lg font-medium tracking-[-0.03em]">
+              EweNote
+            </span>
           </div>
-          <button
-            onClick={toggleTheme}
-            className="p-1.5 hover:bg-sidebar-accent rounded-lg transition-colors"
-            title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-          >
-            {theme === 'light' ? (
-              <Moon className="w-4 h-4" />
-            ) : (
-              <Sun className="w-4 h-4" />
-            )}
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setCollapsed(true)}
+              className="rounded-full p-1.5 transition-colors hover:bg-white/6"
+              title="Hide left sidebar"
+              aria-label="Hide left sidebar"
+            >
+              <PanelLeftClose className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="rounded-full p-1.5 transition-colors hover:bg-white/6"
+              title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            >
+              {theme === 'light' ? (
+                <Moon className="w-4 h-4" />
+              ) : (
+                <Sun className="w-4 h-4" />
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Search */}
       <button
         onClick={onSearchClick}
-        className="mx-4 mt-4 flex items-center gap-2 px-3 py-2 bg-sidebar-accent rounded-lg hover:bg-sidebar-accent/80 transition-colors text-left group"
+        className="group mx-3 mt-3 flex items-center gap-2 rounded-full bg-white/4 px-3 py-2.5 text-left transition-colors hover:bg-white/7"
       >
         <Search className="w-4 h-4 text-muted-foreground" />
         <span className="text-sm text-muted-foreground flex-1">
@@ -167,10 +210,10 @@ function SidebarContent({
       </button>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
+      <nav className="flex-1 overflow-y-auto px-3 py-3">
         {/* Pinned Notes Section */}
         {pinnedNotes.length > 0 && (
-          <div className="mb-6">
+          <div className="mb-4">
             <button
               onClick={() => setPinnedExpanded(!pinnedExpanded)}
               className="w-full flex items-center gap-2 px-3 py-1.5 mb-2 hover:bg-sidebar-accent/50 rounded-lg transition-colors"
@@ -181,7 +224,7 @@ function SidebarContent({
                 <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
               )}
               <Star className="w-3.5 h-3.5 text-muted-foreground" />
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex-1">
+              <span className="flex-1 text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
                 Pinned
               </span>
               <span className="text-xs text-muted-foreground">
@@ -232,9 +275,9 @@ function SidebarContent({
         </div>
 
         {/* Folders */}
-        <div className="mt-6">
-          <div className="flex items-center justify-between px-3 mb-2">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+        <div className="mt-4">
+          <div className="mb-2 flex items-center justify-between px-3">
+            <span className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
               Folders
             </span>
             <button
@@ -245,7 +288,7 @@ function SidebarContent({
                   addFolder(name);
                 }
               }}
-              className="p-1 hover:bg-sidebar-accent rounded transition-colors"
+              className="rounded-full p-1 transition-colors hover:bg-white/6"
               title="New folder"
             >
               <Plus className="w-3.5 h-3.5 text-muted-foreground" />
@@ -301,11 +344,11 @@ function SidebarContent({
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-sidebar-border space-y-2">
+      <div className="space-y-2 border-t border-white/6 p-3">
         <button
           data-cy="ewe-note-settings-link"
           onClick={() => navigate('/settings')}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-sidebar-accent transition-colors text-left"
+          className="flex w-full items-center gap-2 rounded-2xl px-3 py-2 text-left transition-colors hover:bg-white/6"
         >
           <Settings className="w-4 h-4 text-muted-foreground" />
           <span className="text-sm">Settings</span>
@@ -313,10 +356,10 @@ function SidebarContent({
 
         <button
           data-cy="ewe-note-account-link"
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sidebar-accent transition-colors text-left"
+          className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left transition-colors hover:bg-white/6"
           onClick={() => navigate('/settings#account')}
         >
-          <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-sm font-medium">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/6 text-sm font-medium">
             {(user.firstName || 'G').slice(0, 1).toUpperCase()}
           </div>
           <div className="flex-1 text-left min-w-0">
@@ -362,7 +405,7 @@ function PinnedNoteItem({ note, onTogglePin }: PinnedNoteItemProps) {
     >
       <button
         onClick={() => navigate(`/editor/${note.id}`)}
-        className="flex-1 flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-sidebar-accent transition-colors text-left"
+        className="flex flex-1 items-center gap-2 rounded-xl px-2 py-1.5 text-left transition-colors hover:bg-white/6"
       >
         <Star className="w-3.5 h-3.5 text-primary fill-primary flex-shrink-0" />
         <span className="text-sm truncate">{note.title}</span>
@@ -373,7 +416,7 @@ function PinnedNoteItem({ note, onTogglePin }: PinnedNoteItemProps) {
             e.stopPropagation();
             onTogglePin();
           }}
-          className="p-1 hover:bg-sidebar-accent rounded transition-colors opacity-0 group-hover:opacity-100"
+          className="rounded-full p-1 opacity-0 transition-colors group-hover:opacity-100 hover:bg-white/6"
           title="Unpin note"
         >
           <Star className="w-3.5 h-3.5 text-muted-foreground" />
@@ -427,15 +470,15 @@ function FolderItem({
   return (
     <div
       ref={drop}
-      className={`flex items-center gap-1 rounded-lg transition-colors ${
-        isOver ? 'bg-primary/10 border border-primary/30' : ''
+      className={`flex items-center gap-1 rounded-xl transition-colors ${
+        isOver ? 'border border-primary/30 bg-primary/10' : ''
       }`}
       onMouseEnter={() => onHoverChange(true)}
       onMouseLeave={() => onHoverChange(false)}
     >
       <button
         onClick={onToggle}
-        className="p-1 hover:bg-sidebar-accent rounded transition-colors"
+        className="rounded-full p-1 transition-colors hover:bg-white/6"
       >
         {isExpanded ? (
           <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
@@ -444,7 +487,7 @@ function FolderItem({
         )}
       </button>
       <button
-        className="flex-1 flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-sidebar-accent transition-colors text-left"
+        className="flex flex-1 items-center gap-2 rounded-xl px-2 py-1.5 text-left transition-colors hover:bg-white/6"
         onClick={onClick}
       >
         <FolderOpen className="w-4 h-4 text-muted-foreground" />
@@ -456,7 +499,7 @@ function FolderItem({
       {isHovered && (
         <button
           onClick={onNewNote}
-          className="p-1 hover:bg-sidebar-accent rounded transition-colors"
+          className="rounded-full p-1 transition-colors hover:bg-white/6"
           title="New note in folder"
         >
           <Plus className="w-3.5 h-3.5 text-muted-foreground" />
@@ -465,7 +508,7 @@ function FolderItem({
       {isHovered && (
         <button
           onClick={onShareFolder}
-          className="p-1 hover:bg-sidebar-accent rounded transition-colors"
+          className="rounded-full p-1 transition-colors hover:bg-white/6"
           title="Share folder"
           disabled={folder.kind === 'shared-room'}
         >
@@ -504,7 +547,7 @@ function NoteItem({ note, folderId }: NoteItemProps) {
           ref={drag}
           data-cy={`ewe-note-note-item-${note.id}`}
           onClick={() => navigate(`/editor/${note.id}`)}
-          className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-sidebar-accent transition-colors text-left group ${
+          className={`group flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left transition-colors hover:bg-white/6 ${
             isDragging ? 'opacity-50' : ''
           }`}
         >
@@ -577,10 +620,10 @@ function SidebarLink({
     <button
       data-cy={dataCy}
       onClick={onClick}
-      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-left ${
+      className={`flex w-full items-center gap-2 rounded-2xl px-3 py-2 text-left transition-colors ${
         active
-          ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-          : 'hover:bg-sidebar-accent/50'
+          ? 'bg-white/10 text-sidebar-accent-foreground'
+          : 'hover:bg-white/6'
       }`}
     >
       <Icon className="w-4 h-4" />

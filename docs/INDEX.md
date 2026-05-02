@@ -3,7 +3,7 @@
 ## Plain English
 
 This folder contains current project documentation, deployment/security docs,
-AI planning history, workflows, research notes, and personal strategy notes.
+AI planning history, workflows, and research notes.
 
 ## Owns
 
@@ -28,7 +28,6 @@ AI planning history, workflows, research notes, and personal strategy notes.
 
 - [`ai/`](./ai/): ADRs, plans, research, testing notes, and agent workflows.
 - [`deployment/`](./deployment/): Deployment provider notes and minimum specs.
-- [`personal/`](./personal/): Strategy and roadmap notes.
 - [`workflows/`](./workflows/): Cross-tool and maintenance workflows.
 
 ## Key Contracts

@@ -362,13 +362,47 @@ Approval does not authorize broad app-shell UX work, unrelated EweserDB SDK chan
 
 ## Execution Summary
 
-| Run     | Status      | Files Changed | Verification | Notes |
-| ------- | ----------- | ------------- | ------------ | ----- |
-| `run-1` | Not started |               |              |       |
-| `run-2` | Not started |               |              |       |
-| `run-3` | Not started |               |              |       |
-| `run-4` | Not started |               |              |       |
-| `run-5` | Not started |               |              |       |
+| Run     | Status                                | Files Changed                                                                                                                                                           | Verification                                                                                                                                                                                                    | Notes                                                                                                                                                                                                                                                                                                                                                                             |
+| ------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `run-1` | Complete                              | `docs/ai/plans/2026-04-06-tiptap-migration.md`                                                                                                                          | Read-only inspection of `editor.tsx`, `notes-room.tsx`, `NotesContext.tsx`, OFM helpers, package docs                                                                                                           | Contract: `Note.text` is canonical body markdown; `Note.frontmatter.title` is canonical explicit title when present; tags/aliases/properties remain frontmatter-backed; markdown tasks serialize as `- [ ]` / `- [x]`; new TipTap Yjs fragments use `tiptap:${noteId}` and old BlockNote fragments are ignored rather than converted.                                             |
+| `run-2` | Complete                              | `packages/ewe-note/package.json`, lockfiles, `src/components/editor.tsx`, `src/components/tiptap-editor.tsx`, `src/editor/markdown.ts`, `src/index.css`, import cleanup | `npm run type-check --workspace @eweser/ewe-note`; `npm run test --workspace @eweser/ewe-note`; `npm run build --workspace @eweser/ewe-note`; browser smoke on `http://127.0.0.1:5181/`                         | BlockNote was removed from the active path and dependencies; TipTap 2.27.2 editor loads, edits, saves, reloads, and returns home with title/preview agreement. Added `@radix-ui/react-popover` because the existing UI import was missing and blocked typecheck.                                                                                                                  |
+| `run-3` | Complete with local-only verification | `src/components/tiptap-editor.tsx`, `src/editor/yjs.ts`, `src/index.css`                                                                                                | `npm ls @tiptap/pm prosemirror-view prosemirror-state prosemirror-model y-prosemirror --workspace @eweser/ewe-note`; typecheck/test/build above; browser smoke while signed out                                 | Collaboration binds TipTap to a stable `Y.XmlFragment` per note when a provider exists, disables StarterKit history for collaborative documents, and wires cursor awareness from the existing user/device color source. Signed-in two-tab cursor verification was skipped because local auth/sync services were not running.                                                      |
+| `run-4` | Complete with scoped OFM coverage     | `src/editor/markdown.ts`, `src/editor/markdown.test.ts`, OFM helper comments, `RightPanel.tsx`                                                                          | `npm run test --workspace @eweser/ewe-note` including new markdown bridge tests and existing import/export/vault tests; browser smoke verified task count after TipTap task-list command and reload             | Parser/serializer preserves tasks, wiki links, highlights, blockquotes/callout markdown, headings, lists, code blocks, and vault/wiki URL transformations through canonical markdown. Outline buttons now scroll to rendered heading anchors. Wiki-link click navigation remains a known follow-up; current behavior preserves link data but prevents default browser navigation. |
+| `run-5` | Complete with Cypress skipped         | `src/components/tiptap-editor.tsx`, `src/App.tsx`, `src/db.tsx`, `src/index.css`, package docs/comments                                                                 | `npm run lint --workspace @eweser/ewe-note`; `npm run test --workspace @eweser/ewe-note`; `npm run type-check --workspace @eweser/ewe-note`; `npm run build --workspace @eweser/ewe-note`; Playwright CLI smoke | Toolbar exposes heading, bold, italic, code, bullet list, and task-list controls with accessible labels. Manual browser smoke covered editor open, task-list conversion, reload persistence, home title/preview consistency. Cypress was not run because the local backend/auth stack was not started for E2E.                                                                    |
+
+### Manual Test Handoffs
+
+#### Run 2: TipTap Baseline Editor
+
+- Delivered behavior: ordinary notes open in TipTap, seed from `Note.text`, save back through `updateNoteText`, reload, and show the same title/preview on the home screen.
+- Local services/commands: `npm run dev --workspace @eweser/ewe-note -- --host 127.0.0.1`; optional backend stack via `npm run dev:docker` for signed-in sync.
+- Manual steps: open `http://127.0.0.1:5181/`, open a note, edit body text, wait one second, reload, return home.
+- Expected results: editor content persists after reload; home card title comes from frontmatter title or first heading; preview reflects body markdown.
+- Known gaps/risk: build still warns that `attachment-resolver.ts` imports Node modules in browser bundles; this pre-existing vault utility warning was not in editor scope.
+
+#### Run 3: Collaboration, Undo, And Presence
+
+- Delivered behavior: when `room.syncProvider` exists, TipTap uses collaboration/cursor extensions against `tiptap:${noteId}` and disables StarterKit history for collaborative documents.
+- Local services/commands: start backend/sync/auth with `npm run dev:docker`, start EweNote, sign in or provide a valid access grant so `room.syncProvider` exists.
+- Manual steps: open the same note in two browser tabs or clients, type in one, observe the other, and verify cursor labels/colors.
+- Expected results: text syncs through the existing provider; local-only signed-out editing still works without a provider.
+- Known gaps/risk: this session only smoke-tested signed-out local editing because auth/sync services were not running.
+
+#### Run 4: OFM, Tasks, Outline, And Backlinks
+
+- Delivered behavior: markdown bridge serializes TipTap JSON back to canonical OFM-style markdown for tasks, wiki links, highlights, headings, lists, blockquotes, and code blocks. Tasks view updates from serialized `- [ ]` / `- [x]` markdown.
+- Local services/commands: same EweNote dev command; use a note containing `[[Wiki]]`, `==highlight==`, headings, and task list items.
+- Manual steps: type headings and tasks with the toolbar, add wiki/highlight markdown through import or seeded note text, reload, open Tasks and the right panel.
+- Expected results: task count updates; headings appear in the outline and scroll the editor; backlinks continue to index canonical `[[Name]]` / `[[Name|Alias]]` markdown.
+- Known gaps/risk: direct wiki-link click navigation from inside TipTap is preserved as data but not implemented as app navigation in this run.
+
+#### Run 5: Controls And Regression Coverage
+
+- Delivered behavior: TipTap toolbar has labeled icon controls, active state styling, and regression coverage for markdown bridge behavior.
+- Local services/commands: `npm run test --workspace @eweser/ewe-note`, `npm run lint --workspace @eweser/ewe-note`, and manual browser smoke.
+- Manual steps: verify toolbar commands for heading, bold, italic, code, bullet list, and task list; open command palette while editor is focused and press Escape.
+- Expected results: toolbar changes editor content without layout jumps; Escape closes overlays rather than corrupting editor focus.
+- Known gaps/risk: Cypress was not run in this session; add a focused E2E once the local auth/app stack is part of the test run.
 
 ## Files Inspected During 2026-05-01 Decision Update
 
@@ -397,3 +431,5 @@ Approval does not authorize broad app-shell UX work, unrelated EweserDB SDK chan
 ## Self-Reflection / Instruction Improvements
 
 - 2026-05-01 decision update: "Drop down as low as needed" should be encoded as a hybrid abstraction rule, not as a blanket move from BlockNote to direct ProseMirror. The plan now defaults to TipTap 2.x and names the exact ProseMirror escape hatches the coder must understand.
+- 2026-05-02 coder run: Editor migration plans should explicitly say whether package-local `package-lock.json` files are canonical. This repo has both root and EweNote lockfiles, so dependency changes need both lockfiles refreshed or stale removed packages can remain in review diffs.
+- 2026-05-02 coder run: Signed-in collaboration verification should include an explicit local auth/sync startup precondition and test account/access-grant assumption. Without that, Coder can verify only local Yjs/offline behavior and must mark two-client presence as unverified.

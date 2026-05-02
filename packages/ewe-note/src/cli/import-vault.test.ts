@@ -13,6 +13,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const FIXTURE_VAULT = join(__dirname, '../../test-fixtures/obsidian-vault');
+const PARITY_FIXTURE_VAULT = join(
+  __dirname,
+  '../../test-fixtures/obsidian-parity'
+);
 
 describe('generateNoteId', () => {
   it('produces a 16-character hex string', () => {
@@ -161,5 +165,42 @@ describe('importVault', () => {
     const ids1 = m1.notes.map((n) => n._id).sort();
     const ids2 = m2.notes.map((n) => n._id).sort();
     expect(ids1).toEqual(ids2);
+  });
+});
+
+describe('parity fixture CLI contract', () => {
+  it('preserves Obsidian-sensitive tokens while importing and serializing', async () => {
+    const manifest = await importVault({
+      vaultPath: PARITY_FIXTURE_VAULT,
+      vaultName: 'parity-vault',
+      dryRun: true,
+    });
+
+    const byPath = new Map(
+      manifest.notes.map((note) => [note.sourcePath, note])
+    );
+
+    const wikiEmbeds = byPath.get('wiki-embeds-parity.md');
+    expect(wikiEmbeds).toBeDefined();
+    expect(wikiEmbeds?.text).toContain('%%Inline wiki comment%%');
+    expect(wikiEmbeds?.text).toContain(
+      '![[Attachments/test-image.png|640x480]]'
+    );
+    expect(wikiEmbeds?.text).toContain('[[Basic Parity Note|Quick Jump]]');
+    expect(wikiEmbeds?.text).toContain(
+      '[[Properties and Tags#Nested Tag|Properties Section]]'
+    );
+
+    const callouts = byPath.get('callouts-footnotes-parity.md');
+    expect(callouts).toBeDefined();
+    expect(callouts?.text).toContain('%%block comment%%');
+    expect(callouts?.text).toContain('[^alpha]');
+    expect(callouts?.wikiLinks).toHaveLength(0);
+
+    const real = byPath.get('real-note.md');
+    expect(real).toBeDefined();
+    expect(real?.text).toContain('![[test-image.png]]');
+    expect(real?.text).toContain('%%runtime note%%');
+    expect(real?.text).toContain('[^shared]');
   });
 });

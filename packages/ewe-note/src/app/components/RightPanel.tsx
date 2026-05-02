@@ -22,7 +22,7 @@ interface RightPanelProps {
 
 export function RightPanel({ noteId, onClose }: RightPanelProps) {
   const navigate = useNavigate();
-  const { notes, updateNote } = useNotes();
+  const { notes, updateNote, convertUnlinkedMentionToLink } = useNotes();
   const [newTag, setNewTag] = useState('');
   const [newPropertyKey, setNewPropertyKey] = useState('');
   const [newPropertyValue, setNewPropertyValue] = useState('');
@@ -30,8 +30,28 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
   const note = notes.find((n) => n.id === noteId);
   if (!note) return null;
 
-  // Extract backlinks
   const backlinks = notes.filter((n) => n.links.includes(noteId));
+  const outgoingLinks =
+    note.outgoingLinks.length > 0
+      ? note.outgoingLinks
+      : note.links.map((linkId) => ({
+          target: notes.find((n) => n.id === linkId)?.title ?? linkId,
+          noteId: linkId,
+          display: '',
+          raw: '',
+          alias: undefined,
+          heading: undefined,
+          blockRef: undefined,
+        }));
+  const unresolvedOutgoingLinks = outgoingLinks.filter((link) => !link.noteId);
+  const resolvedOutgoingLinks = outgoingLinks.filter((link) => !!link.noteId);
+  const unlinkedMentions = note.unlinkedMentions.map((mention) => {
+    const targetNote = notes.find((n) => n.id === mention.noteId);
+    return {
+      ...mention,
+      title: targetNote?.title,
+    };
+  });
 
   // Extract outline from markdown headings
   const headingRegex = /^(#{1,6})\s+(.+)$/gm;
@@ -132,6 +152,11 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
               {headings.map((heading, index) => (
                 <button
                   key={index}
+                  onClick={() => {
+                    document
+                      .querySelector(`[data-heading-anchor="${heading.id}"]`)
+                      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}
                   className="w-full text-left px-2 py-1.5 rounded hover:bg-accent transition-colors text-sm group"
                   style={{ paddingLeft: `${(heading.level - 1) * 12 + 8}px` }}
                 >
@@ -152,33 +177,93 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
             {/* Outgoing Links */}
             <div>
               <h3 className="text-xs font-medium text-muted-foreground mb-2">
-                Outgoing Links ({note.links.length})
+                Outgoing Links ({outgoingLinks.length})
               </h3>
-              {note.links.length === 0 ? (
+              {outgoingLinks.length === 0 ? (
                 <div className="text-sm text-muted-foreground">
                   No outgoing links
                 </div>
               ) : (
                 <div className="space-y-1">
-                  {note.links.map((linkId) => {
-                    const linkedNote = notes.find((n) => n.id === linkId);
-                    if (!linkedNote) return null;
-                    return (
+                  {resolvedOutgoingLinks.map((link) => {
+                    const linkedNote = link.noteId
+                      ? notes.find((n) => n.id === link.noteId)
+                      : null;
+                    const content = (
+                      <>
+                        <FileText className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium truncate">
+                            {linkedNote?.title ?? link.target}
+                          </div>
+                          <div className="text-xs text-muted-foreground truncate">
+                            {linkedNote
+                              ? `${linkedNote.content.substring(0, 100)}...`
+                              : 'Unresolved wiki link'}
+                          </div>
+                        </div>
+                      </>
+                    );
+
+                    return linkedNote && link.noteId ? (
                       <button
-                        key={linkId}
-                        onClick={() => navigate(`/editor/${linkId}`)}
+                        key={`${link.target}:${link.noteId}`}
+                        onClick={() => navigate(`/editor/${link.noteId}`)}
                         className="w-full flex items-start gap-2 px-2 py-2 rounded hover:bg-accent transition-colors text-left group"
+                      >
+                        {content}
+                      </button>
+                    ) : (
+                      <div
+                        key={link.target}
+                        className="w-full flex items-start gap-2 px-2 py-2 rounded text-left"
+                      >
+                        {content}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Unresolved Outgoing Links */}
+            <div>
+              <h3 className="text-xs font-medium text-muted-foreground mb-2">
+                Unresolved Links ({unresolvedOutgoingLinks.length})
+              </h3>
+              {unresolvedOutgoingLinks.length === 0 ? (
+                <div className="text-sm text-muted-foreground">
+                  No unresolved links
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {unresolvedOutgoingLinks.map((link) => {
+                    const context = [
+                      link.heading ? `#${link.heading}` : '',
+                      link.blockRef ? `#^${link.blockRef}` : '',
+                      link.alias ? ` (${link.alias})` : '',
+                    ]
+                      .join('')
+                      .trim();
+                    return (
+                      <div
+                        key={
+                          link.raw ||
+                          `${link.target}:${link.noteId ?? link.alias}`
+                        }
+                        className="w-full flex items-start gap-2 px-2 py-2 rounded bg-muted/30"
                       >
                         <FileText className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium truncate">
-                            {linkedNote.title}
+                            {link.target}
+                            {context ? ` ${context}` : ''}
                           </div>
-                          <div className="text-xs text-muted-foreground truncate">
-                            {linkedNote.content.substring(0, 100)}...
+                          <div className="text-xs text-muted-foreground">
+                            Unresolved wiki link
                           </div>
                         </div>
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
@@ -212,6 +297,50 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
                         </div>
                       </div>
                     </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Unlinked Mentions */}
+            <div>
+              <h3 className="text-xs font-medium text-muted-foreground mb-2">
+                Unlinked Mentions ({unlinkedMentions.length})
+              </h3>
+              {unlinkedMentions.length === 0 ? (
+                <div className="text-sm text-muted-foreground">
+                  No unlinked mentions
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {unlinkedMentions.map((mention) => (
+                    <div
+                      key={mention.noteId}
+                      className="flex items-start gap-2 px-2 py-2 rounded border border-dashed border-border text-sm"
+                    >
+                      <FileText className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium truncate">
+                          {mention.title ?? mention.noteId}
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          {mention.mention}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="text-xs px-2 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20"
+                        onClick={() =>
+                          convertUnlinkedMentionToLink(
+                            note.id,
+                            mention.noteId,
+                            mention.mention
+                          )
+                        }
+                      >
+                        Convert
+                      </button>
+                    </div>
                   ))}
                 </div>
               )}

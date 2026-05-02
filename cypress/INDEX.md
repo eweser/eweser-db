@@ -16,7 +16,8 @@ global artifacts. Active E2E specs live under `e2e/cypress`.
 
 ## Children
 
-- [`downloads/`](./downloads/): Cypress download artifacts.
+- No committed child directories. Cypress-managed download artifacts may appear
+  here locally and should remain untracked.
 
 ## Key Contracts
 

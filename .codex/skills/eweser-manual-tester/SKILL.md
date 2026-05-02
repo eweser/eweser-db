@@ -66,6 +66,54 @@ Check the app's actual config before assuming an auth URL. For example,
 health port as `38101`. Treat mismatches as findings or setup blockers, not as
 facts to paper over.
 
+## Browser Startup
+
+Use the Codex in-app browser first when browser verification matters. Do not
+start with macOS `open`, a separate headed Playwright browser, or Computer Use
+against the Codex app.
+
+1. Load the `browser-use:browser` skill.
+2. Use `tool_search` to expose `node_repl js` if the JavaScript execution tool
+   is not already available.
+3. Bootstrap Browser Use with the `iab` backend and create a tab yourself; do
+   not depend on the user already having a page open:
+
+```js
+if (!globalThis.agent) {
+  const { setupAtlasRuntime } =
+    await import('/Users/jacob/.codex/plugins/cache/openai-bundled/browser-use/0.1.0-alpha1/scripts/browser-client.mjs');
+  await setupAtlasRuntime({ globals: globalThis, backend: 'iab' });
+}
+await agent.browser.nameSession('manual test');
+if (typeof tab === 'undefined' || !tab) {
+  globalThis.tab =
+    (await agent.browser.tabs.selected()) || (await agent.browser.tabs.new());
+}
+await tab.goto('<local-url>');
+```
+
+If this fails with `No Codex IAB backends were discovered`, do not keep
+retrying or imply Codex lacks a browser. Record the exact diagnostic in the
+manual test report, then use the Playwright CLI fallback below. A single retry
+is reasonable after the user opens the in-app browser or the app reconnects.
+
+Do not use Computer Use to drive the Codex app as a workaround. In current
+Codex Desktop runs it may list `com.openai.codex`, but direct control of Codex
+itself can be blocked for safety.
+
+Fallback only after Browser Use IAB is unavailable:
+
+```bash
+command -v npx >/dev/null 2>&1
+export PWCLI="$HOME/.codex/skills/playwright/scripts/playwright_cli.sh"
+"$PWCLI" open '<local-url>' --headed
+"$PWCLI" snapshot
+```
+
+When falling back, label the evidence clearly as Playwright CLI evidence and
+include the Browser Use failure reason. Keep `.playwright-cli/` artifacts local
+unless the user explicitly asks for them.
+
 ## Test Data and Accounts
 
 Prefer disposable, per-run test identities for manual QA. Use a deterministic

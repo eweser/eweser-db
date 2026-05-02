@@ -1,0 +1,68 @@
+{
+  "version": "1.0",
+  "fixtures": [
+    {
+      "file": "basic-parity.md",
+      "label": "Basic syntax and source fidelity",
+      "requiredSourceFragments": [
+        "==highlighted text==",
+        "%%critical hidden note%%",
+        "- [ ] Unfinished",
+        "- [x] Done",
+        "# Heading One"
+      ],
+      "requiredEditorFragments": [
+        "data-type=\"taskList\"",
+        "data-checked=\"false\"",
+        "data-checked=\"true\""
+      ],
+      "preserveExact": true
+    },
+    {
+      "file": "wiki-embeds-parity.md",
+      "label": "Wiki links and embeds",
+      "requiredSourceFragments": [
+        "[[Basic Parity Note|Quick Jump]]",
+        "[[Properties and Tags#Nested Tag|Properties Section]]",
+        "![[Attachments/test-image.png|640x480]]",
+        "![[Callouts and Math#Math Section|Math heading embed]]"
+      ],
+      "requiredEditorFragments": ["wiki://Basic%20Parity%20Note"],
+      "preserveExact": true
+    },
+    {
+      "file": "callouts-footnotes-parity.md",
+      "label": "Callouts, comments, and footnotes",
+      "requiredSourceFragments": [
+        "> [!note]",
+        "> [!warning]-",
+        "%%block comment%%",
+        "[^alpha]"
+      ],
+      "requiredEditorFragments": [],
+      "preserveExact": true
+    },
+    {
+      "file": "tables-math-parity.md",
+      "label": "Tables and math",
+      "requiredSourceFragments": ["| Item | Value |", "x = "],
+      "requiredEditorFragments": [],
+      "preserveExact": true
+    },
+    {
+      "file": "real-note.md",
+      "label": "Combined realistic note",
+      "requiredSourceFragments": [
+        "![[test-image.png]]",
+        "%%runtime note%%",
+        "- [ ] Checklist",
+        "[^shared]"
+      ],
+      "requiredEditorFragments": [
+        "data-type=\"taskList\"",
+        "data-checked=\"false\""
+      ],
+      "preserveExact": true
+    }
+  ]
+}

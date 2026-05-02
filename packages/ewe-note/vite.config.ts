@@ -55,4 +55,29 @@ export default defineConfig({
   optimizeDeps: {
     include: ['yjs'],
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined;
+          if (
+            id.includes('/@tiptap/') ||
+            id.includes('/prosemirror-') ||
+            id.includes('/yjs/') ||
+            id.includes('/y-pro')
+          ) {
+            return 'vendor-editor';
+          }
+          if (id.includes('/@radix-ui/')) return 'vendor-radix';
+          if (id.includes('/react') || id.includes('/react-dom')) {
+            return 'vendor-react';
+          }
+          if (id.includes('/recharts/') || id.includes('/d3-')) {
+            return 'vendor-charts';
+          }
+          return undefined;
+        },
+      },
+    },
+  },
 });

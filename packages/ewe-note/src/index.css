@@ -33,48 +33,163 @@ body,
   contain: layout;
 }
 
-.bn-container {
-  width: 100% !important;
-  max-width: 100% !important;
-  overflow-x: hidden !important;
-  box-sizing: border-box !important;
-  position: relative !important;
-  contain: layout !important;
-}
-
-.bn-editor {
-  width: 100% !important;
-  max-width: 100% !important;
-  overflow-x: hidden !important;
-  box-sizing: border-box !important;
-  position: relative !important;
-  contain: layout !important;
-}
-
 .ProseMirror {
   width: 100% !important;
   max-width: 100% !important;
   overflow-x: hidden !important;
   box-sizing: border-box !important;
   position: relative !important;
-  contain: layout !important;
-}
-
-.bn-block-content {
-  max-width: 100% !important;
+  min-height: 45vh;
   box-sizing: border-box !important;
 }
 
-.bn-inline-content {
-  max-width: 100% !important;
-  box-sizing: border-box !important;
+.tiptap-editor {
+  width: 100%;
 }
 
-.bn-block-outer,
-.bn-block,
-.bn-block-group {
-  max-width: 100% !important;
-  box-sizing: border-box !important;
+.tiptap-prosemirror {
+  color: var(--foreground);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.tiptap-prosemirror h1,
+.tiptap-prosemirror h2,
+.tiptap-prosemirror h3,
+.tiptap-prosemirror h4,
+.tiptap-prosemirror h5,
+.tiptap-prosemirror h6 {
+  color: var(--foreground);
+  font-weight: 650;
+  line-height: 1.25;
+  margin: 1.4em 0 0.45em;
+}
+
+.tiptap-prosemirror h1 {
+  font-size: 2rem;
+}
+
+.tiptap-prosemirror h2 {
+  font-size: 1.5rem;
+}
+
+.tiptap-prosemirror h3 {
+  font-size: 1.25rem;
+}
+
+.tiptap-prosemirror p {
+  margin: 0.75em 0;
+}
+
+.tiptap-prosemirror ul,
+.tiptap-prosemirror ol {
+  margin: 0.75em 0;
+  padding-left: 1.5rem;
+}
+
+.tiptap-prosemirror ul {
+  list-style-type: disc;
+}
+
+.tiptap-prosemirror ol {
+  list-style-type: decimal;
+}
+
+.tiptap-prosemirror li {
+  padding-left: 0.25rem;
+}
+
+.tiptap-prosemirror ul[data-type='taskList'] {
+  list-style: none;
+  padding-left: 0;
+}
+
+.tiptap-prosemirror li[data-type='taskItem'],
+.tiptap-prosemirror li[data-checked] {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin: 0.35rem 0;
+}
+
+.tiptap-prosemirror li[data-type='taskItem'] > label,
+.tiptap-prosemirror li[data-checked] > label {
+  flex: 0 0 auto;
+  margin-top: 0.2rem;
+  line-height: 1;
+}
+
+.tiptap-prosemirror li[data-type='taskItem'] > label input,
+.tiptap-prosemirror li[data-checked] > label input {
+  display: block;
+  height: 1rem;
+  width: 1rem;
+}
+
+.tiptap-prosemirror li[data-type='taskItem'] > div,
+.tiptap-prosemirror li[data-checked] > div {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.tiptap-prosemirror li[data-type='taskItem'] > div > p,
+.tiptap-prosemirror li[data-checked] > div > p {
+  margin: 0;
+}
+
+.tiptap-prosemirror blockquote {
+  border-left: 3px solid var(--border);
+  color: var(--muted-foreground);
+  margin: 1rem 0;
+  padding-left: 1rem;
+}
+
+.tiptap-prosemirror pre {
+  background: var(--muted);
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  padding: 0.875rem 1rem;
+}
+
+.tiptap-prosemirror code {
+  background: var(--muted);
+  border-radius: 0.25rem;
+  padding: 0.1rem 0.25rem;
+}
+
+.tiptap-prosemirror mark {
+  background: hsl(50 90% 75% / 0.65);
+  border-radius: 0.2rem;
+  padding: 0 0.15rem;
+}
+
+.dark .tiptap-prosemirror mark {
+  background: hsl(50 80% 40% / 0.45);
+}
+
+.collaboration-cursor__caret {
+  border-left: 1px solid;
+  border-right: 1px solid;
+  margin-left: -1px;
+  margin-right: -1px;
+  pointer-events: none;
+  position: relative;
+  word-break: normal;
+}
+
+.collaboration-cursor__label {
+  border-radius: 3px 3px 3px 0;
+  color: white;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 600;
+  left: -1px;
+  line-height: normal;
+  padding: 0.1rem 0.25rem;
+  position: absolute;
+  top: -1.4em;
+  user-select: none;
+  white-space: nowrap;
 }
 
 :root {
@@ -208,36 +323,28 @@ body,
   background-color: var(--sidebar-background) !important;
   color: var(--sidebar-foreground) !important;
 }
-/* .bn-shadcn has its own hardcoded CSS variable scope that shadows root vars.
-   Override the rendered properties directly with our theme vars. */
-.bn-shadcn .bn-editor {
-  background-color: var(--background) !important;
-  color: var(--foreground) !important;
-  border-radius: 0 !important;
+
+.editor-bubble-menu,
+.editor-slash-menu {
+  animation: editor-float-in 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
 }
 
-/* Menus / popovers */
-.bn-container .bn-menu-dropdown,
-.bn-container .bn-suggestion-menu,
-.bn-shadcn [class*='bn-'][class*='dropdown'],
-.bn-shadcn [class*='bn-'][class*='popover'],
-.bn-shadcn [data-radix-popper-content-wrapper] {
-  background-color: var(--popover) !important;
-  color: var(--popover-foreground) !important;
-  border-color: var(--border) !important;
+.editor-bubble-menu {
+  backdrop-filter: blur(8px);
 }
 
-/* Also patch the low-level bn-colors vars for toolbars / side menus */
-.bn-container {
-  --bn-colors-editor-background: var(--background) !important;
-  --bn-colors-editor-text: var(--foreground) !important;
-  --bn-colors-menu-background: var(--popover) !important;
-  --bn-colors-menu-text: var(--popover-foreground) !important;
-  --bn-colors-tooltip-background: var(--muted) !important;
-  --bn-colors-tooltip-text: var(--muted-foreground) !important;
-  --bn-colors-hovered-background: var(--accent) !important;
-  --bn-colors-hovered-text: var(--accent-foreground) !important;
-  --bn-colors-border: var(--border) !important;
-  --bn-colors-shadow: var(--border) !important;
-  --bn-colors-side-menu: var(--muted-foreground) !important;
+.editor-slash-menu {
+  backdrop-filter: blur(6px);
+}
+
+@keyframes editor-float-in {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

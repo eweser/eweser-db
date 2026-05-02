@@ -1,8 +1,8 @@
 /**
  * OFM (Obsidian Flavored Markdown) Serializer / Deserializer
  *
- * Converts between BlockNote's internal block format and Obsidian Flavored Markdown.
- * Handles OFM-specific syntax that BlockNote's built-in markdown converter doesn't support:
+ * Converts between editor-compatible markdown and Obsidian Flavored Markdown.
+ * Handles OFM-specific syntax that the active editor does not natively store:
  *   - Wiki links: [[Note Name]] and [[Note Name|Alias]]
  *   - Highlights: ==text==
  *   - Comments: %%text%%
@@ -11,16 +11,64 @@
  *   - Tags: #tag (preserved as-is)
  */
 
-import type { Block, BlockNoteEditor } from '@blocknote/core';
-import type { VaultConfig } from '@/utils/attachment-resolver';
-import { resolveAttachment } from '@/utils/attachment-resolver';
+import type { VaultConfig } from '../utils/attachment-resolver';
+import { resolveAttachment } from '../utils/attachment-resolver';
+
+const OFM_EMBED_META_PREFIX = 'eweser-ofm-embed:';
+const OFM_MEDIA_EXTENSIONS = new Set([
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.gif',
+  '.webp',
+  '.svg',
+  '.pdf',
+  '.mp3',
+  '.mp4',
+  '.wav',
+  '.ogg',
+]);
+
+interface ParsedEmbed {
+  raw: string;
+  target: string;
+}
+
+function encodeEmbedToken(raw: string): string {
+  return `${OFM_EMBED_META_PREFIX}${encodeURIComponent(raw)}`;
+}
+
+function decodeEmbedToken(value: string): string | null {
+  if (!value.startsWith(OFM_EMBED_META_PREFIX)) {
+    return null;
+  }
+
+  const encoded = value.slice(OFM_EMBED_META_PREFIX.length);
+  try {
+    return decodeURIComponent(encoded);
+  } catch {
+    return null;
+  }
+}
+
+function parseEmbed(raw: string): ParsedEmbed {
+  const trimmed = raw.trim();
+  const [targetPart] = trimmed.split('|');
+  const target = (targetPart ?? '').split('#')[0]?.trim() ?? '';
+  return { raw: trimmed, target };
+}
+
+function isMediaEmbedTarget(target: string): boolean {
+  const extension = target.slice(target.lastIndexOf('.')).toLowerCase();
+  return OFM_MEDIA_EXTENSIONS.has(extension);
+}
 
 // ---------------------------------------------------------------------------
-// Pre-processing: OFM → Standard Markdown (for import into BlockNote)
+// Pre-processing: OFM -> Standard Markdown (for import into the editor)
 // ---------------------------------------------------------------------------
 
 /**
- * Transform OFM-specific syntax into BlockNote-compatible markdown
+ * Transform OFM-specific syntax into editor-compatible markdown
  * before passing to tryParseMarkdownToBlocks().
  *
  * @param ofm - Obsidian Flavored Markdown source
@@ -34,26 +82,25 @@ export function ofmToMarkdown(
 ): string {
   let result = ofm;
 
-  // Strip block comments %%...%% (multiline)
-  result = result.replace(/%%[\s\S]*?%%/g, '');
+  // Preserve block comments %%...%% as plain text for source fidelity.
 
-  // Image embeds: ![[image.png|300]] → ![image.png](resolved-url)
-  result = result.replace(
-    /!\[\[([^\]|#]+?)(?:\|([^\]]*))?\]\]/g,
-    (_match, target: string, _size: string) => {
-      const name = target.trim();
-      const url = vaultConfig
-        ? resolveAttachment(name, vaultConfig, noteSourcePath)
-        : `vault://${encodeURIComponent(name)}`;
-      return `![${name}](${url})`;
+  // Image/audio/PDF embeds with extension metadata.
+  result = result.replace(/!\[\[([^\]]+)\]\]/g, (_match, raw: string) => {
+    const parsed = parseEmbed(String(raw));
+
+    if (!isMediaEmbedTarget(parsed.target)) {
+      return `![[${parsed.raw}]]`;
     }
-  );
 
-  // Note embeds: ![[Note Name]] (no extension) → blockquote placeholder
-  result = result.replace(
-    /!\[\[([^\]]+)\]\]/g,
-    (_match, target: string) => `> 📄 *Embedded note: [[${target.trim()}]]*`
-  );
+    const resolvedTarget = parsed.target
+      ? `vault://${encodeURI(parsed.target)}`
+      : `vault://${encodeURIComponent(parsed.raw)}`;
+    const url = vaultConfig
+      ? resolveAttachment(parsed.target, vaultConfig, noteSourcePath)
+      : resolvedTarget;
+
+    return `![${parsed.target}](${url} "${encodeEmbedToken(parsed.raw)}")`;
+  });
 
   // Wiki links with alias: [[Note Name|Alias]] → [Alias](wiki://Note Name)
   result = result.replace(
@@ -80,33 +127,43 @@ export function ofmToMarkdown(
     }
   );
 
-  // Highlights: ==text== → **text** (BlockNote doesn't have a highlight mark natively)
-  result = result.replace(/==([^=]+)==/g, '**$1**');
-
   return result;
 }
 
 // ---------------------------------------------------------------------------
-// Post-processing: Standard Markdown → OFM (for export from BlockNote)
+// Post-processing: Standard Markdown -> OFM
 // ---------------------------------------------------------------------------
 
 /**
- * Transform BlockNote-serialized markdown back to OFM syntax.
+ * Transform serialized markdown back to OFM syntax.
  *
  * Reverses ofmToMarkdown() transformations:
  *   [Note Name](wiki://Note Name)         → [[Note Name]]
  *   [Alias](wiki://Note Name)             → [[Note Name|Alias]]
- *   ![name](vault://name)                 → ![[name]]
+ *   ![name](vault://name)                 → [[name]]
  */
 export function markdownToOfm(markdown: string): string {
   let result = markdown;
 
-  // Image vault links: ![name](vault://path) → ![[path]]
+  // Preserve embed metadata created by ofmToMarkdown().
   result = result.replace(
-    /!\[([^\]]*)\]\(vault:\/\/([^)]+)\)/g,
-    (_match, _alt: string, encoded: string) => {
+    /!\[([^\]]*)\]\(([^"\s)]+)\s+"([^"]+)"\)/g,
+    (_match, _alt: string, _path: string, title: string) => {
+      const decoded = decodeEmbedToken(title);
+      if (!decoded) {
+        return _match;
+      }
+      return `![[${decoded}]]`;
+    }
+  );
+
+  // Back-compat for markdown image links written without a metadata token.
+  result = result.replace(
+    /!\[([^\]]*)\]\(vault:\/\/([^ )]+)\)/g,
+    (_match, alt: string, encoded: string) => {
       const path = decodeURIComponent(encoded);
-      return `![[${path}]]`;
+      const name = alt.trim() || path.split('/').pop();
+      return `![[${name}]]`;
     }
   );
 
@@ -125,6 +182,7 @@ export function markdownToOfm(markdown: string): string {
         // No alias transformation needed
         return heading ? `[[${target}#${heading}]]` : `[[${target}]]`;
       }
+
       return heading
         ? `[[${target}#${heading}|${alias}]]`
         : `[[${target}|${alias}]]`;
@@ -135,31 +193,4 @@ export function markdownToOfm(markdown: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Editor helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Serialize editor blocks to OFM-compatible markdown.
- * Replaces the lossy blocksToMarkdownLossy() call for vault-synced notes.
- */
-export async function blocksToOfm(
-  editor: BlockNoteEditor,
-  blocks?: Block[]
-): Promise<string> {
-  const markdown = await editor.blocksToMarkdownLossy(blocks);
-  return markdownToOfm(markdown);
-}
-
-/**
- * Parse OFM markdown into BlockNote blocks.
- * Use instead of tryParseMarkdownToBlocks() for vault-synced notes.
- */
-export async function ofmToBlocks(
-  editor: BlockNoteEditor,
-  ofm: string,
-  vaultConfig?: VaultConfig,
-  noteSourcePath?: string
-): Promise<Block[]> {
-  const markdown = ofmToMarkdown(ofm, vaultConfig, noteSourcePath);
-  return editor.tryParseMarkdownToBlocks(markdown);
-}
+// TipTap editor helpers live in `src/editor/markdown.ts`.

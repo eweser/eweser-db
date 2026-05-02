@@ -1,7 +1,7 @@
 /**
  * FrontmatterEditor — editable property panel for Obsidian YAML frontmatter.
  *
- * Shows above the BlockNote editor for vault-synced notes.
+ * Shows above the editor for vault-synced notes.
  * Renders frontmatter as typed key-value rows (text, number, boolean, list, date).
  */
 

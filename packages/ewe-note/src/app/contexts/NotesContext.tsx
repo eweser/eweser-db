@@ -3,6 +3,13 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import removeMarkdown from 'markdown-to-text';
 import { useDb } from '@/db';
 import { useFolders } from '@/notes-room';
+import {
+  extractWikiLinkTargets,
+  extractUnlinkedMentions,
+  normalizeWikiTarget,
+  type OutgoingWikiLink,
+  type UnlinkedMention,
+} from './note-links';
 
 export interface Note {
   id: string;
@@ -12,11 +19,14 @@ export interface Note {
   folder: string;
   tags: string[];
   properties: Record<string, string>;
+  aliases: string[];
   createdAt: string;
   updatedAt: string;
   pinned: boolean;
   links: string[];
+  outgoingLinks: OutgoingWikiLink[];
   backlinks: string[];
+  unlinkedMentions: UnlinkedMention[];
 }
 
 export interface Folder {
@@ -69,6 +79,12 @@ interface NotesContextType {
   getNotesInFolder: (folderId: string) => Note[];
   getRecentNotes: (limit?: number) => Note[];
   getPinnedNotes: () => Note[];
+  resolveWikiLink: (target: string) => string | null;
+  convertUnlinkedMentionToLink: (
+    noteId: string,
+    targetNoteId: string,
+    mention?: string
+  ) => void;
 }
 
 const NotesContext = createContext<NotesContextType | undefined>(undefined);
@@ -99,8 +115,10 @@ type InternalNote = Note & {
   source: DbNote;
 };
 
+type ResolvableTargetValue = string | { noteId: string; mention: string };
+
 function normalize(text: string) {
-  return text.trim().toLowerCase();
+  return normalizeWikiTarget(text);
 }
 
 function deriveTitle(note: DbNote) {
@@ -129,13 +147,6 @@ function stringifyProperties(frontmatter?: Record<string, unknown>) {
       Array.isArray(value) ? value.join(', ') : String(value),
     ])
   );
-}
-
-function extractWikiLinks(markdown: string) {
-  const matches = markdown.matchAll(/\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g);
-  return Array.from(matches, (match) => match[1]?.trim()).filter(
-    Boolean
-  ) as string[];
 }
 
 function loadPinnedIds() {
@@ -175,6 +186,128 @@ function extractTasksFromMarkdown(noteId: string, markdown: string) {
   }
 
   return tasks;
+}
+
+type ResolvableTargets = {
+  candidates: Map<string, ResolvableTargetValue>;
+  mentionsByNoteId: Map<string, Set<string>>;
+};
+
+function buildResolvableTargets(notes: InternalNote[]): ResolvableTargets {
+  const targets = new Map<string, { noteId: string; mention: string }>();
+  const mentionsByNoteId = new Map<string, Set<string>>();
+
+  for (const note of notes) {
+    const normalizedTitle = normalize(note.title);
+    const noteMentions = mentionsByNoteId.get(note.id) ?? new Set<string>();
+    noteMentions.add(normalizedTitle);
+    mentionsByNoteId.set(note.id, noteMentions);
+
+    if (!targets.has(normalizedTitle)) {
+      targets.set(normalizedTitle, { noteId: note.id, mention: note.title });
+    }
+
+    for (const alias of note.aliases) {
+      const normalizedAlias = normalize(alias);
+      noteMentions.add(normalizedAlias);
+      mentionsByNoteId.set(note.id, noteMentions);
+      if (!targets.has(normalizedAlias)) {
+        targets.set(normalizedAlias, { noteId: note.id, mention: alias });
+      }
+    }
+  }
+
+  return { candidates: targets, mentionsByNoteId };
+}
+
+function normalizeResolvableTargets(
+  resolvableTargets:
+    | ResolvableTargets['candidates']
+    | Record<string, ResolvableTargetValue>
+    | null
+    | undefined
+): Map<string, ResolvableTargetValue> {
+  if (resolvableTargets instanceof Map) return resolvableTargets;
+
+  if (
+    !resolvableTargets ||
+    typeof resolvableTargets !== 'object' ||
+    Array.isArray(resolvableTargets)
+  ) {
+    return new Map();
+  }
+
+  return new Map<string, ResolvableTargetValue>(
+    Object.entries(resolvableTargets as Record<string, ResolvableTargetValue>)
+  );
+}
+
+function buildOutboundLinks(
+  note: InternalNote,
+  resolvableTargets: Map<string, ResolvableTargetValue>
+) {
+  const raw = extractWikiLinkTargets(note.content);
+  const seen = new Set<string>();
+
+  const outgoingLinks = raw.map((entry) => {
+    const targetKey = normalize(entry.target);
+    return {
+      ...entry,
+      noteId:
+        entry.noteId ??
+        (() => {
+          const candidate = resolvableTargets.get(targetKey);
+          return typeof candidate === 'string'
+            ? candidate
+            : (candidate?.noteId ?? null);
+        })(),
+      raw: entry.raw,
+    };
+  });
+
+  const deduped = outgoingLinks.filter((link) => {
+    const key = `${link.target}|${link.heading ?? ''}|${link.blockRef ?? ''}|${
+      link.alias ?? ''
+    }`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  const linkedIds = deduped
+    .map((link) => link.noteId)
+    .filter(Boolean) as string[];
+
+  return {
+    outgoingLinks: deduped,
+    linkedIds: Array.from(new Set(linkedIds)),
+  };
+}
+
+function extractUnlinkedMentionsForNote(
+  note: InternalNote,
+  resolvableTargets: Map<string, ResolvableTargetValue>,
+  outgoingTargets: Set<string>
+) {
+  const normalizedTargets = normalizeResolvableTargets(resolvableTargets);
+  const excluded = new Set([
+    normalize(note.title),
+    ...note.aliases.map(normalize),
+    ...outgoingTargets,
+  ]);
+
+  const candidateEntries = Array.from(normalizedTargets.entries()).filter(
+    ([, entry]) => {
+      const targetNoteId =
+        typeof entry === 'string' ? entry : (entry?.noteId ?? null);
+      return targetNoteId !== note.id;
+    }
+  );
+  return extractUnlinkedMentions(
+    note.content,
+    Object.fromEntries(candidateEntries),
+    excluded
+  );
 }
 
 export function NotesProvider({ children }: { children: React.ReactNode }) {
@@ -279,7 +412,7 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
   const notes = useMemo<Note[]>(() => {
     const internal: InternalNote[] = [];
 
-    const titleIndex = new Map<string, string>();
+    const noteById = new Map<string, InternalNote>();
 
     for (const room of allRooms) {
       const docs = notesByRoomId[room.id] ?? [];
@@ -303,26 +436,43 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
           updatedAt: new Date(source._updated).toISOString(),
           pinned: pinnedIds.has(source._id),
           links: [],
+          outgoingLinks: [],
           backlinks: [],
+          unlinkedMentions: [],
+          aliases,
           source,
         };
 
         internal.push(note);
-        titleIndex.set(normalize(title), source._id);
-        aliases.forEach((alias) =>
-          titleIndex.set(normalize(alias), source._id)
-        );
+        noteById.set(source._id, note);
       }
     }
+
+    const resolvableTargets = buildResolvableTargets(internal);
+    const normalizedCandidates = normalizeResolvableTargets(
+      resolvableTargets.candidates
+    );
 
     const backlinksById = new Map<string, string[]>();
 
     for (const note of internal) {
-      const linkedIds = extractWikiLinks(note.content)
-        .map((linkText) => titleIndex.get(normalize(linkText)))
-        .filter(Boolean) as string[];
+      const { outgoingLinks, linkedIds } = buildOutboundLinks(
+        note,
+        normalizedCandidates
+      );
+      const outgoingTargetSet = new Set<string>(
+        linkedIds.flatMap((id) =>
+          Array.from(resolvableTargets.mentionsByNoteId.get(id) ?? [])
+        )
+      );
 
-      note.links = Array.from(new Set(linkedIds));
+      note.outgoingLinks = outgoingLinks;
+      note.links = linkedIds;
+      note.unlinkedMentions = extractUnlinkedMentionsForNote(
+        note,
+        normalizedCandidates,
+        outgoingTargetSet
+      );
 
       note.links.forEach((linkedId) => {
         const current = backlinksById.get(linkedId) ?? [];
@@ -380,7 +530,10 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
       updatedAt: new Date(source._updated).toISOString(),
       pinned: pinnedIds.has(source._id),
       links: [],
+      outgoingLinks: [],
       backlinks: [],
+      unlinkedMentions: [],
+      aliases: source.aliases ?? [],
     };
   };
 
@@ -411,6 +564,7 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     const frontmatter: Record<string, unknown> = {};
     if (note.title && note.title !== 'Untitled') frontmatter.title = note.title;
     if (note.tags?.length) frontmatter.tags = note.tags;
+    if (note.aliases?.length) frontmatter.aliases = note.aliases;
     Object.entries(note.properties ?? {}).forEach(([key, value]) => {
       frontmatter[key] = value;
     });
@@ -449,6 +603,15 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     if (updates.tags !== undefined) {
       next.tags = updates.tags;
       nextFrontmatter.tags = updates.tags;
+    }
+
+    if (updates.aliases !== undefined) {
+      next.aliases = updates.aliases;
+      if (updates.aliases.length > 0) {
+        nextFrontmatter.aliases = updates.aliases;
+      } else {
+        delete nextFrontmatter.aliases;
+      }
     }
 
     if (updates.properties !== undefined) {
@@ -588,6 +751,55 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  const wikiResolutionMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const note of notes) {
+      map.set(normalize(note.title), note.id);
+      for (const alias of note.aliases) {
+        map.set(normalize(alias), note.id);
+      }
+    }
+    return map;
+  }, [notes]);
+
+  const resolveWikiLink = (target: string) => {
+    return wikiResolutionMap.get(normalize(target)) ?? null;
+  };
+
+  const escapeRegExp = (value: string) =>
+    value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+  const convertUnlinkedMentionToLink = (
+    noteId: string,
+    targetNoteId: string,
+    mention?: string
+  ) => {
+    const sourceNote = notes.find((note) => note.id === noteId);
+    const targetNote = notes.find((note) => note.id === targetNoteId);
+    if (!sourceNote || !targetNote) return;
+
+    const preferredMention = mention ?? targetNote.title;
+    const sourceText = sourceNote.content;
+    const matcher = new RegExp(escapeRegExp(preferredMention), 'i');
+    const match = matcher.exec(sourceText);
+    if (!match) return;
+
+    const start = match.index;
+    const end = start + match[0].length;
+    const insertionText =
+      preferredMention.toLowerCase() === targetNote.title.toLowerCase()
+        ? `[[${targetNote.title}]]`
+        : `[[${targetNote.title}|${match[0]}]]`;
+
+    const next = [
+      sourceText.slice(0, start),
+      insertionText,
+      sourceText.slice(end),
+    ].join('');
+
+    updateNote(noteId, { content: next });
+  };
+
   const contextValue: NotesContextType = {
     notes,
     folders,
@@ -613,6 +825,8 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     getNotesInFolder,
     getRecentNotes,
     getPinnedNotes,
+    resolveWikiLink,
+    convertUnlinkedMentionToLink,
   };
 
   return (
