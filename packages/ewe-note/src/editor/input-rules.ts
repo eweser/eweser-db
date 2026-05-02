@@ -79,11 +79,37 @@ export function applyMarkdownInputRules(editor: Editor) {
     return true;
   }
 
+  // Completed task list
+  if (
+    runRule(editor, /^-\s\[x\]\s+$/i, () => {
+      deleteMarkerAndReset(editor, line.text.length, line.from);
+      editor
+        .chain()
+        .focus()
+        .toggleTaskList()
+        .updateAttributes('taskItem', { checked: true })
+        .run();
+    })
+  ) {
+    return true;
+  }
+
   // Task list
   if (
     runRule(editor, /^-\s\[\s?\]\s+$/, () => {
       deleteMarkerAndReset(editor, line.text.length, line.from);
       editor.chain().focus().toggleTaskList().run();
+    })
+  ) {
+    return true;
+  }
+
+  // Obsidian callout starter
+  if (
+    runRule(editor, /^>\s\[!([a-zA-Z][\w-]*)\]\s*$/, (match) => {
+      const type = match?.[1] ?? 'note';
+      deleteMarkerAndReset(editor, line.text.length, line.from);
+      editor.chain().focus().insertContent(`> [!${type}]\n> `).run();
     })
   ) {
     return true;
@@ -138,6 +164,50 @@ export function applyMarkdownInputRules(editor: Editor) {
         .focus()
         .insertContent('| Column 1 | Column 2 |\n| --- | --- |\n|  |  |')
         .run();
+    })
+  ) {
+    return true;
+  }
+
+  // Inline highlight scaffold on a line by itself.
+  if (
+    runRule(editor, /^==([^=\n]+)==$/, (match) => {
+      const text = match?.[1] ?? '';
+      deleteMarkerAndReset(editor, line.text.length, line.from);
+      editor.chain().focus().insertContent(`<mark>${text}</mark>`).run();
+    })
+  ) {
+    return true;
+  }
+
+  // Wiki-link scaffold on a line by itself.
+  if (
+    runRule(editor, /^\[\[([^\]]+)\]\]$/, (match) => {
+      const raw = match?.[1] ?? '';
+      const [targetPart, aliasPart] = raw.split('|');
+      const target = targetPart?.trim() ?? '';
+      const alias = aliasPart?.trim() || target;
+      if (!target) return;
+      deleteMarkerAndReset(editor, line.text.length, line.from);
+      editor
+        .chain()
+        .focus()
+        .insertContent(
+          `<a href="wiki://${encodeURIComponent(target)}">${alias}</a>`
+        )
+        .run();
+    })
+  ) {
+    return true;
+  }
+
+  // Embed scaffold on a line by itself. Preserve as source-visible OFM.
+  if (
+    runRule(editor, /^!\[\[([^\]]+)\]\]$/, (match) => {
+      const raw = match?.[1]?.trim() ?? '';
+      if (!raw) return;
+      deleteMarkerAndReset(editor, line.text.length, line.from);
+      editor.chain().focus().insertContent(`![[${raw}]]`).run();
     })
   ) {
     return true;

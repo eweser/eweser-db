@@ -33,12 +33,14 @@ export function EditorSlashMenu({
       if (!commandsOpenState) return;
 
       if (event.key === 'ArrowDown') {
+        if (matches.length === 0) return;
         event.preventDefault();
         setSelectedIndex((prev) => (prev + 1) % matches.length);
         return;
       }
 
       if (event.key === 'ArrowUp') {
+        if (matches.length === 0) return;
         event.preventDefault();
         setSelectedIndex((prev) =>
           prev === 0 ? Math.max(matches.length - 1, 0) : prev - 1
@@ -46,7 +48,7 @@ export function EditorSlashMenu({
         return;
       }
 
-      if (event.key === 'Escape') {
+      if (event.key === 'Escape' || event.key === ' ') {
         event.preventDefault();
         onClose();
         return;

@@ -14,6 +14,8 @@ To run your own instance check out the /server readme at [eweser-db repo](https:
 
 - ✓ App layout with sidebar navigation
 - ✓ Offline-first — works without login, syncs when connected
+- ✓ TipTap editor with Obsidian-style Markdown, slash commands, context menus, and source mode
+- ✓ Lossless Obsidian vault import/export contract for comments, embeds, links, callouts, footnotes, properties, tables, and math source
 - ✓ Connection status indicator
 - ✓ User authentication via `@eweser/db`
 - ✓ Real-time sync across devices

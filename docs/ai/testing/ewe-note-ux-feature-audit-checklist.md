@@ -26,7 +26,9 @@ Goal: verify whether EweNote feels complete as a local-first note app and identi
 - Signing in adds sync; it must not feel required for basic note-taking.
 - The first screen is the notes workspace, not onboarding or marketing.
 - Folders are personal organization. Shared rooms/spaces are collaboration or access boundaries.
-- BlockNote is the current editor. Do not expect TipTap behavior.
+- TipTap is the current editor. Expect Obsidian-style Markdown behavior,
+  source mode fallback, slash commands, context menus, and lossless OFM export
+  where this branch claims parity.
 - Markdown, wiki links, tags, properties, backlinks, and Obsidian-style workflows are part of the intended direction.
 - Sharing/collaboration must not overpromise if real access grants are not wired.
 - PWA/offline support is in scope enough to audit visible behavior and trust cues.
@@ -199,7 +201,7 @@ Goal: verify whether EweNote feels complete as a local-first note app and identi
 - [ ] Esc closes dialogs/palette where expected.
 - [ ] Visible focus states are present.
 - [ ] Destructive menu items are distinguishable from normal actions.
-- [ ] Flag if keyboard-only operation gets stuck inside BlockNote or dialogs.
+- [ ] Flag if keyboard-only operation gets stuck inside TipTap, source mode, menus, or dialogs.
 
 ## 18. Error and Edge States
 

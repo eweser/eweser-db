@@ -24,7 +24,7 @@ curl -fsSL https://raw.githubusercontent.com/eweser/eweser-db/main/scripts/setup
 - `@eweser/app` - React SPA for login, signup, account management, and access grants
 - `@eweser/aggregator` - server-side indexing and public search
 - `@eweser/sync-server` - Hocuspocus sync relay
-- `@eweser/ewe-note` - BlockNote-based note-taking app
+- `@eweser/ewe-note` - TipTap-based Obsidian-compatible note-taking app
 - example apps under `examples/`
 
 ## Quick Start

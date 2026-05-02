@@ -144,6 +144,15 @@ body,
   padding-left: 1rem;
 }
 
+.tiptap-prosemirror blockquote:has(p:first-child:nth-last-child(n + 1)) {
+  max-width: 100%;
+}
+
+.tiptap-prosemirror blockquote p:first-child:has(+ p),
+.tiptap-prosemirror blockquote p:first-child {
+  overflow-wrap: anywhere;
+}
+
 .tiptap-prosemirror pre {
   background: var(--muted);
   border-radius: 0.5rem;
@@ -165,6 +174,46 @@ body,
 
 .dark .tiptap-prosemirror mark {
   background: hsl(50 80% 40% / 0.45);
+}
+
+.tiptap-prosemirror table {
+  border-collapse: collapse;
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.tiptap-prosemirror th,
+.tiptap-prosemirror td {
+  border: 1px solid var(--border);
+  padding: 0.4rem 0.55rem;
+}
+
+.tiptap-toolbar,
+.editor-slash-menu,
+.editor-bubble-menu,
+.source-mode-editor {
+  max-width: min(100%, calc(100vw - 1.5rem));
+}
+
+.source-mode-editor textarea {
+  tab-size: 2;
+}
+
+@media (max-width: 640px) {
+  .tiptap-toolbar {
+    position: static;
+    flex-wrap: wrap;
+    border-radius: 0.75rem;
+  }
+
+  .editor-bubble-menu {
+    left: 50% !important;
+    top: auto !important;
+    bottom: 1rem;
+    transform: translateX(-50%) !important;
+  }
 }
 
 .collaboration-cursor__caret {

@@ -4,6 +4,7 @@ import {
   type CommandGroupName,
   getCommandsByGroup,
   type EditorCommand,
+  type EditorCommandContext,
 } from '@/editor/commands';
 import {
   DropdownMenu,
@@ -17,6 +18,7 @@ interface EditorToolbarProps {
   editor: Editor;
   onSave: () => void;
   focused?: boolean;
+  commandContext?: EditorCommandContext;
 }
 
 const buttonClass =
@@ -28,9 +30,11 @@ const triggerClass =
 function CommandButton({
   command,
   editor,
+  commandContext,
 }: {
   command: EditorCommand;
   editor: Editor;
+  commandContext?: EditorCommandContext;
 }) {
   return (
     <button
@@ -41,9 +45,13 @@ function CommandButton({
           ? `${command.label} (${command.shortcut})`
           : command.label
       }
-      data-active={command.isActive(editor)}
+      data-active={
+        command.id === 'source-mode'
+          ? Boolean(commandContext?.sourceMode)
+          : command.isActive(editor)
+      }
       className={buttonClass}
-      onClick={() => command.execute(editor)}
+      onClick={() => command.execute(editor, commandContext)}
       disabled={!command.isEnabled(editor)}
     >
       <command.icon className="h-4 w-4" />
@@ -55,10 +63,12 @@ function CommandMenu({
   label,
   commands,
   editor,
+  commandContext,
 }: {
   label: string;
   commands: EditorCommand[];
   editor: Editor;
+  commandContext?: EditorCommandContext;
 }) {
   return (
     <DropdownMenu>
@@ -72,7 +82,7 @@ function CommandMenu({
         {commands.map((command) => (
           <div key={command.id}>
             <DropdownMenuItem
-              onSelect={() => command.execute(editor)}
+              onSelect={() => command.execute(editor, commandContext)}
               disabled={!command.isEnabled(editor)}
               className="gap-3"
             >
@@ -93,6 +103,7 @@ export function EditorToolbar({
   editor,
   onSave,
   focused = false,
+  commandContext,
 }: EditorToolbarProps) {
   const grouped: Record<CommandGroupName, EditorCommand[]> = {
     paragraph: getCommandsByGroup('paragraph'),
@@ -122,13 +133,29 @@ export function EditorToolbar({
           label="Text"
           commands={grouped.paragraph}
           editor={editor}
+          commandContext={commandContext}
         />
-        <CommandMenu label="Insert" commands={grouped.insert} editor={editor} />
-        <CommandMenu label="Lists" commands={grouped.list} editor={editor} />
+        <CommandMenu
+          label="Insert"
+          commands={grouped.insert}
+          editor={editor}
+          commandContext={commandContext}
+        />
+        <CommandMenu
+          label="Lists"
+          commands={grouped.list}
+          editor={editor}
+          commandContext={commandContext}
+        />
         <div className="ml-1 hidden items-center gap-1 sm:flex">
           <span className="h-4 w-px bg-border" aria-hidden="true" />
           {quickActions.map((command) => (
-            <CommandButton key={command.id} command={command} editor={editor} />
+            <CommandButton
+              key={command.id}
+              command={command}
+              editor={editor}
+              commandContext={commandContext}
+            />
           ))}
         </div>
       </div>
@@ -139,7 +166,11 @@ export function EditorToolbar({
             {index === 0 ? (
               <span className="mr-1 h-4 w-px bg-border" aria-hidden="true" />
             ) : null}
-            <CommandButton command={command} editor={editor} />
+            <CommandButton
+              command={command}
+              editor={editor}
+              commandContext={commandContext}
+            />
           </div>
         ))}
       </div>

@@ -52,12 +52,11 @@ export default function FrontmatterEditor({
 }: FrontmatterEditorProps) {
   const frontmatter = note.frontmatter ?? {};
   const [expanded, setExpanded] = useState(false);
+  const [newKey, setNewKey] = useState('');
+  const [newType, setNewType] = useState<FieldType>('text');
+  const [newValue, setNewValue] = useState('');
 
   const entries = Object.entries(frontmatter);
-
-  if (entries.length === 0) {
-    return null;
-  }
 
   const handleChange = (key: string, raw: string, type: FieldType) => {
     onUpdate({
@@ -72,9 +71,12 @@ export default function FrontmatterEditor({
   };
 
   const handleAddField = () => {
-    const key = prompt('Property name:');
-    if (!key?.trim()) return;
-    onUpdate({ ...frontmatter, [key.trim()]: '' });
+    const key = newKey.trim();
+    if (!key) return;
+    onUpdate({ ...frontmatter, [key]: parseInputValue(newValue, newType) });
+    setNewKey('');
+    setNewValue('');
+    setNewType('text');
   };
 
   return (
@@ -133,12 +135,41 @@ export default function FrontmatterEditor({
               </div>
             );
           })}
-          <button
-            onClick={handleAddField}
-            className="text-xs text-muted-foreground hover:text-foreground"
-          >
-            + Add property
-          </button>
+          <div className="grid gap-2 rounded-lg border border-border/70 bg-background/60 p-3 md:grid-cols-[minmax(0,1fr)_8rem_minmax(0,1fr)_auto]">
+            <input
+              aria-label="New property name"
+              value={newKey}
+              onChange={(event) => setNewKey(event.target.value)}
+              placeholder="Property"
+              className="min-w-0 rounded border border-input bg-background px-2 py-1 text-sm"
+            />
+            <select
+              aria-label="New property type"
+              value={newType}
+              onChange={(event) => setNewType(event.target.value as FieldType)}
+              className="rounded border border-input bg-background px-2 py-1 text-sm"
+            >
+              <option value="text">Text</option>
+              <option value="number">Number</option>
+              <option value="boolean">Boolean</option>
+              <option value="date">Date</option>
+              <option value="list">List</option>
+            </select>
+            <input
+              aria-label="New property value"
+              value={newValue}
+              onChange={(event) => setNewValue(event.target.value)}
+              placeholder={newType === 'list' ? 'item1, item2' : 'Value'}
+              className="min-w-0 rounded border border-input bg-background px-2 py-1 text-sm"
+            />
+            <button
+              type="button"
+              onClick={handleAddField}
+              className="rounded border border-border px-3 py-1 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              Add
+            </button>
+          </div>
         </div>
       )}
     </div>

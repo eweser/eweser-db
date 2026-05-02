@@ -8,16 +8,21 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/app/components/ui/context-menu';
-import { getCommandsByGroup } from '@/editor/commands';
+import {
+  getCommandsByGroup,
+  type EditorCommandContext,
+} from '@/editor/commands';
 
 interface EditorContextMenuProps {
   editor: Editor;
   children: ReactNode;
+  commandContext?: EditorCommandContext;
 }
 
 export function EditorContextMenu({
   editor,
   children,
+  commandContext,
 }: EditorContextMenuProps) {
   return (
     <ContextMenu>
@@ -27,7 +32,7 @@ export function EditorContextMenu({
         {getCommandsByGroup('format').map((command) => (
           <ContextMenuItem
             key={command.id}
-            onSelect={() => command.execute(editor)}
+            onSelect={() => command.execute(editor, commandContext)}
             disabled={!command.isEnabled(editor)}
           >
             <command.icon className="mr-2 h-4 w-4" />
@@ -42,7 +47,7 @@ export function EditorContextMenu({
         {getCommandsByGroup('paragraph').map((command) => (
           <ContextMenuItem
             key={command.id}
-            onSelect={() => command.execute(editor)}
+            onSelect={() => command.execute(editor, commandContext)}
             disabled={!command.isEnabled(editor)}
           >
             <command.icon className="mr-2 h-4 w-4" />
@@ -54,7 +59,7 @@ export function EditorContextMenu({
         {getCommandsByGroup('list').map((command) => (
           <ContextMenuItem
             key={command.id}
-            onSelect={() => command.execute(editor)}
+            onSelect={() => command.execute(editor, commandContext)}
             disabled={!command.isEnabled(editor)}
           >
             <command.icon className="mr-2 h-4 w-4" />
@@ -63,18 +68,28 @@ export function EditorContextMenu({
         ))}
         <ContextMenuSeparator />
         <ContextMenuLabel>Insert</ContextMenuLabel>
-        {getCommandsByGroup('insert')
-          .slice(0, 4)
-          .map((command) => (
-            <ContextMenuItem
-              key={command.id}
-              onSelect={() => command.execute(editor)}
-              disabled={!command.isEnabled(editor)}
-            >
-              <command.icon className="mr-2 h-4 w-4" />
-              <span>{command.label}</span>
-            </ContextMenuItem>
-          ))}
+        {getCommandsByGroup('insert').map((command) => (
+          <ContextMenuItem
+            key={command.id}
+            onSelect={() => command.execute(editor, commandContext)}
+            disabled={!command.isEnabled(editor)}
+          >
+            <command.icon className="mr-2 h-4 w-4" />
+            <span>{command.label}</span>
+          </ContextMenuItem>
+        ))}
+        <ContextMenuSeparator />
+        <ContextMenuLabel>View</ContextMenuLabel>
+        {getCommandsByGroup('utility').map((command) => (
+          <ContextMenuItem
+            key={command.id}
+            onSelect={() => command.execute(editor, commandContext)}
+            disabled={!command.isEnabled(editor)}
+          >
+            <command.icon className="mr-2 h-4 w-4" />
+            <span>{command.label}</span>
+          </ContextMenuItem>
+        ))}
         <ContextMenuSeparator />
         <ContextMenuItem onSelect={() => editor.commands.undo()}>
           Undo

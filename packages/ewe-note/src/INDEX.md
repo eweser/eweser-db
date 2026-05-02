@@ -2,7 +2,7 @@
 
 ## Plain English
 
-This source root contains the Ewe Notes React app, BlockNote editor surfaces,
+This source root contains the Ewe Notes React app, TipTap editor surfaces,
 room hooks, Obsidian/vault CLI import-export code, theme/UI components, and PWA
 helpers.
 
@@ -27,7 +27,7 @@ helpers.
 - [`app/`](./app/): App shell and routes.
 - [`cli/`](./cli/): Vault import/export and sync CLI code.
 - [`components/`](./components/): App UI and editor components.
-- [`extensions/`](./extensions/): BlockNote and Markdown extensions.
+- [`extensions/`](./extensions/): TipTap-adjacent and Markdown extensions.
 - [`hooks/`](./hooks/): React hooks.
 - [`imports/`](./imports/): Static imported image assets.
 - [`lib/`](./lib/): UI primitives, icons, themes, and utilities.

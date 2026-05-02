@@ -1,5 +1,5 @@
 /**
- * Purpose: BlockNote editor bridge for room-backed notes.
+ * Purpose: TipTap editor bridge for room-backed notes.
  * Exports: Editor default component.
  * Touches: Yjs fragments, provider collaboration, OFM serialization, and saves.
  * Read before editing: packages/ewe-note/src/INDEX.md and notes-room.tsx.
@@ -45,6 +45,8 @@ export default function Editor({
   onEditorReady,
   onEditorFocusChange,
   onNavigateWikiLink,
+  sourceMode,
+  onSourceModeChange,
 }: {
   selectedRoom: Room<Note>;
   selectedNoteId: string;
@@ -52,6 +54,8 @@ export default function Editor({
   onEditorReady?: (editor: TiptapEditorInstance | null) => void;
   onEditorFocusChange?: (focused: boolean) => void;
   onNavigateWikiLink?: (href: string) => void;
+  sourceMode?: boolean;
+  onSourceModeChange?: (sourceMode: boolean) => void;
 }) {
   const { loggedIn } = useDb();
 
@@ -80,6 +84,8 @@ export default function Editor({
       onEditorReady={onEditorReady}
       onEditorFocusChange={onEditorFocusChange}
       onNavigateWikiLink={onNavigateWikiLink}
+      sourceMode={sourceMode}
+      onSourceModeChange={onSourceModeChange}
     />
   );
 }
@@ -95,6 +101,8 @@ function EditorInternal({
   onEditorReady,
   onEditorFocusChange,
   onNavigateWikiLink,
+  sourceMode,
+  onSourceModeChange,
 }: {
   selectedNoteId: string;
   provider: Room<Note>['syncProvider'];
@@ -109,6 +117,8 @@ function EditorInternal({
   onEditorReady?: (editor: TiptapEditorInstance | null) => void;
   onEditorFocusChange?: (focused: boolean) => void;
   onNavigateWikiLink?: (href: string) => void;
+  sourceMode?: boolean;
+  onSourceModeChange?: (sourceMode: boolean) => void;
 }) {
   const { user } = useDb();
   const { resolvedMode } = useTheme();
@@ -121,14 +131,12 @@ function EditorInternal({
   return (
     <div data-cy="ewe-note-editor" className="editor-wrapper w-full max-w-full">
       <div className="mx-auto w-full max-w-[46rem]">
-        {showFrontmatterEditor &&
-          note.frontmatter &&
-          Object.keys(note.frontmatter).length > 0 && (
-            <FrontmatterEditor
-              note={note}
-              onUpdate={(fm) => updateNoteFrontmatter(fm, note)}
-            />
-          )}
+        {showFrontmatterEditor && (
+          <FrontmatterEditor
+            note={note}
+            onUpdate={(fm) => updateNoteFrontmatter(fm, note)}
+          />
+        )}
         <TiptapEditor
           note={note}
           doc={doc}
@@ -140,6 +148,8 @@ function EditorInternal({
           onEditorReady={onEditorReady}
           onEditorFocusChange={onEditorFocusChange}
           onNavigateWikiLink={onNavigateWikiLink}
+          sourceMode={sourceMode}
+          onSourceModeChange={onSourceModeChange}
         />
       </div>
     </div>

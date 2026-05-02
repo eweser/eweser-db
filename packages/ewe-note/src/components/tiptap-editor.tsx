@@ -31,6 +31,7 @@ import { getTiptapFragment, isEmptyFragment } from '@/editor/yjs';
 import { EditorContextMenu } from '@/components/editor-context-menu';
 import { EditorBubbleMenu } from '@/components/editor-bubble-menu';
 import { EditorSlashMenu } from '@/components/editor-slash-menu';
+import { SourceModeEditor } from '@/components/source-mode-editor';
 
 type ProviderWithAwareness = NonNullable<Room<Note>['syncProvider']> & {
   awareness?: {
@@ -52,6 +53,8 @@ interface TiptapEditorProps {
   onNavigateWikiLink?: (href: string) => void;
   onEditorReady?: (editor: Editor | null) => void;
   onEditorFocusChange?: (focused: boolean) => void;
+  sourceMode?: boolean;
+  onSourceModeChange?: (sourceMode: boolean) => void;
 }
 
 function debounce(func: (markdown: string, note: Note) => void, wait: number) {
@@ -158,6 +161,8 @@ export function TiptapEditor({
   onNavigateWikiLink,
   onEditorReady,
   onEditorFocusChange,
+  sourceMode = false,
+  onSourceModeChange,
 }: TiptapEditorProps) {
   const noteRef = useRef(note);
   const fragment = useMemo(
@@ -169,10 +174,12 @@ export function TiptapEditor({
     [note.text]
   );
   const debouncedSaveRef = useRef<ReturnType<typeof debounce> | null>(null);
+  const suppressEditorSaveRef = useRef(false);
   const [slashMenuState, setSlashMenuState] = useState<SlashMenuState | null>(
     null
   );
   const [focused, setFocused] = useState(false);
+  const [sourceValue, setSourceValue] = useState(note.text);
 
   if (!debouncedSaveRef.current) {
     debouncedSaveRef.current = debounce(onSaveMarkdown, 750);
@@ -180,7 +187,10 @@ export function TiptapEditor({
 
   useEffect(() => {
     noteRef.current = note;
-  }, [note]);
+    if (!sourceMode) {
+      setSourceValue(note.text);
+    }
+  }, [note, sourceMode]);
 
   const extensions = useMemo(
     () => buildExtensions({ fragment, provider, userName, userColor }),
@@ -225,6 +235,10 @@ export function TiptapEditor({
         onEditorReady?.(editor);
       },
       onUpdate({ editor }) {
+        if (suppressEditorSaveRef.current || sourceMode) {
+          return;
+        }
+
         const didApplyRule = applyMarkdownInputRules(editor);
         if (!didApplyRule) {
           setSlashMenuState(resolveSlashMenuState(editor));
@@ -254,6 +268,28 @@ export function TiptapEditor({
   );
 
   const closeSlashMenu = useCallback(() => setSlashMenuState(null), []);
+  const toggleSourceMode = useCallback(() => {
+    if (!onSourceModeChange) return;
+
+    if (!sourceMode && editor) {
+      const markdown = editorJsonToMarkdown(editor.getJSON() as JSONContent);
+      setSourceValue(markdown);
+      debouncedSaveRef.current?.flush();
+      onSaveMarkdown(markdown, noteRef.current);
+      onSourceModeChange(true);
+      return;
+    }
+
+    onSourceModeChange(false);
+  }, [editor, onSaveMarkdown, onSourceModeChange, sourceMode]);
+
+  const commandContext = useMemo(
+    () => ({
+      sourceMode,
+      toggleSourceMode,
+    }),
+    [sourceMode, toggleSourceMode]
+  );
 
   const executeSlashCommand = useCallback(
     (commandId: EditorCommandId) => {
@@ -269,11 +305,39 @@ export function TiptapEditor({
         .focus()
         .deleteRange({ from: slashMenuState.from, to: slashMenuState.to })
         .run();
-      command.execute(editor);
+      command.execute(editor, commandContext);
       closeSlashMenu();
     },
-    [editor, closeSlashMenu, slashMenuState]
+    [editor, closeSlashMenu, commandContext, slashMenuState]
   );
+
+  const saveSourceMarkdown = useCallback((nextValue: string) => {
+    setSourceValue(nextValue);
+    debouncedSaveRef.current?.(nextValue, noteRef.current);
+  }, []);
+
+  const exitSourceMode = useCallback(() => {
+    debouncedSaveRef.current?.flush();
+    onSaveMarkdown(sourceValue, noteRef.current);
+    suppressEditorSaveRef.current = true;
+    editor?.commands.setContent(markdownToEditorHtml(sourceValue), false);
+    window.setTimeout(() => {
+      suppressEditorSaveRef.current = false;
+    }, 500);
+    onSourceModeChange?.(false);
+  }, [editor, onSaveMarkdown, onSourceModeChange, sourceValue]);
+
+  useEffect(() => {
+    if (!editor) return;
+
+    const focusEvent = new CustomEvent('ewe-note-editor-focus', {
+      detail: {
+        editor,
+        commandContext,
+      },
+    });
+    window.dispatchEvent(focusEvent);
+  }, [commandContext, editor, focused]);
 
   useEffect(() => {
     return () => debouncedSaveRef.current?.flush();
@@ -287,12 +351,21 @@ export function TiptapEditor({
         editor={editor}
         onSave={() => saveEditor(editor, noteRef.current, onSaveMarkdown)}
         focused={focused}
+        commandContext={commandContext}
       />
-      <EditorBubbleMenu editor={editor}>
-        <EditorContextMenu editor={editor}>
-          <EditorContent editor={editor} className="editor-view" />
-        </EditorContextMenu>
-      </EditorBubbleMenu>
+      {sourceMode ? (
+        <SourceModeEditor
+          value={sourceValue}
+          onChange={saveSourceMarkdown}
+          onExit={exitSourceMode}
+        />
+      ) : (
+        <EditorBubbleMenu editor={editor} commandContext={commandContext}>
+          <EditorContextMenu editor={editor} commandContext={commandContext}>
+            <EditorContent editor={editor} className="editor-view" />
+          </EditorContextMenu>
+        </EditorBubbleMenu>
+      )}
       <EditorSlashMenu
         commandsOpenState={slashMenuState}
         onSelect={executeSlashCommand}

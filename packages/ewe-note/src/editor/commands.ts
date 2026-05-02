@@ -73,13 +73,19 @@ export interface EditorCommand {
   slashTrigger: string[];
   isActive: (editor: Editor) => boolean;
   isEnabled: (editor: Editor) => boolean;
-  execute: (editor: Editor) => void;
+  execute: (editor: Editor, context?: EditorCommandContext) => void;
   shortcut?: string;
   description?: string;
+  menuPlacement: Array<'toolbar' | 'bubble' | 'context' | 'slash' | 'palette'>;
 }
 
 function replaceSelection(editor: Editor, content: string) {
   editor.chain().focus().deleteSelection().insertContent(content).run();
+}
+
+export interface EditorCommandContext {
+  sourceMode?: boolean;
+  toggleSourceMode?: () => void;
 }
 
 export const EDITOR_COMMANDS: EditorCommand[] = [
@@ -94,6 +100,7 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
     execute: (editor) => editor.chain().focus().setParagraph().run(),
     shortcut: 'Ctrl/Cmd+0',
     description: 'Body paragraph',
+    menuPlacement: ['toolbar', 'context', 'slash', 'palette'],
   },
   {
     id: 'heading-1',
@@ -106,6 +113,7 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
     execute: (editor) =>
       editor.chain().focus().toggleHeading({ level: 1 }).run(),
     shortcut: 'Ctrl/Cmd+1',
+    menuPlacement: ['toolbar', 'context', 'slash', 'palette'],
   },
   {
     id: 'heading-2',
@@ -118,6 +126,7 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
     execute: (editor) =>
       editor.chain().focus().toggleHeading({ level: 2 }).run(),
     shortcut: 'Ctrl/Cmd+2',
+    menuPlacement: ['toolbar', 'context', 'slash', 'palette'],
   },
   {
     id: 'heading-3',
@@ -130,6 +139,7 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
     execute: (editor) =>
       editor.chain().focus().toggleHeading({ level: 3 }).run(),
     shortcut: 'Ctrl/Cmd+3',
+    menuPlacement: ['toolbar', 'context', 'slash', 'palette'],
   },
   {
     id: 'heading-4',
@@ -141,6 +151,7 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
     isEnabled: () => true,
     execute: (editor) =>
       editor.chain().focus().toggleHeading({ level: 4 }).run(),
+    menuPlacement: ['toolbar', 'context', 'slash', 'palette'],
   },
   {
     id: 'heading-5',
@@ -152,6 +163,7 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
     isEnabled: () => true,
     execute: (editor) =>
       editor.chain().focus().toggleHeading({ level: 5 }).run(),
+    menuPlacement: ['toolbar', 'context', 'slash', 'palette'],
   },
   {
     id: 'heading-6',
@@ -163,6 +175,7 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
     isEnabled: () => true,
     execute: (editor) =>
       editor.chain().focus().toggleHeading({ level: 6 }).run(),
+    menuPlacement: ['toolbar', 'context', 'slash', 'palette'],
   },
   {
     id: 'quote',
@@ -173,6 +186,7 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
     isActive: (editor) => editor.isActive('blockquote'),
     isEnabled: () => true,
     execute: (editor) => editor.chain().focus().toggleBlockquote().run(),
+    menuPlacement: ['toolbar', 'context', 'slash', 'palette'],
   },
   {
     id: 'bold',
@@ -184,6 +198,7 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
     isEnabled: () => true,
     execute: (editor) => editor.chain().focus().toggleBold().run(),
     shortcut: 'Ctrl/Cmd+B',
+    menuPlacement: ['toolbar', 'bubble', 'context', 'slash', 'palette'],
   },
   {
     id: 'italic',
@@ -195,6 +210,7 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
     isEnabled: () => true,
     execute: (editor) => editor.chain().focus().toggleItalic().run(),
     shortcut: 'Ctrl/Cmd+I',
+    menuPlacement: ['toolbar', 'bubble', 'context', 'slash', 'palette'],
   },
   {
     id: 'strikethrough',
@@ -206,6 +222,7 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
     isEnabled: () => true,
     execute: (editor) => editor.chain().focus().toggleStrike().run(),
     shortcut: 'Ctrl/Cmd+Shift+X',
+    menuPlacement: ['toolbar', 'bubble', 'context', 'slash', 'palette'],
   },
   {
     id: 'highlight',
@@ -217,6 +234,7 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
     isEnabled: () => true,
     execute: (editor) => editor.chain().focus().toggleHighlight().run(),
     shortcut: 'Ctrl/Cmd+Shift+H',
+    menuPlacement: ['toolbar', 'bubble', 'context', 'slash', 'palette'],
   },
   {
     id: 'code',
@@ -228,6 +246,7 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
     isEnabled: () => true,
     execute: (editor) => editor.chain().focus().toggleCode().run(),
     shortcut: 'Ctrl/Cmd+E',
+    menuPlacement: ['toolbar', 'bubble', 'context', 'slash', 'palette'],
   },
   {
     id: 'code-block',
@@ -239,6 +258,7 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
     isEnabled: () => true,
     execute: (editor) => editor.chain().focus().toggleCodeBlock().run(),
     shortcut: '```',
+    menuPlacement: ['toolbar', 'context', 'slash', 'palette'],
   },
   {
     id: 'horizontal-rule',
@@ -250,6 +270,7 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
     isEnabled: () => true,
     execute: (editor) => editor.chain().focus().setHorizontalRule().run(),
     shortcut: '---',
+    menuPlacement: ['toolbar', 'context', 'slash', 'palette'],
   },
   {
     id: 'bullet-list',
@@ -260,6 +281,7 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
     isActive: (editor) => editor.isActive('bulletList'),
     isEnabled: () => true,
     execute: (editor) => editor.chain().focus().toggleBulletList().run(),
+    menuPlacement: ['toolbar', 'context', 'slash', 'palette'],
   },
   {
     id: 'ordered-list',
@@ -270,6 +292,7 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
     isActive: (editor) => editor.isActive('orderedList'),
     isEnabled: () => true,
     execute: (editor) => editor.chain().focus().toggleOrderedList().run(),
+    menuPlacement: ['toolbar', 'context', 'slash', 'palette'],
   },
   {
     id: 'task-list',
@@ -280,6 +303,7 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
     isActive: (editor) => editor.isActive('taskList'),
     isEnabled: () => true,
     execute: (editor) => editor.chain().focus().toggleTaskList().run(),
+    menuPlacement: ['toolbar', 'context', 'slash', 'palette'],
   },
   {
     id: 'link',
@@ -297,6 +321,7 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
       editor.commands.toggleLink({ href });
     },
     shortcut: 'Ctrl/Cmd+K',
+    menuPlacement: ['toolbar', 'context', 'slash', 'palette'],
   },
   {
     id: 'external-link',
@@ -311,6 +336,7 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
       if (!href) return;
       editor.commands.toggleLink({ href });
     },
+    menuPlacement: ['toolbar', 'context', 'slash', 'palette'],
   },
   {
     id: 'clear-formatting',
@@ -323,6 +349,7 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
     execute: (editor) =>
       editor.chain().focus().unsetAllMarks().clearNodes().run(),
     shortcut: 'Ctrl/Cmd+Shift+X',
+    menuPlacement: ['context', 'slash', 'palette'],
   },
   {
     id: 'insert-callout',
@@ -335,6 +362,7 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
     execute: (editor) => {
       replaceSelection(editor, '> [!note]\n> ');
     },
+    menuPlacement: ['toolbar', 'context', 'slash', 'palette'],
   },
   {
     id: 'insert-table',
@@ -351,6 +379,7 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
       );
     },
     shortcut: '|',
+    menuPlacement: ['toolbar', 'context', 'slash', 'palette'],
   },
   {
     id: 'insert-embed',
@@ -367,6 +396,7 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
       if (!target) return;
       replaceSelection(editor, `![[${target}]]`);
     },
+    menuPlacement: ['toolbar', 'context', 'slash', 'palette'],
   },
   {
     id: 'insert-comment',
@@ -390,6 +420,7 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
       );
       replaceSelection(editor, `%%${selectedText}%%`);
     },
+    menuPlacement: ['context', 'slash', 'palette'],
   },
   {
     id: 'insert-math',
@@ -402,6 +433,7 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
     execute: (editor) => {
       replaceSelection(editor, '$$\n\n$$');
     },
+    menuPlacement: ['context', 'slash', 'palette'],
   },
   {
     id: 'source-mode',
@@ -411,11 +443,12 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
     slashTrigger: ['source'],
     isActive: () => false,
     isEnabled: () => true,
-    execute: () => {
-      window.alert(
-        'Source mode is planned. Rich markdown edits remain available in editor mode.'
-      );
+    execute: (_editor, context) => {
+      context?.toggleSourceMode?.();
     },
+    shortcut: 'Ctrl/Cmd+Shift+S',
+    description: 'Edit the canonical Markdown source',
+    menuPlacement: ['toolbar', 'context', 'slash', 'palette'],
   },
 ];
 
@@ -446,4 +479,12 @@ export function getSlashMatchCommands(query: string, limit = 20) {
 
     return haystack.includes(normalized);
   }).slice(0, limit);
+}
+
+export function getCommandsForPlacement(
+  placement: EditorCommand['menuPlacement'][number]
+) {
+  return EDITOR_COMMANDS.filter((command) =>
+    command.menuPlacement.includes(placement)
+  );
 }

@@ -65,7 +65,7 @@ e2e/
 | Sync server   | Hocuspocus with SQLite-backed persistence            |
 | Aggregation   | Server-side indexing over webhook-fed documents      |
 | Frontend apps | React 18-19, Vite, Tailwind CSS, Radix UI            |
-| Editor        | BlockNote in `packages/ewe-note`                     |
+| Editor        | TipTap in `packages/ewe-note`                        |
 | Testing       | Vitest and Cypress                                   |
 | Build         | Vite, `tsc`, npm workspaces                          |
 

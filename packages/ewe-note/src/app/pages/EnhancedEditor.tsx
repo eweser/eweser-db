@@ -38,6 +38,7 @@ import type { Note } from '../contexts/NotesContext';
 export function EnhancedEditor() {
   const [focusMode, setFocusMode] = useState(false);
   const [copyLinkDone, setCopyLinkDone] = useState(false);
+  const [sourceMode, setSourceMode] = useState(false);
   const navigate = useNavigate();
   const { noteId } = useParams();
   const {
@@ -166,6 +167,8 @@ export function EnhancedEditor() {
                 selectedRoom={editorRoom}
                 selectedNoteId={note.id}
                 showFrontmatterEditor={false}
+                sourceMode={sourceMode}
+                onSourceModeChange={setSourceMode}
               />
             ) : null}
           </div>
@@ -200,6 +203,8 @@ export function EnhancedEditor() {
         onFocusMode={() => setFocusMode(true)}
         editorRoom={editorRoom}
         onNavigateWikiLink={handleNavigateWikiLink}
+        sourceMode={sourceMode}
+        onSourceModeChange={setSourceMode}
       />
     </WorkspaceShell>
   );
@@ -221,6 +226,8 @@ function EditorWorkspace({
   onFocusMode,
   editorRoom,
   onNavigateWikiLink,
+  sourceMode,
+  onSourceModeChange,
 }: {
   note: Note;
   folderName: string;
@@ -237,6 +244,8 @@ function EditorWorkspace({
   onFocusMode: () => void;
   editorRoom: ReturnType<typeof useDb>['selectedRoom'];
   onNavigateWikiLink: (href: string) => void;
+  sourceMode: boolean;
+  onSourceModeChange: (sourceMode: boolean) => void;
 }) {
   const { metadataVisible, setMetadataVisible } = useWorkspaceShell();
 
@@ -394,6 +403,8 @@ function EditorWorkspace({
               selectedNoteId={note.id}
               showFrontmatterEditor={false}
               onNavigateWikiLink={onNavigateWikiLink}
+              sourceMode={sourceMode}
+              onSourceModeChange={onSourceModeChange}
             />
           ) : null}
         </div>

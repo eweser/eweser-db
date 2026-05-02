@@ -1,7 +1,11 @@
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Editor } from '@tiptap/react';
-import { getCommandById, type EditorCommandId } from '@/editor/commands';
+import {
+  getCommandById,
+  type EditorCommandContext,
+  type EditorCommandId,
+} from '@/editor/commands';
 
 interface BubbleMenuPosition {
   x: number;
@@ -11,6 +15,7 @@ interface BubbleMenuPosition {
 interface EditorBubbleMenuProps {
   editor: Editor;
   children?: ReactNode;
+  commandContext?: EditorCommandContext;
 }
 
 const FORMAT_COMMAND_IDS: EditorCommandId[] = [
@@ -36,7 +41,11 @@ const positionForSelection = (editor: Editor): BubbleMenuPosition => {
   return { x: caret.left, y: Math.max(caret.top - 44, 40) };
 };
 
-export function EditorBubbleMenu({ editor, children }: EditorBubbleMenuProps) {
+export function EditorBubbleMenu({
+  editor,
+  children,
+  commandContext,
+}: EditorBubbleMenuProps) {
   const [visible, setVisible] = useState(false);
   const [position, setPosition] = useState<BubbleMenuPosition>({ x: 0, y: 0 });
 
@@ -96,7 +105,7 @@ export function EditorBubbleMenu({ editor, children }: EditorBubbleMenuProps) {
                   key={command.id}
                   aria-label={command.label}
                   className="pointer-events-auto inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground data-[active=true]:bg-accent data-[active=true]:text-foreground"
-                  onClick={() => command.execute(editor)}
+                  onClick={() => command.execute(editor, commandContext)}
                   data-active={command.isActive(editor)}
                   disabled={!command.isEnabled(editor)}
                 >

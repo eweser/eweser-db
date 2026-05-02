@@ -7,13 +7,13 @@ bridge, layout chrome, sidebar, dialogs, theme controls, and local UI primitives
 
 ## Owns
 
-- The BlockNote editor wrapper used for room-backed note editing.
+- The TipTap editor wrapper used for room-backed note editing.
 - Layout, sidebar, search, folder, frontmatter, and theme surfaces.
 - Local shadcn-style primitives under `ui/`.
 
 ## Start Here
 
-- [`editor.tsx`](./editor.tsx): BlockNote, Yjs collaboration, and save bridge.
+- [`editor.tsx`](./editor.tsx): TipTap, Yjs collaboration, and save bridge.
 - [`layout.tsx`](./layout.tsx): App chrome, topbar, sidebar, and focus layout.
 - [`app-sidebar.tsx`](./app-sidebar.tsx): Main navigation and room/note sidebar.
 - [`layout-shortcuts.ts`](./layout-shortcuts.ts): Keyboard layout state rules.

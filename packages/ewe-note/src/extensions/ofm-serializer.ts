@@ -12,56 +12,6 @@
  */
 
 import type { VaultConfig } from '../utils/attachment-resolver';
-import { resolveAttachment } from '../utils/attachment-resolver';
-
-const OFM_EMBED_META_PREFIX = 'eweser-ofm-embed:';
-const OFM_MEDIA_EXTENSIONS = new Set([
-  '.png',
-  '.jpg',
-  '.jpeg',
-  '.gif',
-  '.webp',
-  '.svg',
-  '.pdf',
-  '.mp3',
-  '.mp4',
-  '.wav',
-  '.ogg',
-]);
-
-interface ParsedEmbed {
-  raw: string;
-  target: string;
-}
-
-function encodeEmbedToken(raw: string): string {
-  return `${OFM_EMBED_META_PREFIX}${encodeURIComponent(raw)}`;
-}
-
-function decodeEmbedToken(value: string): string | null {
-  if (!value.startsWith(OFM_EMBED_META_PREFIX)) {
-    return null;
-  }
-
-  const encoded = value.slice(OFM_EMBED_META_PREFIX.length);
-  try {
-    return decodeURIComponent(encoded);
-  } catch {
-    return null;
-  }
-}
-
-function parseEmbed(raw: string): ParsedEmbed {
-  const trimmed = raw.trim();
-  const [targetPart] = trimmed.split('|');
-  const target = (targetPart ?? '').split('#')[0]?.trim() ?? '';
-  return { raw: trimmed, target };
-}
-
-function isMediaEmbedTarget(target: string): boolean {
-  const extension = target.slice(target.lastIndexOf('.')).toLowerCase();
-  return OFM_MEDIA_EXTENSIONS.has(extension);
-}
 
 // ---------------------------------------------------------------------------
 // Pre-processing: OFM -> Standard Markdown (for import into the editor)
@@ -84,27 +34,17 @@ export function ofmToMarkdown(
 
   // Preserve block comments %%...%% as plain text for source fidelity.
 
-  // Image/audio/PDF embeds with extension metadata.
+  // Preserve all embeds as source-visible OFM until a real TipTap node owns
+  // media/embed serialization. This avoids image/media data loss on editor save.
   result = result.replace(/!\[\[([^\]]+)\]\]/g, (_match, raw: string) => {
-    const parsed = parseEmbed(String(raw));
-
-    if (!isMediaEmbedTarget(parsed.target)) {
-      return `![[${parsed.raw}]]`;
-    }
-
-    const resolvedTarget = parsed.target
-      ? `vault://${encodeURI(parsed.target)}`
-      : `vault://${encodeURIComponent(parsed.raw)}`;
-    const url = vaultConfig
-      ? resolveAttachment(parsed.target, vaultConfig, noteSourcePath)
-      : resolvedTarget;
-
-    return `![${parsed.target}](${url} "${encodeEmbedToken(parsed.raw)}")`;
+    void vaultConfig;
+    void noteSourcePath;
+    return `![[${String(raw).trim()}]]`;
   });
 
   // Wiki links with alias: [[Note Name|Alias]] → [Alias](wiki://Note Name)
   result = result.replace(
-    /\[\[([^\]|#]+?)(?:#([^\]|]*))?\|([^\]]+)\]\]/g,
+    /(?<!!)\[\[([^\]|#]+?)(?:#([^\]|]*))?\|([^\]]+)\]\]/g,
     (_match, target: string, heading: string | undefined, alias: string) => {
       const href = heading
         ? `wiki://${encodeURIComponent(target.trim())}#${encodeURIComponent(heading.trim())}`
@@ -115,7 +55,7 @@ export function ofmToMarkdown(
 
   // Wiki links without alias: [[Note Name#Heading]] → [Note Name § Heading](wiki://Note Name#Heading)
   result = result.replace(
-    /\[\[([^\]|#]*?)(?:#([^\]|]*))?\]\]/g,
+    /(?<!!)\[\[([^\]|#]*?)(?:#([^\]|]*))?\]\]/g,
     (_match, target: string, heading: string | undefined) => {
       const label = heading
         ? `${target.trim()} § ${heading.trim()}`
@@ -144,18 +84,6 @@ export function ofmToMarkdown(
  */
 export function markdownToOfm(markdown: string): string {
   let result = markdown;
-
-  // Preserve embed metadata created by ofmToMarkdown().
-  result = result.replace(
-    /!\[([^\]]*)\]\(([^"\s)]+)\s+"([^"]+)"\)/g,
-    (_match, _alt: string, _path: string, title: string) => {
-      const decoded = decodeEmbedToken(title);
-      if (!decoded) {
-        return _match;
-      }
-      return `![[${decoded}]]`;
-    }
-  );
 
   // Back-compat for markdown image links written without a metadata token.
   result = result.replace(

@@ -72,6 +72,30 @@ describe('serializeNote', () => {
     expect(result).toContain('tags:');
     expect(result).toContain('myTag');
   });
+
+  it('preserves Obsidian parity source tokens during export serialization', () => {
+    const note = makeNote({
+      frontmatter: { title: 'Parity Export', aliases: ['PE'] },
+      tags: ['export'],
+      text: [
+        '> [!project-risk]- Custom callout',
+        '> body',
+        '',
+        '![[Attachments/test-image.png|640x480]]',
+        '',
+        '%%export comment%%',
+        '',
+        '[^one]: Export footnote',
+      ].join('\n'),
+    });
+
+    const result = serializeNote(note);
+    expect(result).toContain('aliases:');
+    expect(result).toContain('> [!project-risk]- Custom callout');
+    expect(result).toContain('![[Attachments/test-image.png|640x480]]');
+    expect(result).toContain('%%export comment%%');
+    expect(result).toContain('[^one]: Export footnote');
+  });
 });
 
 // ---------------------------------------------------------------------------

@@ -9,8 +9,13 @@ import {
   ArrowRight,
   FileCode,
 } from 'lucide-react';
+import type { Editor } from '@tiptap/react';
 import { useNotes } from '../contexts/NotesContext';
 import { TemplatesDialog } from './TemplatesDialog';
+import {
+  getCommandsForPlacement,
+  type EditorCommandContext,
+} from '@/editor/commands';
 
 interface EnhancedCommandPaletteProps {
   open: boolean;
@@ -23,6 +28,10 @@ export function EnhancedCommandPalette({
 }: EnhancedCommandPaletteProps) {
   const [search, setSearch] = useState('');
   const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [activeEditor, setActiveEditor] = useState<{
+    editor: Editor;
+    commandContext?: EditorCommandContext;
+  } | null>(null);
   const navigate = useNavigate();
   const { folders, addNote, searchNotes, getRecentNotes } = useNotes();
 
@@ -57,6 +66,24 @@ export function EnhancedCommandPalette({
     return () => document.removeEventListener('keydown', down);
   }, [open, onOpenChange, handleNewNote]);
 
+  useEffect(() => {
+    const onEditorFocus = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{
+          editor: Editor;
+          commandContext?: EditorCommandContext;
+        }>
+      ).detail;
+      if (!detail?.editor) return;
+      setActiveEditor(detail);
+    };
+
+    window.addEventListener('ewe-note-editor-focus', onEditorFocus);
+    return () => {
+      window.removeEventListener('ewe-note-editor-focus', onEditorFocus);
+    };
+  }, []);
+
   const handleSelectNote = (noteId: string) => {
     navigate(`/editor/${noteId}`);
     onOpenChange(false);
@@ -65,6 +92,15 @@ export function EnhancedCommandPalette({
 
   const recentNotes = getRecentNotes(5);
   const searchResults = search ? searchNotes(search) : [];
+  const editorCommands = activeEditor
+    ? getCommandsForPlacement('palette').filter((command) =>
+        [command.label, command.description, ...command.slashTrigger]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+          .includes(search.toLowerCase().trim())
+      )
+    : [];
 
   if (!open) return null;
 
@@ -132,6 +168,45 @@ export function EnhancedCommandPalette({
                           )}
                         </div>
                       </div>
+                    </Command.Item>
+                  ))}
+                </Command.Group>
+              )}
+
+              {activeEditor && editorCommands.length > 0 && (
+                <Command.Group
+                  heading="Editor Commands"
+                  className="mb-4 [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider"
+                >
+                  {editorCommands.slice(0, 12).map((command) => (
+                    <Command.Item
+                      key={command.id}
+                      onSelect={() => {
+                        command.execute(
+                          activeEditor.editor,
+                          activeEditor.commandContext
+                        );
+                        onOpenChange(false);
+                        setSearch('');
+                      }}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer hover:bg-accent/70 data-[selected=true]:bg-accent transition-colors"
+                    >
+                      <command.icon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[15px] truncate font-medium">
+                          {command.label}
+                        </div>
+                        {command.description ? (
+                          <div className="text-xs text-muted-foreground truncate">
+                            {command.description}
+                          </div>
+                        ) : null}
+                      </div>
+                      {command.shortcut ? (
+                        <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                          {command.shortcut}
+                        </kbd>
+                      ) : null}
                     </Command.Item>
                   ))}
                 </Command.Group>

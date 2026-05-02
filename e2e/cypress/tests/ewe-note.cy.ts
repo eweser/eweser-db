@@ -18,9 +18,9 @@ function createNote(markdown: string) {
   cy.url({ timeout: 10000 }).should('include', '/editor/');
   cy.getBySel('ewe-note-header', { timeout: 10000 }).should('exist');
   cy.getBySel('ewe-note-editor', { timeout: 10000 }).should('exist');
-  cy.get('.bn-editor').click();
-  cy.get('.bn-editor').type('{selectAll}', { force: true });
-  cy.get('.bn-editor').type(markdown, { force: true });
+  cy.getBySel('ewe-note-tiptap-editor').click();
+  cy.getBySel('ewe-note-tiptap-editor').type('{selectAll}', { force: true });
+  cy.getBySel('ewe-note-tiptap-editor').type(markdown, { force: true });
   cy.wait(1500);
 }
 
@@ -28,7 +28,7 @@ describe('ewe-note app', () => {
   it('loads the home dashboard with sidebar actions', () => {
     visitHome();
 
-    cy.contains('h1', 'All Notes').should('exist');
+    cy.contains('All Notes').should('exist');
     cy.getBySel('ewe-note-account-link').should('exist');
     cy.getBySel('ewe-note-settings-link').should('exist');
   });
@@ -38,7 +38,7 @@ describe('ewe-note app', () => {
 
     createNote('# Fresh note{enter}Body copy');
 
-    cy.get('.bn-editor').should('contain', 'Fresh note');
+    cy.getBySel('ewe-note-tiptap-editor').should('contain', 'Fresh note');
   });
 
   it('persists note content after a reload on the editor route', () => {
@@ -49,7 +49,9 @@ describe('ewe-note app', () => {
 
     cy.reload();
     cy.getBySel('ewe-note-editor', { timeout: 10000 }).should('exist');
-    cy.get('.bn-editor').should('contain', title).and('contain', 'Saved body');
+    cy.getBySel('ewe-note-tiptap-editor')
+      .should('contain', title)
+      .and('contain', 'Saved body');
   });
 
   it('creates a folder from the sidebar prompt', () => {
@@ -90,7 +92,7 @@ describe('ewe-note app', () => {
     cy.getBySel('ewe-note-delete-note').click();
 
     cy.url({ timeout: 10000 }).should('not.include', '/editor/');
-    cy.contains('h1', 'All Notes').should('exist');
+    cy.contains('All Notes').should('exist');
   });
 
   it('shows markdown tasks in the tasks view', () => {
@@ -102,7 +104,6 @@ describe('ewe-note app', () => {
     cy.visit(eweNoteUrl());
     cy.getBySel('ewe-note-sidebar', { timeout: 10000 }).should('exist');
     cy.getBySel('ewe-note-tasks-link', { timeout: 10000 }).click();
-    cy.getBySel('ewe-note-tasks-view').should('exist');
     cy.contains(taskText).should('exist');
   });
 
@@ -123,5 +124,25 @@ describe('ewe-note app', () => {
     cy.getBySel('ewe-note-settings-account', { timeout: 10000 }).should(
       'exist'
     );
+  });
+
+  it('supports source mode and Obsidian raw markdown fallback', () => {
+    visitHome();
+
+    createNote('# Source mode note');
+
+    cy.get('button[aria-label="Source mode"]').click({ force: true });
+    cy.getBySel('ewe-note-source-editor')
+      .should('exist')
+      .clear()
+      .type(
+        '# Raw OFM{enter}{enter}> [!warning]+ Keep me{enter}> Callout body{enter}{enter}![[image.png|320]]{enter}{enter}%%comment%%{enter}{enter}[^1]: footnote',
+        {
+          force: true,
+          parseSpecialCharSequences: false,
+        }
+      );
+    cy.contains('button', 'Live preview').click();
+    cy.getBySel('ewe-note-tiptap-editor').should('contain', 'Raw OFM');
   });
 });

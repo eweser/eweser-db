@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { editorJsonToMarkdown, markdownToEditorHtml } from './markdown';
 import { markdownToOfm, ofmToMarkdown } from '../extensions/ofm-serializer';
+import { parseCalloutHeader } from '../extensions/callout';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -124,26 +125,30 @@ describe('TipTap markdown bridge', () => {
     const toEditor = ofmToMarkdown(source);
     const back = markdownToOfm(toEditor);
 
-    expect(toEditor).toContain('[Project Notes](wiki://Project%20Notes)');
-    expect(toEditor).toContain('[Notes/Session 1');
+    expect(toEditor).toContain('![[Project Notes]]');
+    expect(toEditor).toContain('![[Notes/Session 1#Topic Heading]]');
     expect(back).toContain('![[Project Notes]]');
     expect(back).toContain('![[Notes/Session 1#Topic Heading]]');
   });
 
-  it('preserves media embed metadata via editor-safe markdown', () => {
+  it('preserves media embeds as source-visible OFM until a media node owns them', () => {
     const source = '![[test-image.png|640x480]]';
     const toEditor = ofmToMarkdown(source);
     const back = markdownToOfm(toEditor);
 
-    expect(toEditor).toContain('eweser-ofm-embed:');
-    expect(toEditor).toContain('[test-image.png]');
-    expect(toEditor).toContain('(vault://test-image.png');
+    expect(toEditor).toContain('![[test-image.png|640x480]]');
     expect(back).toContain('![[test-image.png|640x480]]');
   });
 
   it('documents and executes the parity fixture matrix', () => {
     expect(PARITY_MATRIX.version).toBe('1.0');
     expect(PARITY_MATRIX.fixtures.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it('preserves custom callout types instead of coercing them', () => {
+    expect(parseCalloutHeader('> [!project-risk]- Review')?.type).toBe(
+      'project-risk'
+    );
   });
 
   it.each(PARITY_MATRIX.fixtures)(
