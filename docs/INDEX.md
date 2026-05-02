@@ -19,6 +19,8 @@ AI planning history, workflows, research notes, and personal strategy notes.
   contract.
 - [`ai/workflows/codex-planner-coder.md`](./ai/workflows/codex-planner-coder.md):
   Planner -> Coder workflow.
+- [`workflows/codex-session-retrospective.md`](./workflows/codex-session-retrospective.md):
+  Review loop for finding repeated Codex inefficiency patterns.
 - [`workflows/code-index-maintenance.md`](./workflows/code-index-maintenance.md):
   Daily index maintenance workflow.
 

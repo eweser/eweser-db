@@ -1,4 +1,10 @@
 #!/usr/bin/env node
+/**
+ * Purpose: Obsidian vault import manifest CLI and parser.
+ * Exports: import types, generateNoteId, processNoteFile, and import helpers.
+ * Touches: User markdown, frontmatter, tags, wiki links, and attachments.
+ * Read before editing: packages/ewe-note/src/INDEX.md.
+ */
 /* eslint-disable no-console -- CLI tool: console is the correct output mechanism */
 /**
  * Obsidian Vault Import CLI

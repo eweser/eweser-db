@@ -1,4 +1,10 @@
 #!/usr/bin/env node
+/**
+ * Purpose: Obsidian vault export CLI from import manifests.
+ * Exports: ExportedNote, serializeNote, and exportVault.
+ * Touches: User markdown, YAML frontmatter, and filesystem writes.
+ * Read before editing: packages/ewe-note/src/INDEX.md.
+ */
 /* eslint-disable no-console -- CLI tool: console is the correct output mechanism */
 /**
  * Obsidian Vault Export CLI

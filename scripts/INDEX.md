@@ -18,6 +18,10 @@ tests, secret scanning, agent orchestration, and code-index validation.
   Navigation index checker.
 - [`code-map/generate-code-map.mjs`](./code-map/generate-code-map.mjs):
   Local TypeScript import/export map prototype.
+- [`code-map/query-code-map.mjs`](./code-map/query-code-map.mjs): Compact
+  query helper for symbols, packages, files, and export hotspots.
+- [`codex/analyze-session-efficiency.mjs`](./codex/analyze-session-efficiency.mjs):
+  Scans local Codex session logs for repeated inefficiency patterns.
 - [`codex/README.md`](./codex/README.md): Codex helper script notes.
 
 ## Children
@@ -47,5 +51,9 @@ tests, secret scanning, agent orchestration, and code-index validation.
 - `npm run code-index:check`: Validates index coverage.
 - `npm run code-map`: Writes the local TypeScript import/export map to
   `.ai/code-map.json`.
+- `npm run code-map:query -- --symbol buildRef`: Prints targeted code-map
+  answers without loading the full generated map into model context.
+- `npm run codex:retrospective -- --since 2026-05-02 --cwd /home/jacob/eweser-db`:
+  Reports likely agent flailing patterns from new local sessions.
 - `npm run test:e2e`: Exercises the E2E smoke runner.
 - `bash scripts/ai-secrets/scan-secrets.sh`: Runs secret scanning when relevant.

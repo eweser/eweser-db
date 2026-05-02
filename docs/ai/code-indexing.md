@@ -223,3 +223,7 @@ review rule; CI reports coverage but does not fail on low coverage.
 Generated symbol maps or graph-backed code memory may complement this
 hand-written index later. They should be planned separately and must not replace
 the human-readable `INDEX.md` tree.
+
+Use `npm run code-map` to write the ignored local `.ai/code-map.json` and
+`npm run code-map:query -- --symbol <name>` for compact import/export answers.
+Do not paste the full generated map into model context.

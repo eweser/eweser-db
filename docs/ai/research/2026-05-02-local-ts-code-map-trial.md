@@ -102,6 +102,6 @@ SDK-facing app code:
 Keep the local TypeScript map prototype. It is useful enough for agent
 navigation questions and cheap enough to maintain as experimental tooling.
 
-Do not add CI drift checks or generated files in Git yet. The next improvement,
-if needed, should be import resolution and a small query CLI so agents can ask
-for targeted answers without loading `.ai/code-map.json` directly.
+Do not add CI drift checks or generated files in Git yet. A small query CLI now
+exists as `npm run code-map:query`; the next improvement, if needed, should be
+relative import resolution so file-to-file dependency answers are canonical.

@@ -1,3 +1,9 @@
+/**
+ * Purpose: BlockNote editor bridge for room-backed notes.
+ * Exports: Editor default component.
+ * Touches: Yjs fragments, provider collaboration, OFM serialization, and saves.
+ * Read before editing: packages/ewe-note/src/INDEX.md and notes-room.tsx.
+ */
 import '@blocknote/core/fonts/inter.css';
 import { useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';

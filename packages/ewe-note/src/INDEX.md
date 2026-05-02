@@ -15,11 +15,12 @@ helpers.
 ## Start Here
 
 - [`App.tsx`](./App.tsx): Top-level provider and load gate.
-- [`app/App.tsx`](./app/App.tsx): Redesigned app shell.
+- [`app/INDEX.md`](./app/): Redesigned app shell routes, pages, and context.
 - [`notes-room.tsx`](./notes-room.tsx): React hook for note room state and CRUD.
-- [`components/editor.tsx`](./components/editor.tsx): BlockNote editor wrapper.
-- [`cli/import-vault.ts`](./cli/import-vault.ts): Vault import entry point.
-- [`cli/export-vault.ts`](./cli/export-vault.ts): Vault export entry point.
+- [`components/INDEX.md`](./components/): Editor, layout, sidebar, and UI
+  component map.
+- [`cli/INDEX.md`](./cli/): Vault import, export, and sync CLI map.
+- [`extensions/INDEX.md`](./extensions/): Obsidian Flavored Markdown helper map.
 
 ## Children
 

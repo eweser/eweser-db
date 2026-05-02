@@ -134,6 +134,9 @@ Codex workflow is `docs/ai/workflows/codex-planner-coder.md`.
 ## Code Navigation Index
 
 Before broad exploration, read the nearest `INDEX.md`.
+For navigation tasks, treat `INDEX.md` as the first step and use `rg` only
+after the index narrows the search space to the right package, source root, or
+boundary file.
 If you are creating, updating, or reviewing index files or source headers,
 also read `docs/ai/code-indexing.md` and apply its contract in the same change.
 

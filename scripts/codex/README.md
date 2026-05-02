@@ -2,6 +2,27 @@
 
 This directory contains repo-local helpers for EweserDB agent workflows.
 
+## Session Retrospective
+
+Use the session retrospective analyzer to review only new local Codex sessions
+after an instruction or tooling change and look for repeated wasted motion.
+
+```bash
+npm run codex:retrospective -- --since 2026-05-02 --cwd /home/jacob/eweser-db
+npm run codex:retrospective -- --since 2026-05-02 --cwd /home/jacob/eweser-db --write .ai/reports/codex-session-retrospective-2026-05-02.md
+```
+
+The analyzer reads `~/.codex/sessions/**/*.jsonl` by default and flags
+heuristics such as:
+
+- broad search before `INDEX.md`
+- repeated search or `git status` churn
+- runtime-orientation misses before local verification
+- repeated test/type-check retries
+
+Use the report to decide whether the fix belongs in a nearby `INDEX.md`,
+`LOCAL_DEVELOPMENT.md`, runtime-orientation guidance, or a small helper script.
+
 ## Plan Orchestrator
 
 Use the orchestrator for approved, structured implementation plans that need multiple coding runs, isolated worktrees, integration, and final QA/review.
