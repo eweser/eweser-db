@@ -123,12 +123,12 @@ export function EditorToolbar({
 
   return (
     <div
-      className={`tiptap-toolbar sticky top-3 z-10 mb-6 flex items-center justify-between gap-3 rounded-2xl border border-border/70 bg-background/92 px-3 py-2 shadow-sm backdrop-blur transition-all ${
+      className={`tiptap-toolbar sticky top-3 z-10 mb-6 flex flex-wrap items-center justify-start gap-3 rounded-2xl border border-border/70 bg-background/92 px-3 py-2 shadow-sm backdrop-blur transition-all sm:justify-between ${
         focused ? 'opacity-100' : 'opacity-80'
       }`}
     >
       <span className="sr-only">Editor toolbar</span>
-      <div className="flex min-w-0 items-center gap-1">
+      <div className="flex min-w-0 flex-wrap items-center gap-1">
         <CommandMenu
           label="Text"
           commands={grouped.paragraph}
@@ -160,7 +160,7 @@ export function EditorToolbar({
         </div>
       </div>
 
-      <div className="hidden items-center gap-1 md:flex">
+      <div className="flex shrink-0 items-center gap-1">
         {grouped.utility.map((command, index) => (
           <div key={command.id} className="flex items-center gap-1">
             {index === 0 ? (

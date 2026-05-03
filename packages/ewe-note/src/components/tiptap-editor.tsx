@@ -6,8 +6,13 @@ import Heading from '@tiptap/extension-heading';
 import Link from '@tiptap/extension-link';
 import Highlight from '@tiptap/extension-highlight';
 import TaskList from '@tiptap/extension-task-list';
+import Table from '@tiptap/extension-table';
+import TableRow from '@tiptap/extension-table-row';
+import TableHeader from '@tiptap/extension-table-header';
+import TableCell from '@tiptap/extension-table-cell';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
+import { mergeAttributes, Node } from '@tiptap/core';
 import type { Extension } from '@tiptap/core';
 import type { EditorCommandId } from '@/editor/commands';
 import { getCommandById } from '@/editor/commands';
@@ -98,6 +103,37 @@ const HeadingWithAnchors = Heading.extend({
   },
 });
 
+const ImageNode = Node.create({
+  name: 'image',
+  group: 'block',
+  atom: true,
+  draggable: true,
+
+  addAttributes() {
+    return {
+      src: { default: null },
+      alt: { default: null },
+      title: { default: null },
+      width: {
+        default: null,
+        parseHTML: (element) => element.getAttribute('width'),
+      },
+      height: {
+        default: null,
+        parseHTML: (element) => element.getAttribute('height'),
+      },
+    };
+  },
+
+  parseHTML() {
+    return [{ tag: 'img[src]' }];
+  },
+
+  renderHTML({ HTMLAttributes }) {
+    return ['img', mergeAttributes(HTMLAttributes)];
+  },
+});
+
 function buildExtensions({
   fragment,
   provider,
@@ -120,7 +156,14 @@ function buildExtensions({
       openOnClick: false,
       protocols: ['wiki', 'vault'],
     }),
+    ImageNode,
     Highlight,
+    Table.configure({
+      resizable: false,
+    }),
+    TableRow,
+    TableHeader,
+    TableCell,
     TaskList,
     TaskItemWithExit.configure({
       nested: true,
@@ -326,6 +369,28 @@ export function TiptapEditor({
     }, 500);
     onSourceModeChange?.(false);
   }, [editor, onSaveMarkdown, onSourceModeChange, sourceValue]);
+
+  useEffect(() => {
+    if (!onSourceModeChange) return;
+
+    const handleSourceModeShortcut = (event: KeyboardEvent) => {
+      const hasModifier = event.metaKey || event.ctrlKey;
+      if (!hasModifier || !event.shiftKey || event.key.toLowerCase() !== 's') {
+        return;
+      }
+
+      event.preventDefault();
+      if (sourceMode) {
+        exitSourceMode();
+      } else {
+        toggleSourceMode();
+      }
+    };
+
+    window.addEventListener('keydown', handleSourceModeShortcut);
+    return () =>
+      window.removeEventListener('keydown', handleSourceModeShortcut);
+  }, [exitSourceMode, onSourceModeChange, sourceMode, toggleSourceMode]);
 
   useEffect(() => {
     if (!editor) return;

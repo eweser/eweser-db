@@ -8,7 +8,7 @@ import {
 } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { WorkspaceShell } from './WorkspaceShell';
+import { WorkspaceShell, useWorkspaceShell } from './WorkspaceShell';
 import { WORKSPACE_MODE_STORAGE_KEY } from './workspace-layout';
 
 vi.mock('react-router', () => ({
@@ -27,6 +27,18 @@ vi.mock('./EnhancedCommandPalette', () => ({
   EnhancedCommandPalette: ({ open }: { open: boolean }) =>
     open ? <div data-cy="mock-command-palette">Palette</div> : null,
 }));
+
+function ClosableMetadataPanel() {
+  const { setMetadataVisible } = useWorkspaceShell();
+  return (
+    <aside data-cy="mock-right-panel">
+      Metadata
+      <button type="button" onClick={() => setMetadataVisible(false)}>
+        Close note info
+      </button>
+    </aside>
+  );
+}
 
 describe('WorkspaceShell', () => {
   beforeEach(() => {
@@ -100,6 +112,30 @@ describe('WorkspaceShell', () => {
     });
 
     expect(window.localStorage.getItem(WORKSPACE_MODE_STORAGE_KEY)).toBe('3');
+    expect(screen.queryByText('Sidebar')).not.toBeNull();
+    expect(screen.queryByText('Notes')).not.toBeNull();
+  });
+
+  it('lets the metadata panel close mode 4 back to mode 3', async () => {
+    window.localStorage.setItem(WORKSPACE_MODE_STORAGE_KEY, '4');
+
+    render(
+      <WorkspaceShell
+        selectedNoteId="note-1"
+        metadataSlot={<ClosableMetadataPanel />}
+      >
+        <div data-cy="mock-editor">Editor</div>
+      </WorkspaceShell>
+    );
+
+    expect(screen.queryByText('Metadata')).not.toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close note info' }));
+
+    await waitFor(() => {
+      expect(window.localStorage.getItem(WORKSPACE_MODE_STORAGE_KEY)).toBe('3');
+    });
+    expect(screen.queryByText('Metadata')).toBeNull();
     expect(screen.queryByText('Sidebar')).not.toBeNull();
     expect(screen.queryByText('Notes')).not.toBeNull();
   });

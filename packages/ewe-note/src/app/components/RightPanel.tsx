@@ -11,6 +11,7 @@ import {
   Plus,
 } from 'lucide-react';
 import { useNotes } from '../contexts/NotesContext';
+import { extractMarkdownOutline } from './right-panel-outline';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
@@ -53,17 +54,7 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
     };
   });
 
-  // Extract outline from markdown headings
-  const headingRegex = /^(#{1,6})\s+(.+)$/gm;
-  const headings: Array<{ level: number; text: string; id: string }> = [];
-  let match;
-  while ((match = headingRegex.exec(note.content)) !== null) {
-    headings.push({
-      level: match[1].length,
-      text: match[2],
-      id: match[2].toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-    });
-  }
+  const headings = extractMarkdownOutline(note.content);
 
   const handleAddTag = () => {
     if (newTag && !note.tags.includes(newTag)) {

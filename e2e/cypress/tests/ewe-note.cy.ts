@@ -1,6 +1,9 @@
 /// <reference types="cypress" />
 
-const eweNoteUrl = () => (Cypress.env('eweNoteBaseUrl') as string) ?? '';
+const eweNoteUrl = () =>
+  (Cypress.env('eweNoteBaseUrl') as string | undefined) ??
+  (Cypress.config('baseUrl') as string | undefined) ??
+  '';
 
 function visitHome() {
   cy.visit(eweNoteUrl(), {
@@ -131,7 +134,7 @@ describe('ewe-note app', () => {
 
     createNote('# Source mode note');
 
-    cy.get('button[aria-label="Source mode"]').click({ force: true });
+    cy.get('button[aria-label="Source mode"]').should('be.visible').click();
     cy.getBySel('ewe-note-source-editor')
       .should('exist')
       .clear()

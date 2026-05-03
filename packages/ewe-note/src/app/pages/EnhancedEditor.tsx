@@ -180,7 +180,7 @@ export function EnhancedEditor() {
   return (
     <WorkspaceShell
       selectedNoteId={note.id}
-      metadataSlot={<RightPanel noteId={note.id} />}
+      metadataSlot={<EditorMetadataPanel noteId={note.id} />}
     >
       <EditorWorkspace
         note={note}
@@ -207,6 +207,13 @@ export function EnhancedEditor() {
         onSourceModeChange={setSourceMode}
       />
     </WorkspaceShell>
+  );
+}
+
+function EditorMetadataPanel({ noteId }: { noteId: string }) {
+  const { setMetadataVisible } = useWorkspaceShell();
+  return (
+    <RightPanel noteId={noteId} onClose={() => setMetadataVisible(false)} />
   );
 }
 

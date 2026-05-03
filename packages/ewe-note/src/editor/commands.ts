@@ -373,10 +373,11 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
     isActive: () => false,
     isEnabled: () => true,
     execute: (editor) => {
-      replaceSelection(
-        editor,
-        '| Header 1 | Header 2 |\n| --- | --- |\n|  |  |'
-      );
+      editor
+        .chain()
+        .focus()
+        .insertTable({ rows: 3, cols: 2, withHeaderRow: true })
+        .run();
     },
     shortcut: '|',
     menuPlacement: ['toolbar', 'context', 'slash', 'palette'],

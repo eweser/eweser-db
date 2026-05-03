@@ -1,9 +1,16 @@
 import type { JSONContent } from '@tiptap/react';
 import MarkdownIt from 'markdown-it';
 import { markdownToOfm, ofmToMarkdown } from '../extensions/ofm-serializer';
+import { toImageEmbedSyntax } from '../extensions/image-embed';
 
 const markdown = new MarkdownIt({
   html: true,
+  linkify: false,
+  typographer: false,
+});
+
+const taskInlineMarkdown = new MarkdownIt({
+  html: false,
   linkify: false,
   typographer: false,
 });
@@ -16,14 +23,6 @@ export function slugHeading(text: string): string {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '') || 'heading'
   );
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
 }
 
 function preprocessTaskLines(source: string): string {
@@ -48,7 +47,9 @@ function preprocessTaskLines(source: string): string {
     }
 
     const checked = match[1].toLowerCase() === 'x';
-    const text = escapeHtml(match[2] ?? '');
+    const text = renderHighlightHtml(
+      taskInlineMarkdown.renderInline(match[2] ?? '')
+    );
     taskBuffer.push(
       `<li data-type="taskItem" data-checked="${checked}"><p>${text}</p></li>`
     );
@@ -59,14 +60,16 @@ function preprocessTaskLines(source: string): string {
 }
 
 function markdownToEditorMarkdown(source: string): string {
-  return ofmToMarkdown(source).replace(/==([^=\n]+)==/g, (_match, text) => {
-    return `<mark>${escapeHtml(String(text))}</mark>`;
-  });
+  return ofmToMarkdown(source);
 }
 
 export function markdownToEditorHtml(source: string): string {
   const normalized = markdownToEditorMarkdown(source);
-  return markdown.render(preprocessTaskLines(normalized));
+  return renderHighlightHtml(markdown.render(preprocessTaskLines(normalized)));
+}
+
+function renderHighlightHtml(value: string): string {
+  return value.replace(/==([^=<>\n]+)==/g, '<mark>$1</mark>');
 }
 
 function markText(text: string, marks: JSONContent['marks']): string {
@@ -121,6 +124,75 @@ function renderListItem(node: JSONContent, prefix: string): string {
   return [firstLine, ...nested].join('\n');
 }
 
+function renderTableCell(node: JSONContent): string {
+  return (node.content ?? [])
+    .map((child) => {
+      if (child.type === 'paragraph') return renderInline(child.content);
+      return renderNode(child).replace(/\n/g, '<br>');
+    })
+    .join('<br>')
+    .replace(/\|/g, '\\|')
+    .trim();
+}
+
+function renderTableRow(node: JSONContent): string[] {
+  return (node.content ?? [])
+    .filter(
+      (child) => child.type === 'tableHeader' || child.type === 'tableCell'
+    )
+    .map(renderTableCell);
+}
+
+function renderTable(node: JSONContent): string {
+  const rows = (node.content ?? [])
+    .filter((child) => child.type === 'tableRow')
+    .map(renderTableRow)
+    .filter((row) => row.length > 0);
+
+  if (rows.length === 0) return '';
+
+  const columnCount = Math.max(...rows.map((row) => row.length));
+  const normalizedRows = rows.map((row) =>
+    Array.from({ length: columnCount }, (_value, index) => row[index] ?? '')
+  );
+  const [headerRow, ...bodyRows] = normalizedRows;
+  const divider = Array.from({ length: columnCount }, () => '---');
+  const renderMarkdownRow = (row: string[]) => `| ${row.join(' | ')} |`;
+
+  return [
+    renderMarkdownRow(headerRow),
+    renderMarkdownRow(divider),
+    ...bodyRows.map(renderMarkdownRow),
+  ].join('\n');
+}
+
+function decodeVaultSrc(src: string) {
+  if (!src.startsWith('vault://')) return null;
+  try {
+    return decodeURIComponent(src.slice('vault://'.length));
+  } catch {
+    return src.slice('vault://'.length);
+  }
+}
+
+function renderImage(node: JSONContent): string {
+  const src = String(node.attrs?.src ?? '');
+  const alt = String(node.attrs?.alt ?? '');
+  const vaultPath = decodeVaultSrc(src);
+  const width = Number(node.attrs?.width);
+  const height = Number(node.attrs?.height);
+
+  if (vaultPath) {
+    return toImageEmbedSyntax({
+      sourcePath: vaultPath,
+      ...(Number.isFinite(width) && width > 0 ? { width } : {}),
+      ...(Number.isFinite(height) && height > 0 ? { height } : {}),
+    });
+  }
+
+  return `![${alt}](${src})`;
+}
+
 function renderNode(node: JSONContent): string {
   switch (node.type) {
     case 'paragraph':
@@ -158,6 +230,10 @@ function renderNode(node: JSONContent): string {
       )}\n\`\`\``;
     case 'horizontalRule':
       return '---';
+    case 'table':
+      return renderTable(node);
+    case 'image':
+      return renderImage(node);
     default:
       return node.content ? renderInline(node.content) : '';
   }

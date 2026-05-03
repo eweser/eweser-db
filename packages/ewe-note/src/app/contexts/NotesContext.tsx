@@ -6,6 +6,7 @@ import { useFolders } from '@/notes-room';
 import {
   extractWikiLinkTargets,
   extractUnlinkedMentions,
+  linkUnlinkedMentionInMarkdown,
   normalizeWikiTarget,
   type OutgoingWikiLink,
   type UnlinkedMention,
@@ -766,9 +767,6 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     return wikiResolutionMap.get(normalize(target)) ?? null;
   };
 
-  const escapeRegExp = (value: string) =>
-    value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
   const convertUnlinkedMentionToLink = (
     noteId: string,
     targetNoteId: string,
@@ -780,22 +778,12 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
 
     const preferredMention = mention ?? targetNote.title;
     const sourceText = sourceNote.content;
-    const matcher = new RegExp(escapeRegExp(preferredMention), 'i');
-    const match = matcher.exec(sourceText);
-    if (!match) return;
-
-    const start = match.index;
-    const end = start + match[0].length;
-    const insertionText =
-      preferredMention.toLowerCase() === targetNote.title.toLowerCase()
-        ? `[[${targetNote.title}]]`
-        : `[[${targetNote.title}|${match[0]}]]`;
-
-    const next = [
-      sourceText.slice(0, start),
-      insertionText,
-      sourceText.slice(end),
-    ].join('');
+    const next = linkUnlinkedMentionInMarkdown(
+      sourceText,
+      targetNote.title,
+      preferredMention
+    );
+    if (next === sourceText) return;
 
     updateNote(noteId, { content: next });
   };

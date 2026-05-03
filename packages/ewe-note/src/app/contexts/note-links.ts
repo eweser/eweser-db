@@ -11,6 +11,8 @@ export interface OutgoingWikiLink {
 export interface UnlinkedMention {
   noteId: string;
   mention: string;
+  start: number;
+  end: number;
 }
 
 export interface ExtractedWikiLink {
@@ -150,6 +152,10 @@ export function extractWikiLinkTargets(markdown: string): OutgoingWikiLink[] {
   const seen = new Set<string>();
 
   for (const match of markdown.matchAll(/\[\[([^\]]+)\]\]/g)) {
+    if (match.index !== undefined && markdown[match.index - 1] === '!') {
+      continue;
+    }
+
     const parsed = parseWikiBraceLink(match);
     if (!parsed) continue;
 
@@ -221,6 +227,79 @@ export function containsPhrase(source: string, phrase: string) {
   return normalizedSource.includes(normalizedPhrase);
 }
 
+type TextRange = {
+  start: number;
+  end: number;
+};
+
+function collectExcludedRanges(markdown: string) {
+  const ranges: TextRange[] = [];
+  const collect = (pattern: RegExp) => {
+    for (const match of markdown.matchAll(pattern)) {
+      if (match.index === undefined) continue;
+      ranges.push({ start: match.index, end: match.index + match[0].length });
+    }
+  };
+
+  collect(/```[\s\S]*?```/g);
+  collect(/`[^`\n]*`/g);
+  collect(/!?\[\[[^\]]+\]\]/g);
+  collect(/!?\[((?:[^\]\\]|\\.)+)\]\([^)]+\)/g);
+
+  return ranges.sort((a, b) => a.start - b.start);
+}
+
+function isInsideRange(index: number, ranges: TextRange[]) {
+  return ranges.some((range) => index >= range.start && index < range.end);
+}
+
+export function findEligibleMentionRange(
+  markdown: string,
+  mention: string
+): TextRange | null {
+  const trimmed = mention.trim();
+  if (!trimmed) return null;
+
+  const ranges = collectExcludedRanges(markdown);
+  const matcher = new RegExp(
+    trimmed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+    'gi'
+  );
+
+  for (const match of markdown.matchAll(matcher)) {
+    if (match.index === undefined) continue;
+    if (isInsideRange(match.index, ranges)) continue;
+
+    return {
+      start: match.index,
+      end: match.index + match[0].length,
+    };
+  }
+
+  return null;
+}
+
+export function linkUnlinkedMentionInMarkdown(
+  markdown: string,
+  targetTitle: string,
+  mention: string
+) {
+  const range = findEligibleMentionRange(markdown, mention);
+  if (!range) return markdown;
+
+  const matchedText = markdown.slice(range.start, range.end);
+  const insertionText =
+    matchedText.toLowerCase() === targetTitle.toLowerCase()
+      ? `[[${targetTitle}]]`
+      : `[[${targetTitle}|${matchedText}]]`;
+
+  return [
+    markdown.slice(0, range.start),
+    insertionText,
+    markdown.slice(range.end),
+  ].join('');
+}
+
 export function extractUnlinkedMentions(
   markdown: string,
   candidates:
@@ -248,10 +327,12 @@ export function extractUnlinkedMentions(
 
     if (excludedTargets.has(target)) continue;
     if (!containsPhrase(scanned, target)) continue;
+    const range = findEligibleMentionRange(markdown, mentionText);
+    if (!range) continue;
 
     if (!mentionKeys.has(noteId)) {
       mentionKeys.add(noteId);
-      mentions.push({ noteId, mention: mentionText });
+      mentions.push({ noteId, mention: mentionText, ...range });
     }
   }
 

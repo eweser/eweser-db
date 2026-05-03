@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { editorJsonToMarkdown, markdownToEditorHtml } from './markdown';
+import {
+  editorJsonToMarkdown,
+  markdownToEditorHtml,
+  slugHeading,
+} from './markdown';
 import { markdownToOfm, ofmToMarkdown } from '../extensions/ofm-serializer';
 import { parseCalloutHeader } from '../extensions/callout';
 
@@ -53,6 +57,21 @@ describe('TipTap markdown bridge', () => {
 
     expect(html).toContain('<mark>marked</mark>');
     expect(html).not.toContain('<strong>marked</strong>');
+  });
+
+  it('preserves inline markdown formatting inside task bodies', () => {
+    const html = markdownToEditorHtml(
+      '- [ ] **bold** *italic* `code` [site](https://example.com) [[Target]] ==marked=='
+    );
+
+    expect(html).toContain('data-type="taskItem" data-checked="false"');
+    expect(html).toContain('<strong>bold</strong>');
+    expect(html).toContain('<em>italic</em>');
+    expect(html).toContain('<code>code</code>');
+    expect(html).toContain('<a href="https://example.com">site</a>');
+    expect(html).toContain('<a href="wiki://Target">Target</a>');
+    expect(html).toContain('<mark>marked</mark>');
+    expect(html).not.toContain('&lt;strong&gt;');
   });
 
   it('serializes task nodes back to markdown checkboxes', () => {
@@ -110,6 +129,75 @@ describe('TipTap markdown bridge', () => {
     ).toBe('[[Target|Alias]] and ==marked==');
   });
 
+  it('renders Markdown tables as readable editor tables', () => {
+    const html = markdownToEditorHtml('| A | B |\n| - | - |\n| 1 | 2 |');
+
+    expect(html).toContain('<table>');
+    expect(html).toContain('<th>A</th>');
+    expect(html).toContain('<td>1</td>');
+  });
+
+  it('serializes TipTap table nodes back to Markdown tables', () => {
+    expect(
+      editorJsonToMarkdown({
+        type: 'doc',
+        content: [
+          {
+            type: 'table',
+            content: [
+              {
+                type: 'tableRow',
+                content: [
+                  {
+                    type: 'tableHeader',
+                    content: [
+                      {
+                        type: 'paragraph',
+                        content: [{ type: 'text', text: 'A' }],
+                      },
+                    ],
+                  },
+                  {
+                    type: 'tableHeader',
+                    content: [
+                      {
+                        type: 'paragraph',
+                        content: [{ type: 'text', text: 'B' }],
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                type: 'tableRow',
+                content: [
+                  {
+                    type: 'tableCell',
+                    content: [
+                      {
+                        type: 'paragraph',
+                        content: [{ type: 'text', text: '1' }],
+                      },
+                    ],
+                  },
+                  {
+                    type: 'tableCell',
+                    content: [
+                      {
+                        type: 'paragraph',
+                        content: [{ type: 'text', text: '2' }],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      })
+    ).toBe('| A | B |\n| --- | --- |\n| 1 | 2 |');
+  });
+
   it('normalizes Obsidian comments through the OFM bridge', () => {
     const source = 'start %%comment body%% end';
     const toEditor = ofmToMarkdown(source);
@@ -132,12 +220,53 @@ describe('TipTap markdown bridge', () => {
   });
 
   it('preserves media embeds as source-visible OFM until a media node owns them', () => {
-    const source = '![[test-image.png|640x480]]';
+    const source = '![[Attachments/test-image.png|640x480]]';
     const toEditor = ofmToMarkdown(source);
     const back = markdownToOfm(toEditor);
+    const html = markdownToEditorHtml(source);
 
-    expect(toEditor).toContain('![[test-image.png|640x480]]');
-    expect(back).toContain('![[test-image.png|640x480]]');
+    expect(toEditor).toContain('![[Attachments/test-image.png|640x480]]');
+    expect(back).toContain('![[Attachments/test-image.png|640x480]]');
+    expect(html).toContain('![[Attachments/test-image.png|640x480]]');
+    expect(
+      editorJsonToMarkdown({
+        type: 'doc',
+        content: [
+          {
+            type: 'paragraph',
+            content: [
+              {
+                type: 'text',
+                text: '![[Attachments/test-image.png|640x480]]',
+              },
+            ],
+          },
+        ],
+      })
+    ).toBe('![[Attachments/test-image.png|640x480]]');
+  });
+
+  it('serializes vault image nodes to OFM instead of dropping them', () => {
+    expect(
+      editorJsonToMarkdown({
+        type: 'doc',
+        content: [
+          {
+            type: 'image',
+            attrs: {
+              src: 'vault://Attachments%2Ftest-image.png',
+              alt: 'test-image.png',
+              width: 640,
+              height: 480,
+            },
+          },
+        ],
+      })
+    ).toBe('![[Attachments/test-image.png|640x480]]');
+  });
+
+  it('uses one slug contract for editor headings and outline links', () => {
+    expect(slugHeading('?! Release Notes: v1.2! ')).toBe('release-notes-v1-2');
   });
 
   it('documents and executes the parity fixture matrix', () => {

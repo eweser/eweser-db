@@ -594,7 +594,14 @@ Known gaps / residual risk:
   `npm run dev --workspace @eweser/ewe-note -- --host 127.0.0.1`. Verified:
   opening a seeded note, `Cmd+1` hiding support panes, `Cmd+4` showing metadata,
   and `Cmd+1` inside the title input not changing panes.
-- Cypress route assertions from the worker still need to be reconciled against the active local route/runtime setup.
+- Follow-up manual retest fixed the active Cypress command:
+  `EWE_NOTE_BASE_URL=http://127.0.0.1:5181/ ELECTRON_RUN_AS_NODE= npx cypress run --config baseUrl=http://127.0.0.1:5181,video=false --spec e2e/cypress/tests/ewe-note.cy.ts`.
+  The run passed 10/10 against the active TipTap worktree, and Source Mode no
+  longer relies on Cypress force-clicking a hidden control.
+- Viewport retest covered desktop/laptop editor mode and 390px editor-only mode.
+  Full mode 3 at 390px still presents separate sidebar/list/editor panes; use
+  pane mode 1 for narrow editor parity checks unless a future responsive-shell
+  run changes that topology.
 - The orchestrator currently cannot safely use uncommitted local WIP as a worker base. For future large orchestrated UI runs, create a temporary local integration branch or commit approved WIP before launching workers.
 
 ## Self-Reflection / Instruction Improvements
