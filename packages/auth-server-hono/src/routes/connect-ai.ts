@@ -5,7 +5,12 @@
  * Read before editing: packages/auth-server-hono/src/INDEX.md and AGENTS.md.
  */
 import { Hono, type Context } from 'hono';
-import { COLLECTION_KEYS } from '@eweser/shared';
+import {
+  COLLECTION_KEYS,
+  type MemoryCaptureMode,
+  type MemoryStrategyKind,
+  type MemoryStrategyScope,
+} from '@eweser/shared';
 import { z } from 'zod';
 import { requireAuth } from '../middleware/auth.js';
 import { createRateLimit } from '../middleware/rate-limit.js';
@@ -47,6 +52,15 @@ type ConnectAiClientId =
 const tokenClientIdSet = new Set<ConnectAiClientId>(tokenClientIds);
 const oauthClientIdSet = new Set<ConnectAiClientId>(oauthClientIds);
 const onboardingTtlMs = 7 * 24 * 60 * 60 * 1000;
+const memoryCaptureModes = ['manual', 'suggest', 'auto'] as const;
+const memoryStrategyKinds = [
+  'agent-journal',
+  'project-wiki',
+  'auto-curated',
+  'knowledge-graph',
+  'workspace-intelligence',
+  'custom',
+] as const;
 
 function isTokenClientId(
   clientId: ConnectAiClientId
@@ -80,6 +94,12 @@ const connectAiClientSchema = z.enum([
 
 const setupBodySchema = z.object({
   clientId: connectAiClientSchema,
+  captureMode: z.enum(memoryCaptureModes).optional(),
+  defaultWriteRoomId: z.string().optional(),
+  memoryScopeKey: z.string().optional(),
+  memoryStrategy: z.enum(memoryStrategyKinds).optional(),
+  readableRoomIds: z.array(z.string()).optional(),
+  writableRoomIds: z.array(z.string()).optional(),
   writeRoomIds: z.array(z.string()).optional(),
 });
 
@@ -243,30 +263,148 @@ function getRecommendedWriteRoomIds(
   writableRooms: Awaited<ReturnType<typeof getWritableRoomsByUserId>>
 ): string[] {
   return writableRooms
-    .filter(
-      (room) =>
-        room.collectionKey === 'conversations' ||
-        (room.collectionKey === 'notes' &&
-          /\bai\b|codex|assistant/i.test(room.name))
-    )
+    .filter((room) => room.collectionKey === 'conversations')
     .map((room) => room.id);
+}
+
+function buildMemoryStrategyOverview(
+  writableRooms: Awaited<ReturnType<typeof getWritableRoomsByUserId>>
+) {
+  const writableRoomIds = getRecommendedWriteRoomIds(writableRooms);
+  const defaultWriteRoomId = writableRoomIds[0];
+  const readableRoomIds = writableRooms.map((room) => room.id);
+  const defaultScope: MemoryStrategyScope = {
+    scopeType: 'global',
+    scopeKey: 'default',
+    label: 'Shared Agent Memory',
+    strategy: 'agent-journal',
+    captureMode: 'manual',
+    ...(defaultWriteRoomId ? { defaultWriteRoomId } : {}),
+    readableRoomIds,
+    writableRoomIds,
+  };
+
+  return {
+    defaultStrategy: 'agent-journal' as const,
+    defaultCaptureMode: 'manual' as const,
+    scopes: [defaultScope],
+    choices: [
+      {
+        strategy: 'agent-journal' as const,
+        label: 'Shared Agent Memory',
+        description:
+          'Portable manual memory for coding agents, decisions, preferences, and session continuity.',
+        advanced: false,
+      },
+      {
+        strategy: 'project-wiki' as const,
+        label: 'Project Wiki',
+        description: 'Source-backed project knowledge. Planned after the MVP.',
+        advanced: true,
+      },
+      {
+        strategy: 'auto-curated' as const,
+        label: 'Auto-Curated Memory',
+        description:
+          'Automatic preference and fact extraction. Planned after capture controls.',
+        advanced: true,
+      },
+      {
+        strategy: 'knowledge-graph' as const,
+        label: 'Knowledge Graph',
+        description:
+          'Temporal relationship memory. Planned after the Agent Journal baseline.',
+        advanced: true,
+      },
+      {
+        strategy: 'workspace-intelligence' as const,
+        label: 'Workspace Intelligence',
+        description:
+          'Team docs, tables, and transcripts. Planned after workspace ingestion.',
+        advanced: true,
+      },
+      {
+        strategy: 'custom' as const,
+        label: 'Custom',
+        description: 'Bring your own strategy contract and processors.',
+        advanced: true,
+      },
+    ],
+    captureModes: [
+      {
+        mode: 'manual' as const,
+        label: 'Manual',
+        description: 'Agents save memory only when explicitly asked.',
+        enabled: true,
+      },
+      {
+        mode: 'suggest' as const,
+        label: 'Suggest',
+        description:
+          'Agents can stage reviewable memory suggestions where supported.',
+        enabled: true,
+      },
+      {
+        mode: 'auto' as const,
+        label: 'Auto',
+        description:
+          'Automatic capture is planned and disabled until capture hooks are implemented.',
+        enabled: false,
+      },
+    ],
+  };
 }
 
 async function buildTokenScope(
   userId: string,
-  requestedWriteRoomIds?: string[]
+  options: {
+    captureMode?: MemoryCaptureMode | undefined;
+    defaultWriteRoomId?: string | undefined;
+    memoryScopeKey?: string | undefined;
+    memoryStrategy?: MemoryStrategyKind | undefined;
+    readableRoomIds?: string[] | undefined;
+    writableRoomIds?: string[] | undefined;
+    writeRoomIds?: string[] | undefined;
+  } = {}
 ) {
   const writableRooms = await getWritableRoomsByUserId(userId);
+  if (options.memoryStrategy && options.memoryStrategy !== 'agent-journal') {
+    return { error: 'Unsupported memory strategy' as const };
+  }
+  if (options.captureMode === 'auto') {
+    return { error: 'Automatic capture is not enabled yet' as const };
+  }
   const writeRoomIds =
-    requestedWriteRoomIds ?? getRecommendedWriteRoomIds(writableRooms);
+    options.writableRoomIds ??
+    options.writeRoomIds ??
+    getRecommendedWriteRoomIds(writableRooms);
+  const readRoomIds = options.readableRoomIds ?? [];
   const writableRoomById = new Map(
     writableRooms.map((room) => [room.id, room])
   );
+  const unauthorizedReadRoom = readRoomIds.find(
+    (roomId) => !writableRoomById.has(roomId)
+  );
+  if (unauthorizedReadRoom) {
+    return { error: 'Invalid readable room' as const };
+  }
   const unauthorizedWriteRoom = writeRoomIds.find(
     (roomId) => !writableRoomById.has(roomId)
   );
   if (unauthorizedWriteRoom) {
-    return null;
+    return { error: 'Invalid writable room' as const };
+  }
+  if (
+    options.defaultWriteRoomId &&
+    !writeRoomIds.includes(options.defaultWriteRoomId)
+  ) {
+    return { error: 'Invalid default write room' as const };
+  }
+  if (
+    readRoomIds.length > 0 &&
+    writeRoomIds.some((roomId) => !readRoomIds.includes(roomId))
+  ) {
+    return { error: 'Writable rooms must also be readable' as const };
   }
 
   const writeAllowedCollections = Array.from(
@@ -275,12 +413,25 @@ async function buildTokenScope(
     )
   ).filter((collectionKey): collectionKey is string => Boolean(collectionKey));
 
+  const readAllowedCollections =
+    readRoomIds.length > 0
+      ? Array.from(
+          new Set(
+            readRoomIds.map(
+              (roomId) => writableRoomById.get(roomId)?.collectionKey
+            )
+          )
+        ).filter((collectionKey): collectionKey is string =>
+          Boolean(collectionKey)
+        )
+      : [...COLLECTION_KEYS];
+
   return {
     allowedCollections: [...COLLECTION_KEYS],
     allowedRooms: [],
     permissions: 'read' as const,
-    readAllowedCollections: [...COLLECTION_KEYS],
-    readAllowedRooms: [],
+    readAllowedCollections,
+    readAllowedRooms: readRoomIds,
     writeAllowedCollections,
     writeAllowedFolderIds: [],
     writeAllowedPathPrefixes: [],
@@ -342,7 +493,7 @@ connectAiRouter.get('/', requireAuth, async (c) => {
     defaults: {
       allowedCollections: 'all-supported-collections',
       permissions: 'read',
-      recommendedWritableTarget: 'memory-and-ai-rooms',
+      recommendedWritableTarget: 'dedicated-ai-room',
       writeScope: 'room',
       tokenTtlSeconds: Math.floor(onboardingTtlMs / 1000),
     },
@@ -351,6 +502,7 @@ connectAiRouter.get('/', requireAuth, async (c) => {
     oauthMetadataUrl: `${getAuthServerBaseUrl()}/.well-known/oauth-authorization-server`,
     smartLinkRule:
       'Never place bearer tokens in URLs. All setup flows stay on authenticated Eweser pages and mint or rotate tokens server-side.',
+    memoryStrategy: buildMemoryStrategyOverview(writableRooms),
     writableRooms: writableRooms.map(
       ({ id, name, collectionKey, syncUrl, syncBaseUrl }) => ({
         id,
@@ -388,14 +540,14 @@ connectAiRouter.post(
       return c.json({ error: 'Invalid request body' }, 400);
     }
 
-    const { clientId, writeRoomIds } = parsedBody.data;
+    const { clientId, ...scopeOptions } = parsedBody.data;
     if (!isTokenClientId(clientId)) {
       return c.json({ error: 'This client uses OAuth onboarding' }, 400);
     }
 
-    const scope = await buildTokenScope(user.id, writeRoomIds);
-    if (!scope) {
-      return c.json({ error: 'Invalid writable room' }, 403);
+    const scope = await buildTokenScope(user.id, scopeOptions);
+    if ('error' in scope) {
+      return c.json({ error: scope.error }, 403);
     }
 
     const agentName = getAgentName(clientId);
@@ -451,7 +603,7 @@ connectAiRouter.post(
       return c.json({ error: 'Invalid request body' }, 400);
     }
 
-    const { clientId, writeRoomIds } = parsedBody.data;
+    const { clientId, ...scopeOptions } = parsedBody.data;
     if (!isTokenClientId(clientId)) {
       return c.json({ error: 'This client uses OAuth onboarding' }, 400);
     }
@@ -465,9 +617,9 @@ connectAiRouter.post(
       return c.json({ error: 'Connection not found' }, 404);
     }
 
-    const scope = await buildTokenScope(user.id, writeRoomIds);
-    if (!scope) {
-      return c.json({ error: 'Invalid writable room' }, 403);
+    const scope = await buildTokenScope(user.id, scopeOptions);
+    if ('error' in scope) {
+      return c.json({ error: scope.error }, 403);
     }
 
     const updated = await updateAgentConfigScope(existing.id, user.id, scope);

@@ -6,7 +6,17 @@
  */
 import { z } from 'zod';
 import type { DataLayer } from './data-layer.js';
-import type { EweDocument } from '@eweser/shared';
+import {
+  estimateMemoryTokens,
+  exportAgentJournalMarkdown,
+  type MemoryAuditAction,
+  type MemoryAuditEvent,
+  type Conversation,
+  type EweDocument,
+  type MemoryCaptureMode,
+  type MemoryScopeType,
+  type MemoryStrategyKind,
+} from '@eweser/shared';
 import path from 'node:path';
 
 type LogFn = (entry: {
@@ -20,6 +30,8 @@ type ToolResult = {
   content: Array<{ type: 'text'; text: string }>;
   isError?: boolean;
 };
+
+export type MemoryAuditSink = (event: MemoryAuditEvent) => void | Promise<void>;
 
 type ToolRegistrar = <TShape extends z.ZodRawShape>(
   name: string,
@@ -123,7 +135,7 @@ function normalizeTagValue(value: string): string {
     .trim()
     .toLowerCase()
     .replace(/[/\\]+/g, '-')
-    .replace(/\\s+/g, '-')
+    .replace(/\s+/g, '-')
     .replace(/[^a-z0-9-_.]/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-+/, '')
@@ -160,6 +172,23 @@ const SearchFiltersSchema = z
   .optional();
 
 type SearchFilters = z.infer<typeof SearchFiltersSchema>;
+
+const MemoryStrategySchema = z.enum([
+  'agent-journal',
+  'project-wiki',
+  'auto-curated',
+  'knowledge-graph',
+  'workspace-intelligence',
+  'custom',
+]);
+
+const MemoryCaptureModeSchema = z.enum(['manual', 'suggest', 'auto']);
+const MemoryScopeTypeSchema = z.enum([
+  'global',
+  'project',
+  'workspace',
+  'agent',
+]);
 
 type InMemorySearchResult = {
   roomId: string;
@@ -218,14 +247,136 @@ function matchesSearchFilters(
   return true;
 }
 
+let auditSequence = 0;
+
+function nextAuditId(action: MemoryAuditAction): string {
+  auditSequence += 1;
+  return `mcp-${action}-${auditSequence}`;
+}
+
+function emitAudit(
+  auditSink: MemoryAuditSink | undefined,
+  event: { action: MemoryAuditAction } & Record<string, unknown>
+): void {
+  if (!auditSink) return;
+  const reason = typeof event.reason === 'string' ? event.reason : undefined;
+  const query = typeof event.query === 'string' ? event.query : undefined;
+  const resultSummary =
+    typeof event.resultSummary === 'string' ? event.resultSummary : undefined;
+  const redactedReason = reason ? redactSecretLikeText(reason) : undefined;
+  const redactedQuery = query ? redactSecretLikeText(query) : undefined;
+  const redactedSummary = resultSummary
+    ? redactSecretLikeText(resultSummary)
+    : undefined;
+  const safetyWarnings = [
+    ...(Array.isArray(event.safetyWarnings)
+      ? event.safetyWarnings.filter(
+          (warning): warning is string => typeof warning === 'string'
+        )
+      : []),
+    ...(redactedReason?.redacted ||
+    redactedQuery?.redacted ||
+    redactedSummary?.redacted
+      ? ['secret-like content redacted before audit']
+      : []),
+  ];
+  const safeEvent = stripUndefined({
+    ...event,
+    id: nextAuditId(event.action),
+    timestamp: new Date().toISOString(),
+    ...(redactedReason && { reason: redactedReason.text }),
+    ...(redactedQuery && { query: redactedQuery.text }),
+    ...(redactedSummary && { resultSummary: redactedSummary.text }),
+    ...(safetyWarnings.length && { safetyWarnings }),
+  }) as MemoryAuditEvent;
+  void auditSink(safeEvent);
+}
+
+function stripUndefined<T extends Record<string, unknown>>(value: T): T {
+  return Object.fromEntries(
+    Object.entries(value).filter(([, entry]) => entry !== undefined)
+  ) as T;
+}
+
+function resultText(result: ToolResult): string {
+  return result.content.map((entry) => entry.text).join('\n');
+}
+
+function auditResultSummary(result: ToolResult): string {
+  return redactSecretLikeText(resultText(result).slice(0, 500)).text;
+}
+
 export function registerTools(
   server: ToolServer,
   dataLayer: DataLayer,
   log: LogFn,
   aggregatorUrl?: string,
-  worktreeTag?: string
+  worktreeTag?: string,
+  auditSink?: MemoryAuditSink
 ): void {
   const tool = getToolRegistrar(server);
+
+  // -------------------------------------------------------------------------
+  // eweser_get_memory_strategy
+  // -------------------------------------------------------------------------
+  tool(
+    'eweser_get_memory_strategy',
+    'Return the active memory strategy, capture mode, scope, and writable targets for this agent token.',
+    {
+      scopeType: MemoryScopeTypeSchema.optional(),
+      scopeKey: z.string().optional(),
+    },
+    async ({ scopeType, scopeKey }) => {
+      const strategy = dataLayer.getMemoryStrategy({ scopeKey, scopeType });
+      emitAudit(auditSink, {
+        action: 'strategy_lookup',
+        scopeType,
+        scopeKey,
+        worktreeTag,
+        resultSummary: `${strategy.strategy} ${strategy.captureMode}`,
+        tokenEstimate: estimateMemoryTokens(JSON.stringify(strategy)),
+      });
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: JSON.stringify(strategy, null, 2),
+          },
+        ],
+      };
+    }
+  );
+
+  // -------------------------------------------------------------------------
+  // eweser_list_memory_scopes
+  // -------------------------------------------------------------------------
+  tool(
+    'eweser_list_memory_scopes',
+    'List global/project/workspace memory scopes this agent can use.',
+    {},
+    async () => {
+      const scopes = dataLayer.listMemoryScopes();
+      emitAudit(auditSink, {
+        action: 'scope_list',
+        worktreeTag,
+        resultCount: scopes.length,
+        roomIds: scopes.flatMap((scope) => [
+          ...(scope.readableRoomIds ?? []),
+          ...(scope.writableRoomIds ?? []),
+        ]),
+        resultSummary: `Listed ${scopes.length} memory scopes.`,
+        tokenEstimate: estimateMemoryTokens(JSON.stringify(scopes)),
+      });
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: JSON.stringify(scopes, null, 2),
+          },
+        ],
+      };
+    }
+  );
 
   // -------------------------------------------------------------------------
   // eweser_list_rooms
@@ -372,12 +523,23 @@ export function registerTools(
               results: AggregatorSearchResult[];
             };
             const formatted = formatAggregatorResults(data.results);
-            return {
+            const result = {
               content: [
                 { type: 'text' as const, text: formatted },
                 { type: 'text' as const, text: JSON.stringify(data.results) },
               ],
             };
+            emitAudit(auditSink, {
+              action: 'memory_search',
+              query,
+              worktreeTag,
+              roomIds: data.results.map((entry) => entry.roomId),
+              memoryIds: data.results.map((entry) => entry.id),
+              resultCount: data.results.length,
+              resultSummary: auditResultSummary(result),
+              tokenEstimate: estimateMemoryTokens(resultText(result)),
+            });
+            return result;
           }
           // Fall through to in-memory on non-ok response
         } catch {
@@ -394,7 +556,7 @@ export function registerTools(
         .searchDocuments(query, collectionFilter)
         .filter((result) => matchesSearchFilters(result, filters))
         .slice(0, 10);
-      return {
+      const result = {
         content: [
           {
             type: 'text' as const,
@@ -402,6 +564,17 @@ export function registerTools(
           },
         ],
       };
+      emitAudit(auditSink, {
+        action: 'memory_search',
+        query,
+        worktreeTag,
+        roomIds: results.map((entry) => entry.roomId),
+        memoryIds: results.map((entry) => entry.doc._id),
+        resultCount: results.length,
+        resultSummary: auditResultSummary(result),
+        tokenEstimate: estimateMemoryTokens(resultText(result)),
+      });
+      return result;
     }
   );
 
@@ -500,7 +673,12 @@ export function registerTools(
       'Requires readwrite access on the target room (collectionKey: "conversations"). ' +
       'Keep summary concise — ideally under 500 tokens.',
     {
-      roomId: z.string().describe('The conversations room UUID to write to'),
+      roomId: z
+        .string()
+        .optional()
+        .describe(
+          'The conversations room UUID to write to. Optional when exactly one writable memory target is available.'
+        ),
       title: z
         .string()
         .min(1)
@@ -545,6 +723,10 @@ export function registerTools(
         .array(z.string())
         .optional()
         .describe('IDs of related EweserDB documents'),
+      scopeType: MemoryScopeTypeSchema.optional(),
+      scopeKey: z.string().optional(),
+      strategy: MemoryStrategySchema.optional(),
+      captureMode: MemoryCaptureModeSchema.optional(),
     },
     async ({
       roomId,
@@ -556,8 +738,17 @@ export function registerTools(
       tags,
       turns,
       relatedDocIds,
+      scopeType,
+      scopeKey,
+      strategy,
+      captureMode,
     }) => {
-      const crudApi = dataLayer.getDocumentsForRoom(roomId);
+      const resolvedRoomId = dataLayer.resolveMemoryWriteRoom({
+        roomId,
+        scopeKey,
+        scopeType,
+      });
+      const crudApi = dataLayer.getDocumentsForRoom(resolvedRoomId);
 
       const MAX_TURNS = 100;
       let cappedTurns = turns;
@@ -586,6 +777,11 @@ export function registerTools(
         memoryType,
         agentId: agentId ?? 'unknown',
         date: date ?? new Date().toISOString().slice(0, 10),
+        strategy: strategy ?? ('agent-journal' satisfies MemoryStrategyKind),
+        captureMode: captureMode ?? ('manual' satisfies MemoryCaptureMode),
+        scopeType: scopeType ?? ('global' satisfies MemoryScopeType),
+        scopeKey: scopeKey ?? 'default',
+        reviewStatus: 'accepted',
         tags:
           (tags?.some((tag: string) => tag.startsWith('worktree:')) ?? false)
             ? tags
@@ -597,7 +793,7 @@ export function registerTools(
         }),
       };
 
-      const connected = dataLayer.assertWriteAccess(roomId, docData);
+      const connected = dataLayer.assertWriteAccess(resolvedRoomId, docData);
       if (connected.meta.collectionKey !== 'conversations') {
         throw new Error('eweser_save_memory requires a conversations room');
       }
@@ -605,13 +801,13 @@ export function registerTools(
       const newDoc = crudApi.new(docData as Parameters<typeof crudApi.new>[0]);
 
       void log({
-        roomId,
+        roomId: resolvedRoomId,
         collectionKey: connected.meta.collectionKey,
         action: 'write',
         documentCount: 1,
       });
 
-      return {
+      const result = {
         content: [
           {
             type: 'text' as const,
@@ -619,6 +815,171 @@ export function registerTools(
           },
         ],
       };
+      emitAudit(auditSink, {
+        action: 'memory_save',
+        agentId: docData.agentId,
+        scopeType: docData.scopeType,
+        scopeKey: docData.scopeKey,
+        worktreeTag,
+        roomIds: [resolvedRoomId],
+        memoryIds: [newDoc._id],
+        resultCount: 1,
+        resultSummary: auditResultSummary(result),
+        tokenEstimate: estimateMemoryTokens(docData.summary),
+        safetyWarnings: docData.redactionWarnings,
+      });
+      return result;
+    }
+  );
+
+  // -------------------------------------------------------------------------
+  // eweser_suggest_memory
+  // -------------------------------------------------------------------------
+  tool(
+    'eweser_suggest_memory',
+    'Stage a suggested memory for later review. This writes a conversations document with reviewStatus: "suggested".',
+    {
+      roomId: z.string().optional(),
+      title: z.string().min(1),
+      summary: z.string().min(1).max(2000),
+      memoryType: z.enum(['session', 'memory', 'decision', 'bookmark']),
+      agentId: z.string().optional(),
+      scopeType: MemoryScopeTypeSchema.optional(),
+      scopeKey: z.string().optional(),
+      strategy: MemoryStrategySchema.optional(),
+      captureMode: z.literal('suggest').optional(),
+      tags: z.array(z.string()).optional(),
+    },
+    async ({
+      roomId,
+      title,
+      summary,
+      memoryType,
+      agentId,
+      scopeType,
+      scopeKey,
+      strategy,
+      tags,
+    }) => {
+      const resolvedRoomId = dataLayer.resolveMemoryWriteRoom({
+        roomId,
+        scopeKey,
+        scopeType,
+      });
+      const redactedSummary = redactSecretLikeText(summary);
+      const docData = {
+        title,
+        summary: redactedSummary.text,
+        memoryType,
+        agentId: agentId ?? 'unknown',
+        date: new Date().toISOString().slice(0, 10),
+        strategy: strategy ?? 'agent-journal',
+        captureMode: 'suggest',
+        scopeType: scopeType ?? 'global',
+        scopeKey: scopeKey ?? 'default',
+        reviewStatus: 'suggested',
+        tags:
+          (tags?.some((tag: string) => tag.startsWith('worktree:')) ?? false)
+            ? tags
+            : [...(tags ?? []), buildWorktreeTag(worktreeTag)],
+        ...(redactedSummary.redacted && {
+          redactionWarnings: ['secret-like content redacted before save'],
+        }),
+      };
+      const connected = dataLayer.assertWriteAccess(resolvedRoomId, docData);
+      if (connected.meta.collectionKey !== 'conversations') {
+        throw new Error('eweser_suggest_memory requires a conversations room');
+      }
+      const crudApi = dataLayer.getDocumentsForRoom(resolvedRoomId);
+      const newDoc = crudApi.new(docData as Parameters<typeof crudApi.new>[0]);
+      void log({
+        roomId: resolvedRoomId,
+        collectionKey: connected.meta.collectionKey,
+        action: 'write',
+        documentCount: 1,
+      });
+      const result = {
+        content: [
+          {
+            type: 'text' as const,
+            text: JSON.stringify({ id: newDoc._id, suggested: true }, null, 2),
+          },
+        ],
+      };
+      emitAudit(auditSink, {
+        action: 'memory_suggest',
+        agentId: docData.agentId,
+        scopeType: docData.scopeType,
+        scopeKey: docData.scopeKey,
+        worktreeTag,
+        roomIds: [resolvedRoomId],
+        memoryIds: [newDoc._id],
+        resultCount: 1,
+        resultSummary: auditResultSummary(result),
+        tokenEstimate: estimateMemoryTokens(docData.summary),
+        safetyWarnings: docData.redactionWarnings,
+      });
+      return result;
+    }
+  );
+
+  // -------------------------------------------------------------------------
+  // eweser_export_memory
+  // -------------------------------------------------------------------------
+  tool(
+    'eweser_export_memory',
+    'Export Agent Journal memory for a selected scope. Defaults to Obsidian-compatible Markdown.',
+    {
+      roomId: z.string().optional(),
+      scopeType: MemoryScopeTypeSchema.optional(),
+      scopeKey: z.string().optional(),
+      format: z.enum(['obsidian', 'markdown', 'json']).optional(),
+    },
+    async ({ roomId, scopeType, scopeKey, format }) => {
+      const targetRoomId = dataLayer.resolveMemoryWriteRoom({
+        roomId,
+        scopeKey,
+        scopeType,
+      });
+      const connected = dataLayer.assertReadAccess(targetRoomId);
+      if (connected.meta.collectionKey !== 'conversations') {
+        throw new Error('eweser_export_memory requires a conversations room');
+      }
+      const raw = dataLayer.getRawDocuments<Conversation>(targetRoomId);
+      const memories = Object.values(raw).filter((doc): doc is Conversation =>
+        Boolean(doc && !doc._deleted)
+      );
+      const files = exportAgentJournalMarkdown(memories, {
+        format: format ?? 'obsidian',
+        scopeType,
+        scopeKey,
+      });
+      void log({
+        roomId: targetRoomId,
+        collectionKey: connected.meta.collectionKey,
+        action: 'read',
+        documentCount: memories.length,
+      });
+      const result = {
+        content: [
+          {
+            type: 'text' as const,
+            text: JSON.stringify(files, null, 2),
+          },
+        ],
+      };
+      emitAudit(auditSink, {
+        action: 'memory_export',
+        scopeType,
+        scopeKey,
+        worktreeTag,
+        roomIds: [targetRoomId],
+        memoryIds: memories.map((memory) => memory._id),
+        resultCount: files.length,
+        resultSummary: `Exported ${files.length} Agent Journal files.`,
+        tokenEstimate: estimateMemoryTokens(resultText(result)),
+      });
+      return result;
     }
   );
 

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { DataLayer } from './data-layer.js';
+import type { MemoryAuditEvent } from '@eweser/shared';
 
 // ---------------------------------------------------------------------------
 // Mock DataLayer
@@ -13,6 +14,7 @@ type ToolHandler = (args: Record<string, unknown>) => Promise<{
 
 // Capture tool registrations so we can invoke them directly in tests
 const registeredTools = new Map<string, ToolHandler>();
+const auditEvents: MemoryAuditEvent[] = [];
 
 const mockServer = {
   tool: vi.fn(
@@ -40,6 +42,14 @@ const mockRoom = {
 const mockConversationRoom = {
   id: 'conversation-room',
   name: 'Conversations',
+  collectionKey: 'conversations',
+  syncUrl: 'ws://localhost:1234',
+  syncBaseUrl: null,
+};
+
+const mockSecondConversationRoom = {
+  id: 'conversation-room-2',
+  name: 'Project Memory',
   collectionKey: 'conversations',
   syncUrl: 'ws://localhost:1234',
   syncBaseUrl: null,
@@ -81,7 +91,45 @@ const mockCrudApi = {
 
 const mockDataLayer = {
   listRooms: vi.fn(() => [mockRoom]),
-  assertReadAccess: vi.fn(() => mockConnectedRoom),
+  listWritableRooms: vi.fn((collectionKey?: string) =>
+    collectionKey === 'conversations'
+      ? [mockConversationRoom]
+      : [mockConversationRoom]
+  ),
+  listMemoryScopes: vi.fn(() => [
+    {
+      scopeType: 'global',
+      scopeKey: 'default',
+      label: 'Shared Agent Memory',
+      strategy: 'agent-journal',
+      captureMode: 'manual',
+      defaultWriteRoomId: 'conversation-room',
+      readableRoomIds: ['room-1', 'conversation-room'],
+      writableRoomIds: ['conversation-room'],
+    },
+  ]),
+  getMemoryStrategy: vi.fn(() => ({
+    strategy: 'agent-journal',
+    captureMode: 'manual',
+    scope: {
+      scopeType: 'global',
+      scopeKey: 'default',
+      label: 'Shared Agent Memory',
+      strategy: 'agent-journal',
+      captureMode: 'manual',
+      defaultWriteRoomId: 'conversation-room',
+      readableRoomIds: ['room-1', 'conversation-room'],
+      writableRoomIds: ['conversation-room'],
+    },
+  })),
+  resolveMemoryWriteRoom: vi.fn(
+    ({ roomId }: { roomId?: string } = {}) => roomId ?? 'conversation-room'
+  ),
+  assertReadAccess: vi.fn((roomId: string) =>
+    roomId === 'conversation-room'
+      ? mockConnectedConversationRoom
+      : mockConnectedRoom
+  ),
   assertWriteAccess: vi.fn((roomId: string) =>
     roomId === 'conversation-room'
       ? mockConnectedConversationRoom
@@ -106,7 +154,15 @@ beforeEach(() => {
   // Re-mock log on each run
   mockLog.mockResolvedValue(undefined);
   // Register all tools fresh
-  registerTools(mockServer, mockDataLayer, mockLog);
+  registerTools(
+    mockServer,
+    mockDataLayer,
+    mockLog,
+    undefined,
+    'mcp-server',
+    (event) => auditEvents.push(event)
+  );
+  auditEvents.length = 0;
 });
 
 // ---------------------------------------------------------------------------
@@ -133,6 +189,30 @@ describe('eweser_list_rooms', () => {
   it('passes collectionKey filter to dataLayer', async () => {
     await callTool('eweser_list_rooms', { collectionKey: 'notes' });
     expect(mockDataLayer.listRooms).toHaveBeenCalledWith('notes');
+  });
+});
+
+describe('memory strategy tools', () => {
+  it('returns active memory strategy metadata', async () => {
+    const result = await callTool('eweser_get_memory_strategy');
+    const body = JSON.parse(result.content[0].text);
+    expect(body.strategy).toBe('agent-journal');
+    expect(body.captureMode).toBe('manual');
+    expect(auditEvents.at(-1)).toEqual(
+      expect.objectContaining({
+        action: 'strategy_lookup',
+      })
+    );
+    expect(auditEvents.at(-1)).not.toHaveProperty('scopeKey');
+  });
+
+  it('lists memory scopes', async () => {
+    const result = await callTool('eweser_list_memory_scopes');
+    const scopes = JSON.parse(result.content[0].text);
+    expect(scopes[0].writableRoomIds).toEqual(['conversation-room']);
+    expect(auditEvents.at(-1)).toEqual(
+      expect.objectContaining({ action: 'scope_list', resultCount: 1 })
+    );
   });
 });
 
@@ -192,6 +272,13 @@ describe('eweser_search', () => {
     const results = JSON.parse(text);
     expect(results).toHaveLength(1);
     expect(results[0].doc._id).toBe('doc-1');
+    expect(auditEvents.at(-1)).toEqual(
+      expect.objectContaining({
+        action: 'memory_search',
+        memoryIds: ['doc-1'],
+        resultCount: 1,
+      })
+    );
   });
 
   it('passes collectionKey filter to searchDocuments fallback', async () => {
@@ -332,6 +419,11 @@ describe('eweser_save_memory', () => {
         title: 'Decision: Hono over Express',
         summary: 'Chose Hono for auth server — smaller bundle, native fetch.',
         memoryType: 'decision',
+        strategy: 'agent-journal',
+        captureMode: 'manual',
+        scopeType: 'global',
+        scopeKey: 'default',
+        reviewStatus: 'accepted',
         agentId: 'unknown',
         tags: ['worktree:mcp-server'],
       })
@@ -388,6 +480,44 @@ describe('eweser_save_memory', () => {
     );
   });
 
+  it('infers the writable memory room when roomId is omitted', async () => {
+    await callTool('eweser_save_memory', {
+      title: 'Inferred room',
+      summary: 'Saved without an explicit room id.',
+      memoryType: 'memory',
+      scopeKey: 'default',
+    });
+
+    expect(mockDataLayer.resolveMemoryWriteRoom).toHaveBeenCalledWith(
+      expect.objectContaining({ scopeKey: 'default' })
+    );
+    expect(mockDataLayer.assertWriteAccess).toHaveBeenCalledWith(
+      'conversation-room',
+      expect.objectContaining({ title: 'Inferred room' })
+    );
+  });
+
+  it('surfaces multi-room ambiguity from the data layer', async () => {
+    vi.mocked(mockDataLayer.resolveMemoryWriteRoom).mockImplementationOnce(
+      () => {
+        throw new Error(
+          `Multiple writable memory rooms are available; provide roomId or scopeKey. Available roomIds: ${[
+            mockConversationRoom.id,
+            mockSecondConversationRoom.id,
+          ].join(', ')}`
+        );
+      }
+    );
+
+    await expect(
+      callTool('eweser_save_memory', {
+        title: 'Ambiguous',
+        summary: 'Needs target',
+        memoryType: 'memory',
+      })
+    ).rejects.toThrow('Multiple writable memory rooms');
+  });
+
   it('logs access after creation', async () => {
     await callTool('eweser_save_memory', {
       roomId: 'conversation-room',
@@ -397,6 +527,37 @@ describe('eweser_save_memory', () => {
     });
     expect(mockLog).toHaveBeenCalledWith(
       expect.objectContaining({ roomId: 'conversation-room', action: 'write' })
+    );
+    expect(auditEvents.at(-1)).toEqual(
+      expect.objectContaining({
+        action: 'memory_save',
+        memoryIds: ['new-doc'],
+        roomIds: ['conversation-room'],
+      })
+    );
+  });
+
+  it('normalizes spaces in derived worktree tags', async () => {
+    registeredTools.clear();
+    registerTools(
+      mockServer,
+      mockDataLayer,
+      mockLog,
+      undefined,
+      'MCP Server QA',
+      (event) => auditEvents.push(event)
+    );
+
+    await callTool('eweser_save_memory', {
+      title: 'Tag normalization',
+      summary: 'Derived worktree tag should fold whitespace.',
+      memoryType: 'memory',
+    });
+
+    expect(mockCrudApi.new).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        tags: ['worktree:mcp-server-qa'],
+      })
     );
   });
 });
@@ -566,6 +727,11 @@ describe('eweser_save_memory', () => {
     expect(callArgs?.redactionWarnings).toEqual([
       'secret-like content redacted before save',
     ]);
+    expect(JSON.stringify(auditEvents)).not.toContain(accessKey);
+    expect(JSON.stringify(auditEvents)).not.toContain('super-secret-value');
+    expect(auditEvents.at(-1)?.safetyWarnings).toContain(
+      'secret-like content redacted before save'
+    );
   });
 
   it('rejects non-conversation rooms', async () => {
@@ -577,5 +743,53 @@ describe('eweser_save_memory', () => {
         memoryType: 'memory',
       })
     ).rejects.toThrow('requires a conversations room');
+  });
+});
+
+describe('eweser_suggest_memory', () => {
+  it('creates a suggested memory with review metadata', async () => {
+    const result = await callTool('eweser_suggest_memory', {
+      title: 'Suggested preference',
+      summary: 'User prefers concise updates.',
+      memoryType: 'memory',
+    });
+
+    expect(JSON.parse(result.content[0].text)).toEqual(
+      expect.objectContaining({ suggested: true })
+    );
+    expect(mockCrudApi.new).toHaveBeenCalledWith(
+      expect.objectContaining({
+        captureMode: 'suggest',
+        reviewStatus: 'suggested',
+      })
+    );
+    expect(auditEvents.at(-1)).toEqual(
+      expect.objectContaining({
+        action: 'memory_suggest',
+        memoryIds: ['new-doc'],
+      })
+    );
+  });
+});
+
+describe('eweser_export_memory', () => {
+  it('exports conversation memory as Obsidian-compatible Markdown files', async () => {
+    const result = await callTool('eweser_export_memory');
+    const files = JSON.parse(result.content[0].text);
+
+    expect(files.map((file: { path: string }) => file.path)).toContain(
+      'MEMORY.md'
+    );
+    expect(
+      files.some((file: { content: string }) =>
+        file.content.includes('type: agent-journal-memory')
+      )
+    ).toBe(true);
+    expect(auditEvents.at(-1)).toEqual(
+      expect.objectContaining({
+        action: 'memory_export',
+        resultCount: files.length,
+      })
+    );
   });
 });

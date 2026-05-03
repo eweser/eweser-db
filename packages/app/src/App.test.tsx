@@ -110,6 +110,54 @@ function getRequiredInput(id: string) {
   return element;
 }
 
+function defaultMemoryStrategy(roomIds: string[] = []) {
+  const defaultWriteRoomId = roomIds[0];
+  return {
+    defaultStrategy: 'agent-journal' as const,
+    defaultCaptureMode: 'manual' as const,
+    scopes: [
+      {
+        scopeType: 'global' as const,
+        scopeKey: 'default',
+        label: 'Shared Agent Memory',
+        strategy: 'agent-journal' as const,
+        captureMode: 'manual' as const,
+        ...(defaultWriteRoomId ? { defaultWriteRoomId } : {}),
+        readableRoomIds: roomIds,
+        writableRoomIds: roomIds,
+      },
+    ],
+    choices: [
+      {
+        strategy: 'agent-journal' as const,
+        label: 'Shared Agent Memory',
+        description: 'Portable manual memory.',
+        advanced: false,
+      },
+    ],
+    captureModes: [
+      {
+        mode: 'manual' as const,
+        label: 'Manual',
+        description: 'Explicit saves only.',
+        enabled: true,
+      },
+      {
+        mode: 'suggest' as const,
+        label: 'Suggest',
+        description: 'Stage suggested memories.',
+        enabled: true,
+      },
+      {
+        mode: 'auto' as const,
+        label: 'Auto',
+        description: 'Planned.',
+        enabled: false,
+      },
+    ],
+  };
+}
+
 describe('auth-pages app', () => {
   beforeEach(() => {
     cleanup();
@@ -150,6 +198,7 @@ describe('auth-pages app', () => {
       },
       dynamicClientRegistrationUrl: 'https://www.eweser.com/oauth/register',
       mcpUrl: 'https://www.eweser.com/mcp',
+      memoryStrategy: defaultMemoryStrategy(),
       oauthMetadataUrl:
         'https://www.eweser.com/.well-known/oauth-authorization-server',
       smartLinkRule:
@@ -376,6 +425,7 @@ describe('auth-pages app', () => {
       },
       dynamicClientRegistrationUrl: 'https://www.eweser.com/oauth/register',
       mcpUrl: 'https://www.eweser.com/mcp',
+      memoryStrategy: defaultMemoryStrategy(['room-conversations']),
       oauthMetadataUrl:
         'https://www.eweser.com/.well-known/oauth-authorization-server',
       smartLinkRule:
@@ -404,6 +454,9 @@ describe('auth-pages app', () => {
       await screen.findByRole('heading', { name: /connect ai/i, level: 2 })
     ).toBeInTheDocument();
     expect(screen.getByText(/claude desktop/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/shared agent memory/i).length).toBeGreaterThan(
+      0
+    );
     expect(screen.getByText(/writable ai area/i)).toBeInTheDocument();
     expect(screen.getByText(/write scope: 1 room/i)).toBeInTheDocument();
   });
@@ -439,6 +492,7 @@ describe('auth-pages app', () => {
       },
       dynamicClientRegistrationUrl: 'https://www.eweser.com/oauth/register',
       mcpUrl: 'https://www.eweser.com/mcp',
+      memoryStrategy: defaultMemoryStrategy(['room-conversations']),
       oauthMetadataUrl:
         'https://www.eweser.com/.well-known/oauth-authorization-server',
       smartLinkRule:
@@ -486,7 +540,13 @@ describe('auth-pages app', () => {
     await waitFor(() => {
       expect(apiMocks.setupConnectAiToken).toHaveBeenCalledWith(
         'claude-desktop',
-        { writeRoomIds: ['room-conversations', 'room-ai'] }
+        {
+          captureMode: 'manual',
+          defaultWriteRoomId: 'room-conversations',
+          memoryStrategy: 'agent-journal',
+          readableRoomIds: ['room-conversations'],
+          writableRoomIds: ['room-conversations'],
+        }
       );
     });
 
@@ -526,6 +586,7 @@ describe('auth-pages app', () => {
       },
       dynamicClientRegistrationUrl: 'https://www.eweser.com/oauth/register',
       mcpUrl: 'https://www.eweser.com/mcp',
+      memoryStrategy: defaultMemoryStrategy(),
       oauthMetadataUrl:
         'https://www.eweser.com/.well-known/oauth-authorization-server',
       smartLinkRule:
@@ -594,6 +655,7 @@ describe('auth-pages app', () => {
       },
       dynamicClientRegistrationUrl: 'https://www.eweser.com/oauth/register',
       mcpUrl: 'https://www.eweser.com/mcp',
+      memoryStrategy: defaultMemoryStrategy(),
       oauthMetadataUrl:
         'https://www.eweser.com/.well-known/oauth-authorization-server',
       smartLinkRule:

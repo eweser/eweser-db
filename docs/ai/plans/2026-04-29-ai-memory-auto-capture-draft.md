@@ -18,6 +18,9 @@ strategy defaults.
 - Assumption: `auto` is a user-visible setting in the main plan, but real
   automatic capture may need this separate plan if it requires background jobs
   or client integrations.
+- Implementation finding from the main strategy MVP: `auto` is represented in
+  shared/auth/app contracts but disabled in Connect AI. No background hooks,
+  capture workers, or client transcript ingestion were added.
 - Open question: which clients expose reliable capture hooks first: MCP clients,
   local Codex sessions, browser extensions, or app-owned chat surfaces?
 - Open question: should auto-captured memory be accepted immediately or staged

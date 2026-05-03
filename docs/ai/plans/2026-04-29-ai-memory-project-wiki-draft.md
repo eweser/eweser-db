@@ -14,6 +14,10 @@ project/repo knowledge, using canonical memory sources stored in EweserDB.
 
 ## Assumptions / Open Questions
 
+- Implementation finding from the main strategy MVP: Project Wiki remains a
+  pending strategy in the deterministic evaluation harness. Add implemented
+  fixtures under `packages/shared/src/memory-evaluation/` before making product
+  recommendation claims.
 - Assumption: the main memory strategy plan has shipped strategy scopes,
   capture modes, and Agent Journal export.
 - Open question: should generated wiki pages be ordinary Eweser documents, a new

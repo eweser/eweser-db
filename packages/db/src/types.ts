@@ -12,6 +12,7 @@ import type {
   AgentConfig,
   AgentAccessLogEntry,
   Conversation,
+  MemoryStrategyConfig,
   COLLECTION_KEYS,
   ServerRoom,
   EweDocument,
@@ -42,6 +43,7 @@ export type {
   Flashcard,
   Profile,
   Conversation,
+  MemoryStrategyConfig,
   GetDocuments,
 };
 
@@ -54,6 +56,7 @@ export type CollectionToDocument = {
   agentConfigs: AgentConfig;
   agentAccessLogs: AgentAccessLogEntry;
   conversations: Conversation;
+  memoryStrategyConfigs: MemoryStrategyConfig;
 };
 export const collections: Collections = {
   notes: {},
@@ -62,6 +65,7 @@ export const collections: Collections = {
   agentConfigs: {},
   agentAccessLogs: {},
   conversations: {},
+  memoryStrategyConfigs: {},
 };
 
 export type { DocumentWithoutBase, Documents };

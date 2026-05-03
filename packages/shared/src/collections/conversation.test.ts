@@ -5,6 +5,13 @@ import type {
   ConversationTurn,
   ConversationMemoryType,
 } from '../collections/conversation.js';
+import {
+  DEFAULT_MEMORY_STRATEGY_CONFIG,
+  MEMORY_CAPTURE_MODES,
+  MEMORY_SCOPE_TYPES,
+  MEMORY_STRATEGY_KINDS,
+  type MemoryStrategyConfigBase,
+} from './memory-strategy.js';
 
 describe('conversations collection', () => {
   it('conversations is in COLLECTION_KEYS', () => {
@@ -64,5 +71,43 @@ describe('conversations collection', () => {
     // No turns or relatedDocIds — TypeScript would error if required
     expect(minimal.turns).toBeUndefined();
     expect(minimal.relatedDocIds).toBeUndefined();
+  });
+
+  it('accepts optional strategy metadata without breaking old conversations', () => {
+    const scoped: Omit<Conversation, '_id' | '_ref' | '_created' | '_updated'> =
+      {
+        title: 'Scoped decision',
+        summary: 'Use agent journal for the first memory strategy.',
+        agentId: 'codex',
+        memoryType: 'decision',
+        date: '2026-05-03',
+        tags: ['memory'],
+        strategy: 'agent-journal',
+        captureMode: 'manual',
+        scopeType: 'project',
+        scopeKey: 'eweser-db',
+        reviewStatus: 'accepted',
+        provenance: { clientId: 'codex' },
+      };
+
+    expect(scoped.strategy).toBe('agent-journal');
+    expect(scoped.captureMode).toBe('manual');
+    expect(scoped.scopeType).toBe('project');
+  });
+
+  it('exports strict memory strategy defaults and accepted values', () => {
+    const config: MemoryStrategyConfigBase = {
+      ...DEFAULT_MEMORY_STRATEGY_CONFIG,
+      scopeType: 'project',
+      scopeKey: 'eweser-db',
+      readableRoomIds: ['room-memory'],
+      writableRoomIds: ['room-memory'],
+      defaultWriteRoomId: 'room-memory',
+    };
+
+    expect(MEMORY_STRATEGY_KINDS).toContain(config.strategy);
+    expect(MEMORY_CAPTURE_MODES).toContain(config.captureMode);
+    expect(MEMORY_SCOPE_TYPES).toContain(config.scopeType);
+    expect(config.exportFormats).toContain('obsidian');
   });
 });

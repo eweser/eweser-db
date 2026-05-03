@@ -26,24 +26,30 @@ Copy `example.env` and fill in your credentials:
 cp example.env .env
 ```
 
-| Variable              | Required | Description                                                          |
-| --------------------- | -------- | -------------------------------------------------------------------- |
-| `EWESER_AGENT_TOKEN`  | ✅       | Agent bearer token from auth server                                  |
-| `EWESER_AUTH_URL`     | ✅       | Base URL of the auth server, e.g. `http://localhost:3001`            |
-| `EWESER_WORKTREE_TAG` | optional | Workspace/tag label used to scope saved memory docs to this worktree |
-| `EWESER_SYNC_URL`     | optional | Override sync WebSocket URL                                          |
+| Variable                 | Required | Description                                                          |
+| ------------------------ | -------- | -------------------------------------------------------------------- |
+| `EWESER_AGENT_TOKEN`     | ✅       | Agent bearer token from auth server                                  |
+| `EWESER_AUTH_URL`        | ✅       | Base URL of the auth server, e.g. `http://localhost:3001`            |
+| `EWESER_WORKTREE_TAG`    | optional | Workspace/tag label used to scope saved memory docs to this worktree |
+| `EWESER_SYNC_URL`        | optional | Override sync WebSocket URL                                          |
+| `EWESER_MCP_AUDIT_JSONL` | optional | Local JSONL file for safe memory audit events; never use stdout      |
 
 ## Available Tools
 
-| Tool                     | Description                                                            |
-| ------------------------ | ---------------------------------------------------------------------- |
-| `eweser_list_rooms`      | List rooms the agent can access, optionally filtered by collection key |
-| `eweser_list_documents`  | List documents in a room (IDs + summaries)                             |
-| `eweser_read_document`   | Read a full document by room ID and document ID                        |
-| `eweser_search`          | Full-text search across all accessible rooms                           |
-| `eweser_create_document` | Create a new document in a room                                        |
-| `eweser_update_document` | Update fields on an existing document                                  |
-| `eweser_delete_document` | Soft-delete a document (sets `_deleted = true`)                        |
+| Tool                         | Description                                                              |
+| ---------------------------- | ------------------------------------------------------------------------ |
+| `eweser_list_rooms`          | List rooms the agent can access, optionally filtered by collection key   |
+| `eweser_list_documents`      | List documents in a room (IDs + summaries)                               |
+| `eweser_read_document`       | Read a full document by room ID and document ID                          |
+| `eweser_search`              | Full-text search across all accessible rooms                             |
+| `eweser_create_document`     | Create a new document in a room                                          |
+| `eweser_update_document`     | Update fields on an existing document                                    |
+| `eweser_delete_document`     | Soft-delete a document (sets `_deleted = true`)                          |
+| `eweser_get_memory_strategy` | Return active memory strategy, capture mode, scope, and writable targets |
+| `eweser_list_memory_scopes`  | List memory scopes available to this token                               |
+| `eweser_save_memory`         | Save accepted Agent Journal memory, inferring the room when unambiguous  |
+| `eweser_suggest_memory`      | Stage suggested Agent Journal memory for review                          |
+| `eweser_export_memory`       | Export Agent Journal memory as Obsidian-compatible Markdown by default   |
 
 ## Supported Clients
 
@@ -177,16 +183,33 @@ Agent tokens use separate read and write scopes.
 - For notes, writable scope can be narrowed further by room plus `folderIds` or `sourcePath` prefixes.
 - Legacy `permissions: "readwrite"` tokens keep their existing room-level behavior when no explicit write scope is present.
 
-The recommended writable setup is a dedicated room named `AI Notes`.
+The recommended writable setup is a dedicated `conversations` room for **AI Memory / Agent Journal**. Personal note rooms should stay off until explicitly granted.
 
-1. Create or choose an `AI Notes` room in Eweser.
+1. Create or choose a `conversations` room for AI Memory / Agent Journal.
 2. Open the signed-in Connect AI page.
-3. Select only that room in the Writable AI area.
+3. Select it as readable and writable, and make it the default write room.
 4. Prepare or rotate the token for Codex, Claude Desktop, Copilot, or OpenClaw.
 
-With that setup, the AI client can read the rooms granted by the token but can only create, update, or delete documents in the selected writable room. If no writable room is selected, token clients are read-only.
+With that setup, `eweser_save_memory` can omit `roomId` because there is exactly one writable memory target. If multiple writable memory rooms are available, the tool returns a typed ambiguity error and asks for `roomId` or `scopeKey`.
+
+Capture mode behavior in this MVP:
+
+- `manual`: accepted memory writes through `eweser_save_memory`.
+- `suggest`: reviewable suggestions write through `eweser_suggest_memory`.
+- `auto`: visible as planned/disabled until capture hooks and audit policy ship.
+
+`eweser_export_memory` returns an array of files. The default format is Obsidian-compatible Markdown with YAML frontmatter, stable tags, and `[[wikilinks]]`; pass `format: "json"` only when a client needs raw records.
+
+With scoped setup, the AI client can read the rooms granted by the token but can only create, update, or delete documents in selected writable rooms. If no writable room is selected, token clients are read-only.
 
 Every tool call is audit-logged to the auth server (room, action, document count).
+
+For local diagnostics, set `EWESER_MCP_AUDIT_JSONL` to a file path. Memory tools
+then write bounded JSONL audit events for strategy lookup, scope listing, save,
+suggest, search, and export. Audit events include action metadata, room ids,
+memory ids, result counts, token estimates, and safety warnings. They must not
+include bearer tokens, sync tokens, cookies, `.env` values, or full unredacted
+transcripts.
 
 ## Troubleshooting
 
