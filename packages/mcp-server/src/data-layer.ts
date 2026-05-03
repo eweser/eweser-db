@@ -17,6 +17,10 @@ import {
   type Documents,
   type EweDocument,
   type CollectionKey,
+  type MemoryCaptureMode,
+  type MemoryStrategyKind,
+  type MemoryStrategyScope,
+  type MemoryScopeType,
 } from '@eweser/shared';
 
 const TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000; // refresh 5 min before expiry
@@ -325,6 +329,88 @@ export class DataLayer {
     const all = this.getReadableRooms().map((r) => r.meta);
     if (!collectionKey) return all;
     return all.filter((r) => r.collectionKey === collectionKey);
+  }
+
+  listWritableRooms(collectionKey?: string): AgentRoom[] {
+    const writable = Array.from(this.rooms.values())
+      .filter(
+        (connected) =>
+          this.canReadRoom(connected) && this.canWriteRoom(connected)
+      )
+      .map((connected) => connected.meta);
+    if (!collectionKey) return writable;
+    return writable.filter((room) => room.collectionKey === collectionKey);
+  }
+
+  listMemoryScopes(): MemoryStrategyScope[] {
+    const readableRoomIds = this.listRooms().map((room) => room.id);
+    const writableRoomIds = this.listWritableRooms('conversations').map(
+      (room) => room.id
+    );
+    return [
+      {
+        scopeType: 'global',
+        scopeKey: 'default',
+        label: 'Shared Agent Memory',
+        strategy: 'agent-journal',
+        captureMode: 'manual',
+        ...(writableRoomIds[0]
+          ? { defaultWriteRoomId: writableRoomIds[0] }
+          : {}),
+        readableRoomIds,
+        writableRoomIds,
+      },
+    ];
+  }
+
+  getMemoryStrategy(
+    options: {
+      scopeKey?: string | undefined;
+      scopeType?: MemoryScopeType | undefined;
+    } = {}
+  ): {
+    strategy: MemoryStrategyKind;
+    captureMode: MemoryCaptureMode;
+    scope: MemoryStrategyScope;
+  } {
+    const scopes = this.listMemoryScopes();
+    const scope =
+      scopes.find(
+        (candidate) =>
+          (!options.scopeKey || candidate.scopeKey === options.scopeKey) &&
+          (!options.scopeType || candidate.scopeType === options.scopeType)
+      ) ?? scopes[0];
+
+    if (!scope) {
+      throw new Error('No memory scopes are available for this agent.');
+    }
+
+    return {
+      strategy: scope.strategy,
+      captureMode: scope.captureMode,
+      scope,
+    };
+  }
+
+  resolveMemoryWriteRoom(
+    options: {
+      roomId?: string | undefined;
+      scopeKey?: string | undefined;
+      scopeType?: MemoryScopeType | undefined;
+    } = {}
+  ): string {
+    if (options.roomId) return options.roomId;
+
+    const scope = this.getMemoryStrategy(options).scope;
+    if (scope.defaultWriteRoomId) return scope.defaultWriteRoomId;
+    if (scope.writableRoomIds.length === 1)
+      return scope.writableRoomIds[0] as string;
+    if (scope.writableRoomIds.length === 0) {
+      throw new Error('No writable conversations memory room is available.');
+    }
+    throw new Error(
+      `Multiple writable memory rooms are available; provide roomId or scopeKey. Available roomIds: ${scope.writableRoomIds.join(', ')}`
+    );
   }
 
   // ---------------------------------------------------------------------------

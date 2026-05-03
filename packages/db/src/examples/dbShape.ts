@@ -144,6 +144,7 @@ const _exampleDb: { collections: Collections } = {
     agentAccessLogs: {},
     conversations: {},
     fileAttachments: {},
+    memoryStrategyConfigs: {},
   },
 };
 

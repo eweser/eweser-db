@@ -13,6 +13,7 @@ import type {
   AgentAccessLogEntry,
   Conversation,
   FileAttachment,
+  MemoryStrategyConfig,
   COLLECTION_KEYS,
   ServerRoom,
   EweDocument,
@@ -44,6 +45,7 @@ export type {
   Profile,
   Conversation,
   FileAttachment,
+  MemoryStrategyConfig,
   GetDocuments,
 };
 
@@ -57,6 +59,7 @@ export type CollectionToDocument = {
   agentAccessLogs: AgentAccessLogEntry;
   conversations: Conversation;
   fileAttachments: FileAttachment;
+  memoryStrategyConfigs: MemoryStrategyConfig;
 };
 export const collections: Collections = {
   notes: {},
@@ -66,6 +69,7 @@ export const collections: Collections = {
   agentAccessLogs: {},
   conversations: {},
   fileAttachments: {},
+  memoryStrategyConfigs: {},
 };
 
 export type { DocumentWithoutBase, Documents };

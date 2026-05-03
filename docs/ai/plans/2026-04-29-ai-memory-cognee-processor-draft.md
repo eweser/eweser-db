@@ -14,6 +14,10 @@ docs, tables, transcripts, and multi-source team/project memory.
 
 ## Assumptions / Open Questions
 
+- Implementation finding from the main strategy MVP: Workspace Intelligence
+  remains pending in the deterministic evaluation harness. This plan should add
+  workspace artifact fixtures and explicit provenance expectations before
+  making recommendation claims.
 - Assumption: workspace intelligence is heavier than Agent Journal and Project
   Wiki, so it should follow manual testing of the main memory feature.
 - Open question: which source should be first: local docs, Lark docs/tables,

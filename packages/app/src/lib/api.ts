@@ -1,4 +1,9 @@
-import type { ServerRoom } from '@eweser/shared';
+import type {
+  MemoryCaptureMode,
+  MemoryScopeType,
+  MemoryStrategyKind,
+  ServerRoom,
+} from '@eweser/shared';
 import { authServerUrl } from './config';
 
 export interface AuthPagesUser {
@@ -58,6 +63,33 @@ export interface ConnectAiWritableRoom {
   syncUrl: string | null;
 }
 
+export interface ConnectAiMemoryStrategyOverview {
+  defaultStrategy: MemoryStrategyKind;
+  defaultCaptureMode: MemoryCaptureMode;
+  scopes: Array<{
+    scopeType: MemoryScopeType;
+    scopeKey: string;
+    label: string;
+    strategy: MemoryStrategyKind;
+    captureMode: MemoryCaptureMode;
+    defaultWriteRoomId?: string;
+    readableRoomIds: string[];
+    writableRoomIds: string[];
+  }>;
+  choices: Array<{
+    strategy: MemoryStrategyKind;
+    label: string;
+    description: string;
+    advanced: boolean;
+  }>;
+  captureModes: Array<{
+    mode: MemoryCaptureMode;
+    label: string;
+    description: string;
+    enabled: boolean;
+  }>;
+}
+
 export interface ConnectAiOverviewResponse {
   clients: ConnectAiClientOverview[];
   defaults: {
@@ -69,6 +101,7 @@ export interface ConnectAiOverviewResponse {
   };
   dynamicClientRegistrationUrl: string;
   mcpUrl: string;
+  memoryStrategy: ConnectAiMemoryStrategyOverview;
   oauthMetadataUrl: string;
   smartLinkRule: string;
   writableRooms?: ConnectAiWritableRoom[];
@@ -141,7 +174,14 @@ export function getConnectAiOverview() {
 
 export function setupConnectAiToken(
   clientId: ConnectAiClientId,
-  options?: { writeRoomIds?: string[] }
+  options?: {
+    captureMode?: MemoryCaptureMode | undefined;
+    defaultWriteRoomId?: string | undefined;
+    memoryStrategy?: MemoryStrategyKind | undefined;
+    readableRoomIds?: string[] | undefined;
+    writableRoomIds?: string[] | undefined;
+    writeRoomIds?: string[] | undefined;
+  }
 ) {
   return request<ConnectAiSetupResponse>(
     '/api/account/connect-ai/setup-token',
@@ -154,7 +194,14 @@ export function setupConnectAiToken(
 
 export function rotateConnectAiToken(
   clientId: ConnectAiClientId,
-  options?: { writeRoomIds?: string[] }
+  options?: {
+    captureMode?: MemoryCaptureMode | undefined;
+    defaultWriteRoomId?: string | undefined;
+    memoryStrategy?: MemoryStrategyKind | undefined;
+    readableRoomIds?: string[] | undefined;
+    writableRoomIds?: string[] | undefined;
+    writeRoomIds?: string[] | undefined;
+  }
 ) {
   return request<ConnectAiSetupResponse>(
     '/api/account/connect-ai/rotate-token',

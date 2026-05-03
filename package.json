@@ -24,6 +24,7 @@
     "code-map": "node scripts/code-map/generate-code-map.mjs --out .ai/code-map.json --pretty",
     "code-map:query": "node scripts/code-map/query-code-map.mjs",
     "codex:retrospective": "node scripts/codex/analyze-session-efficiency.mjs",
+    "memory:diagnose": "node scripts/memory/diagnose-memory-session.mjs",
     "build:logger": "npm run build --workspace @eweser/logger",
     "build:shared": "npm run build --workspace @eweser/shared",
     "build:db": "npm run build --workspace @eweser/db",

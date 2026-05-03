@@ -14,6 +14,10 @@ Evaluate and, if approved, add an optional Mem0-style processor for
 
 ## Assumptions / Open Questions
 
+- Implementation finding from the main strategy MVP: Auto-Curated Memory remains
+  pending in the deterministic evaluation harness. This plan should add
+  preference-extraction fixtures and keep ordinary memory redaction semantics
+  from `eweser_save_memory`.
 - Assumption: Eweser memory source records remain canonical; processor outputs
   are derived artifacts that can be rebuilt or deleted.
 - Open question: should the first implementation use a library, self-hosted

@@ -15,6 +15,10 @@ processor for relationship-heavy and time-sensitive memory.
 
 ## Assumptions / Open Questions
 
+- Implementation finding from the main strategy MVP: Knowledge Graph remains
+  pending in the deterministic evaluation harness. This plan should extend the
+  requirement-change and temporal-correctness fixtures before claiming graph
+  recommendations.
 - Assumption: Eweser source episodes remain canonical and graph nodes/edges are
   derived rebuildable artifacts.
 - Open question: which graph backend is acceptable for local dev, hosted, and

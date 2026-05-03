@@ -7,10 +7,11 @@
  */
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { appendFile } from 'node:fs/promises';
 import { env } from './env.js';
 import { verifyAgentToken, fetchAgentRooms, logAccess } from './auth.js';
 import { DataLayer } from './data-layer.js';
-import { registerTools } from './tools.js';
+import { registerTools, type MemoryAuditSink } from './tools.js';
 import { createLogger } from '@eweser/logger';
 
 const log = createLogger('mcp-server');
@@ -55,13 +56,23 @@ async function main() {
     action: 'read' | 'write';
     documentCount?: number;
   }) => logAccess(env.EWESER_AGENT_TOKEN, env.EWESER_AUTH_URL, entry);
+  const auditSink: MemoryAuditSink | undefined = env.EWESER_MCP_AUDIT_JSONL
+    ? async (event) => {
+        await appendFile(
+          env.EWESER_MCP_AUDIT_JSONL as string,
+          `${JSON.stringify(event)}\n`,
+          'utf8'
+        );
+      }
+    : undefined;
 
   registerTools(
     server,
     dataLayer,
     logFn,
     env.EWESER_AGGREGATOR_URL,
-    env.EWESER_WORKTREE_TAG
+    env.EWESER_WORKTREE_TAG,
+    auditSink
   );
 
   // 5. Connect to stdio transport

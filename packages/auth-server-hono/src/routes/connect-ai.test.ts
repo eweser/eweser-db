@@ -142,6 +142,15 @@ describe('connectAiRouter', () => {
     expect(body.clients).toHaveLength(6);
     expect(body.mcpUrl).toBe('https://www.eweser.com/mcp');
     expect(body.smartLinkRule).toContain('Never place bearer tokens in URLs');
+    expect(body.memoryStrategy.defaultStrategy).toBe('agent-journal');
+    expect(body.memoryStrategy.defaultCaptureMode).toBe('manual');
+    expect(body.memoryStrategy.captureModes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ mode: 'manual', enabled: true }),
+        expect.objectContaining({ mode: 'suggest', enabled: true }),
+        expect.objectContaining({ mode: 'auto', enabled: false }),
+      ])
+    );
     expect(body.writableRooms).toEqual([
       expect.objectContaining({ id: 'room-ai', name: 'AI Notes' }),
     ]);
@@ -206,7 +215,7 @@ describe('connectAiRouter', () => {
     );
   });
 
-  it('defaults token setup writes to memory and dedicated AI rooms', async () => {
+  it('defaults token setup writes to dedicated conversation memory rooms', async () => {
     mockGetWritableRoomsByUserId.mockResolvedValueOnce([
       {
         id: 'room-conversations',
@@ -247,10 +256,10 @@ describe('connectAiRouter', () => {
         tokenHash: 'secret-hash',
         tokenExpiresAt: new Date('2026-05-01T00:00:00.000Z'),
         lastAccessAt: null,
-        writeAllowedCollections: ['conversations', 'notes'],
+        writeAllowedCollections: ['conversations'],
         writeAllowedFolderIds: [],
         writeAllowedPathPrefixes: [],
-        writeAllowedRooms: ['room-conversations', 'room-ai'],
+        writeAllowedRooms: ['room-conversations'],
         createdAt: new Date('2026-04-24T00:00:00.000Z'),
         updatedAt: null,
       },
@@ -270,8 +279,80 @@ describe('connectAiRouter', () => {
     expect(res.status).toBe(200);
     expect(mockCreateAgentConfig).toHaveBeenCalledWith(
       expect.objectContaining({
-        writeAllowedCollections: ['conversations', 'notes'],
-        writeAllowedRooms: ['room-conversations', 'room-ai'],
+        writeAllowedCollections: ['conversations'],
+        writeAllowedRooms: ['room-conversations'],
+      })
+    );
+  });
+
+  it('creates token setup payload with selected readable and writable rooms', async () => {
+    mockGetWritableRoomsByUserId.mockResolvedValueOnce([
+      {
+        id: 'room-conversations',
+        name: 'Conversations',
+        collectionKey: 'conversations',
+        syncUrl: 'wss://sync.eweser.com',
+        syncBaseUrl: null,
+      },
+      {
+        id: 'room-ai',
+        name: 'AI Notes',
+        collectionKey: 'notes',
+        syncUrl: 'wss://sync.eweser.com',
+        syncBaseUrl: null,
+      },
+    ]);
+    mockGetAgentConfigsByUserId.mockResolvedValueOnce([]);
+    mockCreateAgentConfig.mockResolvedValueOnce({
+      agentConfig: {
+        id: 'agent-uuid-1',
+        userId: mockUser.id,
+        name: 'Connect AI: Codex',
+        type: 'mcp',
+        endpoint: 'https://www.eweser.com/mcp',
+        allowedCollections: ['notes'],
+        allowedRooms: [],
+        permissions: 'read',
+        readAllowedCollections: ['conversations', 'notes'],
+        readAllowedRooms: ['room-conversations', 'room-ai'],
+        isActive: true,
+        tokenHash: 'secret-hash',
+        tokenExpiresAt: new Date('2026-05-01T00:00:00.000Z'),
+        lastAccessAt: null,
+        writeAllowedCollections: ['conversations'],
+        writeAllowedFolderIds: [],
+        writeAllowedPathPrefixes: [],
+        writeAllowedRooms: ['room-conversations'],
+        createdAt: new Date('2026-04-24T00:00:00.000Z'),
+        updatedAt: null,
+      },
+      token: 'agent-token-123',
+    });
+
+    const res = await authenticatedFetch(
+      app,
+      '/api/account/connect-ai/setup-token',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          clientId: 'codex',
+          captureMode: 'suggest',
+          defaultWriteRoomId: 'room-conversations',
+          memoryStrategy: 'agent-journal',
+          readableRoomIds: ['room-conversations', 'room-ai'],
+          writableRoomIds: ['room-conversations'],
+        }),
+      }
+    );
+
+    expect(res.status).toBe(200);
+    expect(mockCreateAgentConfig).toHaveBeenCalledWith(
+      expect.objectContaining({
+        readAllowedCollections: ['conversations', 'notes'],
+        readAllowedRooms: ['room-conversations', 'room-ai'],
+        writeAllowedCollections: ['conversations'],
+        writeAllowedRooms: ['room-conversations'],
       })
     );
   });
@@ -339,6 +420,65 @@ describe('connectAiRouter', () => {
 
     expect(res.status).toBe(403);
     expect(mockCreateAgentConfig).not.toHaveBeenCalled();
+  });
+
+  it('rejects token setup with an unauthorized readable room', async () => {
+    const res = await authenticatedFetch(
+      app,
+      '/api/account/connect-ai/setup-token',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          clientId: 'codex',
+          readableRoomIds: ['room-other'],
+          writableRoomIds: [],
+        }),
+      }
+    );
+
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ error: 'Invalid readable room' });
+    expect(mockCreateAgentConfig).not.toHaveBeenCalled();
+  });
+
+  it('rejects token setup with disabled automatic capture', async () => {
+    const res = await authenticatedFetch(
+      app,
+      '/api/account/connect-ai/setup-token',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          clientId: 'codex',
+          captureMode: 'auto',
+        }),
+      }
+    );
+
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({
+      error: 'Automatic capture is not enabled yet',
+    });
+  });
+
+  it('rejects token setup when default write room is not writable', async () => {
+    const res = await authenticatedFetch(
+      app,
+      '/api/account/connect-ai/setup-token',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          clientId: 'codex',
+          defaultWriteRoomId: 'room-ai',
+          writableRoomIds: [],
+        }),
+      }
+    );
+
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ error: 'Invalid default write room' });
   });
 
   it('updates writable scope before rotating an existing token', async () => {
