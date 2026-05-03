@@ -21,13 +21,18 @@ Planner -> Coder workflow.
 
 1. Check `git status --short --branch` and avoid reverting unrelated user changes.
 2. Read the plan file. The user should provide a path such as `docs/ai/plans/YYYY-MM-DD-feature.md`.
-3. Read `AGENTS.md`, `ARCHITECTURE.md`, and `.github/copilot-instructions.md`.
-4. Read `docs/ai/workflows/codex-planner-coder.md`.
+3. Read `AGENTS.md`, `ARCHITECTURE.md`, `.github/copilot-instructions.md`, and `docs/ai/workflows/codex-planner-coder.md`.
+4. Read the nearest `INDEX.md` before broad `rg` or `find` exploration. For symbol/import/export questions, prefer `npm run code-map:query -- --symbol <name>`, `--file <path>`, or `--package <name>` before dumping source into context.
 5. Read the relevant package `AGENTS.md` for the run scope.
 6. Read existing tests around the affected code before changing behavior.
 7. Identify which run to start from. Default to Run 1 and implement all runs sequentially.
 8. Confirm the plan's approval boundary covers the requested work. If not, stop and ask for approval.
-9. Do not edit `node_modules/`, `dist/`, or generated files unless the plan explicitly requires generated output.
+9. Before running tests, starting services, Cypress, or browser flows, run `~/.codex/skills/eweser-runtime-orientation/scripts/eweser-runtime-orientation.sh status`; run `refresh` if endpoints are unknown or stale.
+10. Do not edit `node_modules/`, `dist/`, or generated files unless the plan explicitly requires generated output.
+
+Read long docs in targeted chunks. Do not concatenate multiple large docs or
+full source files into one command when an index, heading search, or `code-map`
+query can narrow the next file to inspect.
 
 ## Package quick-ref
 
@@ -37,7 +42,7 @@ Planner -> Coder workflow.
 | Core SDK     | `packages/db/src/`                  | Yjs CRDT ops; test with fake-indexeddb         |
 | Auth server  | `packages/auth-server-hono/`        | Hono + better-auth + Drizzle + PostgreSQL      |
 | Sync server  | `packages/sync-server/src/`         | Hocuspocus; JWT auth; SQLite/Postgres          |
-| Note app     | `packages/ewe-note/src/`            | React SPA + BlockNote                          |
+| Note app     | `packages/ewe-note/src/`            | React SPA + TipTap                             |
 | Shared UI    | `packages/examples-components/src/` | ESM; changeset required for API changes        |
 | MCP server   | `packages/mcp-server/src/`          | Exposes EweserDB data to AI agents             |
 
@@ -60,6 +65,7 @@ Use sidecars to keep implementation moving, not to obscure ownership.
 
 - For read-only help, use `scripts/codex/mini-worker.sh code|web|research` with narrow questions.
 - Good sidecar tasks: find a code path, check current official docs, inspect a test failure, summarize a diff risk.
+- For local code navigation, use nearby indexes and targeted `code-map` queries before asking a sidecar to explore.
 - Keep implementation local by default.
 - Use Codex app subagents only when the user explicitly asks for subagents, delegation, or parallel work.
 - Delegate code edits only when the write scope is explicit and disjoint, and tell the worker not to revert other changes.

@@ -1,12 +1,21 @@
-# EweNotes
+# EweNote
 
-A simple note taking app that syncs to the cloud, while also being able to work offline.
+Calm local-first notes with TipTap editing, Obsidian-style Markdown
+preservation, folders, links, metadata, and optional EweserDB sync.
 
 Built using [eweser-db](https://github.com/eweser/eweser-db)
 
 ## Development Setup
 
-You'll want to either point the app to a Eweser DB instance or run your own instance of the Eweser DB server. You can set the `AUTH_SERVER` environment variable to point to your Eweser DB instance. In local dev, the app defaults to `http://localhost:38180` so the login link reaches the auth UI instead of the API port.
+For local UI work:
+
+```bash
+VITE_AUTH_SERVER=http://localhost:38101 VITE_AUTH_PAGES_URL=http://localhost:3001 npm run dev --workspace @eweser/ewe-note -- --host 127.0.0.1 --port 5181
+```
+
+Point `VITE_AUTH_SERVER` and `VITE_AUTH_PAGES_URL` at the local or deployed
+EweserDB auth services you want to test. Without auth/sync services, the app
+still writes local notes in the browser profile.
 
 To run your own instance check out the /server readme at [eweser-db repo](https://github.com/eweser/eweser-db)
 
@@ -16,13 +25,14 @@ To run your own instance check out the /server readme at [eweser-db repo](https:
 - ✓ Offline-first — works without login, syncs when connected
 - ✓ TipTap editor with Obsidian-style Markdown, slash commands, context menus, and source mode
 - ✓ Lossless Obsidian vault import/export contract for comments, embeds, links, callouts, footnotes, properties, tables, and math source
-- ✓ Connection status indicator
+- ✓ Local/auth/sync status indicator
 - ✓ User authentication via `@eweser/db`
-- ✓ Real-time sync across devices
-- ✓ PWA support for installable experience
+- ✓ Optional room sync when auth and sync services are reachable
+- ✓ PWA install support in production builds
 
 ## TODO
 
 - [ ] Enhanced user profile management
 - [ ] Collaborative cursors for real-time editing
 - [ ] Advanced search across notes
+- [ ] UI-level vault import/export workflow

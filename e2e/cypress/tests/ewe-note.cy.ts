@@ -57,15 +57,13 @@ describe('ewe-note app', () => {
       .and('contain', 'Saved body');
   });
 
-  it('creates a folder from the sidebar prompt', () => {
+  it('creates a folder from the visible sidebar dialog', () => {
     const folderName = `Test Folder ${Date.now()}`;
     visitHome();
 
-    cy.window().then((win) => {
-      cy.stub(win, 'prompt').returns(folderName);
-    });
-
     cy.getBySel('ewe-note-new-folder-trigger').click();
+    cy.getBySel('ewe-note-folder-name-input').type(folderName);
+    cy.getBySel('ewe-note-folder-submit').click();
     cy.contains(folderName).should('exist');
   });
 

@@ -92,17 +92,17 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
   return (
     <aside
       data-cy="ewe-note-right-panel"
-      className="fixed inset-y-0 right-0 z-40 flex h-screen w-80 flex-col overflow-hidden border-l border-border bg-card shadow-2xl xl:relative xl:z-auto xl:shadow-none"
+      className="flex h-full w-full shrink-0 flex-col overflow-hidden border-l border-white/6 bg-[oklch(0.16_0.01_95)] md:w-80"
     >
       {/* Header */}
-      <div className="px-4 py-4 border-b border-border flex items-center justify-between">
-        <h2 className="text-sm font-medium">Note Info</h2>
+      <div className="flex items-center justify-between border-b border-white/6 px-4 py-4">
+        <h2 className="text-sm font-medium text-foreground">Note Info</h2>
         {onClose && (
           <button
             type="button"
             aria-label="Close note info"
             onClick={onClose}
-            className="p-1 hover:bg-accent rounded transition-colors"
+            className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-white/6 hover:text-foreground"
           >
             <X className="w-4 h-4" />
           </button>
@@ -114,7 +114,7 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
         defaultValue="outline"
         className="flex-1 flex flex-col overflow-hidden"
       >
-        <TabsList className="w-full grid grid-cols-3 mx-4 mt-3">
+        <TabsList className="mx-4 mt-3 grid w-auto grid-cols-3 bg-white/5">
           <TabsTrigger value="outline" className="text-xs">
             <List className="w-3.5 h-3.5 mr-1.5" />
             Outline

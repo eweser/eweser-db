@@ -39,7 +39,7 @@ The Next.js/Supabase migration is complete. The current stack is:
 | Sync server    | Hocuspocus relay with persistence                                   |
 | Aggregator     | Server-side public indexing and search                              |
 | Apps           | React 18-19, Vite, Tailwind CSS, Radix UI                           |
-| Editor         | BlockNote in `packages/ewe-note`                                    |
+| Editor         | TipTap in `packages/ewe-note`                                       |
 | Testing        | Vitest and Cypress                                                  |
 | Build          | npm workspaces, Vite, `tsc`                                         |
 
@@ -97,7 +97,7 @@ packages/aggregator indexes public room data.
 | `packages/app/src/`                 | Auth/account/access-grant SPA                       |
 | `packages/sync-server/src/`         | Hocuspocus sync relay                               |
 | `packages/aggregator/src/`          | Public indexing/search                              |
-| `packages/ewe-note/src/`            | BlockNote note-taking app                           |
+| `packages/ewe-note/src/`            | TipTap note-taking app                              |
 | `packages/examples-components/src/` | Shared example UI components                        |
 | `examples/`                         | Demo and interop apps                               |
 | `packages/mcp-server/src/`          | MCP server for agent access                         |

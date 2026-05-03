@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { Command } from 'cmdk';
 import {
@@ -28,6 +28,7 @@ export function EnhancedCommandPalette({
 }: EnhancedCommandPaletteProps) {
   const [search, setSearch] = useState('');
   const [templatesOpen, setTemplatesOpen] = useState(false);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
   const [activeEditor, setActiveEditor] = useState<{
     editor: Editor;
     commandContext?: EditorCommandContext;
@@ -65,6 +66,33 @@ export function EnhancedCommandPalette({
     document.addEventListener('keydown', down);
     return () => document.removeEventListener('keydown', down);
   }, [open, onOpenChange, handleNewNote]);
+
+  useEffect(() => {
+    if (open) {
+      previousFocusRef.current =
+        document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null;
+      return;
+    }
+
+    previousFocusRef.current?.focus();
+    previousFocusRef.current = null;
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      onOpenChange(false);
+      setSearch('');
+    };
+
+    document.addEventListener('keydown', onEscape);
+    return () => document.removeEventListener('keydown', onEscape);
+  }, [open, onOpenChange]);
 
   useEffect(() => {
     const onEditorFocus = (event: Event) => {

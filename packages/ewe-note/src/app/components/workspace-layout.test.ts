@@ -3,6 +3,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   DEFAULT_WORKSPACE_MODE,
+  getDefaultMobilePane,
+  getMobilePaneForMode,
+  getModeForMobilePane,
   WORKSPACE_MODE_STORAGE_KEY,
   clampWorkspaceMode,
   getWorkspaceModeHotkey,
@@ -89,6 +92,20 @@ describe('workspace layout', () => {
       notesListVisible: true,
       metadataVisible: true,
     });
+  });
+
+  it('maps mobile panes to reachable workspace states', () => {
+    expect(getDefaultMobilePane(null)).toBe('notes');
+    expect(getDefaultMobilePane('note-1')).toBe('editor');
+    expect(getMobilePaneForMode(1)).toBe('editor');
+    expect(getMobilePaneForMode(2)).toBe('notes');
+    expect(getMobilePaneForMode(3)).toBe('navigation');
+    expect(getMobilePaneForMode(4)).toBe('metadata');
+    expect(getModeForMobilePane('metadata', 1)).toBe(4);
+    expect(getModeForMobilePane('navigation', 1)).toBe(3);
+    expect(getModeForMobilePane('notes', 1)).toBe(2);
+    expect(getModeForMobilePane('editor', 4)).toBe(1);
+    expect(getModeForMobilePane('editor', 2)).toBe(2);
   });
 
   it('ignores shortcuts inside editable targets', () => {

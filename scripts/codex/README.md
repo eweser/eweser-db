@@ -10,18 +10,30 @@ after an instruction or tooling change and look for repeated wasted motion.
 ```bash
 npm run codex:retrospective -- --since 2026-05-02 --cwd /home/jacob/eweser-db
 npm run codex:retrospective -- --since 2026-05-02 --cwd /home/jacob/eweser-db --write .ai/reports/codex-session-retrospective-2026-05-02.md
+npm run codex:retrospective -- --since 2026-05-02 --cwd /home/jacob/eweser-db --mark-reviewed
+npm run codex:retrospective -- --cwd /home/jacob/eweser-db
 ```
 
 The analyzer reads `~/.codex/sessions/**/*.jsonl` by default and flags
 heuristics such as:
 
 - broad search before `INDEX.md`
+- repeated broad search without targeted `code-map` queries
 - repeated search or `git status` churn
 - runtime-orientation misses before local verification
 - repeated test/type-check retries
 
+`--mark-reviewed` writes `.ai/codex-session-retrospective-state.json` with the
+newest scanned session timestamp and id. Later runs can omit `--since`; the
+analyzer starts after that reviewed-through marker so old flailing patterns do
+not keep appearing as new regressions.
+
 Use the report to decide whether the fix belongs in a nearby `INDEX.md`,
 `LOCAL_DEVELOPMENT.md`, runtime-orientation guidance, or a small helper script.
+If the fix is too broad or risky for the retrospective pass, write a
+Coder-ready plan under `docs/ai/plans/` from `docs/ai/plans/_template.md` and
+include a launch prompt such as
+`Use $eweser-coder docs/ai/plans/<plan>.md`.
 
 ## Plan Orchestrator
 

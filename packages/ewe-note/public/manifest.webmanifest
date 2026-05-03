@@ -1,9 +1,9 @@
 {
   "name": "Ewe Note",
   "short_name": "EweNote",
-  "description": "Offline-first note taking with EweserDB sync.",
-  "start_url": "/notes/",
-  "scope": "/notes/",
+  "description": "Local-first note taking with optional EweserDB sync.",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#fff7eb",

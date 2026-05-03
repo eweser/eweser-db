@@ -1,7 +1,24 @@
+import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router';
-import { FileText, Hash, Plus, Search, Star, CheckSquare } from 'lucide-react';
+import {
+  BookOpen,
+  FileText,
+  Hash,
+  Info,
+  Library,
+  Plus,
+  Search,
+  Star,
+  CheckSquare,
+  type LucideIcon,
+} from 'lucide-react';
 import { useNotes } from '../contexts/NotesContext';
-import type { WorkspaceMode } from './workspace-layout';
+import {
+  WORKSPACE_MODE_DESCRIPTIONS,
+  WORKSPACE_MODE_LABELS,
+  WORKSPACE_SHORTCUT_LABELS,
+  type WorkspaceMode,
+} from './workspace-layout';
 
 type WorkspaceView = 'all' | 'recent' | 'pinned' | 'tasks' | `folder:${string}`;
 
@@ -58,8 +75,15 @@ export function NotesListPane({
 
   const incompleteTasks = tasks.filter((task) => !task.completed);
 
+  const modeIcons = {
+    1: FileText,
+    2: BookOpen,
+    3: Library,
+    4: Info,
+  } satisfies Record<WorkspaceMode, LucideIcon>;
+
   return (
-    <aside className="flex h-screen w-[22rem] shrink-0 flex-col border-r border-white/6 bg-[oklch(0.175_0.01_95)]/96">
+    <aside className="flex h-full min-h-0 w-full shrink-0 flex-col border-r border-white/6 bg-[oklch(0.175_0.01_95)]/96 md:h-screen md:w-[22rem]">
       <div className="border-b border-white/6 px-4 py-4">
         <div className="mb-3 flex items-start justify-between gap-3">
           <div>
@@ -96,28 +120,50 @@ export function NotesListPane({
           </button>
         </div>
 
-        <div className="mt-3 flex items-center gap-1 rounded-full bg-black/10 p-1">
+        <div
+          className="mt-3 grid grid-cols-2 gap-1 rounded-2xl bg-black/10 p-1 xl:grid-cols-4"
+          aria-label="Workspace layout"
+        >
           {[1, 2, 3, 4].map((value) => (
-            <button
+            <WorkspaceModeButton
               key={value}
-              type="button"
+              value={value as WorkspaceMode}
+              active={mode === value}
+              icon={modeIcons[value as WorkspaceMode]}
               onClick={() => onModeChange(value as WorkspaceMode)}
-              className={`flex h-8 min-w-8 items-center justify-center rounded-full px-2 text-xs transition-colors ${
-                mode === value
-                  ? 'bg-white/12 text-foreground'
-                  : 'text-muted-foreground hover:bg-white/6 hover:text-foreground'
-              }`}
-              title={`Workspace mode ${value}`}
-              aria-label={`Workspace mode ${value}`}
-            >
-              {value}
-            </button>
+            />
           ))}
         </div>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-2 py-3">
-        {activeView === 'tasks' ? (
+        {activeView === 'tasks' && incompleteTasks.length === 0 ? (
+          <EmptyPane
+            icon={CheckSquare}
+            title="No open tasks"
+            body="Task items from your notes appear here when they use markdown checkboxes."
+          />
+        ) : activeView !== 'tasks' && displayNotes.length === 0 ? (
+          <EmptyPane
+            icon={FileText}
+            title={activeView === 'all' ? 'No notes yet' : 'Nothing here'}
+            body={
+              activeView === 'all'
+                ? 'Create a note and it will stay available locally on this device.'
+                : 'Try another view or create a note in this space.'
+            }
+            action={
+              <button
+                type="button"
+                onClick={handleNewNote}
+                className="mt-4 inline-flex h-9 items-center gap-2 rounded-full border border-white/10 px-3 text-sm text-foreground transition-colors hover:bg-white/6"
+              >
+                <Plus className="h-4 w-4" />
+                New note
+              </button>
+            }
+          />
+        ) : activeView === 'tasks' ? (
           <div className="space-y-1">
             {incompleteTasks.map((task) => {
               const taskNote = notes.find((note) => note.id === task.noteId);
@@ -201,6 +247,67 @@ export function NotesListPane({
         )}
       </div>
     </aside>
+  );
+}
+
+function WorkspaceModeButton({
+  value,
+  active,
+  icon: Icon,
+  onClick,
+}: {
+  value: WorkspaceMode;
+  active: boolean;
+  icon: LucideIcon;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex min-h-12 items-center gap-2 rounded-xl px-2.5 py-2 text-left transition-colors ${
+        active
+          ? 'bg-white/12 text-foreground'
+          : 'text-muted-foreground hover:bg-white/6 hover:text-foreground'
+      }`}
+      title={`${WORKSPACE_MODE_LABELS[value]} - ${WORKSPACE_MODE_DESCRIPTIONS[value]} (${WORKSPACE_SHORTCUT_LABELS[value]})`}
+      aria-label={`${WORKSPACE_MODE_LABELS[value]} workspace mode`}
+    >
+      <Icon className="h-4 w-4 shrink-0" />
+      <span className="min-w-0">
+        <span className="block truncate text-xs font-medium">
+          {WORKSPACE_MODE_LABELS[value]}
+        </span>
+        <span className="hidden truncate text-[10px] text-muted-foreground xl:block">
+          {WORKSPACE_SHORTCUT_LABELS[value].replace('Ctrl/Cmd+', '⌘')}
+        </span>
+      </span>
+    </button>
+  );
+}
+
+function EmptyPane({
+  icon: Icon,
+  title,
+  body,
+  action,
+}: {
+  icon: LucideIcon;
+  title: string;
+  body: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="px-4 py-10 text-center">
+      <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-muted-foreground">
+        <Icon className="h-4 w-4" />
+      </div>
+      <div className="mt-4 text-sm font-medium text-foreground">{title}</div>
+      <p className="mx-auto mt-2 max-w-[16rem] text-sm leading-6 text-muted-foreground">
+        {body}
+      </p>
+      {action}
+    </div>
   );
 }
 

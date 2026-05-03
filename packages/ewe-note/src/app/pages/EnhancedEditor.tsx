@@ -257,14 +257,14 @@ function EditorWorkspace({
   const { metadataVisible, setMetadataVisible } = useWorkspaceShell();
 
   return (
-    <main className="flex h-screen min-w-0 flex-col overflow-hidden bg-[oklch(0.145_0.01_95)]">
+    <main className="flex h-full min-w-0 flex-col overflow-hidden bg-[oklch(0.145_0.01_95)] md:h-screen">
       <header
         data-cy="ewe-note-header"
-        className="border-b border-white/6 bg-[oklch(0.155_0.01_95)]/92 px-6 py-5 backdrop-blur"
+        className="border-b border-white/6 bg-[oklch(0.155_0.01_95)]/92 px-4 py-4 backdrop-blur md:px-6 md:py-5"
       >
-        <div className="mb-4 flex items-start justify-between gap-4">
+        <div className="mb-3 flex items-start justify-between gap-3 md:mb-4 md:gap-4">
           <div className="min-w-0 flex-1">
-            <div className="mb-3 flex items-center gap-3">
+            <div className="mb-2 flex items-center gap-2 md:mb-3 md:gap-3">
               <button
                 type="button"
                 aria-label="Back to all notes"
@@ -274,9 +274,12 @@ function EditorWorkspace({
                 <ArrowLeft className="w-4 h-4" />
               </button>
 
-              <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
+              <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground md:text-sm">
                 <FolderOpen className="w-4 h-4 shrink-0" />
-                <span className="max-w-[18rem] truncate" title={folderName}>
+                <span
+                  className="max-w-[10rem] truncate md:max-w-[18rem]"
+                  title={folderName}
+                >
                   {folderName}
                 </span>
                 <ChevronRight className="w-3.5 h-3.5 shrink-0" />
@@ -288,11 +291,11 @@ function EditorWorkspace({
               aria-label="Note title"
               value={note.title}
               onChange={(e) => onUpdateTitle(e.target.value)}
-              className="w-full bg-transparent text-[2rem] font-semibold tracking-[-0.035em] text-foreground outline-none placeholder:text-muted-foreground md:text-[2.4rem]"
+              className="w-full min-w-0 bg-transparent text-[1.65rem] font-semibold tracking-[-0.02em] text-foreground outline-none placeholder:text-muted-foreground md:text-[2.4rem] md:tracking-[-0.035em]"
             />
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1 md:gap-2">
             <button
               type="button"
               aria-label={
@@ -379,7 +382,7 @@ function EditorWorkspace({
           </div>
         </div>
 
-        <div className="flex min-h-7 flex-wrap items-center gap-2 pl-11">
+        <div className="flex min-h-7 flex-wrap items-center gap-2 md:pl-11">
           {note.tags.map((tag) => (
             <Badge
               key={tag}
@@ -403,7 +406,7 @@ function EditorWorkspace({
       </header>
 
       <div className="flex-1 overflow-y-auto bg-[oklch(0.14_0.008_95)]">
-        <div className="mx-auto max-w-[52rem] px-6 py-8 md:px-10">
+        <div className="mx-auto max-w-[52rem] px-4 py-6 md:px-10 md:py-8">
           {editorRoom ? (
             <Editor
               selectedRoom={editorRoom}

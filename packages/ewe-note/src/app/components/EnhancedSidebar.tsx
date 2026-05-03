@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import {
   FileText,
@@ -35,6 +35,16 @@ import {
   ContextMenuTrigger,
   ContextMenuSeparator,
 } from './ui/context-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from './ui/dialog';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 
@@ -82,12 +92,14 @@ function SidebarContent({
     tasks,
     addNote,
     addFolder,
+    updateFolder,
+    deleteFolder,
     getNotesInFolder,
     moveNote,
     getPinnedNotes,
     togglePinNote,
   } = useNotes();
-  const { loggedIn, user } = useDb();
+  const { loggedIn, syncStatusLabel, syncStatusDescription, user } = useDb();
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
     new Set(['work', 'personal', 'development', 'daily'])
   );
@@ -99,6 +111,11 @@ function SidebarContent({
   const [hoveredFolder, setHoveredFolder] = useState<string | null>(null);
   const [pinnedExpanded, setPinnedExpanded] = useState(true);
   const [collapsed, setCollapsed] = useState(false);
+  const [folderDialog, setFolderDialog] = useState<{
+    mode: 'create' | 'rename';
+    folderId?: string;
+    initialName: string;
+  } | null>(null);
 
   const toggleFolder = (folderId: string) => {
     setExpandedFolders((prev) => {
@@ -126,6 +143,30 @@ function SidebarContent({
     navigate(`/editor/${newNote.id}`);
   };
 
+  const handleFolderSubmit = (name: string) => {
+    if (folderDialog?.mode === 'rename' && folderDialog.folderId) {
+      updateFolder(folderDialog.folderId, { name });
+      setFolderDialog(null);
+      return;
+    }
+
+    addFolder(name);
+    setFolderDialog(null);
+  };
+
+  const handleDeleteFolder = (folder: NotesFolder) => {
+    const folderNotes = getNotesInFolder(folder.id);
+    const message =
+      folderNotes.length > 0
+        ? `Delete "${folder.name}" and move ${folderNotes.length} notes back to All Notes?`
+        : `Delete "${folder.name}"?`;
+
+    if (!window.confirm(message)) return;
+
+    folderNotes.forEach((note) => moveNote(note.id, ''));
+    deleteFolder(folder.id);
+  };
+
   const incompleteTasks = tasks.filter((t) => !t.completed);
   const pinnedNotes = getPinnedNotes();
 
@@ -147,7 +188,7 @@ function SidebarContent({
   return (
     <aside
       data-cy="ewe-note-sidebar"
-      className="relative flex h-screen w-[15rem] flex-col border-r border-white/6 bg-[oklch(0.17_0.01_95)]/98"
+      className="relative flex h-full w-full flex-col border-r border-white/6 bg-[oklch(0.17_0.01_95)]/98 md:h-screen md:w-[15rem]"
     >
       <button
         type="button"
@@ -282,14 +323,12 @@ function SidebarContent({
             </span>
             <button
               data-cy="ewe-note-new-folder-trigger"
-              onClick={() => {
-                const name = prompt('Folder name:');
-                if (name) {
-                  addFolder(name);
-                }
-              }}
+              onClick={() =>
+                setFolderDialog({ mode: 'create', initialName: '' })
+              }
               className="rounded-full p-1 transition-colors hover:bg-white/6"
               title="New folder"
+              aria-label="New folder"
             >
               <Plus className="w-3.5 h-3.5 text-muted-foreground" />
             </button>
@@ -317,6 +356,14 @@ function SidebarContent({
                     onShareFolder={() =>
                       handleShareFolder(folder.id, folder.name)
                     }
+                    onRename={() =>
+                      setFolderDialog({
+                        mode: 'rename',
+                        folderId: folder.id,
+                        initialName: folder.name,
+                      })
+                    }
+                    onDelete={() => handleDeleteFolder(folder)}
                   />
 
                   {/* Folder notes */}
@@ -345,6 +392,19 @@ function SidebarContent({
 
       {/* Footer */}
       <div className="space-y-2 border-t border-white/6 p-3">
+        <div
+          className="rounded-2xl border border-white/6 bg-white/4 px-3 py-2"
+          data-cy="ewe-note-sync-status"
+        >
+          <div className="flex items-center gap-2 text-xs font-medium text-foreground">
+            <span className="h-2 w-2 rounded-full bg-primary" />
+            {syncStatusLabel}
+          </div>
+          <div className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">
+            {syncStatusDescription}
+          </div>
+        </div>
+
         <button
           data-cy="ewe-note-settings-link"
           onClick={() => navigate('/settings')}
@@ -384,6 +444,24 @@ function SidebarContent({
           folderId={selectedFolder.id}
         />
       )}
+      <NameDialog
+        open={Boolean(folderDialog)}
+        onOpenChange={(open) => {
+          if (!open) setFolderDialog(null);
+        }}
+        title={folderDialog?.mode === 'rename' ? 'Rename folder' : 'New folder'}
+        description={
+          folderDialog?.mode === 'rename'
+            ? 'Update the folder name used in the local library.'
+            : 'Create a local folder for organizing notes on this device.'
+        }
+        initialName={folderDialog?.initialName ?? ''}
+        submitLabel={folderDialog?.mode === 'rename' ? 'Rename' : 'Create'}
+        inputLabel="Folder name"
+        dataCyInput="ewe-note-folder-name-input"
+        dataCySubmit="ewe-note-folder-submit"
+        onSubmit={handleFolderSubmit}
+      />
     </aside>
   );
 }
@@ -437,6 +515,8 @@ interface FolderItemProps {
   onNewNote: () => void;
   onMove: (noteId: string, targetFolder: string) => void;
   onShareFolder: () => void;
+  onRename: () => void;
+  onDelete: () => void;
 }
 
 function FolderItem({
@@ -450,6 +530,8 @@ function FolderItem({
   onNewNote,
   onMove,
   onShareFolder,
+  onRename,
+  onDelete,
 }: FolderItemProps) {
   const [{ isOver }, drop] = useDrop<
     DraggedNoteItem,
@@ -505,6 +587,17 @@ function FolderItem({
           <Plus className="w-3.5 h-3.5 text-muted-foreground" />
         </button>
       )}
+      {isHovered && folder.kind === 'folder' && (
+        <button
+          onClick={onRename}
+          className="rounded-full p-1 transition-colors hover:bg-white/6"
+          title="Rename folder"
+          aria-label={`Rename ${folder.name}`}
+          data-cy={`ewe-note-folder-rename-${folder.id}`}
+        >
+          <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+        </button>
+      )}
       {isHovered && (
         <button
           onClick={onShareFolder}
@@ -513,6 +606,17 @@ function FolderItem({
           disabled={folder.kind === 'shared-room'}
         >
           <Share className="w-3.5 h-3.5 text-muted-foreground" />
+        </button>
+      )}
+      {isHovered && folder.kind === 'folder' && (
+        <button
+          onClick={onDelete}
+          className="rounded-full p-1 transition-colors hover:bg-white/6"
+          title="Delete folder"
+          aria-label={`Delete ${folder.name}`}
+          data-cy={`ewe-note-folder-delete-${folder.id}`}
+        >
+          <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
         </button>
       )}
     </div>
@@ -526,7 +630,12 @@ interface NoteItemProps {
 
 function NoteItem({ note, folderId }: NoteItemProps) {
   const navigate = useNavigate();
-  const { togglePinNote, updateNote, deleteNote } = useNotes();
+  const { folders, togglePinNote, updateNote, deleteNote, moveNote } =
+    useNotes();
+  const [renameOpen, setRenameOpen] = useState(false);
+  const moveTargets = folders.filter(
+    (folder) => folder.kind === 'folder' && folder.id !== folderId
+  );
 
   const [{ isDragging }, drag] = useDrag<
     DraggedNoteItem,
@@ -573,17 +682,27 @@ function NoteItem({ note, folderId }: NoteItemProps) {
             </>
           )}
         </ContextMenuItem>
-        <ContextMenuItem
-          onClick={() => {
-            const nextTitle = window.prompt('Rename note:', note.title);
-            if (nextTitle && nextTitle.trim()) {
-              updateNote(note.id, { title: nextTitle.trim() });
-            }
-          }}
-        >
+        <ContextMenuItem onClick={() => setRenameOpen(true)}>
           <Pencil className="w-4 h-4 mr-2" />
           <span>Rename</span>
         </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem
+          disabled={!folderId}
+          onClick={() => moveNote(note.id, '')}
+        >
+          <FolderOpen className="w-4 h-4 mr-2" />
+          <span>Move to All Notes</span>
+        </ContextMenuItem>
+        {moveTargets.slice(0, 8).map((folder) => (
+          <ContextMenuItem
+            key={folder.id}
+            onClick={() => moveNote(note.id, folder.id)}
+          >
+            <FolderOpen className="w-4 h-4 mr-2" />
+            <span>Move to {folder.name}</span>
+          </ContextMenuItem>
+        ))}
         <ContextMenuSeparator />
         <ContextMenuItem
           className="text-destructive"
@@ -597,7 +716,98 @@ function NoteItem({ note, folderId }: NoteItemProps) {
           <span>Delete</span>
         </ContextMenuItem>
       </ContextMenuContent>
+      <NameDialog
+        open={renameOpen}
+        onOpenChange={setRenameOpen}
+        title="Rename note"
+        description="Update this note title without changing its body."
+        initialName={note.title}
+        submitLabel="Rename"
+        inputLabel="Note title"
+        dataCyInput="ewe-note-note-title-input"
+        dataCySubmit="ewe-note-note-rename-submit"
+        onSubmit={(nextTitle) => {
+          updateNote(note.id, { title: nextTitle });
+          setRenameOpen(false);
+        }}
+      />
     </ContextMenu>
+  );
+}
+
+function NameDialog({
+  open,
+  onOpenChange,
+  title,
+  description,
+  initialName,
+  submitLabel,
+  inputLabel,
+  dataCyInput,
+  dataCySubmit,
+  onSubmit,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  description: string;
+  initialName: string;
+  submitLabel: string;
+  inputLabel: string;
+  dataCyInput: string;
+  dataCySubmit: string;
+  onSubmit: (name: string) => void;
+}) {
+  const [name, setName] = useState(initialName);
+
+  useEffect(() => {
+    if (open) setName(initialName);
+  }, [initialName, open]);
+
+  const submit = () => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    onSubmit(trimmed);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
+        <label className="space-y-2 text-sm">
+          <span className="text-muted-foreground">{inputLabel}</span>
+          <Input
+            data-cy={dataCyInput}
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') submit();
+            }}
+            autoFocus
+          />
+        </label>
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            data-cy={dataCySubmit}
+            disabled={!name.trim()}
+            onClick={submit}
+          >
+            {submitLabel}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

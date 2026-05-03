@@ -19,6 +19,12 @@ export type WorkspacePaneVisibility = {
   metadataVisible: boolean;
 };
 
+export type WorkspaceMobilePane =
+  | 'navigation'
+  | 'notes'
+  | 'editor'
+  | 'metadata';
+
 export const WORKSPACE_MODE_STORAGE_KEY = 'ewe-note-workspace-mode';
 export const DEFAULT_WORKSPACE_MODE: WorkspaceMode = 3;
 
@@ -30,10 +36,17 @@ export const WORKSPACE_SHORTCUT_LABELS: Record<WorkspaceMode, string> = {
 };
 
 export const WORKSPACE_MODE_LABELS: Record<WorkspaceMode, string> = {
-  1: 'Editor',
-  2: 'List + Editor',
-  3: 'Sidebar + List + Editor',
-  4: 'Full Workspace',
+  1: 'Write',
+  2: 'Browse',
+  3: 'Organize',
+  4: 'Inspect',
+};
+
+export const WORKSPACE_MODE_DESCRIPTIONS: Record<WorkspaceMode, string> = {
+  1: 'Editor only',
+  2: 'Notes and editor',
+  3: 'Folders, notes, and editor',
+  4: 'Open note info',
 };
 
 export function clampWorkspaceMode(value: number): WorkspaceMode {
@@ -116,6 +129,30 @@ export function getWorkspacePaneVisibility(
     notesListVisible: mode >= 2,
     metadataVisible: mode >= 4,
   };
+}
+
+export function getDefaultMobilePane(
+  selectedNoteId?: string | null
+): WorkspaceMobilePane {
+  return selectedNoteId ? 'editor' : 'notes';
+}
+
+export function getMobilePaneForMode(mode: WorkspaceMode): WorkspaceMobilePane {
+  if (mode === 4) return 'metadata';
+  if (mode === 3) return 'navigation';
+  if (mode === 2) return 'notes';
+  return 'editor';
+}
+
+export function getModeForMobilePane(
+  pane: WorkspaceMobilePane,
+  currentMode: WorkspaceMode
+): WorkspaceMode {
+  if (pane === 'metadata') return 4;
+  if (pane === 'navigation') return 3;
+  if (pane === 'notes') return 2;
+  if (currentMode === 4) return 1;
+  return currentMode;
 }
 
 export function getWorkspaceModeHotkey(

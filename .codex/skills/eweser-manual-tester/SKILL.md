@@ -19,19 +19,40 @@ Read:
 
 1. `AGENTS.md`
 2. `ARCHITECTURE.md`
-3. `LOCAL_DEVELOPMENT.md` when local services, ports, auth, or browser flows
+3. the nearest `INDEX.md` for the package or workflow under test before broad
+   `rg` or `find` exploration
+4. `LOCAL_DEVELOPMENT.md` when local services, ports, auth, or browser flows
    matter
-4. the relevant plan file in `docs/ai/plans/` or checklist under
+5. the relevant plan file in `docs/ai/plans/` or checklist under
    `docs/ai/testing/`
-5. the plan's Execution Summary and manual-test handoff notes, when present
-6. relevant package `AGENTS.md` files for touched areas
+6. the plan's Execution Summary and manual-test handoff notes, when present
+7. relevant package `AGENTS.md` files for touched areas
 
 If the plan lacks a manual-test handoff, create a best-effort checklist from the
 run deliverables and report that the handoff is missing.
 
+Keep orientation compact. Use indexes, plan headings, and targeted file reads;
+do not dump full docs or broad source trees into context before you know which
+surface you are testing.
+
 ## Fast Local Orientation
 
-Start by verifying what is already running before broad repo spelunking:
+Start by verifying what is already running before broad repo spelunking. Use the
+runtime-orientation helper first; it captures the worktree, branch, and known
+local endpoints in one compact pass.
+
+```bash
+~/.codex/skills/eweser-runtime-orientation/scripts/eweser-runtime-orientation.sh status
+```
+
+If the status output is missing expected endpoints or conflicts with the task,
+refresh it before testing:
+
+```bash
+~/.codex/skills/eweser-runtime-orientation/scripts/eweser-runtime-orientation.sh refresh
+```
+
+Use narrower direct probes only after that:
 
 ```bash
 git status --short

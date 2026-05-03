@@ -39,15 +39,17 @@ export function ShareFolderDialog({
         <DialogHeader>
           <DialogTitle>Share "{folderName}"</DialogTitle>
           <DialogDescription>
-            Share a link to this folder. Collaborative editing between users is
-            coming soon.
+            This copies a local navigation link. It does not grant another user
+            access to the folder or its notes.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 mt-4">
           {/* Share Link */}
           <div>
-            <Label className="text-sm font-medium mb-2 block">Share Link</Label>
+            <Label className="text-sm font-medium mb-2 block">
+              Local folder link
+            </Label>
             <div className="flex gap-2">
               <Input
                 data-cy="ewe-note-share-link-input"
@@ -81,11 +83,11 @@ export function ShareFolderDialog({
             <div className="flex gap-3">
               <Users className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
               <div className="text-sm">
-                <p className="font-medium mb-1">Collaborative Editing</p>
+                <p className="font-medium mb-1">Access grants not included</p>
                 <p className="text-muted-foreground">
-                  Real-time collaborative folders are powered by eweser-db
-                  shared rooms. Multi-user access control will be available in a
-                  future release.
+                  Real collaboration will use EweserDB shared rooms and
+                  auditable grants. Until that exists here, this link is only a
+                  shortcut for this browser profile.
                 </p>
               </div>
             </div>

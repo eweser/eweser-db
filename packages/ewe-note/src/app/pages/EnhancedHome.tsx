@@ -1,12 +1,11 @@
 import { useNavigate } from 'react-router';
-import { ArrowRight, Clock3, FolderTree, Keyboard, Plus } from 'lucide-react';
+import { ArrowRight, FileText, Plus } from 'lucide-react';
 import { WorkspaceShell } from '../components/WorkspaceShell';
 import { useNotes } from '../contexts/NotesContext';
-import { WORKSPACE_SHORTCUT_LABELS } from '../components/workspace-layout';
 
 export function EnhancedHome() {
   const navigate = useNavigate();
-  const { notes, folders, addNote, getRecentNotes } = useNotes();
+  const { notes, addNote, getRecentNotes } = useNotes();
 
   const handleNewNote = () => {
     const created = addNote({ title: 'Untitled', content: '' });
@@ -17,20 +16,20 @@ export function EnhancedHome() {
 
   return (
     <WorkspaceShell>
-      <main className="flex h-screen min-w-0 items-center justify-center bg-[oklch(0.145_0.01_95)] px-8">
+      <main className="flex h-full min-w-0 items-center justify-center overflow-y-auto bg-[oklch(0.145_0.01_95)] px-4 py-6 md:h-screen md:px-8">
         <div className="w-full max-w-4xl">
-          <div className="grid gap-6 lg:grid-cols-[1.3fr_0.9fr]">
-            <section className="rounded-[2rem] border border-white/6 bg-[oklch(0.16_0.01_95)] px-8 py-9 shadow-[0_24px_60px_rgba(0,0,0,0.18)]">
+          <div className="grid gap-6 lg:grid-cols-[1fr_0.9fr]">
+            <section className="px-1 py-2 md:px-4 md:py-6">
               <div className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
-                EweNote
+                Library
               </div>
-              <h1 className="mt-4 max-w-[10ch] text-5xl font-semibold tracking-[-0.05em] text-foreground">
-                Quiet space, full note depth.
+              <h1 className="mt-4 max-w-[12ch] text-4xl font-semibold tracking-[-0.03em] text-foreground md:text-5xl md:tracking-[-0.05em]">
+                Pick up where you left off.
               </h1>
               <p className="mt-5 max-w-[42rem] text-base leading-7 text-muted-foreground">
-                Obsidian-style linking, metadata, and organization, without a
-                control-heavy writing surface. Pick a note from the library, or
-                start a new one and stay in the text.
+                Your notes are local-first on this device. Open a recent note or
+                start a blank page; links, folders, and metadata stay nearby
+                without taking over the writing surface.
               </p>
 
               <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -54,70 +53,65 @@ export function EnhancedHome() {
                   </button>
                 ) : null}
               </div>
-
-              <div className="mt-10 grid gap-3 sm:grid-cols-3">
-                <MetricCard
-                  label="Notes"
-                  value={String(notes.length)}
-                  icon={<Clock3 className="h-4 w-4" />}
-                />
-                <MetricCard
-                  label="Folders"
-                  value={String(folders.length)}
-                  icon={<FolderTree className="h-4 w-4" />}
-                />
-                <MetricCard
-                  label="Pane modes"
-                  value="1 to 4"
-                  icon={<Keyboard className="h-4 w-4" />}
-                />
-              </div>
             </section>
 
-            <section className="rounded-[2rem] border border-white/6 bg-[oklch(0.16_0.01_95)] px-6 py-7">
-              <div className="text-sm font-medium text-foreground">
-                Workspace shortcuts
-              </div>
-              <div className="mt-5 space-y-3">
-                <ShortcutRow
-                  shortcut={WORKSPACE_SHORTCUT_LABELS[1]}
-                  label="Editor only"
-                />
-                <ShortcutRow
-                  shortcut={WORKSPACE_SHORTCUT_LABELS[2]}
-                  label="Notes list plus editor"
-                />
-                <ShortcutRow
-                  shortcut={WORKSPACE_SHORTCUT_LABELS[3]}
-                  label="Folders, notes list, editor"
-                />
-                <ShortcutRow
-                  shortcut={WORKSPACE_SHORTCUT_LABELS[4]}
-                  label="Open note metadata"
-                />
+            <section className="border-l border-white/6 px-1 py-2 md:px-5 md:py-6">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                    Recent
+                  </div>
+                  <div className="mt-1 text-sm text-muted-foreground">
+                    {notes.length} {notes.length === 1 ? 'note' : 'notes'}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleNewNote}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/8 text-muted-foreground transition-colors hover:bg-white/6 hover:text-foreground"
+                  aria-label="New note"
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
               </div>
 
-              <div className="mt-8 border-t border-white/6 pt-5">
-                <div className="text-sm font-medium text-foreground">
-                  Recent notes
-                </div>
-                <div className="mt-3 space-y-2">
-                  {recentNotes.map((note) => (
+              <div className="mt-5 space-y-1">
+                {recentNotes.length > 0 ? (
+                  recentNotes.map((note) => (
                     <button
                       key={note.id}
                       type="button"
                       onClick={() => navigate(`/editor/${note.id}`)}
-                      className="w-full rounded-2xl px-3 py-3 text-left transition-colors hover:bg-white/5"
+                      className="group w-full rounded-2xl px-3 py-3 text-left transition-colors hover:bg-white/5"
                     >
-                      <div className="truncate text-sm text-foreground">
-                        {note.title}
-                      </div>
-                      <div className="mt-1 truncate text-xs text-muted-foreground">
-                        {new Date(note.updatedAt).toLocaleDateString()}
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/5 text-muted-foreground transition-colors group-hover:text-foreground">
+                          <FileText className="h-3.5 w-3.5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-medium text-foreground">
+                            {note.title}
+                          </div>
+                          <div className="mt-1 line-clamp-2 text-sm leading-6 text-muted-foreground">
+                            {stripMarkdown(note.content) || 'Blank note'}
+                          </div>
+                          <div className="mt-2 text-[11px] text-muted-foreground">
+                            {new Date(note.updatedAt).toLocaleDateString()}
+                          </div>
+                        </div>
                       </div>
                     </button>
-                  ))}
-                </div>
+                  ))
+                ) : (
+                  <div className="rounded-2xl border border-white/6 px-4 py-8 text-center">
+                    <div className="text-sm font-medium text-foreground">
+                      No recent notes
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                      Create a note and it will appear here first.
+                    </p>
+                  </div>
+                )}
               </div>
             </section>
           </div>
@@ -127,35 +121,11 @@ export function EnhancedHome() {
   );
 }
 
-function MetricCard({
-  label,
-  value,
-  icon,
-}: {
-  label: string;
-  value: string;
-  icon: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-[1.5rem] border border-white/6 bg-white/4 px-4 py-4">
-      <div className="flex items-center justify-between text-muted-foreground">
-        <span className="text-xs uppercase tracking-[0.16em]">{label}</span>
-        {icon}
-      </div>
-      <div className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-foreground">
-        {value}
-      </div>
-    </div>
-  );
-}
-
-function ShortcutRow({ shortcut, label }: { shortcut: string; label: string }) {
-  return (
-    <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/4 px-4 py-3">
-      <div className="text-sm text-foreground">{label}</div>
-      <kbd className="rounded-full border border-white/8 px-3 py-1 font-mono text-[11px] text-muted-foreground">
-        {shortcut}
-      </kbd>
-    </div>
-  );
+function stripMarkdown(markdown: string) {
+  return markdown
+    .replace(/^#.*$/gm, '')
+    .replace(/\[\[|\]\]/g, '')
+    .replace(/[*_`>#-]/g, '')
+    .replace(/\n+/g, ' ')
+    .trim();
 }
