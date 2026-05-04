@@ -1,0 +1,42 @@
+filters:
+  or:
+    - file.inFolder("Projects")
+    - file.inFolder("Areas")
+formulas:
+  status_label: 'if(note.status, note.status, "unknown")'
+  deadline_present: 'if(note.deadline, true, false)'
+properties:
+  file.name:
+    displayName: Name
+  file.folder:
+    displayName: Folder
+  note.status:
+    displayName: Status
+  note.priority:
+    displayName: Priority
+  note.deadline:
+    displayName: Deadline
+  formula.status_label:
+    displayName: Status Label
+views:
+  - type: table
+    name: Project Table
+    groupBy:
+      property: note.status
+      direction: ASC
+    order:
+      - file.folder
+      - note.priority
+      - file.name
+  - type: list
+    name: Reviewed Items
+    filters:
+      and:
+        - 'note.reviewed == true'
+        - 'formula.deadline_present == true'
+    order:
+      - note.deadline
+      - file.name
+  - type: cards
+    name: Card View
+    filters: 'file.hasTag("project") || file.hasTag("area")'

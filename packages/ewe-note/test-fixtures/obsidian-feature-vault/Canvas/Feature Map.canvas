@@ -1,0 +1,86 @@
+{
+  "nodes": [
+    {
+      "id": "1111111111111111",
+      "type": "group",
+      "x": -40,
+      "y": -40,
+      "width": 980,
+      "height": 420,
+      "label": "Vault workflows",
+      "color": "4"
+    },
+    {
+      "id": "2222222222222222",
+      "type": "file",
+      "x": 40,
+      "y": 40,
+      "width": 320,
+      "height": 220,
+      "file": "Projects/Overview.md"
+    },
+    {
+      "id": "3333333333333333",
+      "type": "text",
+      "x": 420,
+      "y": 40,
+      "width": 300,
+      "height": 180,
+      "text": "# Review flow\n\n- Import fixture\n- Verify links\n- Export vault"
+    },
+    {
+      "id": "4444444444444444",
+      "type": "file",
+      "x": 760,
+      "y": 40,
+      "width": 140,
+      "height": 140,
+      "file": "Attachments/test-image.png"
+    },
+    {
+      "id": "5555555555555555",
+      "type": "link",
+      "x": 420,
+      "y": 260,
+      "width": 320,
+      "height": 100,
+      "url": "https://help.obsidian.md/file-formats"
+    },
+    {
+      "id": "6666666666666666",
+      "type": "file",
+      "x": 40,
+      "y": 280,
+      "width": 320,
+      "height": 100,
+      "file": "Daily Notes/2026-05-04.md",
+      "subpath": "#Open questions"
+    }
+  ],
+  "edges": [
+    {
+      "id": "7777777777777777",
+      "fromNode": "2222222222222222",
+      "fromSide": "right",
+      "toNode": "3333333333333333",
+      "toSide": "left",
+      "label": "drives"
+    },
+    {
+      "id": "8888888888888888",
+      "fromNode": "3333333333333333",
+      "fromSide": "right",
+      "toNode": "4444444444444444",
+      "toSide": "left",
+      "label": "references"
+    },
+    {
+      "id": "9999999999999999",
+      "fromNode": "6666666666666666",
+      "fromSide": "top",
+      "toNode": "3333333333333333",
+      "toSide": "left",
+      "label": "feeds"
+    }
+  ]
+}
