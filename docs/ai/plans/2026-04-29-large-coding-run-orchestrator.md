@@ -70,7 +70,7 @@ orchestration:
 runs:
   - id: run-1
     title: Add shared schema types
-    agent: eweser-code
+    agent: eweser-coder
     model: coding
     parallel: false
     dependsOn: []
@@ -83,7 +83,7 @@ runs:
     changeset: maybe
   - id: run-2
     title: Add app UI
-    agent: eweser-code
+    agent: eweser-coder
     model: coding
     parallel: true
     dependsOn:
@@ -157,7 +157,7 @@ The orchestrator should pass explicit `--model` values. It should not let coding
 - Recommended Agent: coder
 - Steps:
   - Create one worktree per coding run from the chosen base branch or integration branch.
-  - Run `codex exec` with the `$eweser-code` prompt, the exact plan path, run ID, write scope, tests, and "do not revert unrelated changes" instruction.
+  - Run `codex exec` with the `$eweser-coder` prompt, the exact plan path, run ID, write scope, tests, and "do not revert unrelated changes" instruction.
   - Log stdout/stderr per run.
   - Record started/finished/blocked status.
   - Mark runs blocked on non-zero exit, dirty conflict state, scope violations, or missing test evidence.
@@ -250,7 +250,7 @@ Implemented v1 on 2026-04-29.
 - Implemented explicit model routing: `coding`/`strong` worker runs use `gpt-5.4`, `simple`/`fast`/`mini` worker runs use `gpt-5.4-mini`, and final QA/review stages use `gpt-5.4`. The supervising chat can stay on `gpt-5.5` without leaking that model into worker execution.
 - Implemented dry-run, `--run`, `--max-parallel`, `--sequential`, `--resume`, `--stop`, `--allow-dirty`, and `--commit` flags.
 - Implemented local state/log/report layout under `.codex/orchestrator/<plan-slug>/`.
-- Implemented worker worktree creation, `codex exec` worker prompts with `$eweser-code`, per-run logging, status files, changed-file scope checks, dependency scheduling, and blocked-state recording.
+- Implemented worker worktree creation, `codex exec` worker prompts with `$eweser-coder`, per-run logging, status files, changed-file scope checks, dependency scheduling, and blocked-state recording.
 - Implemented integration through worker branch squash merges, per-run test reruns, conflict recording, optional per-run commits, and final QA/review `codex exec` handoff using `$eweser-qa` and `$eweser-review`.
 - Implemented stop handling that reads the active marker, kills the process tree, removes the marker, and marks in-progress state files as interrupted.
 - Verification run:

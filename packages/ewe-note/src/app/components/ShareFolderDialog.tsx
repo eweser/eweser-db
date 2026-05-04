@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Users, Copy, Check } from 'lucide-react';
+import { Users, Copy, Check, AlertCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -24,13 +24,19 @@ export function ShareFolderDialog({
   folderName,
   folderId,
 }: ShareFolderDialogProps) {
-  const [copied, setCopied] = useState(false);
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>(
+    'idle'
+  );
   const shareLink = `${window.location.origin}/?folder=${encodeURIComponent(folderId)}`;
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(shareLink);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareLink);
+      setCopyState('copied');
+      setTimeout(() => setCopyState('idle'), 2000);
+    } catch {
+      setCopyState('failed');
+    }
   };
 
   return (
@@ -63,10 +69,15 @@ export function ShareFolderDialog({
                 variant="outline"
                 size="sm"
               >
-                {copied ? (
+                {copyState === 'copied' ? (
                   <>
                     <Check className="w-4 h-4 mr-2" />
                     Copied
+                  </>
+                ) : copyState === 'failed' ? (
+                  <>
+                    <AlertCircle className="w-4 h-4 mr-2" />
+                    Copy failed
                   </>
                 ) : (
                   <>
@@ -85,13 +96,24 @@ export function ShareFolderDialog({
               <div className="text-sm">
                 <p className="font-medium mb-1">Access grants not included</p>
                 <p className="text-muted-foreground">
-                  Real collaboration will use EweserDB shared rooms and
-                  auditable grants. Until that exists here, this link is only a
-                  shortcut for this browser profile.
+                  Opening the link focuses this folder in this browser profile.
+                  It does not create access for anyone else.
                 </p>
               </div>
             </div>
           </div>
+          {copyState === 'failed' ? (
+            <div
+              data-cy="ewe-note-share-copy-error"
+              className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+            >
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>
+                Clipboard access is unavailable. Select the link and copy it
+                manually.
+              </span>
+            </div>
+          ) : null}
         </div>
       </DialogContent>
     </Dialog>

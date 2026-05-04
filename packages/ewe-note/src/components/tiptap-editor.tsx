@@ -37,6 +37,17 @@ import { EditorContextMenu } from '@/components/editor-context-menu';
 import { EditorBubbleMenu } from '@/components/editor-bubble-menu';
 import { EditorSlashMenu } from '@/components/editor-slash-menu';
 import { SourceModeEditor } from '@/components/source-mode-editor';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 
 type ProviderWithAwareness = NonNullable<Room<Note>['syncProvider']> & {
   awareness?: {
@@ -60,6 +71,12 @@ interface TiptapEditorProps {
   onEditorFocusChange?: (focused: boolean) => void;
   sourceMode?: boolean;
   onSourceModeChange?: (sourceMode: boolean) => void;
+}
+
+interface LinkDialogState {
+  open: boolean;
+  kind: 'link' | 'external-link';
+  href: string;
 }
 
 function debounce(func: (markdown: string, note: Note) => void, wait: number) {
@@ -223,6 +240,11 @@ export function TiptapEditor({
   );
   const [focused, setFocused] = useState(false);
   const [sourceValue, setSourceValue] = useState(note.text);
+  const [linkDialog, setLinkDialog] = useState<LinkDialogState>({
+    open: false,
+    kind: 'link',
+    href: '',
+  });
 
   if (!debouncedSaveRef.current) {
     debouncedSaveRef.current = debounce(onSaveMarkdown, 750);
@@ -326,13 +348,44 @@ export function TiptapEditor({
     onSourceModeChange(false);
   }, [editor, onSaveMarkdown, onSourceModeChange, sourceMode]);
 
+  const requestLink = useCallback(
+    ({ kind, href }: { kind: 'link' | 'external-link'; href?: string }) => {
+      setLinkDialog({
+        open: true,
+        kind,
+        href: href ?? '',
+      });
+    },
+    []
+  );
+
   const commandContext = useMemo(
     () => ({
       sourceMode,
       toggleSourceMode,
+      requestLink,
     }),
-    [sourceMode, toggleSourceMode]
+    [requestLink, sourceMode, toggleSourceMode]
   );
+
+  const closeLinkDialog = useCallback(() => {
+    setLinkDialog((prev) => ({ ...prev, open: false }));
+  }, []);
+
+  const submitLinkDialog = useCallback(() => {
+    if (!editor) return;
+    const href = linkDialog.href.trim();
+    if (!href) return;
+
+    editor.chain().focus().extendMarkRange('link').setLink({ href }).run();
+    closeLinkDialog();
+  }, [closeLinkDialog, editor, linkDialog.href]);
+
+  const unsetLink = useCallback(() => {
+    if (!editor) return;
+    editor.chain().focus().extendMarkRange('link').unsetLink().run();
+    closeLinkDialog();
+  }, [closeLinkDialog, editor]);
 
   const executeSlashCommand = useCallback(
     (commandId: EditorCommandId) => {
@@ -436,6 +489,62 @@ export function TiptapEditor({
         onSelect={executeSlashCommand}
         onClose={closeSlashMenu}
       />
+      <Dialog open={linkDialog.open} onOpenChange={closeLinkDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {linkDialog.kind === 'external-link'
+                ? 'Insert external link'
+                : 'Insert link'}
+            </DialogTitle>
+            <DialogDescription>
+              {linkDialog.kind === 'external-link'
+                ? 'Enter a full URL to apply to the selected text.'
+                : 'Use a URL or a wiki target such as wiki://Note Name.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="ewe-note-link-href">Link target</Label>
+            <Input
+              id="ewe-note-link-href"
+              data-cy="ewe-note-link-input"
+              autoFocus
+              placeholder={
+                linkDialog.kind === 'external-link'
+                  ? 'https://example.com'
+                  : 'wiki://Note Name'
+              }
+              value={linkDialog.href}
+              onChange={(event) =>
+                setLinkDialog((prev) => ({ ...prev, href: event.target.value }))
+              }
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  submitLinkDialog();
+                }
+              }}
+            />
+          </div>
+          <DialogFooter>
+            {editor.isActive('link') ? (
+              <Button type="button" variant="outline" onClick={unsetLink}>
+                Remove link
+              </Button>
+            ) : null}
+            <Button type="button" variant="outline" onClick={closeLinkDialog}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={submitLinkDialog}
+              disabled={!linkDialog.href.trim()}
+            >
+              Apply link
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

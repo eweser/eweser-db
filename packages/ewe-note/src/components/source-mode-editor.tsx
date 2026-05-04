@@ -1,3 +1,5 @@
+import { Eye } from 'lucide-react';
+
 interface SourceModeEditorProps {
   value: string;
   onChange: (value: string) => void;
@@ -10,20 +12,17 @@ export function SourceModeEditor({
   onExit,
 }: SourceModeEditorProps) {
   return (
-    <div className="source-mode-editor rounded-xl border border-border bg-card/60">
-      <div className="flex items-center justify-between border-b border-border px-4 py-2">
-        <div>
-          <div className="text-sm font-medium text-foreground">Source mode</div>
-          <div className="text-xs text-muted-foreground">
-            Raw Obsidian Markdown
-          </div>
-        </div>
+    <div className="source-mode-editor relative rounded-2xl border border-border/70 bg-card/35">
+      <div className="pointer-events-none absolute right-3 top-3 z-10 flex justify-end">
+        <span className="sr-only">Source mode, raw Obsidian Markdown</span>
         <button
           type="button"
-          className="rounded-md border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          aria-label="Return to rich editor"
+          title="Return to rich editor"
+          className="pointer-events-auto rounded-full border border-border/70 bg-background/70 p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           onClick={onExit}
         >
-          Live preview
+          <Eye className="h-4 w-4" />
         </button>
       </div>
       <textarea
@@ -32,7 +31,7 @@ export function SourceModeEditor({
         spellCheck={false}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="min-h-[55vh] w-full resize-y bg-transparent px-4 py-4 font-mono text-sm leading-6 text-foreground outline-none"
+        className="min-h-[55vh] w-full resize-y bg-transparent px-4 py-4 pr-16 font-mono text-sm leading-6 text-foreground outline-none"
       />
     </div>
   );

@@ -748,8 +748,74 @@ contents, direct pushes to `main`, secret handling, or merging PRs.
 | `run-7` | Complete | `docs/ai/testing/ewe-note-ux-feature-audit-checklist.md`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `npm run test --workspace @eweser/ewe-note -- --run src/editor/markdown.test.ts src/cli/import-vault.test.ts src/cli/vault-sync.test.ts`; `npm run build --workspace @eweser/ewe-note`                                                                                                                                                                                                                                                     | Obsidian-sensitive Markdown/import/vault-sync tests passed, and production build generated PWA assets. Checklist now reflects library-first home, visible folder dialogs, truthful sharing, and mobile pane controls. Obsidian desktop open-check was not run; source-format tests are the fallback. |
 | `run-8` | Complete | `e2e/cypress/tests/ewe-note.cy.ts`; `docs/ai/testing/ewe-note-ux-feature-audit-checklist.md`; `docs/ai/plans/2026-05-03-ewe-note-finish-bear-obsidian-ux.md`; final screenshots in `output/playwright/`                                                                                                                                                                                                                                                                                                                                                                                                                          | `npm run lint --workspace @eweser/ewe-note -- --max-warnings=0`; `npm run type-check --workspace @eweser/ewe-note`; `npm run test --workspace @eweser/ewe-note`; `npm run build --workspace @eweser/ewe-note`; `EWE_NOTE_BASE_URL=http://127.0.0.1:5181/ ELECTRON_RUN_AS_NODE= npx cypress run --config baseUrl=http://127.0.0.1:5181,video=false --spec e2e/cypress/tests/ewe-note.cy.ts`; `npm run code-index:check`; `git diff --check` | Final Cypress passed after rerun. The first Cypress attempt failed because source formatting during the run triggered Vite HMR and blanked the test browser; rerun after formatting passed 10/10.                                                                                                    |
 
+### QA Follow-up: EweNote QA Findings
+
+- Status: Complete.
+- Files changed: `packages/ewe-note/src/app/components/ShareFolderDialog.tsx`,
+  `packages/ewe-note/src/app/components/WorkspaceShell.tsx`,
+  `packages/ewe-note/src/app/components/WorkspaceShell.test.tsx`,
+  `packages/ewe-note/src/app/components/EnhancedSidebar.tsx`,
+  `packages/ewe-note/src/app/components/EnhancedSidebar.test.ts`,
+  `packages/ewe-note/src/app/components/sync-status-visual.ts`,
+  `packages/ewe-note/src/app/pages/EnhancedEditor.tsx`,
+  `packages/ewe-note/src/components/editor-toolbar.tsx`, and
+  `e2e/cypress/tests/ewe-note.cy.ts`.
+- Share folder follow-up: `/?folder=<id>` now focuses the folder view in the
+  workspace shell, and the share dialog copy stays explicit that the link is
+  only local navigation and does not grant access.
+- Source mode follow-up: source mode now pauses rich-text toolbar menus and
+  keeps only the source-mode toggle visible with a raw-Markdown status message.
+- Clipboard follow-up: folder share copy and note copy-link actions only show
+  success after `navigator.clipboard.writeText()` resolves, and show scoped
+  failure states when clipboard access is denied or unavailable.
+- Sync visual follow-up: sidebar status dots now differ across `synced`,
+  `connecting`, `offline`, `local-only`, `signed-out`, and error states.
+- Verification:
+  `npm run lint --workspace @eweser/ewe-note -- --max-warnings=0`;
+  `npm run type-check --workspace @eweser/ewe-note`;
+  `npm run test --workspace @eweser/ewe-note`;
+  `npm run build --workspace @eweser/ewe-note`;
+  `EWE_NOTE_BASE_URL=http://127.0.0.1:5181/ ELECTRON_RUN_AS_NODE= npx cypress run --config baseUrl=http://127.0.0.1:5181,video=false --spec e2e/cypress/tests/ewe-note.cy.ts`;
+  `npm run code-index:check`; `git diff --check`.
+  The first Cypress run failed because the existing dev server did not yet show
+  the mounted folder-share affordance; the rerun passed 14/14 after the Vite
+  server reflected the current source.
+
+### Manual Tester Fix Pass: 2026-05-03
+
+- Status: Complete.
+- Files changed: `packages/ewe-note/src/app/pages/EnhancedEditor.tsx`,
+  `packages/ewe-note/src/app/pages/EnhancedHome.tsx`,
+  `packages/ewe-note/src/app/components/WorkspaceShell.tsx`,
+  `packages/ewe-note/src/app/components/NotesListPane.tsx`,
+  `packages/ewe-note/src/app/components/EnhancedSidebar.tsx`,
+  `packages/ewe-note/src/config.ts`, `packages/ewe-note/src/config.test.ts`,
+  and `e2e/cypress/tests/ewe-note.cy.ts`.
+- Manual tester gaps fixed: the open editor note menu now has a visible
+  `Move to folder` section; folder actions are persistently visible instead of
+  hover-only; mobile and note-list pane labels no longer clip; the home route is
+  a quieter notes-first library; the default dev auth server now matches
+  `http://localhost:38101`.
+- Verification:
+  `.codex/skills/eweser-runtime-orientation/scripts/eweser-runtime-orientation.sh status`;
+  `npm run test --workspace @eweser/ewe-note -- --run src/config.test.ts src/app/components/workspace-layout.test.ts src/app/components/WorkspaceShell.test.tsx`;
+  `npm run type-check --workspace @eweser/ewe-note`;
+  `EWE_NOTE_BASE_URL=http://127.0.0.1:5181/ ELECTRON_RUN_AS_NODE= npx cypress run --config baseUrl=http://127.0.0.1:5181,video=false --spec e2e/cypress/tests/ewe-note.cy.ts`;
+  `git diff --check`.
+- Evidence: `output/playwright/ewe-note-fixes-desktop-home.png` and
+  `output/playwright/ewe-note-fixes-mobile-home.png`.
+
 ## Self-Reflection / Instruction Improvements
 
+- QA follow-up work should prefer persistent DOM affordances for actions that
+  need Cypress coverage. Hover-only mounted controls are easy to miss in
+  automation and weaker for keyboard accessibility.
+- Manual tester fixes should add direct coverage for the exact missed flow. The
+  note-move gap needed an open-editor action test, not just folder drag/drop
+  behavior buried in the sidebar.
+- The `eweser-runtime-orientation` skill path in some instructions points at
+  `~/.codex/skills/...`; this checkout's available script was repo-local under
+  `.codex/skills/...`.
 - Do not edit/format source while Cypress is actively driving the Vite dev
   server. The first final Cypress attempt failed from a Vite HMR blank-page
   state during formatting, then passed cleanly after edits stopped.

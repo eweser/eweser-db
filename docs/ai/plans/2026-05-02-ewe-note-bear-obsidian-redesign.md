@@ -16,7 +16,7 @@ orchestration:
 runs:
   - id: run-1
     title: Design Context, Shape Brief, and North-Star Direction
-    agent: eweser-code
+    agent: eweser-coder
     model: strong
     parallel: false
     dependsOn: []
@@ -29,7 +29,7 @@ runs:
     changeset: no
   - id: run-2
     title: Shared Workspace Shell and Pane-Mode Architecture
-    agent: eweser-code
+    agent: eweser-coder
     model: coding
     parallel: false
     dependsOn:
@@ -51,7 +51,7 @@ runs:
     changeset: no
   - id: run-3
     title: Sidebar and Notes-List Redesign
-    agent: eweser-code
+    agent: eweser-coder
     model: coding
     parallel: false
     dependsOn:
@@ -69,7 +69,7 @@ runs:
     changeset: no
   - id: run-4
     title: Editor Surface, Metadata Demotion, and Focus Behavior
-    agent: eweser-code
+    agent: eweser-coder
     model: coding
     parallel: false
     dependsOn:
@@ -88,7 +88,7 @@ runs:
     changeset: no
   - id: run-5
     title: Impeccable Critique Loop, Live Variants, and Final Polish
-    agent: eweser-code
+    agent: eweser-coder
     model: strong
     parallel: false
     dependsOn:
@@ -108,7 +108,7 @@ runs:
     changeset: no
   - id: run-6
     title: Final Regression Pass and Manual Review Kit
-    agent: eweser-code
+    agent: eweser-coder
     model: fast
     parallel: false
     dependsOn:

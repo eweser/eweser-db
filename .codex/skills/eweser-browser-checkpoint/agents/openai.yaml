@@ -1,0 +1,7 @@
+interface:
+  display_name: 'Eweser Browser Checkpoint'
+  short_description: 'Focused browser feedback for one EweserDB UI run'
+  default_prompt: 'Use $eweser-browser-checkpoint to run a focused browser checkpoint for the completed EweserDB UI run.'
+
+policy:
+  allow_implicit_invocation: true

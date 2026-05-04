@@ -51,6 +51,15 @@ export function applyMarkdownInputRules(editor: Editor) {
   const line = currentLineInfo(editor);
   if (!line) return false;
 
+  const convertCurrentListItemToTask = (checked: boolean) => {
+    deleteMarkerAndReset(editor, line.text.length, line.from);
+    const chain = editor.chain().focus().toggleTaskList();
+    if (checked) {
+      chain.updateAttributes('taskItem', { checked: true });
+    }
+    chain.run();
+  };
+
   // Heading
   if (
     runRule(editor, /^#{1,6}\s+$/, (match) => {
@@ -81,14 +90,17 @@ export function applyMarkdownInputRules(editor: Editor) {
 
   // Completed task list
   if (
-    runRule(editor, /^-\s\[x\]\s+$/i, () => {
-      deleteMarkerAndReset(editor, line.text.length, line.from);
-      editor
-        .chain()
-        .focus()
-        .toggleTaskList()
-        .updateAttributes('taskItem', { checked: true })
-        .run();
+    runRule(editor, /^-\s?\[x\]$/i, () => {
+      convertCurrentListItemToTask(true);
+    })
+  ) {
+    return true;
+  }
+
+  // Completed task list inside an already-created bullet list item.
+  if (
+    runRule(editor, /^\[x\]$/i, () => {
+      convertCurrentListItemToTask(true);
     })
   ) {
     return true;
@@ -96,9 +108,17 @@ export function applyMarkdownInputRules(editor: Editor) {
 
   // Task list
   if (
-    runRule(editor, /^-\s\[\s?\]\s+$/, () => {
-      deleteMarkerAndReset(editor, line.text.length, line.from);
-      editor.chain().focus().toggleTaskList().run();
+    runRule(editor, /^-\s?\[\s?\]$/, () => {
+      convertCurrentListItemToTask(false);
+    })
+  ) {
+    return true;
+  }
+
+  // Task list inside an already-created bullet list item.
+  if (
+    runRule(editor, /^\[\s?\]$/, () => {
+      convertCurrentListItemToTask(false);
     })
   ) {
     return true;

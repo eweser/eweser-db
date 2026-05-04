@@ -3,6 +3,8 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import removeMarkdown from 'markdown-to-text';
 import { useDb } from '@/db';
 import { useFolders } from '@/notes-room';
+import { collectFolderTreeIds } from './folder-tree';
+import { buildDefaultUntitledNoteTitle, UNTITLED_TITLE } from './note-titles';
 import {
   extractWikiLinkTargets,
   extractUnlinkedMentions,
@@ -78,6 +80,7 @@ interface NotesContextType {
   getTodayNote: () => Note;
   searchNotes: (query: string) => Note[];
   getNotesInFolder: (folderId: string) => Note[];
+  getDirectNotesInFolder: (folderId: string) => Note[];
   getRecentNotes: (limit?: number) => Note[];
   getPinnedNotes: () => Note[];
   resolveWikiLink: (target: string) => string | null;
@@ -122,6 +125,11 @@ function normalize(text: string) {
   return normalizeWikiTarget(text);
 }
 
+function getSourcePathTarget(sourcePath?: string) {
+  if (!sourcePath) return null;
+  return sourcePath.replace(/\.md$/i, '').trim() || null;
+}
+
 function deriveTitle(note: DbNote) {
   const fmTitle = note.frontmatter?.title;
   if (typeof fmTitle === 'string' && fmTitle.trim()) {
@@ -134,7 +142,7 @@ function deriveTitle(note: DbNote) {
   }
 
   const plain = removeMarkdown(note.text).trim();
-  return plain.split('\n').find(Boolean)?.trim() || 'Untitled';
+  return plain.split('\n').find(Boolean)?.trim() || UNTITLED_TITLE;
 }
 
 function stringifyProperties(frontmatter?: Record<string, unknown>) {
@@ -206,6 +214,19 @@ function buildResolvableTargets(notes: InternalNote[]): ResolvableTargets {
 
     if (!targets.has(normalizedTitle)) {
       targets.set(normalizedTitle, { noteId: note.id, mention: note.title });
+    }
+
+    const sourcePathTarget = getSourcePathTarget(note.source.sourcePath);
+    if (sourcePathTarget) {
+      const normalizedPath = normalize(sourcePathTarget);
+      noteMentions.add(normalizedPath);
+      mentionsByNoteId.set(note.id, noteMentions);
+      if (!targets.has(normalizedPath)) {
+        targets.set(normalizedPath, {
+          noteId: note.id,
+          mention: sourcePathTarget,
+        });
+      }
     }
 
     for (const alias of note.aliases) {
@@ -324,7 +345,7 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
   const {
     folders: roomFolders,
     createFolder,
-    renameFolder,
+    updateFolder: updateStoredFolder,
     deleteFolder,
   } = useFolders(canonicalRoom);
   const [notesByRoomId, setNotesByRoomId] = useState<Record<string, DbNote[]>>(
@@ -562,8 +583,14 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
       throw new Error('No available room to create a note');
     }
 
+    const requestedTitle = note.title?.trim();
+    const resolvedTitle =
+      !requestedTitle || requestedTitle === UNTITLED_TITLE
+        ? buildDefaultUntitledNoteTitle()
+        : requestedTitle;
+
     const frontmatter: Record<string, unknown> = {};
-    if (note.title && note.title !== 'Untitled') frontmatter.title = note.title;
+    frontmatter.title = resolvedTitle;
     if (note.tags?.length) frontmatter.tags = note.tags;
     if (note.aliases?.length) frontmatter.aliases = note.aliases;
     Object.entries(note.properties ?? {}).forEach(([key, value]) => {
@@ -571,7 +598,7 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     });
 
     const created = targetRoom.getDocuments().new({
-      text: note.content || `# ${note.title?.trim() || 'Untitled'}\n\n`,
+      text: note.content || `# ${resolvedTitle}\n\n`,
       ...(Object.keys(frontmatter).length ? { frontmatter } : {}),
       ...(note.tags?.length ? { tags: note.tags } : {}),
       ...(note.folder &&
@@ -673,11 +700,32 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateFolder = (id: string, updates: Partial<Folder>) => {
-    if (updates.name) renameFolder(id, updates.name);
+    const nextUpdates: { name?: string; parentFolderId?: string } = {};
+
+    if (updates.name !== undefined) {
+      nextUpdates.name = updates.name;
+    }
+
+    if (updates.parentId !== undefined) {
+      if (updates.parentId) {
+        nextUpdates.parentFolderId = updates.parentId;
+      } else {
+        nextUpdates.parentFolderId = undefined;
+      }
+    }
+
+    if (Object.keys(nextUpdates).length > 0) {
+      updateStoredFolder(id, nextUpdates);
+    }
   };
 
-  const getNotesInFolder = (folderId: string) =>
+  const getDirectNotesInFolder = (folderId: string) =>
     notes.filter((note) => note.folder === folderId);
+
+  const getNotesInFolder = (folderId: string) => {
+    const visibleFolderIds = collectFolderTreeIds(folderId, folders);
+    return notes.filter((note) => visibleFolderIds.has(note.folder));
+  };
 
   const getRecentNotes = (limit = 10) =>
     [...notes]
@@ -811,6 +859,7 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     getTodayNote,
     searchNotes,
     getNotesInFolder,
+    getDirectNotesInFolder,
     getRecentNotes,
     getPinnedNotes,
     resolveWikiLink,

@@ -108,13 +108,22 @@ describe('workspace layout', () => {
     expect(getModeForMobilePane('editor', 2)).toBe(2);
   });
 
-  it('ignores shortcuts inside editable targets', () => {
-    const input = document.createElement('input');
+  it('still allows pane shortcuts inside the TipTap editing surface', () => {
     const editor = document.createElement('div');
     editor.setAttribute('contenteditable', 'true');
 
+    expect(shouldIgnoreWorkspaceHotkeyTarget(editor)).toBe(false);
+  });
+
+  it('ignores shortcuts inside explicit form controls', () => {
+    const input = document.createElement('input');
+    const select = document.createElement('select');
+    const ignored = document.createElement('div');
+    ignored.setAttribute('data-workspace-hotkeys', 'ignore');
+
     expect(shouldIgnoreWorkspaceHotkeyTarget(input)).toBe(true);
-    expect(shouldIgnoreWorkspaceHotkeyTarget(editor)).toBe(true);
+    expect(shouldIgnoreWorkspaceHotkeyTarget(select)).toBe(true);
+    expect(shouldIgnoreWorkspaceHotkeyTarget(ignored)).toBe(true);
     expect(shouldIgnoreWorkspaceHotkeyTarget(document.body)).toBe(false);
   });
 });

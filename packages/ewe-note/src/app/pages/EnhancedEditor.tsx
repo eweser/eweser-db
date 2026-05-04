@@ -1,13 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import {
-  ArrowLeft,
   Star,
   MoreHorizontal,
   Maximize2,
   FolderOpen,
-  ChevronRight,
-  Hash,
   Link2,
   Minimize2,
   SidebarClose,
@@ -15,14 +12,17 @@ import {
   Copy,
   Download,
   Check,
+  FolderInput,
+  FileCode,
+  Eye,
 } from 'lucide-react';
 import { RightPanel } from '../components/RightPanel';
 import { useNotes } from '../contexts/NotesContext';
-import { Badge } from '../components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../components/ui/dropdown-menu';
@@ -34,10 +34,13 @@ import {
   useWorkspaceShell,
 } from '../components/WorkspaceShell';
 import type { Note } from '../contexts/NotesContext';
+import { useIsMobile } from '../components/ui/use-mobile';
 
 export function EnhancedEditor() {
   const [focusMode, setFocusMode] = useState(false);
-  const [copyLinkDone, setCopyLinkDone] = useState(false);
+  const [copyLinkState, setCopyLinkState] = useState<
+    'idle' | 'copied' | 'failed'
+  >('idle');
   const [sourceMode, setSourceMode] = useState(false);
   const navigate = useNavigate();
   const { noteId } = useParams();
@@ -48,13 +51,18 @@ export function EnhancedEditor() {
     togglePinNote,
     deleteNote,
     addNote,
+    moveNote,
     resolveWikiLink,
   } = useNotes();
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setCopyLinkDone(true);
-    setTimeout(() => setCopyLinkDone(false), 2000);
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopyLinkState('copied');
+      setTimeout(() => setCopyLinkState('idle'), 2000);
+    } catch {
+      setCopyLinkState('failed');
+    }
   };
 
   const handleDuplicate = () => {
@@ -107,6 +115,28 @@ export function EnhancedEditor() {
   );
 
   useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const hasModifier = event.metaKey || event.ctrlKey;
+      if (!hasModifier || event.altKey || event.shiftKey) {
+        return;
+      }
+
+      if (event.code !== 'Digit1' && event.key !== '1') {
+        return;
+      }
+
+      if (!noteId) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      setFocusMode(true);
+    };
+
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [noteId]);
+
+  useEffect(() => {
     if (!note || !noteRoom) return;
     if (selectedRoom?.id !== noteRoom.id) {
       setSelectedRoom(noteRoom);
@@ -116,7 +146,7 @@ export function EnhancedEditor() {
 
   if (!note) {
     return (
-      <div className="h-screen flex items-center justify-center">
+      <div className="flex h-screen items-center justify-center bg-background text-foreground">
         <div className="text-center">
           <h2 className="text-2xl font-medium mb-2">Note not found</h2>
           <button
@@ -130,38 +160,26 @@ export function EnhancedEditor() {
     );
   }
 
-  const folder = folders.find((f) => f.id === note.folder);
   const editorRoom = noteRoom ?? selectedRoom;
-  const visibleProperties = Object.entries(note.properties).slice(0, 2);
-  const noteMeta = new Date(note.updatedAt).toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-
   if (focusMode) {
     return (
-      <div className="h-screen bg-card flex flex-col">
-        {/* Minimal focus mode header */}
-        <header className="flex items-center justify-between border-b border-border/50 px-5 py-3">
+      <div className="flex h-screen flex-col bg-background">
+        <header className="pointer-events-none fixed right-4 top-4 z-30 flex items-center gap-1">
           <button
             type="button"
             aria-label="Exit focus mode"
             onClick={() => setFocusMode(false)}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2"
+            className="pointer-events-auto rounded-full border border-border/60 bg-card/92 p-2 text-muted-foreground shadow-lg shadow-black/15 transition-colors hover:bg-accent hover:text-foreground"
           >
             <Minimize2 className="w-4 h-4" />
-            Exit Focus Mode
           </button>
-          <div className="text-xs text-muted-foreground">Edited {noteMeta}</div>
         </header>
 
-        {/* Focus mode editor */}
         <div
           data-cy="ewe-note-focus-mode-active"
-          className="flex-1 overflow-y-auto"
+          className="flex-1 overflow-y-auto bg-background"
         >
-          <div className="max-w-3xl mx-auto px-6 py-8">
+          <div className="mx-auto max-w-[46rem] px-7 py-8 md:px-10 md:py-10">
             {editorRoom ? (
               <Editor
                 selectedRoom={editorRoom}
@@ -184,12 +202,9 @@ export function EnhancedEditor() {
     >
       <EditorWorkspace
         note={note}
-        folderName={folder?.name || 'Notes'}
-        noteMeta={noteMeta}
-        visibleProperties={visibleProperties}
         onUpdateTitle={(title) => updateNote(note.id, { title })}
         onCopyLink={handleCopyLink}
-        copyLinkDone={copyLinkDone}
+        copyLinkState={copyLinkState}
         onDuplicate={handleDuplicate}
         onExport={handleExport}
         onDelete={() => {
@@ -198,8 +213,9 @@ export function EnhancedEditor() {
             navigate('/');
           }
         }}
+        folders={folders}
+        onMoveNote={(targetFolder) => moveNote(note.id, targetFolder)}
         onTogglePin={() => togglePinNote(note.id)}
-        onNavigateHome={() => navigate('/')}
         onFocusMode={() => setFocusMode(true)}
         editorRoom={editorRoom}
         onNavigateWikiLink={handleNavigateWikiLink}
@@ -219,17 +235,15 @@ function EditorMetadataPanel({ noteId }: { noteId: string }) {
 
 function EditorWorkspace({
   note,
-  folderName,
-  noteMeta,
-  visibleProperties,
   onUpdateTitle,
   onCopyLink,
-  copyLinkDone,
+  copyLinkState,
   onDuplicate,
   onExport,
   onDelete,
+  folders,
+  onMoveNote,
   onTogglePin,
-  onNavigateHome,
   onFocusMode,
   editorRoom,
   onNavigateWikiLink,
@@ -237,17 +251,15 @@ function EditorWorkspace({
   onSourceModeChange,
 }: {
   note: Note;
-  folderName: string;
-  noteMeta: string;
-  visibleProperties: [string, string][];
   onUpdateTitle: (title: string) => void;
   onCopyLink: () => void;
-  copyLinkDone: boolean;
+  copyLinkState: 'idle' | 'copied' | 'failed';
   onDuplicate: () => void;
   onExport: () => void;
   onDelete: () => void;
+  folders: Array<{ id: string; name: string; kind?: string }>;
+  onMoveNote: (targetFolder: string) => void;
   onTogglePin: () => void;
-  onNavigateHome: () => void;
   onFocusMode: () => void;
   editorRoom: ReturnType<typeof useDb>['selectedRoom'];
   onNavigateWikiLink: (href: string) => void;
@@ -255,78 +267,41 @@ function EditorWorkspace({
   onSourceModeChange: (sourceMode: boolean) => void;
 }) {
   const { metadataVisible, setMetadataVisible } = useWorkspaceShell();
+  const isMobile = useIsMobile();
+  const moveTargets = folders.filter(
+    (folder) => folder.kind === 'folder' && folder.id !== note.folder
+  );
 
   return (
-    <main className="flex h-full min-w-0 flex-col overflow-hidden bg-[oklch(0.145_0.01_95)] md:h-screen">
+    <main className="relative flex h-full min-w-0 flex-col overflow-hidden bg-background md:h-screen">
       <header
         data-cy="ewe-note-header"
-        className="border-b border-white/6 bg-[oklch(0.155_0.01_95)]/92 px-4 py-4 backdrop-blur md:px-6 md:py-5"
+        className={
+          isMobile
+            ? 'pointer-events-none fixed bottom-20 right-4 z-30 flex flex-col items-end gap-2'
+            : 'pointer-events-none fixed right-3 top-3 z-30 flex items-center gap-1 rounded-full border border-border/60 bg-card/88 p-1 shadow-lg shadow-black/10 backdrop-blur md:right-4 md:top-4'
+        }
       >
-        <div className="mb-3 flex items-start justify-between gap-3 md:mb-4 md:gap-4">
-          <div className="min-w-0 flex-1">
-            <div className="mb-2 flex items-center gap-2 md:mb-3 md:gap-3">
-              <button
-                type="button"
-                aria-label="Back to all notes"
-                onClick={onNavigateHome}
-                className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-white/6 hover:text-foreground"
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </button>
-
-              <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground md:text-sm">
-                <FolderOpen className="w-4 h-4 shrink-0" />
-                <span
-                  className="max-w-[10rem] truncate md:max-w-[18rem]"
-                  title={folderName}
-                >
-                  {folderName}
-                </span>
-                <ChevronRight className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">{noteMeta}</span>
-              </div>
-            </div>
-
-            <input
-              aria-label="Note title"
-              value={note.title}
-              onChange={(e) => onUpdateTitle(e.target.value)}
-              className="w-full min-w-0 bg-transparent text-[1.65rem] font-semibold tracking-[-0.02em] text-foreground outline-none placeholder:text-muted-foreground md:text-[2.4rem] md:tracking-[-0.035em]"
-            />
-          </div>
-
-          <div className="flex shrink-0 items-center gap-1 md:gap-2">
-            <button
-              type="button"
-              aria-label={
-                metadataVisible ? 'Close note info' : 'Open note info'
-              }
-              data-cy="ewe-note-info-panel-toggle"
-              onClick={() => setMetadataVisible(!metadataVisible)}
-              className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-white/6 hover:text-foreground"
-              title={metadataVisible ? 'Close note info' : 'Open note info'}
-            >
-              {metadataVisible ? (
-                <SidebarClose className="w-4 h-4" />
-              ) : (
-                <SidebarOpen className="w-4 h-4" />
-              )}
-            </button>
-            <button
-              type="button"
-              aria-label="Enter focus mode"
-              data-cy="ewe-note-focus-mode"
-              onClick={onFocusMode}
-              className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-white/6 hover:text-foreground"
-              title="Focus Mode"
-            >
-              <Maximize2 className="w-4 h-4" />
-            </button>
+        <input
+          aria-label="Note title"
+          value={note.title}
+          onChange={(e) => onUpdateTitle(e.target.value)}
+          className="sr-only"
+          tabIndex={-1}
+        />
+        <div
+          className={`pointer-events-auto flex shrink-0 items-center gap-0.5 ${
+            isMobile
+              ? 'flex-col rounded-3xl border border-border/60 bg-card/92 p-1.5 shadow-lg shadow-black/10 backdrop-blur'
+              : ''
+          }`}
+        >
+          {isMobile ? (
             <button
               type="button"
               aria-label={note.pinned ? 'Unpin note' : 'Pin note'}
               onClick={onTogglePin}
-              className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-white/6 hover:text-foreground"
+              className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               title={note.pinned ? 'Unpin note' : 'Pin note'}
             >
               <Star
@@ -335,78 +310,133 @@ function EditorWorkspace({
                 }`}
               />
             </button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  aria-label="Open note actions"
-                  data-cy="ewe-note-editor-menu-trigger"
-                  className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-white/6 hover:text-foreground"
-                >
-                  <MoreHorizontal className="w-4 h-4" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  data-cy="ewe-note-copy-link"
-                  onClick={onCopyLink}
-                >
-                  {copyLinkDone ? (
-                    <Check className="mr-2 h-4 w-4 text-green-500" />
-                  ) : (
-                    <Link2 className="mr-2 h-4 w-4" />
-                  )}
-                  {copyLinkDone ? 'Copied!' : 'Copy Link'}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  data-cy="ewe-note-duplicate"
-                  onClick={onDuplicate}
-                >
-                  <Copy className="mr-2 h-4 w-4" />
-                  Duplicate
-                </DropdownMenuItem>
-                <DropdownMenuItem data-cy="ewe-note-export" onClick={onExport}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Export as Markdown
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  data-cy="ewe-note-delete-note"
-                  className="text-destructive"
-                  onClick={onDelete}
-                >
-                  Delete Note
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-
-        <div className="flex min-h-7 flex-wrap items-center gap-2 md:pl-11">
-          {note.tags.map((tag) => (
-            <Badge
-              key={tag}
-              variant="secondary"
-              className="rounded-full bg-white/6 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground"
+          ) : (
+            <button
+              type="button"
+              aria-label={
+                metadataVisible ? 'Close note info' : 'Open note info'
+              }
+              data-cy="ewe-note-info-panel-toggle"
+              onClick={() => setMetadataVisible(!metadataVisible)}
+              className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              title={metadataVisible ? 'Close note info' : 'Open note info'}
             >
-              <Hash className="mr-0.5 h-3 w-3" />
-              {tag}
-            </Badge>
-          ))}
-          {visibleProperties.map(([key, value]) => (
-            <Badge
-              key={key}
-              variant="outline"
-              className="rounded-full border-white/8 bg-transparent px-2.5 py-0.5 text-[11px] font-normal text-muted-foreground"
+              {metadataVisible ? (
+                <SidebarClose className="w-4 h-4" />
+              ) : (
+                <SidebarOpen className="w-4 h-4" />
+              )}
+            </button>
+          )}
+          <button
+            type="button"
+            aria-label="Enter focus mode"
+            data-cy="ewe-note-focus-mode"
+            onClick={onFocusMode}
+            className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            title="Focus Mode"
+          >
+            <Maximize2 className="w-4 h-4" />
+          </button>
+          {!isMobile ? (
+            <button
+              type="button"
+              aria-label={note.pinned ? 'Unpin note' : 'Pin note'}
+              onClick={onTogglePin}
+              className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              title={note.pinned ? 'Unpin note' : 'Pin note'}
             >
-              {key}: {value}
-            </Badge>
-          ))}
+              <Star
+                className={`w-4 h-4 ${
+                  note.pinned ? 'fill-current text-primary' : ''
+                }`}
+              />
+            </button>
+          ) : null}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label="Open note actions"
+                data-cy="ewe-note-editor-menu-trigger"
+                className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <MoreHorizontal className="w-4 h-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onSourceModeChange(!sourceMode)}>
+                {sourceMode ? (
+                  <Eye className="mr-2 h-4 w-4" />
+                ) : (
+                  <FileCode className="mr-2 h-4 w-4" />
+                )}
+                {sourceMode ? 'Return to rich editor' : 'Edit raw Markdown'}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                data-cy="ewe-note-copy-link"
+                onClick={onCopyLink}
+              >
+                {copyLinkState === 'copied' ? (
+                  <Check className="mr-2 h-4 w-4 text-green-500" />
+                ) : copyLinkState === 'failed' ? (
+                  <Link2 className="mr-2 h-4 w-4 text-destructive" />
+                ) : (
+                  <Link2 className="mr-2 h-4 w-4" />
+                )}
+                {copyLinkState === 'copied'
+                  ? 'Copied!'
+                  : copyLinkState === 'failed'
+                    ? 'Copy failed'
+                    : 'Copy Link'}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                data-cy="ewe-note-duplicate"
+                onClick={onDuplicate}
+              >
+                <Copy className="mr-2 h-4 w-4" />
+                Duplicate
+              </DropdownMenuItem>
+              <DropdownMenuItem data-cy="ewe-note-export" onClick={onExport}>
+                <Download className="mr-2 h-4 w-4" />
+                Export as Markdown
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Move to folder</DropdownMenuLabel>
+              <DropdownMenuItem
+                data-cy="ewe-note-move-note-all"
+                disabled={!note.folder}
+                onClick={() => onMoveNote('')}
+              >
+                <FolderInput className="mr-2 h-4 w-4" />
+                All Notes
+              </DropdownMenuItem>
+              {moveTargets.slice(0, 8).map((folder) => (
+                <DropdownMenuItem
+                  key={folder.id}
+                  data-cy={`ewe-note-move-note-${folder.id}`}
+                  onClick={() => onMoveNote(folder.id)}
+                >
+                  <FolderOpen className="mr-2 h-4 w-4" />
+                  {folder.name}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                data-cy="ewe-note-delete-note"
+                className="text-destructive"
+                onClick={onDelete}
+              >
+                Delete Note
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto bg-[oklch(0.14_0.008_95)]">
-        <div className="mx-auto max-w-[52rem] px-4 py-6 md:px-10 md:py-8">
+      <div className="flex-1 overflow-y-auto bg-background">
+        <div className="mx-auto max-w-[48rem] px-5 py-5 pb-32 md:px-10 md:py-10">
           {editorRoom ? (
             <Editor
               selectedRoom={editorRoom}

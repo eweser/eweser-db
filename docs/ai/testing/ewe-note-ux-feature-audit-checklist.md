@@ -191,7 +191,7 @@ Goal: verify whether EweNote feels complete as a local-first note app and identi
 - [ ] Sidebar is usable or collapses appropriately.
 - [ ] Editor header controls do not overflow.
 - [ ] Right panel does not permanently cover content without a clear close action.
-- [ ] Mobile top controls can switch between Organize, Browse, Write, and Inspect.
+- [ ] Mobile top controls switch cleanly between the 4 panes using icon-only chrome with accessible labels.
 - [ ] Dialogs fit on small screens.
 - [ ] Note cards/list rows remain readable.
 - [ ] Flag any horizontal scrolling, clipped buttons, overlapping text, or unreachable controls.

@@ -22,6 +22,8 @@ Every new plan must include:
 - Execution summary
 - Self-reflection / instruction improvements
 
+Use `eweser-coder` for coding runs in plan metadata and examples.
+
 Planner creates implementation-ready plans and stops for approval. Coder treats
 the approved plan as the approval boundary, implements all runs, verifies,
 performs internal QA, fixes issues found inside the boundary, and updates the

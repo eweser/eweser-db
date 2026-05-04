@@ -86,6 +86,10 @@ function replaceSelection(editor: Editor, content: string) {
 export interface EditorCommandContext {
   sourceMode?: boolean;
   toggleSourceMode?: () => void;
+  requestLink?: (options: {
+    kind: 'link' | 'external-link';
+    href?: string;
+  }) => void;
 }
 
 export const EDITOR_COMMANDS: EditorCommand[] = [
@@ -313,12 +317,21 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
     slashTrigger: ['link', 'wiki'],
     isActive: (editor) => editor.isActive('link'),
     isEnabled: () => true,
-    execute: (editor) => {
-      const href = window.prompt(
+    execute: (editor, context) => {
+      const href = editor.getAttributes('link').href;
+      if (context?.requestLink) {
+        context.requestLink({
+          kind: 'link',
+          href: typeof href === 'string' ? href : undefined,
+        });
+        return;
+      }
+
+      const nextHref = window.prompt(
         'Link target (wiki://Name for internal links)'
       );
-      if (!href) return;
-      editor.commands.toggleLink({ href });
+      if (!nextHref) return;
+      editor.commands.toggleLink({ href: nextHref });
     },
     shortcut: 'Ctrl/Cmd+K',
     menuPlacement: ['toolbar', 'context', 'slash', 'palette'],
@@ -331,10 +344,19 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
     slashTrigger: ['url', 'ext'],
     isActive: (editor) => editor.isActive('link'),
     isEnabled: () => true,
-    execute: (editor) => {
-      const href = window.prompt('External URL');
-      if (!href) return;
-      editor.commands.toggleLink({ href });
+    execute: (editor, context) => {
+      const href = editor.getAttributes('link').href;
+      if (context?.requestLink) {
+        context.requestLink({
+          kind: 'external-link',
+          href: typeof href === 'string' ? href : undefined,
+        });
+        return;
+      }
+
+      const nextHref = window.prompt('External URL');
+      if (!nextHref) return;
+      editor.commands.toggleLink({ href: nextHref });
     },
     menuPlacement: ['toolbar', 'context', 'slash', 'palette'],
   },

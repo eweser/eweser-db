@@ -2,13 +2,13 @@
 name: eweser-coder
 description: >
   Use this skill to implement a feature in the EweserDB monorepo from a plan file.
-  Also use it when the user invokes $eweser-coder or the legacy personal
-  $eweser-code name, asks Codex to code an approved EweserDB plan, continue a
-  run from docs/ai/plans, fix a bug, or make repo changes while preserving
-  quality gates. Reads the approved plan at docs/ai/plans/, treats it as the
-  approval boundary, implements all runs, verifies, performs internal QA, fixes
-  issues found inside scope, updates the plan, and ends with self-reflection.
-  Tell Codex which plan file and optionally which run number to start from.
+  Also use it when the user invokes $eweser-coder, asks Codex to code an
+  approved EweserDB plan, continue a run from docs/ai/plans, fix a bug, or
+  make repo changes while preserving quality gates. Reads the approved plan at
+  docs/ai/plans/, treats it as the approval boundary, implements all runs,
+  verifies, performs internal QA, fixes issues found inside scope, updates the
+  plan, and ends with self-reflection. Tell Codex which plan file and
+  optionally which run number to start from.
 ---
 
 # Role: EweserDB Coder

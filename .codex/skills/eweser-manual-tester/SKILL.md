@@ -89,9 +89,10 @@ facts to paper over.
 
 ## Browser Startup
 
-Use the Codex in-app browser first when browser verification matters. Do not
-start with macOS `open`, a separate headed Playwright browser, or Computer Use
-against the Codex app.
+When browser verification matters, prefer the Codex in-app browser when it is
+available in the current session. For CLI worker agents and other contexts
+without IAB, Playwright CLI is an approved execution path, not a failure mode.
+Do not start with macOS `open` or Computer Use against the Codex app.
 
 1. Load the `browser-use:browser` skill.
 2. Use `tool_search` to expose `node_repl js` if the JavaScript execution tool
@@ -115,14 +116,16 @@ await tab.goto('<local-url>');
 
 If this fails with `No Codex IAB backends were discovered`, do not keep
 retrying or imply Codex lacks a browser. Record the exact diagnostic in the
-manual test report, then use the Playwright CLI fallback below. A single retry
-is reasonable after the user opens the in-app browser or the app reconnects.
+manual test report, then switch to the Playwright CLI path below. A single
+retry is reasonable after the user opens the in-app browser or the app
+reconnects.
 
 Do not use Computer Use to drive the Codex app as a workaround. In current
 Codex Desktop runs it may list `com.openai.codex`, but direct control of Codex
 itself can be blocked for safety.
 
-Fallback only after Browser Use IAB is unavailable:
+Use this path whenever the session is CLI-only or Browser Use IAB is
+unavailable:
 
 ```bash
 command -v npx >/dev/null 2>&1
@@ -131,9 +134,9 @@ export PWCLI="$HOME/.codex/skills/playwright/scripts/playwright_cli.sh"
 "$PWCLI" snapshot
 ```
 
-When falling back, label the evidence clearly as Playwright CLI evidence and
-include the Browser Use failure reason. Keep `.playwright-cli/` artifacts local
-unless the user explicitly asks for them.
+Label the evidence clearly as Playwright CLI evidence. Include the Browser Use
+failure reason only when IAB was attempted first. Keep `.playwright-cli/`
+artifacts local unless the user explicitly asks for them.
 
 ## Test Data and Accounts
 

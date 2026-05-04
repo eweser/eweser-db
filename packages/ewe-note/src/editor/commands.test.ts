@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { Editor } from '@tiptap/core';
 import {
   EDITOR_COMMANDS,
@@ -76,5 +76,24 @@ describe('editor command registry', () => {
       JSON.stringify({ rows: 3, cols: 2, withHeaderRow: true }),
       'run',
     ]);
+  });
+
+  it('routes link commands through the editor context when available', () => {
+    const requestLink = vi.fn();
+    const editor = {
+      getAttributes: () => ({ href: 'wiki://Existing Note' }),
+    } as unknown as Editor;
+
+    getCommandById('link')?.execute(editor, { requestLink });
+    getCommandById('external-link')?.execute(editor, { requestLink });
+
+    expect(requestLink).toHaveBeenNthCalledWith(1, {
+      kind: 'link',
+      href: 'wiki://Existing Note',
+    });
+    expect(requestLink).toHaveBeenNthCalledWith(2, {
+      kind: 'external-link',
+      href: 'wiki://Existing Note',
+    });
   });
 });

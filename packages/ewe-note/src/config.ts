@@ -34,7 +34,7 @@ export function resolveAuthServerUrl(
   origin?: string
 ) {
   const defaultAuthServer = import.meta.env.DEV
-    ? 'http://localhost:38180'
+    ? 'http://localhost:38101'
     : '/';
 
   return stripTrailingSlash(

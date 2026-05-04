@@ -22,7 +22,6 @@ body,
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  contain: layout;
 }
 
 .editor-view {
@@ -30,7 +29,6 @@ body,
   max-width: 100%;
   flex: 1;
   box-sizing: border-box;
-  contain: layout;
 }
 
 .ProseMirror {
@@ -39,7 +37,7 @@ body,
   overflow-x: hidden !important;
   box-sizing: border-box !important;
   position: relative !important;
-  min-height: 45vh;
+  min-height: min(60vh, calc(100dvh - 15rem));
   box-sizing: border-box !important;
 }
 
@@ -49,8 +47,8 @@ body,
 
 .tiptap-prosemirror {
   color: var(--foreground);
-  font-size: 1rem;
-  line-height: 1.7;
+  font-size: 1.06rem;
+  line-height: 1.72;
 }
 
 .tiptap-prosemirror h1,
@@ -208,11 +206,8 @@ body,
     border-radius: 0.75rem;
   }
 
-  .editor-bubble-menu {
-    left: 50% !important;
-    top: auto !important;
-    bottom: 1rem;
-    transform: translateX(-50%) !important;
+  .source-mode-editor {
+    border-radius: 1.25rem;
   }
 }
 
@@ -273,32 +268,32 @@ body,
 }
 
 .dark {
-  --background: hsl(0 0% 0%);
-  --foreground: hsl(0 0% 95%);
-  --card: hsl(0 0% 4%);
-  --card-foreground: hsl(0 0% 95%);
-  --popover: hsl(0 0% 4%);
-  --popover-foreground: hsl(0 0% 95%);
-  --primary: hsl(30 25% 50%);
+  --background: hsl(40 9% 7%);
+  --foreground: hsl(38 18% 92%);
+  --card: hsl(42 8% 9%);
+  --card-foreground: hsl(38 18% 92%);
+  --popover: hsl(42 8% 10%);
+  --popover-foreground: hsl(38 18% 92%);
+  --primary: hsl(31 45% 62%);
   --primary-foreground: hsl(45 30% 96%);
   --secondary: hsl(22 35% 40%);
   --secondary-foreground: hsl(22 60% 90%);
-  --muted: hsl(0 0% 12%);
-  --muted-foreground: hsl(0 0% 60%);
-  --accent: hsl(0 0% 12%);
-  --accent-foreground: hsl(0 0% 95%);
+  --muted: hsl(40 8% 14%);
+  --muted-foreground: hsl(36 9% 68%);
+  --accent: hsl(40 8% 15%);
+  --accent-foreground: hsl(38 18% 92%);
   --destructive: hsl(0 63% 31%);
   --destructive-foreground: hsl(210 40% 98%);
-  --border: hsl(0 0% 14%);
-  --input: hsl(0 0% 14%);
-  --ring: hsl(0 0% 70%);
-  --sidebar-background: hsl(0 0% 5%);
-  --sidebar-foreground: hsl(0 0% 88%);
-  --sidebar-primary: hsl(224 76% 50%);
-  --sidebar-primary-foreground: hsl(0 0% 100%);
-  --sidebar-accent: hsl(0 0% 10%);
-  --sidebar-accent-foreground: hsl(0 0% 88%);
-  --sidebar-border: hsl(0 0% 10%);
+  --border: hsl(40 8% 18%);
+  --input: hsl(40 8% 18%);
+  --ring: hsl(38 18% 82%);
+  --sidebar-background: hsl(42 8% 10%);
+  --sidebar-foreground: hsl(38 14% 82%);
+  --sidebar-primary: hsl(31 45% 62%);
+  --sidebar-primary-foreground: hsl(40 9% 7%);
+  --sidebar-accent: hsl(42 8% 15%);
+  --sidebar-accent-foreground: hsl(38 18% 92%);
+  --sidebar-border: hsl(40 8% 18%);
   --sidebar-ring: hsl(217 91% 60%);
 }
 
@@ -375,8 +370,8 @@ body,
 
 .editor-bubble-menu,
 .editor-slash-menu {
-  animation: editor-float-in 120ms cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: transform, opacity;
+  animation: editor-fade-in 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity;
 }
 
 .editor-bubble-menu {
@@ -387,13 +382,11 @@ body,
   backdrop-filter: blur(6px);
 }
 
-@keyframes editor-float-in {
+@keyframes editor-fade-in {
   from {
     opacity: 0;
-    transform: translateY(-2px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }

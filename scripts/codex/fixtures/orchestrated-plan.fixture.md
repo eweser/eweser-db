@@ -15,8 +15,9 @@ orchestration:
 runs:
   - id: docs-run
     title: Update docs
-    agent: eweser-code
+    agent: eweser-coder
     model: fast
+    ui: false
     parallel: true
     dependsOn: []
     writeScope:
@@ -25,13 +26,16 @@ runs:
       - npm run format:check
     changeset: no
   - id: scripts-run
-    title: Update script fixture
-    agent: eweser-code
+    title: Update app shell
+    agent: eweser-coder
     model: fast
-    parallel: true
-    dependsOn: []
+    ui: true
+    browserCheckpoint: focused
+    parallel: false
+    dependsOn:
+      - docs-run
     writeScope:
-      - scripts/codex/fixtures/**
+      - packages/app/src/**
     tests:
       - node --version
     changeset: no

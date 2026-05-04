@@ -71,6 +71,8 @@ include:
 - Assumptions / open questions
 - Runs with id, title, files, steps, tests, verification, dependencies, model
   tier, and risk level
+- For orchestrated UI runs, explicit `ui: true | false` classification and the
+  intended browser follow-up depth (`focused`, `full`, or `none`)
 - Run order and manual-test handoff expectations when the work is user-visible
   or crosses app/API/MCP behavior
 - Stop conditions

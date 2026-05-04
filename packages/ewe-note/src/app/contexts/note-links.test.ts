@@ -5,6 +5,7 @@ import {
   linkUnlinkedMentionInMarkdown,
   normalizeWikiTarget,
 } from './note-links';
+import { readFeatureVaultFixture } from '../../editor/obsidian-feature-fixtures';
 
 describe('note link extraction', () => {
   it('extracts canonical wiki links and TipTap wiki href markdown', () => {
@@ -86,6 +87,53 @@ describe('note link extraction', () => {
     ]);
   });
 
+  it('extracts fixture links, aliases, heading refs, block refs, and missing targets', () => {
+    const links = extractWikiLinkTargets(
+      readFeatureVaultFixture('06 Links Navigation Edge Cases.md')
+    );
+
+    expect(links).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          target: 'Projects/Overview',
+          raw: '[[Projects/Overview]]',
+        }),
+        expect.objectContaining({
+          target: 'Folder Cases/Alias Collision',
+          alias: 'Overview',
+          raw: '[[Folder Cases/Alias Collision|Overview]]',
+        }),
+        expect.objectContaining({
+          target: '05 Link Targets',
+          heading: 'Canonical Heading Target',
+          raw: '[[05 Link Targets#Canonical Heading Target]]',
+        }),
+        expect.objectContaining({
+          target: '05 Link Targets',
+          blockRef: 'detail-block',
+          alias: 'Detailed block jump',
+          raw: '[[05 Link Targets#^detail-block|Detailed block jump]]',
+        }),
+        expect.objectContaining({
+          target: 'Missing Feature Note',
+          raw: '[[Missing Feature Note]]',
+        }),
+      ])
+    );
+  });
+
+  it('keeps fixture embeds out of outgoing note links', () => {
+    const links = extractWikiLinkTargets(
+      readFeatureVaultFixture('07 Embeds and Media.md')
+    );
+
+    expect(links.map((link) => link.target)).not.toContain('Projects/Overview');
+    expect(links.map((link) => link.target)).not.toContain('05 Link Targets');
+    expect(links.map((link) => link.target)).toContain(
+      'Attachments/reference-sheet.pdf'
+    );
+  });
+
   it('finds unlinked mention targets from plain text content', () => {
     const candidates = new Map([
       ['artificial intelligence', 'note-1'],
@@ -127,5 +175,23 @@ describe('note link extraction', () => {
     ).toBe(
       '`Project Plan` already linked as [[Project Plan]] and [Project Plan](wiki://Project%20Plan).\nPlain [[Project Plan]] should convert.'
     );
+  });
+
+  it('finds fixture unlinked mentions without consuming existing links', () => {
+    const plainMention = 'Feature Vault Compass';
+    const markdown =
+      readFeatureVaultFixture('08 Search and Discovery.md') +
+      `\n\nPlain parity discovery note: ${plainMention}.`;
+
+    const candidates = new Map([['feature vault compass', 'note-compass']]);
+
+    expect(extractUnlinkedMentions(markdown, candidates, new Set())).toEqual([
+      {
+        noteId: 'note-compass',
+        mention: 'feature vault compass',
+        start: markdown.lastIndexOf(plainMention),
+        end: markdown.lastIndexOf(plainMention) + plainMention.length,
+      },
+    ]);
   });
 });

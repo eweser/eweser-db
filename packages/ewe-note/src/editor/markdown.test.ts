@@ -9,6 +9,11 @@ import {
 } from './markdown';
 import { markdownToOfm, ofmToMarkdown } from '../extensions/ofm-serializer';
 import { parseCalloutHeader } from '../extensions/callout';
+import {
+  FEATURE_VAULT_MATRIX,
+  readFeatureVaultFixture,
+  selectFeatureVaultFixtures,
+} from './obsidian-feature-fixtures';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -30,6 +35,11 @@ const PARITY_MATRIX = JSON.parse(readFileSync(PARITY_MATRIX_PATH, 'utf-8')) as {
   version: string;
   fixtures: ParityFixture[];
 };
+
+const FEATURE_MARKDOWN_FIXTURES = selectFeatureVaultFixtures({
+  categoryId: 'markdown-syntax',
+  handling: ['render-edit', 'preserve-round-trip'],
+}).filter((fixture) => fixture.assertions);
 
 function readFixture(fileName: string): string {
   return readFileSync(join(PARITY_FIXTURE_DIR, fileName), 'utf-8');
@@ -274,6 +284,11 @@ describe('TipTap markdown bridge', () => {
     expect(PARITY_MATRIX.fixtures.length).toBeGreaterThanOrEqual(4);
   });
 
+  it('loads the feature-vault matrix contract for markdown parity', () => {
+    expect(FEATURE_VAULT_MATRIX.version).toBe('1.0.0');
+    expect(FEATURE_MARKDOWN_FIXTURES.length).toBeGreaterThanOrEqual(4);
+  });
+
   it('preserves custom callout types instead of coercing them', () => {
     expect(parseCalloutHeader('> [!project-risk]- Review')?.type).toBe(
       'project-risk'
@@ -302,6 +317,28 @@ describe('TipTap markdown bridge', () => {
       }
 
       if (preserveExact) {
+        expect(normalizeOfmText(roundTrip)).toBe(normalizeOfmText(source));
+      }
+    }
+  );
+
+  it.each(FEATURE_MARKDOWN_FIXTURES)(
+    '$relativePath: preserves feature-vault markdown parity expectations',
+    ({ relativePath, assertions }) => {
+      const source = readFeatureVaultFixture(relativePath);
+      const editorSource = ofmToMarkdown(source);
+      const editorHtml = markdownToEditorHtml(source);
+      const roundTrip = markdownToOfm(editorSource);
+
+      for (const fragment of assertions?.requiredSourceFragments ?? []) {
+        expect(roundTrip).toContain(fragment);
+      }
+
+      for (const fragment of assertions?.requiredEditorFragments ?? []) {
+        expect(editorHtml).toContain(fragment);
+      }
+
+      if (assertions?.preserveNormalizedRoundTrip) {
         expect(normalizeOfmText(roundTrip)).toBe(normalizeOfmText(source));
       }
     }

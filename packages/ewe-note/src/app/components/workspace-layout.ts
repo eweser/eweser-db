@@ -35,18 +35,11 @@ export const WORKSPACE_SHORTCUT_LABELS: Record<WorkspaceMode, string> = {
   4: 'Ctrl/Cmd+4',
 };
 
-export const WORKSPACE_MODE_LABELS: Record<WorkspaceMode, string> = {
-  1: 'Write',
-  2: 'Browse',
-  3: 'Organize',
-  4: 'Inspect',
-};
-
-export const WORKSPACE_MODE_DESCRIPTIONS: Record<WorkspaceMode, string> = {
-  1: 'Editor only',
-  2: 'Notes and editor',
-  3: 'Folders, notes, and editor',
-  4: 'Open note info',
+export const WORKSPACE_MODE_ARIA_LABELS: Record<WorkspaceMode, string> = {
+  1: 'Editor',
+  2: 'Recent notes',
+  3: 'Folders',
+  4: 'Metadata',
 };
 
 export function clampWorkspaceMode(value: number): WorkspaceMode {
@@ -165,16 +158,13 @@ export function shouldIgnoreWorkspaceHotkeyTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false;
 
   const tagName = target.tagName;
-  if (
-    tagName === 'INPUT' ||
-    tagName === 'TEXTAREA' ||
-    tagName === 'SELECT' ||
-    target.isContentEditable
-  ) {
+  if (tagName === 'INPUT' || tagName === 'SELECT') {
     return true;
   }
 
-  return Boolean(target.closest('[contenteditable="true"], [role="textbox"]'));
+  return Boolean(
+    target.closest('input, select, [data-workspace-hotkeys="ignore"]')
+  );
 }
 
 export function readStoredWorkspaceMode() {
