@@ -17,6 +17,10 @@ const PARITY_FIXTURE_VAULT = join(
   __dirname,
   '../../test-fixtures/obsidian-parity'
 );
+const FEATURE_FIXTURE_VAULT = join(
+  __dirname,
+  '../../test-fixtures/obsidian-feature-vault'
+);
 
 describe('generateNoteId', () => {
   it('produces a 16-character hex string', () => {
@@ -202,5 +206,88 @@ describe('parity fixture CLI contract', () => {
     expect(real?.text).toContain('![[test-image.png]]');
     expect(real?.text).toContain('%%runtime note%%');
     expect(real?.text).toContain('[^shared]');
+  });
+});
+
+describe('feature vault file preservation contract', () => {
+  let manifest: VaultImportManifest;
+
+  it('imports the feature vault with preserved file inventory metadata', async () => {
+    manifest = await importVault({
+      vaultPath: FEATURE_FIXTURE_VAULT,
+      vaultName: 'feature-vault',
+      dryRun: true,
+    });
+
+    expect(manifest.notes.length).toBeGreaterThan(10);
+    expect(manifest.files.length).toBeGreaterThanOrEqual(20);
+    expect(manifest.attachments.length).toBeLessThan(manifest.files.length);
+  });
+
+  it('preserves .canvas and .base files in the manifest files inventory', async () => {
+    manifest ??= await importVault({
+      vaultPath: FEATURE_FIXTURE_VAULT,
+      vaultName: 'feature-vault',
+      dryRun: true,
+    });
+
+    const canvas = manifest.files.find(
+      (file) => file.sourcePath === 'Canvas/Feature Map.canvas'
+    );
+    const base = manifest.files.find(
+      (file) => file.sourcePath === 'Bases/Projects.base'
+    );
+
+    expect(canvas).toBeDefined();
+    expect(canvas?.fileCategory).toBe('canvas');
+    expect(canvas?.mimeType).toBe('application/json');
+    expect(canvas?.contentHash).toHaveLength(64);
+
+    expect(base).toBeDefined();
+    expect(base?.fileCategory).toBe('base');
+    expect(base?.mimeType).toBe('text/yaml');
+    expect(base?.contentHash).toHaveLength(64);
+  });
+
+  it('expands preserved attachment formats to Obsidian fixture media types', async () => {
+    manifest ??= await importVault({
+      vaultPath: FEATURE_FIXTURE_VAULT,
+      vaultName: 'feature-vault',
+      dryRun: true,
+    });
+
+    const byPath = new Map(
+      manifest.files.map((file) => [file.sourcePath, file])
+    );
+
+    expect(byPath.get('Attachments/cover.avif')?.fileCategory).toBe('image');
+    expect(byPath.get('Attachments/scan.bmp')?.fileCategory).toBe('image');
+    expect(byPath.get('Attachments/archive.m4a')?.fileCategory).toBe('audio');
+    expect(byPath.get('Attachments/field-recording.flac')?.fileCategory).toBe(
+      'audio'
+    );
+    expect(byPath.get('Attachments/mobile-capture.3gp')?.fileCategory).toBe(
+      'video'
+    );
+    expect(byPath.get('Attachments/clip.mkv')?.fileCategory).toBe('video');
+    expect(byPath.get('Attachments/overview.webm')?.fileCategory).toBe('video');
+    expect(
+      manifest.attachments.some(
+        (file) => file.sourcePath === 'Canvas/Feature Map.canvas'
+      )
+    ).toBe(false);
+  });
+
+  it('explicitly skips .obsidian config paths from the preserved inventory', async () => {
+    manifest ??= await importVault({
+      vaultPath: FEATURE_FIXTURE_VAULT,
+      vaultName: 'feature-vault',
+      dryRun: true,
+    });
+
+    expect(
+      manifest.files.every((file) => !file.sourcePath.startsWith('.obsidian'))
+    ).toBe(true);
+    expect(manifest.skippedPaths).toContain('.obsidian');
   });
 });

@@ -4,13 +4,18 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { mkdtemp, writeFile, rm, readFile, mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+import { createHash } from 'node:crypto';
 import { VaultSyncEngine } from './vault-sync';
-import { serializeNote } from './export-vault';
-import type { ImportedNote } from './import-vault';
+import { exportVault, serializeNote } from './export-vault';
+import { importVault, type ImportedNote } from './import-vault';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 void __filename; // suppress unused warning
+const FEATURE_FIXTURE_VAULT = join(
+  __dirname,
+  '../../test-fixtures/obsidian-feature-vault'
+);
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -18,6 +23,10 @@ void __filename; // suppress unused warning
 
 async function createTempVault(): Promise<string> {
   return mkdtemp(join(tmpdir(), 'vault-sync-test-'));
+}
+
+function sha256(content: Buffer): string {
+  return createHash('sha256').update(content).digest('hex');
 }
 
 function makeNote(overrides: Partial<ImportedNote> = {}): ImportedNote {
@@ -225,5 +234,56 @@ describe('VaultSyncEngine', () => {
 
     const note = Object.values(engine['state'].notes)[0];
     expect(note?.sourcePath).toBe('A/B/Deep.md');
+  });
+});
+
+describe('exportVault', () => {
+  it('writes preserved non-note vault files byte-for-byte during export', async () => {
+    const manifest = await importVault({
+      vaultPath: FEATURE_FIXTURE_VAULT,
+      vaultName: 'feature-vault',
+      dryRun: true,
+    });
+    const tempDir = await createTempVault();
+    const manifestPath = join(tempDir, 'manifest.json');
+    const outputDir = join(tempDir, 'exported-vault');
+
+    try {
+      await writeFile(manifestPath, JSON.stringify(manifest, null, 2), 'utf-8');
+
+      const result = await exportVault({
+        manifestPath,
+        outputPath: outputDir,
+      });
+
+      expect(result.notes.length).toBe(manifest.notes.length);
+      expect(result.files.length).toBe(manifest.files.length);
+
+      const exportedCanvas = await readFile(
+        join(outputDir, 'Canvas', 'Feature Map.canvas')
+      );
+      const exportedBase = await readFile(
+        join(outputDir, 'Bases', 'Projects.base')
+      );
+      const exportedAvif = await readFile(
+        join(outputDir, 'Attachments', 'cover.avif')
+      );
+
+      const sourceCanvas = await readFile(
+        join(FEATURE_FIXTURE_VAULT, 'Canvas', 'Feature Map.canvas')
+      );
+      const sourceBase = await readFile(
+        join(FEATURE_FIXTURE_VAULT, 'Bases', 'Projects.base')
+      );
+      const sourceAvif = await readFile(
+        join(FEATURE_FIXTURE_VAULT, 'Attachments', 'cover.avif')
+      );
+
+      expect(sha256(exportedCanvas)).toBe(sha256(sourceCanvas));
+      expect(sha256(exportedBase)).toBe(sha256(sourceBase));
+      expect(sha256(exportedAvif)).toBe(sha256(sourceAvif));
+    } finally {
+      await rm(tempDir, { recursive: true, force: true });
+    }
   });
 });

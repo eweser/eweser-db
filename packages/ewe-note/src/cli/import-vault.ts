@@ -1,28 +1,13 @@
 #!/usr/bin/env node
 /**
  * Purpose: Obsidian vault import manifest CLI and parser.
- * Exports: import types, generateNoteId, processNoteFile, and import helpers.
- * Touches: User markdown, frontmatter, tags, wiki links, and attachments.
+ * Exports: import types, generateNoteId, processNoteFile, processVaultFile,
+ * and import helpers.
+ * Touches: User markdown, frontmatter, tags, wiki links, attachments,
+ * Canvas/Bases files, and manifest inventory metadata.
  * Read before editing: packages/ewe-note/src/INDEX.md.
  */
 /* eslint-disable no-console -- CLI tool: console is the correct output mechanism */
-/**
- * Obsidian Vault Import CLI
- *
- * Scans an Obsidian vault folder and outputs a JSON manifest of notes
- * ready to be loaded into EweserDB rooms.
- *
- * Usage:
- *   npx tsx packages/ewe-note/src/cli/import-vault.ts \
- *     --vault /path/to/vault \
- *     --name "My Vault" \
- *     [--output ./vault-import.json] \
- *     [--dry-run]
- *
- * NOTE: EweserDB uses IndexedDB (browser environment) for storage.
- * This CLI produces a JSON manifest; the app-level import reads this
- * manifest and creates Yjs documents in the browser session.
- */
 
 import { readFile, readdir, stat, writeFile } from 'node:fs/promises';
 import { join, relative, extname, basename } from 'node:path';
@@ -56,7 +41,16 @@ export interface ImportedNote {
   attachmentRefs: string[];
 }
 
-export interface ImportedAttachment {
+export type VaultFileCategory =
+  | 'image'
+  | 'audio'
+  | 'video'
+  | 'document'
+  | 'canvas'
+  | 'base'
+  | 'binary';
+
+export interface ImportedVaultFile {
   /** Relative path within the vault */
   sourcePath: string;
   /** File name */
@@ -65,14 +59,38 @@ export interface ImportedAttachment {
   size: number;
   /** MIME type guessed from extension */
   mimeType: string;
+  /** Broad file family for import/export routing */
+  fileCategory: VaultFileCategory;
+  /** SHA-256 content hash for round-trip verification */
+  contentHash: string;
+  /** Absolute source path used for byte-for-byte export when available */
+  copySourcePath?: string;
+  /** Optional inline bytes for manifests that embed file content */
+  contentBase64?: string;
 }
+
+export type ImportedAttachment = ImportedVaultFile;
 
 export interface VaultImportManifest {
   vaultName: string;
   vaultPath: string;
   importedAt: string;
   notes: ImportedNote[];
+  /** Backward-compatible subset for attachment-oriented consumers */
   attachments: ImportedAttachment[];
+  /** Full preserved vault inventory for non-note files */
+  files: ImportedVaultFile[];
+  skippedPaths: string[];
+}
+
+interface VaultFileSpec {
+  mimeType: string;
+  fileCategory: VaultFileCategory;
+}
+
+interface ScanDirectoryResult {
+  mdFiles: string[];
+  preservedFiles: string[];
   skippedPaths: string[];
 }
 
@@ -82,33 +100,46 @@ export interface VaultImportManifest {
 
 const IGNORED_DIRS = new Set(['.obsidian', '.trash', '.git', 'node_modules']);
 const NOTE_EXTENSION = '.md';
-const ATTACHMENT_EXTENSIONS = new Set([
-  '.png',
-  '.jpg',
-  '.jpeg',
-  '.gif',
-  '.webp',
-  '.svg',
-  '.pdf',
-  '.mp3',
-  '.mp4',
-  '.wav',
-  '.ogg',
+
+const VAULT_FILE_SPECS: Record<string, VaultFileSpec> = {
+  '.png': { mimeType: 'image/png', fileCategory: 'image' },
+  '.jpg': { mimeType: 'image/jpeg', fileCategory: 'image' },
+  '.jpeg': { mimeType: 'image/jpeg', fileCategory: 'image' },
+  '.gif': { mimeType: 'image/gif', fileCategory: 'image' },
+  '.webp': { mimeType: 'image/webp', fileCategory: 'image' },
+  '.svg': { mimeType: 'image/svg+xml', fileCategory: 'image' },
+  '.avif': { mimeType: 'image/avif', fileCategory: 'image' },
+  '.bmp': { mimeType: 'image/bmp', fileCategory: 'image' },
+  '.pdf': { mimeType: 'application/pdf', fileCategory: 'document' },
+  '.mp3': { mimeType: 'audio/mpeg', fileCategory: 'audio' },
+  '.wav': { mimeType: 'audio/wav', fileCategory: 'audio' },
+  '.ogg': { mimeType: 'audio/ogg', fileCategory: 'audio' },
+  '.flac': { mimeType: 'audio/flac', fileCategory: 'audio' },
+  '.m4a': { mimeType: 'audio/mp4', fileCategory: 'audio' },
+  '.mp4': { mimeType: 'video/mp4', fileCategory: 'video' },
+  '.webm': { mimeType: 'video/webm', fileCategory: 'video' },
+  '.ogv': { mimeType: 'video/ogg', fileCategory: 'video' },
+  '.3gp': { mimeType: 'video/3gpp', fileCategory: 'video' },
+  '.mkv': { mimeType: 'video/x-matroska', fileCategory: 'video' },
+  '.mov': { mimeType: 'video/quicktime', fileCategory: 'video' },
+  '.canvas': { mimeType: 'application/json', fileCategory: 'canvas' },
+  '.base': { mimeType: 'text/yaml', fileCategory: 'base' },
+};
+
+const ATTACHMENT_CATEGORIES = new Set<VaultFileCategory>([
+  'image',
+  'audio',
+  'video',
+  'document',
 ]);
 
-const MIME_MAP: Record<string, string> = {
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.gif': 'image/gif',
-  '.webp': 'image/webp',
-  '.svg': 'image/svg+xml',
-  '.pdf': 'application/pdf',
-  '.mp3': 'audio/mpeg',
-  '.mp4': 'video/mp4',
-  '.wav': 'audio/wav',
-  '.ogg': 'audio/ogg',
-};
+const ATTACHMENT_EXTENSIONS = new Set(
+  Object.entries(VAULT_FILE_SPECS)
+    .filter(([, spec]) => ATTACHMENT_CATEGORIES.has(spec.fileCategory))
+    .map(([ext]) => ext)
+);
+
+const PRESERVED_FILE_EXTENSIONS = new Set(Object.keys(VAULT_FILE_SPECS));
 
 // ---------------------------------------------------------------------------
 // ID generation
@@ -126,16 +157,36 @@ export function generateNoteId(vaultName: string, sourcePath: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function toVaultRelativePath(rootPath: string, filePath: string): string {
+  return relative(rootPath, filePath).replace(/\\/g, '/');
+}
+
+function getVaultFileSpec(filePath: string): VaultFileSpec | undefined {
+  return VAULT_FILE_SPECS[extname(filePath).toLowerCase()];
+}
+
+function isImportedAttachment(file: ImportedVaultFile): boolean {
+  return ATTACHMENT_CATEGORIES.has(file.fileCategory);
+}
+
+function hashBuffer(buffer: Buffer): string {
+  return createHash('sha256').update(buffer).digest('hex');
+}
+
+// ---------------------------------------------------------------------------
 // File scanning
 // ---------------------------------------------------------------------------
 
 async function scanDirectory(
   dir: string,
-  _vaultRoot: string
-): Promise<{ mdFiles: string[]; attachmentFiles: string[] }> {
+  vaultRoot: string
+): Promise<ScanDirectoryResult> {
   const mdFiles: string[] = [];
-  const attachmentFiles: string[] = [];
-  const skipped: string[] = [];
+  const preservedFiles: string[] = [];
+  const skippedPaths: string[] = [];
 
   async function recurse(currentDir: string): Promise<void> {
     let entries: string[];
@@ -146,35 +197,40 @@ async function scanDirectory(
     }
 
     for (const entry of entries) {
-      if (entry.startsWith('.') && IGNORED_DIRS.has(entry)) {
-        skipped.push(join(currentDir, entry));
+      const fullPath = join(currentDir, entry);
+      const relPath = toVaultRelativePath(vaultRoot, fullPath);
+
+      if (IGNORED_DIRS.has(entry)) {
+        skippedPaths.push(relPath);
         continue;
       }
 
-      const fullPath = join(currentDir, entry);
       let fileStat;
       try {
         fileStat = await stat(fullPath);
       } catch {
+        skippedPaths.push(relPath);
         continue;
       }
 
       if (fileStat.isDirectory()) {
         await recurse(fullPath);
+        continue;
+      }
+
+      const ext = extname(entry).toLowerCase();
+      if (ext === NOTE_EXTENSION) {
+        mdFiles.push(fullPath);
+      } else if (PRESERVED_FILE_EXTENSIONS.has(ext)) {
+        preservedFiles.push(fullPath);
       } else {
-        const ext = extname(entry).toLowerCase();
-        if (ext === NOTE_EXTENSION) {
-          mdFiles.push(fullPath);
-        } else if (ATTACHMENT_EXTENSIONS.has(ext)) {
-          attachmentFiles.push(fullPath);
-        }
+        skippedPaths.push(relPath);
       }
     }
   }
 
   await recurse(dir);
-  void skipped; // Info for future verbose logging
-  return { mdFiles, attachmentFiles };
+  return { mdFiles, preservedFiles, skippedPaths };
 }
 
 // ---------------------------------------------------------------------------
@@ -187,16 +243,15 @@ export async function processNoteFile(
   vaultName: string
 ): Promise<ImportedNote> {
   const rawContent = await readFile(filePath, 'utf-8');
-  const relPath = relative(vaultRoot, filePath);
+  const relPath = toVaultRelativePath(vaultRoot, filePath);
   const { frontmatter, content } = parseFrontmatter(rawContent);
 
   const tags = extractTags(content);
-  // Also include tags from frontmatter
   const fmTags = frontmatter.tags;
   if (Array.isArray(fmTags)) {
-    for (const t of fmTags) {
-      if (typeof t === 'string' && !tags.includes(t)) {
-        tags.push(t);
+    for (const tag of fmTags) {
+      if (typeof tag === 'string' && !tags.includes(tag)) {
+        tags.push(tag);
       }
     }
   }
@@ -205,19 +260,17 @@ export async function processNoteFile(
   const aliases: string[] = [];
   const fmAliases = frontmatter.aliases;
   if (Array.isArray(fmAliases)) {
-    for (const a of fmAliases) {
-      if (typeof a === 'string') aliases.push(a);
+    for (const alias of fmAliases) {
+      if (typeof alias === 'string') aliases.push(alias);
     }
   }
 
-  // Collect attachment references from embeds
   const attachmentRefs: string[] = [];
   for (const link of wikiLinks) {
-    if (link.isEmbed && link.target) {
-      const ext = extname(link.target).toLowerCase();
-      if (ATTACHMENT_EXTENSIONS.has(ext)) {
-        attachmentRefs.push(link.target);
-      }
+    if (!link.isEmbed || !link.target) continue;
+    const ext = extname(link.target).toLowerCase();
+    if (ATTACHMENT_EXTENSIONS.has(ext)) {
+      attachmentRefs.push(link.target);
     }
   }
 
@@ -245,21 +298,26 @@ export async function processNoteFile(
 }
 
 // ---------------------------------------------------------------------------
-// Attachment processing
+// Non-note file processing
 // ---------------------------------------------------------------------------
 
-async function processAttachmentFile(
+export async function processVaultFile(
   filePath: string,
   vaultRoot: string
-): Promise<ImportedAttachment> {
+): Promise<ImportedVaultFile> {
+  const relPath = toVaultRelativePath(vaultRoot, filePath);
+  const spec = getVaultFileSpec(filePath);
+  const bytes = await readFile(filePath);
   const fileStat = await stat(filePath);
-  const relPath = relative(vaultRoot, filePath);
-  const ext = extname(filePath).toLowerCase();
+
   return {
     sourcePath: relPath,
     name: basename(filePath),
     size: fileStat.size,
-    mimeType: MIME_MAP[ext] ?? 'application/octet-stream',
+    mimeType: spec?.mimeType ?? 'application/octet-stream',
+    fileCategory: spec?.fileCategory ?? 'binary',
+    contentHash: hashBuffer(bytes),
+    copySourcePath: filePath,
   };
 }
 
@@ -276,38 +334,36 @@ export async function importVault(options: {
   const { vaultPath, vaultName, outputPath, dryRun = false } = options;
 
   console.log(`Scanning vault: ${vaultPath}`);
-  const { mdFiles, attachmentFiles } = await scanDirectory(
-    vaultPath,
-    vaultPath
-  );
+  const scanResult = await scanDirectory(vaultPath, vaultPath);
   console.log(
-    `Found ${mdFiles.length} notes, ${attachmentFiles.length} attachments`
+    `Found ${scanResult.mdFiles.length} notes, ${scanResult.preservedFiles.length} preserved files`
   );
 
   const notes: ImportedNote[] = [];
-  const skippedPaths: string[] = [];
+  const files: ImportedVaultFile[] = [];
+  const skippedPaths = [...scanResult.skippedPaths];
 
-  for (const filePath of mdFiles) {
+  for (const filePath of scanResult.mdFiles) {
     try {
-      const note = await processNoteFile(filePath, vaultPath, vaultName);
-      notes.push(note);
+      notes.push(await processNoteFile(filePath, vaultPath, vaultName));
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
       console.warn(`Skipping ${filePath}: ${errMsg}`);
-      skippedPaths.push(filePath);
+      skippedPaths.push(toVaultRelativePath(vaultPath, filePath));
     }
   }
 
-  const attachments: ImportedAttachment[] = [];
-  for (const filePath of attachmentFiles) {
+  for (const filePath of scanResult.preservedFiles) {
     try {
-      attachments.push(await processAttachmentFile(filePath, vaultPath));
+      files.push(await processVaultFile(filePath, vaultPath));
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      console.warn(`Skipping attachment ${filePath}: ${errMsg}`);
-      skippedPaths.push(filePath);
+      console.warn(`Skipping file ${filePath}: ${errMsg}`);
+      skippedPaths.push(toVaultRelativePath(vaultPath, filePath));
     }
   }
+
+  const attachments = files.filter(isImportedAttachment);
 
   const manifest: VaultImportManifest = {
     vaultName,
@@ -315,7 +371,8 @@ export async function importVault(options: {
     importedAt: new Date().toISOString(),
     notes,
     attachments,
-    skippedPaths,
+    files,
+    skippedPaths: [...new Set(skippedPaths)].sort(),
   };
 
   if (!dryRun && outputPath) {
@@ -324,11 +381,13 @@ export async function importVault(options: {
   }
 
   console.log(
-    `Import complete: ${notes.length} notes, ${attachments.length} attachments imported from vault "${vaultName}"`
+    `Import complete: ${notes.length} notes, ${files.length} preserved files imported from vault "${vaultName}"`
   );
 
-  if (skippedPaths.length > 0) {
-    console.warn(`Skipped ${skippedPaths.length} files due to errors`);
+  if (manifest.skippedPaths.length > 0) {
+    console.warn(
+      `Skipped ${manifest.skippedPaths.length} paths by policy or due to errors`
+    );
   }
 
   return manifest;
@@ -360,7 +419,6 @@ async function main(): Promise<void> {
   await importVault({ vaultPath, vaultName, outputPath, dryRun });
 }
 
-// Only run main when called directly (not in tests)
 if (process.argv[1] && process.argv[1].endsWith('import-vault.ts')) {
   main().catch((err) => {
     console.error('Import failed:', err);
