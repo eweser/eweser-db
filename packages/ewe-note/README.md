@@ -30,6 +30,26 @@ To run your own instance check out the /server readme at [eweser-db repo](https:
 - ✓ Optional room sync when auth and sync services are reachable
 - ✓ PWA install support in production builds
 
+## Obsidian Parity Fixtures
+
+The focused Markdown parity harness still lives under
+`packages/ewe-note/test-fixtures/obsidian-parity/`.
+
+The broader vault contract for current and future Obsidian parity work now
+lives in:
+
+- `packages/ewe-note/test-fixtures/obsidian-feature-vault/matrix.json`
+- `docs/ai/testing/ewe-note-obsidian-feature-parity-checklist.md`
+
+Treat `matrix.json` as the contract and the checklist as the manual QA guide.
+Keep the matrix honest. It distinguishes:
+
+- features EweNote should render and edit
+- features EweNote must preserve on import/export round trip
+- features that only need manual/browser validation today
+- explicit non-goals such as native Canvas, Bases, Graph, Publish, Sync, and
+  Obsidian CLI parity
+
 ## TODO
 
 - [ ] Enhanced user profile management
