@@ -18,7 +18,8 @@ Obsidian-compatible vault data with Ewe Note data shapes.
   entry point, inventory-only preflight, and conservative scrubbed-copy helper.
 - [`export-vault.ts`](./export-vault.ts): Manifest-to-vault export logic.
 - [`vault-sync.ts`](./vault-sync.ts): Local vault/state sync engine and
-  offline Eweser notes-room sync mode.
+  Eweser notes-room sync mode, including remote attachment upload/materialize
+  support through S3-compatible storage helpers.
 
 ## Children
 
@@ -31,6 +32,8 @@ Obsidian-compatible vault data with Ewe Note data shapes.
   files should preserve Obsidian-compatible meaning where possible.
 - CLI output should avoid printing private file contents unless explicitly
   requested by a command mode.
+- Device-local attachment paths are not canonical synced data; remote
+  attachment materialization must work from object storage metadata alone.
 
 ## Update Triggers
 

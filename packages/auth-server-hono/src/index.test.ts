@@ -35,6 +35,13 @@ vi.mock('./routes/access-grant.js', async () => {
   return { accessGrantRouter };
 });
 
+vi.mock('./routes/files.js', async () => {
+  const { Hono } = await import('hono');
+  const filesRouter = new Hono();
+  filesRouter.get('/health', (c) => c.json({ ok: true }));
+  return { filesRouter };
+});
+
 const { app } = await import('./index.js');
 
 describe('app health routes', () => {

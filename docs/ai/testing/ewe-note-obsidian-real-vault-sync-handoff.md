@@ -90,12 +90,13 @@ The biggest remaining product issue is attachment handling:
 
 - Current import/export can preserve attachment inventory and byte-for-byte
   exported preserved files.
-- EweNote does not yet have the object storage layer for cross-device binary
-  sync.
-- The S3-compatible bucket and bring-your-own-storage provider work is still
-  unimplemented.
-- Local filesystem attachment rendering/materialization is still needed before
-  a real vault can feel usable.
+- EweNote now has an S3-compatible object storage route/helper layer with
+  Railway Buckets as the first hosted provider target.
+- Remote attachment bytes can now be uploaded and later materialized back into
+  a mounted vault by `vault-sync.ts`, but this turn did not run a live Railway
+  credential smoke against the real scrubbed vault.
+- Provider-profile UX, self-hosted setup docs, and non-vault local cache/pin
+  behavior are still follow-up work.
 
 Relevant plans:
 
@@ -118,6 +119,7 @@ Ask the user for:
 - whether secret-like notes should be skipped, redacted, or allowed into a
   private/local-only room;
 - whether attachments should be counted only, copied locally, or uploaded;
-- which storage provider profile is approved, if any.
+- confirm the hosted provider path if it differs from the approved Railway
+  Buckets-first default.
 
 Until those answers exist, use synthetic fixtures only.

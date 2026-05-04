@@ -43,10 +43,12 @@ import {
 } from '@eweser/shared';
 import {
   Database,
+  downloadFile,
   type DocumentWithoutBase,
   type FileAttachment,
   type GetDocuments,
   type Note,
+  uploadFile,
 } from '@eweser/db';
 import {
   generateNoteId,
@@ -88,6 +90,7 @@ export type VaultSyncMode =
       vaultName: string;
       roomId: string;
       attachmentsRoomId: string;
+      remoteSync: boolean;
       authServer?: string;
       token?: string;
       debounceMs: number;
@@ -387,9 +390,12 @@ export function resolveVaultSyncMode(options: {
 
   const roomId = options.roomId?.trim();
   if (roomId) {
-    if (!offlineOnly) {
+    const hasRemoteConfig = Boolean(
+      options.authServer?.trim() && options.token?.trim()
+    );
+    if (!offlineOnly && !hasRemoteConfig) {
       throw new Error(
-        '--offline-only is required for Eweser room vault sync in this CLI pass.'
+        'Room sync without --offline-only requires both --auth-url and --token.'
       );
     }
 
@@ -400,6 +406,7 @@ export function resolveVaultSyncMode(options: {
       roomId,
       attachmentsRoomId:
         options.attachmentsRoomId?.trim() || `${roomId}-attachments`,
+      remoteSync: !offlineOnly,
       authServer: options.authServer?.trim() || undefined,
       token: options.token?.trim() || undefined,
       debounceMs,
@@ -638,6 +645,7 @@ export class EweserRoomVaultSyncEngine {
   private readonly vaultName: string;
   private readonly roomId: string;
   private readonly attachmentsRoomId: string;
+  private readonly remoteSync: boolean;
   private readonly authServer?: string;
   private readonly token?: string;
   private readonly debounceMs: number;
@@ -659,6 +667,7 @@ export class EweserRoomVaultSyncEngine {
     vaultName: string;
     roomId: string;
     attachmentsRoomId?: string;
+    remoteSync?: boolean;
     authServer?: string;
     token?: string;
     debounceMs?: number;
@@ -668,6 +677,7 @@ export class EweserRoomVaultSyncEngine {
     this.roomId = options.roomId;
     this.attachmentsRoomId =
       options.attachmentsRoomId ?? `${options.roomId}-attachments`;
+    this.remoteSync = options.remoteSync ?? false;
     this.authServer = options.authServer;
     this.token = options.token;
     this.debounceMs = options.debounceMs ?? 500;
@@ -678,7 +688,7 @@ export class EweserRoomVaultSyncEngine {
 
     this.db = new Database({
       ...(this.authServer ? { authServer: this.authServer } : {}),
-      providers: ['IndexedDB'],
+      providers: this.remoteSync ? ['IndexedDB', 'Hocuspocus'] : ['IndexedDB'],
       localStoragePolyfill: globalThis.localStorage ?? createMemoryStorage(),
       initialRooms: [
         {
@@ -697,14 +707,52 @@ export class EweserRoomVaultSyncEngine {
       this.db.accessGrantToken = this.token;
     }
 
-    const room = this.db.getRoom<Note>('notes', this.roomId);
-    await room.load({ loadRemote: false, awaitLoadRemote: false });
-    this.Notes = room.getDocuments();
-    const attachmentsRoom = this.db.getRoom<FileAttachment>(
+    let notesRoom = this.db.getRoom<Note>('notes', this.roomId);
+    let attachmentsRoom = this.db.getRoom<FileAttachment>(
       'fileAttachments',
       this.attachmentsRoomId
     );
-    await attachmentsRoom.load({ loadRemote: false, awaitLoadRemote: false });
+
+    if (this.remoteSync) {
+      this.db.useSync = true;
+      const synced = await this.db.syncRegistry();
+      if (!synced) {
+        throw new Error('Failed to sync registry for remote vault sync.');
+      }
+
+      const syncedNotesRoom = this.db.registry.find(
+        (room) => room.id === this.roomId && room.collectionKey === 'notes'
+      );
+      const syncedAttachmentsRoom = this.db.registry.find(
+        (room) =>
+          room.id === this.attachmentsRoomId &&
+          room.collectionKey === 'fileAttachments'
+      );
+
+      if (!syncedNotesRoom || !syncedAttachmentsRoom) {
+        throw new Error(
+          'Remote vault sync could not find both notes and attachment rooms after registry sync.'
+        );
+      }
+
+      notesRoom = (await this.db.loadRoom(syncedNotesRoom, {
+        loadRemote: true,
+        awaitLoadRemote: true,
+      })) as typeof notesRoom;
+      attachmentsRoom = (await this.db.loadRoom(syncedAttachmentsRoom, {
+        loadRemote: true,
+        awaitLoadRemote: true,
+      })) as typeof attachmentsRoom;
+    } else {
+      await notesRoom.load({ loadRemote: false, awaitLoadRemote: false });
+      await attachmentsRoom.load({
+        loadRemote: false,
+        awaitLoadRemote: false,
+      });
+    }
+
+    const room = notesRoom;
+    this.Notes = room.getDocuments();
     this.Attachments = attachmentsRoom.getDocuments();
 
     await this.bootstrapFromVault();
@@ -774,6 +822,7 @@ export class EweserRoomVaultSyncEngine {
   }
 
   async onAttachmentChange(relPath: string): Promise<void> {
+    if (this.writing.has(relPath)) return;
     await this.upsertAttachmentIntoRoom(relPath, true);
   }
 
@@ -973,10 +1022,46 @@ export class EweserRoomVaultSyncEngine {
     const file = await processVaultFile(fullPath, this.vaultPath);
     const attachmentId = generateAttachmentId(this.roomId, file.sourcePath);
     const existing = Attachments.get(attachmentId);
-    const metadata = vaultFileToAttachmentBase(file, {
+    let metadata = vaultFileToAttachmentBase(file, {
       baseId: this.roomId,
       sourceVault: this.vaultName,
     });
+
+    if (this.remoteSync) {
+      if (!this.db) {
+        throw new Error(
+          'Remote attachment upload requires an initialized database.'
+        );
+      }
+
+      const uploaded = await uploadFile({
+        db: this.db,
+        file: await readFile(fullPath),
+        metadata: {
+          baseId: metadata.baseId,
+          filename: metadata.filename,
+          mimeType: metadata.mimeType,
+          ...(metadata.parentNoteRefs
+            ? { parentNoteRefs: metadata.parentNoteRefs }
+            : {}),
+          size: metadata.size,
+          sourcePath: metadata.sourcePath,
+          ...(metadata.sourceVault
+            ? { sourceVault: metadata.sourceVault }
+            : {}),
+        },
+        roomId: this.attachmentsRoomId,
+      });
+      metadata = {
+        ...metadata,
+        contentHash: uploaded.contentHash,
+        localAvailability: 'unknown',
+        localPath: undefined,
+        remoteObjectKey: uploaded.remoteObjectKey,
+        remoteProviderProfileId: uploaded.remoteProviderProfileId,
+        size: uploaded.size,
+      };
+    }
 
     if (existing) {
       Attachments.set({ ...existing, ...metadata });
@@ -1055,9 +1140,9 @@ export class EweserRoomVaultSyncEngine {
   private async materializeAttachment(
     attachment: FileAttachment
   ): Promise<void> {
-    if (!attachment.localPath) return;
     const destination = join(this.vaultPath, attachment.sourcePath);
-    if (destination === attachment.localPath) return;
+    const canCopyLocal =
+      Boolean(attachment.localPath) && destination !== attachment.localPath;
 
     try {
       const existingHash = await fileHash(destination);
@@ -1071,11 +1156,32 @@ export class EweserRoomVaultSyncEngine {
       // Missing destination is fine; materialization will create it.
     }
 
-    await mkdir(dirname(destination), { recursive: true });
-    await copyFile(attachment.localPath, destination);
-    console.log(
-      `Eweser attachment room -> File: wrote "${attachment.sourcePath}"`
-    );
+    this.writing.add(attachment.sourcePath);
+    try {
+      await mkdir(dirname(destination), { recursive: true });
+
+      if (canCopyLocal && attachment.localPath) {
+        await copyFile(attachment.localPath, destination);
+      } else if (this.remoteSync && this.db && attachment.remoteObjectKey) {
+        const bytes = await downloadFile({
+          attachment,
+          db: this.db,
+          roomId: this.attachmentsRoomId,
+        });
+        await writeFile(destination, bytes);
+      } else {
+        return;
+      }
+
+      console.log(
+        `Eweser attachment room -> File: wrote "${attachment.sourcePath}"`
+      );
+    } finally {
+      setTimeout(
+        () => this.writing.delete(attachment.sourcePath),
+        this.debounceMs * 2
+      );
+    }
   }
 }
 
@@ -1146,6 +1252,7 @@ async function main(): Promise<void> {
       vaultName: mode.vaultName,
       roomId: mode.roomId,
       attachmentsRoomId: mode.attachmentsRoomId,
+      remoteSync: mode.remoteSync,
       authServer: mode.authServer,
       token: mode.token,
       debounceMs: mode.debounceMs,
