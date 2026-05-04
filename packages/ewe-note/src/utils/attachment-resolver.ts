@@ -18,6 +18,7 @@
  */
 import { logger } from './index.js';
 import type * as AttachmentResolverNode from './attachment-resolver.node';
+import type { FileAttachmentBase } from '@eweser/shared';
 
 export type ResolutionStrategy = 'local_file' | 'base64' | 'storage_url';
 
@@ -127,6 +128,19 @@ export function resolveAttachment(
     default:
       return '';
   }
+}
+
+export function resolveAttachmentRecord(
+  attachment: FileAttachmentBase,
+  vaultConfig: VaultConfig
+): string {
+  if (attachment.remoteObjectKey && vaultConfig.storageBaseUrl) {
+    return `${vaultConfig.storageBaseUrl}/${encodeURIComponent(
+      attachment.remoteObjectKey
+    )}`;
+  }
+
+  return resolveAttachment(attachment.sourcePath, vaultConfig);
 }
 
 /**

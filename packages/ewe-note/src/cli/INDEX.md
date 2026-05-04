@@ -15,9 +15,10 @@ Obsidian-compatible vault data with Ewe Note data shapes.
 ## Start Here
 
 - [`import-vault.ts`](./import-vault.ts): Import parser, manifest types, and CLI
-  entry point.
+  entry point, inventory-only preflight, and conservative scrubbed-copy helper.
 - [`export-vault.ts`](./export-vault.ts): Manifest-to-vault export logic.
-- [`vault-sync.ts`](./vault-sync.ts): Local vault/state sync engine.
+- [`vault-sync.ts`](./vault-sync.ts): Local vault/state sync engine and
+  offline Eweser notes-room sync mode.
 
 ## Children
 

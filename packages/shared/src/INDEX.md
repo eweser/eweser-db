@@ -17,6 +17,8 @@ and response types, and pure utility helpers.
 - [`collections/index.ts`](./collections/index.ts): Collection keys and
   document union contracts.
 - [`collections/note.ts`](./collections/note.ts): Note schema.
+- [`collections/file-attachment.ts`](./collections/file-attachment.ts):
+  Attachment metadata schema for local and future remote file sync.
 - [`collections/agent-config.ts`](./collections/agent-config.ts): Agent config
   and access log schemas.
 - [`api/index.ts`](./api/index.ts): API contract exports.

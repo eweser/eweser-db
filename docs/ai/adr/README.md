@@ -14,6 +14,7 @@ Short, permanent records of significant architectural decisions made during Ewes
 | [ADR-0006](./0006-quality-gates-hardening.md)   | Quality Gates — Lint/Format/Type-Check        | Implemented | 2026-04-02 |
 | [ADR-0007](./0007-rooms-topology-refactor.md)   | Rooms Topology + Doc-Split Combined           | Accepted    | 2026-04-07 |
 | [ADR-0008](./0008-testing-examples-db-auth.md)  | Testing Strategy — Examples + DB + Auth       | Implemented | 2026-04-03 |
+| [ADR-0009](./0009-base-vault-room-grouping.md)  | Base/Vault Room Grouping                      | Accepted    | 2026-05-04 |
 
 ## Format
 

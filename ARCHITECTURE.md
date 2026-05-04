@@ -110,6 +110,17 @@ e2e/
 
 A room is a Yjs-backed container with access control. It groups documents that share a collection key and schema.
 
+### Bases And Vaults
+
+A base is the user-facing workspace unit for vault-style data. For Obsidian
+compatibility, one base maps to one vault.
+
+Internally, bases group rooms rather than replacing room collection boundaries.
+The current desktop vault sync path starts with a `notes` room and note-level
+`sourcePath`/`sourceVault` metadata. Attachment metadata can be added as a
+separate room when file sync graduates beyond local filesystem handling. Local
+mount paths are device-local settings, not canonical synced data.
+
 ### Collections and Schemas
 
 Collections define strongly typed document shapes. Apps that share a schema can interoperate on the same data.

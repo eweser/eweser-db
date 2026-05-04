@@ -2,10 +2,23 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { mkdtemp, writeFile, rm, readFile, mkdir } from 'node:fs/promises';
+import {
+  mkdtemp,
+  writeFile,
+  rm,
+  readFile,
+  mkdir,
+  rename,
+  unlink,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
-import { VaultSyncEngine } from './vault-sync';
+import 'fake-indexeddb/auto';
+import {
+  EweserRoomVaultSyncEngine,
+  VaultSyncEngine,
+  resolveVaultSyncMode,
+} from './vault-sync';
 import { exportVault, serializeNote } from './export-vault';
 import { importVault, type ImportedNote } from './import-vault';
 
@@ -234,6 +247,270 @@ describe('VaultSyncEngine', () => {
 
     const note = Object.values(engine['state'].notes)[0];
     expect(note?.sourcePath).toBe('A/B/Deep.md');
+  });
+
+  it('bootstraps existing vault notes into state on start', async () => {
+    await writeFile(join(tempDir, 'Existing Note.md'), '# Existing', 'utf-8');
+    await mkdir(join(tempDir, 'Folder A'), { recursive: true });
+    await writeFile(
+      join(tempDir, 'Folder A', 'Nested.md'),
+      '# Nested',
+      'utf-8'
+    );
+
+    await engine.start();
+
+    const state = JSON.parse(await readFile(statePath, 'utf-8'));
+    const notes = Object.values(state.notes) as ImportedNote[];
+    const paths = notes.map((note) => note.sourcePath).sort();
+
+    expect(paths).toEqual(['Existing Note.md', 'Folder A/Nested.md']);
+  });
+});
+
+describe('EweserRoomVaultSyncEngine', () => {
+  let tempDir: string;
+  let engine: EweserRoomVaultSyncEngine;
+
+  beforeEach(async () => {
+    tempDir = await createTempVault();
+    engine = new EweserRoomVaultSyncEngine({
+      vaultPath: tempDir,
+      vaultName: 'test-vault',
+      roomId: `test-room-${crypto.randomUUID()}`,
+      debounceMs: 20,
+    });
+  });
+
+  afterEach(async () => {
+    await engine.stop();
+    await rm(tempDir, { recursive: true, force: true });
+  });
+
+  it('bootstraps existing vault notes into an Eweser notes room', async () => {
+    await writeFile(join(tempDir, 'Existing Note.md'), '# Existing', 'utf-8');
+
+    await engine.start();
+
+    const notes = engine.getNotes();
+    expect(notes).toHaveLength(1);
+    expect(notes[0]?.sourcePath).toBe('Existing Note.md');
+    expect(notes[0]?.text).toContain('# Existing');
+  });
+
+  it('updates the Eweser notes room when a file changes', async () => {
+    await engine.start();
+    await writeFile(
+      join(tempDir, 'Filesystem Note.md'),
+      '# Filesystem',
+      'utf-8'
+    );
+
+    await engine.onFileChange('Filesystem Note.md');
+
+    const notes = engine.getNotes();
+    expect(notes).toHaveLength(1);
+    expect(notes[0]?.sourcePath).toBe('Filesystem Note.md');
+    expect(notes[0]?.text).toContain('# Filesystem');
+  });
+
+  it('writes room-created notes back to the vault folder', async () => {
+    await engine.start();
+
+    engine.getDocuments().new({
+      text: '# From Room',
+      sourcePath: 'Room Note.md',
+      sourceVault: 'test-vault',
+      frontmatter: {},
+      aliases: [],
+      tags: [],
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const content = await readFile(join(tempDir, 'Room Note.md'), 'utf-8');
+    expect(content).toContain('# From Room');
+  });
+
+  it('bootstraps vault attachments into an Eweser attachment room', async () => {
+    await mkdir(join(tempDir, 'Attachments'), { recursive: true });
+    await writeFile(
+      join(tempDir, 'Attachments', 'image.png'),
+      Buffer.from([0, 1, 2, 3])
+    );
+
+    await engine.start();
+
+    const attachments = engine.getAttachments();
+    expect(attachments).toHaveLength(1);
+    expect(attachments[0]?.sourcePath).toBe('Attachments/image.png');
+    expect(attachments[0]?.contentHash).toHaveLength(64);
+    expect(attachments[0]?.localAvailability).toBe('available');
+  });
+
+  it('updates attachment metadata when a binary file changes', async () => {
+    await mkdir(join(tempDir, 'Attachments'), { recursive: true });
+    const imagePath = join(tempDir, 'Attachments', 'image.png');
+    await writeFile(imagePath, Buffer.from([0, 1, 2, 3]));
+
+    await engine.start();
+    const originalHash = engine.getAttachments()[0]?.contentHash;
+
+    await writeFile(imagePath, Buffer.from([4, 5, 6, 7]));
+    await engine.onAttachmentChange('Attachments/image.png');
+
+    const updatedHash = engine.getAttachments()[0]?.contentHash;
+    expect(updatedHash).toHaveLength(64);
+    expect(updatedHash).not.toBe(originalHash);
+  });
+
+  it('soft-deletes attachment metadata when a binary file is deleted', async () => {
+    await mkdir(join(tempDir, 'Attachments'), { recursive: true });
+    const imagePath = join(tempDir, 'Attachments', 'image.png');
+    await writeFile(imagePath, Buffer.from([0, 1, 2, 3]));
+
+    await engine.start();
+    const [attachment] = engine.getAttachments();
+    expect(attachment).toBeDefined();
+
+    await unlink(imagePath);
+    await engine.onAttachmentDelete('Attachments/image.png');
+
+    expect(engine.getAttachments()).toHaveLength(0);
+    expect(
+      engine.getAttachmentDocuments().get(attachment?._id ?? '')?._deleted
+    ).toBe(true);
+  });
+
+  it('materializes attachment metadata with local bytes back to disk', async () => {
+    const cachePath = join(tempDir, 'cache.png');
+    await writeFile(cachePath, Buffer.from([9, 8, 7, 6]));
+
+    await engine.start();
+    engine.getAttachmentDocuments().new({
+      baseId: 'test-room',
+      sourcePath: 'Attachments/from-room.png',
+      filename: 'from-room.png',
+      mimeType: 'image/png',
+      size: 4,
+      contentHash: sha256(Buffer.from([9, 8, 7, 6])),
+      localAvailability: 'available',
+      localPath: cachePath,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const materialized = await readFile(
+      join(tempDir, 'Attachments', 'from-room.png')
+    );
+    expect(sha256(materialized)).toBe(sha256(Buffer.from([9, 8, 7, 6])));
+  });
+
+  it('preserves note identity when a file is renamed', async () => {
+    const originalPath = join(tempDir, 'Original Note.md');
+    const renamedPath = join(tempDir, 'Renamed Note.md');
+    await writeFile(originalPath, '# Stable Identity', 'utf-8');
+
+    await engine.start();
+
+    const [before] = engine.getNotes();
+    expect(before).toBeDefined();
+
+    await rename(originalPath, renamedPath);
+    await engine.onFileChange('Renamed Note.md');
+    await engine.onFileDelete('Original Note.md');
+
+    const notes = engine.getNotes();
+    expect(notes).toHaveLength(1);
+    expect(notes[0]?._id).toBe(before?._id);
+    expect(notes[0]?.sourcePath).toBe('Renamed Note.md');
+    expect(notes[0]?.vaultSync?.sourceId).toBe(before?._id);
+  });
+
+  it('soft-deletes the matching room note when a file is deleted', async () => {
+    const notePath = join(tempDir, 'Delete Me.md');
+    await writeFile(notePath, '# Delete Me', 'utf-8');
+
+    await engine.start();
+
+    const [note] = engine.getNotes();
+    expect(note).toBeDefined();
+
+    await unlink(notePath);
+    await engine.onFileDelete('Delete Me.md');
+
+    expect(engine.getNotes()).toHaveLength(0);
+    expect(engine.getDocuments().get(note?._id ?? '')?._deleted).toBe(true);
+  });
+
+  it('writes a conflict copy when file and room both changed', async () => {
+    const notePath = join(tempDir, 'Conflict Note.md');
+    await writeFile(notePath, '# Original', 'utf-8');
+
+    await engine.start();
+
+    const [note] = engine.getNotes();
+    if (!note) throw new Error('Expected bootstrapped note.');
+    engine.getDocuments().set({
+      ...note,
+      text: '# Room Edit',
+    });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    await writeFile(notePath, '# File Edit', 'utf-8');
+    await engine.onFileChange('Conflict Note.md');
+
+    const restored = await readFile(notePath, 'utf-8');
+    expect(restored).toContain('# Room Edit');
+
+    const conflict = engine
+      .getNotes()
+      .find((candidate) => candidate.sourcePath?.includes('conflict'));
+    expect(conflict?.text).toContain('# File Edit');
+  });
+});
+
+describe('resolveVaultSyncMode', () => {
+  it('requires explicit destination flags for real-vault sync', () => {
+    expect(() =>
+      resolveVaultSyncMode({
+        vaultPath: '/tmp/vault',
+      })
+    ).toThrow(
+      'Refusing to run vault sync without --inventory-only or --local-only'
+    );
+  });
+
+  it('allows inventory-only preflight without a state destination', () => {
+    const mode = resolveVaultSyncMode({
+      vaultPath: '/tmp/vault',
+      inventoryOnly: true,
+    });
+
+    expect(mode.kind).toBe('inventory');
+    expect(mode.vaultPath).toBe('/tmp/vault');
+  });
+
+  it('requires an explicit state destination for local-only sync', () => {
+    expect(() =>
+      resolveVaultSyncMode({
+        vaultPath: '/tmp/vault',
+        localOnly: true,
+      })
+    ).toThrow('--state is required when running --local-only vault sync.');
+  });
+
+  it('allows offline Eweser room sync when a room is explicit', () => {
+    const mode = resolveVaultSyncMode({
+      vaultPath: '/tmp/vault',
+      roomId: 'notes-room',
+      offlineOnly: true,
+    });
+
+    expect(mode.kind).toBe('eweser-room-sync');
+    if (mode.kind !== 'eweser-room-sync') {
+      throw new Error('Expected Eweser room sync mode.');
+    }
+    expect(mode.roomId).toBe('notes-room');
   });
 });
 

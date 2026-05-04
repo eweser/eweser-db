@@ -13,6 +13,16 @@ Branch: `codex/ewe-note-obsidian-editor-pr`
   - `npm run build --workspace @eweser/ewe-note`
   - Cypress: `14/14` passing with
     `EWE_NOTE_BASE_URL=http://127.0.0.1:5181/ ELECTRON_RUN_AS_NODE= npx cypress run --config baseUrl=http://127.0.0.1:5181,video=false --spec e2e/cypress/tests/ewe-note.cy.ts`
+- Run-0a safe preflight is now implemented and verified on synthetic fixtures:
+  - `npx tsx packages/ewe-note/src/cli/import-vault.ts --vault /path/to/vault --inventory-only`
+  - `npx tsx packages/ewe-note/src/cli/vault-sync.ts --vault /path/to/vault --inventory-only`
+  - `npx tsx packages/ewe-note/src/cli/vault-sync.ts --vault /path/to/vault --local-only --state ./vault-state.json`
+  - `npx tsx packages/ewe-note/src/cli/import-vault.ts --vault /path/to/vault --scrubbed-copy /path/to/output-copy`
+  - `--local-only` now refuses to run without an explicit `--state`.
+  - `--scrubbed-copy` now defaults to a conservative mode: secret-flagged text files are skipped, and attachments are skipped unless explicitly approved later.
+- Run 1 room-backed CLI sync is implemented for offline room mode:
+  - `node_modules/.bin/tsx packages/ewe-note/src/cli/vault-sync.ts --vault /path/to/scrubbed-vault --room room-id --offline-only`
+  - In Node, this uses `fake-indexeddb` for the SDK's IndexedDB dependency. It exercises the real `@eweser/db` notes room CRUD surface, but it is not durable across CLI restarts without remote Hocuspocus or a durable Node IndexedDB adapter.
 - The user now has real Obsidian vaults synced and open.
 - The user says those vaults contain secrets.
 
@@ -31,7 +41,7 @@ logs, commits, ordinary memory, or EweserDB rooms.
 ## Recommended Next Run
 
 Use [2026-05-01-obsidian-full-sync-base-files.md](../plans/2026-05-01-obsidian-full-sync-base-files.md),
-starting with `run-0a`.
+starting with the next blocked live-vault step after `run-0a`.
 
 First deliverable:
 
@@ -52,6 +62,27 @@ The preflight must not:
 - upload to hosted storage;
 - create persistent sync state;
 - print raw secret values.
+
+## Approved Privacy Choice
+
+The user approved option 2: create and use a scrubbed copy of the real vault for
+the first live-sync target, not the original vault.
+
+Current safe default for that scrubbed copy:
+
+- skip text-like files with secret-risk matches;
+- skip attachments by default;
+- keep the copy local-only;
+- do not create a room write, remote upload, or manifest from the original
+  vault until the scrubbed copy is inspected.
+
+The current scrubbed sync target is:
+
+- `/Users/jacob/Documents/Work-eweser-scrubbed-with-attachments-2026-05-04`
+- 265 notes copied;
+- 359 attachments copied;
+- 13 secret-flagged text files skipped;
+- follow-up inventory on the scrubbed copy found 0 text-like secret findings.
 
 ## File Handling Product Gap
 
