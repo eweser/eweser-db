@@ -16,6 +16,8 @@ Make Ewe Note fully syncable with Obsidian vaults, including Markdown notes, fol
 - `packages/ewe-note/src/cli/import-vault.ts` indexes attachments in the import manifest, but does not upload, persist, or sync binary file contents through EweserDB.
 - `packages/shared/src/collections/note.ts` already has optional `sourcePath`, `sourceVault`, `frontmatter`, `aliases`, `tags`, and `folderIds`, which are enough for a better first live sync pass.
 - `docs/ai/plans/2026-04-03-file-storage.md` is still deferred. It sketches `fileAttachments`, object storage, upload APIs, SDK helpers, and offline pinning, but those capabilities are not implemented.
+- 2026-05-04 continuation note: the user's real Obsidian vaults are synced and open, but they contain secrets. Do not run a live importer, sync bridge, manifest export, or room write against those vaults until a secret-safe preflight and explicit destination approval are complete.
+- 2026-05-04 continuation note: image and other binary file handling is now the main product blocker. Current code preserves attachment inventory and hashes; it does not yet provide local attachment rendering from mounted real vaults, remote object storage, S3-compatible bucket setup, or bring-your-own-storage provider configuration.
 
 ## Architecture Decision
 
@@ -32,14 +34,17 @@ Make Ewe Note fully syncable with Obsidian vaults, including Markdown notes, fol
 - Assumption: "base" means a user-facing data workspace or vault-level access unit, not necessarily the existing `Room` class.
 - Assumption: Phase 1 should support local filesystem attachments before remote object storage, because Eweser file handling is not built yet.
 - Assumption: Markdown notes can remain last-writer-wins at the whole-file level for external Obsidian edits; Ewe Note/Yjs collaborative edits still merge inside the notes room.
+- Assumption: real user vaults may contain API keys, tokens, credentials, customer data, and other secrets in Markdown, frontmatter, code blocks, canvases, Bases, or attachments. The sync importer must treat all vault content as sensitive until scanned and scoped.
 - Open question: Should a base have its own first-class shared collection type now, or should it initially be represented by room metadata plus naming conventions?
 - Open question: Should remote binary storage use MinIO/R2 first, or should desktop vault sync remain filesystem-only until the broader file-storage plan is approved?
+- Open question: Should the first real-vault pass run in `--inventory-only --no-content --local-only` mode and produce only counts, extension summaries, and redacted secret findings?
+- Open question: Should secret-bearing notes be skipped, redacted, encrypted client-side, or synced only into a specifically marked local-only/private base until E2EE exists?
 
 ## Runs
 
 ## Run Order And Manual Test Handoffs
 
-Run order: sequential by default. Runs 1 and 2 can be parallelized after Run 0 if implemented in separate worktrees. Runs 4 and 5 depend on the file model from Run 3.
+Run order: sequential by default. Run 0A is a hard preflight before touching real user vaults. Runs 1 and 2 can be parallelized after Run 0 if implemented in separate worktrees. Runs 4 and 5 depend on the file model from Run 3.
 
 After each completed run, Coder must update the Execution Summary and add a manual-test handoff with:
 
@@ -49,6 +54,37 @@ After each completed run, Coder must update the Execution Summary and add a manu
 - manual steps;
 - expected results;
 - known gaps or residual risk.
+
+### Run 0A: Secret-Safe Real Vault Inventory Preflight
+
+- **Id**: `run-0a`
+- **Title**: `Secret-Safe Real Vault Inventory Preflight`
+- **Deliverable**:
+  - A local-only inventory mode and handoff procedure for real Obsidian vaults that can count files, extensions, attachment sizes, and secret-risk matches without writing note bodies, binary bytes, or secret-bearing manifests into EweserDB.
+- **Files**:
+  - `packages/ewe-note/src/cli/import-vault.ts`: add or wrap inventory-only behavior if not already sufficient.
+  - `packages/ewe-note/src/cli/vault-sync.ts`: add guardrails that refuse real-vault sync unless preflight output and destination flags are explicit.
+  - `docs/ai/testing/ewe-note-obsidian-real-vault-sync-handoff.md`: keep the operator handoff current.
+  - `docs/ai/plans/2026-05-01-obsidian-full-sync-base-files.md`: update execution status and stop conditions.
+- **Steps**:
+  - [ ] Require explicit vault paths from the user; do not infer paths from currently open Obsidian windows or recent files.
+  - [ ] Add `--inventory-only`, `--no-content`, and `--local-only` guardrails or an equivalent script path.
+  - [ ] Produce only aggregate counts by file type, top-level folder, total bytes, largest files, and redacted secret-risk counts.
+  - [ ] Scan Markdown, Canvas, Base, and text-like files for secret-like patterns, but report only path, line number, rule id, and redacted snippet.
+  - [ ] Never include raw secret values in terminal output, JSON manifests, docs, screenshots, logs, ordinary memory, or commits.
+  - [ ] Stop before copying binaries, writing room data, uploading files, or creating persistent sync state.
+- **Tests**:
+  - Unit tests with fixture secrets that assert redaction and no raw secret output.
+  - Fixture inventory test for attachment counts and extension summaries.
+- **Verification**:
+  - `npm test --workspace @eweser/ewe-note -- import-vault vault-sync`
+  - Manual run against a synthetic secret fixture, not the user's real vault.
+- **Manual test handoff**:
+  - Ask the user for exact vault paths and explicit permission for local-only inventory. Run the preflight on one vault, verify no raw secret values appear in output, then decide which notes/files can be synced.
+- **Dependencies**:
+  - None
+- **Model tier**: `strong`
+- **Risk level**: `high`
 
 ### Run 0: Base/Vault Model Decision
 
@@ -97,7 +133,7 @@ After each completed run, Coder must update the Execution Summary and add a manu
 - **Manual test handoff**:
   - Start local backend if remote sync is enabled, start Ewe Note, run the vault-sync CLI against a copied fixture vault, edit one `.md` file and one Ewe Note note, and verify both sides converge without repeated rewrites.
 - **Dependencies**:
-  - `run-0`
+  - `run-0a`, `run-0`
 - **Model tier**: `strong`
 - **Risk level**: `high`
 
@@ -202,6 +238,8 @@ After each completed run, Coder must update the Execution Summary and add a manu
 - **Steps**:
   - [ ] Implement or revive the relevant parts of `docs/ai/plans/2026-04-03-file-storage.md`.
   - [ ] Validate auth/session and room access for file upload/download.
+  - [ ] Support provider profiles for hosted Eweser storage, self-hosted MinIO, and bring-your-own S3-compatible storage such as Cloudflare R2, AWS S3, Backblaze B2, or another endpoint-compatible provider.
+  - [ ] Keep provider credentials out of room data and ordinary manifests; store only provider profile ids, object keys, hashes, and non-secret metadata in synced documents.
   - [ ] Store object keys and hashes in attachment metadata documents.
   - [ ] Cache files locally and materialize them into the local Obsidian vault when a device mounts that base.
   - [ ] Enforce size limits and keep self-hosted configuration documented.
@@ -252,6 +290,9 @@ Stop and ask for user approval if:
 
 - The implementation would require changing `Room` semantics to allow mixed collection schemas.
 - Remote file storage is required before the user has approved the file-storage architecture and quota/security model.
+- A real user vault may contain secrets and the next step would read, copy, write, upload, log, screenshot, or persist raw vault content without an approved local-only secret-safe preflight.
+- The importer or sync CLI would write raw secret values to manifests, terminal logs, EweserDB rooms, memory, screenshots, or committed fixtures.
+- The sync destination is unclear: local-only inventory, local EweNote room, hosted sync server, remote object storage, or bring-your-own storage must be named before running.
 - Auth/security behavior changes beyond file upload/download access checks are needed.
 - A PostgreSQL migration is needed but not explicitly planned.
 - A public package API change is needed without a changeset.
@@ -261,19 +302,20 @@ Stop and ask for user approval if:
 
 Approval of this plan authorizes Coder to implement the runs above, make focused supporting edits needed for those runs, write/update tests, run relevant verification, perform internal QA, fix issues found inside this boundary, create required changesets, and update this plan's execution summary.
 
-Approval does not authorize unrelated refactors, destructive git operations, direct pushes to `main`, deleting migrations, broad E2EE claims, reintroducing Next.js/Supabase patterns, or making remote binary storage a hosted paid feature without a separate product/security review.
+Approval does not authorize unrelated refactors, destructive git operations, direct pushes to `main`, deleting migrations, broad E2EE claims, reintroducing Next.js/Supabase patterns, reading or syncing secret-bearing real vault content without the Run 0A preflight, or making remote binary storage a hosted paid feature without a separate product/security review.
 
 ## Execution Summary
 
-| Run     | Status      | Files Changed | Verification | Notes |
-| ------- | ----------- | ------------- | ------------ | ----- |
-| `run-0` | Not started |               |              |       |
-| `run-1` | Not started |               |              |       |
-| `run-2` | Not started |               |              |       |
-| `run-3` | Not started |               |              |       |
-| `run-4` | Not started |               |              |       |
-| `run-5` | Not started |               |              |       |
-| `run-6` | Not started |               |              |       |
+| Run      | Status      | Files Changed | Verification | Notes                                               |
+| -------- | ----------- | ------------- | ------------ | --------------------------------------------------- |
+| `run-0a` | Not started |               |              | Required before any real secret-bearing vault sync. |
+| `run-0`  | Not started |               |              |                                                     |
+| `run-1`  | Not started |               |              |                                                     |
+| `run-2`  | Not started |               |              |                                                     |
+| `run-3`  | Not started |               |              |                                                     |
+| `run-4`  | Not started |               |              |                                                     |
+| `run-5`  | Not started |               |              |                                                     |
+| `run-6`  | Not started |               |              |                                                     |
 
 ## Self-Reflection / Instruction Improvements
 

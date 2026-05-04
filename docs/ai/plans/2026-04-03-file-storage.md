@@ -1,7 +1,7 @@
 # Plan: File Storage & AI Data Layer
 
 > **Created:** 2026-04-03
-> **Updated:** 2026-04-03
+> **Updated:** 2026-05-04
 > **Status:** Draft — awaiting approval
 > **Depends on:** AI-First Launch Strategy (Run 2 schemas), Privacy & Autonomy (Run P3 agent permissions)
 
@@ -35,7 +35,17 @@ These are cheap to store (60 MB for 10,000 items), work offline, CRDT-merge acro
 | Video / audio recordings           | Way too large for IndexedDB |
 | Screenshots from browser extension | Binary images               |
 
-Binary files are stored in S3-compatible object storage. Yjs documents store only a content-addressed reference (SHA-256 hash + URL). **Requires premium on eweser.com** (storage costs real money per GB).
+Binary files are stored in S3-compatible object storage. Yjs documents store only a content-addressed reference (SHA-256 hash + URL). Hosted Eweser storage may be premium because storage costs real money per GB, but the architecture must also support self-hosted and bring-your-own-storage provider profiles.
+
+### Provider Strategy: Hosted, Self-Hosted, Bring Your Own Storage
+
+The storage layer should not hard-code one bucket owner.
+
+- **Hosted Eweser storage:** Eweser-managed bucket, quota enforcement, simplest onboarding.
+- **Self-hosted MinIO:** local or self-hosted object storage for Docker/self-host deployments.
+- **Bring your own storage:** S3-compatible endpoint profile for Cloudflare R2, AWS S3, Backblaze B2, or similar providers.
+
+Provider credentials are secrets. They must never live in Yjs documents, Obsidian import manifests, screenshots, ordinary memory, logs, or committed fixtures. Synced metadata should store only provider profile ids, object keys, hashes, MIME types, sizes, and non-secret routing metadata.
 
 ### The Document Problem
 
@@ -120,6 +130,10 @@ type FileAttachmentBase = {
   fileId: string;
   /** Object storage URL (MinIO/R2 pre-signed or public) */
   url: string;
+  /** Non-secret storage provider profile id */
+  storageProviderId?: string;
+  /** Non-secret object key/path inside the provider bucket */
+  objectKey?: string;
   /** MIME type */
   mimeType: string;
   /** Original filename */
@@ -162,6 +176,7 @@ While self-hosting has no limits, the managed service at eweser.com enforces sto
 - **Text data (Yjs):** Unlimited for all users (notes, conversations, configs, logs).
 - **Binary files (Blobs):** Requires a premium plan. Quotas are enforced at the upload API level (`POST /api/files/upload`).
 - **Self-hosted:** No enforcement; users manage their own MinIO/S3 storage.
+- **Bring-your-own storage:** Eweser should enforce metadata validity and access boundaries, but object byte quotas are the user's provider responsibility unless they opt into hosted storage.
 
 See [monetization.md](../../personal/monetization.md) for the business model and pricing tiers.
 
@@ -201,6 +216,7 @@ See [monetization.md](../../personal/monetization.md) for the business model and
 - [ ] Upload size limit: configurable, default 100 MB per file
 - [ ] Abstract storage backend interface so R2/B2 is a config swap, no code change
 - [ ] Env vars: `STORAGE_ENDPOINT`, `STORAGE_BUCKET`, `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY`, `STORAGE_PUBLIC_URL`, `STORAGE_QUOTA_MB`
+- [ ] Add non-secret provider profile config for hosted, self-hosted MinIO, and bring-your-own S3-compatible endpoints. Provider secrets must come from server env/secret storage or a user-approved local credential store, not synced room data.
 - [ ] Files: `packages/auth-server-hono/src/routes/files.ts`, `packages/auth-server-hono/src/lib/storage.ts`
 - [ ] Tests: unit tests with MinIO mock; integration test against local MinIO
 
@@ -254,6 +270,8 @@ See [monetization.md](../../personal/monetization.md) for the business model and
 - **Browser IndexedDB limits**: Varies by browser (50–100 MB typical). Pinned files could exceed this. Mitigation: File System Access API for larger offline stores on desktop; server URL always available as fallback.
 - **Upload size limits**: Caddy needs `request_body { max_size 100MB }` in Caddyfile. Document clearly.
 - **Agent config sensitivity**: Agent configs may contain API keys or tokens. The MCP backup tool MUST detect and warn about secret-like values (env vars, API keys) before backing up. Option to redact or skip.
+- **Obsidian vault sensitivity**: Real Obsidian vaults may contain secrets in Markdown, frontmatter, code blocks, Canvas, Bases, and attachments. Import/sync tooling MUST support local-only inventory, redacted secret findings, skip/redact policies, and explicit approval before writing secret-bearing content into rooms or object storage.
+- **Provider credential sensitivity**: Bring-your-own S3/R2/B2 credentials are persistent access credentials. Creating, storing, or changing them requires explicit user confirmation and should use server-side env/secret storage or local OS credential storage, not Yjs.
 - **Binary file conflicts**: Two devices can't merge the same image. Last-write-wins or keep-both. Document the limitation clearly.
 - **Version history storage growth**: Yjs operation logs grow over time. For long-lived documents, need a compaction/snapshot strategy. Not urgent for v1 (text is small).
 - **Changeset required**: `@eweser/shared` and `@eweser/db` both need changeset entries.
