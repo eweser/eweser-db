@@ -65,6 +65,9 @@ export default function Editor({
   );
   const provider = room?.syncProvider;
   const doc = room?.ydoc;
+  const editorInstanceKey = `${selectedRoom.id}:${selectedNoteId}:${
+    provider?.awareness ? 'collab' : 'local'
+  }`;
 
   const note = notes ? notes[selectedNoteId] : null;
   if (!note || !doc) {
@@ -73,7 +76,7 @@ export default function Editor({
   // needs to be in a different component because hooks can't be called conditionally
   return (
     <EditorInternal
-      key={selectedNoteId}
+      key={editorInstanceKey}
       selectedNoteId={selectedNoteId}
       provider={provider}
       doc={doc}

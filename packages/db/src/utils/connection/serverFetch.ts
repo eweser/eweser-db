@@ -29,7 +29,7 @@ export const serverFetch =
           ...options.headers,
           'Content-Type': 'application/json',
         };
-        options.referrer = 'no-referrer';
+        options.referrerPolicy = 'no-referrer';
       }
 
       let requestBody: BodyInit | null | undefined;

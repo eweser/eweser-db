@@ -58,6 +58,10 @@ type ProviderWithAwareness = NonNullable<Room<Note>['syncProvider']> & {
   };
 };
 
+type XmlFragmentWithDoc = XmlFragment & {
+  doc?: object | null;
+};
+
 interface TiptapEditorProps {
   note: Note;
   doc: NonNullable<Room<Note>['ydoc']>;
@@ -188,7 +192,7 @@ function buildExtensions({
     }),
   ] as Extension[];
 
-  if (!provider) return extensions;
+  if (!isCollaborationReady(fragment, provider)) return extensions;
 
   const providerWithAwareness = provider as ProviderWithAwareness;
   extensions.push(
@@ -200,6 +204,16 @@ function buildExtensions({
   );
 
   return extensions;
+}
+
+export function isCollaborationReady(
+  fragment: XmlFragment,
+  provider?: Room<Note>['syncProvider']
+): provider is ProviderWithAwareness {
+  const providerWithAwareness = provider as ProviderWithAwareness | undefined;
+  return Boolean(
+    providerWithAwareness?.awareness && (fragment as XmlFragmentWithDoc).doc
+  );
 }
 
 function saveEditor(
@@ -229,6 +243,7 @@ export function TiptapEditor({
     () => getTiptapFragment(doc, selectedNoteId),
     [doc, selectedNoteId]
   );
+  const collaborationReady = isCollaborationReady(fragment, provider);
   const initialHtml = useMemo(
     () => markdownToEditorHtml(note.text),
     [note.text]
@@ -294,7 +309,7 @@ export function TiptapEditor({
         },
       },
       onCreate({ editor }) {
-        if (!provider || isEmptyFragment(fragment)) {
+        if (!collaborationReady || isEmptyFragment(fragment)) {
           editor.commands.setContent(initialHtml, false);
         }
         onEditorReady?.(editor);
@@ -329,7 +344,7 @@ export function TiptapEditor({
         onEditorFocusChange?.(false);
       },
     },
-    [selectedNoteId]
+    [selectedNoteId, doc, provider?.awareness]
   );
 
   const closeSlashMenu = useCallback(() => setSlashMenuState(null), []);
