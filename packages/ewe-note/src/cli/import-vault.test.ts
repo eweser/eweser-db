@@ -95,6 +95,12 @@ async function createSecretFixtureVault(): Promise<string> {
     'utf-8'
   );
 
+  await writeFile(
+    join(vaultDir, '.eweser-local-state.json'),
+    JSON.stringify({ token: 'tooling-secret-value' }, null, 2),
+    'utf-8'
+  );
+
   await writeFile(join(vaultDir, '.obsidian', 'config'), 'ignored', 'utf-8');
 
   return vaultDir;
@@ -438,6 +444,12 @@ describe('inventoryVault', () => {
       expect(serialized).not.toContain('super-secret-value');
       expect(serialized).not.toContain(SECRET_FIXTURE_OPENAI_KEY);
       expect(serialized).not.toContain('canvas-secret');
+      expect(report.secretFindings).not.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ path: '.eweser-local-state.json' }),
+        ])
+      );
+      expect(report.skippedPaths).toContain('.eweser-local-state.json');
 
       const noteFinding = report.secretFindings.find(
         (finding) =>
