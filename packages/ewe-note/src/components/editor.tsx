@@ -1,22 +1,17 @@
 /**
- * Purpose: BlockNote editor bridge for room-backed notes.
+ * Purpose: TipTap editor bridge for room-backed notes.
  * Exports: Editor default component.
  * Touches: Yjs fragments, provider collaboration, OFM serialization, and saves.
  * Read before editing: packages/ewe-note/src/INDEX.md and notes-room.tsx.
  */
-import '@blocknote/core/fonts/inter.css';
-import { useCreateBlockNote } from '@blocknote/react';
-import { BlockNoteView } from '@blocknote/shadcn';
-import '@blocknote/shadcn/style.css';
 import { useTheme } from '@/components/theme-provider';
 import { getDeviceType, useDb } from '@/db';
 import type { Note, Room } from '@eweser/db';
 import { useNotesRoom } from '@/notes-room';
-import { useEffect, useRef } from 'react';
 import { Icons } from '@/lib/icons';
-import { logger } from '@/utils';
-import { blocksToOfm, ofmToBlocks } from '@/extensions/ofm-serializer';
 import FrontmatterEditor from '@/components/frontmatter-editor';
+import { TiptapEditor } from '@/components/tiptap-editor';
+import type { Editor as TiptapEditorInstance } from '@tiptap/react';
 
 const darkModeCursorColors = [
   '#ffe4a1', // Lightened orange
@@ -47,10 +42,20 @@ export default function Editor({
   selectedRoom,
   selectedNoteId,
   showFrontmatterEditor = true,
+  onEditorReady,
+  onEditorFocusChange,
+  onNavigateWikiLink,
+  sourceMode,
+  onSourceModeChange,
 }: {
   selectedRoom: Room<Note>;
   selectedNoteId: string;
   showFrontmatterEditor?: boolean;
+  onEditorReady?: (editor: TiptapEditorInstance | null) => void;
+  onEditorFocusChange?: (focused: boolean) => void;
+  onNavigateWikiLink?: (href: string) => void;
+  sourceMode?: boolean;
+  onSourceModeChange?: (sourceMode: boolean) => void;
 }) {
   const { loggedIn } = useDb();
 
@@ -76,6 +81,11 @@ export default function Editor({
       updateNoteFrontmatter={updateNoteFrontmatter}
       note={note}
       showFrontmatterEditor={showFrontmatterEditor}
+      onEditorReady={onEditorReady}
+      onEditorFocusChange={onEditorFocusChange}
+      onNavigateWikiLink={onNavigateWikiLink}
+      sourceMode={sourceMode}
+      onSourceModeChange={onSourceModeChange}
     />
   );
 }
@@ -88,6 +98,11 @@ function EditorInternal({
   updateNoteFrontmatter,
   note,
   showFrontmatterEditor,
+  onEditorReady,
+  onEditorFocusChange,
+  onNavigateWikiLink,
+  sourceMode,
+  onSourceModeChange,
 }: {
   selectedNoteId: string;
   provider: Room<Note>['syncProvider'];
@@ -99,167 +114,44 @@ function EditorInternal({
   ) => void;
   note: Note;
   showFrontmatterEditor: boolean;
+  onEditorReady?: (editor: TiptapEditorInstance | null) => void;
+  onEditorFocusChange?: (focused: boolean) => void;
+  onNavigateWikiLink?: (href: string) => void;
+  sourceMode?: boolean;
+  onSourceModeChange?: (sourceMode: boolean) => void;
 }) {
   const { user } = useDb();
   const { resolvedMode } = useTheme();
   const usedTheme = resolvedMode;
   const cursorColors =
     usedTheme === 'dark' ? darkModeCursorColors : lightModeCursorColors;
-  /** Really this should be set to the OTHER user's color theme but that is impossible */
   const cursorColor =
     cursorColors[Math.floor(Math.random() * cursorColors.length)] ?? '#e6b45c';
-  const editor = useCreateBlockNote({
-    ...(provider
-      ? {
-          collaboration: {
-            // The Yjs Provider responsible for transporting updates:
-            provider,
-            // Where to store BlockNote data in the Y.Doc:
-            fragment: doc.getXmlFragment(selectedNoteId),
-            // Information (name and color) for this user:
-            user: {
-              name: user.firstName || getDeviceType(),
-              color: cursorColor,
-            },
-          },
-        }
-      : {}),
-  });
-
-  // Stable ref so the onChange closure always sees the latest note without re-registering
-  const noteRef = useRef(note);
-  useEffect(() => {
-    noteRef.current = note;
-  });
-
-  // Stable debounced save — created once per editor instance
-  const debouncedSaveRef = useRef<ReturnType<typeof debounce> | null>(null);
-  if (!debouncedSaveRef.current) {
-    debouncedSaveRef.current = debounce(updateNoteText, 1000);
-  }
-
-  // Flush any pending debounced save when the note changes (component unmounts)
-  useEffect(() => {
-    return () => {
-      debouncedSaveRef.current?.flush();
-    };
-  }, []);
-
-  // Register onChange once; use refs so we never need to re-register
-  useEffect(() => {
-    const unsubscribe = editor.onChange(async (e) => {
-      const currentNote = noteRef.current;
-      const isVaultNote = !!currentNote.sourcePath;
-      const text = isVaultNote
-        ? await blocksToOfm(e)
-        : await e.blocksToMarkdownLossy();
-      debouncedSaveRef.current?.(text, currentNote);
-    });
-    return () => {
-      unsubscribe?.();
-    };
-  }, [editor]);
-
-  // Pull the initial note text from eweser-db and set it in the editor
-  useEffect(() => {
-    (async () => {
-      if (!editor) return;
-
-      // When collaboration is active, the Yjs XML fragment is the source of
-      // truth. Only fall back to note.text if the fragment is empty (first
-      // time this note is opened before any Yjs content has been written).
-      if (provider) {
-        const fragment = doc.getXmlFragment(selectedNoteId);
-        const fragmentHasContent = fragment.length > 0;
-        if (fragmentHasContent) {
-          // Yjs already has content — just focus the editor.
-          setTimeout(() => {
-            const lastBlock = editor.document[editor.document.length - 1];
-            if (lastBlock) {
-              editor.setTextCursorPosition(lastBlock, 'end');
-            }
-            editor.focus();
-          }, 0);
-          return;
-        }
-      }
-
-      // Offline / no collaboration, or Yjs fragment is empty — seed from note.text.
-      if (!note.text) return;
-      const existing = await editor.blocksToMarkdownLossy();
-      if (existing && existing === note.text) {
-        logger('existing === note.text');
-      } else {
-        // Use OFM-aware parser for vault notes
-        const isVaultNote = !!note.sourcePath;
-        const blocks = isVaultNote
-          ? await ofmToBlocks(editor, note.text)
-          : await editor.tryParseMarkdownToBlocks(note.text);
-        editor.replaceBlocks(editor.document, blocks);
-      }
-
-      // set focus
-      setTimeout(() => {
-        const lastBlock = editor.document[editor.document.length - 1];
-        if (lastBlock) {
-          editor.setTextCursorPosition(lastBlock, 'end');
-        }
-        editor.focus();
-      }, 0);
-    })();
-    // don't want to rerun on note text change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editor]);
-  // TODO: listen for remote updates, but filter out updates that are from this browser
 
   return (
     <div data-cy="ewe-note-editor" className="editor-wrapper w-full max-w-full">
-      <div className="max-w-5xl mx-auto w-full">
-        {showFrontmatterEditor &&
-          note.frontmatter &&
-          Object.keys(note.frontmatter).length > 0 && (
-            <FrontmatterEditor
-              note={note}
-              onUpdate={(fm) => updateNoteFrontmatter(fm, note)}
-            />
-          )}
-        <BlockNoteView
-          editor={editor}
-          theme={usedTheme}
-          className="editor-view"
+      <div className="mx-auto w-full max-w-[46rem]">
+        {showFrontmatterEditor && (
+          <FrontmatterEditor
+            note={note}
+            onUpdate={(fm) => updateNoteFrontmatter(fm, note)}
+          />
+        )}
+        <TiptapEditor
+          note={note}
+          doc={doc}
+          provider={provider}
+          selectedNoteId={selectedNoteId}
+          onSaveMarkdown={updateNoteText}
+          userName={user.firstName || getDeviceType()}
+          userColor={cursorColor}
+          onEditorReady={onEditorReady}
+          onEditorFocusChange={onEditorFocusChange}
+          onNavigateWikiLink={onNavigateWikiLink}
+          sourceMode={sourceMode}
+          onSourceModeChange={onSourceModeChange}
         />
       </div>
     </div>
   );
-}
-
-function debounce(func: (text: string, note?: Note) => void, wait: number) {
-  let timeout: NodeJS.Timeout | null = null;
-  let lastArgs: [string, Note?] | null = null;
-
-  const debounced = function (...args: [string, Note?]) {
-    lastArgs = args;
-    if (timeout) {
-      clearTimeout(timeout);
-    }
-
-    timeout = setTimeout(() => {
-      lastArgs = null;
-      timeout = null;
-      func(...args);
-    }, wait);
-  };
-
-  /** Immediately call the function if there is a pending debounce */
-  debounced.flush = function () {
-    if (timeout && lastArgs) {
-      clearTimeout(timeout);
-      timeout = null;
-      const args = lastArgs;
-      lastArgs = null;
-      func(...args);
-    }
-  };
-
-  return debounced;
 }

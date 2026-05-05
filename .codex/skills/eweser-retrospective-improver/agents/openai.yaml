@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Eweser Retrospective Improver'
+  short_description: 'Improve Codex sessions from retrospectives'
+  default_prompt: 'Use $eweser-retrospective-improver to analyze recent Codex sessions and make targeted prompt, context, index, or workflow improvements.'

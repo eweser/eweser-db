@@ -26,7 +26,9 @@ Goal: verify whether EweNote feels complete as a local-first note app and identi
 - Signing in adds sync; it must not feel required for basic note-taking.
 - The first screen is the notes workspace, not onboarding or marketing.
 - Folders are personal organization. Shared rooms/spaces are collaboration or access boundaries.
-- BlockNote is the current editor. Do not expect TipTap behavior.
+- TipTap is the current editor. Expect Obsidian-style Markdown behavior,
+  source mode fallback, slash commands, context menus, and lossless OFM export
+  where this branch claims parity.
 - Markdown, wiki links, tags, properties, backlinks, and Obsidian-style workflows are part of the intended direction.
 - Sharing/collaboration must not overpromise if real access grants are not wired.
 - PWA/offline support is in scope enough to audit visible behavior and trust cues.
@@ -70,12 +72,12 @@ Goal: verify whether EweNote feels complete as a local-first note app and identi
 - [ ] Confirm destructive actions are clearly labeled and not too easy to trigger.
 - [ ] Flag if deletion has no undo/recovery story or if duplicate/delete leaves stale sidebar/home state.
 
-## 5. Home Dashboard Views
+## 5. Library and Note List Views
 
 - [ ] All Notes shows all current notes.
 - [ ] Recent shows recent notes in a sensible order.
 - [ ] Pinned section appears only when notes are pinned.
-- [ ] Grid/list toggle works and preserves readable cards/rows.
+- [ ] The first screen feels like a notes library, not a metrics dashboard.
 - [ ] Note previews are readable and do not expose raw markdown in a jarring way.
 - [ ] Empty states for no notes, no pinned notes, and no tasks are useful.
 - [ ] Flag if counts are wrong, active nav state is stale, or layouts jump when cards update.
@@ -83,10 +85,12 @@ Goal: verify whether EweNote feels complete as a local-first note app and identi
 ## 6. Folders and Organization
 
 - [ ] Create a folder from the sidebar.
+- [ ] Folder creation uses a visible dialog, not a native browser prompt.
+- [ ] Rename a folder from the visible folder-row actions.
 - [ ] Create a note inside that folder.
 - [ ] Folder note count updates.
 - [ ] Folder can expand/collapse.
-- [ ] Moving a note into a folder works if drag/drop is visible.
+- [ ] Moving a note into a folder works through a visible menu or drag/drop.
 - [ ] Notes without folders are still discoverable.
 - [ ] Shared-room-like entries are visually distinguishable from normal folders.
 - [ ] Flag if the UI blurs "folder" and "shared space" semantics, or if folder actions rely on browser prompts in a way that feels unfinished.
@@ -169,7 +173,7 @@ Goal: verify whether EweNote feels complete as a local-first note app and identi
 - [ ] Open share folder dialog.
 - [ ] Copy share link.
 - [ ] Follow or inspect the share link behavior if practical.
-- [ ] Confirm dialog copy clearly says collaborative editing/access control is coming soon if not implemented.
+- [ ] Confirm dialog copy clearly says the link is not an access grant if real sharing is not implemented.
 - [ ] Verify shared-room folders cannot be shared again or that disabled controls explain why.
 - [ ] Flag any UI that implies real multi-user access when it is only a placeholder link.
 
@@ -187,6 +191,7 @@ Goal: verify whether EweNote feels complete as a local-first note app and identi
 - [ ] Sidebar is usable or collapses appropriately.
 - [ ] Editor header controls do not overflow.
 - [ ] Right panel does not permanently cover content without a clear close action.
+- [ ] Mobile top controls switch cleanly between the 4 panes using icon-only chrome with accessible labels.
 - [ ] Dialogs fit on small screens.
 - [ ] Note cards/list rows remain readable.
 - [ ] Flag any horizontal scrolling, clipped buttons, overlapping text, or unreachable controls.
@@ -199,7 +204,7 @@ Goal: verify whether EweNote feels complete as a local-first note app and identi
 - [ ] Esc closes dialogs/palette where expected.
 - [ ] Visible focus states are present.
 - [ ] Destructive menu items are distinguishable from normal actions.
-- [ ] Flag if keyboard-only operation gets stuck inside BlockNote or dialogs.
+- [ ] Flag if keyboard-only operation gets stuck inside TipTap, source mode, menus, or dialogs.
 
 ## 18. Error and Edge States
 

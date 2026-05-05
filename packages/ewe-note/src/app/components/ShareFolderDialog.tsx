@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Users, Copy, Check } from 'lucide-react';
+import { Users, Copy, Check, AlertCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -24,13 +24,19 @@ export function ShareFolderDialog({
   folderName,
   folderId,
 }: ShareFolderDialogProps) {
-  const [copied, setCopied] = useState(false);
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>(
+    'idle'
+  );
   const shareLink = `${window.location.origin}/?folder=${encodeURIComponent(folderId)}`;
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(shareLink);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareLink);
+      setCopyState('copied');
+      setTimeout(() => setCopyState('idle'), 2000);
+    } catch {
+      setCopyState('failed');
+    }
   };
 
   return (
@@ -39,15 +45,17 @@ export function ShareFolderDialog({
         <DialogHeader>
           <DialogTitle>Share "{folderName}"</DialogTitle>
           <DialogDescription>
-            Share a link to this folder. Collaborative editing between users is
-            coming soon.
+            This copies a local navigation link. It does not grant another user
+            access to the folder or its notes.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 mt-4">
           {/* Share Link */}
           <div>
-            <Label className="text-sm font-medium mb-2 block">Share Link</Label>
+            <Label className="text-sm font-medium mb-2 block">
+              Local folder link
+            </Label>
             <div className="flex gap-2">
               <Input
                 data-cy="ewe-note-share-link-input"
@@ -61,10 +69,15 @@ export function ShareFolderDialog({
                 variant="outline"
                 size="sm"
               >
-                {copied ? (
+                {copyState === 'copied' ? (
                   <>
                     <Check className="w-4 h-4 mr-2" />
                     Copied
+                  </>
+                ) : copyState === 'failed' ? (
+                  <>
+                    <AlertCircle className="w-4 h-4 mr-2" />
+                    Copy failed
                   </>
                 ) : (
                   <>
@@ -81,15 +94,26 @@ export function ShareFolderDialog({
             <div className="flex gap-3">
               <Users className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
               <div className="text-sm">
-                <p className="font-medium mb-1">Collaborative Editing</p>
+                <p className="font-medium mb-1">Access grants not included</p>
                 <p className="text-muted-foreground">
-                  Real-time collaborative folders are powered by eweser-db
-                  shared rooms. Multi-user access control will be available in a
-                  future release.
+                  Opening the link focuses this folder in this browser profile.
+                  It does not create access for anyone else.
                 </p>
               </div>
             </div>
           </div>
+          {copyState === 'failed' ? (
+            <div
+              data-cy="ewe-note-share-copy-error"
+              className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+            >
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>
+                Clipboard access is unavailable. Select the link and copy it
+                manually.
+              </span>
+            </div>
+          ) : null}
         </div>
       </DialogContent>
     </Dialog>

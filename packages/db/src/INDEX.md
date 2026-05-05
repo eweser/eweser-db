@@ -19,6 +19,8 @@ tests.
 - [`types.ts`](./types.ts): SDK collection and provider types.
 - [`utils/getDocuments.ts`](./utils/getDocuments.ts): Yjs-backed document CRUD
   helpers.
+- [`utils/files.ts`](./utils/files.ts): Auth-server-backed attachment upload,
+  presign, and download helpers.
 - [`methods/newRoom.ts`](./methods/newRoom.ts): Room creation logic.
 
 ## Children
@@ -33,6 +35,8 @@ tests.
 - `getDocuments()` is the main CRUD surface over Yjs-backed room documents.
 - Multi-step Yjs writes should be transactional where needed.
 - Remote sync is optional; offline-first behavior is the default.
+- Remote file helpers depend on an access-grant token and never store storage
+  provider secrets in room documents.
 
 ## Update Triggers
 

@@ -3,7 +3,7 @@
 ## Plain English
 
 This package is the offline-first Ewe Notes app built with React, Vite,
-Tailwind, BlockNote, and `@eweser/db`.
+Tailwind, TipTap, and `@eweser/db`.
 
 ## Owns
 
@@ -27,7 +27,7 @@ Tailwind, BlockNote, and `@eweser/db`.
 ## Key Contracts
 
 - Note data lives in `@eweser/db` rooms and remains useful offline.
-- BlockNote/Obsidian import-export behavior must preserve user content.
+- TipTap/Obsidian import-export behavior must preserve user content.
 - Shared example UI changes may require changesets when they affect published
   package APIs.
 

@@ -1,5 +1,20 @@
 import type { DocumentBase } from './documentBase.js';
 
+export type NoteVaultSyncMetadata = {
+  /** Stable identity for a file-backed note, independent from mutable sourcePath. */
+  sourceId?: string;
+  /** Source path observed during the last successful vault sync. */
+  sourcePath?: string;
+  /** Filesystem mtime in milliseconds from the last successful file read. */
+  sourceMtimeMs?: number;
+  /** SHA-256 hash of the last file content synced from disk. */
+  lastFileHash?: string;
+  /** SHA-256 hash of the last Eweser note content materialized to disk. */
+  lastEweserHash?: string;
+  /** ISO timestamp for the last successful vault sync operation. */
+  lastSyncedAt?: string;
+};
+
 export type NoteBase = {
   text: string;
   flashcardRefs?: string[];
@@ -15,6 +30,8 @@ export type NoteBase = {
   tags?: string[];
   /** IDs of folders this note belongs to */
   folderIds?: string[];
+  /** Filesystem bridge metadata for Obsidian-compatible vault sync. */
+  vaultSync?: NoteVaultSyncMetadata;
 };
 
 export type Note = DocumentBase & NoteBase;

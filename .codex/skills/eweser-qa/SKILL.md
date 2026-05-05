@@ -21,13 +21,27 @@ re-QA, an audit, or independent review after Coder has completed internal QA.
 1. Check `git status --short --branch` and the branch diff to understand the full scope of changes.
 2. Read the plan file the coder worked from in `docs/ai/plans/`, if one exists.
 3. Read `AGENTS.md`.
-4. Read `docs/ai/quality-gates-matrix.md` when verification scope is ambiguous.
-5. Read relevant changed files and tests.
-6. If the branch has an open PR, inspect unresolved PR review threads and top-level comments before reviewing the local diff.
+4. Read the nearest `INDEX.md` for changed package boundaries before broad `rg` or `find` exploration.
+5. Use targeted `npm run code-map:query -- --symbol <name>`, `--file <path>`, or `--package <name>` for import/export questions before loading broad source context.
+6. Read `docs/ai/quality-gates-matrix.md` when verification scope is ambiguous.
+7. Read relevant changed files and tests.
+8. If the branch has an open PR, inspect unresolved PR review threads and top-level comments before reviewing the local diff.
+
+Keep the review context focused. Use `git diff --name-only`, indexes, PR
+comments, and targeted file reads before loading large docs or entire source
+files.
 
 ## Verification steps
 
 ### 1. Tests
+
+Before local tests, services, Cypress, or browser flows, run:
+
+```bash
+~/.codex/skills/eweser-runtime-orientation/scripts/eweser-runtime-orientation.sh status
+```
+
+Run `refresh` if endpoints are unknown, stale, or relevant to the verification.
 
 ```bash
 npm test

@@ -2,21 +2,22 @@
 
 ## Plain English
 
-This source root contains the landing site's pages, components, and styles.
+This source root contains the landing site's pages, layouts, and styles.
 
 ## Owns
 
-- Landing-page source files and visual presentation for the marketing site.
+- Landing-page source files, layouts, and visual presentation for the
+  marketing site.
 
 ## Start Here
 
 - [`pages/`](./pages/): Page routes when present.
-- [`components/`](./components/): Reusable landing components when present.
+- [`layouts/`](./layouts/): Shared Astro layout wrappers.
 - [`styles/`](./styles/): Landing styles when present.
 
 ## Children
 
-- [`components/`](./components/): Landing UI components when present.
+- [`layouts/`](./layouts/): Shared layout files.
 - [`pages/`](./pages/): Route/page files when present.
 - [`styles/`](./styles/): Site styles when present.
 
@@ -27,7 +28,7 @@ This source root contains the landing site's pages, components, and styles.
 
 ## Update Triggers
 
-- Update when source folders, landing routes, components, copy ownership, or
+- Update when source folders, landing routes, layouts, copy ownership, or
   build commands change.
 
 ## Testing

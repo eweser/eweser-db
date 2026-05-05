@@ -22,10 +22,14 @@
  * should be captured via the app and passed as the manifest input.
  */
 
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { serializeFrontmatter } from '@eweser/shared';
-import type { VaultImportManifest, ImportedNote } from './import-vault';
+import type {
+  VaultImportManifest,
+  ImportedNote,
+  ImportedVaultFile,
+} from './import-vault';
 
 // ---------------------------------------------------------------------------
 // Export types
@@ -34,6 +38,11 @@ import type { VaultImportManifest, ImportedNote } from './import-vault';
 export interface ExportedNote {
   sourcePath: string;
   content: string;
+}
+
+export interface ExportedVaultFile {
+  sourcePath: string;
+  size: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -65,22 +74,24 @@ export async function exportVault(options: {
   manifestPath: string;
   outputPath: string;
   dryRun?: boolean;
-}): Promise<ExportedNote[]> {
+}): Promise<{ notes: ExportedNote[]; files: ExportedVaultFile[] }> {
   const { manifestPath, outputPath, dryRun = false } = options;
 
   const rawManifest = await readFile(manifestPath, 'utf-8');
   const manifest = JSON.parse(rawManifest) as VaultImportManifest;
+  const files = manifest.files ?? manifest.attachments ?? [];
 
   console.log(
-    `Exporting ${manifest.notes.length} notes from vault "${manifest.vaultName}" to ${outputPath}`
+    `Exporting ${manifest.notes.length} notes and ${files.length} preserved files from vault "${manifest.vaultName}" to ${outputPath}`
   );
 
-  const exported: ExportedNote[] = [];
+  const exportedNotes: ExportedNote[] = [];
+  const exportedFiles: ExportedVaultFile[] = [];
 
   for (const note of manifest.notes) {
     const content = serializeNote(note);
     const destPath = join(outputPath, note.sourcePath);
-    exported.push({ sourcePath: note.sourcePath, content });
+    exportedNotes.push({ sourcePath: note.sourcePath, content });
 
     if (!dryRun) {
       await mkdir(dirname(destPath), { recursive: true });
@@ -88,9 +99,41 @@ export async function exportVault(options: {
     }
   }
 
-  console.log(`Export complete: ${exported.length} notes written`);
+  for (const file of files) {
+    const destPath = join(outputPath, file.sourcePath);
+    exportedFiles.push({ sourcePath: file.sourcePath, size: file.size });
 
-  return exported;
+    if (!dryRun) {
+      await writeVaultFile(file, destPath);
+    }
+  }
+
+  console.log(
+    `Export complete: ${exportedNotes.length} notes and ${exportedFiles.length} preserved files written`
+  );
+
+  return { notes: exportedNotes, files: exportedFiles };
+}
+
+async function writeVaultFile(
+  file: ImportedVaultFile,
+  destPath: string
+): Promise<void> {
+  await mkdir(dirname(destPath), { recursive: true });
+
+  if (file.contentBase64) {
+    await writeFile(destPath, Buffer.from(file.contentBase64, 'base64'));
+    return;
+  }
+
+  if (file.copySourcePath) {
+    await copyFile(file.copySourcePath, destPath);
+    return;
+  }
+
+  throw new Error(
+    `Cannot export preserved file "${file.sourcePath}" without contentBase64 or copySourcePath`
+  );
 }
 
 // ---------------------------------------------------------------------------

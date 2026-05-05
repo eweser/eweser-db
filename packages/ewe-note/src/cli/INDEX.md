@@ -7,16 +7,19 @@ Obsidian-compatible vault data with Ewe Note data shapes.
 
 ## Owns
 
-- Vault import manifest generation from Markdown files and attachments.
+- Vault import manifest generation from Markdown files and preserved vault
+  files, including attachments, `.canvas`, and `.base`.
 - Vault export from manifests back to Markdown files.
 - Local state-file sync experiments for vault workflows.
 
 ## Start Here
 
 - [`import-vault.ts`](./import-vault.ts): Import parser, manifest types, and CLI
-  entry point.
+  entry point, inventory-only preflight, and conservative scrubbed-copy helper.
 - [`export-vault.ts`](./export-vault.ts): Manifest-to-vault export logic.
-- [`vault-sync.ts`](./vault-sync.ts): Local vault/state sync engine.
+- [`vault-sync.ts`](./vault-sync.ts): Local vault/state sync engine and
+  Eweser notes-room sync mode, including remote attachment upload/materialize
+  support through S3-compatible storage helpers.
 
 ## Children
 
@@ -25,10 +28,12 @@ Obsidian-compatible vault data with Ewe Note data shapes.
 ## Key Contracts
 
 - Import/export code is user-data sensitive and should avoid lossy transforms.
-- Markdown, frontmatter, tags, wiki links, and attachments should preserve
-  Obsidian-compatible meaning where possible.
+- Markdown, frontmatter, tags, wiki links, attachments, and preserved vault
+  files should preserve Obsidian-compatible meaning where possible.
 - CLI output should avoid printing private file contents unless explicitly
   requested by a command mode.
+- Device-local attachment paths are not canonical synced data; remote
+  attachment materialization must work from object storage metadata alone.
 
 ## Update Triggers
 

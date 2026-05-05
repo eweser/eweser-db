@@ -22,6 +22,8 @@ Every new plan must include:
 - Execution summary
 - Self-reflection / instruction improvements
 
+Use `eweser-coder` for coding runs in plan metadata and examples.
+
 Planner creates implementation-ready plans and stops for approval. Coder treats
 the approved plan as the approval boundary, implements all runs, verifies,
 performs internal QA, fixes issues found inside the boundary, and updates the
@@ -68,6 +70,7 @@ plan. Standalone QA is reserved for independent re-QA or audit work.
 | ---------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------ |
 | [2026-04-06-tiptap-migration.md](./2026-04-06-tiptap-migration.md)                             | Planned  | Lower-level ProseMirror migration to replace BlockNote and fix editor/title/task serialization issues. |
 | [2026-05-01-ewe-note-ux-feature-completion.md](./2026-05-01-ewe-note-ux-feature-completion.md) | Proposed | App-shell, mobile, PWA/offline, sync-status, folders, settings, tasks, and tester handoff pass.        |
+| [2026-05-01-obsidian-full-sync-base-files.md](./2026-05-01-obsidian-full-sync-base-files.md)   | Proposed | Real Obsidian vault sync, now gated by secret-safe preflight and attachment/object-storage work.       |
 | [2026-04-11-ewe-note-feature-tests.md](./2026-04-11-ewe-note-feature-tests.md)                 | Later QA | Useful after the UX pass; current Cypress coverage is partial.                                         |
 
 ### Deferred Backlog
@@ -76,7 +79,7 @@ plan. Standalone QA is reserved for independent re-QA or audit work.
 | -------------------------------------------------------------------------- | ----------- | --------------------------------------------------------- |
 | [2026-04-02-phase-4-deploy.md](./2026-04-02-phase-4-deploy.md)             | Mostly done | Keep only for remaining production polish/cleanup notes.  |
 | [2026-04-02-phase-5-mobile.md](./2026-04-02-phase-5-mobile.md)             | Deferred    | PWA exists; Capacitor/native app work is not launch-path. |
-| [2026-04-03-file-storage.md](./2026-04-03-file-storage.md)                 | Deferred    | Object storage and file APIs are not launch-path.         |
+| [2026-04-03-file-storage.md](./2026-04-03-file-storage.md)                 | Deferred    | Object storage, file APIs, and BYO storage provider work. |
 | [2026-04-05-auto-knowledge-graph.md](./2026-04-05-auto-knowledge-graph.md) | Deferred    | Later graph/search layer concept.                         |
 
 ## Completed Plans

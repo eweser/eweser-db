@@ -11,6 +11,7 @@ import {
   Plus,
 } from 'lucide-react';
 import { useNotes } from '../contexts/NotesContext';
+import { extractMarkdownOutline } from './right-panel-outline';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
@@ -22,7 +23,7 @@ interface RightPanelProps {
 
 export function RightPanel({ noteId, onClose }: RightPanelProps) {
   const navigate = useNavigate();
-  const { notes, updateNote } = useNotes();
+  const { notes, updateNote, convertUnlinkedMentionToLink } = useNotes();
   const [newTag, setNewTag] = useState('');
   const [newPropertyKey, setNewPropertyKey] = useState('');
   const [newPropertyValue, setNewPropertyValue] = useState('');
@@ -30,20 +31,30 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
   const note = notes.find((n) => n.id === noteId);
   if (!note) return null;
 
-  // Extract backlinks
   const backlinks = notes.filter((n) => n.links.includes(noteId));
+  const outgoingLinks =
+    note.outgoingLinks.length > 0
+      ? note.outgoingLinks
+      : note.links.map((linkId) => ({
+          target: notes.find((n) => n.id === linkId)?.title ?? linkId,
+          noteId: linkId,
+          display: '',
+          raw: '',
+          alias: undefined,
+          heading: undefined,
+          blockRef: undefined,
+        }));
+  const unresolvedOutgoingLinks = outgoingLinks.filter((link) => !link.noteId);
+  const resolvedOutgoingLinks = outgoingLinks.filter((link) => !!link.noteId);
+  const unlinkedMentions = note.unlinkedMentions.map((mention) => {
+    const targetNote = notes.find((n) => n.id === mention.noteId);
+    return {
+      ...mention,
+      title: targetNote?.title,
+    };
+  });
 
-  // Extract outline from markdown headings
-  const headingRegex = /^(#{1,6})\s+(.+)$/gm;
-  const headings: Array<{ level: number; text: string; id: string }> = [];
-  let match;
-  while ((match = headingRegex.exec(note.content)) !== null) {
-    headings.push({
-      level: match[1].length,
-      text: match[2],
-      id: match[2].toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-    });
-  }
+  const headings = extractMarkdownOutline(note.content);
 
   const handleAddTag = () => {
     if (newTag && !note.tags.includes(newTag)) {
@@ -81,17 +92,17 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
   return (
     <aside
       data-cy="ewe-note-right-panel"
-      className="fixed inset-y-0 right-0 z-40 flex h-screen w-80 flex-col overflow-hidden border-l border-border bg-card shadow-2xl xl:relative xl:z-auto xl:shadow-none"
+      className="flex h-full w-full shrink-0 flex-col overflow-hidden border-l border-border bg-card"
     >
       {/* Header */}
-      <div className="px-4 py-4 border-b border-border flex items-center justify-between">
-        <h2 className="text-sm font-medium">Note Info</h2>
+      <div className="flex items-center justify-between border-b border-border px-4 py-4">
+        <h2 className="text-sm font-medium text-foreground">Note Info</h2>
         {onClose && (
           <button
             type="button"
             aria-label="Close note info"
             onClick={onClose}
-            className="p-1 hover:bg-accent rounded transition-colors"
+            className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           >
             <X className="w-4 h-4" />
           </button>
@@ -103,7 +114,7 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
         defaultValue="outline"
         className="flex-1 flex flex-col overflow-hidden"
       >
-        <TabsList className="w-full grid grid-cols-3 mx-4 mt-3">
+        <TabsList className="mx-4 mt-3 grid w-auto grid-cols-3 bg-muted/60">
           <TabsTrigger value="outline" className="text-xs">
             <List className="w-3.5 h-3.5 mr-1.5" />
             Outline
@@ -132,6 +143,11 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
               {headings.map((heading, index) => (
                 <button
                   key={index}
+                  onClick={() => {
+                    document
+                      .querySelector(`[data-heading-anchor="${heading.id}"]`)
+                      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}
                   className="w-full text-left px-2 py-1.5 rounded hover:bg-accent transition-colors text-sm group"
                   style={{ paddingLeft: `${(heading.level - 1) * 12 + 8}px` }}
                 >
@@ -152,33 +168,93 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
             {/* Outgoing Links */}
             <div>
               <h3 className="text-xs font-medium text-muted-foreground mb-2">
-                Outgoing Links ({note.links.length})
+                Outgoing Links ({outgoingLinks.length})
               </h3>
-              {note.links.length === 0 ? (
+              {outgoingLinks.length === 0 ? (
                 <div className="text-sm text-muted-foreground">
                   No outgoing links
                 </div>
               ) : (
                 <div className="space-y-1">
-                  {note.links.map((linkId) => {
-                    const linkedNote = notes.find((n) => n.id === linkId);
-                    if (!linkedNote) return null;
-                    return (
+                  {resolvedOutgoingLinks.map((link) => {
+                    const linkedNote = link.noteId
+                      ? notes.find((n) => n.id === link.noteId)
+                      : null;
+                    const content = (
+                      <>
+                        <FileText className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium truncate">
+                            {linkedNote?.title ?? link.target}
+                          </div>
+                          <div className="text-xs text-muted-foreground truncate">
+                            {linkedNote
+                              ? `${linkedNote.content.substring(0, 100)}...`
+                              : 'Unresolved wiki link'}
+                          </div>
+                        </div>
+                      </>
+                    );
+
+                    return linkedNote && link.noteId ? (
                       <button
-                        key={linkId}
-                        onClick={() => navigate(`/editor/${linkId}`)}
+                        key={`${link.target}:${link.noteId}`}
+                        onClick={() => navigate(`/editor/${link.noteId}`)}
                         className="w-full flex items-start gap-2 px-2 py-2 rounded hover:bg-accent transition-colors text-left group"
+                      >
+                        {content}
+                      </button>
+                    ) : (
+                      <div
+                        key={link.target}
+                        className="w-full flex items-start gap-2 px-2 py-2 rounded text-left"
+                      >
+                        {content}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Unresolved Outgoing Links */}
+            <div>
+              <h3 className="text-xs font-medium text-muted-foreground mb-2">
+                Unresolved Links ({unresolvedOutgoingLinks.length})
+              </h3>
+              {unresolvedOutgoingLinks.length === 0 ? (
+                <div className="text-sm text-muted-foreground">
+                  No unresolved links
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {unresolvedOutgoingLinks.map((link) => {
+                    const context = [
+                      link.heading ? `#${link.heading}` : '',
+                      link.blockRef ? `#^${link.blockRef}` : '',
+                      link.alias ? ` (${link.alias})` : '',
+                    ]
+                      .join('')
+                      .trim();
+                    return (
+                      <div
+                        key={
+                          link.raw ||
+                          `${link.target}:${link.noteId ?? link.alias}`
+                        }
+                        className="w-full flex items-start gap-2 px-2 py-2 rounded bg-muted/30"
                       >
                         <FileText className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium truncate">
-                            {linkedNote.title}
+                            {link.target}
+                            {context ? ` ${context}` : ''}
                           </div>
-                          <div className="text-xs text-muted-foreground truncate">
-                            {linkedNote.content.substring(0, 100)}...
+                          <div className="text-xs text-muted-foreground">
+                            Unresolved wiki link
                           </div>
                         </div>
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
@@ -212,6 +288,50 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
                         </div>
                       </div>
                     </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Unlinked Mentions */}
+            <div>
+              <h3 className="text-xs font-medium text-muted-foreground mb-2">
+                Unlinked Mentions ({unlinkedMentions.length})
+              </h3>
+              {unlinkedMentions.length === 0 ? (
+                <div className="text-sm text-muted-foreground">
+                  No unlinked mentions
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {unlinkedMentions.map((mention) => (
+                    <div
+                      key={mention.noteId}
+                      className="flex items-start gap-2 px-2 py-2 rounded border border-dashed border-border text-sm"
+                    >
+                      <FileText className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium truncate">
+                          {mention.title ?? mention.noteId}
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          {mention.mention}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="text-xs px-2 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20"
+                        onClick={() =>
+                          convertUnlinkedMentionToLink(
+                            note.id,
+                            mention.noteId,
+                            mention.mention
+                          )
+                        }
+                      >
+                        Convert
+                      </button>
+                    </div>
                   ))}
                 </div>
               )}

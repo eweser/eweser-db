@@ -1,5 +1,3 @@
-import '@blocknote/core/fonts/inter.css';
-import '@blocknote/shadcn/style.css';
 import 'yjs';
 import { Database } from '@eweser/db';
 import type { CollectionKey, Note, Room } from '@eweser/db';
@@ -98,6 +96,9 @@ export type DbContextType = {
   loaded: boolean;
   loggedIn: boolean;
   hasToken: boolean;
+  syncStatus: EweNoteSyncStatus;
+  syncStatusLabel: string;
+  syncStatusDescription: string;
   selectedRoom: Room<Note> | null;
   setSelectedRoom: (room: Room<Note> | null) => void;
   selectedNoteId: string;
@@ -110,6 +111,22 @@ export type DbContextType = {
     avatar: string;
   };
   signOut: () => void;
+};
+
+export type EweNoteSyncStatus =
+  | 'local-only'
+  | 'signed-out'
+  | 'connecting'
+  | 'synced'
+  | 'offline'
+  | 'auth-unreachable'
+  | 'sync-error';
+
+type DbStatusSnapshot = {
+  online: boolean;
+  hasToken: boolean;
+  connectedRoomsCount: number;
+  connectingRoomsCount: number;
 };
 
 export const DbContext = createContext<DbContextType | null>(null);
@@ -132,6 +149,70 @@ const signOut = () => {
 // for detailed debugging
 // db.on('status', (status) => console.log(status));
 
+function deriveSyncStatus({
+  loaded,
+  loggedIn,
+  hasToken,
+  browserOnline,
+  dbStatus,
+}: {
+  loaded: boolean;
+  loggedIn: boolean;
+  hasToken: boolean;
+  browserOnline: boolean;
+  dbStatus: DbStatusSnapshot | null;
+}): EweNoteSyncStatus {
+  if (!browserOnline) return 'offline';
+  if (!hasToken && !loggedIn) return loaded ? 'signed-out' : 'local-only';
+  if (dbStatus?.online === false) return 'auth-unreachable';
+  if (dbStatus?.connectingRoomsCount) return 'connecting';
+  if (dbStatus?.connectedRoomsCount) return 'synced';
+  if (hasToken && !loggedIn) return 'auth-unreachable';
+  return 'local-only';
+}
+
+function getSyncStatusText(status: EweNoteSyncStatus) {
+  switch (status) {
+    case 'synced':
+      return {
+        label: 'Synced',
+        description: 'At least one notes room is connected for remote sync.',
+      };
+    case 'connecting':
+      return {
+        label: 'Connecting',
+        description: 'EweNote is trying to connect a notes room.',
+      };
+    case 'offline':
+      return {
+        label: 'Offline',
+        description: 'You can keep writing locally; remote sync is paused.',
+      };
+    case 'auth-unreachable':
+      return {
+        label: 'Auth unavailable',
+        description:
+          'A token exists, but the app has not confirmed the signed-in session.',
+      };
+    case 'sync-error':
+      return {
+        label: 'Sync error',
+        description:
+          'Remote sync reported an error. Local notes remain usable.',
+      };
+    case 'local-only':
+      return {
+        label: 'Local only',
+        description: 'Notes are stored in this browser profile on this device.',
+      };
+    case 'signed-out':
+      return {
+        label: 'Signed out',
+        description: 'Local notes work now. Sign in when you want sync.',
+      };
+  }
+}
+
 export const DbProvider = ({ children }: { children: ReactNode }) => {
   // If rooms were already loaded before this component mounted (db is module-level),
   // initialize loaded as true so offline/local-first mode works without login.
@@ -140,6 +221,10 @@ export const DbProvider = ({ children }: { children: ReactNode }) => {
   );
   const [loggedIn, setLoggedIn] = useState(false);
   const [hasToken, setHasToken] = useState(false);
+  const [dbStatus, setDbStatus] = useState<DbStatusSnapshot | null>(null);
+  const [browserOnline, setBrowserOnline] = useState(() =>
+    typeof navigator === 'undefined' ? true : navigator.onLine
+  );
   const [selectedRoom, setSelectedRoom] = useState<Room<Note> | null>(null);
 
   const defaultNotesRoom = db.getRoom<Note>(collectionKey, defaultRoomId);
@@ -203,6 +288,37 @@ export const DbProvider = ({ children }: { children: ReactNode }) => {
   }, [loggedIn, hasToken]);
 
   useEffect(() => {
+    const handleBrowserOnline = () => setBrowserOnline(true);
+    const handleBrowserOffline = () => setBrowserOnline(false);
+
+    window.addEventListener('online', handleBrowserOnline);
+    window.addEventListener('offline', handleBrowserOffline);
+
+    return () => {
+      window.removeEventListener('online', handleBrowserOnline);
+      window.removeEventListener('offline', handleBrowserOffline);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleStatus = (status: DbStatusSnapshot) => {
+      setDbStatus({
+        online: status.online,
+        hasToken: status.hasToken,
+        connectedRoomsCount: status.connectedRoomsCount,
+        connectingRoomsCount: status.connectingRoomsCount,
+      });
+    };
+
+    db.on('status', handleStatus);
+    db.statusListener();
+
+    return () => {
+      db.off('status', handleStatus);
+    };
+  }, []);
+
+  useEffect(() => {
     const handleRoomsLoaded = () => {
       setLoaded(true);
       setAllRooms(db.getRooms('notes'));
@@ -239,6 +355,14 @@ export const DbProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const user = useGetUserFromDb(db, loggedIn || hasToken);
+  const syncStatus = deriveSyncStatus({
+    loaded,
+    loggedIn,
+    hasToken,
+    browserOnline,
+    dbStatus,
+  });
+  const syncStatusText = getSyncStatusText(syncStatus);
 
   const contextValue = useMemo(
     () => ({
@@ -247,6 +371,9 @@ export const DbProvider = ({ children }: { children: ReactNode }) => {
       loaded,
       loggedIn,
       hasToken,
+      syncStatus,
+      syncStatusLabel: syncStatusText.label,
+      syncStatusDescription: syncStatusText.description,
       selectedRoom: selectedRoom ?? defaultNotesRoom,
       setSelectedRoom,
       selectedNoteId: selectedNoteId ?? defaultNote?._id ?? defaultNoteId,
@@ -260,6 +387,8 @@ export const DbProvider = ({ children }: { children: ReactNode }) => {
       loaded,
       loggedIn,
       hasToken,
+      syncStatus,
+      syncStatusText,
       selectedRoom,
       defaultNotesRoom,
       setSelectedRoom,

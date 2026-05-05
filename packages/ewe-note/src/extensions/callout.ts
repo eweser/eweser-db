@@ -10,8 +10,8 @@
  *   > [!type]+ Title   (expanded by default)
  *   > [!type]- Title   (collapsed by default)
  *
- * At the serialization layer, callouts are preserved as blockquotes in
- * BlockNote and rendered with callout styling via CSS class detection.
+ * At the serialization layer, callouts are preserved as blockquotes and
+ * rendered with callout styling via CSS class detection.
  */
 
 /** All built-in Obsidian callout types */
@@ -45,7 +45,7 @@ export const CALLOUT_TYPES = [
   'cite',
 ] as const;
 
-export type CalloutType = (typeof CALLOUT_TYPES)[number];
+export type CalloutType = (typeof CALLOUT_TYPES)[number] | (string & {});
 
 export interface CalloutInfo {
   type: CalloutType;
@@ -70,7 +70,7 @@ export function parseCalloutHeader(line: string): CalloutInfo | null {
   const foldChar = match[2] ?? '';
   const titleText = (match[3] ?? '').trim();
 
-  const type = CALLOUT_TYPES.includes(rawType) ? rawType : 'note';
+  const type = rawType;
   const foldable = foldChar === '+' || foldChar === '-';
   const defaultExpanded = foldChar !== '-';
 

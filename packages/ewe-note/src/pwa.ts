@@ -2,6 +2,8 @@ import { registerSW } from 'virtual:pwa-register';
 
 export const PWA_UPDATE_MESSAGE =
   'A new version of Ewe Note is available. Reload now?';
+export const PWA_OFFLINE_READY_EVENT = 'eweser:pwa-offline-ready';
+export const PWA_REGISTER_ERROR_EVENT = 'eweser:pwa-register-error';
 
 type ConfirmReload = (message: string) => boolean;
 type UpdateServiceWorker = (reloadPage?: boolean) => Promise<void> | void;
@@ -40,11 +42,11 @@ export function registerPwa() {
       updateServiceWorker(reloadPage)
     ),
     onOfflineReady() {
-      window.dispatchEvent(new CustomEvent('eweser:pwa-offline-ready'));
+      window.dispatchEvent(new CustomEvent(PWA_OFFLINE_READY_EVENT));
     },
     onRegisterError(error: unknown) {
       window.dispatchEvent(
-        new CustomEvent('eweser:pwa-register-error', { detail: error })
+        new CustomEvent(PWA_REGISTER_ERROR_EVENT, { detail: error })
       );
     },
   });

@@ -19,7 +19,11 @@ Drizzle models, and service helpers for the auth API.
   invite, update, and sync-token routes.
 - [`routes/agents.ts`](./routes/agents.ts): Agent token API.
 - [`routes/connect-ai.ts`](./routes/connect-ai.ts): Signed-in AI connector API.
+- [`routes/files.ts`](./routes/files.ts): S3-compatible attachment
+  upload/presign/download routes with room access checks.
 - [`routes/mcp.ts`](./routes/mcp.ts): Remote HTTP MCP endpoint.
+- [`lib/storage.ts`](./lib/storage.ts): S3-compatible object storage adapter
+  used by attachment routes.
 - [`services/sync-token.ts`](./services/sync-token.ts): Sync token issuance.
 
 ## Children
@@ -37,6 +41,8 @@ Drizzle models, and service helpers for the auth API.
 - Room access grants remain explicit and auditable.
 - Sync tokens are signed for the sync server and scoped to rooms.
 - Remote MCP accepts OAuth bearer tokens and legacy agent bearer tokens.
+- Attachment routes must keep provider credentials in env/secret storage and
+  only expose non-secret object metadata in synced documents.
 
 ## Update Triggers
 

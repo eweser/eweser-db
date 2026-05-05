@@ -34,6 +34,8 @@ manual-test handoff with:
 
 - **Id**: `run-1`
 - **Title**: `<Title>`
+- **UI classification**: `ui: true | false`
+- **Browser checkpoint**: `<focused | full | none>`
 - **Deliverable**:
   - <Concrete result this run leaves behind.>
 - **Files**:

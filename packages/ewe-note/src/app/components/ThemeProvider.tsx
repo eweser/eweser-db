@@ -8,11 +8,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 }
 
 export function useTheme() {
-  const { resolvedMode, setMode } = useAppTheme();
+  const theme = useAppTheme();
 
   return {
-    theme: resolvedMode as Theme,
-    toggleTheme: () => setMode(resolvedMode === 'light' ? 'dark' : 'light'),
-    setTheme: (theme: Theme) => setMode(theme),
+    ...theme,
+    theme: theme.resolvedMode as Theme,
+    toggleTheme: () =>
+      theme.setMode(theme.resolvedMode === 'light' ? 'dark' : 'light'),
+    setTheme: (nextTheme: Theme) => theme.setMode(nextTheme),
   };
 }

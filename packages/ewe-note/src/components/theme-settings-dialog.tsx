@@ -203,7 +203,13 @@ function ThemeSection({
 }: Readonly<ThemeSectionProps>) {
   const presets = getThemesByMode(themeMode);
   const [editingCustom, setEditingCustom] = useState(false);
-  const seed = themeMode === 'light' ? CUSTOM_LIGHT_SEED : CUSTOM_DARK_SEED;
+  const fallbackSeed =
+    themeMode === 'light' ? CUSTOM_LIGHT_SEED : CUSTOM_DARK_SEED;
+  const activePreset =
+    activeId === 'custom'
+      ? undefined
+      : presets.find((theme) => theme.id === activeId);
+  const seed = customVars ?? activePreset?.vars ?? fallbackSeed;
 
   const handleSelectCustom = () => {
     onSelect('custom');
@@ -245,7 +251,7 @@ function ThemeSection({
           <div className="flex items-center justify-center w-full h-8 rounded bg-muted">
             <Palette className="h-4 w-4 text-muted-foreground" />
           </div>
-          <span className="text-xs font-medium">Custom</span>
+          <span className="text-xs font-medium">Customize</span>
         </button>
       </div>
 
@@ -288,15 +294,7 @@ function ThemeSection({
   );
 }
 
-// ----- Main Dialog -----
-interface ThemeSettingsDialogProps {
-  /** Custom trigger element. If omitted, renders a default button. */
-  trigger?: React.ReactNode;
-}
-
-export function ThemeSettingsDialog({
-  trigger,
-}: Readonly<ThemeSettingsDialogProps>) {
+export function ThemeSettingsPanelContent() {
   const {
     lightThemeId,
     setLightThemeId,
@@ -308,6 +306,38 @@ export function ThemeSettingsDialog({
     setCustomDarkVars,
   } = useTheme();
 
+  return (
+    <div className="space-y-5 py-2">
+      <ThemeSection
+        modeLabel="Light"
+        themeMode="light"
+        activeId={lightThemeId}
+        onSelect={setLightThemeId}
+        customVars={customLightVars}
+        onSaveCustom={setCustomLightVars}
+      />
+      <div className="border-t border-border" />
+      <ThemeSection
+        modeLabel="Dark"
+        themeMode="dark"
+        activeId={darkThemeId}
+        onSelect={setDarkThemeId}
+        customVars={customDarkVars}
+        onSaveCustom={setCustomDarkVars}
+      />
+    </div>
+  );
+}
+
+// ----- Main Dialog -----
+interface ThemeSettingsDialogProps {
+  /** Custom trigger element. If omitted, renders a default button. */
+  trigger?: React.ReactNode;
+}
+
+export function ThemeSettingsDialog({
+  trigger,
+}: Readonly<ThemeSettingsDialogProps>) {
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -322,25 +352,7 @@ export function ThemeSettingsDialog({
         <DialogHeader>
           <DialogTitle>Theme Settings</DialogTitle>
         </DialogHeader>
-        <div className="space-y-5 py-2">
-          <ThemeSection
-            modeLabel="Light"
-            themeMode="light"
-            activeId={lightThemeId}
-            onSelect={setLightThemeId}
-            customVars={customLightVars}
-            onSaveCustom={setCustomLightVars}
-          />
-          <div className="border-t border-border" />
-          <ThemeSection
-            modeLabel="Dark"
-            themeMode="dark"
-            activeId={darkThemeId}
-            onSelect={setDarkThemeId}
-            customVars={customDarkVars}
-            onSaveCustom={setCustomDarkVars}
-          />
-        </div>
+        <ThemeSettingsPanelContent />
       </DialogContent>
     </Dialog>
   );

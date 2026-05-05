@@ -128,6 +128,7 @@ export type FolderRecord = FolderBase & { id: string };
 export type UseFoldersResult = {
   folders: FolderRecord[];
   createFolder: (name: string, parentFolderId?: string) => string;
+  updateFolder: (id: string, updates: Partial<FolderBase>) => void;
   renameFolder: (id: string, name: string) => void;
   deleteFolder: (id: string) => void;
   getFolderMap: () => YMap<string> | null;
@@ -183,14 +184,23 @@ export function useFolders(room: Room<Note> | null): UseFoldersResult {
     return id;
   };
 
-  const renameFolder = (id: string, name: string) => {
+  const updateFolder = (id: string, updates: Partial<FolderBase>) => {
     const map = getFolderMap();
     if (!map) return;
     const existing = map.get(id);
     if (!existing) return;
     const base = JSON.parse(existing) as FolderBase;
+    const next = {
+      ...base,
+      ...updates,
+    } as FolderBase & { parentFolderId?: string };
+
+    if (!next.parentFolderId) {
+      delete next.parentFolderId;
+    }
+
     room?.ydoc?.transact(() => {
-      map.set(id, JSON.stringify({ ...base, name }));
+      map.set(id, JSON.stringify(next));
     });
   };
 
@@ -202,5 +212,16 @@ export function useFolders(room: Room<Note> | null): UseFoldersResult {
     });
   };
 
-  return { folders, createFolder, renameFolder, deleteFolder, getFolderMap };
+  const renameFolder = (id: string, name: string) => {
+    updateFolder(id, { name });
+  };
+
+  return {
+    folders,
+    createFolder,
+    updateFolder,
+    renameFolder,
+    deleteFolder,
+    getFolderMap,
+  };
 }

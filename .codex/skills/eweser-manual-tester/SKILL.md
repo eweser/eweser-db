@@ -19,19 +19,40 @@ Read:
 
 1. `AGENTS.md`
 2. `ARCHITECTURE.md`
-3. `LOCAL_DEVELOPMENT.md` when local services, ports, auth, or browser flows
+3. the nearest `INDEX.md` for the package or workflow under test before broad
+   `rg` or `find` exploration
+4. `LOCAL_DEVELOPMENT.md` when local services, ports, auth, or browser flows
    matter
-4. the relevant plan file in `docs/ai/plans/` or checklist under
+5. the relevant plan file in `docs/ai/plans/` or checklist under
    `docs/ai/testing/`
-5. the plan's Execution Summary and manual-test handoff notes, when present
-6. relevant package `AGENTS.md` files for touched areas
+6. the plan's Execution Summary and manual-test handoff notes, when present
+7. relevant package `AGENTS.md` files for touched areas
 
 If the plan lacks a manual-test handoff, create a best-effort checklist from the
 run deliverables and report that the handoff is missing.
 
+Keep orientation compact. Use indexes, plan headings, and targeted file reads;
+do not dump full docs or broad source trees into context before you know which
+surface you are testing.
+
 ## Fast Local Orientation
 
-Start by verifying what is already running before broad repo spelunking:
+Start by verifying what is already running before broad repo spelunking. Use the
+runtime-orientation helper first; it captures the worktree, branch, and known
+local endpoints in one compact pass.
+
+```bash
+~/.codex/skills/eweser-runtime-orientation/scripts/eweser-runtime-orientation.sh status
+```
+
+If the status output is missing expected endpoints or conflicts with the task,
+refresh it before testing:
+
+```bash
+~/.codex/skills/eweser-runtime-orientation/scripts/eweser-runtime-orientation.sh refresh
+```
+
+Use narrower direct probes only after that:
 
 ```bash
 git status --short
@@ -65,6 +86,57 @@ Check the app's actual config before assuming an auth URL. For example,
 `http://localhost:38180`, while `LOCAL_DEVELOPMENT.md` documents the auth API
 health port as `38101`. Treat mismatches as findings or setup blockers, not as
 facts to paper over.
+
+## Browser Startup
+
+When browser verification matters, prefer the Codex in-app browser when it is
+available in the current session. For CLI worker agents and other contexts
+without IAB, Playwright CLI is an approved execution path, not a failure mode.
+Do not start with macOS `open` or Computer Use against the Codex app.
+
+1. Load the `browser-use:browser` skill.
+2. Use `tool_search` to expose `node_repl js` if the JavaScript execution tool
+   is not already available.
+3. Bootstrap Browser Use with the `iab` backend and create a tab yourself; do
+   not depend on the user already having a page open:
+
+```js
+if (!globalThis.agent) {
+  const { setupAtlasRuntime } =
+    await import('/Users/jacob/.codex/plugins/cache/openai-bundled/browser-use/0.1.0-alpha1/scripts/browser-client.mjs');
+  await setupAtlasRuntime({ globals: globalThis, backend: 'iab' });
+}
+await agent.browser.nameSession('manual test');
+if (typeof tab === 'undefined' || !tab) {
+  globalThis.tab =
+    (await agent.browser.tabs.selected()) || (await agent.browser.tabs.new());
+}
+await tab.goto('<local-url>');
+```
+
+If this fails with `No Codex IAB backends were discovered`, do not keep
+retrying or imply Codex lacks a browser. Record the exact diagnostic in the
+manual test report, then switch to the Playwright CLI path below. A single
+retry is reasonable after the user opens the in-app browser or the app
+reconnects.
+
+Do not use Computer Use to drive the Codex app as a workaround. In current
+Codex Desktop runs it may list `com.openai.codex`, but direct control of Codex
+itself can be blocked for safety.
+
+Use this path whenever the session is CLI-only or Browser Use IAB is
+unavailable:
+
+```bash
+command -v npx >/dev/null 2>&1
+export PWCLI="$HOME/.codex/skills/playwright/scripts/playwright_cli.sh"
+"$PWCLI" open '<local-url>' --headed
+"$PWCLI" snapshot
+```
+
+Label the evidence clearly as Playwright CLI evidence. Include the Browser Use
+failure reason only when IAB was attempted first. Keep `.playwright-cli/`
+artifacts local unless the user explicitly asks for them.
 
 ## Test Data and Accounts
 

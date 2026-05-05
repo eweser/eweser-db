@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import {
   FileText,
@@ -7,15 +7,15 @@ import {
   Plus,
   Search,
   CheckSquare,
-  ChevronRight,
   ChevronDown,
+  ChevronRight,
   Settings,
-  Moon,
-  Sun,
+  Star,
+  PanelLeftOpen,
   Share,
   Pencil,
   Trash2,
-  Star,
+  MoreHorizontal,
   type LucideIcon,
 } from 'lucide-react';
 import {
@@ -23,23 +23,33 @@ import {
   type Note as NotesNote,
   type Folder as NotesFolder,
 } from '../contexts/NotesContext';
-import { useTheme } from '../components/ThemeProvider';
 import { ShareFolderDialog } from '../components/ShareFolderDialog';
-import { useDb } from '@/db';
+import { useDb } from '../../db';
 import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-  ContextMenuSeparator,
-} from './ui/context-menu';
-import { DndProvider, useDrag, useDrop } from 'react-dnd';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from './ui/dialog';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { getSyncStatusDotClass } from './sync-status-visual';
+import { DndProvider, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
 
 interface EnhancedSidebarProps {
   onSearchClick: () => void;
   activeView?: string;
   onViewChange?: (view: string) => void;
+  desktopWidth?: number;
 }
 
 const ItemTypes = {
@@ -53,8 +63,9 @@ interface DraggedNoteItem {
 
 export function EnhancedSidebar({
   onSearchClick,
-  activeView = 'all',
+  activeView = 'recent',
   onViewChange,
+  desktopWidth,
 }: EnhancedSidebarProps) {
   return (
     <DndProvider backend={HTML5Backend}>
@@ -62,6 +73,7 @@ export function EnhancedSidebar({
         onSearchClick={onSearchClick}
         activeView={activeView}
         onViewChange={onViewChange}
+        desktopWidth={desktopWidth}
       />
     </DndProvider>
   );
@@ -69,23 +81,28 @@ export function EnhancedSidebar({
 
 function SidebarContent({
   onSearchClick,
-  activeView = 'all',
+  activeView = 'recent',
   onViewChange,
+  desktopWidth,
 }: EnhancedSidebarProps) {
   const navigate = useNavigate();
-  const { theme, toggleTheme } = useTheme();
+  const activeFolderId = activeView.startsWith('folder:')
+    ? activeView.replace('folder:', '')
+    : null;
   const {
     folders,
-    notes,
     tasks,
+    currentNoteId,
     addNote,
     addFolder,
+    updateFolder,
+    deleteFolder,
+    getDirectNotesInFolder,
     getNotesInFolder,
     moveNote,
-    getPinnedNotes,
-    togglePinNote,
   } = useNotes();
-  const { loggedIn, user } = useDb();
+  const { loggedIn, syncStatus, syncStatusLabel, syncStatusDescription, user } =
+    useDb();
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
     new Set(['work', 'personal', 'development', 'daily'])
   );
@@ -94,8 +111,47 @@ function SidebarContent({
     id: string;
     name: string;
   } | null>(null);
-  const [hoveredFolder, setHoveredFolder] = useState<string | null>(null);
-  const [pinnedExpanded, setPinnedExpanded] = useState(true);
+  const [collapsed, setCollapsed] = useState(false);
+  const [folderDialog, setFolderDialog] = useState<{
+    mode: 'create' | 'rename';
+    folderId?: string;
+    parentId?: string | null;
+    initialName: string;
+  } | null>(null);
+  const knownFolderIdsRef = useRef<Set<string>>(new Set());
+
+  const childFoldersByParent = useMemo(() => {
+    const grouped = new Map<string | null, NotesFolder[]>();
+
+    for (const folder of folders) {
+      const parentKey = folder.parentId ?? null;
+      const current = grouped.get(parentKey) ?? [];
+      current.push(folder);
+      grouped.set(parentKey, current);
+    }
+
+    return grouped;
+  }, [folders]);
+
+  useEffect(() => {
+    setExpandedFolders((prev) => {
+      const next = new Set(prev);
+      let changed = false;
+
+      for (const folder of folders) {
+        if (!knownFolderIdsRef.current.has(folder.id)) {
+          knownFolderIdsRef.current.add(folder.id);
+          next.add(folder.id);
+          if (folder.parentId) {
+            next.add(folder.parentId);
+          }
+          changed = true;
+        }
+      }
+
+      return changed ? next : prev;
+    });
+  }, [folders]);
 
   const toggleFolder = (folderId: string) => {
     setExpandedFolders((prev) => {
@@ -123,213 +179,259 @@ function SidebarContent({
     navigate(`/editor/${newNote.id}`);
   };
 
+  const handleFolderSubmit = (name: string) => {
+    if (folderDialog?.mode === 'rename' && folderDialog.folderId) {
+      updateFolder(folderDialog.folderId, { name });
+      setFolderDialog(null);
+      return;
+    }
+
+    const parentId = folderDialog?.parentId ?? null;
+    addFolder(name, parentId);
+    if (parentId) {
+      setExpandedFolders((prev) => new Set(prev).add(parentId));
+    }
+    setFolderDialog(null);
+  };
+
+  const handleDeleteFolder = (folder: NotesFolder) => {
+    const folderNotes = getNotesInFolder(folder.id);
+    const childFolders = childFoldersByParent.get(folder.id) ?? [];
+    const fallbackFolderId = folder.parentId ?? '';
+    const message =
+      folderNotes.length > 0 || childFolders.length > 0
+        ? `Delete "${folder.name}" and move ${folderNotes.length} notes${childFolders.length > 0 ? ` plus keep ${childFolders.length} subfolder${childFolders.length === 1 ? '' : 's'}` : ''}?`
+        : `Delete "${folder.name}"?`;
+
+    if (!window.confirm(message)) return;
+
+    folderNotes.forEach((note) => moveNote(note.id, fallbackFolderId));
+    childFolders.forEach((childFolder) =>
+      updateFolder(childFolder.id, { parentId: folder.parentId })
+    );
+    deleteFolder(folder.id);
+  };
+
   const incompleteTasks = tasks.filter((t) => !t.completed);
-  const pinnedNotes = getPinnedNotes();
+
+  if (collapsed) {
+    return (
+      <button
+        type="button"
+        aria-label="Show left sidebar"
+        title="Show left sidebar"
+        onClick={() => setCollapsed(false)}
+        className="group h-screen w-3 shrink-0 border-r border-sidebar-border bg-sidebar-background transition-colors hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <span className="sr-only">Show left sidebar</span>
+        <PanelLeftOpen className="pointer-events-none fixed left-2 top-3 h-4 w-4 -translate-x-1/2 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" />
+      </button>
+    );
+  }
 
   return (
     <aside
       data-cy="ewe-note-sidebar"
-      className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col h-screen"
+      className="relative flex h-full w-full shrink-0 flex-col border-r border-sidebar-border bg-sidebar-background text-sidebar-foreground md:h-screen"
+      style={desktopWidth ? { width: `${desktopWidth}px` } : undefined}
     >
-      {/* Logo */}
-      <div className="p-6 border-b border-sidebar-border">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <EweserLogo className="w-8 h-8 shrink-0 text-sidebar-foreground" />
-            <span className="text-lg tracking-tight font-medium">EweNote</span>
-          </div>
-          <button
-            onClick={toggleTheme}
-            className="p-1.5 hover:bg-sidebar-accent rounded-lg transition-colors"
-            title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-          >
-            {theme === 'light' ? (
-              <Moon className="w-4 h-4" />
-            ) : (
-              <Sun className="w-4 h-4" />
-            )}
-          </button>
-        </div>
+      <div className="hidden grid-cols-7 gap-1 border-b border-sidebar-border px-2 py-2 md:grid">
+        <IconRailButton
+          icon={Search}
+          label="Search notes"
+          onClick={onSearchClick}
+        />
+        <IconRailButton
+          icon={FileText}
+          label="All notes"
+          active={activeView === 'all'}
+          onClick={() => {
+            onViewChange?.('all');
+            navigate('/');
+          }}
+        />
+        <IconRailButton
+          dataCy="ewe-note-recent-link"
+          icon={Clock}
+          label="Recent"
+          active={activeView === 'recent'}
+          onClick={() => onViewChange?.('recent')}
+        />
+        <IconRailButton
+          dataCy="ewe-note-pinned-link"
+          icon={Star}
+          label="Pinned"
+          active={activeView === 'pinned'}
+          onClick={() => onViewChange?.('pinned')}
+        />
+        <IconRailButton
+          dataCy="ewe-note-tasks-link"
+          icon={CheckSquare}
+          label="Tasks"
+          active={activeView === 'tasks'}
+          badge={incompleteTasks.length}
+          onClick={() => onViewChange?.('tasks')}
+        />
+        <IconRailButton
+          icon={Plus}
+          label="New note"
+          onClick={() => handleNewNoteInFolder('')}
+        />
+        <IconRailButton
+          dataCy="ewe-note-new-folder-trigger"
+          icon={FolderOpen}
+          label={activeFolderId ? 'New subfolder' : 'New folder'}
+          onClick={() =>
+            setFolderDialog({
+              mode: 'create',
+              initialName: '',
+              parentId: activeFolderId,
+            })
+          }
+        />
       </div>
 
-      {/* Search */}
-      <button
-        onClick={onSearchClick}
-        className="mx-4 mt-4 flex items-center gap-2 px-3 py-2 bg-sidebar-accent rounded-lg hover:bg-sidebar-accent/80 transition-colors text-left group"
+      <div
+        data-cy="ewe-note-sidebar-mobile-toolbar"
+        className="grid grid-cols-4 gap-1 border-b border-sidebar-border px-2 py-2 md:hidden"
       >
-        <Search className="w-4 h-4 text-muted-foreground" />
-        <span className="text-sm text-muted-foreground flex-1">
-          Search notes...
-        </span>
-        <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-0.5 rounded border border-border bg-background px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-          ⌘K
-        </kbd>
-      </button>
+        <IconRailButton
+          dataCy="ewe-note-pinned-link-mobile"
+          icon={Star}
+          label="Pinned"
+          active={activeView === 'pinned'}
+          onClick={() => onViewChange?.('pinned')}
+        />
+        <IconRailButton
+          dataCy="ewe-note-tasks-link-mobile"
+          icon={CheckSquare}
+          label="Tasks"
+          active={activeView === 'tasks'}
+          badge={incompleteTasks.length}
+          onClick={() => onViewChange?.('tasks')}
+        />
+        <IconRailButton
+          icon={Plus}
+          label="New note"
+          onClick={() => handleNewNoteInFolder('')}
+        />
+        <IconRailButton
+          dataCy="ewe-note-new-folder-trigger-mobile"
+          icon={FolderOpen}
+          label={activeFolderId ? 'New subfolder' : 'New folder'}
+          onClick={() =>
+            setFolderDialog({
+              mode: 'create',
+              initialName: '',
+              parentId: activeFolderId,
+            })
+          }
+        />
+      </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
-        {/* Pinned Notes Section */}
-        {pinnedNotes.length > 0 && (
-          <div className="mb-6">
-            <button
-              onClick={() => setPinnedExpanded(!pinnedExpanded)}
-              className="w-full flex items-center gap-2 px-3 py-1.5 mb-2 hover:bg-sidebar-accent/50 rounded-lg transition-colors"
-            >
-              {pinnedExpanded ? (
-                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
-              ) : (
-                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
-              )}
-              <Star className="w-3.5 h-3.5 text-muted-foreground" />
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex-1">
-                Pinned
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {pinnedNotes.length}
-              </span>
-            </button>
-            {pinnedExpanded && (
-              <div className="space-y-0.5 ml-2">
-                {pinnedNotes.map((note) => (
-                  <PinnedNoteItem
-                    key={note.id}
-                    note={note}
-                    onTogglePin={() => togglePinNote(note.id)}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Main Navigation */}
-        <div className="space-y-1">
-          <SidebarLink
-            icon={FileText}
-            label="All Notes"
-            count={notes.length}
-            active={activeView === 'all'}
-            onClick={() => {
-              onViewChange?.('all');
-              navigate('/');
-            }}
-          />
-          <SidebarLink
-            dataCy="ewe-note-recent-link"
-            icon={Clock}
-            label="Recent"
-            active={activeView === 'recent'}
-            onClick={() => onViewChange?.('recent')}
-          />
-          <SidebarLink
-            dataCy="ewe-note-tasks-link"
-            icon={CheckSquare}
-            label="Tasks"
-            count={incompleteTasks.length}
-            active={activeView === 'tasks'}
-            onClick={() => onViewChange?.('tasks')}
-          />
-        </div>
-
-        {/* Folders */}
-        <div className="mt-6">
-          <div className="flex items-center justify-between px-3 mb-2">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Folders
-            </span>
-            <button
-              data-cy="ewe-note-new-folder-trigger"
-              onClick={() => {
-                const name = prompt('Folder name:');
-                if (name) {
-                  addFolder(name);
+      <nav
+        className="relative flex-1 overflow-y-auto px-3 py-2"
+        data-cy="ewe-note-sidebar-tree"
+      >
+        <div
+          className="min-h-full"
+          data-testid="sidebar-empty-space"
+          onClick={(event) => {
+            if (event.target !== event.currentTarget) return;
+            if (activeFolderId) {
+              onViewChange?.('recent');
+            }
+          }}
+        >
+          <div className="space-y-1">
+            {(childFoldersByParent.get(null) ?? []).map((folder) => (
+              <FolderBranch
+                key={folder.id}
+                folder={folder}
+                expandedFolders={expandedFolders}
+                childFoldersByParent={childFoldersByParent}
+                getDirectNotesInFolder={getDirectNotesInFolder}
+                getNotesInFolder={getNotesInFolder}
+                activeView={activeView}
+                currentNoteId={currentNoteId}
+                onToggle={toggleFolder}
+                onClick={(nextFolder) =>
+                  onViewChange?.(`folder:${nextFolder.id}`)
                 }
-              }}
-              className="p-1 hover:bg-sidebar-accent rounded transition-colors"
-              title="New folder"
-            >
-              <Plus className="w-3.5 h-3.5 text-muted-foreground" />
-            </button>
-          </div>
-          <div className="space-y-0.5">
-            {folders.map((folder) => {
-              const folderNotes = getNotesInFolder(folder.id);
-              const isExpanded = expandedFolders.has(folder.id);
-              const isHovered = hoveredFolder === folder.id;
-
-              return (
-                <div key={folder.id}>
-                  <FolderItem
-                    folder={folder}
-                    folderNotes={folderNotes}
-                    isExpanded={isExpanded}
-                    isHovered={isHovered}
-                    onToggle={() => toggleFolder(folder.id)}
-                    onClick={() => onViewChange?.(`folder:${folder.id}`)}
-                    onHoverChange={(hovered) =>
-                      setHoveredFolder(hovered ? folder.id : null)
-                    }
-                    onNewNote={() => handleNewNoteInFolder(folder.id)}
-                    onMove={moveNote}
-                    onShareFolder={() =>
-                      handleShareFolder(folder.id, folder.name)
-                    }
-                  />
-
-                  {/* Folder notes */}
-                  {isExpanded && folderNotes.length > 0 && (
-                    <div className="ml-6 mt-0.5 space-y-0.5">
-                      {folderNotes.slice(0, 10).map((note) => (
-                        <NoteItem
-                          key={note.id}
-                          note={note}
-                          folderId={folder.id}
-                        />
-                      ))}
-                      {folderNotes.length > 10 && (
-                        <div className="text-xs text-muted-foreground px-2 py-1">
-                          +{folderNotes.length - 10} more
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                onNewNote={handleNewNoteInFolder}
+                onNewSubfolder={(nextFolder) =>
+                  setFolderDialog({
+                    mode: 'create',
+                    initialName: '',
+                    parentId: nextFolder.id,
+                  })
+                }
+                onMove={moveNote}
+                onShareFolder={handleShareFolder}
+                onRename={(nextFolder) =>
+                  setFolderDialog({
+                    mode: 'rename',
+                    folderId: nextFolder.id,
+                    initialName: nextFolder.name,
+                  })
+                }
+                onDelete={handleDeleteFolder}
+              />
+            ))}
+            {folders.length === 0 ? (
+              <div className="px-2 py-6 text-center text-xs text-muted-foreground">
+                Create a folder to start organizing notes.
+              </div>
+            ) : null}
+            {(childFoldersByParent.get(null) ?? []).length === 0 &&
+            folders.length > 0 ? (
+              <div className="px-2 py-6 text-center text-xs text-muted-foreground">
+                Root folders are hidden because every folder is nested.
+              </div>
+            ) : null}
           </div>
         </div>
       </nav>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-sidebar-border space-y-2">
-        <button
-          data-cy="ewe-note-settings-link"
-          onClick={() => navigate('/settings')}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-sidebar-accent transition-colors text-left"
-        >
-          <Settings className="w-4 h-4 text-muted-foreground" />
-          <span className="text-sm">Settings</span>
-        </button>
+      <div className="hidden border-t border-sidebar-border p-2 md:block">
+        <div className="grid grid-cols-3 gap-1">
+          <button
+            data-cy="ewe-note-sync-status"
+            onClick={() => navigate('/settings#sync')}
+            className="flex h-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            title={`${syncStatusLabel}: ${syncStatusDescription}`}
+            aria-label={`${syncStatusLabel}: ${syncStatusDescription}`}
+          >
+            <span
+              data-cy="ewe-note-sync-status-dot"
+              className={`h-2 w-2 rounded-full ${getSyncStatusDotClass(
+                syncStatus
+              )}`}
+            />
+          </button>
 
-        <button
-          data-cy="ewe-note-account-link"
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sidebar-accent transition-colors text-left"
-          onClick={() => navigate('/settings#account')}
-        >
-          <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-sm font-medium">
-            {(user.firstName || 'G').slice(0, 1).toUpperCase()}
-          </div>
-          <div className="flex-1 text-left min-w-0">
-            <div className="text-sm font-medium truncate">
-              {loggedIn
-                ? `${user.firstName} ${user.lastName}`.trim() || 'Signed In'
-                : 'Sign In'}
-            </div>
-            <div className="text-xs text-muted-foreground truncate">
-              {loggedIn ? 'Account settings' : 'Connect your account'}
-            </div>
-          </div>
-        </button>
+          <button
+            data-cy="ewe-note-settings-link"
+            onClick={() => navigate('/settings')}
+            className="flex h-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            title="Settings"
+            aria-label="Settings"
+          >
+            <Settings className="h-4 w-4" />
+          </button>
+
+          <button
+            data-cy="ewe-note-account-link"
+            className="flex h-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            onClick={() => navigate('/settings#account')}
+            title={loggedIn ? 'Account settings' : 'Sign in'}
+            aria-label={loggedIn ? 'Account settings' : 'Sign in'}
+          >
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-sidebar-accent text-xs font-medium text-sidebar-foreground">
+              {(user.firstName || 'G').slice(0, 1).toUpperCase()}
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* Share Folder Dialog */}
@@ -341,44 +443,136 @@ function SidebarContent({
           folderId={selectedFolder.id}
         />
       )}
+      <NameDialog
+        open={Boolean(folderDialog)}
+        onOpenChange={(open) => {
+          if (!open) setFolderDialog(null);
+        }}
+        title={
+          folderDialog?.mode === 'rename'
+            ? 'Rename folder'
+            : folderDialog?.parentId
+              ? 'New subfolder'
+              : 'New folder'
+        }
+        description={
+          folderDialog?.mode === 'rename'
+            ? 'Update the folder name used in the local library.'
+            : folderDialog?.parentId
+              ? 'Create a nested folder inside the selected parent folder.'
+              : 'Create a local folder for organizing notes on this device.'
+        }
+        initialName={folderDialog?.initialName ?? ''}
+        submitLabel={folderDialog?.mode === 'rename' ? 'Rename' : 'Create'}
+        inputLabel="Folder name"
+        dataCyInput="ewe-note-folder-name-input"
+        dataCySubmit="ewe-note-folder-submit"
+        onSubmit={handleFolderSubmit}
+      />
     </aside>
   );
 }
 
-interface PinnedNoteItemProps {
-  note: NotesNote;
-  onTogglePin: () => void;
+interface FolderBranchProps {
+  folder: NotesFolder;
+  expandedFolders: Set<string>;
+  childFoldersByParent: Map<string | null, NotesFolder[]>;
+  activeView: string;
+  currentNoteId: string | null;
+  getDirectNotesInFolder: (folderId: string) => NotesNote[];
+  getNotesInFolder: (folderId: string) => NotesNote[];
+  onToggle: (folderId: string) => void;
+  onClick: (folder: NotesFolder) => void;
+  onNewNote: (folderId: string) => void;
+  onNewSubfolder: (folder: NotesFolder) => void;
+  onMove: (noteId: string, targetFolder: string) => void;
+  onShareFolder: (folderId: string, folderName: string) => void;
+  onRename: (folder: NotesFolder) => void;
+  onDelete: (folder: NotesFolder) => void;
 }
 
-function PinnedNoteItem({ note, onTogglePin }: PinnedNoteItemProps) {
+function FolderBranch({
+  folder,
+  expandedFolders,
+  childFoldersByParent,
+  activeView,
+  currentNoteId,
+  getDirectNotesInFolder,
+  getNotesInFolder,
+  onToggle,
+  onClick,
+  onNewNote,
+  onNewSubfolder,
+  onMove,
+  onShareFolder,
+  onRename,
+  onDelete,
+}: FolderBranchProps) {
   const navigate = useNavigate();
-  const [isHovered, setIsHovered] = useState(false);
+  const folderNotes = getDirectNotesInFolder(folder.id);
+  const childFolders = childFoldersByParent.get(folder.id) ?? [];
+  const isExpanded = expandedFolders.has(folder.id);
 
   return (
-    <div
-      className="flex items-center gap-1 group"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <button
-        onClick={() => navigate(`/editor/${note.id}`)}
-        className="flex-1 flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-sidebar-accent transition-colors text-left"
-      >
-        <Star className="w-3.5 h-3.5 text-primary fill-primary flex-shrink-0" />
-        <span className="text-sm truncate">{note.title}</span>
-      </button>
-      {isHovered && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onTogglePin();
-          }}
-          className="p-1 hover:bg-sidebar-accent rounded transition-colors opacity-0 group-hover:opacity-100"
-          title="Unpin note"
-        >
-          <Star className="w-3.5 h-3.5 text-muted-foreground" />
-        </button>
-      )}
+    <div className="space-y-1">
+      <FolderItem
+        folder={folder}
+        folderNotes={folderNotes}
+        isExpanded={isExpanded}
+        active={activeView === `folder:${folder.id}`}
+        onToggle={() => onToggle(folder.id)}
+        onClick={() => onClick(folder)}
+        onNewNote={() => onNewNote(folder.id)}
+        onNewSubfolder={() => onNewSubfolder(folder)}
+        onMove={onMove}
+        onShareFolder={() => onShareFolder(folder.id, folder.name)}
+        onRename={() => onRename(folder)}
+        onDelete={() => onDelete(folder)}
+      />
+
+      {isExpanded && (childFolders.length > 0 || folderNotes.length > 0) ? (
+        <div className="space-y-1 border-l border-sidebar-border/70 pl-3 md:ml-4 md:pl-2">
+          {childFolders.map((childFolder) => (
+            <FolderBranch
+              key={childFolder.id}
+              folder={childFolder}
+              expandedFolders={expandedFolders}
+              childFoldersByParent={childFoldersByParent}
+              activeView={activeView}
+              currentNoteId={currentNoteId}
+              getDirectNotesInFolder={getDirectNotesInFolder}
+              getNotesInFolder={getNotesInFolder}
+              onToggle={onToggle}
+              onClick={onClick}
+              onNewNote={onNewNote}
+              onNewSubfolder={onNewSubfolder}
+              onMove={onMove}
+              onShareFolder={onShareFolder}
+              onRename={onRename}
+              onDelete={onDelete}
+            />
+          ))}
+          {folderNotes.map((note) => (
+            <button
+              key={note.id}
+              type="button"
+              onClick={() => navigate(`/editor/${note.id}`)}
+              className={`flex w-full min-w-0 items-start gap-2 rounded-2xl px-3 py-2 text-left text-sm transition-colors ${
+                currentNoteId === note.id
+                  ? 'bg-sidebar-accent text-sidebar-foreground'
+                  : 'hover:bg-sidebar-accent/70'
+              }`}
+              title={formatTreeNoteTitle(note.title)}
+              aria-label={`Open note ${formatTreeNoteTitle(note.title)}`}
+            >
+              <FileText className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+              <span className="min-w-0 flex-1 truncate leading-5">
+                {formatTreeNoteTitle(note.title)}
+              </span>
+            </button>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -387,26 +581,30 @@ interface FolderItemProps {
   folder: NotesFolder;
   folderNotes: NotesNote[];
   isExpanded: boolean;
-  isHovered: boolean;
+  active: boolean;
   onToggle: () => void;
   onClick: () => void;
-  onHoverChange: (hovered: boolean) => void;
   onNewNote: () => void;
+  onNewSubfolder: () => void;
   onMove: (noteId: string, targetFolder: string) => void;
   onShareFolder: () => void;
+  onRename: () => void;
+  onDelete: () => void;
 }
 
 function FolderItem({
   folder,
   folderNotes,
   isExpanded,
-  isHovered,
+  active,
   onToggle,
   onClick,
-  onHoverChange,
   onNewNote,
+  onNewSubfolder,
   onMove,
   onShareFolder,
+  onRename,
+  onDelete,
 }: FolderItemProps) {
   const [{ isOver }, drop] = useDrop<
     DraggedNoteItem,
@@ -427,172 +625,200 @@ function FolderItem({
   return (
     <div
       ref={drop}
-      className={`flex items-center gap-1 rounded-lg transition-colors ${
-        isOver ? 'bg-primary/10 border border-primary/30' : ''
+      className={`flex w-full min-w-0 items-center gap-1 rounded-2xl transition-colors ${
+        isOver ? 'border border-primary/30 bg-primary/10' : ''
       }`}
-      onMouseEnter={() => onHoverChange(true)}
-      onMouseLeave={() => onHoverChange(false)}
     >
       <button
+        type="button"
         onClick={onToggle}
-        className="p-1 hover:bg-sidebar-accent rounded transition-colors"
+        className="shrink-0 self-center rounded-full p-1 transition-colors hover:bg-sidebar-accent"
+        aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${folder.name}`}
       >
         {isExpanded ? (
-          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
         ) : (
-          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
         )}
       </button>
       <button
-        className="flex-1 flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-sidebar-accent transition-colors text-left"
+        className={`flex min-w-0 flex-1 items-center gap-2 rounded-2xl px-3 py-2 text-left transition-colors ${
+          active
+            ? 'bg-sidebar-accent text-sidebar-foreground'
+            : 'hover:bg-sidebar-accent/70'
+        }`}
         onClick={onClick}
+        title={folder.name}
       >
-        <FolderOpen className="w-4 h-4 text-muted-foreground" />
-        <span className="text-sm flex-1">{folder.name}</span>
-        <span className="text-xs text-muted-foreground">
+        <FolderOpen className="h-4 w-4 shrink-0 self-start text-muted-foreground" />
+        <span className="min-w-0 flex-1 text-sm leading-5 [overflow-wrap:anywhere]">
+          {folder.name}
+        </span>
+        <span className="shrink-0 self-center text-[11px] text-muted-foreground">
           {folderNotes.length}
         </span>
       </button>
-      {isHovered && (
-        <button
-          onClick={onNewNote}
-          className="p-1 hover:bg-sidebar-accent rounded transition-colors"
-          title="New note in folder"
-        >
-          <Plus className="w-3.5 h-3.5 text-muted-foreground" />
-        </button>
-      )}
-      {isHovered && (
-        <button
-          onClick={onShareFolder}
-          className="p-1 hover:bg-sidebar-accent rounded transition-colors"
-          title="Share folder"
-          disabled={folder.kind === 'shared-room'}
-        >
-          <Share className="w-3.5 h-3.5 text-muted-foreground" />
-        </button>
-      )}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            aria-label={`Folder actions for ${folder.name}`}
+            className="shrink-0 self-center rounded-full p-1 text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            data-cy={`ewe-note-folder-actions-${folder.id}`}
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={onNewNote}>
+            <Plus className="mr-2 h-4 w-4" />
+            New note
+          </DropdownMenuItem>
+          {folder.kind === 'folder' ? (
+            <DropdownMenuItem onClick={onNewSubfolder}>
+              <FolderOpen className="mr-2 h-4 w-4" />
+              New subfolder
+            </DropdownMenuItem>
+          ) : null}
+          <DropdownMenuItem
+            onClick={onShareFolder}
+            disabled={folder.kind === 'shared-room'}
+          >
+            <Share className="mr-2 h-4 w-4" />
+            Share folder
+          </DropdownMenuItem>
+          {folder.kind === 'folder' ? (
+            <DropdownMenuItem onClick={onRename}>
+              <Pencil className="mr-2 h-4 w-4" />
+              Rename folder
+            </DropdownMenuItem>
+          ) : null}
+          {folder.kind === 'folder' ? (
+            <DropdownMenuItem onClick={onDelete}>
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete folder
+            </DropdownMenuItem>
+          ) : null}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
 
-interface NoteItemProps {
-  note: NotesNote;
-  folderId: string;
-}
+function NameDialog({
+  open,
+  onOpenChange,
+  title,
+  description,
+  initialName,
+  submitLabel,
+  inputLabel,
+  dataCyInput,
+  dataCySubmit,
+  onSubmit,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  description: string;
+  initialName: string;
+  submitLabel: string;
+  inputLabel: string;
+  dataCyInput: string;
+  dataCySubmit: string;
+  onSubmit: (name: string) => void;
+}) {
+  const [name, setName] = useState(initialName);
 
-function NoteItem({ note, folderId }: NoteItemProps) {
-  const navigate = useNavigate();
-  const { togglePinNote, updateNote, deleteNote } = useNotes();
+  useEffect(() => {
+    if (open) setName(initialName);
+  }, [initialName, open]);
 
-  const [{ isDragging }, drag] = useDrag<
-    DraggedNoteItem,
-    unknown,
-    { isDragging: boolean }
-  >({
-    type: ItemTypes.NOTE,
-    item: { noteId: note.id, folderId },
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
-    }),
-  });
+  const submit = () => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    onSubmit(trimmed);
+  };
 
   return (
-    <ContextMenu>
-      <ContextMenuTrigger asChild>
-        <button
-          ref={drag}
-          data-cy={`ewe-note-note-item-${note.id}`}
-          onClick={() => navigate(`/editor/${note.id}`)}
-          className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-sidebar-accent transition-colors text-left group ${
-            isDragging ? 'opacity-50' : ''
-          }`}
-        >
-          <FileText className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-          <span className="text-xs truncate flex-1">{note.title}</span>
-        </button>
-      </ContextMenuTrigger>
-      <ContextMenuContent>
-        <ContextMenuItem onClick={() => navigate(`/editor/${note.id}`)}>
-          <FileText className="w-4 h-4 mr-2" />
-          <span>Open</span>
-        </ContextMenuItem>
-        <ContextMenuItem onClick={() => togglePinNote(note.id)}>
-          {note.pinned ? (
-            <>
-              <Star className="w-4 h-4 mr-2" />
-              <span>Unpin</span>
-            </>
-          ) : (
-            <>
-              <Star className="w-4 h-4 mr-2" />
-              <span>Pin</span>
-            </>
-          )}
-        </ContextMenuItem>
-        <ContextMenuItem
-          onClick={() => {
-            const nextTitle = window.prompt('Rename note:', note.title);
-            if (nextTitle && nextTitle.trim()) {
-              updateNote(note.id, { title: nextTitle.trim() });
-            }
-          }}
-        >
-          <Pencil className="w-4 h-4 mr-2" />
-          <span>Rename</span>
-        </ContextMenuItem>
-        <ContextMenuSeparator />
-        <ContextMenuItem
-          className="text-destructive"
-          onClick={() => {
-            if (window.confirm('Delete this note?')) {
-              deleteNote(note.id);
-            }
-          }}
-        >
-          <Trash2 className="w-4 h-4 mr-2" />
-          <span>Delete</span>
-        </ContextMenuItem>
-      </ContextMenuContent>
-    </ContextMenu>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
+        <label className="space-y-2 text-sm">
+          <span className="text-muted-foreground">{inputLabel}</span>
+          <Input
+            data-cy={dataCyInput}
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') submit();
+            }}
+            autoFocus
+          />
+        </label>
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            data-cy={dataCySubmit}
+            disabled={!name.trim()}
+            onClick={submit}
+          >
+            {submitLabel}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-function SidebarLink({
+function IconRailButton({
   icon: Icon,
   label,
-  count,
   active = false,
+  badge,
   onClick,
   dataCy,
 }: {
   icon: LucideIcon;
   label: string;
-  count?: number;
   active?: boolean;
+  badge?: number;
   onClick?: () => void;
   dataCy?: string;
 }) {
   return (
     <button
       data-cy={dataCy}
+      type="button"
       onClick={onClick}
-      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-left ${
+      title={label}
+      aria-label={label}
+      className={`relative flex h-9 items-center justify-center rounded-full transition-colors ${
         active
-          ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-          : 'hover:bg-sidebar-accent/50'
+          ? 'bg-sidebar-accent text-sidebar-foreground'
+          : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground'
       }`}
     >
-      <Icon className="w-4 h-4" />
-      <span className="text-sm flex-1">{label}</span>
-      {count !== undefined && (
-        <span className="text-xs text-muted-foreground">{count}</span>
+      <Icon className="h-4 w-4" />
+      <span className="sr-only">{label}</span>
+      {badge !== undefined && badge > 0 && (
+        <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-primary" />
       )}
     </button>
   );
 }
 
-function EweserLogo({ className }: { className?: string }) {
+function _EweserLogo({ className }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 117 123"
@@ -622,5 +848,15 @@ function EweserLogo({ className }: { className?: string }) {
         fill="currentColor"
       />
     </svg>
+  );
+}
+
+function formatTreeNoteTitle(title: string) {
+  return (
+    title
+      .replace(/^#{1,6}\s+/g, '')
+      .replace(/^\s*[-*+]\s+\[( |x|X)\]\s+/g, '')
+      .replace(/[*_~`[\]]/g, '')
+      .trim() || 'Untitled'
   );
 }

@@ -2,7 +2,7 @@
  * Attachment Resolver for Obsidian Vaults
  *
  * Resolves attachment file names (e.g. "image.png") to URLs that can be
- * used in the BlockNote editor for rendering.
+ * used in the editor for rendering.
  *
  * Obsidian's attachment search order:
  *   1. Exact path relative to vault root: "Attachments/image.png"
@@ -17,6 +17,8 @@
  *   - STORAGE_URL: Image hosted on a remote storage service (for cloud sync).
  */
 import { logger } from './index.js';
+import type * as AttachmentResolverNode from './attachment-resolver.node';
+import type { FileAttachmentBase } from '@eweser/shared';
 
 export type ResolutionStrategy = 'local_file' | 'base64' | 'storage_url';
 
@@ -128,6 +130,19 @@ export function resolveAttachment(
   }
 }
 
+export function resolveAttachmentRecord(
+  attachment: FileAttachmentBase,
+  vaultConfig: VaultConfig
+): string {
+  if (attachment.remoteObjectKey && vaultConfig.storageBaseUrl) {
+    return `${vaultConfig.storageBaseUrl}/${encodeURIComponent(
+      attachment.remoteObjectKey
+    )}`;
+  }
+
+  return resolveAttachment(attachment.sourcePath, vaultConfig);
+}
+
 /**
  * Async variant — resolves an attachment to a base64 data URL by reading the file.
  * Only works in a Node.js environment (CLI or server-side rendering).
@@ -137,31 +152,21 @@ export async function resolveAttachmentBase64(
   vaultConfig: VaultConfig,
   noteSourcePath?: string
 ): Promise<string | null> {
-  const { readFile, access } = await import('node:fs/promises');
-  const { join } = await import('node:path');
-
-  const candidates = getAttachmentCandidates(attachmentName, noteSourcePath);
-
-  for (const candidate of candidates) {
-    const fullPath = join(vaultConfig.vaultPath, candidate);
-    try {
-      await access(fullPath);
-      const data = await readFile(fullPath);
-      const ext = candidate.split('.').pop()?.toLowerCase() ?? 'png';
-      const mimeMap: Record<string, string> = {
-        png: 'image/png',
-        jpg: 'image/jpeg',
-        jpeg: 'image/jpeg',
-        gif: 'image/gif',
-        webp: 'image/webp',
-        svg: 'image/svg+xml',
-      };
-      const mime = mimeMap[ext] ?? 'application/octet-stream';
-      return `data:${mime};base64,${data.toString('base64')}`;
-    } catch {
-      // File not found at this path, try next
-    }
+  if (typeof window !== 'undefined') {
+    logger(
+      'resolveAttachmentBase64: base64 resolution is only available in Node.js'
+    );
+    return null;
   }
 
-  return null; // Not found anywhere
+  const nodeModulePath = './attachment-resolver.node';
+  const { resolveAttachmentBase64Node } = (await import(
+    /* @vite-ignore */ nodeModulePath
+  )) as typeof AttachmentResolverNode;
+
+  return resolveAttachmentBase64Node(
+    attachmentName,
+    vaultConfig,
+    noteSourcePath
+  );
 }

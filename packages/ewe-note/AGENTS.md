@@ -5,7 +5,7 @@ Applies to: `packages/ewe-note/`, `packages/examples-components/`, `examples/`
 ## Stack
 
 - React 18-19, Vite, Tailwind CSS, Radix UI
-- BlockNote editor (in ewe-note only)
+- TipTap 2.x editor (in ewe-note only)
 - `@eweser/db` for all data operations
 - `@eweser/examples-components` for shared UI components
 

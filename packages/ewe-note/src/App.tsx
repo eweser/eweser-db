@@ -4,8 +4,6 @@
  * Touches: Theme, DbProvider, TooltipProvider, selected room, and selected note.
  * Read before editing: packages/ewe-note/src/INDEX.md and AGENTS.md.
  */
-import '@blocknote/core/fonts/inter.css';
-import '@blocknote/shadcn/style.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import { DbProvider, useDb } from './db';
 import { Icons } from './lib/icons';

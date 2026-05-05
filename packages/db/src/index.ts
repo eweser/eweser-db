@@ -49,6 +49,7 @@ import { newRoom } from './methods/newRoom.js';
 import { renameRoom } from './methods/renameRoom.js';
 
 export * from './utils/index.js';
+export * from './utils/files.js';
 export * from './types.js';
 const defaultRtcPeers = [
   'wss://signaling.yjs.debv',

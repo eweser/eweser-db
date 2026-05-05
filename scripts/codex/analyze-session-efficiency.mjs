@@ -7,12 +7,13 @@ import process from 'node:process';
 const defaultCodexHome =
   process.env.CODEX_HOME || path.join(process.env.HOME || '', '.codex');
 const defaultSessionsRoot = path.join(defaultCodexHome, 'sessions');
+const defaultStatePath = '.ai/codex-session-retrospective-state.json';
 
 function printHelp() {
   console.log(`Usage: node scripts/codex/analyze-session-efficiency.mjs [options]
 
 Scans local Codex session JSONL files and reports likely agent inefficiency
-patterns after a cutoff date.
+patterns after a cutoff date or after the last reviewed session marker.
 
 Options:
   --since <YYYY-MM-DD>     Include sessions on or after this UTC date.
@@ -21,6 +22,8 @@ Options:
   --limit <n>              Max sessions to include in the report. Defaults to 20.
   --min-score <n>          Only include sessions with score >= n. Defaults to 1.
   --write <path>           Write the Markdown report to a file instead of stdout.
+  --state <path>           Review marker path. Defaults to ${defaultStatePath}.
+  --mark-reviewed          Record the newest scanned session as reviewed.
   --help, -h               Show this help text.
 `);
 }
@@ -30,8 +33,10 @@ function parseArgs(argv) {
     cwdPrefix: null,
     limit: 20,
     minScore: 1,
+    markReviewed: false,
     sessionsRoot: defaultSessionsRoot,
     since: null,
+    statePath: defaultStatePath,
     writePath: null,
   };
 
@@ -55,6 +60,11 @@ function parseArgs(argv) {
     } else if (arg === '--write') {
       options.writePath = requireValue(argv, index, arg);
       index += 1;
+    } else if (arg === '--state') {
+      options.statePath = requireValue(argv, index, arg);
+      index += 1;
+    } else if (arg === '--mark-reviewed') {
+      options.markReviewed = true;
     } else if (arg === '--help' || arg === '-h') {
       printHelp();
       process.exit(0);
@@ -63,16 +73,44 @@ function parseArgs(argv) {
     }
   }
 
-  if (!options.since) {
-    throw new Error(
-      '--since is required so the report stays focused on the new agent environment.'
-    );
-  }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(options.since)) {
+  if (options.since && !/^\d{4}-\d{2}-\d{2}$/.test(options.since)) {
     throw new Error('--since must use YYYY-MM-DD format.');
   }
 
   return options;
+}
+
+function readReviewState(statePath) {
+  const absStatePath = path.resolve(process.cwd(), statePath);
+  if (!fs.existsSync(absStatePath)) {
+    return null;
+  }
+  return JSON.parse(fs.readFileSync(absStatePath, 'utf8'));
+}
+
+function resolveCutoff(options) {
+  if (options.since) {
+    return {
+      exclusive: false,
+      label: `since ${options.since}`,
+      start: `${options.since}T00:00:00.000Z`,
+    };
+  }
+
+  const state = readReviewState(options.statePath);
+  const reviewedThrough = state?.reviewedThrough;
+  if (reviewedThrough?.timestamp) {
+    return {
+      exclusive: true,
+      label: `after reviewed session ${reviewedThrough.id}`,
+      lastReviewed: reviewedThrough,
+      start: reviewedThrough.timestamp,
+    };
+  }
+
+  throw new Error(
+    `--since is required until ${options.statePath} contains a reviewedThrough marker.`
+  );
 }
 
 function requireValue(argv, index, flag) {
@@ -159,6 +197,9 @@ function commandCategory(command) {
   if (command.includes('eweser-runtime-orientation.sh')) {
     return 'runtime-orientation';
   }
+  if (command.includes('npm run code-map:query')) {
+    return 'code-map-query';
+  }
   if (
     command.includes('npm test') ||
     command.includes('vitest') ||
@@ -185,6 +226,18 @@ function commandCategory(command) {
     return 'find';
   }
   return 'other';
+}
+
+function isSimpleOperationalPrompt(prompt) {
+  const text = prompt.toLowerCase();
+  return [
+    'pull main',
+    'pull main into',
+    'make a pull request',
+    'create pull request',
+    'run npm audit fix',
+    'npm audit fix',
+  ].some((phrase) => text.includes(phrase));
 }
 
 function extractSession(records, filePath) {
@@ -320,6 +373,7 @@ function analyzeSession(session) {
   const broadSearchCount =
     countCategory(session.commands, 'search') +
     countCategory(session.commands, 'find');
+  const codeMapQueryCount = countCategory(session.commands, 'code-map-query');
   if (broadSearchCount >= 4) {
     score += 1;
     findings.push({
@@ -332,6 +386,7 @@ function analyzeSession(session) {
 
   if (
     firstBroadSearchAt !== -1 &&
+    !isSimpleOperationalPrompt(session.firstUserMessage) &&
     (firstIndexReadAt === -1 || firstBroadSearchAt < firstIndexReadAt)
   ) {
     score += 2;
@@ -340,6 +395,21 @@ function analyzeSession(session) {
       detail: 'Started broad search before opening an `INDEX.md`.',
       recommendation:
         'Strengthen instructions to read the nearest index before any repo-wide search for navigation tasks.',
+    });
+  }
+
+  if (
+    broadSearchCount >= 6 &&
+    codeMapQueryCount === 0 &&
+    !isSimpleOperationalPrompt(session.firstUserMessage)
+  ) {
+    score += 1;
+    findings.push({
+      category: 'missed code-map query',
+      detail:
+        'Session used repeated broad search without a targeted `code-map` query.',
+      recommendation:
+        'For symbol, import, export, package, or barrel-file questions, query `npm run code-map:query` before wider source search.',
     });
   }
 
@@ -449,16 +519,34 @@ function summarizeThemes(sessions) {
   );
 }
 
+function formatSessionMarker(session) {
+  if (!session) {
+    return 'none';
+  }
+  const name = session.threadName ? ` (${session.threadName})` : '';
+  return `${session.id}${name} at ${session.timestamp}`;
+}
+
 function buildMarkdownReport(options, sessions) {
   const lines = [];
   lines.push('# Codex Session Efficiency Retrospective');
   lines.push('');
-  lines.push(`- Since: \`${options.since}\``);
+  lines.push(`- Cutoff: \`${options.cutoff.label}\``);
+  if (options.cutoff.lastReviewed) {
+    lines.push(
+      `- Previous reviewed-through: \`${formatSessionMarker(options.cutoff.lastReviewed)}\``
+    );
+  }
   lines.push(`- Sessions root: \`${normalizePath(options.sessionsRoot)}\``);
   if (options.cwdPrefix) {
     lines.push(`- CWD filter: \`${options.cwdPrefix}\``);
   }
+  lines.push(`- Matching sessions scanned: \`${options.matchedCount}\``);
   lines.push(`- Included sessions: \`${sessions.length}\``);
+  lines.push(
+    `- Newest scanned session: \`${formatSessionMarker(options.reviewedThrough)}\``
+  );
+  lines.push(`- Review state: \`${options.statePath}\``);
   lines.push('');
 
   if (sessions.length === 0) {
@@ -519,6 +607,50 @@ function truncateInline(text, limit) {
   return `${singleLine.slice(0, limit - 3)}...`;
 }
 
+function compareSessionPosition(a, b) {
+  const timestampCompare = String(a.timestamp || '').localeCompare(
+    String(b.timestamp || '')
+  );
+  if (timestampCompare !== 0) {
+    return timestampCompare;
+  }
+  return String(a.id || '').localeCompare(String(b.id || ''));
+}
+
+function isAfterCutoff(session, cutoff) {
+  if (!session.timestamp) {
+    return false;
+  }
+  if (cutoff.exclusive) {
+    return session.timestamp > cutoff.start;
+  }
+  return session.timestamp >= cutoff.start;
+}
+
+function writeReviewState(options, reviewedThrough) {
+  if (!reviewedThrough) {
+    return null;
+  }
+
+  const absStatePath = path.resolve(process.cwd(), options.statePath);
+  const state = {
+    updatedAt: new Date().toISOString(),
+    cwdPrefix: options.cwdPrefix,
+    sessionsRoot: normalizePath(options.sessionsRoot),
+    cutoff: options.cutoff,
+    matchedSessions: options.matchedCount,
+    reviewedThrough: {
+      filePath: normalizePath(reviewedThrough.filePath),
+      id: reviewedThrough.id,
+      threadName: reviewedThrough.threadName,
+      timestamp: reviewedThrough.timestamp,
+    },
+  };
+  fs.mkdirSync(path.dirname(absStatePath), { recursive: true });
+  fs.writeFileSync(absStatePath, `${JSON.stringify(state, null, 2)}\n`);
+  return absStatePath;
+}
+
 function main() {
   try {
     const options = parseArgs(process.argv.slice(2));
@@ -526,9 +658,11 @@ function main() {
       throw new Error(`Sessions root does not exist: ${options.sessionsRoot}`);
     }
 
-    const sinceStart = `${options.since}T00:00:00.000Z`;
+    const cutoff = resolveCutoff(options);
+    options.cutoff = cutoff;
     const files = listJsonlFiles(options.sessionsRoot);
     const analyzed = [];
+    const matched = [];
 
     for (const filePath of files) {
       const { records, skippedLines } = readJsonl(filePath);
@@ -537,12 +671,13 @@ function main() {
       }
       const session = extractSession(records, filePath);
       session.skippedLines = skippedLines;
-      if (!session.timestamp || session.timestamp < sinceStart) {
+      if (!isAfterCutoff(session, cutoff)) {
         continue;
       }
       if (options.cwdPrefix && !session.cwd.startsWith(options.cwdPrefix)) {
         continue;
       }
+      matched.push(session);
       const result = analyzeSession(session);
       if (result.score >= options.minScore) {
         analyzed.push(result);
@@ -557,6 +692,9 @@ function main() {
     });
 
     const selected = analyzed.slice(0, options.limit);
+    const reviewedThrough = matched.sort(compareSessionPosition).at(-1) ?? null;
+    options.matchedCount = matched.length;
+    options.reviewedThrough = reviewedThrough;
     const report = buildMarkdownReport(options, selected);
 
     if (options.writePath) {
@@ -564,10 +702,20 @@ function main() {
       fs.mkdirSync(path.dirname(absWritePath), { recursive: true });
       fs.writeFileSync(absWritePath, `${report}\n`);
       console.log(`Wrote ${absWritePath}`);
-      return;
+    } else {
+      console.log(report);
     }
 
-    console.log(report);
+    if (options.markReviewed) {
+      const absStatePath = writeReviewState(options, reviewedThrough);
+      if (absStatePath) {
+        console.log(
+          `Marked reviewed through ${formatSessionMarker(reviewedThrough)} in ${absStatePath}`
+        );
+      } else {
+        console.log('No matching sessions to mark reviewed.');
+      }
+    }
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     console.error('Run with --help for usage.');

@@ -10,6 +10,7 @@ import { env } from './env.js';
 import { logSecurityEvent } from './model/security-events.js';
 
 const log = createLogger('auth-config');
+const requireEmailVerification = env.AUTH_EMAIL_PROVIDER !== 'disabled';
 
 export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
@@ -46,7 +47,7 @@ export const auth = betterAuth({
     enabled: true,
     minPasswordLength: 10,
     maxPasswordLength: 128,
-    requireEmailVerification: true,
+    requireEmailVerification,
     revokeSessionsOnPasswordReset: true,
     async onPasswordReset({ user }) {
       await logSecurityEvent({
@@ -91,8 +92,8 @@ export const auth = betterAuth({
   },
 
   emailVerification: {
-    sendOnSignUp: true,
-    sendOnSignIn: true,
+    sendOnSignUp: requireEmailVerification,
+    sendOnSignIn: requireEmailVerification,
     autoSignInAfterVerification: true,
     async sendVerificationEmail({ token, url, user }) {
       try {

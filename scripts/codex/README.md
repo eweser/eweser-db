@@ -10,18 +10,30 @@ after an instruction or tooling change and look for repeated wasted motion.
 ```bash
 npm run codex:retrospective -- --since 2026-05-02 --cwd /home/jacob/eweser-db
 npm run codex:retrospective -- --since 2026-05-02 --cwd /home/jacob/eweser-db --write .ai/reports/codex-session-retrospective-2026-05-02.md
+npm run codex:retrospective -- --since 2026-05-02 --cwd /home/jacob/eweser-db --mark-reviewed
+npm run codex:retrospective -- --cwd /home/jacob/eweser-db
 ```
 
 The analyzer reads `~/.codex/sessions/**/*.jsonl` by default and flags
 heuristics such as:
 
 - broad search before `INDEX.md`
+- repeated broad search without targeted `code-map` queries
 - repeated search or `git status` churn
 - runtime-orientation misses before local verification
 - repeated test/type-check retries
 
+`--mark-reviewed` writes `.ai/codex-session-retrospective-state.json` with the
+newest scanned session timestamp and id. Later runs can omit `--since`; the
+analyzer starts after that reviewed-through marker so old flailing patterns do
+not keep appearing as new regressions.
+
 Use the report to decide whether the fix belongs in a nearby `INDEX.md`,
 `LOCAL_DEVELOPMENT.md`, runtime-orientation guidance, or a small helper script.
+If the fix is too broad or risky for the retrospective pass, write a
+Coder-ready plan under `docs/ai/plans/` from `docs/ai/plans/_template.md` and
+include a launch prompt such as
+`Use $eweser-coder docs/ai/plans/<plan>.md`.
 
 ## Plan Orchestrator
 
@@ -57,8 +69,9 @@ orchestration:
 runs:
   - id: run-1
     title: Add shared schema types
-    agent: eweser-code
+    agent: eweser-coder
     model: coding
+    ui: false
     parallel: false
     dependsOn: []
     writeScope:
@@ -70,8 +83,10 @@ runs:
     changeset: maybe
   - id: run-2
     title: Add app UI
-    agent: eweser-code
+    agent: eweser-coder
     model: coding
+    ui: true
+    browserCheckpoint: focused
     parallel: true
     dependsOn:
       - run-1
@@ -84,28 +99,32 @@ runs:
 
 Supported fields:
 
-| Field                       | Required | Notes                                                                                                                                                                 |
-| --------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `orchestration.enabled`     | yes      | Must be `true`.                                                                                                                                                       |
-| `orchestration.maxParallel` | no       | Positive integer. CLI `--max-parallel` overrides it.                                                                                                                  |
-| `orchestration.baseBranch`  | no       | Defaults to the current branch.                                                                                                                                       |
-| `orchestration.finalStages` | no       | Allowed values are `qa` and `review`. They run after all coding runs integrate.                                                                                       |
-| `runs[].id`                 | yes      | Unique slug-like ID: letters, numbers, dots, underscores, or dashes.                                                                                                  |
-| `runs[].title`              | yes      | Human-readable run title.                                                                                                                                             |
-| `runs[].agent`              | yes      | Currently `eweser-code` for coding runs.                                                                                                                              |
-| `runs[].model`              | no       | Defaults to `coding`. `coding`/`strong` map to `gpt-5.4`; `simple`/`fast`/`mini` map to `gpt-5.4-mini`.                                                               |
-| `runs[].parallel`           | no       | Defaults to `false`. Parallel runs still need disjoint write scopes.                                                                                                  |
-| `runs[].dependsOn`          | no       | Run IDs that must finish before this run starts. Runs with multiple dependencies merge those completed worker branches into the worker worktree before coding starts. |
-| `runs[].writeScope`         | yes      | Glob-like path list. Used for conflict avoidance and scope checks.                                                                                                    |
-| `runs[].tests`              | no       | Commands the worker is expected to run and the integrator reruns after merge.                                                                                         |
-| `runs[].changeset`          | no       | `yes`, `no`, or `maybe`; documentation signal only.                                                                                                                   |
-| `runs[].allowSharedScope`   | no       | Escape hatch for conservative serialization. Use sparingly and document why in the plan.                                                                              |
+| Field                       | Required | Notes                                                                                                                                                                                                                                                                        |
+| --------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `orchestration.enabled`     | yes      | Must be `true`.                                                                                                                                                                                                                                                              |
+| `orchestration.maxParallel` | no       | Positive integer. CLI `--max-parallel` overrides it.                                                                                                                                                                                                                         |
+| `orchestration.baseBranch`  | no       | Defaults to the current branch.                                                                                                                                                                                                                                              |
+| `orchestration.finalStages` | no       | Allowed values are `qa` and `review`. They run after all coding runs integrate.                                                                                                                                                                                              |
+| `runs[].id`                 | yes      | Unique slug-like ID: letters, numbers, dots, underscores, or dashes.                                                                                                                                                                                                         |
+| `runs[].title`              | yes      | Human-readable run title.                                                                                                                                                                                                                                                    |
+| `runs[].agent`              | yes      | `eweser-coder` is the coding-run agent name. `eweser-manual-tester` runs a full browser/manual QA gate. `eweser-browser-checkpoint` runs a lighter browser-only checkpoint. In CLI worker runs, browser-capable agents may use Playwright CLI as the primary execution path. |
+| `runs[].model`              | no       | Defaults to `coding`. `coding`/`strong` map to `gpt-5.4`; `simple`/`fast`/`mini` map to `gpt-5.4-mini`.                                                                                                                                                                      |
+| `runs[].ui`                 | no       | Required when a coding run touches likely UI scope. Use `true` to require browser follow-up or `false` to mark it as intentionally non-UI.                                                                                                                                   |
+| `runs[].browserCheckpoint`  | no       | `focused`, `full`, or `none`. For `ui: true` coding runs, omitted defaults to `focused`. The orchestrator auto-adds the checkpoint run immediately after that run.                                                                                                           |
+| `runs[].parallel`           | no       | Defaults to `false`. Parallel runs still need disjoint write scopes.                                                                                                                                                                                                         |
+| `runs[].dependsOn`          | no       | Run IDs that must finish before this run starts. Runs with multiple dependencies merge those completed worker branches into the worker worktree before coding starts.                                                                                                        |
+| `runs[].writeScope`         | yes      | Required for coding runs. Optional for manual/browser checkpoint runs that only report through orchestrator artifacts. Used for conflict avoidance and scope checks.                                                                                                         |
+| `runs[].tests`              | no       | Commands the worker is expected to run and the integrator reruns after merge.                                                                                                                                                                                                |
+| `runs[].changeset`          | no       | `yes`, `no`, or `maybe`; documentation signal only.                                                                                                                                                                                                                          |
+| `runs[].allowSharedScope`   | no       | Escape hatch for conservative serialization. Use sparingly and document why in the plan.                                                                                                                                                                                     |
 
 Validation rules:
 
 - Every run must have a unique ID.
 - Every dependency must point to an existing run.
 - Dependency cycles are rejected.
+- Coding runs that touch likely UI paths must declare `ui: true` or `ui: false`.
+- `ui: true` coding runs automatically get a browser follow-up unless `browserCheckpoint: none` is set.
 - Runs marked `parallel: true` must have disjoint write scopes from other runnable parallel runs.
 - Shared contracts and repo-wide files force serialization unless `allowSharedScope: true` is set. Conservative paths include `packages/shared`, migrations, root package and lock files, root config, docs indexes, and package export files.
 - Final QA/review stages only run after coding runs are integrated.

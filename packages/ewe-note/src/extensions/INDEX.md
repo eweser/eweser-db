@@ -8,7 +8,7 @@ embeds.
 
 ## Owns
 
-- OFM-to-BlockNote and BlockNote-to-OFM serialization helpers.
+- OFM-to-TipTap and TipTap-to-OFM serialization helpers.
 - Parsing helpers for wiki links and vault image embed syntax.
 - Extension modules that preserve Obsidian-compatible note semantics.
 
@@ -25,7 +25,7 @@ embeds.
 ## Key Contracts
 
 - Serialization changes can affect import/export round trips and editor saves.
-- Obsidian-specific syntax should degrade gracefully when BlockNote lacks a
+- Obsidian-specific syntax should degrade gracefully when TipTap lacks a
   matching native feature.
 - Attachment URL resolution is delegated to `../utils/attachment-resolver.ts`.
 

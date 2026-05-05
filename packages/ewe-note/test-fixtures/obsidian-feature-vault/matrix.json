@@ -1,0 +1,359 @@
+{
+  "version": "1.0.0",
+  "fixtureVault": "packages/ewe-note/test-fixtures/obsidian-feature-vault",
+  "contractNotes": [
+    "This file is the source-of-truth contract for the Obsidian feature vault fixture.",
+    "requiredHandling states what the fixture and later verification runs must prove, not marketing claims.",
+    "currentProductState is descriptive and intentionally conservative; do not upgrade it without code or manual evidence."
+  ],
+  "statusDefinitions": {
+    "render-edit": "EweNote should render this in the main note workflow and preserve edits on round trip.",
+    "preserve-round-trip": "EweNote may not render this natively yet, but import/export must preserve the source or file bytes.",
+    "navigate/search": "EweNote should expose this through search, links, backlinks, outline, tags, or related note navigation.",
+    "manual-only": "This contract is validated by manual QA rather than a reliable automated assertion today.",
+    "out-of-scope": "This is intentionally not a parity target for current EweNote product scope."
+  },
+  "sources": [
+    {
+      "id": "file-formats",
+      "label": "Obsidian Help: Accepted file formats",
+      "url": "https://help.obsidian.md/file-formats"
+    },
+    {
+      "id": "properties",
+      "label": "Obsidian Help: Properties",
+      "url": "https://help.obsidian.md/properties"
+    },
+    {
+      "id": "bases",
+      "label": "Obsidian Help: Bases",
+      "url": "https://help.obsidian.md/bases"
+    },
+    {
+      "id": "bases-syntax",
+      "label": "Obsidian Help: Bases syntax",
+      "url": "https://help.obsidian.md/bases/syntax"
+    },
+    {
+      "id": "canvas",
+      "label": "Obsidian Help: Canvas",
+      "url": "https://help.obsidian.md/plugins/canvas"
+    },
+    {
+      "id": "plugins",
+      "label": "Obsidian Help: Core plugins",
+      "url": "https://help.obsidian.md/plugins"
+    },
+    {
+      "id": "cli",
+      "label": "Obsidian Help: CLI",
+      "url": "https://help.obsidian.md/cli"
+    }
+  ],
+  "categories": [
+    {
+      "id": "markdown-syntax",
+      "label": "Markdown syntax and source fidelity",
+      "sourceIds": ["file-formats"],
+      "fixtureCoverage": [
+        "Multiple Markdown notes with overlapping syntax so import/export and editor checks can distinguish exact-preserve cases from rich-render cases.",
+        "At least one note that intentionally relies on source mode for unsupported or partially rendered syntax."
+      ],
+      "features": [
+        {
+          "id": "headings-lists-emphasis",
+          "label": "Headings, paragraphs, emphasis, blockquotes, lists, and checklist items",
+          "requiredHandling": "render-edit",
+          "currentProductState": "implemented",
+          "notes": "Core note editing surface."
+        },
+        {
+          "id": "tables",
+          "label": "Markdown tables",
+          "requiredHandling": "render-edit",
+          "currentProductState": "implemented",
+          "notes": "Recent parity work added explicit table support."
+        },
+        {
+          "id": "code-blocks-inline-code",
+          "label": "Inline code and fenced code blocks",
+          "requiredHandling": "render-edit",
+          "currentProductState": "implemented"
+        },
+        {
+          "id": "callouts-footnotes",
+          "label": "Callouts and footnotes",
+          "requiredHandling": "preserve-round-trip",
+          "currentProductState": "partial",
+          "notes": "Fixture should prove source fidelity even where rich rendering is incomplete."
+        },
+        {
+          "id": "comments-highlights-escapes",
+          "label": "Obsidian comments, highlights, escaped Markdown, and raw HTML",
+          "requiredHandling": "preserve-round-trip",
+          "currentProductState": "partial"
+        },
+        {
+          "id": "external-links-source-mode",
+          "label": "External Markdown links and source-mode fallback for unsupported rich rendering",
+          "requiredHandling": "manual-only",
+          "currentProductState": "partial",
+          "notes": "Source mode is valid parity evidence when EweNote intentionally preserves syntax instead of rendering it."
+        },
+        {
+          "id": "math-and-mermaid",
+          "label": "Math and Mermaid source blocks",
+          "requiredHandling": "preserve-round-trip",
+          "currentProductState": "preserve-only",
+          "notes": "This run does not claim native diagram or math rendering parity."
+        }
+      ]
+    },
+    {
+      "id": "properties-tags",
+      "label": "Properties, tags, and frontmatter-backed metadata",
+      "sourceIds": ["properties", "bases", "bases-syntax"],
+      "fixtureCoverage": [
+        "Notes with YAML frontmatter covering scalar, list, boolean, date, alias, cssclasses, and tag-heavy metadata.",
+        "Property-bearing notes that later Bases fixtures can reference without inventing separate synthetic metadata."
+      ],
+      "features": [
+        {
+          "id": "yaml-properties",
+          "label": "YAML frontmatter properties including text, arrays, booleans, and dates",
+          "requiredHandling": "render-edit",
+          "currentProductState": "implemented"
+        },
+        {
+          "id": "default-obsidian-properties",
+          "label": "Default Obsidian properties such as tags, aliases, and cssclasses",
+          "requiredHandling": "render-edit",
+          "currentProductState": "partial",
+          "notes": "Fixture should cover them even if some are only preserved today."
+        },
+        {
+          "id": "property-driven-discovery",
+          "label": "Tags and properties participating in note filtering or discovery flows",
+          "requiredHandling": "navigate/search",
+          "currentProductState": "partial"
+        }
+      ]
+    },
+    {
+      "id": "links-navigation",
+      "label": "Links, embeds, and navigation surfaces",
+      "sourceIds": ["file-formats", "plugins"],
+      "fixtureCoverage": [
+        "Notes that link across folders, aliases, headings, blocks, embeds, and intentionally broken targets.",
+        "Enough cross-link density to exercise backlinks, outgoing links, outline, quick switcher, and search checks in later runs."
+      ],
+      "features": [
+        {
+          "id": "wiki-links-aliases",
+          "label": "Wiki links, aliases, and path-based note resolution",
+          "requiredHandling": "navigate/search",
+          "currentProductState": "implemented"
+        },
+        {
+          "id": "heading-and-block-refs",
+          "label": "Heading references and block references",
+          "requiredHandling": "navigate/search",
+          "currentProductState": "partial"
+        },
+        {
+          "id": "backlinks-outgoing-links-unlinked-mentions",
+          "label": "Backlinks, outgoing links, and unlinked mention discovery",
+          "requiredHandling": "navigate/search",
+          "currentProductState": "partial"
+        },
+        {
+          "id": "outline-quick-switcher-search",
+          "label": "Outline, quick switcher, and full-text search workflows",
+          "requiredHandling": "navigate/search",
+          "currentProductState": "partial"
+        },
+        {
+          "id": "note-embeds",
+          "label": "Embeds of notes, headings, blocks, and attachments inside Markdown",
+          "requiredHandling": "preserve-round-trip",
+          "currentProductState": "partial"
+        }
+      ]
+    },
+    {
+      "id": "attachments-files",
+      "label": "Attachments and vault file inventory",
+      "sourceIds": ["file-formats"],
+      "fixtureCoverage": [
+        "Tiny license-clean placeholder binaries for each supported attachment family where practical.",
+        "File references from Markdown notes so preserved files are not orphaned test data."
+      ],
+      "features": [
+        {
+          "id": "images-audio-video-pdf",
+          "label": "Documented Obsidian attachment classes: images, audio, video, and PDF",
+          "requiredHandling": "preserve-round-trip",
+          "currentProductState": "partial",
+          "notes": "The fixture should cover the documented file families, even where import scanning is still incomplete."
+        },
+        {
+          "id": "safe-obsidian-config",
+          "label": "Safe fixture-only .obsidian config files",
+          "requiredHandling": "manual-only",
+          "currentProductState": "not-started",
+          "notes": "Keep config handling explicit and narrow. Do not broaden import/export to arbitrary app settings without approval."
+        }
+      ]
+    },
+    {
+      "id": "canvas-files",
+      "label": "Obsidian Canvas files",
+      "sourceIds": ["canvas"],
+      "fixtureCoverage": [
+        "At least one valid .canvas file using note, text, file, and web cards.",
+        "Linked note and attachment targets that also exist elsewhere in the fixture vault."
+      ],
+      "features": [
+        {
+          "id": "canvas-json-files",
+          "label": ".canvas files stored in the vault using Obsidian's Canvas format",
+          "requiredHandling": "preserve-round-trip",
+          "currentProductState": "not-implemented",
+          "notes": "EweNote should preserve file inventory and bytes without claiming native Canvas editing UI."
+        },
+        {
+          "id": "canvas-manual-open",
+          "label": "Manual validation that fixture Canvas files still open in Obsidian",
+          "requiredHandling": "manual-only",
+          "currentProductState": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "base-files",
+      "label": "Obsidian Bases files and property queries",
+      "sourceIds": ["bases", "bases-syntax", "properties"],
+      "fixtureCoverage": [
+        "At least one valid .base file that references frontmatter-backed properties from real fixture notes.",
+        "Query definitions that exercise filters, sorts, and a mix of default and custom properties without claiming native EweNote UI."
+      ],
+      "features": [
+        {
+          "id": "base-query-files",
+          "label": ".base files stored in the vault for property-backed views and queries",
+          "requiredHandling": "preserve-round-trip",
+          "currentProductState": "not-implemented",
+          "notes": "EweNote should preserve file inventory and bytes without claiming native Bases querying or view UI."
+        },
+        {
+          "id": "base-property-references",
+          "label": "Properties referenced by Bases definitions remain present in source notes",
+          "requiredHandling": "manual-only",
+          "currentProductState": "partial"
+        }
+      ]
+    },
+    {
+      "id": "folders-paths",
+      "label": "Folders, duplicate names, and path-sensitive behavior",
+      "sourceIds": ["file-formats"],
+      "fixtureCoverage": [
+        "Nested folders, duplicate filenames in different directories, and path-collision edge cases.",
+        "Case, punctuation, and broken-link examples that make navigation assertions concrete."
+      ],
+      "features": [
+        {
+          "id": "nested-folders",
+          "label": "Nested folders and stable relative paths",
+          "requiredHandling": "preserve-round-trip",
+          "currentProductState": "implemented"
+        },
+        {
+          "id": "duplicate-note-names",
+          "label": "Duplicate note names in different folders",
+          "requiredHandling": "navigate/search",
+          "currentProductState": "not-verified",
+          "notes": "Needs fixture coverage and navigation assertions."
+        },
+        {
+          "id": "broken-links-case-punctuation",
+          "label": "Broken links, case differences, punctuation differences, and title collisions",
+          "requiredHandling": "navigate/search",
+          "currentProductState": "partial"
+        }
+      ]
+    },
+    {
+      "id": "core-plugin-workflows",
+      "label": "Obsidian core plugin-adjacent note workflows",
+      "sourceIds": ["plugins", "cli"],
+      "fixtureCoverage": [
+        "Daily note, template, slides, bookmark, search-target, and word-count-oriented notes represented as plain vault content.",
+        "Fixture content that supports manual workflow checks without implying plugin-surface parity."
+      ],
+      "features": [
+        {
+          "id": "daily-notes-templates",
+          "label": "Daily notes and templates as note workflows",
+          "requiredHandling": "manual-only",
+          "currentProductState": "partial",
+          "notes": "EweNote can test note content workflows without claiming core-plugin parity."
+        },
+        {
+          "id": "commands-slash-actions",
+          "label": "Command-palette, slash-command, and quick action workflows that touch note creation or editing",
+          "requiredHandling": "manual-only",
+          "currentProductState": "partial",
+          "notes": "These are workflow checks, not a claim of Obsidian command parity."
+        },
+        {
+          "id": "tags-outline-word-count",
+          "label": "Tags view, outline, and word-count style workflows",
+          "requiredHandling": "navigate/search",
+          "currentProductState": "partial"
+        },
+        {
+          "id": "bookmarks-search-slides",
+          "label": "Bookmarks, saved search targets, and Slides source notes",
+          "requiredHandling": "preserve-round-trip",
+          "currentProductState": "not-implemented",
+          "notes": "Preserve fixture content without claiming dedicated UI."
+        }
+      ]
+    },
+    {
+      "id": "explicit-non-goals",
+      "label": "Explicit non-goals for this parity harness",
+      "sourceIds": ["plugins", "cli", "canvas", "bases"],
+      "fixtureCoverage": [
+        "Optional preserve-only files and notes may reference these surfaces, but the fixture must not be used to imply native EweNote feature delivery."
+      ],
+      "features": [
+        {
+          "id": "native-canvas-ui",
+          "label": "Native Canvas editing UI",
+          "requiredHandling": "out-of-scope",
+          "currentProductState": "not-implemented"
+        },
+        {
+          "id": "native-bases-ui",
+          "label": "Native Bases querying and view UI",
+          "requiredHandling": "out-of-scope",
+          "currentProductState": "not-implemented"
+        },
+        {
+          "id": "graph-publish-sync-community-plugins",
+          "label": "Graph view, Publish, Obsidian Sync, and community plugin ecosystem parity",
+          "requiredHandling": "out-of-scope",
+          "currentProductState": "not-implemented"
+        },
+        {
+          "id": "obsidian-cli-command-parity",
+          "label": "Obsidian CLI command parity",
+          "requiredHandling": "out-of-scope",
+          "currentProductState": "not-implemented"
+        }
+      ]
+    }
+  ]
+}

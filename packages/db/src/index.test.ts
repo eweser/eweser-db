@@ -9,6 +9,7 @@ const collectionKeys = [
   'agentConfigs',
   'agentAccessLogs',
   'conversations',
+  'fileAttachments',
 ];
 const defaultAuthServer = 'https://www.eweser.com';
 
