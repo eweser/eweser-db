@@ -422,7 +422,7 @@ async function scanDirectory(
       const fullPath = join(currentDir, entry);
       const relPath = toVaultRelativePath(vaultRoot, fullPath);
 
-      if (IGNORED_DIRS.has(entry)) {
+      if (IGNORED_DIRS.has(entry) || entry.startsWith('.')) {
         skippedPaths.push(relPath);
         continue;
       }
