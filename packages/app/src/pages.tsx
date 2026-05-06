@@ -2159,6 +2159,7 @@ export function AppRoutes() {
         path="/"
       />
       <Route element={<SignInPage />} path="/sign-in" />
+      <Route element={<SignInPage />} path="/auth/sign-in" />
       <Route element={<SignUpPage />} path="/sign-up" />
       <Route element={<TwoFactorChallengePage />} path="/two-factor" />
       <Route element={<ForgotPasswordPage />} path="/forgot-password" />
