@@ -284,7 +284,9 @@ describe('auth-pages app', () => {
 
     expect(await screen.findByLabelText(/email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^sign in$/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /^sign in$/i })
+    ).toBeInTheDocument();
   });
 
   it('should sign in and redirect to the permission page when a login query is present', async () => {
