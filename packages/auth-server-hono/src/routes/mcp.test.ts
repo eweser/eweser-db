@@ -6,6 +6,8 @@ vi.mock('../env.js', () => ({
   env: {
     AUTH_SERVER_URL: 'http://localhost:3000',
     AUTH_TRUSTED_ORIGINS: ['http://localhost:3000'],
+    MCP_INTERNAL_AUTH_URL: 'http://auth-api:3000',
+    MCP_INTERNAL_SYNC_URL: 'ws://sync-server:8080',
     MCP_ALLOWED_ORIGINS: ['https://chatgpt.com'],
     MCP_SESSION_MODE: 'single',
     SYNC_SERVER_URL: 'ws://localhost:38181',
@@ -35,8 +37,13 @@ vi.mock('../model/security-events.js', () => ({
   logSecurityEvent: vi.fn(),
 }));
 
-const { mcpRouter, filterRoomsForAgentConfig, mapDbAgentConfigForMcp } =
-  await import('./mcp.js');
+const {
+  mcpRouter,
+  filterRoomsForAgentConfig,
+  getInternalMcpAuthUrl,
+  getInternalMcpSyncUrl,
+  mapDbAgentConfigForMcp,
+} = await import('./mcp.js');
 
 function makeApp() {
   const app = new Hono();
@@ -169,5 +176,10 @@ describe('mcpRouter', () => {
     expect(response.headers.get('access-control-allow-origin')).toBe(
       'https://chatgpt.com'
     );
+  });
+
+  it('prefers internal MCP runtime URLs when provided', () => {
+    expect(getInternalMcpAuthUrl()).toBe('http://auth-api:3000');
+    expect(getInternalMcpSyncUrl()).toBe('http://sync-server:8080');
   });
 });

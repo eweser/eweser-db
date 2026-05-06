@@ -100,6 +100,32 @@ const abuseEmail = 'abuse@eweser.com';
 const privacyEmail = 'privacy@eweser.com';
 const copyrightEmail = 'copyright@eweser.com';
 
+function readAuthErrorMessage(result: unknown): string | null {
+  if (!result || typeof result !== 'object' || !('error' in result)) {
+    return null;
+  }
+
+  const error = result.error;
+  if (!error || typeof error !== 'object' || !('message' in error)) {
+    return null;
+  }
+
+  return typeof error.message === 'string' ? error.message : null;
+}
+
+function readAuthDataToken(result: unknown): string | null {
+  if (!result || typeof result !== 'object' || !('data' in result)) {
+    return null;
+  }
+
+  const data = result.data;
+  if (!data || typeof data !== 'object' || !('token' in data)) {
+    return null;
+  }
+
+  return typeof data.token === 'string' ? data.token : null;
+}
+
 function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
@@ -424,8 +450,9 @@ function SignInPage() {
         })
       );
 
-      if (result.error) {
-        setError(result.error.message ?? 'Unable to sign in.');
+      const errorMessage = readAuthErrorMessage(result);
+      if (errorMessage) {
+        setError(errorMessage);
         return;
       }
 
@@ -456,8 +483,9 @@ function SignInPage() {
         })
       );
 
-      if (result.error) {
-        setError(result.error.message ?? 'Unable to continue with OAuth.');
+      const errorMessage = readAuthErrorMessage(result);
+      if (errorMessage) {
+        setError(errorMessage);
       }
     } catch (requestError) {
       setError(
@@ -622,7 +650,7 @@ function SignUpPage() {
     setLoading(true);
 
     const nextPath = resolvePostAuthPath(persistedLoginQuery, returnTo);
-    let result;
+    let result: unknown;
 
     try {
       result = await withTimeout(
@@ -666,12 +694,13 @@ function SignUpPage() {
       setCaptchaKey((current) => current + 1);
     }
 
-    if (result.error) {
-      setError(result.error.message ?? 'Unable to create your account.');
+    const errorMessage = readAuthErrorMessage(result);
+    if (errorMessage) {
+      setError(errorMessage);
       return;
     }
 
-    if (result.data?.token) {
+    if (readAuthDataToken(result)) {
       navigate(nextPath, { replace: true });
       return;
     }
@@ -1300,9 +1329,10 @@ function SignOutPage() {
       }
 
       const result = await authClient.signOut();
-      if (result.error) {
+      const errorMessage = readAuthErrorMessage(result);
+      if (errorMessage) {
         if (active) {
-          setError(result.error.message ?? 'Unable to sign out.');
+          setError(errorMessage);
         }
         return;
       }

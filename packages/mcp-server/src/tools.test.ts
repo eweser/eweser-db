@@ -55,6 +55,30 @@ const mockSecondConversationRoom = {
   syncBaseUrl: null,
 };
 
+const mockProjectWikiDraftRoom = {
+  id: 'project-wiki-drafts-room',
+  name: 'Wiki Drafts',
+  collectionKey: 'projectWikiDrafts',
+  syncUrl: 'ws://localhost:1234',
+  syncBaseUrl: null,
+};
+
+const mockProjectWikiPageRoom = {
+  id: 'project-wiki-pages-room',
+  name: 'Wiki Pages',
+  collectionKey: 'projectWikiPages',
+  syncUrl: 'ws://localhost:1234',
+  syncBaseUrl: null,
+};
+
+const mockStrategyRoom = {
+  id: 'strategy-room',
+  name: 'Strategy Configs',
+  collectionKey: 'memoryStrategyConfigs',
+  syncUrl: 'ws://localhost:1234',
+  syncBaseUrl: null,
+};
+
 const mockConnectedRoom = {
   meta: mockRoom,
   ydoc: {},
@@ -66,6 +90,16 @@ const mockConnectedRoom = {
 const mockConnectedConversationRoom = {
   ...mockConnectedRoom,
   meta: mockConversationRoom,
+};
+
+const mockConnectedProjectWikiDraftRoom = {
+  ...mockConnectedRoom,
+  meta: mockProjectWikiDraftRoom,
+};
+
+const mockConnectedProjectWikiPageRoom = {
+  ...mockConnectedRoom,
+  meta: mockProjectWikiPageRoom,
 };
 
 const mockDoc1 = {
@@ -81,6 +115,25 @@ const mockDoc1 = {
   tags: ['mcp-audit'],
 };
 
+const mockConversationMemoryDoc = {
+  _created: Date.parse('2026-05-01T00:00:00.000Z'),
+  _id: 'memory-1',
+  _ref: 'conversations/conversation-room/memory-1',
+  _updated: Date.parse('2026-05-01T00:00:00.000Z'),
+  agentId: 'codex',
+  captureMode: 'manual',
+  date: '2026-05-01',
+  memoryType: 'memory',
+  reviewStatus: 'accepted',
+  scopeKey: 'eweser-db',
+  scopeType: 'project',
+  sourceMemoryIds: [],
+  strategy: 'project-wiki',
+  summary: 'Project wiki sources should remain deterministic.',
+  tags: ['research'],
+  title: 'Project wiki source',
+};
+
 const mockCrudApi = {
   get: vi.fn((id: string) => (id === 'doc-1' ? mockDoc1 : undefined)),
   set: vi.fn((doc: unknown) => doc),
@@ -89,8 +142,70 @@ const mockCrudApi = {
   getAll: vi.fn(() => [mockDoc1]),
 };
 
+const mockDraftDoc = {
+  _created: Date.parse('2026-05-06T00:00:00.000Z'),
+  _id: 'draft-1',
+  _ref: 'projectWikiDrafts.project-wiki-drafts-room.draft-1',
+  _updated: Date.parse('2026-05-06T00:00:00.000Z'),
+  format: 'markdown',
+  pageKind: 'overview',
+  pageSlug: 'overview',
+  proposedContent: '# Overview\n',
+  reviewStatus: 'pending',
+  scopeKey: 'eweser-db',
+  scopeType: 'project',
+  sourceMemoryIds: ['memory-1'],
+  sourceRefs: ['notes.room.doc'],
+  title: 'Overview',
+};
+
+const mockPageDoc = {
+  _created: Date.parse('2026-05-06T00:00:00.000Z'),
+  _id: 'page-1',
+  _ref: 'projectWikiPages.project-wiki-pages-room.page-1',
+  _updated: Date.parse('2026-05-06T00:00:00.000Z'),
+  content: '# Overview\n',
+  format: 'markdown',
+  lastAcceptedDraftId: 'draft-1',
+  pageKind: 'overview',
+  reviewStatus: 'accepted',
+  scopeKey: 'eweser-db',
+  scopeType: 'project',
+  slug: 'overview',
+  sourceMemoryIds: ['memory-1'],
+  sourceRefs: ['notes.room.doc'],
+  title: 'Overview',
+};
+
+const mockDraftCrudApi = {
+  get: vi.fn((id: string) => (id === 'draft-1' ? mockDraftDoc : undefined)),
+  set: vi.fn((doc: unknown) => doc),
+  new: vi.fn((doc: unknown) => ({ ...doc, _id: 'new-draft' })),
+  delete: vi.fn(),
+  getAll: vi.fn(() => [mockDraftDoc]),
+};
+
+const mockPageCrudApi = {
+  get: vi.fn((id: string) => (id === 'page-1' ? mockPageDoc : undefined)),
+  set: vi.fn((doc: unknown) => doc),
+  new: vi.fn((doc: unknown) => ({ ...doc, _id: 'new-page' })),
+  delete: vi.fn(),
+  getAll: vi.fn(() => [mockPageDoc]),
+};
+
 const mockDataLayer = {
-  listRooms: vi.fn(() => [mockRoom]),
+  listRooms: vi.fn((collectionKey?: string) => {
+    const rooms = [
+      mockRoom,
+      mockConversationRoom,
+      mockStrategyRoom,
+      mockProjectWikiDraftRoom,
+      mockProjectWikiPageRoom,
+    ];
+    return collectionKey
+      ? rooms.filter((room) => room.collectionKey === collectionKey)
+      : rooms;
+  }),
   listWritableRooms: vi.fn((collectionKey?: string) =>
     collectionKey === 'conversations'
       ? [mockConversationRoom]
@@ -125,18 +240,63 @@ const mockDataLayer = {
   resolveMemoryWriteRoom: vi.fn(
     ({ roomId }: { roomId?: string } = {}) => roomId ?? 'conversation-room'
   ),
+  resolveProjectWikiTargets: vi.fn(() => ({
+    draftRoomId: 'project-wiki-drafts-room',
+    pageRoomId: 'project-wiki-pages-room',
+    scope: {
+      captureMode: 'manual',
+      draftRoomIds: ['project-wiki-drafts-room'],
+      label: 'Project Wiki',
+      pageRoomIds: ['project-wiki-pages-room'],
+      readableRoomIds: [
+        'strategy-room',
+        'conversation-room',
+        'project-wiki-drafts-room',
+        'project-wiki-pages-room',
+      ],
+      scopeKey: 'eweser-db',
+      scopeType: 'project',
+      sourceRoomIds: ['conversation-room'],
+      strategy: 'project-wiki',
+      writableRoomIds: ['project-wiki-drafts-room', 'project-wiki-pages-room'],
+    },
+    sourceRoomIds: ['conversation-room'],
+  })),
   assertReadAccess: vi.fn((roomId: string) =>
     roomId === 'conversation-room'
       ? mockConnectedConversationRoom
-      : mockConnectedRoom
+      : roomId === 'project-wiki-drafts-room'
+        ? mockConnectedProjectWikiDraftRoom
+        : roomId === 'project-wiki-pages-room'
+          ? mockConnectedProjectWikiPageRoom
+          : mockConnectedRoom
   ),
   assertWriteAccess: vi.fn((roomId: string) =>
     roomId === 'conversation-room'
       ? mockConnectedConversationRoom
-      : mockConnectedRoom
+      : roomId === 'project-wiki-drafts-room'
+        ? mockConnectedProjectWikiDraftRoom
+        : roomId === 'project-wiki-pages-room'
+          ? mockConnectedProjectWikiPageRoom
+          : mockConnectedRoom
   ),
-  getRawDocuments: vi.fn(() => ({ 'doc-1': mockDoc1 })),
-  getDocumentsForRoom: vi.fn(() => mockCrudApi),
+  getRawDocuments: vi.fn((roomId?: string) => {
+    if (roomId === 'conversation-room') {
+      return { 'memory-1': mockConversationMemoryDoc };
+    }
+    if (roomId === 'project-wiki-drafts-room') {
+      return { 'draft-1': mockDraftDoc };
+    }
+    if (roomId === 'project-wiki-pages-room') {
+      return { 'page-1': mockPageDoc };
+    }
+    return { 'doc-1': mockDoc1 };
+  }),
+  getDocumentsForRoom: vi.fn((roomId?: string) => {
+    if (roomId === 'project-wiki-drafts-room') return mockDraftCrudApi;
+    if (roomId === 'project-wiki-pages-room') return mockPageCrudApi;
+    return mockCrudApi;
+  }),
   getAgentToken: vi.fn(() => 'mock-agent-token'),
   searchDocuments: vi.fn(() => [
     { roomId: 'room-1', collectionKey: 'notes', doc: mockDoc1 },
@@ -182,8 +342,9 @@ describe('eweser_list_rooms', () => {
     const result = await callTool('eweser_list_rooms');
     expect(result.isError).toBeFalsy();
     const rooms = JSON.parse(result.content[0].text);
-    expect(rooms).toHaveLength(1);
-    expect(rooms[0].id).toBe('room-1');
+    expect(rooms.some((room: { id: string }) => room.id === 'room-1')).toBe(
+      true
+    );
   });
 
   it('passes collectionKey filter to dataLayer', async () => {
@@ -791,5 +952,105 @@ describe('eweser_export_memory', () => {
         resultCount: files.length,
       })
     );
+  });
+});
+
+describe('project wiki tools', () => {
+  it('builds project wiki drafts without writing to the source room', async () => {
+    const result = await callTool('eweser_build_project_wiki', {
+      scopeKey: 'eweser-db',
+      scopeType: 'project',
+    });
+
+    const body = JSON.parse(result.content[0].text);
+    expect(body.map((entry: { pageSlug: string }) => entry.pageSlug)).toEqual([
+      'overview',
+      'decisions',
+      'active-questions',
+      'source-index',
+    ]);
+    expect(mockDataLayer.resolveProjectWikiTargets).toHaveBeenCalledWith({
+      scopeKey: 'eweser-db',
+      scopeType: 'project',
+    });
+    expect(mockDraftCrudApi.new).toHaveBeenCalled();
+    expect(mockLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        roomId: 'project-wiki-drafts-room',
+        action: 'write',
+      })
+    );
+  });
+
+  it('lists project wiki drafts for the configured scope', async () => {
+    const result = await callTool('eweser_list_project_wiki_drafts', {
+      scopeKey: 'eweser-db',
+      scopeType: 'project',
+    });
+
+    const drafts = JSON.parse(result.content[0].text);
+    expect(drafts).toHaveLength(1);
+    expect(drafts[0].pageSlug).toBe('overview');
+  });
+
+  it('accepts a project wiki draft into canonical pages', async () => {
+    const result = await callTool('eweser_review_project_wiki_draft', {
+      action: 'accept',
+      draftId: 'draft-1',
+      scopeKey: 'eweser-db',
+      scopeType: 'project',
+    });
+
+    const body = JSON.parse(result.content[0].text);
+    expect(body.pageSlug).toBe('overview');
+    expect(mockPageCrudApi.set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        content: '# Overview\n',
+        lastAcceptedDraftId: 'draft-1',
+      })
+    );
+    expect(mockDraftCrudApi.set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reviewStatus: 'accepted',
+        targetPageId: 'page-1',
+      })
+    );
+  });
+
+  it('rejects a project wiki draft without changing canonical pages', async () => {
+    await callTool('eweser_review_project_wiki_draft', {
+      action: 'reject',
+      draftId: 'draft-1',
+      scopeKey: 'eweser-db',
+      scopeType: 'project',
+    });
+
+    expect(mockDraftCrudApi.set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reviewStatus: 'rejected',
+      })
+    );
+    expect(mockPageCrudApi.set).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        lastAcceptedDraftId: 'draft-1',
+      })
+    );
+  });
+
+  it('exports accepted project wiki pages as markdown files', async () => {
+    const result = await callTool('eweser_export_project_wiki', {
+      scopeKey: 'eweser-db',
+      scopeType: 'project',
+    });
+
+    const files = JSON.parse(result.content[0].text);
+    expect(files.map((file: { path: string }) => file.path)).toContain(
+      'PROJECT_WIKI.md'
+    );
+    expect(
+      files.some((file: { content: string }) =>
+        file.content.includes('type: project-wiki-page')
+      )
+    ).toBe(true);
   });
 });

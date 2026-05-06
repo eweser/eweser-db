@@ -23,6 +23,10 @@ and response types, and pure utility helpers.
   and access log schemas.
 - [`collections/memory-strategy.ts`](./collections/memory-strategy.ts): AI
   memory strategy, scope, capture mode, and review/provenance contracts.
+- [`collections/project-wiki-page.ts`](./collections/project-wiki-page.ts):
+  Canonical Project Wiki page contracts.
+- [`collections/project-wiki-draft.ts`](./collections/project-wiki-draft.ts):
+  Reviewable Project Wiki draft contracts.
 - [`memory-evaluation/index.ts`](./memory-evaluation/index.ts): Deterministic
   scenario harness for strategy recommendation evidence.
 - [`api/index.ts`](./api/index.ts): API contract exports.
@@ -41,6 +45,9 @@ and response types, and pure utility helpers.
 - `COLLECTION_KEYS` defines interoperable collection names.
 - `memoryStrategyConfigs` is user-owned product configuration; auth-server
   PostgreSQL may mirror only operational pointers needed for token enforcement.
+- `projectWikiPages` and `projectWikiDrafts` are the dedicated canonical and
+  derived Project Wiki collections. Do not reuse personal `notes` as the
+  canonical wiki store.
 - `_ref` values must be built with shared helpers and use the documented
   auth-server, collection, room, and document format.
 - Keep this package dependency-free.

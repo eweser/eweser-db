@@ -24,10 +24,28 @@ describe('memory strategy evaluation', () => {
     ).toEqual(expect.objectContaining({ status: 'implemented' }));
   });
 
-  it('marks unimplemented strategies as pending evidence', () => {
+  it('recommends project-wiki for the implemented source-tracking scenario', () => {
+    const scenario = BASELINE_MEMORY_SCENARIOS.find(
+      (candidate) => candidate.id === 'research-source-tracking'
+    );
+    if (!scenario) throw new Error('Missing research source tracking fixture');
+
+    const result = evaluateMemoryScenario(scenario);
+
+    expect(result.recommendedStrategy).toBe('project-wiki');
+    expect(
+      result.scores.find((score) => score.strategy === 'project-wiki')
+    ).toEqual(expect.objectContaining({ status: 'implemented' }));
+  });
+
+  it('keeps future strategies pending when they do not have implementation evidence', () => {
     const results = evaluateBaselineMemoryScenarios();
     const pendingScores = results.flatMap((result) =>
-      result.scores.filter((score) => score.strategy !== 'agent-journal')
+      result.scores.filter(
+        (score) =>
+          score.strategy !== 'agent-journal' &&
+          score.strategy !== 'project-wiki'
+      )
     );
 
     expect(pendingScores.length).toBeGreaterThan(0);

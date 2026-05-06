@@ -145,6 +145,8 @@ const _exampleDb: { collections: Collections } = {
     conversations: {},
     fileAttachments: {},
     memoryStrategyConfigs: {},
+    projectWikiPages: {},
+    projectWikiDrafts: {},
   },
 };
 

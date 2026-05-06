@@ -271,8 +271,9 @@ function buildMemoryStrategyOverview(
   writableRooms: Awaited<ReturnType<typeof getWritableRoomsByUserId>>
 ) {
   const writableRoomIds = getRecommendedWriteRoomIds(writableRooms);
-  const defaultWriteRoomId = writableRoomIds[0];
-  const readableRoomIds = writableRooms.map((room) => room.id);
+  const defaultWriteRoomId =
+    writableRoomIds.length === 1 ? writableRoomIds[0] : undefined;
+  const readableRoomIds = writableRoomIds;
   const defaultScope: MemoryStrategyScope = {
     scopeType: 'global',
     scopeKey: 'default',
@@ -299,8 +300,9 @@ function buildMemoryStrategyOverview(
       {
         strategy: 'project-wiki' as const,
         label: 'Project Wiki',
-        description: 'Source-backed project knowledge. Planned after the MVP.',
-        advanced: true,
+        description:
+          'Deterministic project knowledge built from approved source rooms into reviewable drafts and canonical wiki pages.',
+        advanced: false,
       },
       {
         strategy: 'auto-curated' as const,
@@ -368,7 +370,11 @@ async function buildTokenScope(
   } = {}
 ) {
   const writableRooms = await getWritableRoomsByUserId(userId);
-  if (options.memoryStrategy && options.memoryStrategy !== 'agent-journal') {
+  if (
+    options.memoryStrategy &&
+    options.memoryStrategy !== 'agent-journal' &&
+    options.memoryStrategy !== 'project-wiki'
+  ) {
     return { error: 'Unsupported memory strategy' as const };
   }
   if (options.captureMode === 'auto') {
@@ -405,6 +411,30 @@ async function buildTokenScope(
     writeRoomIds.some((roomId) => !readRoomIds.includes(roomId))
   ) {
     return { error: 'Writable rooms must also be readable' as const };
+  }
+
+  const writeCollections = Array.from(
+    new Set(
+      writeRoomIds.map((roomId) => writableRoomById.get(roomId)?.collectionKey)
+    )
+  ).filter((collectionKey): collectionKey is string => Boolean(collectionKey));
+
+  if (options.memoryStrategy === 'project-wiki') {
+    if (readRoomIds.length === 0) {
+      return { error: 'Project Wiki requires readable source rooms' as const };
+    }
+    if (!writeCollections.includes('projectWikiDrafts')) {
+      return {
+        error:
+          'Project Wiki requires a writable projectWikiDrafts room' as const,
+      };
+    }
+    if (!writeCollections.includes('projectWikiPages')) {
+      return {
+        error:
+          'Project Wiki requires a writable projectWikiPages room' as const,
+      };
+    }
   }
 
   const writeAllowedCollections = Array.from(

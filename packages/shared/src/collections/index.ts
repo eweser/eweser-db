@@ -12,6 +12,8 @@ import type { DocumentBase } from './documentBase.js';
 import type { Conversation } from './conversation.js';
 import type { FileAttachment } from './file-attachment.js';
 import type { MemoryStrategyConfig } from './memory-strategy.js';
+import type { ProjectWikiDraft } from './project-wiki-draft.js';
+import type { ProjectWikiPage } from './project-wiki-page.js';
 export * from './note.js';
 export * from './flashcard.js';
 export * from './profile.js';
@@ -21,6 +23,8 @@ export * from './conversation.js';
 export * from './folder.js';
 export * from './file-attachment.js';
 export * from './memory-strategy.js';
+export * from './project-wiki-page.js';
+export * from './project-wiki-draft.js';
 
 /** We don't include registry because we use this after login to get all non-registry collections. */
 export const COLLECTION_KEYS = [
@@ -32,6 +36,8 @@ export const COLLECTION_KEYS = [
   'conversations',
   'fileAttachments',
   'memoryStrategyConfigs',
+  'projectWikiPages',
+  'projectWikiDrafts',
 ] as const;
 
 export const COLLECTION_KEYS_OR_ALL = [...COLLECTION_KEYS, 'all'] as const;
@@ -51,7 +57,9 @@ export type EweDocument =
   | AgentAccessLogEntry
   | Conversation
   | FileAttachment
-  | MemoryStrategyConfig;
+  | MemoryStrategyConfig
+  | ProjectWikiPage
+  | ProjectWikiDraft;
 export type CollectionKey = (typeof COLLECTION_KEYS)[number];
 export type CollectionKeyOrAll = (typeof COLLECTION_KEYS_OR_ALL)[number];
 

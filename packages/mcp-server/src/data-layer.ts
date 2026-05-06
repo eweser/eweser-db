@@ -18,6 +18,7 @@ import {
   type EweDocument,
   type CollectionKey,
   type MemoryCaptureMode,
+  type MemoryStrategyConfig,
   type MemoryStrategyKind,
   type MemoryStrategyScope,
   type MemoryScopeType,
@@ -342,29 +343,100 @@ export class DataLayer {
     return writable.filter((room) => room.collectionKey === collectionKey);
   }
 
-  listMemoryScopes(): MemoryStrategyScope[] {
+  private buildGlobalAgentJournalScope(): MemoryStrategyScope {
     const readableRoomIds = this.listRooms().map((room) => room.id);
     const writableRoomIds = this.listWritableRooms('conversations').map(
       (room) => room.id
     );
-    return [
-      {
-        scopeType: 'global',
-        scopeKey: 'default',
-        label: 'Shared Agent Memory',
-        strategy: 'agent-journal',
-        captureMode: 'manual',
-        ...(writableRoomIds[0]
-          ? { defaultWriteRoomId: writableRoomIds[0] }
-          : {}),
-        readableRoomIds,
-        writableRoomIds,
-      },
-    ];
+    const defaultWriteRoomId =
+      writableRoomIds.length === 1 ? writableRoomIds[0] : undefined;
+    return {
+      scopeType: 'global',
+      scopeKey: 'default',
+      label: 'Shared Agent Memory',
+      strategy: 'agent-journal',
+      captureMode: 'manual',
+      ...(defaultWriteRoomId ? { defaultWriteRoomId } : {}),
+      readableRoomIds,
+      writableRoomIds,
+    };
+  }
+
+  private getConfiguredMemoryScopes(): MemoryStrategyScope[] {
+    const readableRoomIdSet = new Set(this.listRooms().map((room) => room.id));
+    const writableRooms = this.listWritableRooms();
+    const writableRoomIdSet = new Set(writableRooms.map((room) => room.id));
+    const writableRoomById = new Map(
+      writableRooms.map((room) => [room.id, room])
+    );
+
+    return this.listRooms('memoryStrategyConfigs')
+      .flatMap((room) =>
+        Object.values(this.getRawDocuments<MemoryStrategyConfig>(room.id))
+      )
+      .filter((config): config is MemoryStrategyConfig =>
+        Boolean(config && !config._deleted && config.enabled)
+      )
+      .map((config) => {
+        const explicitReadableRoomIds = normalizeScopeIds(
+          config.readableRoomIds
+        );
+        const sourceRoomIds = normalizeScopeIds(
+          config.sourceRoomIds?.length
+            ? config.sourceRoomIds
+            : explicitReadableRoomIds
+        ).filter((roomId) => readableRoomIdSet.has(roomId));
+        const draftRoomIds = normalizeScopeIds(config.writableRoomIds).filter(
+          (roomId) =>
+            writableRoomIdSet.has(roomId) &&
+            writableRoomById.get(roomId)?.collectionKey === 'projectWikiDrafts'
+        );
+        const pageRoomIds = normalizeScopeIds(config.writableRoomIds).filter(
+          (roomId) =>
+            writableRoomIdSet.has(roomId) &&
+            writableRoomById.get(roomId)?.collectionKey === 'projectWikiPages'
+        );
+        const writableRoomIds =
+          config.strategy === 'project-wiki'
+            ? normalizeScopeIds([...draftRoomIds, ...pageRoomIds])
+            : normalizeScopeIds(config.writableRoomIds).filter((roomId) =>
+                writableRoomIdSet.has(roomId)
+              );
+        const readableRoomIds = normalizeScopeIds([
+          ...explicitReadableRoomIds.filter((roomId) =>
+            readableRoomIdSet.has(roomId)
+          ),
+          ...sourceRoomIds,
+          ...writableRoomIds,
+        ]);
+        const defaultWriteRoomId = normalizeScopeIds(
+          config.defaultWriteRoomId ? [config.defaultWriteRoomId] : []
+        ).find((roomId) => writableRoomIds.includes(roomId));
+
+        return {
+          scopeType: config.scopeType,
+          scopeKey: config.scopeKey,
+          label: memoryStrategyLabel(config),
+          strategy: config.strategy,
+          captureMode: config.captureMode,
+          ...(defaultWriteRoomId ? { defaultWriteRoomId } : {}),
+          readableRoomIds,
+          writableRoomIds,
+          ...(sourceRoomIds.length ? { sourceRoomIds } : {}),
+          ...(draftRoomIds.length ? { draftRoomIds } : {}),
+          ...(pageRoomIds.length ? { pageRoomIds } : {}),
+        } satisfies MemoryStrategyScope;
+      });
+  }
+
+  listMemoryScopes(): MemoryStrategyScope[] {
+    const configuredScopes = this.getConfiguredMemoryScopes();
+    return [...configuredScopes, this.buildGlobalAgentJournalScope()];
   }
 
   getMemoryStrategy(
     options: {
+      preferFallbackGlobal?: boolean | undefined;
       scopeKey?: string | undefined;
       scopeType?: MemoryScopeType | undefined;
     } = {}
@@ -374,12 +446,21 @@ export class DataLayer {
     scope: MemoryStrategyScope;
   } {
     const scopes = this.listMemoryScopes();
+    const matchedScope = scopes.find(
+      (candidate) =>
+        (!options.scopeKey || candidate.scopeKey === options.scopeKey) &&
+        (!options.scopeType || candidate.scopeType === options.scopeType)
+    );
+
+    const configuredScopes = scopes.filter((scope) => !isFallbackScope(scope));
     const scope =
-      scopes.find(
-        (candidate) =>
-          (!options.scopeKey || candidate.scopeKey === options.scopeKey) &&
-          (!options.scopeType || candidate.scopeType === options.scopeType)
-      ) ?? scopes[0];
+      matchedScope ??
+      (options.preferFallbackGlobal
+        ? scopes.find(isFallbackScope)
+        : configuredScopes.length === 1
+          ? configuredScopes[0]
+          : undefined) ??
+      scopes[0];
 
     if (!scope) {
       throw new Error('No memory scopes are available for this agent.');
@@ -401,7 +482,10 @@ export class DataLayer {
   ): string {
     if (options.roomId) return options.roomId;
 
-    const scope = this.getMemoryStrategy(options).scope;
+    const scope = this.getMemoryStrategy({
+      ...options,
+      preferFallbackGlobal: true,
+    }).scope;
     if (scope.defaultWriteRoomId) return scope.defaultWriteRoomId;
     if (scope.writableRoomIds.length === 1)
       return scope.writableRoomIds[0] as string;
@@ -411,6 +495,66 @@ export class DataLayer {
     throw new Error(
       `Multiple writable memory rooms are available; provide roomId or scopeKey. Available roomIds: ${scope.writableRoomIds.join(', ')}`
     );
+  }
+
+  resolveProjectWikiTargets(
+    options: {
+      scopeKey?: string | undefined;
+      scopeType?: MemoryScopeType | undefined;
+    } = {}
+  ): {
+    draftRoomId: string;
+    pageRoomId: string;
+    scope: MemoryStrategyScope & {
+      strategy: 'project-wiki';
+      sourceRoomIds: string[];
+      draftRoomIds: string[];
+      pageRoomIds: string[];
+    };
+    sourceRoomIds: string[];
+  } {
+    const strategy = this.getMemoryStrategy(options);
+    if (strategy.strategy !== 'project-wiki') {
+      throw new Error('Resolved scope is not configured for project-wiki.');
+    }
+
+    const scope = strategy.scope;
+    const sourceRoomIds = scope.sourceRoomIds ?? [];
+    const draftRoomIds = scope.draftRoomIds ?? [];
+    const pageRoomIds = scope.pageRoomIds ?? [];
+
+    if (sourceRoomIds.length === 0) {
+      throw new Error(
+        'Project Wiki requires at least one readable source room.'
+      );
+    }
+    if (draftRoomIds.length !== 1) {
+      throw new Error(
+        draftRoomIds.length === 0
+          ? 'Project Wiki requires exactly one writable draft room.'
+          : `Project Wiki requires exactly one writable draft room. Available roomIds: ${draftRoomIds.join(', ')}`
+      );
+    }
+    if (pageRoomIds.length !== 1) {
+      throw new Error(
+        pageRoomIds.length === 0
+          ? 'Project Wiki requires exactly one writable page room.'
+          : `Project Wiki requires exactly one writable page room. Available roomIds: ${pageRoomIds.join(', ')}`
+      );
+    }
+
+    return {
+      draftRoomId: draftRoomIds[0] as string,
+      pageRoomId: pageRoomIds[0] as string,
+      scope: {
+        ...scope,
+        strategy: 'project-wiki',
+        sourceRoomIds,
+        draftRoomIds,
+        pageRoomIds,
+      },
+      sourceRoomIds,
+    };
   }
 
   // ---------------------------------------------------------------------------
@@ -470,6 +614,22 @@ export class DataLayer {
 
     return results;
   }
+}
+
+function isFallbackScope(scope: MemoryStrategyScope): boolean {
+  return (
+    scope.scopeType === 'global' &&
+    scope.scopeKey === 'default' &&
+    scope.strategy === 'agent-journal'
+  );
+}
+
+function normalizeScopeIds(values: string[] | undefined): string[] {
+  return Array.from(new Set((values ?? []).filter(Boolean)));
+}
+
+function memoryStrategyLabel(config: MemoryStrategyConfig): string {
+  return config.name?.trim() || `${config.scopeType}/${config.scopeKey}`;
 }
 
 function compactScope(values: string[] | undefined): string[] {

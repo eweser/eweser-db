@@ -229,6 +229,81 @@ function createMemoryStorage(): Storage {
   } as Storage;
 }
 
+type RemoteSyncReadyProvider = {
+  synced?: boolean;
+  on(
+    event: 'synced' | 'authenticationFailed',
+    callback: (payload: { state?: boolean; reason?: string }) => void
+  ): void;
+  off(
+    event: 'synced' | 'authenticationFailed',
+    callback: (payload: { state?: boolean; reason?: string }) => void
+  ): void;
+};
+
+export async function waitForRemoteSyncProviderReady(
+  provider: RemoteSyncReadyProvider | null | undefined,
+  timeoutMs = 15000
+): Promise<void> {
+  if (!provider) {
+    throw new Error('Remote sync provider is missing.');
+  }
+
+  if (provider.synced) {
+    return;
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      cleanup();
+      reject(new Error('Timed out waiting for remote sync provider.'));
+    }, timeoutMs);
+
+    const handleSynced = (payload: { state?: boolean }) => {
+      if (!payload.state) {
+        return;
+      }
+      cleanup();
+      resolve();
+    };
+
+    const handleAuthenticationFailed = (payload: { reason?: string }) => {
+      cleanup();
+      reject(
+        new Error(
+          `Remote sync provider authentication failed${payload.reason ? `: ${payload.reason}` : '.'}`
+        )
+      );
+    };
+
+    const cleanup = () => {
+      clearTimeout(timeout);
+      provider.off('synced', handleSynced);
+      provider.off('authenticationFailed', handleAuthenticationFailed);
+    };
+
+    provider.on('synced', handleSynced);
+    provider.on('authenticationFailed', handleAuthenticationFailed);
+  });
+}
+
+async function waitForRemoteRoomReady(
+  room: { syncProvider?: RemoteSyncReadyProvider | null },
+  timeoutMs = 15000
+): Promise<void> {
+  const start = Date.now();
+
+  while (!room.syncProvider) {
+    if (Date.now() - start >= timeoutMs) {
+      throw new Error('Timed out waiting for remote sync provider.');
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+
+  const remainingMs = Math.max(1, timeoutMs - (Date.now() - start));
+  await waitForRemoteSyncProviderReady(room.syncProvider, remainingMs);
+}
+
 async function ensureNodeIndexedDb(): Promise<void> {
   if (!('window' in globalThis)) {
     Object.defineProperty(globalThis, 'window', {
@@ -743,6 +818,9 @@ export class EweserRoomVaultSyncEngine {
         loadRemote: true,
         awaitLoadRemote: true,
       })) as typeof attachmentsRoom;
+
+      await waitForRemoteRoomReady(notesRoom);
+      await waitForRemoteRoomReady(attachmentsRoom);
     } else {
       await notesRoom.load({ loadRemote: false, awaitLoadRemote: false });
       await attachmentsRoom.load({

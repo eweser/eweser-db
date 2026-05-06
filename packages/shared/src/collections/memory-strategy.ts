@@ -83,6 +83,9 @@ export interface MemoryStrategyScope {
   defaultWriteRoomId?: string;
   readableRoomIds: string[];
   writableRoomIds: string[];
+  sourceRoomIds?: string[];
+  draftRoomIds?: string[];
+  pageRoomIds?: string[];
 }
 
 export interface MemoryStrategyChoice {

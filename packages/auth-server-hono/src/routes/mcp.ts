@@ -51,6 +51,15 @@ const mcpRequestRateLimit = createRateLimit({
 const sessionCache = new Map<string, McpSession>();
 const OAUTH_LAST_USED_UPDATE_INTERVAL_MS = 5 * 60 * 1000;
 
+export function getInternalMcpAuthUrl(): string {
+  return env.MCP_INTERNAL_AUTH_URL ?? env.AUTH_SERVER_URL;
+}
+
+export function getInternalMcpSyncUrl(): string | undefined {
+  const syncUrl = env.MCP_INTERNAL_SYNC_URL ?? env.SYNC_SERVER_URL;
+  return syncUrl?.replace('ws://', 'http://').replace('wss://', 'https://');
+}
+
 // Prune sessions idle for more than 30 minutes
 const SESSION_TTL_MS = 30 * 60 * 1000;
 setInterval(
@@ -315,12 +324,9 @@ mcpRouter.all('/', async (c) => {
     // Create DataLayer — it makes internal requests to the sync server
     dataLayer = new DataLayer(
       agentConfig,
-      env.AUTH_SERVER_URL,
+      getInternalMcpAuthUrl(),
       auth.agentToken ?? `oauth-placeholder-${auth.userId}`,
-      env.SYNC_SERVER_URL?.replace('ws://', 'http://').replace(
-        'wss://',
-        'https://'
-      )
+      getInternalMcpSyncUrl()
     );
     await dataLayer.init(agentRooms);
 

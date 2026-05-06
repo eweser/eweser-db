@@ -105,6 +105,8 @@ services:
       AUTH_SERVER_DOMAIN: ${AUTH_PUBLIC_DOMAIN:-localhost:38101}
       AUTH_SERVER_URL: ${AUTH_PUBLIC_URL:-http://localhost:38101}
       AUTH_TRUSTED_ORIGINS: ${AUTH_TRUSTED_ORIGINS:-http://localhost:38101,http://localhost:3001,http://127.0.0.1:3001,http://localhost:5181,http://127.0.0.1:5181,http://localhost:38111,http://127.0.0.1:38111}
+      MCP_INTERNAL_AUTH_URL: http://localhost:3000
+      MCP_INTERNAL_SYNC_URL: ws://sync-server:8080
       SYNC_SERVER_URL: ${SYNC_PUBLIC_URL:-ws://localhost:38181}
       SYNC_AUTH_SECRET: ${SYNC_AUTH_SECRET:-localsyncauthsecret1234567890abcd}
       PORT: 3000

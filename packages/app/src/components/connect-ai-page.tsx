@@ -151,10 +151,33 @@ export function ConnectAiPage() {
     });
   }
 
+  function handleStrategyChange(nextStrategy: string) {
+    setSelectedStrategy(nextStrategy);
+    if (nextStrategy !== 'project-wiki') {
+      return;
+    }
+
+    const projectWikiWriteRoomIds = (overview?.writableRooms ?? [])
+      .filter(
+        (room) =>
+          room.collectionKey === 'projectWikiDrafts' ||
+          room.collectionKey === 'projectWikiPages'
+      )
+      .map((room) => room.id);
+
+    setDefaultWriteRoomId(undefined);
+    setSelectedWriteRoomIds((current) =>
+      current.filter((roomId) => projectWikiWriteRoomIds.includes(roomId))
+    );
+    setSelectedReadRoomIds((current) =>
+      Array.from(new Set(current.concat(projectWikiWriteRoomIds)))
+    );
+  }
+
   function buildSetupOptions() {
     return {
       captureMode: selectedCaptureMode as 'manual' | 'suggest' | 'auto',
-      defaultWriteRoomId,
+      ...(selectedStrategy === 'agent-journal' ? { defaultWriteRoomId } : {}),
       memoryStrategy: selectedStrategy as
         | 'agent-journal'
         | 'project-wiki'
@@ -267,7 +290,7 @@ export function ConnectAiPage() {
         onCaptureModeChange={setSelectedCaptureMode}
         onDefaultWriteRoomChange={setDefaultWriteRoomId}
         onReadRoomToggle={toggleReadRoom}
-        onStrategyChange={setSelectedStrategy}
+        onStrategyChange={handleStrategyChange}
         onWriteRoomToggle={toggleWriteRoom}
       />
 
@@ -396,7 +419,7 @@ function MemoryStrategySettings({
     <div className="mb-6 rounded-lg border border-border bg-background/50 p-4">
       <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
         <div>
-          <h3 className="text-sm font-semibold">Shared Agent Memory</h3>
+          <h3 className="text-sm font-semibold">Memory strategy</h3>
           <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
             Choose the memory strategy, capture mode, and room boundaries that
             token clients receive. Personal rooms stay read-only or off unless
@@ -404,7 +427,9 @@ function MemoryStrategySettings({
           </p>
         </div>
         <span className="rounded-full border border-border px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-          Agent Journal
+          {selectedStrategy === 'project-wiki'
+            ? 'Project Wiki'
+            : 'Agent Journal'}
         </span>
       </div>
 
@@ -419,11 +444,14 @@ function MemoryStrategySettings({
             {memoryStrategy.choices.map((choice) => (
               <option
                 key={choice.strategy}
-                disabled={choice.strategy !== 'agent-journal'}
+                disabled={
+                  choice.strategy !== 'agent-journal' &&
+                  choice.strategy !== 'project-wiki'
+                }
                 value={choice.strategy}
               >
                 {choice.label}
-                {choice.advanced ? ' (planned)' : ''}
+                {choice.advanced ? ' (advanced)' : ''}
               </option>
             ))}
           </select>
@@ -453,6 +481,7 @@ function MemoryStrategySettings({
           <span className="block font-medium">Default write room</span>
           <select
             className="mt-2 w-full rounded-md border border-border bg-background px-3 py-2"
+            disabled={selectedStrategy === 'project-wiki'}
             value={defaultWriteRoomId ?? ''}
             onChange={(event) =>
               onDefaultWriteRoomChange(event.target.value || undefined)
@@ -467,8 +496,22 @@ function MemoryStrategySettings({
                 </option>
               ))}
           </select>
+          <span className="mt-2 block text-xs text-muted-foreground">
+            {selectedStrategy === 'project-wiki'
+              ? 'Project Wiki writes drafts and accepted pages to dedicated wiki rooms. Default write room is not used there.'
+              : 'Agent Journal can infer the write target only when exactly one writable conversations room is selected.'}
+          </span>
         </label>
       </div>
+
+      {selectedStrategy === 'project-wiki' ? (
+        <div className="mt-4 rounded-md border border-border/80 bg-background/60 px-3 py-3 text-sm text-muted-foreground">
+          Project Wiki is available for seeded project scopes. Select readable
+          source rooms plus writable `projectWikiDrafts` and `projectWikiPages`
+          rooms. The canonical strategy config still lives in
+          `memoryStrategyConfigs`; this screen only scopes the token.
+        </div>
+      ) : null}
 
       <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {rooms.map((room) => (

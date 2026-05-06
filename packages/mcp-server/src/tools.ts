@@ -9,6 +9,8 @@ import type { DataLayer } from './data-layer.js';
 import {
   estimateMemoryTokens,
   exportAgentJournalMarkdown,
+  exportProjectWikiMarkdown,
+  buildProjectWikiDrafts,
   type MemoryAuditAction,
   type MemoryAuditEvent,
   type Conversation,
@@ -16,6 +18,8 @@ import {
   type MemoryCaptureMode,
   type MemoryScopeType,
   type MemoryStrategyKind,
+  type ProjectWikiDraft,
+  type ProjectWikiPage,
 } from '@eweser/shared';
 import path from 'node:path';
 
@@ -304,6 +308,42 @@ function resultText(result: ToolResult): string {
 
 function auditResultSummary(result: ToolResult): string {
   return redactSecretLikeText(resultText(result).slice(0, 500)).text;
+}
+
+function activeProjectWikiDocs<T extends { _deleted?: boolean }>(
+  docs: Record<string, T>
+): T[] {
+  return Object.values(docs).filter((doc): doc is T =>
+    Boolean(doc && !doc._deleted)
+  );
+}
+
+function findProjectWikiDraftBySlug(
+  drafts: ProjectWikiDraft[],
+  scopeType: MemoryScopeType,
+  scopeKey: string,
+  pageSlug: string
+): ProjectWikiDraft | undefined {
+  return drafts.find(
+    (draft) =>
+      draft.scopeType === scopeType &&
+      draft.scopeKey === scopeKey &&
+      draft.pageSlug === pageSlug
+  );
+}
+
+function findProjectWikiPageBySlug(
+  pages: ProjectWikiPage[],
+  scopeType: MemoryScopeType,
+  scopeKey: string,
+  slug: string
+): ProjectWikiPage | undefined {
+  return pages.find(
+    (page) =>
+      page.scopeType === scopeType &&
+      page.scopeKey === scopeKey &&
+      page.slug === slug
+  );
 }
 
 export function registerTools(
@@ -980,6 +1020,352 @@ export function registerTools(
         tokenEstimate: estimateMemoryTokens(resultText(result)),
       });
       return result;
+    }
+  );
+
+  // -------------------------------------------------------------------------
+  // eweser_build_project_wiki
+  // -------------------------------------------------------------------------
+  tool(
+    'eweser_build_project_wiki',
+    'Build or refresh deterministic Project Wiki drafts for a configured project scope without mutating source memory rooms.',
+    {
+      scopeType: z.literal('project').optional(),
+      scopeKey: z.string().optional(),
+    },
+    async ({ scopeType, scopeKey }) => {
+      const targets = dataLayer.resolveProjectWikiTargets({
+        scopeKey,
+        scopeType,
+      });
+      const sourceMemories = targets.sourceRoomIds.flatMap((roomId) => {
+        const connected = dataLayer.assertReadAccess(roomId);
+        if (connected.meta.collectionKey !== 'conversations') {
+          return [];
+        }
+        const raw = dataLayer.getRawDocuments<Conversation>(roomId);
+        return activeProjectWikiDocs(raw);
+      });
+
+      const pageCrud = dataLayer.getDocumentsForRoom<ProjectWikiPage>(
+        targets.pageRoomId
+      );
+      const existingPages = activeProjectWikiDocs(
+        dataLayer.getRawDocuments<ProjectWikiPage>(targets.pageRoomId)
+      );
+      void pageCrud;
+      const drafts = buildProjectWikiDrafts(sourceMemories, {
+        generatorId: 'eweser-mcp',
+        scopeKey: targets.scope.scopeKey,
+        targetPageIds: Object.fromEntries(
+          existingPages.map((page) => [page.pageKind, page._id])
+        ),
+      });
+
+      const draftCrud = dataLayer.getDocumentsForRoom<ProjectWikiDraft>(
+        targets.draftRoomId
+      );
+      const existingDrafts = activeProjectWikiDocs(
+        dataLayer.getRawDocuments<ProjectWikiDraft>(targets.draftRoomId)
+      );
+      const writtenDrafts = drafts.map((draft) => {
+        const existing = findProjectWikiDraftBySlug(
+          existingDrafts,
+          draft.scopeType,
+          draft.scopeKey,
+          draft.pageSlug
+        );
+        const candidate = {
+          ...draft,
+          reviewStatus: 'pending' as const,
+        };
+        return existing
+          ? draftCrud.set({
+              ...existing,
+              ...candidate,
+            })
+          : draftCrud.new(candidate);
+      });
+
+      const connected = dataLayer.assertWriteAccess(targets.draftRoomId);
+      void log({
+        roomId: targets.draftRoomId,
+        collectionKey: connected.meta.collectionKey,
+        action: 'write',
+        documentCount: writtenDrafts.length,
+      });
+
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: JSON.stringify(
+              writtenDrafts.map((draft) => ({
+                id: draft._id,
+                pageKind: draft.pageKind,
+                pageSlug: draft.pageSlug,
+                sourceMemoryIds: draft.sourceMemoryIds,
+                targetPageId: draft.targetPageId,
+              })),
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    }
+  );
+
+  // -------------------------------------------------------------------------
+  // eweser_list_project_wiki_drafts
+  // -------------------------------------------------------------------------
+  tool(
+    'eweser_list_project_wiki_drafts',
+    'List Project Wiki drafts for a configured project scope.',
+    {
+      reviewStatus: z.enum(['pending', 'accepted', 'rejected']).optional(),
+      scopeType: z.literal('project').optional(),
+      scopeKey: z.string().optional(),
+    },
+    async ({ reviewStatus, scopeType, scopeKey }) => {
+      const targets = dataLayer.resolveProjectWikiTargets({
+        scopeKey,
+        scopeType,
+      });
+      const drafts = activeProjectWikiDocs(
+        dataLayer.getRawDocuments<ProjectWikiDraft>(targets.draftRoomId)
+      ).filter(
+        (draft) =>
+          draft.scopeType === targets.scope.scopeType &&
+          draft.scopeKey === targets.scope.scopeKey &&
+          (!reviewStatus || draft.reviewStatus === reviewStatus)
+      );
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: JSON.stringify(drafts, null, 2),
+          },
+        ],
+      };
+    }
+  );
+
+  // -------------------------------------------------------------------------
+  // eweser_list_project_wiki_pages
+  // -------------------------------------------------------------------------
+  tool(
+    'eweser_list_project_wiki_pages',
+    'List accepted Project Wiki pages for a configured project scope.',
+    {
+      scopeType: z.literal('project').optional(),
+      scopeKey: z.string().optional(),
+    },
+    async ({ scopeType, scopeKey }) => {
+      const targets = dataLayer.resolveProjectWikiTargets({
+        scopeKey,
+        scopeType,
+      });
+      const pages = activeProjectWikiDocs(
+        dataLayer.getRawDocuments<ProjectWikiPage>(targets.pageRoomId)
+      ).filter(
+        (page) =>
+          page.scopeType === targets.scope.scopeType &&
+          page.scopeKey === targets.scope.scopeKey
+      );
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: JSON.stringify(pages, null, 2),
+          },
+        ],
+      };
+    }
+  );
+
+  // -------------------------------------------------------------------------
+  // eweser_review_project_wiki_draft
+  // -------------------------------------------------------------------------
+  tool(
+    'eweser_review_project_wiki_draft',
+    'Accept or reject a Project Wiki draft. Accept writes only to canonical projectWikiPages; reject leaves canonical pages untouched.',
+    {
+      action: z.enum(['accept', 'reject']),
+      draftId: z.string(),
+      scopeType: z.literal('project').optional(),
+      scopeKey: z.string().optional(),
+    },
+    async ({ action, draftId, scopeType, scopeKey }) => {
+      const targets = dataLayer.resolveProjectWikiTargets({
+        scopeKey,
+        scopeType,
+      });
+      const draftCrud = dataLayer.getDocumentsForRoom<ProjectWikiDraft>(
+        targets.draftRoomId
+      );
+      const pageCrud = dataLayer.getDocumentsForRoom<ProjectWikiPage>(
+        targets.pageRoomId
+      );
+      const draft = draftCrud.get(draftId);
+      if (!draft || draft._deleted) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: 'text' as const,
+              text: `Project Wiki draft not found: ${draftId}`,
+            },
+          ],
+        };
+      }
+
+      if (action === 'reject') {
+        const rejected = draftCrud.set({
+          ...draft,
+          reviewStatus: 'rejected',
+          provenance: {
+            ...draft.provenance,
+            rejectedAt: new Date().toISOString(),
+          },
+        });
+        const connected = dataLayer.assertWriteAccess(targets.draftRoomId);
+        void log({
+          roomId: targets.draftRoomId,
+          collectionKey: connected.meta.collectionKey,
+          action: 'write',
+          documentCount: 1,
+        });
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: JSON.stringify(
+                { action, draftId: rejected._id, canonicalPageChanged: false },
+                null,
+                2
+              ),
+            },
+          ],
+        };
+      }
+
+      const existingPages = activeProjectWikiDocs(
+        dataLayer.getRawDocuments<ProjectWikiPage>(targets.pageRoomId)
+      );
+      const existingPage =
+        (draft.targetPageId ? pageCrud.get(draft.targetPageId) : undefined) ??
+        findProjectWikiPageBySlug(
+          existingPages,
+          draft.scopeType,
+          draft.scopeKey,
+          draft.pageSlug
+        );
+      const pageCandidate = {
+        scopeType: draft.scopeType,
+        scopeKey: draft.scopeKey,
+        slug: draft.pageSlug,
+        title: draft.title,
+        pageKind: draft.pageKind,
+        format: draft.format,
+        content: draft.proposedContent,
+        sourceMemoryIds: draft.sourceMemoryIds,
+        sourceRefs: draft.sourceRefs ?? [],
+        reviewStatus: 'accepted' as const,
+        lastAcceptedDraftId: draft._id,
+        provenance: {
+          ...draft.provenance,
+          acceptedAt: new Date().toISOString(),
+        },
+      };
+      const page = existingPage
+        ? pageCrud.set({ ...existingPage, ...pageCandidate })
+        : pageCrud.new(pageCandidate);
+      const updatedDraft = draftCrud.set({
+        ...draft,
+        reviewStatus: 'accepted',
+        targetPageId: page._id,
+        provenance: {
+          ...draft.provenance,
+          acceptedAt: new Date().toISOString(),
+        },
+      });
+      const pageConnected = dataLayer.assertWriteAccess(targets.pageRoomId);
+      const draftConnected = dataLayer.assertWriteAccess(targets.draftRoomId);
+      void log({
+        roomId: targets.pageRoomId,
+        collectionKey: pageConnected.meta.collectionKey,
+        action: 'write',
+        documentCount: 1,
+      });
+      void log({
+        roomId: targets.draftRoomId,
+        collectionKey: draftConnected.meta.collectionKey,
+        action: 'write',
+        documentCount: 1,
+      });
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: JSON.stringify(
+              {
+                action,
+                canonicalPageId: page._id,
+                draftId: updatedDraft._id,
+                pageSlug: page.slug,
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    }
+  );
+
+  // -------------------------------------------------------------------------
+  // eweser_export_project_wiki
+  // -------------------------------------------------------------------------
+  tool(
+    'eweser_export_project_wiki',
+    'Export accepted Project Wiki pages for a configured project scope as Markdown or JSON.',
+    {
+      format: z.enum(['obsidian', 'markdown', 'json']).optional(),
+      scopeType: z.literal('project').optional(),
+      scopeKey: z.string().optional(),
+    },
+    async ({ format, scopeType, scopeKey }) => {
+      const targets = dataLayer.resolveProjectWikiTargets({
+        scopeKey,
+        scopeType,
+      });
+      const pages = activeProjectWikiDocs(
+        dataLayer.getRawDocuments<ProjectWikiPage>(targets.pageRoomId)
+      ).filter(
+        (page) =>
+          page.scopeType === targets.scope.scopeType &&
+          page.scopeKey === targets.scope.scopeKey
+      );
+      const files = exportProjectWikiMarkdown(pages, {
+        format: format ?? 'obsidian',
+        scopeKey: targets.scope.scopeKey,
+      });
+      const connected = dataLayer.assertReadAccess(targets.pageRoomId);
+      void log({
+        roomId: targets.pageRoomId,
+        collectionKey: connected.meta.collectionKey,
+        action: 'read',
+        documentCount: pages.length,
+      });
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: JSON.stringify(files, null, 2),
+          },
+        ],
+      };
     }
   );
 

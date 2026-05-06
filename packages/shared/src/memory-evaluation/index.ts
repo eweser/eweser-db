@@ -577,7 +577,10 @@ export const GOLDEN_MEMORY_DIAGNOSTIC_FIXTURES: MemoryDiagnosticFixture[] = [
   },
 ];
 
-const IMPLEMENTED_STRATEGIES = new Set<MemoryStrategyKind>(['agent-journal']);
+const IMPLEMENTED_STRATEGIES = new Set<MemoryStrategyKind>([
+  'agent-journal',
+  'project-wiki',
+]);
 
 export function evaluateMemoryScenario(
   scenario: MemoryScenarioInput
