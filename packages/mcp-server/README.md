@@ -36,20 +36,25 @@ cp example.env .env
 
 ## Available Tools
 
-| Tool                         | Description                                                              |
-| ---------------------------- | ------------------------------------------------------------------------ |
-| `eweser_list_rooms`          | List rooms the agent can access, optionally filtered by collection key   |
-| `eweser_list_documents`      | List documents in a room (IDs + summaries)                               |
-| `eweser_read_document`       | Read a full document by room ID and document ID                          |
-| `eweser_search`              | Full-text search across all accessible rooms                             |
-| `eweser_create_document`     | Create a new document in a room                                          |
-| `eweser_update_document`     | Update fields on an existing document                                    |
-| `eweser_delete_document`     | Soft-delete a document (sets `_deleted = true`)                          |
-| `eweser_get_memory_strategy` | Return active memory strategy, capture mode, scope, and writable targets |
-| `eweser_list_memory_scopes`  | List memory scopes available to this token                               |
-| `eweser_save_memory`         | Save accepted Agent Journal memory, inferring the room when unambiguous  |
-| `eweser_suggest_memory`      | Stage suggested Agent Journal memory for review                          |
-| `eweser_export_memory`       | Export Agent Journal memory as Obsidian-compatible Markdown by default   |
+| Tool                               | Description                                                              |
+| ---------------------------------- | ------------------------------------------------------------------------ |
+| `eweser_list_rooms`                | List rooms the agent can access, optionally filtered by collection key   |
+| `eweser_list_documents`            | List documents in a room (IDs + summaries)                               |
+| `eweser_read_document`             | Read a full document by room ID and document ID                          |
+| `eweser_search`                    | Full-text search across all accessible rooms                             |
+| `eweser_create_document`           | Create a new document in a room                                          |
+| `eweser_update_document`           | Update fields on an existing document                                    |
+| `eweser_delete_document`           | Soft-delete a document (sets `_deleted = true`)                          |
+| `eweser_get_memory_strategy`       | Return active memory strategy, capture mode, scope, and writable targets |
+| `eweser_list_memory_scopes`        | List memory scopes available to this token                               |
+| `eweser_save_memory`               | Save accepted Agent Journal memory, inferring the room when unambiguous  |
+| `eweser_suggest_memory`            | Stage suggested Agent Journal memory for review                          |
+| `eweser_export_memory`             | Export Agent Journal memory as Obsidian-compatible Markdown by default   |
+| `eweser_build_project_wiki`        | Build deterministic Project Wiki drafts from approved source memory      |
+| `eweser_list_project_wiki_drafts`  | List reviewable Project Wiki drafts for a project scope                  |
+| `eweser_list_project_wiki_pages`   | List accepted canonical Project Wiki pages for a project scope           |
+| `eweser_review_project_wiki_draft` | Accept or reject a Project Wiki draft                                    |
+| `eweser_export_project_wiki`       | Export accepted Project Wiki pages as Markdown or JSON                   |
 
 ## Supported Clients
 
@@ -192,6 +197,15 @@ The recommended writable setup is a dedicated `conversations` room for **AI Memo
 
 With that setup, `eweser_save_memory` can omit `roomId` because there is exactly one writable memory target. If multiple writable memory rooms are available, the tool returns a typed ambiguity error and asks for `roomId` or `scopeKey`.
 
+Project Wiki uses a different safety model:
+
+1. Store the canonical strategy config in a `memoryStrategyConfigs` room.
+2. Select readable source rooms, typically `conversations` plus any explicit source rooms.
+3. Select exactly one writable `projectWikiDrafts` room and exactly one writable `projectWikiPages` room.
+4. Build drafts first, review provenance, then accept or reject drafts explicitly.
+
+Project Wiki tools do not write back into source memory rooms. Source rooms remain read-only during draft build and export. Only accepted drafts update canonical `projectWikiPages`.
+
 Capture mode behavior in this MVP:
 
 - `manual`: accepted memory writes through `eweser_save_memory`.
@@ -199,6 +213,8 @@ Capture mode behavior in this MVP:
 - `auto`: visible as planned/disabled until capture hooks and audit policy ship.
 
 `eweser_export_memory` returns an array of files. The default format is Obsidian-compatible Markdown with YAML frontmatter, stable tags, and `[[wikilinks]]`; pass `format: "json"` only when a client needs raw records.
+
+`eweser_export_project_wiki` returns accepted wiki pages only. The default format is Obsidian-compatible Markdown with stable filenames, provenance frontmatter, and a `PROJECT_WIKI.md` index.
 
 With scoped setup, the AI client can read the rooms granted by the token but can only create, update, or delete documents in selected writable rooms. If no writable room is selected, token clients are read-only.
 

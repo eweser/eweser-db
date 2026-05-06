@@ -5,10 +5,12 @@ Status: current support doc for the first AI memory strategy MVP.
 The deterministic harness lives in `packages/shared/src/memory-evaluation/`.
 It exists to keep strategy recommendations evidence-backed. UI copy can say
 Agent Journal is recommended for coding continuity because the scenario harness
-has an implemented fixture for that case. It should not claim Project Wiki,
-Auto-Curated Memory, Knowledge Graph, or Workspace Intelligence are production
-recommendations until their follow-up plans add implemented processors and
-passing fixtures.
+has an implemented fixture for that case. Project Wiki now also has implemented
+deterministic evidence for the source-tracking scenario, so UI copy can say it
+is available for source-backed project memory when the runtime is configured
+with dedicated draft/page rooms. Auto-Curated Memory, Knowledge Graph, and
+Workspace Intelligence should still remain pending until their follow-up plans
+add implemented processors and passing fixtures.
 
 This harness is conceptual strategy evidence. The encode/retrieve audit system
 in `docs/ai/memory-diagnostics-audit.md` is the stronger reliability check for
@@ -41,9 +43,9 @@ The harness scores these dimensions deterministically:
 - portability;
 - use-case fit.
 
-`agent-journal` is the only implemented strategy in this first pass. Other
-strategies are marked `pending`, even when their conceptual fit is strongest.
-That prevents false pass/fail claims before their actual processors exist.
+`agent-journal` and `project-wiki` are implemented in this pass. Future
+strategies remain `pending`, even when their conceptual fit is strongest. That
+prevents false pass/fail claims before their actual processors exist.
 
 ## Safety Fixtures
 

@@ -86,6 +86,27 @@ phrases, token budget, and safety checks. If it fails, the suggested actions
 should name the missed recall, noisy recall, token-budget breach, or safety
 leak.
 
+## Project Wiki Manual Audit
+
+Use this when validating the deterministic Project Wiki flow rather than the
+Agent Journal save/search path:
+
+1. Seed one `memoryStrategyConfigs` doc for `strategy: "project-wiki"` with a
+   project `scopeKey`, readable source room ids, and writable
+   `projectWikiDrafts` / `projectWikiPages` room ids.
+2. Seed at least one source-backed project memory and one decision memory in
+   the readable source rooms.
+3. Call `eweser_get_memory_strategy` and confirm it resolves to `project-wiki`
+   for the seeded project scope.
+4. Call `eweser_build_project_wiki`, inspect the returned draft ids, then read a
+   draft document and confirm `sourceMemoryIds` and any `sourceRefs`.
+5. Reject one draft with `eweser_review_project_wiki_draft` and confirm the
+   canonical pages stay unchanged.
+6. Accept one draft and confirm the canonical page updates with
+   `lastAcceptedDraftId`.
+7. Export the accepted wiki with `eweser_export_project_wiki` and inspect the
+   stable filenames plus provenance frontmatter.
+
 ## Known Limits
 
 - Token counts are deterministic estimates, not model tokenizer counts.

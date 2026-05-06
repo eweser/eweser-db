@@ -42,6 +42,19 @@ function redirectToAuthPages(path: string, search = '') {
   return new URL(`${path}${search}`, `${resolveAuthPagesOrigin()}/`).toString();
 }
 
+function normalizeAuthPagesPath(path: string) {
+  if (path === '/auth' || path === '/auth/') {
+    return '/';
+  }
+
+  if (path.startsWith('/auth/')) {
+    const stripped = path.slice('/auth'.length);
+    return stripped.startsWith('/') ? stripped : `/${stripped}`;
+  }
+
+  return path;
+}
+
 function isBrowserNavigation(method: string) {
   return method === 'GET' || method === 'HEAD';
 }
@@ -73,15 +86,17 @@ app.use('*', async (c, next) => {
   const requestUrl = new URL(c.req.url);
 
   if (c.req.path === '/' && requestUrl.searchParams.has('redirect')) {
-    return c.redirect(redirectToAuthPages('/auth/sign-in', requestUrl.search));
+    return c.redirect(redirectToAuthPages('/sign-in', requestUrl.search));
   }
 
   if (c.req.path === '/') {
-    return c.redirect(redirectToAuthPages('/auth/'));
+    return c.redirect(redirectToAuthPages('/'));
   }
 
   if (c.req.path === '/auth' || c.req.path.startsWith('/auth/')) {
-    return c.redirect(redirectToAuthPages(c.req.path, requestUrl.search));
+    return c.redirect(
+      redirectToAuthPages(normalizeAuthPagesPath(c.req.path), requestUrl.search)
+    );
   }
 
   await next();
