@@ -11,6 +11,7 @@ import {
 } from '../components/workspace-interaction-settings';
 
 const mockNavigate = vi.fn();
+const mockSetSelectedRoom = vi.fn();
 
 vi.mock('react-router', () => ({
   useNavigate: () => mockNavigate,
@@ -21,10 +22,13 @@ vi.mock('../../db', () => ({
   useDb: () => ({
     allRooms: [],
     allRoomIds: [],
+    db: {},
     hasToken: false,
     loaded: true,
     loggedIn: false,
     loginUrl: 'http://localhost:38101/login',
+    selectedRoom: null,
+    setSelectedRoom: mockSetSelectedRoom,
     signOut: vi.fn(),
     syncStatus: 'signed-out',
     syncStatusDescription: 'Signed out',
@@ -67,6 +71,7 @@ describe('Settings', () => {
   beforeEach(() => {
     window.localStorage.clear();
     mockNavigate.mockClear();
+    mockSetSelectedRoom.mockClear();
   });
 
   afterEach(() => {
@@ -126,5 +131,18 @@ describe('Settings', () => {
     expect(
       screen.getAllByRole('button', { name: 'Create custom theme' }).length
     ).toBeGreaterThan(0);
+  });
+
+  it('shows the real vault import entry point in sync settings', () => {
+    render(<Settings />);
+
+    expect(
+      screen.getByRole('button', { name: 'Choose vault folder' })
+    ).toBeTruthy();
+    expect(
+      screen.getByText(
+        'Choose an Obsidian vault folder to import markdown locally. Sign in first if you want attachments uploaded and synced across devices.'
+      )
+    ).toBeTruthy();
   });
 });

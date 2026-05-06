@@ -24,6 +24,11 @@ import { AUTH_PAGES_SERVER, AUTH_SERVER, env, routerBase } from '../../config';
 import { useTheme } from '../components/ThemeProvider';
 import { Switch } from '../components/ui/switch';
 import { useWorkspaceInteractionPreferences } from '../components/workspace-interaction-settings';
+import {
+  importVaultFromFiles,
+  type BrowserVaultImportProgress,
+  type BrowserVaultImportResult,
+} from '../lib/browser-vault-import';
 
 const SETTINGS_SECTIONS = [
   { id: 'account', label: 'Account' },
@@ -41,22 +46,41 @@ export function Settings() {
   const contentRef = useRef<HTMLDivElement | null>(null);
   const [activeSection, setActiveSection] =
     useState<SettingsSectionId>('account');
+  const vaultInputRef = useRef<HTMLInputElement | null>(null);
+  const [vaultImportProgress, setVaultImportProgress] =
+    useState<BrowserVaultImportProgress | null>(null);
+  const [vaultImportResult, setVaultImportResult] =
+    useState<BrowserVaultImportResult | null>(null);
+  const [vaultImportError, setVaultImportError] = useState<string | null>(null);
   const { mode, theme, setMode } = useTheme();
   const { preferences, updatePreference } =
     useWorkspaceInteractionPreferences();
   const {
     allRooms,
     allRoomIds,
+    db,
     hasToken,
     loaded,
     loggedIn,
     loginUrl,
+    selectedRoom,
+    setSelectedRoom,
     signOut,
     syncStatus,
     syncStatusDescription,
     syncStatusLabel,
     user,
   } = useDb();
+
+  const importingVault = vaultImportProgress !== null;
+  const canSyncRemotely = loggedIn || hasToken;
+
+  useEffect(() => {
+    const input = vaultInputRef.current;
+    if (!input) return;
+    input.setAttribute('webkitdirectory', '');
+    input.setAttribute('directory', '');
+  }, []);
 
   useEffect(() => {
     const hash = location.hash.replace('#', '').trim();
@@ -118,6 +142,43 @@ export function Settings() {
     window.history.replaceState(null, '', `#${sectionId}`);
     target.scrollIntoView({ block: 'start', behavior: 'smooth' });
   };
+
+  const openVaultPicker = () => {
+    vaultInputRef.current?.click();
+  };
+
+  const handleVaultInputChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = event.currentTarget.files;
+    event.currentTarget.value = '';
+    if (!files || files.length === 0) return;
+
+    setVaultImportError(null);
+    setVaultImportResult(null);
+    try {
+      const result = await importVaultFromFiles({
+        db,
+        files,
+        onProgress: setVaultImportProgress,
+        remoteSyncEnabled: canSyncRemotely,
+        setSelectedRoom,
+      });
+      setVaultImportResult(result);
+    } catch (error) {
+      setVaultImportError(
+        error instanceof Error ? error.message : 'Vault import failed.'
+      );
+    } finally {
+      setVaultImportProgress(null);
+    }
+  };
+
+  const importedRoom =
+    vaultImportResult?.noteRoomId != null
+      ? (allRooms.find((room) => room.id === vaultImportResult.noteRoomId) ??
+        null)
+      : null;
 
   return (
     <div
@@ -318,6 +379,13 @@ export function Settings() {
               </h2>
               <SettingsPanel icon={Server} title="Local-first sync">
                 <div className="space-y-5">
+                  <input
+                    ref={vaultInputRef}
+                    className="hidden"
+                    multiple
+                    onChange={handleVaultInputChange}
+                    type="file"
+                  />
                   <div>
                     <p
                       data-cy="ewe-note-settings-sync-status"
@@ -345,8 +413,12 @@ export function Settings() {
                     />
                     <InfoBlock
                       icon={Download}
-                      title="Import and export"
-                      description="Markdown import and export live in the vault tools and editor source mode. UI-level vault import is still deferred."
+                      title="Obsidian vault import"
+                      description={
+                        canSyncRemotely
+                          ? 'Choose an Obsidian vault folder to create synced notes and attachment rooms from the browser.'
+                          : 'Choose an Obsidian vault folder to import markdown locally. Sign in first if you want attachments uploaded and synced across devices.'
+                      }
                     />
                     <div className="space-y-2 rounded-lg bg-accent/35 px-4 py-4">
                       <div className="text-sm font-medium text-foreground">
@@ -374,6 +446,113 @@ export function Settings() {
                         </div>
                       </dl>
                     </div>
+                  </div>
+
+                  <div className="space-y-4 rounded-lg border border-border/70 px-4 py-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="space-y-1">
+                        <div className="text-sm font-medium text-foreground">
+                          Import an Obsidian vault
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {canSyncRemotely
+                            ? 'This creates a notes room plus a paired attachment room, then uploads files through the auth API.'
+                            : 'This creates a local notes room immediately. Attachments stay out until sync is enabled.'}
+                        </p>
+                      </div>
+                      <button
+                        data-cy="ewe-note-settings-import-vault"
+                        disabled={importingVault}
+                        onClick={openVaultPicker}
+                        type="button"
+                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <Download className="h-4 w-4" />
+                        {importingVault
+                          ? 'Importing vault...'
+                          : 'Choose vault folder'}
+                      </button>
+                    </div>
+
+                    {vaultImportProgress ? (
+                      <div
+                        data-cy="ewe-note-settings-import-progress"
+                        className="rounded-lg border border-border/70 bg-background/70 px-3 py-3 text-sm text-muted-foreground"
+                      >
+                        <div className="font-medium text-foreground">
+                          {vaultImportProgress.message}
+                        </div>
+                        <div className="mt-1">
+                          {vaultImportProgress.phase}{' '}
+                          {vaultImportProgress.current}
+                          {' / '}
+                          {vaultImportProgress.total}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {vaultImportError ? (
+                      <div
+                        data-cy="ewe-note-settings-import-error"
+                        className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-3 text-sm text-destructive"
+                      >
+                        {vaultImportError}
+                      </div>
+                    ) : null}
+
+                    {vaultImportResult ? (
+                      <div
+                        data-cy="ewe-note-settings-import-result"
+                        className="space-y-3 rounded-lg border border-border/70 bg-background/70 px-3 py-3 text-sm"
+                      >
+                        <div className="font-medium text-foreground">
+                          Vault imported
+                        </div>
+                        <div className="text-muted-foreground">
+                          {vaultImportResult.notesImported} notes imported into{' '}
+                          {importedRoom?.name ?? 'a new room'}.{' '}
+                          {vaultImportResult.remoteSyncEnabled
+                            ? `${vaultImportResult.attachmentsUploaded} attachments uploaded`
+                            : 'Attachment upload skipped until sync is active'}
+                          {vaultImportResult.attachmentsSkipped > 0
+                            ? `, ${vaultImportResult.attachmentsSkipped} skipped.`
+                            : '.'}
+                        </div>
+                        {vaultImportResult.warnings.length > 0 ? (
+                          <div className="space-y-1 text-muted-foreground">
+                            {vaultImportResult.warnings
+                              .slice(0, 3)
+                              .map((warning) => (
+                                <p key={warning}>{warning}</p>
+                              ))}
+                            {vaultImportResult.warnings.length > 3 ? (
+                              <p>
+                                {vaultImportResult.warnings.length - 3} more
+                                warning(s) hidden.
+                              </p>
+                            ) : null}
+                          </div>
+                        ) : null}
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            onClick={() => {
+                              if (!importedRoom) return;
+                              setSelectedRoom(importedRoom);
+                              navigate('/');
+                            }}
+                            type="button"
+                            className="rounded-lg border border-border px-3 py-2 text-sm text-foreground transition-colors hover:bg-accent/60"
+                          >
+                            Open imported room
+                          </button>
+                          {selectedRoom?.id === importedRoom?.id ? (
+                            <span className="inline-flex items-center rounded-lg bg-accent px-3 py-2 text-sm text-foreground">
+                              Active room
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               </SettingsPanel>

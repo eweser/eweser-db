@@ -86,7 +86,7 @@ const loginUrlParams = new URLSearchParams({
 });
 
 export const appLoginUrl = new URL(
-  `/auth/sign-in?${loginUrlParams.toString()}`,
+  `/sign-in?${loginUrlParams.toString()}`,
   config.AUTH_PAGES_SERVER
 ).toString();
 
