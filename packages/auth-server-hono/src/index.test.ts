@@ -8,6 +8,7 @@ vi.mock('@hono/node-server', () => ({
 
 vi.mock('./env.js', () => ({
   env: {
+    AUTH_SERVER_URL: 'http://localhost:38101',
     AUTH_TRUSTED_ORIGINS: ['http://localhost:38101'],
     PORT: 38101,
     TRUST_PROXY: false,
@@ -45,6 +46,28 @@ vi.mock('./routes/files.js', async () => {
 const { app } = await import('./index.js');
 
 describe('app health routes', () => {
+  it('redirects root auth entry with redirect params to auth-pages sign-in', async () => {
+    const response = await app.fetch(
+      new Request('http://localhost/?redirect=http%3A%2F%2Flocalhost%3A4173%2F')
+    );
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toBe(
+      'http://localhost:38101/sign-in?redirect=http%3A%2F%2Flocalhost%3A4173%2F'
+    );
+  });
+
+  it('rewrites /auth/* browser routes onto auth-pages root routes', async () => {
+    const response = await app.fetch(
+      new Request('http://localhost/auth/sign-in?domain=note.eweser.com')
+    );
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toBe(
+      'http://localhost:38101/sign-in?domain=note.eweser.com'
+    );
+  });
+
   it('returns status payload for /health', async () => {
     const response = await app.fetch(new Request('http://localhost/health'));
 
