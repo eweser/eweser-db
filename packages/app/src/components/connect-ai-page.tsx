@@ -433,6 +433,30 @@ function MemoryStrategySettings({
         </span>
       </div>
 
+      <div className="mt-4 grid gap-3 border-y border-border/70 py-3 text-sm md:grid-cols-3">
+        <p className="text-muted-foreground">
+          <span className="block font-medium text-foreground">
+            Shared Agent Memory
+          </span>
+          A shared notebook for AI tools to remember durable decisions,
+          preferences, project context, and follow-ups.
+        </p>
+        <p className="text-muted-foreground">
+          <span className="block font-medium text-foreground">
+            Recommended setup
+          </span>
+          Keep one writable Conversations room selected. Leave personal notes
+          read-only or off unless you want agents to use them.
+        </p>
+        <p className="text-muted-foreground">
+          <span className="block font-medium text-foreground">
+            Read and write
+          </span>
+          Read lets an agent use a room as context. Write lets it save new
+          memory there.
+        </p>
+      </div>
+
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
         <label className="text-sm">
           <span className="block font-medium">Strategy</span>

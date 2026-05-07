@@ -473,6 +473,10 @@ describe('auth-pages app', () => {
     expect(screen.getAllByText(/shared agent memory/i).length).toBeGreaterThan(
       0
     );
+    expect(
+      screen.getByText(/a shared notebook for ai tools/i)
+    ).toBeInTheDocument();
+    expect(screen.getByText(/read lets an agent/i)).toBeInTheDocument();
     expect(screen.getByText(/writable ai area/i)).toBeInTheDocument();
     expect(screen.getByText(/write scope: 1 room/i)).toBeInTheDocument();
   });
