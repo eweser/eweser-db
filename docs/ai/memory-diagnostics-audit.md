@@ -33,7 +33,7 @@ npm run memory:diagnose -- --fixture scripts/memory/fixtures/failing-no-recall.j
 JSON output:
 
 ```bash
-npm run memory:diagnose -- --fixture scripts/memory/fixtures/passing-agent-journal.json -- --json
+npm run memory:diagnose -- --fixture scripts/memory/fixtures/passing-agent-journal.json --json
 ```
 
 Audit JSONL from MCP:

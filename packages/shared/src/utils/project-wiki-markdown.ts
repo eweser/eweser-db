@@ -20,10 +20,7 @@ export function exportProjectWikiMarkdown(
   const format = options.format ?? 'obsidian';
   const generatedAt = options.generatedAt ?? new Date().toISOString();
   const acceptedPages = pages
-    .filter(
-      (page) =>
-        !page._deleted && page.reviewStatus === 'accepted' && !page._deleted
-    )
+    .filter((page) => !page._deleted && page.reviewStatus === 'accepted')
     .slice()
     .sort(comparePages);
 

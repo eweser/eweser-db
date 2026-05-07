@@ -24,6 +24,13 @@ const baseMemory: Conversation = {
   reviewStatus: 'accepted',
   aliases: ['Memory strategy decision'],
   relatedDocIds: ['docs/ai/plans/2026-04-29-ai-memory-strategy-onboarding.md'],
+  provenance: {
+    agentId: 'codex',
+    clientId: 'codex-desktop',
+    source: 'session',
+    sourceRef: 'thread-123',
+    relatedMemoryIds: ['memory-0'],
+  },
 };
 
 describe('Agent Journal Markdown import/export', () => {
@@ -75,6 +82,52 @@ describe('Agent Journal Markdown import/export', () => {
     expect(imported[0]?.aliases).toContain('Memory strategy decision');
     expect(imported[0]?.relatedDocIds).toContain(
       'docs/ai/plans/2026-04-29-ai-memory-strategy-onboarding.md'
+    );
+    expect(imported[0]?.provenance).toEqual(
+      expect.objectContaining({
+        agentId: 'codex',
+        clientId: 'codex-desktop',
+        source: 'session',
+        sourceRef: 'thread-123',
+        importedFrom:
+          'memory/items/2026-05-03-keep-strategy-config-user-owned.md',
+        relatedMemoryIds: ['memory-0'],
+        unsupportedFrontmatter: {},
+      })
+    );
+  });
+
+  it('preserves supported provenance while surfacing unsupported frontmatter', () => {
+    const files = exportAgentJournalMarkdown([baseMemory], {
+      generatedAt: '2026-05-03T12:00:00.000Z',
+      scopeType: 'project',
+      scopeKey: 'eweser-db',
+    }).map((file) =>
+      file.path.startsWith('memory/items/')
+        ? {
+            ...file,
+            content: file.content.replace(
+              'exportFormat: obsidian',
+              'experimentalField: keep-for-review\nexportFormat: obsidian'
+            ),
+          }
+        : file
+    );
+
+    const imported = importAgentJournalMarkdown(files, {
+      provenance: { source: 'default-source' },
+    });
+
+    expect(imported[0]?.provenance).toEqual(
+      expect.objectContaining({
+        source: 'session',
+        sourceRef: 'thread-123',
+        importedFrom:
+          'memory/items/2026-05-03-keep-strategy-config-user-owned.md',
+        unsupportedFrontmatter: {
+          experimentalField: 'keep-for-review',
+        },
+      })
     );
   });
 

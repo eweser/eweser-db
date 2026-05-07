@@ -143,7 +143,7 @@ function evaluateFixture(fixture, auditEvents = fixture.auditEvents || []) {
     .join('\n');
   const recallTokenEstimate = recallEvents.reduce(
     (sum, event) =>
-      sum + (event.tokenEstimate || estimateTokens(event.resultSummary || '')),
+      sum + (event.tokenEstimate ?? estimateTokens(event.resultSummary || '')),
     0
   );
 

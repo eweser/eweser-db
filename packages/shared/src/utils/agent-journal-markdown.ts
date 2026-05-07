@@ -316,6 +316,7 @@ function importMemoryFile(
     ...(defaults.tags ?? []),
   ]);
   const unsupportedFrontmatter = pickUnsupportedFrontmatter(frontmatter);
+  const frontmatterProvenance = provenanceField(frontmatter.provenance);
 
   return {
     title,
@@ -354,6 +355,7 @@ function importMemoryFile(
     relatedDocIds: uniqueStrings([...(defaults.relatedDocIds ?? []), ...links]),
     provenance: {
       ...defaults.provenance,
+      ...frontmatterProvenance,
       importedFrom: file.path,
       unsupportedFrontmatter,
     },
@@ -442,6 +444,51 @@ function arrayStringField(value: unknown): string[] {
   return Array.isArray(value)
     ? value.filter((entry): entry is string => typeof entry === 'string')
     : [];
+}
+
+function provenanceField(value: unknown): MemoryProvenance | undefined {
+  if (typeof value === 'string') {
+    try {
+      return provenanceField(JSON.parse(value));
+    } catch {
+      try {
+        return provenanceField(JSON.parse(value.replace(/\\"/g, '"')));
+      } catch {
+        return undefined;
+      }
+    }
+  }
+  if (!isPlainObject(value)) return undefined;
+  const provenance: MemoryProvenance = {};
+  const agentId = stringField(value.agentId);
+  const clientId = stringField(value.clientId);
+  const source = stringField(value.source);
+  const sourceRef = stringField(value.sourceRef);
+  const importedFrom = stringField(value.importedFrom);
+  const importedAt = stringField(value.importedAt);
+  const relatedMemoryIds = arrayStringField(value.relatedMemoryIds);
+  const unsupportedFrontmatter = isPlainObject(value.unsupportedFrontmatter)
+    ? value.unsupportedFrontmatter
+    : undefined;
+
+  if (agentId) provenance.agentId = agentId;
+  if (clientId) provenance.clientId = clientId;
+  if (source) provenance.source = source;
+  if (sourceRef) provenance.sourceRef = sourceRef;
+  if (importedFrom) provenance.importedFrom = importedFrom;
+  if (importedAt) provenance.importedAt = importedAt;
+  if (unsupportedFrontmatter) {
+    provenance.unsupportedFrontmatter = unsupportedFrontmatter;
+  }
+  if (relatedMemoryIds.length > 0) {
+    provenance.relatedMemoryIds = relatedMemoryIds;
+  }
+
+  return Object.keys(provenance).length > 0 ? provenance : undefined;
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function memoryTypeField(value: unknown): ConversationMemoryType | undefined {
