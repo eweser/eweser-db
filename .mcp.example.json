@@ -1,24 +1,58 @@
 {
   "mcpServers": {
     "tavily-mcp": {
-      "command": "tavily-mcp",
+      "command": "node",
+      "args": [
+        "scripts/mcp/safe-launch.mjs",
+        "--allow",
+        "TAVILY_API_KEY",
+        "--",
+        "npx",
+        "-y",
+        "tavily-mcp@latest"
+      ],
       "env": {
         "TAVILY_API_KEY": "${env:TAVILY_API_KEY}"
       }
     },
     "fetch-mcp": {
-      "command": "mcp-server-fetch",
-      "args": ["--ignore-robots-txt"],
+      "command": "node",
+      "args": [
+        "scripts/mcp/safe-launch.mjs",
+        "--allow",
+        "SSL_CERT_FILE",
+        "--",
+        "mcp-server-fetch",
+        "--ignore-robots-txt"
+      ],
       "env": {
         "SSL_CERT_FILE": "/etc/ssl/certs/ca-certificates.crt"
       }
     },
     "playwright": {
-      "command": "playwright-mcp",
-      "args": ["--headless"]
+      "command": "node",
+      "args": [
+        "scripts/mcp/safe-launch.mjs",
+        "--allow",
+        "PLAYWRIGHT_MCP_EXTENSION_TOKEN",
+        "--",
+        "npx",
+        "-y",
+        "@playwright/mcp@latest",
+        "--headless"
+      ]
     },
     "brave-search": {
-      "command": "mcp-server-brave-search",
+      "command": "node",
+      "args": [
+        "scripts/mcp/safe-launch.mjs",
+        "--allow",
+        "BRAVE_API_KEY",
+        "--",
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-brave-search"
+      ],
       "env": {
         "BRAVE_API_KEY": "${env:BRAVE_API_KEY}"
       }
