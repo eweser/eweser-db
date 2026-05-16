@@ -1,87 +1,11 @@
-## Goal
+# EweserDB: Full Page Copy
 
-Create the full text-only copy source for the current EweserDB page set before Figma or code polish resumes.
+Voice direction and headline pool: `2026-04-27-core-copy-deck.md`
+Page architecture and UX decisions: `2026-04-27-product-decisions.md`
 
-This document replaces the next-step Figma pass for now. It is meant to answer: what exact words should each page use, and which features are real today versus planned or future-facing?
+---
 
-## Status Legend
-
-- **Shipped**: implemented in the current repo or documented as completed.
-- **Planned**: intended product/UI surface from current design plans, not fully implemented as a production page yet.
-- **Future-facing**: aspirational or later-phase. Keep only when useful for explaining the product shape; do not present as already available.
-
-## Source Check
-
-Checked against:
-
-- `docs/ai/plans/2026-04-27-core-copy-deck.md`
-- `docs/ai/plans/2026-04-27-authenticated-surfaces-design-pass.md`
-- `docs/ai/plans/completed/2026-04-24-mcp-connect-ux-and-oauth.md`
-- `packages/landing/src/pages/index.astro`
-- `packages/app/src/pages.tsx`
-- `packages/app/src/components/connect-ai-page.tsx`
-- `packages/auth-server-hono/src/routes/connect-ai.ts`
-- `packages/mcp-server/README.md`
-- `packages/ewe-note/src/app/pages/Settings.tsx`
-- `packages/shared/src/collections/index.ts`
-
-## Current Feature Reality
-
-### Shipped
-
-- Local-first TypeScript SDK around Yjs rooms/documents.
-- Shared collection keys: `notes`, `flashcards`, `profiles`, `agentConfigs`, `agentAccessLogs`, `conversations`.
-- Ewe Note app with notes, folders, pinned/recent/tasks views, editor, local-first sync, settings, sign-in, sign-out, and folder sharing UI.
-- Auth pages for sign in, sign up, email confirmation, password reset, verify email, two-factor challenge, account home, account security, and access grant approval.
-- Auth server with better-auth, email/password, Google/GitHub social sign-in hooks, verified email flow, TOTP 2FA, OAuth server routes, access grants, room invites, and sync token refresh.
-- Connect AI page for Claude Desktop, Claude web, ChatGPT web, GitHub Copilot, Codex, and OpenClaw.
-- Remote `/mcp` endpoint accepting OAuth bearer tokens and agent tokens.
-- MCP tools for rooms, documents, search, create/update/delete, and `eweser_save_memory`.
-- Claude web and ChatGPT web use OAuth remote HTTP MCP.
-- Claude Desktop, Copilot, Codex, and OpenClaw use token-backed setup/fallback paths in this pass.
-- Agent token status, expiry, last used, rotate, and revoke controls.
-- Agent access logs exist at the data-model level.
-
-### Planned
-
-- Personal Data Home as the main authenticated control plane.
-- Connected Apps and Permissions as a full app-permissions dashboard.
-- MCP / AI Access as a richer control plane beyond the current Connect AI setup page.
-- Scope inspector, recent app access, downgrade controls, schema/sync summaries, storage/recovery summaries, and audit-style activity UI.
-- Dedicated public Connected Tools page listing available apps and MCP access.
-
-### Future-facing
-
-- File storage providers for photos, attachments, and larger blobs.
-- Personal/family sharing beyond current room invite and folder sharing flows.
-- Lightweight social or trusted-network sharing.
-- Marketplace-like third-party app ecosystem.
-
-## Global Product Language
-
-Use:
-
-- EweserDB
-- user-owned data
-- local-first
-- apps
-- AI agents
-- rooms
-- schemas
-- collections
-- permissions
-- sync
-- Connected Tools
-
-Avoid in public copy:
-
-- Surfaces
-- paradigm
-- generic AI memory hype
-
-## Landing Page
-
-Status: **Planned copy, partially shipped in `packages/landing`**
+## Landing Page Copy
 
 ### Header
 
@@ -92,55 +16,81 @@ EweserDB
 Navigation:
 
 - Manifesto
-- Connected Tools
+- Apps
+- MCP
 - Developers
 - Docs
 
 Primary action:
 
-Explore connected tools
+Connect my AI
 
 Secondary action:
 
 Sign in
 
-Implementation note:
-
-The nav "Connected Tools" link should point to the dedicated public Connected Tools page (`/connected-tools`) when that page ships. Until then it links to the `#apps-mcp` section on the landing page. The primary header CTA is currently "Open Ewe Note" in the shipped code. The planned copy shifts the primary CTA to the dual-path journey: "Connect my AI" and "Try Ewe Note".
-
 ### Hero
+
+Graphic:
+Own Your Own Data
 
 Kicker:
 
-Local-first database for user-owned software
+Seize the means of data production.
 
 Headline:
 
-Your data. Not their moat.
+Your data. Not their property.
 
 Body:
 
-EweserDB is a local-first interoperable database for apps that refuse lock-in. Notes, AI agents, documents, knowledge management, study tools, and collaborative workspaces can all connect to the same user-owned data layer.
+EweserDB is a personal data layer you own. Apps and AI agents connect to it with your permission — they don't store your data, they borrow access to it. Your data lives local-first on your device, is backed up and shared from a self-hostable cloud, and syncs in realtime across your devices
 
 Primary CTA:
 
 Connect my AI
 
+CTA sublabel:
+
+Link Claude, ChatGPT, or Copilot to your own data layer.
+
 Secondary CTA:
 
 Try Ewe Note
 
-Diagram labels (current shipped labels):
+CTA sublabel:
 
-- User Auth
-- User-owned data core
-- MCP Access
-- Personal Data
-- Connected Apps
+Notes on EweserDB. No account needed. Drop-in replacement for Obsidian and the Karpathy-wiki notetaking system, but extending to all of your agents, apps and tools.
+
+Tertiary CTA:
+
+Explore what's possible
+
+CTA sublabel:
+
+See available apps and AI connections.
 
 Diagram note:
 
 Apps and AI agents orbit the user's data layer. They do not own it.
+
+### How It Works
+
+Section label:
+
+00 // How it works
+
+Headline:
+
+Three steps to owning your data.
+
+Steps:
+
+1. **Create an account.** Your profile and data live in 'rooms' you can provision access to.
+2. **Connect your tools.** Sign in to Ewe Note, connect an AI client, or install an app — each one asks for scoped access, not the whole database.
+3. **Your data stays yours.** Switch apps. Revoke access. Take your data anywhere. The database belongs to you, not the platform.
+
+---
 
 ### Problem
 
@@ -258,49 +208,76 @@ Feature status notes:
 - Micro apps: **Shipped as architecture/examples**, marketplace is **future-facing**.
 - Personal sharing: **Future-facing**, with room/folder sharing as the current shipped base.
 
-### Connected Tools
+### Apps
 
 Section label:
 
-04 // Connected Tools
+04 // Apps
 
 Headline:
 
-Apps connect. You stay in control.
+Apps that work with your data, not against it.
 
 Body:
 
-See every connection, scope, and grant in one place. Approve access, revoke it, and know exactly what each app can touch.
+Every app built on EweserDB asks for the access it needs. Nothing more. You grant it, you revoke it, and the data stays in your layer the whole time.
 
-Cards:
+App cards:
 
-User-owned auth
+Ewe Note
 
-Sign in, approve scopes, manage account trust, and keep app access visible.
+A writing and knowledge app that stores your notes on your device. Works offline. Syncs across devices when you're connected. Your first app built on EweserDB.
 
-Personal data
+CTA: Open Ewe Note
 
-See collections, schemas, rooms, sync state, storage, sharing, and recovery.
+More apps coming
 
-Connected apps
+Flashcards, publishing tools, AI memory review, personal knowledge bases, and more — all built on the same data layer.
 
-Review installed apps, granted scopes, recent access, and revoke controls.
+CTA: Explore the ecosystem →
 
-MCP / AI access
+Build your own
 
-Connect AI clients through scoped grants, setup flows, and audit-style visibility.
+EweserDB is open. Build a focused app that works with the user's existing data instead of starting another silo.
 
-Future storage
+CTA: Read the developer docs →
 
-Future-facing: connect file storage providers for photos, attachments, and larger blobs while keeping EweserDB focused on sync, permissions, metadata, and app interop.
+---
 
-Feature status notes:
+### MCP / AI Connections
 
-- User-owned auth: **Shipped**.
-- Personal data control plane: **Planned**.
-- Connected apps dashboard: **Planned**, with access grants **shipped**.
-- MCP / AI access: **Shipped** as Connect AI setup; richer audit dashboard is **planned**.
-- Future storage: **Future-facing**.
+Section label:
+
+04b // MCP
+
+Headline:
+
+Give your AI a memory it can't take with it.
+
+Body:
+
+Connect Claude, ChatGPT, Copilot, and other AI clients to your EweserDB data layer through MCP. They can read your notes and context under scoped, revocable permissions. When you switch AI providers, the data stays — because it was yours to begin with.
+
+Supported clients:
+
+- Claude Desktop — local stdio token
+- Claude web — OAuth via Claude.ai
+- ChatGPT web — OAuth via developer mode
+- GitHub Copilot — token
+- Codex — token via config
+- OpenClaw — explicit Authorization header
+
+CTA: Connect my AI
+
+CTA sublabel:
+
+Requires an account. Takes about two minutes.
+
+Feature status:
+
+- MCP connection setup for all six clients: **Shipped**.
+- Scoped room-level access: **Shipped**.
+- Activity log UI: **Planned**.
 
 ### Developers
 
@@ -353,53 +330,152 @@ Feature status notes:
 
 Headline:
 
-Better tools without starting over.
+The revolution is self-hostable.
 
 Body:
 
-Connect your AI client, try the demo app, or read the docs to start building.
+Connect your AI client, try Ewe Note, or view developer tools and start building.
 
 Primary CTA:
 
 Connect my AI
 
+CTA sublabel:
+
+Link Claude, ChatGPT, or Copilot to your own data.
+
 Secondary CTA:
 
 Try Ewe Note
 
-Tertiary CTA:
+CTA sublabel:
 
-Read the docs
+No account needed. Your notes, your device.
+
+Tertiary CTAs:
+
+- Read the docs
+- Self-host it (Railway one-click deploy)
+- View on GitHub
 
 Footer phrase:
 
 "Ewe-ser", pronounced "user". Because you are.
 
-## Personal Data Home
+## Global Product Language
 
-Status: **Planned page — target for first design release. Required before public launch.**
+Use:
 
-Purpose:
+- EweserDB
+- user-owned data
+- local-first
+- apps
+- AI agents
+- rooms
+- schemas
+- collections
+- permissions
+- sync
 
-The authenticated control plane. Not another app — the layer that apps connect to. Users need this before the landing page promises about "see every connection and grant" can be made honestly.
+Avoid in public copy:
 
----
+- Surfaces
+- paradigm
+- generic AI memory hype
+- "local-first database" as the lead explanation (developer language — use it to support, not to open)
 
-### Header
+## App Shell: Management Pages Copy
+
+These are the authenticated pages at `app.eweser.com`. Copy should be calm, functional, and utility-first. No manifesto tone here — that lives on the marketing site.
+
+### Data Home (`/`)
 
 Eyebrow:
 
-Personal Data
+Your data layer
 
 Primary headline:
 
-Your data layer.
+Everything your apps can touch.
 
 Sub-headline:
 
-Everything connected apps can see is managed from here. Collections, rooms, sync state, app access, and AI grants — all yours.
+Collections, rooms, connected apps, AI grants, and sync state — all visible from one place. Nothing shares your data without appearing here first.
 
-Primary actions:
+Quick stats bar labels:
+
+- Collections
+- Rooms
+- Connected apps
+- AI grants
+- Storage
+- Last synced
+
+Collections section headline:
+
+Your collections
+
+Collections section body:
+
+Your data is organised into collections. Each collection holds one type of record. Apps and AI agents connect to specific rooms inside a collection — not the whole database.
+
+Collection row format:
+[Name] — [Description] — [Room count] · [Last updated]
+
+Collection descriptions:
+
+- **Notes** — Notes, documents, links, and working context.
+- **Flashcards** — Study material linked back to notes and source context.
+- **Profiles** — Portable identity and account data for Eweser apps.
+- **Agent configs** — AI client setup, scope, status, expiry, and revocation state.
+- **Agent access logs** — Records of agent reads and writes against your rooms.
+- **Conversations** — AI conversation summaries, session notes, decisions, and memory entries.
+
+Rooms section headline:
+
+Where your data lives
+
+Rooms section body:
+
+Each room is a sync and permission boundary. Apps connect to specific rooms — granting access to one room does not expose others.
+
+Rooms table columns: Room name · Collection · Sharing · Last synced · Actions
+
+Rooms empty state:
+
+No rooms yet. Rooms are created when you connect an app or sign in to Ewe Note.
+
+Sync section headline:
+
+How your data moves
+
+Sync section body:
+
+Data lives on your device first. The sync server keeps your rooms up to date across devices without becoming the owner of your work.
+
+Sync status rows: Homeserver · Local storage · Last synced · Status
+
+Connected apps section headline:
+
+Apps with access
+
+Connected apps table columns: App · Domain · Scopes · Last access · Revoke
+
+Connected apps empty state:
+
+No apps connected yet. When an app requests access to your data, the request appears here before anything is shared.
+
+AI clients section headline:
+
+AI clients with access
+
+AI clients table columns: Client · Auth type · Status · Last used · Revoke
+
+AI clients empty state:
+
+No AI clients connected yet.
+
+Primary actions (page level):
 
 - Connect AI
 - Connect an app
@@ -407,203 +483,11 @@ Primary actions:
 
 ---
 
-### Quick Stats Bar
+### Connected Apps (`/apps`)
 
-Labels and values (show live counts, dash when zero):
+Eyebrow:
 
-- Collections — [N]
-- Rooms — [N]
-- Connected apps — [N]
-- AI grants — [N]
-- Storage — [size or "Calculating…"]
-- Last synced — [timestamp or "Never"]
-
----
-
-### Section: Data Overview
-
-Section label:
-
-Your collections
-
-Section body:
-
-Your data is organized into collections. Each collection holds a type of record. Apps connect to collections and rooms — not the whole database.
-
-Collection rows:
-
-Notes
-Shared notes, documents, links, and working context.
-[Room count] · [Last updated]
-
-Flashcards
-Study material linked back to notes and source context.
-[Room count] · [Last updated]
-
-Profiles
-Portable account and identity data for Eweser apps.
-[Room count] · [Last updated]
-
-Agent configs
-AI client setup, scope, status, expiry, and revocation state.
-[Count] · [Last updated]
-
-Agent access logs
-Records of agent reads and writes against rooms.
-[Count] · [Last updated]
-
-Conversations
-AI conversation summaries, session notes, decisions, and memory entries.
-[Room count] · [Last updated]
-
-Feature status note: All collection keys above are **shipped**. The UI browsing them is **planned**.
-
----
-
-### Section: Rooms
-
-Section label:
-
-Where data lives
-
-Section body:
-
-Rooms are the permission and sync boundary. Each room belongs to a collection. Apps and AI agents connect to specific rooms — not the whole data layer.
-
-Table labels:
-
-- Room name
-- Collection
-- Sharing
-- Last synced
-- Actions
-
-Empty state:
-
-No rooms yet.
-
-Empty state body:
-
-Apps create rooms when you grant them access. Your first room is created when you sign in to Ewe Note or approve a connected app.
-
----
-
-### Section: Sync and Storage
-
-Section label:
-
-How your data moves
-
-Section body:
-
-Data is stored locally first. Sync keeps rooms up to date across devices without making the cloud the owner.
-
-Status rows:
-
-- Homeserver — [URL or "Not connected"]
-- Local storage — [size or "Calculating…"]
-- Last synced — [timestamp or "Never"]
-- Sync status — Connected / Offline / Syncing
-
-Recovery note (planned):
-
-Export, backup, and self-hosted recovery controls are planned for this section. Do not display until implemented.
-
----
-
-### Section: Sharing
-
-Section label:
-
-Who has access
-
-Section body:
-
-Sharing uses room invites and folder grants. You control which people and apps can reach which rooms.
-
-Links:
-
-- Manage app access →
-- Manage AI access →
-
----
-
-### Section: Connected Apps (summary)
-
-Section label:
-
-Apps connected to your data
-
-Section body:
-
-Apps that have been granted access to your rooms or collections.
-
-Table labels:
-
-- App
-- Domain
-- Scopes
-- Last access
-- Revoke
-
-Empty state:
-
-No connected apps yet.
-
-Empty state body:
-
-When an app requests access to your data, the request will appear here before anything is shared.
-
-Action:
-
-Manage all app access →
-
----
-
-### Section: AI / MCP Access (summary)
-
-Section label:
-
-AI clients with access
-
-Section body:
-
-AI clients and AI agents that can read or write through MCP.
-
-Table labels:
-
-- Client
-- Auth type
-- Status
-- Last used
-- Revoke
-
-Empty state:
-
-No AI clients connected yet.
-
-Actions:
-
-- Manage AI access →
-- Connect a new AI client →
-
----
-
-Feature status notes:
-
-- All collection keys are **shipped**.
-- Rooms, sync state, and access grant data exist in the auth server and are **shipped** at the data layer.
-- The Personal Data Home UI is **planned** — this is the full target copy for the first design pass.
-- Storage and recovery display are **planned** and should stay hidden until implemented.
-- The Connected Apps and AI Access summaries link to the full pages; the full pages are **planned**.
-
-## Connected Apps And Permissions
-
-Status: **Planned page, backed by shipped access grants**
-
-Purpose:
-
-Make app access visible, understandable, and revocable.
+Connected apps
 
 Primary headline:
 
@@ -611,70 +495,45 @@ Every app asks first.
 
 Body:
 
-Review which apps can access your data, what scopes they have, when they last connected, and what you want to revoke.
+Review which apps can access your data, what scopes they have, when they last connected, and what you want to revoke. Nothing is shared without showing up here.
 
-Primary blocks:
+Main table columns:
 
-Installed apps
-
-Apps you have already allowed to access rooms or collections.
-
-Pending requests
-
-Apps waiting for you to approve or deny access.
-
-Recent access
-
-Planned: recent app activity grouped by app, room, and action.
-
-Scope inspector
-
-Review collections, specific rooms, read access, and write access before changing a grant.
-
-Revoke or downgrade
-
-Remove access entirely or reduce an app to a narrower scope.
-
-Table labels:
-
-- App
-- Domain
-- Scopes
-- Collections
-- Rooms
-- Last access
-- Status
+App · Domain · Collections · Scopes · Rooms · Last access · Status · Actions
 
 Scope labels:
 
 - Read
 - Read/write
-- Collections
-- Rooms
-- Metadata
-- Sharing
+
+Pending requests section headline:
+
+Waiting for your approval
+
+Pending requests body:
+
+These apps have requested access to your data. Review the collections and scopes they need before approving.
+
+Scope detail labels (per app, expandable):
+
+- Collections accessible
+- Specific rooms
+- Access level per room
+- Access granted on
+- Last accessed
+- Options: Downgrade to read-only · Revoke access
 
 Empty state:
 
-No connected apps yet.
+No apps connected yet. When an app requests access to your data, the request appears here before anything is shared.
 
-Empty state body:
+---
 
-When an app asks to use your EweserDB data, the request will appear here before anything is shared.
+### MCP / AI Access (`/ai`)
 
-Feature status notes:
+Eyebrow:
 
-- Access grant creation and permission approval are **shipped**.
-- A full connected-apps dashboard, recent access for apps, and downgrade UI are **planned**.
-- Do not imply a third-party marketplace is live.
-
-## MCP / AI Access
-
-Status: **Shipped as Connect AI setup, planned as richer MCP control plane**
-
-Purpose:
-
-Make AI access feel powerful but bounded.
+MCP / AI access
 
 Primary headline:
 
@@ -682,137 +541,132 @@ You choose what AI can see.
 
 Body:
 
-Connect AI clients through scoped access. Choose what they can read, what they can write, and which collections they can touch.
+Connect AI clients through scoped access. Choose what they can read, what they can write, and which rooms they can touch. Everything that connects through MCP appears here.
 
-Top safety copy:
+Safety note (always visible):
 
-Never place bearer tokens in URLs. Setup flows stay on authenticated Eweser pages and mint or rotate tokens server-side.
+Bearer tokens never appear in URLs. All setup and token generation stays on this page.
 
-Primary actions:
+Active clients table columns:
 
-- Connect a client
+Client · Auth type · Status · Expiry · Last used · Rooms · Actions
+
+Per-client actions:
+
 - Rotate token
 - Revoke access
+- View connected rooms
 
-Secondary actions:
+Activity log section headline:
 
-- Account security
-- OAuth metadata
+Recent agent activity
 
-Setup page intro:
+Activity log columns:
 
-Use the auth path each client actually supports today. OAuth stays on remote HTTP clients. Token bootstrap stays on local or fallback clients. Never place bearer tokens in URLs. All setup flows stay on authenticated Eweser pages and mint or rotate tokens server-side.
+Timestamp · Client · Action · Room
+
+Activity log body:
+
+A record of what each AI client read or wrote against your rooms.
+
+Setup section headline:
+
+Connect a client
 
 Client cards:
 
-Claude Desktop
-
-Local stdio setup with `@eweser/mcp` and a short-lived agent token.
-
-Action:
-
-Prepare setup
-
-Setup instructions:
-
-Paste this into Claude Desktop config, then restart Claude Desktop.
-
-Claude web
-
-Remote HTTP MCP on `/mcp` with OAuth in Claude.ai connectors.
-
-Action:
-
-Open connector flow
-
-Steps:
-
-- Open Claude.ai connectors and add the Eweser MCP URL.
-- Use the Eweser OAuth flow when Claude prompts for sign-in.
-- Return here to revoke access if you want Claude to disconnect.
-
-ChatGPT web
-
-Remote HTTP MCP on `/mcp` with OAuth in ChatGPT developer mode.
-
-Action:
-
-Open connector flow
-
-Steps:
-
-- Enable ChatGPT developer mode in Settings before importing the MCP URL.
-- Add the Eweser MCP URL as a custom connector and complete the OAuth prompt.
-- Return here to revoke access or inspect the OAuth metadata endpoint.
-
-GitHub Copilot
-
-Remote HTTP MCP config for Copilot using a bearer token fallback.
-
-Fallback reason:
-
-Copilot cloud agent docs currently call out that remote OAuth-backed MCP servers are not supported there, so this launch ships the explicit token path.
-
-Action:
-
-Prepare setup
-
-Setup instructions:
-
-Use this as a remote HTTP MCP fallback until verified Copilot OAuth client metadata is shipped for Eweser.
-
-Codex
-
-Remote HTTP MCP config for Codex using `bearer_token_env_var`.
-
-Fallback reason:
-
-Codex remote MCP config is supported, but Eweser is not shipping verified first-party OAuth client metadata for Codex in this pass.
-
-Action:
-
-Prepare setup
-
-Setup instructions:
-
-Add this to `~/.codex/config.toml`, set `EWESER_MCP_TOKEN` in the environment that launches Codex, then fully restart Codex. A repo `.env` file alone is not enough for native MCP startup.
-
-OpenClaw
-
-Remote HTTP MCP config with an explicit Authorization header.
-
-Fallback reason:
-
-OpenClaw docs currently document remote HTTP headers, not a verified remote OAuth flow worth launching here.
-
-Action:
-
-Prepare setup
-
-Setup instructions:
-
-Use this remote HTTP MCP definition in OpenClaw with an explicit Authorization header.
+Claude Desktop — Local stdio. Short-lived agent token.
+Claude web — Remote HTTP MCP. OAuth via Claude.ai connectors.
+ChatGPT web — Remote HTTP MCP. OAuth via ChatGPT developer mode.
+GitHub Copilot — Remote HTTP MCP. Token fallback.
+Codex — Remote HTTP MCP. `bearer_token_env_var` in config.
+OpenClaw — Remote HTTP MCP. Explicit Authorization header.
 
 Status labels:
 
-- OAuth
-- Token
-- Connected
-- Not connected
-- Permission
-- Expires
-- Last used
-- Not issued
-- Not yet used
+OAuth · Token · Connected · Not connected · Expires · Last used · Not issued · Never used
 
-Feature status notes:
+---
 
-- Six-client Connect AI setup is **shipped**.
-- OAuth for Claude web and ChatGPT web is **shipped**.
-- Token-backed Claude Desktop, Copilot, Codex, and OpenClaw paths are **shipped**.
-- Agent status, expiry, last used, rotate, and revoke are **shipped**.
-- Rich audit-style activity UI is **planned**. Agent access logs exist, but the polished control plane does not yet.
-- Folder-scoped write defaults are **planned** in `2026-04-27-mcp-folder-scoped-ai-access.md`; do not present as finished.
+### Account (`/account`)
+
+Eyebrow:
+
+Account
+
+Primary headline:
+
+Your identity, your profile.
+
+Sections:
+
+Profile
+
+- Display name
+- Profile room data (portable across Eweser apps)
+
+Email and identity
+
+- Current email
+- Change email
+- Linked OAuth providers (Google, GitHub)
+
+---
+
+### Security (`/security`)
+
+Eyebrow:
+
+Security
+
+Primary headline:
+
+Keep your account tight.
+
+Sections:
+
+Email verification — status, resend
+
+Password — change password
+
+Two-factor authentication — enable / manage TOTP, backup codes
+
+Active sessions — list with revoke individual sessions
+
+---
+
+### Access Grant Permission Prompt (`/access-grant/permission`)
+
+Purpose: a user arrives here from an external app that requested access. Make the decision clear.
+
+Eyebrow:
+
+Access request
+
+Primary headline:
+
+Grant access to your data layer.
+
+Body:
+
+Review the app, the domain it comes from, and exactly what it is asking for before approving. You can revoke this any time from your connected apps page.
+
+Show clearly:
+
+- App name
+- Domain
+- Requested collections (by name with description)
+- Requested scope per collection (read / read-write)
+- What it cannot access: everything not listed above
+
+Actions:
+
+- Approve access
+- Deny
+
+Denial copy:
+
+Access denied. No data was shared.
 
 ## Ewe Note Settings
 
