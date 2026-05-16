@@ -1,4 +1,11 @@
 import type { DocumentBase } from './documentBase.js';
+import type {
+  MemoryCaptureMode,
+  MemoryProvenance,
+  MemoryReviewStatus,
+  MemoryScopeType,
+  MemoryStrategyKind,
+} from './memory-strategy.js';
 
 export interface ConversationTurn {
   role: 'user' | 'assistant';
@@ -26,6 +33,16 @@ export type ConversationBase = {
   turns?: ConversationTurn[];
   /** Refs to other EweserDB documents mentioned */
   relatedDocIds?: string[];
+  /** Strategy metadata for cross-agent memory. Optional for old documents. */
+  strategy?: MemoryStrategyKind;
+  captureMode?: MemoryCaptureMode;
+  scopeType?: MemoryScopeType;
+  scopeKey?: string;
+  reviewStatus?: MemoryReviewStatus;
+  aliases?: string[];
+  sourceMemoryIds?: string[];
+  provenance?: MemoryProvenance;
+  redactionWarnings?: string[];
 };
 
 export type Conversation = DocumentBase & ConversationBase;

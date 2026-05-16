@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { DataLayer } from './data-layer.js';
+import type { MemoryAuditEvent } from '@eweser/shared';
 
 // ---------------------------------------------------------------------------
 // Mock DataLayer
@@ -13,6 +14,7 @@ type ToolHandler = (args: Record<string, unknown>) => Promise<{
 
 // Capture tool registrations so we can invoke them directly in tests
 const registeredTools = new Map<string, ToolHandler>();
+const auditEvents: MemoryAuditEvent[] = [];
 
 const mockServer = {
   tool: vi.fn(
@@ -45,6 +47,38 @@ const mockConversationRoom = {
   syncBaseUrl: null,
 };
 
+const mockSecondConversationRoom = {
+  id: 'conversation-room-2',
+  name: 'Project Memory',
+  collectionKey: 'conversations',
+  syncUrl: 'ws://localhost:1234',
+  syncBaseUrl: null,
+};
+
+const mockProjectWikiDraftRoom = {
+  id: 'project-wiki-drafts-room',
+  name: 'Wiki Drafts',
+  collectionKey: 'projectWikiDrafts',
+  syncUrl: 'ws://localhost:1234',
+  syncBaseUrl: null,
+};
+
+const mockProjectWikiPageRoom = {
+  id: 'project-wiki-pages-room',
+  name: 'Wiki Pages',
+  collectionKey: 'projectWikiPages',
+  syncUrl: 'ws://localhost:1234',
+  syncBaseUrl: null,
+};
+
+const mockStrategyRoom = {
+  id: 'strategy-room',
+  name: 'Strategy Configs',
+  collectionKey: 'memoryStrategyConfigs',
+  syncUrl: 'ws://localhost:1234',
+  syncBaseUrl: null,
+};
+
 const mockConnectedRoom = {
   meta: mockRoom,
   ydoc: {},
@@ -56,6 +90,16 @@ const mockConnectedRoom = {
 const mockConnectedConversationRoom = {
   ...mockConnectedRoom,
   meta: mockConversationRoom,
+};
+
+const mockConnectedProjectWikiDraftRoom = {
+  ...mockConnectedRoom,
+  meta: mockProjectWikiDraftRoom,
+};
+
+const mockConnectedProjectWikiPageRoom = {
+  ...mockConnectedRoom,
+  meta: mockProjectWikiPageRoom,
 };
 
 const mockDoc1 = {
@@ -71,6 +115,25 @@ const mockDoc1 = {
   tags: ['mcp-audit'],
 };
 
+const mockConversationMemoryDoc = {
+  _created: Date.parse('2026-05-01T00:00:00.000Z'),
+  _id: 'memory-1',
+  _ref: 'conversations/conversation-room/memory-1',
+  _updated: Date.parse('2026-05-01T00:00:00.000Z'),
+  agentId: 'codex',
+  captureMode: 'manual',
+  date: '2026-05-01',
+  memoryType: 'memory',
+  reviewStatus: 'accepted',
+  scopeKey: 'eweser-db',
+  scopeType: 'project',
+  sourceMemoryIds: [],
+  strategy: 'project-wiki',
+  summary: 'Project wiki sources should remain deterministic.',
+  tags: ['research'],
+  title: 'Project wiki source',
+};
+
 const mockCrudApi = {
   get: vi.fn((id: string) => (id === 'doc-1' ? mockDoc1 : undefined)),
   set: vi.fn((doc: unknown) => doc),
@@ -79,16 +142,161 @@ const mockCrudApi = {
   getAll: vi.fn(() => [mockDoc1]),
 };
 
+const mockDraftDoc = {
+  _created: Date.parse('2026-05-06T00:00:00.000Z'),
+  _id: 'draft-1',
+  _ref: 'projectWikiDrafts.project-wiki-drafts-room.draft-1',
+  _updated: Date.parse('2026-05-06T00:00:00.000Z'),
+  format: 'markdown',
+  pageKind: 'overview',
+  pageSlug: 'overview',
+  proposedContent: '# Overview\n',
+  reviewStatus: 'pending',
+  scopeKey: 'eweser-db',
+  scopeType: 'project',
+  sourceMemoryIds: ['memory-1'],
+  sourceRefs: ['notes.room.doc'],
+  title: 'Overview',
+};
+
+const mockPageDoc = {
+  _created: Date.parse('2026-05-06T00:00:00.000Z'),
+  _id: 'page-1',
+  _ref: 'projectWikiPages.project-wiki-pages-room.page-1',
+  _updated: Date.parse('2026-05-06T00:00:00.000Z'),
+  content: '# Overview\n',
+  format: 'markdown',
+  lastAcceptedDraftId: 'draft-1',
+  pageKind: 'overview',
+  reviewStatus: 'accepted',
+  scopeKey: 'eweser-db',
+  scopeType: 'project',
+  slug: 'overview',
+  sourceMemoryIds: ['memory-1'],
+  sourceRefs: ['notes.room.doc'],
+  title: 'Overview',
+};
+
+const mockDraftCrudApi = {
+  get: vi.fn((id: string) => (id === 'draft-1' ? mockDraftDoc : undefined)),
+  set: vi.fn((doc: unknown) => doc),
+  new: vi.fn((doc: unknown) => ({ ...doc, _id: 'new-draft' })),
+  delete: vi.fn(),
+  getAll: vi.fn(() => [mockDraftDoc]),
+};
+
+const mockPageCrudApi = {
+  get: vi.fn((id: string) => (id === 'page-1' ? mockPageDoc : undefined)),
+  set: vi.fn((doc: unknown) => doc),
+  new: vi.fn((doc: unknown) => ({ ...doc, _id: 'new-page' })),
+  delete: vi.fn(),
+  getAll: vi.fn(() => [mockPageDoc]),
+};
+
 const mockDataLayer = {
-  listRooms: vi.fn(() => [mockRoom]),
-  assertReadAccess: vi.fn(() => mockConnectedRoom),
+  listRooms: vi.fn((collectionKey?: string) => {
+    const rooms = [
+      mockRoom,
+      mockConversationRoom,
+      mockStrategyRoom,
+      mockProjectWikiDraftRoom,
+      mockProjectWikiPageRoom,
+    ];
+    return collectionKey
+      ? rooms.filter((room) => room.collectionKey === collectionKey)
+      : rooms;
+  }),
+  listWritableRooms: vi.fn((collectionKey?: string) =>
+    collectionKey === 'conversations'
+      ? [mockConversationRoom]
+      : [mockConversationRoom]
+  ),
+  listMemoryScopes: vi.fn(() => [
+    {
+      scopeType: 'global',
+      scopeKey: 'default',
+      label: 'Shared Agent Memory',
+      strategy: 'agent-journal',
+      captureMode: 'manual',
+      defaultWriteRoomId: 'conversation-room',
+      readableRoomIds: ['room-1', 'conversation-room'],
+      writableRoomIds: ['conversation-room'],
+    },
+  ]),
+  getMemoryStrategy: vi.fn(() => ({
+    strategy: 'agent-journal',
+    captureMode: 'manual',
+    scope: {
+      scopeType: 'global',
+      scopeKey: 'default',
+      label: 'Shared Agent Memory',
+      strategy: 'agent-journal',
+      captureMode: 'manual',
+      defaultWriteRoomId: 'conversation-room',
+      readableRoomIds: ['room-1', 'conversation-room'],
+      writableRoomIds: ['conversation-room'],
+    },
+  })),
+  resolveMemoryWriteRoom: vi.fn(
+    ({ roomId }: { roomId?: string } = {}) => roomId ?? 'conversation-room'
+  ),
+  resolveProjectWikiTargets: vi.fn(() => ({
+    draftRoomId: 'project-wiki-drafts-room',
+    pageRoomId: 'project-wiki-pages-room',
+    scope: {
+      captureMode: 'manual',
+      draftRoomIds: ['project-wiki-drafts-room'],
+      label: 'Project Wiki',
+      pageRoomIds: ['project-wiki-pages-room'],
+      readableRoomIds: [
+        'strategy-room',
+        'conversation-room',
+        'project-wiki-drafts-room',
+        'project-wiki-pages-room',
+      ],
+      scopeKey: 'eweser-db',
+      scopeType: 'project',
+      sourceRoomIds: ['conversation-room'],
+      strategy: 'project-wiki',
+      writableRoomIds: ['project-wiki-drafts-room', 'project-wiki-pages-room'],
+    },
+    sourceRoomIds: ['conversation-room'],
+  })),
+  assertReadAccess: vi.fn((roomId: string) =>
+    roomId === 'conversation-room'
+      ? mockConnectedConversationRoom
+      : roomId === 'project-wiki-drafts-room'
+        ? mockConnectedProjectWikiDraftRoom
+        : roomId === 'project-wiki-pages-room'
+          ? mockConnectedProjectWikiPageRoom
+          : mockConnectedRoom
+  ),
   assertWriteAccess: vi.fn((roomId: string) =>
     roomId === 'conversation-room'
       ? mockConnectedConversationRoom
-      : mockConnectedRoom
+      : roomId === 'project-wiki-drafts-room'
+        ? mockConnectedProjectWikiDraftRoom
+        : roomId === 'project-wiki-pages-room'
+          ? mockConnectedProjectWikiPageRoom
+          : mockConnectedRoom
   ),
-  getRawDocuments: vi.fn(() => ({ 'doc-1': mockDoc1 })),
-  getDocumentsForRoom: vi.fn(() => mockCrudApi),
+  getRawDocuments: vi.fn((roomId?: string) => {
+    if (roomId === 'conversation-room') {
+      return { 'memory-1': mockConversationMemoryDoc };
+    }
+    if (roomId === 'project-wiki-drafts-room') {
+      return { 'draft-1': mockDraftDoc };
+    }
+    if (roomId === 'project-wiki-pages-room') {
+      return { 'page-1': mockPageDoc };
+    }
+    return { 'doc-1': mockDoc1 };
+  }),
+  getDocumentsForRoom: vi.fn((roomId?: string) => {
+    if (roomId === 'project-wiki-drafts-room') return mockDraftCrudApi;
+    if (roomId === 'project-wiki-pages-room') return mockPageCrudApi;
+    return mockCrudApi;
+  }),
   getAgentToken: vi.fn(() => 'mock-agent-token'),
   searchDocuments: vi.fn(() => [
     { roomId: 'room-1', collectionKey: 'notes', doc: mockDoc1 },
@@ -106,7 +314,15 @@ beforeEach(() => {
   // Re-mock log on each run
   mockLog.mockResolvedValue(undefined);
   // Register all tools fresh
-  registerTools(mockServer, mockDataLayer, mockLog);
+  registerTools(
+    mockServer,
+    mockDataLayer,
+    mockLog,
+    undefined,
+    'mcp-server',
+    (event) => auditEvents.push(event)
+  );
+  auditEvents.length = 0;
 });
 
 // ---------------------------------------------------------------------------
@@ -126,13 +342,38 @@ describe('eweser_list_rooms', () => {
     const result = await callTool('eweser_list_rooms');
     expect(result.isError).toBeFalsy();
     const rooms = JSON.parse(result.content[0].text);
-    expect(rooms).toHaveLength(1);
-    expect(rooms[0].id).toBe('room-1');
+    expect(rooms.some((room: { id: string }) => room.id === 'room-1')).toBe(
+      true
+    );
   });
 
   it('passes collectionKey filter to dataLayer', async () => {
     await callTool('eweser_list_rooms', { collectionKey: 'notes' });
     expect(mockDataLayer.listRooms).toHaveBeenCalledWith('notes');
+  });
+});
+
+describe('memory strategy tools', () => {
+  it('returns active memory strategy metadata', async () => {
+    const result = await callTool('eweser_get_memory_strategy');
+    const body = JSON.parse(result.content[0].text);
+    expect(body.strategy).toBe('agent-journal');
+    expect(body.captureMode).toBe('manual');
+    expect(auditEvents.at(-1)).toEqual(
+      expect.objectContaining({
+        action: 'strategy_lookup',
+      })
+    );
+    expect(auditEvents.at(-1)).not.toHaveProperty('scopeKey');
+  });
+
+  it('lists memory scopes', async () => {
+    const result = await callTool('eweser_list_memory_scopes');
+    const scopes = JSON.parse(result.content[0].text);
+    expect(scopes[0].writableRoomIds).toEqual(['conversation-room']);
+    expect(auditEvents.at(-1)).toEqual(
+      expect.objectContaining({ action: 'scope_list', resultCount: 1 })
+    );
   });
 });
 
@@ -192,6 +433,13 @@ describe('eweser_search', () => {
     const results = JSON.parse(text);
     expect(results).toHaveLength(1);
     expect(results[0].doc._id).toBe('doc-1');
+    expect(auditEvents.at(-1)).toEqual(
+      expect.objectContaining({
+        action: 'memory_search',
+        memoryIds: ['doc-1'],
+        resultCount: 1,
+      })
+    );
   });
 
   it('passes collectionKey filter to searchDocuments fallback', async () => {
@@ -332,6 +580,11 @@ describe('eweser_save_memory', () => {
         title: 'Decision: Hono over Express',
         summary: 'Chose Hono for auth server — smaller bundle, native fetch.',
         memoryType: 'decision',
+        strategy: 'agent-journal',
+        captureMode: 'manual',
+        scopeType: 'global',
+        scopeKey: 'default',
+        reviewStatus: 'accepted',
         agentId: 'unknown',
         tags: ['worktree:mcp-server'],
       })
@@ -388,6 +641,44 @@ describe('eweser_save_memory', () => {
     );
   });
 
+  it('infers the writable memory room when roomId is omitted', async () => {
+    await callTool('eweser_save_memory', {
+      title: 'Inferred room',
+      summary: 'Saved without an explicit room id.',
+      memoryType: 'memory',
+      scopeKey: 'default',
+    });
+
+    expect(mockDataLayer.resolveMemoryWriteRoom).toHaveBeenCalledWith(
+      expect.objectContaining({ scopeKey: 'default' })
+    );
+    expect(mockDataLayer.assertWriteAccess).toHaveBeenCalledWith(
+      'conversation-room',
+      expect.objectContaining({ title: 'Inferred room' })
+    );
+  });
+
+  it('surfaces multi-room ambiguity from the data layer', async () => {
+    vi.mocked(mockDataLayer.resolveMemoryWriteRoom).mockImplementationOnce(
+      () => {
+        throw new Error(
+          `Multiple writable memory rooms are available; provide roomId or scopeKey. Available roomIds: ${[
+            mockConversationRoom.id,
+            mockSecondConversationRoom.id,
+          ].join(', ')}`
+        );
+      }
+    );
+
+    await expect(
+      callTool('eweser_save_memory', {
+        title: 'Ambiguous',
+        summary: 'Needs target',
+        memoryType: 'memory',
+      })
+    ).rejects.toThrow('Multiple writable memory rooms');
+  });
+
   it('logs access after creation', async () => {
     await callTool('eweser_save_memory', {
       roomId: 'conversation-room',
@@ -397,6 +688,37 @@ describe('eweser_save_memory', () => {
     });
     expect(mockLog).toHaveBeenCalledWith(
       expect.objectContaining({ roomId: 'conversation-room', action: 'write' })
+    );
+    expect(auditEvents.at(-1)).toEqual(
+      expect.objectContaining({
+        action: 'memory_save',
+        memoryIds: ['new-doc'],
+        roomIds: ['conversation-room'],
+      })
+    );
+  });
+
+  it('normalizes spaces in derived worktree tags', async () => {
+    registeredTools.clear();
+    registerTools(
+      mockServer,
+      mockDataLayer,
+      mockLog,
+      undefined,
+      'MCP Server QA',
+      (event) => auditEvents.push(event)
+    );
+
+    await callTool('eweser_save_memory', {
+      title: 'Tag normalization',
+      summary: 'Derived worktree tag should fold whitespace.',
+      memoryType: 'memory',
+    });
+
+    expect(mockCrudApi.new).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        tags: ['worktree:mcp-server-qa'],
+      })
     );
   });
 });
@@ -566,6 +888,11 @@ describe('eweser_save_memory', () => {
     expect(callArgs?.redactionWarnings).toEqual([
       'secret-like content redacted before save',
     ]);
+    expect(JSON.stringify(auditEvents)).not.toContain(accessKey);
+    expect(JSON.stringify(auditEvents)).not.toContain('super-secret-value');
+    expect(auditEvents.at(-1)?.safetyWarnings).toContain(
+      'secret-like content redacted before save'
+    );
   });
 
   it('rejects non-conversation rooms', async () => {
@@ -577,5 +904,153 @@ describe('eweser_save_memory', () => {
         memoryType: 'memory',
       })
     ).rejects.toThrow('requires a conversations room');
+  });
+});
+
+describe('eweser_suggest_memory', () => {
+  it('creates a suggested memory with review metadata', async () => {
+    const result = await callTool('eweser_suggest_memory', {
+      title: 'Suggested preference',
+      summary: 'User prefers concise updates.',
+      memoryType: 'memory',
+    });
+
+    expect(JSON.parse(result.content[0].text)).toEqual(
+      expect.objectContaining({ suggested: true })
+    );
+    expect(mockCrudApi.new).toHaveBeenCalledWith(
+      expect.objectContaining({
+        captureMode: 'suggest',
+        reviewStatus: 'suggested',
+      })
+    );
+    expect(auditEvents.at(-1)).toEqual(
+      expect.objectContaining({
+        action: 'memory_suggest',
+        memoryIds: ['new-doc'],
+      })
+    );
+  });
+});
+
+describe('eweser_export_memory', () => {
+  it('exports conversation memory as Obsidian-compatible Markdown files', async () => {
+    const result = await callTool('eweser_export_memory');
+    const files = JSON.parse(result.content[0].text);
+
+    expect(files.map((file: { path: string }) => file.path)).toContain(
+      'MEMORY.md'
+    );
+    expect(
+      files.some((file: { content: string }) =>
+        file.content.includes('type: agent-journal-memory')
+      )
+    ).toBe(true);
+    expect(auditEvents.at(-1)).toEqual(
+      expect.objectContaining({
+        action: 'memory_export',
+        resultCount: files.length,
+      })
+    );
+  });
+});
+
+describe('project wiki tools', () => {
+  it('builds project wiki drafts without writing to the source room', async () => {
+    const result = await callTool('eweser_build_project_wiki', {
+      scopeKey: 'eweser-db',
+      scopeType: 'project',
+    });
+
+    const body = JSON.parse(result.content[0].text);
+    expect(body.map((entry: { pageSlug: string }) => entry.pageSlug)).toEqual([
+      'overview',
+      'decisions',
+      'active-questions',
+      'source-index',
+    ]);
+    expect(mockDataLayer.resolveProjectWikiTargets).toHaveBeenCalledWith({
+      scopeKey: 'eweser-db',
+      scopeType: 'project',
+    });
+    expect(mockDraftCrudApi.new).toHaveBeenCalled();
+    expect(mockLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        roomId: 'project-wiki-drafts-room',
+        action: 'write',
+      })
+    );
+  });
+
+  it('lists project wiki drafts for the configured scope', async () => {
+    const result = await callTool('eweser_list_project_wiki_drafts', {
+      scopeKey: 'eweser-db',
+      scopeType: 'project',
+    });
+
+    const drafts = JSON.parse(result.content[0].text);
+    expect(drafts).toHaveLength(1);
+    expect(drafts[0].pageSlug).toBe('overview');
+  });
+
+  it('accepts a project wiki draft into canonical pages', async () => {
+    const result = await callTool('eweser_review_project_wiki_draft', {
+      action: 'accept',
+      draftId: 'draft-1',
+      scopeKey: 'eweser-db',
+      scopeType: 'project',
+    });
+
+    const body = JSON.parse(result.content[0].text);
+    expect(body.pageSlug).toBe('overview');
+    expect(mockPageCrudApi.set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        content: '# Overview\n',
+        lastAcceptedDraftId: 'draft-1',
+      })
+    );
+    expect(mockDraftCrudApi.set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reviewStatus: 'accepted',
+        targetPageId: 'page-1',
+      })
+    );
+  });
+
+  it('rejects a project wiki draft without changing canonical pages', async () => {
+    await callTool('eweser_review_project_wiki_draft', {
+      action: 'reject',
+      draftId: 'draft-1',
+      scopeKey: 'eweser-db',
+      scopeType: 'project',
+    });
+
+    expect(mockDraftCrudApi.set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reviewStatus: 'rejected',
+      })
+    );
+    expect(mockPageCrudApi.set).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        lastAcceptedDraftId: 'draft-1',
+      })
+    );
+  });
+
+  it('exports accepted project wiki pages as markdown files', async () => {
+    const result = await callTool('eweser_export_project_wiki', {
+      scopeKey: 'eweser-db',
+      scopeType: 'project',
+    });
+
+    const files = JSON.parse(result.content[0].text);
+    expect(files.map((file: { path: string }) => file.path)).toContain(
+      'PROJECT_WIKI.md'
+    );
+    expect(
+      files.some((file: { content: string }) =>
+        file.content.includes('type: project-wiki-page')
+      )
+    ).toBe(true);
   });
 });

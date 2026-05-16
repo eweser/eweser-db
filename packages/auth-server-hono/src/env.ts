@@ -45,8 +45,12 @@ const envSchema = z
     AUTH_SERVER_URL: urlSchema.default(
       `http://localhost:${defaultAuthApiPort}`
     ),
+    /** Optional internal auth URL override for server-to-server MCP/runtime calls. */
+    MCP_INTERNAL_AUTH_URL: urlSchema.optional(),
     /** WebSocket URL of the Hocuspocus sync server, e.g. "ws://localhost:8080" */
     SYNC_SERVER_URL: z.string().url().default('ws://localhost:8080'),
+    /** Optional internal sync URL override for server-to-server MCP/runtime calls. */
+    MCP_INTERNAL_SYNC_URL: z.string().url().optional(),
     /** Secret for signing Hocuspocus auth JWTs — defaults to SERVER_SECRET if not set */
     SYNC_AUTH_SECRET: z.string().optional(),
     /** Aggregator URL for MCP search tool */

@@ -5,6 +5,7 @@
  */
 export { DataLayer } from './data-layer.js';
 export { registerTools } from './tools.js';
+export type { MemoryAuditSink } from './tools.js';
 export {
   verifyAgentToken,
   fetchAgentRooms,

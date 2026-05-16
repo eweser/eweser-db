@@ -13,6 +13,9 @@ import type {
   AgentAccessLogEntry,
   Conversation,
   FileAttachment,
+  MemoryStrategyConfig,
+  ProjectWikiDraft,
+  ProjectWikiPage,
   COLLECTION_KEYS,
   ServerRoom,
   EweDocument,
@@ -44,6 +47,9 @@ export type {
   Profile,
   Conversation,
   FileAttachment,
+  MemoryStrategyConfig,
+  ProjectWikiDraft,
+  ProjectWikiPage,
   GetDocuments,
 };
 
@@ -57,6 +63,9 @@ export type CollectionToDocument = {
   agentAccessLogs: AgentAccessLogEntry;
   conversations: Conversation;
   fileAttachments: FileAttachment;
+  memoryStrategyConfigs: MemoryStrategyConfig;
+  projectWikiPages: ProjectWikiPage;
+  projectWikiDrafts: ProjectWikiDraft;
 };
 export const collections: Collections = {
   notes: {},
@@ -66,6 +75,9 @@ export const collections: Collections = {
   agentAccessLogs: {},
   conversations: {},
   fileAttachments: {},
+  memoryStrategyConfigs: {},
+  projectWikiPages: {},
+  projectWikiDrafts: {},
 };
 
 export type { DocumentWithoutBase, Documents };

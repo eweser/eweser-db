@@ -22,6 +22,9 @@ tests, secret scanning, agent orchestration, and code-index validation.
   query helper for symbols, packages, files, and export hotspots.
 - [`codex/analyze-session-efficiency.mjs`](./codex/analyze-session-efficiency.mjs):
   Scans local Codex session logs for repeated inefficiency patterns.
+- [`memory/diagnose-memory-session.mjs`](./memory/diagnose-memory-session.mjs):
+  Audits memory fixtures, MCP audit JSONL, and optional Codex session logs for
+  useful recall, bounded context, and safety failures.
 - [`codex/README.md`](./codex/README.md): Codex helper script notes.
 
 ## Children
@@ -55,5 +58,7 @@ tests, secret scanning, agent orchestration, and code-index validation.
   answers without loading the full generated map into model context.
 - `npm run codex:retrospective -- --since 2026-05-02 --cwd /home/jacob/eweser-db`:
   Reports likely agent flailing patterns from new local sessions.
+- `npm run memory:diagnose -- --fixture scripts/memory/fixtures/passing-agent-journal.json`:
+  Runs the deterministic memory diagnostic report against a fixture.
 - `npm run test:e2e`: Exercises the E2E smoke runner.
 - `bash scripts/ai-secrets/scan-secrets.sh`: Runs secret scanning when relevant.

@@ -2,6 +2,9 @@ import type { LoginQueryOptions, LoginQueryParams } from '../index.js';
 
 export * from './documents.js';
 export * from './obsidian-markdown.js';
+export * from './agent-journal-markdown.js';
+export * from './project-wiki-builder.js';
+export * from './project-wiki-markdown.js';
 
 export function loginOptionsToQueryParams({
   collections,

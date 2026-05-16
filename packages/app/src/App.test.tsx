@@ -110,6 +110,60 @@ function getRequiredInput(id: string) {
   return element;
 }
 
+function defaultMemoryStrategy(roomIds: string[] = []) {
+  const defaultWriteRoomId = roomIds[0];
+  return {
+    defaultStrategy: 'agent-journal' as const,
+    defaultCaptureMode: 'manual' as const,
+    scopes: [
+      {
+        scopeType: 'global' as const,
+        scopeKey: 'default',
+        label: 'Shared Agent Memory',
+        strategy: 'agent-journal' as const,
+        captureMode: 'manual' as const,
+        ...(defaultWriteRoomId ? { defaultWriteRoomId } : {}),
+        readableRoomIds: roomIds,
+        writableRoomIds: roomIds,
+      },
+    ],
+    choices: [
+      {
+        strategy: 'agent-journal' as const,
+        label: 'Shared Agent Memory',
+        description: 'Portable manual memory.',
+        advanced: false,
+      },
+      {
+        strategy: 'project-wiki' as const,
+        label: 'Project Wiki',
+        description: 'Deterministic project knowledge.',
+        advanced: false,
+      },
+    ],
+    captureModes: [
+      {
+        mode: 'manual' as const,
+        label: 'Manual',
+        description: 'Explicit saves only.',
+        enabled: true,
+      },
+      {
+        mode: 'suggest' as const,
+        label: 'Suggest',
+        description: 'Stage suggested memories.',
+        enabled: true,
+      },
+      {
+        mode: 'auto' as const,
+        label: 'Auto',
+        description: 'Planned.',
+        enabled: false,
+      },
+    ],
+  };
+}
+
 describe('auth-pages app', () => {
   beforeEach(() => {
     cleanup();
@@ -150,6 +204,7 @@ describe('auth-pages app', () => {
       },
       dynamicClientRegistrationUrl: 'https://www.eweser.com/oauth/register',
       mcpUrl: 'https://www.eweser.com/mcp',
+      memoryStrategy: defaultMemoryStrategy(),
       oauthMetadataUrl:
         'https://www.eweser.com/.well-known/oauth-authorization-server',
       smartLinkRule:
@@ -386,6 +441,7 @@ describe('auth-pages app', () => {
       },
       dynamicClientRegistrationUrl: 'https://www.eweser.com/oauth/register',
       mcpUrl: 'https://www.eweser.com/mcp',
+      memoryStrategy: defaultMemoryStrategy(['room-conversations']),
       oauthMetadataUrl:
         'https://www.eweser.com/.well-known/oauth-authorization-server',
       smartLinkRule:
@@ -414,6 +470,13 @@ describe('auth-pages app', () => {
       await screen.findByRole('heading', { name: /connect ai/i, level: 2 })
     ).toBeInTheDocument();
     expect(screen.getByText(/claude desktop/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/shared agent memory/i).length).toBeGreaterThan(
+      0
+    );
+    expect(
+      screen.getByText(/a shared notebook for ai tools/i)
+    ).toBeInTheDocument();
+    expect(screen.getByText(/read lets an agent/i)).toBeInTheDocument();
     expect(screen.getByText(/writable ai area/i)).toBeInTheDocument();
     expect(screen.getByText(/write scope: 1 room/i)).toBeInTheDocument();
   });
@@ -449,6 +512,7 @@ describe('auth-pages app', () => {
       },
       dynamicClientRegistrationUrl: 'https://www.eweser.com/oauth/register',
       mcpUrl: 'https://www.eweser.com/mcp',
+      memoryStrategy: defaultMemoryStrategy(['room-conversations']),
       oauthMetadataUrl:
         'https://www.eweser.com/.well-known/oauth-authorization-server',
       smartLinkRule:
@@ -496,12 +560,120 @@ describe('auth-pages app', () => {
     await waitFor(() => {
       expect(apiMocks.setupConnectAiToken).toHaveBeenCalledWith(
         'claude-desktop',
-        { writeRoomIds: ['room-conversations', 'room-ai'] }
+        {
+          captureMode: 'manual',
+          defaultWriteRoomId: 'room-conversations',
+          memoryStrategy: 'agent-journal',
+          readableRoomIds: ['room-conversations'],
+          writableRoomIds: ['room-conversations'],
+        }
       );
     });
 
     expect(
       await screen.findByText(/paste this into claude desktop config/i)
+    ).toBeInTheDocument();
+  });
+
+  it('omits defaultWriteRoomId from project-wiki setup payloads', async () => {
+    sessionState = {
+      data: {
+        session: { id: 'session-1' },
+        user: { email: 'test@example.com', id: 'user-1' },
+      },
+      error: null,
+      isPending: false,
+      isRefetching: false,
+      refetch: vi.fn().mockResolvedValue(undefined),
+    };
+
+    apiMocks.getConnectAiOverview.mockResolvedValue({
+      clients: [
+        {
+          clientId: 'codex',
+          connection: null,
+          description:
+            'Remote HTTP MCP config for Codex using bearer_token_env_var.',
+          fallbackReason: null,
+          title: 'Codex',
+          type: 'token-fallback',
+        },
+      ],
+      defaults: {
+        allowedCollections: 'all-supported-collections',
+        permissions: 'read',
+        tokenTtlSeconds: 604800,
+      },
+      dynamicClientRegistrationUrl: 'https://www.eweser.com/oauth/register',
+      mcpUrl: 'https://www.eweser.com/mcp',
+      memoryStrategy: defaultMemoryStrategy(['room-source']),
+      oauthMetadataUrl:
+        'https://www.eweser.com/.well-known/oauth-authorization-server',
+      smartLinkRule:
+        'Never place bearer tokens in URLs. All setup flows stay on authenticated Eweser pages and mint or rotate tokens server-side.',
+      writableRooms: [
+        {
+          id: 'room-source',
+          name: 'Project Memory',
+          collectionKey: 'conversations',
+          syncUrl: null,
+          syncBaseUrl: null,
+        },
+        {
+          id: 'room-drafts',
+          name: 'Wiki Drafts',
+          collectionKey: 'projectWikiDrafts',
+          syncUrl: null,
+          syncBaseUrl: null,
+        },
+        {
+          id: 'room-pages',
+          name: 'Wiki Pages',
+          collectionKey: 'projectWikiPages',
+          syncUrl: null,
+          syncBaseUrl: null,
+        },
+      ],
+    });
+    apiMocks.setupConnectAiToken.mockResolvedValue({
+      agent: { id: 'agent-1', permissions: 'read', tokenExpiresAt: null },
+      clientId: 'codex',
+      payload: {
+        configFormat: 'toml',
+        instructions: 'Add this to ~/.codex/config.toml.',
+        snippet: '[mcp_servers.eweser]',
+      },
+      token: 'raw-token',
+    });
+
+    renderApp('/account/connect-ai');
+
+    await screen.findByRole('heading', { name: /connect ai/i, level: 2 });
+    await userEvent.selectOptions(
+      screen.getByLabelText(/strategy/i),
+      'project-wiki'
+    );
+    const button = await screen.findByRole('button', {
+      name: /prepare setup/i,
+    });
+    await userEvent.click(button);
+
+    await waitFor(() => {
+      expect(apiMocks.setupConnectAiToken).toHaveBeenCalledWith(
+        'codex',
+        expect.objectContaining({
+          captureMode: 'manual',
+          memoryStrategy: 'project-wiki',
+        })
+      );
+    });
+    expect(apiMocks.setupConnectAiToken).toHaveBeenCalledTimes(1);
+    expect(apiMocks.setupConnectAiToken.mock.calls[0]?.[1]).not.toHaveProperty(
+      'defaultWriteRoomId'
+    );
+
+    expect(
+      screen.getByText(/Project Wiki is available for seeded project scopes/i)
     ).toBeInTheDocument();
   });
 
@@ -536,6 +708,7 @@ describe('auth-pages app', () => {
       },
       dynamicClientRegistrationUrl: 'https://www.eweser.com/oauth/register',
       mcpUrl: 'https://www.eweser.com/mcp',
+      memoryStrategy: defaultMemoryStrategy(),
       oauthMetadataUrl:
         'https://www.eweser.com/.well-known/oauth-authorization-server',
       smartLinkRule:
@@ -604,6 +777,7 @@ describe('auth-pages app', () => {
       },
       dynamicClientRegistrationUrl: 'https://www.eweser.com/oauth/register',
       mcpUrl: 'https://www.eweser.com/mcp',
+      memoryStrategy: defaultMemoryStrategy(),
       oauthMetadataUrl:
         'https://www.eweser.com/.well-known/oauth-authorization-server',
       smartLinkRule:

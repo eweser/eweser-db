@@ -10,6 +10,9 @@ const collectionKeys = [
   'agentAccessLogs',
   'conversations',
   'fileAttachments',
+  'memoryStrategyConfigs',
+  'projectWikiPages',
+  'projectWikiDrafts',
 ];
 const defaultAuthServer = 'https://www.eweser.com';
 

@@ -1,0 +1,21 @@
+{
+  "id": "zero-token-estimate",
+  "expected": {
+    "requiredRecallMemoryIds": ["memory-zero"],
+    "excludedRecallMemoryIds": [],
+    "requiredRecallPhrases": ["explicit zero estimate"],
+    "excludedRecallPhrases": [],
+    "maxRecallTokens": 0,
+    "requireStrategyLookup": false,
+    "requireMemoryWrite": false
+  },
+  "auditEvents": [
+    {
+      "action": "memory_search",
+      "query": "zero token estimate",
+      "memoryIds": ["memory-zero"],
+      "resultSummary": "This recall has an explicit zero estimate and must not be re-estimated.",
+      "tokenEstimate": 0
+    }
+  ]
+}

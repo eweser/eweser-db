@@ -65,6 +65,14 @@ function connectTestRoom(dataLayer: DataLayer, room: AgentRoom): void {
   });
 }
 
+function stubRawDocuments(
+  dataLayer: DataLayer,
+  documentsByRoomId: Record<string, Record<string, unknown>>
+): void {
+  dataLayer.getRawDocuments = (<T extends object>(roomId: string) =>
+    (documentsByRoomId[roomId] ?? {}) as T) as typeof dataLayer.getRawDocuments;
+}
+
 describe('DataLayer permission enforcement', () => {
   it('continues when one room fails to connect during init', async () => {
     const dataLayer = new DataLayer(
@@ -157,6 +165,239 @@ describe('DataLayer permission enforcement', () => {
     expect(() =>
       dataLayer.assertWriteAccess('room-1', { text: 'hello' })
     ).not.toThrow();
+  });
+
+  it('sets a default memory write room only when exactly one conversations room is writable', () => {
+    const dataLayer = makeDataLayer(
+      {
+        permissions: 'read',
+        readAllowedCollections: ['conversations'],
+        readAllowedRooms: ['conversation-room-1'],
+        writeAllowedCollections: ['conversations'],
+        writeAllowedRooms: ['conversation-room-1'],
+      },
+      {
+        id: 'conversation-room-1',
+        name: 'Conversations',
+        collectionKey: 'conversations',
+        syncUrl: null,
+        syncBaseUrl: null,
+      }
+    );
+
+    expect(dataLayer.getMemoryStrategy().scope.defaultWriteRoomId).toBe(
+      'conversation-room-1'
+    );
+  });
+
+  it('leaves defaultWriteRoomId unset when multiple conversations rooms are writable', () => {
+    const dataLayer = makeDataLayer(
+      {
+        permissions: 'read',
+        readAllowedCollections: ['conversations'],
+        readAllowedRooms: ['conversation-room-1', 'conversation-room-2'],
+        writeAllowedCollections: ['conversations'],
+        writeAllowedRooms: ['conversation-room-1', 'conversation-room-2'],
+      },
+      {
+        id: 'conversation-room-1',
+        name: 'Conversations',
+        collectionKey: 'conversations',
+        syncUrl: null,
+        syncBaseUrl: null,
+      }
+    );
+    connectTestRoom(dataLayer, {
+      id: 'conversation-room-2',
+      name: 'Conversations 2',
+      collectionKey: 'conversations',
+      syncUrl: null,
+      syncBaseUrl: null,
+    });
+
+    const scope = dataLayer.getMemoryStrategy().scope;
+    expect(scope.writableRoomIds).toEqual([
+      'conversation-room-1',
+      'conversation-room-2',
+    ]);
+    expect(scope.defaultWriteRoomId).toBeUndefined();
+    expect(() => dataLayer.resolveMemoryWriteRoom()).toThrow(
+      'Multiple writable memory rooms are available'
+    );
+  });
+
+  it('resolves a configured project-wiki scope from memoryStrategyConfigs docs', () => {
+    const dataLayer = makeDataLayer(
+      {
+        permissions: 'read',
+        allowedCollections: [
+          'conversations',
+          'memoryStrategyConfigs',
+          'projectWikiDrafts',
+          'projectWikiPages',
+        ],
+        readAllowedCollections: [
+          'conversations',
+          'memoryStrategyConfigs',
+          'projectWikiDrafts',
+          'projectWikiPages',
+        ],
+        readAllowedRooms: [
+          'strategy-room',
+          'source-room',
+          'draft-room',
+          'page-room',
+        ],
+        writeAllowedCollections: ['projectWikiDrafts', 'projectWikiPages'],
+        writeAllowedRooms: ['draft-room', 'page-room'],
+      },
+      {
+        id: 'strategy-room',
+        name: 'Strategy Configs',
+        collectionKey: 'memoryStrategyConfigs',
+        syncUrl: null,
+        syncBaseUrl: null,
+      }
+    );
+    connectTestRoom(dataLayer, {
+      id: 'source-room',
+      name: 'Project Memory',
+      collectionKey: 'conversations',
+      syncUrl: null,
+      syncBaseUrl: null,
+    });
+    connectTestRoom(dataLayer, {
+      id: 'draft-room',
+      name: 'Wiki Drafts',
+      collectionKey: 'projectWikiDrafts',
+      syncUrl: null,
+      syncBaseUrl: null,
+    });
+    connectTestRoom(dataLayer, {
+      id: 'page-room',
+      name: 'Wiki Pages',
+      collectionKey: 'projectWikiPages',
+      syncUrl: null,
+      syncBaseUrl: null,
+    });
+    stubRawDocuments(dataLayer, {
+      'strategy-room': {
+        'config-1': {
+          _created: Date.now(),
+          _id: 'config-1',
+          _ref: 'memoryStrategyConfigs.strategy-room.config-1',
+          _updated: Date.now(),
+          captureMode: 'manual',
+          enabled: true,
+          exportFormats: ['obsidian'],
+          name: 'Project Wiki',
+          readableRoomIds: ['source-room', 'draft-room', 'page-room'],
+          scopeKey: 'eweser-db',
+          scopeType: 'project',
+          sourceRoomIds: ['source-room'],
+          strategy: 'project-wiki',
+          writableRoomIds: ['draft-room', 'page-room'],
+        },
+      },
+    });
+
+    const strategy = dataLayer.getMemoryStrategy({
+      scopeKey: 'eweser-db',
+      scopeType: 'project',
+    });
+
+    expect(strategy.strategy).toBe('project-wiki');
+    expect(strategy.scope.sourceRoomIds).toEqual(['source-room']);
+    expect(strategy.scope.draftRoomIds).toEqual(['draft-room']);
+    expect(strategy.scope.pageRoomIds).toEqual(['page-room']);
+    expect(strategy.scope.writableRoomIds).toEqual(['draft-room', 'page-room']);
+  });
+
+  it('resolves project wiki source, draft, and page targets without mutating source rooms', () => {
+    const dataLayer = makeDataLayer(
+      {
+        permissions: 'read',
+        allowedCollections: [
+          'conversations',
+          'memoryStrategyConfigs',
+          'projectWikiDrafts',
+          'projectWikiPages',
+        ],
+        readAllowedCollections: [
+          'conversations',
+          'memoryStrategyConfigs',
+          'projectWikiDrafts',
+          'projectWikiPages',
+        ],
+        readAllowedRooms: [
+          'strategy-room',
+          'source-room',
+          'draft-room',
+          'page-room',
+        ],
+        writeAllowedCollections: ['projectWikiDrafts', 'projectWikiPages'],
+        writeAllowedRooms: ['draft-room', 'page-room'],
+      },
+      {
+        id: 'strategy-room',
+        name: 'Strategy Configs',
+        collectionKey: 'memoryStrategyConfigs',
+        syncUrl: null,
+        syncBaseUrl: null,
+      }
+    );
+    connectTestRoom(dataLayer, {
+      id: 'source-room',
+      name: 'Project Memory',
+      collectionKey: 'conversations',
+      syncUrl: null,
+      syncBaseUrl: null,
+    });
+    connectTestRoom(dataLayer, {
+      id: 'draft-room',
+      name: 'Wiki Drafts',
+      collectionKey: 'projectWikiDrafts',
+      syncUrl: null,
+      syncBaseUrl: null,
+    });
+    connectTestRoom(dataLayer, {
+      id: 'page-room',
+      name: 'Wiki Pages',
+      collectionKey: 'projectWikiPages',
+      syncUrl: null,
+      syncBaseUrl: null,
+    });
+    stubRawDocuments(dataLayer, {
+      'strategy-room': {
+        'config-1': {
+          _created: Date.now(),
+          _id: 'config-1',
+          _ref: 'memoryStrategyConfigs.strategy-room.config-1',
+          _updated: Date.now(),
+          captureMode: 'manual',
+          enabled: true,
+          exportFormats: ['obsidian'],
+          name: 'Project Wiki',
+          readableRoomIds: ['source-room', 'draft-room', 'page-room'],
+          scopeKey: 'eweser-db',
+          scopeType: 'project',
+          sourceRoomIds: ['source-room'],
+          strategy: 'project-wiki',
+          writableRoomIds: ['draft-room', 'page-room'],
+        },
+      },
+    });
+
+    const targets = dataLayer.resolveProjectWikiTargets({
+      scopeKey: 'eweser-db',
+      scopeType: 'project',
+    });
+
+    expect(targets.sourceRoomIds).toEqual(['source-room']);
+    expect(targets.draftRoomId).toBe('draft-room');
+    expect(targets.pageRoomId).toBe('page-room');
+    expect(targets.sourceRoomIds).not.toContain(targets.draftRoomId);
+    expect(targets.sourceRoomIds).not.toContain(targets.pageRoomId);
   });
 
   it('requires notes created under a configured writable folder scope to identify that folder', () => {

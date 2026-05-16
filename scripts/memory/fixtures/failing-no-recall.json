@@ -1,0 +1,46 @@
+{
+  "id": "failing-no-recall",
+  "title": "Failing diagnostic fixture with no memory recall",
+  "clientId": "codex",
+  "agentId": "codex",
+  "sessionId": "fixture-cli-fail-001",
+  "scopeKey": "eweser-db",
+  "transcript": [
+    {
+      "type": "user",
+      "text": "Run the Eweser test suite."
+    },
+    {
+      "type": "assistant",
+      "text": "Started tests without checking memory."
+    }
+  ],
+  "seedMemories": [
+    {
+      "id": "mem-runtime-orientation",
+      "title": "Eweser tests need runtime orientation first",
+      "summary": "Before local Eweser tests or service checks, run runtime orientation."
+    }
+  ],
+  "auditEvents": [
+    {
+      "id": "audit-cli-fail-1",
+      "timestamp": "2026-05-03T12:00:00.000Z",
+      "action": "memory_save",
+      "clientId": "codex",
+      "agentId": "codex",
+      "sessionId": "fixture-cli-fail-001",
+      "tokenEstimate": 600,
+      "resultSummary": "Large noisy session dump without a later recall lookup. token=super-secret-value"
+    }
+  ],
+  "expected": {
+    "requiredRecallMemoryIds": ["mem-runtime-orientation"],
+    "excludedRecallMemoryIds": [],
+    "requiredRecallPhrases": ["runtime orientation"],
+    "excludedRecallPhrases": ["super-secret-value"],
+    "maxRecallTokens": 120,
+    "requireStrategyLookup": true,
+    "requireMemoryWrite": false
+  }
+}

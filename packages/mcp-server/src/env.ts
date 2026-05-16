@@ -12,6 +12,8 @@ const envSchema = z.object({
   EWESER_SYNC_URL: z.string().optional(),
   /** Optional aggregator URL for PostgreSQL-backed search. Falls back to in-memory if omitted. */
   EWESER_AGGREGATOR_URL: z.string().url().optional(),
+  /** Optional local JSONL audit output. Must not be stdout because MCP uses stdout for JSON-RPC. */
+  EWESER_MCP_AUDIT_JSONL: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

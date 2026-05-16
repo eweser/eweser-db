@@ -17,6 +17,10 @@ memory strategy feature and any approved advanced memory plans are implemented.
 
 - Assumption: this plan runs after the user has manually tested the main memory
   feature.
+- Implementation finding from the main strategy MVP: launch readiness should
+  verify the new Connect AI read/write/default write room controls, MCP
+  strategy tools, Obsidian-compatible export, and scenario harness. `auto`
+  capture is intentionally disabled and should not be marketed as shipped.
 - Open question: which advanced processors, if any, are included in the launch
   target?
 - Open question: does paid hosted memory require updated privacy/terms language

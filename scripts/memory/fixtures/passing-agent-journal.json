@@ -1,0 +1,79 @@
+{
+  "id": "passing-agent-journal",
+  "title": "Passing Agent Journal diagnostic fixture",
+  "clientId": "codex",
+  "agentId": "codex",
+  "sessionId": "fixture-cli-pass-001",
+  "scopeKey": "eweser-db",
+  "transcript": [
+    {
+      "type": "user",
+      "text": "Before Eweser tests, remember runtime orientation."
+    },
+    {
+      "type": "tool",
+      "toolName": "eweser_search",
+      "argsSummary": "query=runtime orientation Eweser tests",
+      "resultSummary": "Returned mem-runtime-orientation."
+    }
+  ],
+  "seedMemories": [
+    {
+      "id": "mem-runtime-orientation",
+      "title": "Eweser tests need runtime orientation first",
+      "summary": "Before local Eweser tests or service checks, run runtime orientation."
+    }
+  ],
+  "auditEvents": [
+    {
+      "id": "audit-cli-pass-1",
+      "timestamp": "2026-05-03T08:00:00.000Z",
+      "action": "strategy_lookup",
+      "clientId": "codex",
+      "agentId": "codex",
+      "sessionId": "fixture-cli-pass-001",
+      "scopeKey": "eweser-db",
+      "resultSummary": "agent-journal manual memory strategy active"
+    },
+    {
+      "id": "audit-cli-pass-2",
+      "timestamp": "2026-05-03T08:00:10.000Z",
+      "action": "memory_save",
+      "clientId": "codex",
+      "agentId": "codex",
+      "sessionId": "fixture-cli-pass-001",
+      "scopeKey": "eweser-db",
+      "memoryIds": ["mem-runtime-orientation"],
+      "roomIds": ["conversation-room"],
+      "tokenEstimate": 32,
+      "resultSummary": "Saved runtime orientation testing memory."
+    },
+    {
+      "id": "audit-cli-pass-3",
+      "timestamp": "2026-05-03T08:10:00.000Z",
+      "action": "memory_search",
+      "clientId": "codex",
+      "agentId": "codex",
+      "sessionId": "fixture-cli-pass-001",
+      "scopeKey": "eweser-db",
+      "query": "runtime orientation Eweser tests",
+      "memoryIds": ["mem-runtime-orientation"],
+      "roomIds": ["conversation-room"],
+      "resultCount": 1,
+      "tokenEstimate": 72,
+      "resultSummary": "Before local Eweser tests or service checks, run runtime orientation."
+    }
+  ],
+  "expected": {
+    "requiredRecallMemoryIds": ["mem-runtime-orientation"],
+    "excludedRecallMemoryIds": ["mem-generic-productivity"],
+    "requiredRecallPhrases": ["runtime orientation", "Eweser tests"],
+    "excludedRecallPhrases": [
+      "generic productivity advice",
+      "super-secret-value"
+    ],
+    "maxRecallTokens": 160,
+    "requireStrategyLookup": true,
+    "requireMemoryWrite": true
+  }
+}

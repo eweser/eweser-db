@@ -57,6 +57,12 @@ export function ConnectAiPage() {
   const [selectedWriteRoomIds, setSelectedWriteRoomIds] = useState<string[]>(
     []
   );
+  const [selectedReadRoomIds, setSelectedReadRoomIds] = useState<string[]>([]);
+  const [selectedStrategy, setSelectedStrategy] = useState('agent-journal');
+  const [selectedCaptureMode, setSelectedCaptureMode] = useState('manual');
+  const [defaultWriteRoomId, setDefaultWriteRoomId] = useState<
+    string | undefined
+  >(undefined);
 
   async function refreshOverview() {
     const result = await getConnectAiOverview();
@@ -71,6 +77,14 @@ export function ConnectAiPage() {
         if (active) {
           setOverview(result);
           setSelectedWriteRoomIds(getRecommendedWriteRoomIds(result));
+          setSelectedReadRoomIds(
+            result.memoryStrategy.scopes[0]?.readableRoomIds ?? []
+          );
+          setDefaultWriteRoomId(
+            result.memoryStrategy.scopes[0]?.defaultWriteRoomId
+          );
+          setSelectedStrategy(result.memoryStrategy.defaultStrategy);
+          setSelectedCaptureMode(result.memoryStrategy.defaultCaptureMode);
         }
       })
       .catch((requestError: Error) => {
@@ -111,10 +125,69 @@ export function ConnectAiPage() {
   function toggleWriteRoom(roomId: string, checked: boolean) {
     setSelectedWriteRoomIds((current) => {
       if (checked) {
+        setSelectedReadRoomIds((readRooms) =>
+          readRooms.includes(roomId) ? readRooms : readRooms.concat(roomId)
+        );
+        setDefaultWriteRoomId((currentDefault) => currentDefault ?? roomId);
         return Array.from(new Set(current.concat(roomId)));
+      }
+      if (defaultWriteRoomId === roomId) {
+        setDefaultWriteRoomId(undefined);
       }
       return current.filter((id) => id !== roomId);
     });
+  }
+
+  function toggleReadRoom(roomId: string, checked: boolean) {
+    setSelectedReadRoomIds((current) => {
+      if (checked) return Array.from(new Set(current.concat(roomId)));
+      setSelectedWriteRoomIds((writeRooms) =>
+        writeRooms.filter((id) => id !== roomId)
+      );
+      if (defaultWriteRoomId === roomId) {
+        setDefaultWriteRoomId(undefined);
+      }
+      return current.filter((id) => id !== roomId);
+    });
+  }
+
+  function handleStrategyChange(nextStrategy: string) {
+    setSelectedStrategy(nextStrategy);
+    if (nextStrategy !== 'project-wiki') {
+      return;
+    }
+
+    const projectWikiWriteRoomIds = (overview?.writableRooms ?? [])
+      .filter(
+        (room) =>
+          room.collectionKey === 'projectWikiDrafts' ||
+          room.collectionKey === 'projectWikiPages'
+      )
+      .map((room) => room.id);
+
+    setDefaultWriteRoomId(undefined);
+    setSelectedWriteRoomIds((current) =>
+      current.filter((roomId) => projectWikiWriteRoomIds.includes(roomId))
+    );
+    setSelectedReadRoomIds((current) =>
+      Array.from(new Set(current.concat(projectWikiWriteRoomIds)))
+    );
+  }
+
+  function buildSetupOptions() {
+    return {
+      captureMode: selectedCaptureMode as 'manual' | 'suggest' | 'auto',
+      ...(selectedStrategy === 'agent-journal' ? { defaultWriteRoomId } : {}),
+      memoryStrategy: selectedStrategy as
+        | 'agent-journal'
+        | 'project-wiki'
+        | 'auto-curated'
+        | 'knowledge-graph'
+        | 'workspace-intelligence'
+        | 'custom',
+      readableRoomIds: selectedReadRoomIds,
+      writableRoomIds: selectedWriteRoomIds,
+    };
   }
 
   async function launchOAuthSetup(clientId: 'claude-web' | 'chatgpt-web') {
@@ -206,6 +279,21 @@ export function ConnectAiPage() {
 
       {error ? <p className="mb-4 text-sm text-destructive">{error}</p> : null}
 
+      <MemoryStrategySettings
+        captureMode={selectedCaptureMode}
+        defaultWriteRoomId={defaultWriteRoomId}
+        memoryStrategy={overview.memoryStrategy}
+        rooms={overview.writableRooms ?? []}
+        selectedReadRoomIds={selectedReadRoomIds}
+        selectedStrategy={selectedStrategy}
+        selectedWriteRoomIds={selectedWriteRoomIds}
+        onCaptureModeChange={setSelectedCaptureMode}
+        onDefaultWriteRoomChange={setDefaultWriteRoomId}
+        onReadRoomToggle={toggleReadRoom}
+        onStrategyChange={handleStrategyChange}
+        onWriteRoomToggle={toggleWriteRoom}
+      />
+
       <WritableRoomSelector
         rooms={overview.writableRooms ?? []}
         selectedRoomIds={selectedWriteRoomIds}
@@ -236,7 +324,7 @@ export function ConnectAiPage() {
                     void withClientAction(client.clientId, async () => {
                       const result = await rotateConnectAiToken(
                         client.clientId,
-                        { writeRoomIds: selectedWriteRoomIds }
+                        buildSetupOptions()
                       );
                       setSetupPayloads((current) => ({
                         ...current,
@@ -270,7 +358,7 @@ export function ConnectAiPage() {
                     return;
                   }
                   const result = await setupConnectAiToken(client.clientId, {
-                    writeRoomIds: selectedWriteRoomIds,
+                    ...buildSetupOptions(),
                   });
                   setSetupPayloads((current) => ({
                     ...current,
@@ -300,17 +388,206 @@ export function ConnectAiPage() {
   );
 }
 
+function MemoryStrategySettings({
+  captureMode,
+  defaultWriteRoomId,
+  memoryStrategy,
+  rooms,
+  selectedReadRoomIds,
+  selectedStrategy,
+  selectedWriteRoomIds,
+  onCaptureModeChange,
+  onDefaultWriteRoomChange,
+  onReadRoomToggle,
+  onStrategyChange,
+  onWriteRoomToggle,
+}: {
+  captureMode: string;
+  defaultWriteRoomId?: string | undefined;
+  memoryStrategy: ConnectAiOverviewResponse['memoryStrategy'];
+  rooms: WritableRoom[];
+  selectedReadRoomIds: string[];
+  selectedStrategy: string;
+  selectedWriteRoomIds: string[];
+  onCaptureModeChange: (mode: string) => void;
+  onDefaultWriteRoomChange: (roomId: string | undefined) => void;
+  onReadRoomToggle: (roomId: string, checked: boolean) => void;
+  onStrategyChange: (strategy: string) => void;
+  onWriteRoomToggle: (roomId: string, checked: boolean) => void;
+}) {
+  return (
+    <div className="mb-6 rounded-lg border border-border bg-background/50 p-4">
+      <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h3 className="text-sm font-semibold">Memory strategy</h3>
+          <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
+            Choose the memory strategy, capture mode, and room boundaries that
+            token clients receive. Personal rooms stay read-only or off unless
+            you explicitly select them.
+          </p>
+        </div>
+        <span className="rounded-full border border-border px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+          {selectedStrategy === 'project-wiki'
+            ? 'Project Wiki'
+            : 'Agent Journal'}
+        </span>
+      </div>
+
+      <div className="mt-4 grid gap-3 border-y border-border/70 py-3 text-sm md:grid-cols-3">
+        <p className="text-muted-foreground">
+          <span className="block font-medium text-foreground">
+            Shared Agent Memory
+          </span>
+          A shared notebook for AI tools to remember durable decisions,
+          preferences, project context, and follow-ups.
+        </p>
+        <p className="text-muted-foreground">
+          <span className="block font-medium text-foreground">
+            Recommended setup
+          </span>
+          Keep one writable Conversations room selected. Leave personal notes
+          read-only or off unless you want agents to use them.
+        </p>
+        <p className="text-muted-foreground">
+          <span className="block font-medium text-foreground">
+            Read and write
+          </span>
+          Read lets an agent use a room as context. Write lets it save new
+          memory there.
+        </p>
+      </div>
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-3">
+        <label className="text-sm">
+          <span className="block font-medium">Strategy</span>
+          <select
+            className="mt-2 w-full rounded-md border border-border bg-background px-3 py-2"
+            value={selectedStrategy}
+            onChange={(event) => onStrategyChange(event.target.value)}
+          >
+            {memoryStrategy.choices.map((choice) => (
+              <option
+                key={choice.strategy}
+                disabled={
+                  choice.strategy !== 'agent-journal' &&
+                  choice.strategy !== 'project-wiki'
+                }
+                value={choice.strategy}
+              >
+                {choice.label}
+                {choice.advanced ? ' (advanced)' : ''}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="text-sm">
+          <span className="block font-medium">Capture mode</span>
+          <select
+            className="mt-2 w-full rounded-md border border-border bg-background px-3 py-2"
+            value={captureMode}
+            onChange={(event) => onCaptureModeChange(event.target.value)}
+          >
+            {memoryStrategy.captureModes.map((mode) => (
+              <option
+                key={mode.mode}
+                disabled={!mode.enabled}
+                value={mode.mode}
+              >
+                {mode.label}
+                {mode.enabled ? '' : ' (planned)'}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="text-sm">
+          <span className="block font-medium">Default write room</span>
+          <select
+            className="mt-2 w-full rounded-md border border-border bg-background px-3 py-2"
+            disabled={selectedStrategy === 'project-wiki'}
+            value={defaultWriteRoomId ?? ''}
+            onChange={(event) =>
+              onDefaultWriteRoomChange(event.target.value || undefined)
+            }
+          >
+            <option value="">None</option>
+            {rooms
+              .filter((room) => selectedWriteRoomIds.includes(room.id))
+              .map((room) => (
+                <option key={room.id} value={room.id}>
+                  {room.name}
+                </option>
+              ))}
+          </select>
+          <span className="mt-2 block text-xs text-muted-foreground">
+            {selectedStrategy === 'project-wiki'
+              ? 'Project Wiki writes drafts and accepted pages to dedicated wiki rooms. Default write room is not used there.'
+              : 'Agent Journal can infer the write target only when exactly one writable conversations room is selected.'}
+          </span>
+        </label>
+      </div>
+
+      {selectedStrategy === 'project-wiki' ? (
+        <div className="mt-4 rounded-md border border-border/80 bg-background/60 px-3 py-3 text-sm text-muted-foreground">
+          Project Wiki is available for seeded project scopes. Select readable
+          source rooms plus writable `projectWikiDrafts` and `projectWikiPages`
+          rooms. The canonical strategy config still lives in
+          `memoryStrategyConfigs`; this screen only scopes the token.
+        </div>
+      ) : null}
+
+      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {rooms.map((room) => (
+          <div
+            key={room.id}
+            className="rounded-md border border-border/80 px-3 py-2 text-sm"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span className="min-w-0">
+                <span className="block truncate font-medium">{room.name}</span>
+                <span className="block text-xs text-muted-foreground">
+                  {room.collectionKey}
+                </span>
+              </span>
+              <span className="text-xs text-muted-foreground">Scope</span>
+            </div>
+            <div className="mt-3 flex gap-4 text-xs text-muted-foreground">
+              <label className="flex items-center gap-2">
+                <input
+                  checked={selectedReadRoomIds.includes(room.id)}
+                  type="checkbox"
+                  onChange={(event) =>
+                    onReadRoomToggle(room.id, event.target.checked)
+                  }
+                />
+                Read
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  checked={selectedWriteRoomIds.includes(room.id)}
+                  disabled={!selectedReadRoomIds.includes(room.id)}
+                  type="checkbox"
+                  onChange={(event) =>
+                    onWriteRoomToggle(room.id, event.target.checked)
+                  }
+                />
+                Write
+              </label>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function getRecommendedWriteRoomIds(
   overview: ConnectAiOverviewResponse
 ): string[] {
   const writableRooms = overview.writableRooms ?? [];
   return writableRooms
-    .filter(
-      (room) =>
-        room.collectionKey === 'conversations' ||
-        (room.collectionKey === 'notes' &&
-          /\bai\b|codex|assistant/i.test(room.name))
-    )
+    .filter((room) => room.collectionKey === 'conversations')
     .map((room) => room.id);
 }
 
