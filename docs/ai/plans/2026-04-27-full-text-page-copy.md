@@ -36,15 +36,19 @@ Own Your Own Data
 
 Kicker:
 
-Seize the means of data production.
+A homestead for your data.
 
 Headline:
 
-Your data. Not their property.
+Your data is not their pasture.
+
+Sub-headline (under hero, above CTAs — the punk-sheep rebuttal):
+
+The flock follows the platform. Ewe don't have to.
 
 Body:
 
-EweserDB is a personal data layer you own. Apps and AI agents connect to it with your permission — they don't store your data, they borrow access to it. Your data lives local-first on your device, is backed up and shared from a self-hostable cloud, and syncs in realtime across your devices
+EweserDB is a personal data layer rooted on your device. Apps and AI agents connect to it with your permission — they don't store your data, they read and write through scoped access you can revoke. Local-first, synced across your devices, and self-hostable any time.
 
 Primary CTA:
 
@@ -52,7 +56,7 @@ Connect my AI
 
 CTA sublabel:
 
-Link Claude, ChatGPT, or Copilot to your own data layer.
+Let Claude, ChatGPT, or Copilot read from a data layer you control.
 
 Secondary CTA:
 
@@ -60,7 +64,7 @@ Try Ewe Note
 
 CTA sublabel:
 
-Notes on EweserDB. No account needed. Drop-in replacement for Obsidian and the Karpathy-wiki notetaking system, but extending to all of your agents, apps and tools.
+A notes app rooted on your device. Drop-in for Obsidian and Karpathy-wiki vaults, extended to every app and agent you connect.
 
 Tertiary CTA:
 
@@ -106,7 +110,7 @@ Body:
 
 Modern software treats your notes, documents, decisions, relationships, and learning work like platform property. You spend years building context, then a bug, shutdown, bad export, or bloated product roadmap can put that work out of reach.
 
-Old world:
+The old enclosure:
 
 - The app owns the database.
 - Your context stays trapped in one product.
@@ -115,7 +119,7 @@ Old world:
 - Trying something new means starting from zero.
 - Export is an escape hatch, not a workflow.
 
-EweserDB world:
+The open field:
 
 - You own the database.
 - Apps compete on experience, not captivity.
@@ -142,7 +146,7 @@ Body:
 
 EweserDB separates the data layer from the app layer. Your rooms, documents, schemas, permissions, and sync state live in a user-owned system. Apps connect to that system when you allow them, then compete on what they help you do.
 
-App-owned data:
+App-owned data (the old enclosure):
 
 - Notes app owns notes on their servers
 - Study app silos your flashcards and learning history
@@ -150,7 +154,7 @@ App-owned data:
 - Every new tool starts empty
 - Features bloat apps because one app must satisfy all use cases
 
-User-owned data:
+User-owned data (the open field):
 
 - One personal data layer
 - Many compatible interfaces
@@ -287,7 +291,7 @@ Section label:
 
 Headline:
 
-Build the app. Not the prison.
+Build the app. Not the enclosure.
 
 Body:
 
@@ -330,11 +334,15 @@ Feature status notes:
 
 Headline:
 
-The revolution is self-hostable.
+Bring it home.
 
 Body:
 
 Connect your AI client, try Ewe Note, or view developer tools and start building.
+
+Alt headline (use on a Manifesto/About page if a punchier closer is needed):
+
+The revolution is self-hostable.
 
 Primary CTA:
 
@@ -360,7 +368,7 @@ Tertiary CTAs:
 
 Footer phrase:
 
-"Ewe-ser", pronounced "user". Because you are.
+"Ewe-ser", pronounced "user". Because ewe are.
 
 ## Global Product Language
 

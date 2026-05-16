@@ -210,7 +210,7 @@ Convert skeptical builders by showing the platform is technically serious.
 
 Recommended heading:
 
-- Build the app. Not the prison.
+- Build the app. Not the enclosure.
 
 Core copy direction:
 

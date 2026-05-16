@@ -250,7 +250,7 @@ Copy tone: calm and specific. No vague "this app wants to access your account." 
 
 ### Problem 1 — The hero explains the philosophy before explaining the product
 
-The current hero headline is "Seize the data layer" (manifesto direction) or "Your data. Not their moat." Both are defiant and memorable but tell you nothing about what EweserDB _is_ or what you can actually _do_.
+Earlier hero headlines ("Seize the data layer" from the retired Communist direction, or "Your data. Not their moat.") were defiant and memorable but told you nothing about what EweserDB _is_ or what you can actually _do_. The current solarpunk direction ("Your data is not their pasture.") inherits the same risk and needs the sub-headline and body to do real explanatory work.
 
 "Local-first database for user-owned software" as a kicker is developer language. A regular person who uses Evernote or keeps notes in Notion doesn't know what a local-first database is or why they should care.
 
@@ -296,14 +296,14 @@ Consider framing Ewe Note in the hero as an example rather than a destination: _
 
 After the hero, the page delivers:
 
-- § I: The Problem (apps are bad landlords)
-- § II: The Reversal (old world vs EweserDB world comparison)
-- § III: The Collective (ecosystem feature cards)
-- § IV: Connected Tools (management UI preview)
-- § V: Developers
+- 01: The Problem (apps are bad landlords)
+- 02: The Reversal (old enclosure vs open field comparison)
+- 03: The Ecosystem (feature cards)
+- 04: Connected Tools (management UI preview)
+- 05: Developers
 - Final CTA
 
-A first-time visitor has to read through five sections of philosophy and comparison before getting any sense of what they actually do today. The feature cards in § III are the closest the page comes to showing concrete capabilities, but they're still aspirational descriptions rather than "here's what you can do right now."
+A first-time visitor has to read through five sections of philosophy and comparison before getting any sense of what they actually do today. The feature cards in section 03 are the closest the page comes to showing concrete capabilities, but they're still aspirational descriptions rather than "here's what you can do right now."
 
 **Fix:** Add a "what you can do today" moment early — either as part of the hero or as its own short section immediately after the hero, before the problem/philosophy sections. Show three concrete things: try notes, connect AI, build an app. Then the argument sections justify those things rather than promising them in the abstract.
 
@@ -311,7 +311,7 @@ A first-time visitor has to read through five sections of philosophy and compari
 
 ### Problem 5 — The "Connected Tools" section on the landing page is confusing
 
-Section § IV previews the app shell management surfaces (Personal Data, Connected Apps, MCP/AI, User Auth) as if they are destinations to explore. Those are the control panel _after_ sign-up — they have no meaning to someone who hasn't yet decided to use the product.
+Section 04 previews the app shell management surfaces (Personal Data, Connected Apps, MCP/AI, User Auth) as if they are destinations to explore. Those are the control panel _after_ sign-up — they have no meaning to someone who hasn't yet decided to use the product.
 
 **Resolved:** "Connected Tools" is retired as a nav label. The landing page nav uses **Apps** and **MCP** as separate items instead. The landing page section that currently previews these management surfaces should be replaced with a concrete preview of what apps exist and what MCP connections are available — content that belongs on the public Apps and MCP pages. The management surfaces (connected apps dashboard, AI access control) are a separate thing that only makes sense once someone has signed up.
 
@@ -414,7 +414,7 @@ A developer should be able to drop in a library, build a useful interface, and i
 
 EweserDB answer:
 
-Build the app. Not the prison.
+Build the app. Not the enclosure.
 
 ### Fast, Local, Responsive
 
