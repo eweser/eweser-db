@@ -4,6 +4,9 @@ import { resolve } from 'path';
 
 const authServerTarget =
   process.env.VITE_AUTH_SERVER_URL ?? 'http://127.0.0.1:38101';
+const authPagesPort = Number(
+  process.env.AUTH_PAGES_PORT ?? process.env.VITE_AUTH_PAGES_PORT ?? '3001'
+);
 
 export default defineConfig({
   base: '/',
@@ -15,10 +18,10 @@ export default defineConfig({
     },
   },
   preview: {
-    port: 3001,
+    port: authPagesPort,
   },
   server: {
-    port: 3001,
+    port: authPagesPort,
     proxy: {
       '/api': {
         changeOrigin: true,

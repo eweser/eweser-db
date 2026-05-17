@@ -13,6 +13,8 @@ tests, secret scanning, agent orchestration, and code-index validation.
 ## Start Here
 
 - [`run-e2e-smoke.mjs`](./run-e2e-smoke.mjs): Root smoke-test runner.
+- [`worktree-env.mjs`](./worktree-env.mjs): Generates ignored per-worktree
+  local ports and env files for EweserDB development and E2E smoke runs.
 - [`release.js`](./release.js): Package release helper.
 - [`code-index/check-code-index.mjs`](./code-index/check-code-index.mjs):
   Navigation index checker.
@@ -60,5 +62,7 @@ tests, secret scanning, agent orchestration, and code-index validation.
   Reports likely agent flailing patterns from new local sessions.
 - `npm run memory:diagnose -- --fixture scripts/memory/fixtures/passing-agent-journal.json`:
   Runs the deterministic memory diagnostic report against a fixture.
+- `node scripts/worktree-env.mjs setup --worktree . --shared-checkout .`:
+  Refreshes ignored local env files for the current checkout.
 - `npm run test:e2e`: Exercises the E2E smoke runner.
 - `bash scripts/ai-secrets/scan-secrets.sh`: Runs secret scanning when relevant.

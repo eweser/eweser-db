@@ -31,6 +31,7 @@ types
 .env.*
 !.env.example
 !**/example.env
+.worktree-ports
 .ai-secrets/
 .agent-secrets/
 .ai/

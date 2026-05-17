@@ -1,10 +1,22 @@
 import { setTimeout as delay } from 'node:timers/promises';
 import { spawn } from 'node:child_process';
 
-const exampleBaseUrl = process.env.CYPRESS_BASE_URL ?? 'http://127.0.0.1:38110';
+const authApiPort =
+  process.env.AUTH_API_HOST_PORT ?? process.env.AUTH_API_PORT ?? '38101';
+const exampleBasicPort = process.env.EXAMPLE_BASIC_PORT ?? '38110';
+const authPagesPort = process.env.AUTH_PAGES_PORT ?? '38111';
+const authServerUrl =
+  process.env.VITE_AUTH_SERVER_URL ??
+  process.env.AUTH_PUBLIC_URL ??
+  `http://127.0.0.1:${authApiPort}`;
+const exampleBaseUrl =
+  process.env.CYPRESS_BASE_URL ?? `http://127.0.0.1:${exampleBasicPort}`;
 const authPagesBaseUrl =
-  process.env.AUTH_PAGES_BASE_URL ?? 'http://127.0.0.1:38111';
-const authApiUrl = process.env.AUTH_API_URL ?? 'http://127.0.0.1:38101/auth';
+  process.env.AUTH_PAGES_BASE_URL ?? `http://127.0.0.1:${authPagesPort}`;
+const authApiUrl =
+  process.env.AUTH_API_URL ??
+  process.env.VITE_AUTH_API_URL ??
+  `${authServerUrl}/auth`;
 const specs = [
   'e2e/cypress/tests/basic-returning-user.cy.ts',
   'e2e/cypress/tests/auth-security-smoke.cy.ts',
@@ -83,7 +95,7 @@ async function main() {
           '--host',
           '127.0.0.1',
           '--port',
-          '38110',
+          exampleBasicPort,
           '--strictPort',
         ],
         {
@@ -91,7 +103,7 @@ async function main() {
             ...process.env,
             ELECTRON_RUN_AS_NODE: '',
             VITE_AUTH_API_URL: authApiUrl,
-            VITE_AUTH_SERVER_URL: 'http://127.0.0.1:38101',
+            VITE_AUTH_SERVER_URL: authServerUrl,
           },
         }
       )
@@ -111,7 +123,7 @@ async function main() {
           '--host',
           '127.0.0.1',
           '--port',
-          '38111',
+          authPagesPort,
           '--strictPort',
         ],
         {

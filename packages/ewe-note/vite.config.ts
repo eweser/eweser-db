@@ -4,6 +4,10 @@ import path from 'node:path';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
+const devPort = Number(process.env.EWE_NOTE_PORT ?? '5181');
+const authServerTarget =
+  process.env.VITE_AUTH_SERVER ?? 'http://localhost:38101';
+
 export default defineConfig({
   base: '/',
   plugins: [
@@ -39,15 +43,15 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5181,
+    port: devPort,
     strictPort: false,
     proxy: {
       '/api': {
-        target: 'http://localhost:38101',
+        target: authServerTarget,
         changeOrigin: true,
       },
       '/ping': {
-        target: 'http://localhost:38101',
+        target: authServerTarget,
         changeOrigin: true,
       },
     },

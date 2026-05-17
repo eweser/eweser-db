@@ -27,6 +27,26 @@ npm run dev --workspace @eweser/app
 npm run dev --workspace @eweser/ewe-note
 ```
 
+## Worktree Quick Start
+
+Jacob's shell has EweserDB-aware worktree helpers in `~/.zshrc`:
+
+```bash
+ewtnew my-feature              # create /home/jacob/code/eweser-db.worktrees/my-feature
+cd ../eweser-db.worktrees/my-feature
+ewenv                         # load and print this worktree's ports
+ewdocker                      # start backend services detached
+ewapp                         # start the auth/account app
+ewe2e                         # start backend services and run the smoke E2E suite
+```
+
+`ewtnew` delegates to the generic `wtnew` helper, then runs
+`scripts/worktree-env.mjs` to generate `.worktree-ports`, update the worktree's
+ignored `.env`, and write ignored Vite `.env.local` files for the example app,
+auth app, and Ewe Note. Each worktree gets a deterministic high-port block so
+Docker, Vite, and Cypress can run without colliding with the main checkout or
+other worktrees.
+
 ## Local URLs
 
 | App                   | URL                           |
