@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import type { DBInstance } from './client.js';
 import { indexedDocuments } from './schema.js';
 
@@ -33,7 +33,9 @@ export type SearchIndexedDocumentsParams = {
   offset?: number;
 };
 
-type SearchDB = Pick<DBInstance, 'select'>;
+type SearchDB = Pick<DBInstance, 'delete' | 'select'>;
+
+const publicAccessValues = ['read', 'write'] as const;
 
 export async function searchIndexedDocuments(
   db: SearchDB,
@@ -42,13 +44,20 @@ export async function searchIndexedDocuments(
   const limit = params.limit ?? 50;
   const offset = params.offset ?? 0;
   const searchPredicate = sql`to_tsvector('english', ${indexedDocuments.documentData}::text) @@ plainto_tsquery('english', ${params.query})`;
+  const publicPredicate = inArray(
+    indexedDocuments.publicAccess,
+    publicAccessValues
+  );
+  const notDeletedPredicate = sql`(${indexedDocuments.documentData}->>'_deleted')::boolean IS DISTINCT FROM true`;
 
   const whereClause = params.collectionKey
     ? and(
+        publicPredicate,
+        notDeletedPredicate,
         searchPredicate,
         eq(indexedDocuments.collectionKey, params.collectionKey)
       )
-    : searchPredicate;
+    : and(publicPredicate, notDeletedPredicate, searchPredicate);
 
   return await db
     .select({
@@ -82,9 +91,32 @@ export async function getDocumentsByRoom(db: SearchDB, roomId: string) {
       updatedAt: indexedDocuments.updatedAt,
     })
     .from(indexedDocuments)
-    .where(eq(indexedDocuments.roomId, roomId))
+    .where(
+      and(
+        eq(indexedDocuments.roomId, roomId),
+        inArray(indexedDocuments.publicAccess, publicAccessValues),
+        sql`(${indexedDocuments.documentData}->>'_deleted')::boolean IS DISTINCT FROM true`
+      )
+    )
     .orderBy(desc(indexedDocuments.updatedAt))
     .limit(200);
+}
+
+export async function deleteIndexedDocumentsByRoom(
+  db: SearchDB,
+  params: {
+    roomId: string;
+    collectionKey?: string | undefined;
+  }
+) {
+  const whereClause = params.collectionKey
+    ? and(
+        eq(indexedDocuments.roomId, params.roomId),
+        eq(indexedDocuments.collectionKey, params.collectionKey)
+      )
+    : eq(indexedDocuments.roomId, params.roomId);
+
+  await db.delete(indexedDocuments).where(whereClause);
 }
 
 /**

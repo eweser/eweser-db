@@ -7,6 +7,7 @@ const mockCreateAccessGrantId = vi.fn();
 const mockGetRoomsFromAccessGrant = vi.fn();
 const mockGetUserCount = vi.fn();
 const mockCreateNewUserRooms = vi.fn();
+const mockGetStorageProviderProfile = vi.fn();
 
 vi.mock('../env.js', () => ({
   env: {
@@ -38,6 +39,10 @@ vi.mock('../services/account/create-user-rooms.js', () => ({
   createNewUserRoomsAndAuthServerAccess: mockCreateNewUserRooms,
 }));
 
+vi.mock('../lib/storage.js', () => ({
+  getStorageProviderProfile: mockGetStorageProviderProfile,
+}));
+
 const { accountRouter } = await import('./account.js');
 
 describe('accountRouter', () => {
@@ -48,6 +53,13 @@ describe('accountRouter', () => {
     app.route('/api/account', accountRouter);
     vi.clearAllMocks();
     mockCreateAccessGrantId.mockReturnValue('user-1|auth.local');
+    mockGetStorageProviderProfile.mockReturnValue({
+      configured: true,
+      id: 'railway-buckets',
+      kind: 's3-compatible',
+      label: 'Railway Buckets',
+      maxFileSizeMb: 100,
+    });
   });
 
   it('should return 401 when no session exists', async () => {
@@ -90,6 +102,12 @@ describe('accountRouter', () => {
     expect(body.user.id).toBe('user-1');
     expect(body.profileRooms).toHaveLength(2);
     expect(body.rooms).toHaveLength(3);
+    expect(body.storageProviderProfile).toEqual(
+      expect.objectContaining({
+        configured: true,
+        id: 'railway-buckets',
+      })
+    );
     expect(body.userCount).toBe(7);
     expect(mockCreateNewUserRooms).not.toHaveBeenCalled();
   });

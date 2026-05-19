@@ -47,6 +47,7 @@ const server = Server.configure({
         roomId: string;
         userId?: string;
         collectionKey?: string;
+        publicAccess?: 'private' | 'read' | 'write';
       };
       return {
         user: {
@@ -56,6 +57,7 @@ const server = Server.configure({
         roomId: decoded.roomId,
         userId: decoded.userId,
         collectionKey: decoded.collectionKey,
+        publicAccess: decoded.publicAccess ?? 'private',
       };
     } catch {
       throw new Error('Invalid token');

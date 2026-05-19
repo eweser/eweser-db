@@ -33,6 +33,7 @@ describe('extractIndexableEvent', () => {
         documentName: 'd7ea7353-f1fb-4af5-bc9c-37cfd9d6195b',
         context: {
           collectionKey: 'notes',
+          publicAccess: 'read',
           userId: 'user-1',
         },
         documentData: { title: 'hello' },
@@ -43,8 +44,44 @@ describe('extractIndexableEvent', () => {
       roomId: 'd7ea7353-f1fb-4af5-bc9c-37cfd9d6195b',
       collectionKey: 'notes',
       userId: 'user-1',
+      publicAccess: 'read',
       documentData: { title: 'hello' },
+      shouldDelete: false,
     });
+  });
+
+  it('marks private or missing-publication events for de-indexing', () => {
+    expect(
+      extractIndexableEvent({
+        roomId: 'd7ea7353-f1fb-4af5-bc9c-37cfd9d6195b',
+        collectionKey: 'notes',
+        publicAccess: 'private',
+        documentData: { title: 'hello' },
+      })?.shouldDelete
+    ).toBe(true);
+
+    expect(
+      extractIndexableEvent({
+        roomId: 'd7ea7353-f1fb-4af5-bc9c-37cfd9d6195b',
+        collectionKey: 'notes',
+        documentData: { title: 'hello' },
+      })?.shouldDelete
+    ).toBe(true);
+  });
+
+  it('strips soft-deleted child documents before indexing', () => {
+    const event = extractIndexableEvent({
+      roomId: 'd7ea7353-f1fb-4af5-bc9c-37cfd9d6195b',
+      collectionKey: 'notes',
+      publicAccess: 'read',
+      documentData: {
+        kept: { title: 'Keep me' },
+        removed: { title: 'Remove me', _deleted: true },
+      },
+    });
+
+    expect(event?.documentData).toEqual({ kept: { title: 'Keep me' } });
+    expect(event?.shouldDelete).toBe(false);
   });
 
   it('returns null when required metadata is missing', () => {
@@ -60,10 +97,11 @@ describe('extractIndexableEvent', () => {
 
 describe('createWebhookHandler', () => {
   it('upserts document on webhook changes', async () => {
+    const remove = vi.fn().mockResolvedValue(undefined);
     const upsert = vi.fn().mockResolvedValue(undefined);
     const app = new Hono();
 
-    app.post('/webhooks/hocuspocus', createWebhookHandler({ upsert }));
+    app.post('/webhooks/hocuspocus', createWebhookHandler({ remove, upsert }));
 
     const response = await app.fetch(
       new Request('http://localhost/webhooks/hocuspocus', {
@@ -72,6 +110,7 @@ describe('createWebhookHandler', () => {
         body: JSON.stringify({
           roomId: '9f9b7fd2-10da-4c55-bd58-19e3e92465b3',
           collectionKey: 'notes',
+          publicAccess: 'read',
           userId: 'user-1',
           documentData: { title: 'Draft' },
         }),
@@ -84,16 +123,48 @@ describe('createWebhookHandler', () => {
       roomId: '9f9b7fd2-10da-4c55-bd58-19e3e92465b3',
       collectionKey: 'notes',
       userId: 'user-1',
+      publicAccess: 'read',
       documentData: { title: 'Draft' },
     });
+    expect(remove).not.toHaveBeenCalled();
+  });
+
+  it('de-indexes private webhook events instead of upserting them', async () => {
+    const remove = vi.fn().mockResolvedValue(undefined);
+    const upsert = vi.fn().mockResolvedValue(undefined);
+    const app = new Hono();
+
+    app.post('/webhooks/hocuspocus', createWebhookHandler({ remove, upsert }));
+
+    const response = await app.fetch(
+      new Request('http://localhost/webhooks/hocuspocus', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          roomId: '9f9b7fd2-10da-4c55-bd58-19e3e92465b3',
+          collectionKey: 'notes',
+          publicAccess: 'private',
+          documentData: { title: 'Draft' },
+        }),
+      })
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ status: 'deindexed' });
+    expect(remove).toHaveBeenCalledWith(
+      '9f9b7fd2-10da-4c55-bd58-19e3e92465b3',
+      'notes'
+    );
+    expect(upsert).not.toHaveBeenCalled();
   });
 
   it('returns 401 when secret is set and signature is missing', async () => {
+    const remove = vi.fn();
     const upsert = vi.fn();
     const app = new Hono();
     app.post(
       '/webhooks/hocuspocus',
-      createWebhookHandler({ upsert, secret: 'test-secret' })
+      createWebhookHandler({ remove, upsert, secret: 'test-secret' })
     );
 
     const response = await app.fetch(
@@ -109,14 +180,19 @@ describe('createWebhookHandler', () => {
   });
 
   it('accepts request with valid HMAC signature', async () => {
+    const remove = vi.fn().mockResolvedValue(undefined);
     const upsert = vi.fn().mockResolvedValue(undefined);
     const app = new Hono();
     const secret = 'test-secret';
-    app.post('/webhooks/hocuspocus', createWebhookHandler({ upsert, secret }));
+    app.post(
+      '/webhooks/hocuspocus',
+      createWebhookHandler({ remove, upsert, secret })
+    );
 
     const body = JSON.stringify({
       roomId: '9f9b7fd2-10da-4c55-bd58-19e3e92465b3',
       collectionKey: 'notes',
+      publicAccess: 'read',
       documentData: { title: 'Draft' },
     });
     const sig =

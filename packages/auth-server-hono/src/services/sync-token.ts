@@ -5,6 +5,7 @@ export interface SyncTokenPayload {
   roomId: string;
   userId?: string;
   collectionKey?: string;
+  publicAccess?: 'private' | 'read' | 'write';
 }
 
 const TOKEN_VALID_MINUTES = 60; // 1 hour
@@ -17,12 +18,14 @@ export function generateSyncToken(
   roomId: string,
   collectionKey?: string,
   userId?: string,
+  publicAccess?: 'private' | 'read' | 'write',
   validMinutes = TOKEN_VALID_MINUTES
 ): { token: string; expiry: Date } {
   const payload: SyncTokenPayload = {
     roomId,
     ...(collectionKey ? { collectionKey } : {}),
     ...(userId ? { userId } : {}),
+    ...(publicAccess ? { publicAccess } : {}),
   };
   const secret = env.SYNC_AUTH_SECRET ?? env.SERVER_SECRET;
   const token = jwt.sign(payload, secret, {

@@ -165,7 +165,7 @@ docker compose -f docker-compose.prod.yml up -d
 
 ---
 
-## Backups
+## Operator Backups
 
 DigitalOcean can take automated PostgreSQL backups if you use their managed database. For a Droplet, back up the Docker volumes:
 
@@ -201,6 +201,11 @@ Keep the latest drill note with:
 - Backup filename restored
 - `\dt` output confirmation
 - Any restore errors or timing anomalies
+
+These operator backups are separate from user snapshot backups. User snapshots
+are uploaded through the auth API to the configured object-storage provider and
+listed from the account app. Operator backups cover PostgreSQL and sync-server
+runtime state; user snapshots cover exported room data selected by the client.
 
 ## Alert Watch
 

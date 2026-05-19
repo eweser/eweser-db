@@ -6,6 +6,7 @@ export type IndexedDocumentInput = {
   roomId: string;
   collectionKey: string;
   userId?: string | undefined;
+  publicAccess: 'read' | 'write';
   documentData: unknown;
 };
 
@@ -21,12 +22,14 @@ export async function upsertIndexedDocument(
       roomId: input.roomId,
       collectionKey: input.collectionKey,
       userId: input.userId,
+      publicAccess: input.publicAccess,
       documentData: input.documentData,
     })
     .onConflictDoUpdate({
       target: [indexedDocuments.roomId, indexedDocuments.collectionKey],
       set: {
         userId: input.userId,
+        publicAccess: input.publicAccess,
         documentData: input.documentData,
         updatedAt: sql`now()`,
       },

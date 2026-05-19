@@ -1,5 +1,5 @@
 import { collectionKeys, type LoginQueryParams } from '@eweser/shared';
-import { Github, Moon, Sun } from 'lucide-react';
+import { Download, Github, Moon, Sun } from 'lucide-react';
 import { ThemeProvider, useTheme } from 'next-themes';
 import { useEffect, useState, type FormEvent } from 'react';
 import {
@@ -25,8 +25,11 @@ import {
 import {
   acceptInvite,
   getAccountBootstrap,
+  getBackupSnapshotDownloadUrl,
+  getBackupSnapshots,
   submitPermissions,
   type AccountBootstrapResponse,
+  type RemoteSnapshotRecord,
 } from './lib/api';
 import { authClient } from './lib/auth-client';
 import { appAbsoluteUrl, authApiUrl, signUpCaptchaEnabled } from './lib/config';
@@ -972,21 +975,208 @@ function AccountHomePage() {
           </Link>
         </div>
       </div>
-      {bootstrap.profileRooms.length >= 2 ? (
-        <ProfileEditor
-          email={bootstrap.user.email}
-          profileRooms={bootstrap.profileRooms}
-          userCount={bootstrap.userCount}
-        />
-      ) : (
-        <Card className="p-6">
-          <h2 className="text-2xl font-semibold">Account</h2>
-          <p className="mt-3 text-sm text-muted-foreground">
-            Signed in as {bootstrap.user.email}
-          </p>
-        </Card>
-      )}
+      <div className="grid gap-4">
+        {bootstrap.profileRooms.length >= 2 ? (
+          <ProfileEditor
+            email={bootstrap.user.email}
+            profileRooms={bootstrap.profileRooms}
+            userCount={bootstrap.userCount}
+          />
+        ) : (
+          <Card className="p-6">
+            <h2 className="text-2xl font-semibold">Account</h2>
+            <p className="mt-3 text-sm text-muted-foreground">
+              Signed in as {bootstrap.user.email}
+            </p>
+          </Card>
+        )}
+        <StorageProviderStatus profile={bootstrap.storageProviderProfile} />
+        <SnapshotBackupsStatus />
+      </div>
     </div>
+  );
+}
+
+function formatBytes(sizeBytes: number) {
+  if (sizeBytes < 1024) return `${sizeBytes} B`;
+  if (sizeBytes < 1024 * 1024) return `${Math.round(sizeBytes / 1024)} KB`;
+  return `${(sizeBytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function SnapshotBackupsStatus() {
+  const [snapshots, setSnapshots] = useState<RemoteSnapshotRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    void getBackupSnapshots()
+      .then((result) => {
+        if (active) {
+          setSnapshots(result.snapshots);
+          setError(null);
+        }
+      })
+      .catch((requestError: Error) => {
+        if (active) {
+          setError(requestError.message);
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  async function downloadSnapshot(snapshotId: string) {
+    setDownloadingId(snapshotId);
+    setError(null);
+    try {
+      const result = await getBackupSnapshotDownloadUrl(snapshotId);
+      window.location.href = result.url;
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'Unable to download snapshot.'
+      );
+    } finally {
+      setDownloadingId(null);
+    }
+  }
+
+  return (
+    <Card className="p-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-semibold">Database snapshots</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {loading
+              ? 'Loading snapshots...'
+              : `${snapshots.length} saved snapshot${
+                  snapshots.length === 1 ? '' : 's'
+                }`}
+          </p>
+        </div>
+        <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
+          User-owned
+        </span>
+      </div>
+      {error ? <p className="mt-4 text-sm text-destructive">{error}</p> : null}
+      {!loading && snapshots.length === 0 ? (
+        <p className="mt-5 text-sm text-muted-foreground">
+          No snapshots have been uploaded yet.
+        </p>
+      ) : null}
+      {snapshots.length > 0 ? (
+        <div className="mt-5 overflow-x-auto">
+          <table className="w-full min-w-[640px] text-left text-sm">
+            <thead className="border-b text-muted-foreground">
+              <tr>
+                <th className="py-2 pr-4 font-medium">Snapshot</th>
+                <th className="py-2 pr-4 font-medium">Rooms</th>
+                <th className="py-2 pr-4 font-medium">Documents</th>
+                <th className="py-2 pr-4 font-medium">Size</th>
+                <th className="py-2 pr-4 font-medium">Retention</th>
+                <th className="py-2 font-medium" />
+              </tr>
+            </thead>
+            <tbody>
+              {snapshots.map((snapshot) => (
+                <tr className="border-b last:border-0" key={snapshot.id}>
+                  <td className="py-3 pr-4">
+                    <div className="font-medium">{snapshot.filename}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {new Date(snapshot.createdAt).toLocaleString()}
+                    </div>
+                  </td>
+                  <td className="py-3 pr-4">{snapshot.roomCount}</td>
+                  <td className="py-3 pr-4">{snapshot.documentCount}</td>
+                  <td className="py-3 pr-4">
+                    {formatBytes(snapshot.sizeBytes)}
+                  </td>
+                  <td className="py-3 pr-4">
+                    {snapshot.retentionExpiresAt
+                      ? new Date(
+                          snapshot.retentionExpiresAt
+                        ).toLocaleDateString()
+                      : 'Manual'}
+                  </td>
+                  <td className="py-3 text-right">
+                    <Button
+                      aria-label={`Download ${snapshot.filename}`}
+                      className="gap-2"
+                      disabled={downloadingId === snapshot.id}
+                      tone="outline"
+                      type="button"
+                      onClick={() => void downloadSnapshot(snapshot.id)}
+                    >
+                      {downloadingId === snapshot.id ? (
+                        <InlineSpinner />
+                      ) : (
+                        <Download className="h-4 w-4" />
+                      )}
+                      Download
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+    </Card>
+  );
+}
+
+function StorageProviderStatus({
+  profile,
+}: {
+  profile: AccountBootstrapResponse['storageProviderProfile'];
+}) {
+  return (
+    <Card className="p-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-semibold">File storage</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {profile?.label ?? 'No storage profile'}
+          </p>
+        </div>
+        <span
+          className={
+            profile?.configured
+              ? 'rounded-full bg-emerald-950 px-3 py-1 text-xs font-medium text-emerald-200'
+              : 'rounded-full bg-amber-950 px-3 py-1 text-xs font-medium text-amber-200'
+          }
+        >
+          {profile?.configured ? 'Configured' : 'Not configured'}
+        </span>
+      </div>
+      {profile ? (
+        <dl className="mt-5 grid gap-3 text-sm md:grid-cols-3">
+          <div>
+            <dt className="text-muted-foreground">Profile</dt>
+            <dd className="mt-1 font-medium">{profile.id}</dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground">Provider</dt>
+            <dd className="mt-1 font-medium">{profile.kind}</dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground">Limit</dt>
+            <dd className="mt-1 font-medium">{profile.maxFileSizeMb} MB</dd>
+          </div>
+        </dl>
+      ) : null}
+    </Card>
   );
 }
 

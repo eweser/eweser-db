@@ -6,17 +6,18 @@ Server-side data indexing and search service for EweserDB.
 
 The aggregator provides public data access by:
 
-- **Listening to room changes** — Receives webhooks from the sync server when documents change
-- **Indexing data** — Stores searchable copies of public/shared documents
+- **Listening to room changes** — Receives signed webhooks from the sync server when documents change
+- **Indexing data** — Stores searchable copies only for explicitly public rooms
 - **Query API** — Allows apps to search public data without direct room access
 
 ## Use Case
 
 When users want to share data publicly (e.g., a blog post, public note, or shared flashcard deck):
 
-1. User invites the aggregator to their room
-2. Aggregator receives webhook notifications on changes
-3. Data is indexed in PostgreSQL
+1. User marks a room as public (`read` or `write`)
+2. Sync tokens carry that explicit publication state to the sync server
+3. Aggregator receives webhook notifications on changes and ignores or
+   de-indexes private rooms
 4. Apps can query the aggregator API to search public content
 
 ## Development
@@ -53,7 +54,8 @@ npm run dev:docker
 
 ## API
 
-- `POST /webhook` — Receives document change events from sync server
+- `POST /webhooks/hocuspocus` — Receives signed document change events from sync server
+- `GET /api/search?q=<query>` — Searches explicitly indexed public documents
 - `GET /health` — Health check
 
 ## Related

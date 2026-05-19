@@ -25,6 +25,7 @@ localStorage.setItem('agg-demo-room-b', roomBId);
 // ---------------------------------------------------------------------------
 type DocEntry = Record<string, string>;
 type DocsMap = Record<string, DocEntry>;
+type PublicAccess = 'private' | 'read';
 
 type ConnectionStatus = 'connecting' | 'connected' | 'error';
 
@@ -95,10 +96,12 @@ function BackendPanel({
   const [docs, setDocs] = useState<DocsMap>({});
   const [status, setStatus] = useState<ConnectionStatus>('connecting');
   const [newDoc, setNewDoc] = useState('');
+  const [publicAccess, setPublicAccess] = useState<PublicAccess>('private');
   const ydocRef = useRef<Y.Doc | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    let provider: HocuspocusProvider | null = null;
     const ydoc = new Y.Doc();
     ydocRef.current = ydoc;
 
@@ -119,13 +122,13 @@ function BackendPanel({
     const getToken = async (): Promise<string> => {
       if (devSyncSecret) {
         const secretBytes = new TextEncoder().encode(devSyncSecret);
-        return new SignJWT({ roomId, collectionKey })
+        return new SignJWT({ roomId, collectionKey, publicAccess })
           .setProtectedHeader({ alg: 'HS256' })
           .setExpirationTime('24h')
           .sign(secretBytes);
       }
       const r = await fetch(
-        `${AGGREGATOR_URL}/api/dev-token?room=${encodeURIComponent(roomId)}&collection=${encodeURIComponent(collectionKey)}`
+        `${AGGREGATOR_URL}/api/dev-token?room=${encodeURIComponent(roomId)}&collection=${encodeURIComponent(collectionKey)}&publicAccess=${encodeURIComponent(publicAccess)}`
       );
       const data = (await r.json()) as { token?: string; error?: string };
       if (!data.token || data.error) {
@@ -138,7 +141,7 @@ function BackendPanel({
       .then((token) => {
         if (cancelled) return;
 
-        const provider = new HocuspocusProvider({
+        provider = new HocuspocusProvider({
           url: syncUrl,
           name: roomId,
           document: ydoc,
@@ -146,6 +149,11 @@ function BackendPanel({
         });
 
         provider.on('authenticated', () => {
+          documentsMap.set('__publicationState', {
+            type: 'publication',
+            publicAccess,
+            updatedAt: new Date().toISOString(),
+          });
           if (!cancelled) setStatus('connected');
         });
         provider.on('close', () => {
@@ -161,10 +169,11 @@ function BackendPanel({
 
     return () => {
       cancelled = true;
+      provider?.destroy();
       ydoc.destroy();
       ydocRef.current = null;
     };
-  }, [roomId, collectionKey, syncUrl]);
+  }, [roomId, collectionKey, publicAccess, syncUrl]);
 
   const addDoc = useCallback(() => {
     const text = newDoc.trim();
@@ -250,6 +259,25 @@ function BackendPanel({
           {syncUrl.replace('ws://', '')}
         </span>
       </div>
+      <label
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          marginBottom: 12,
+          fontSize: '0.82em',
+          color: '#374151',
+        }}
+      >
+        <input
+          checked={publicAccess === 'read'}
+          onChange={(event) =>
+            setPublicAccess(event.target.checked ? 'read' : 'private')
+          }
+          type="checkbox"
+        />
+        Publish this room to aggregator search
+      </label>
 
       <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
         <input
@@ -303,26 +331,29 @@ function BackendPanel({
           fontSize: '0.87em',
         }}
       >
-        {Object.entries(docs).map(([id, doc]) => (
-          <li key={id} style={{ marginBottom: 5 }}>
-            {collectionKey === 'notes' ? (
-              <>
-                <strong>{doc['title']}</strong>
-                {doc['text'] ? (
-                  <span style={{ color: '#6b7280' }}> — {doc['text']}</span>
-                ) : null}
-              </>
-            ) : (
-              <>
-                <strong>{doc['front']}</strong>
-                {doc['back'] ? (
-                  <span style={{ color: '#6b7280' }}> → {doc['back']}</span>
-                ) : null}
-              </>
-            )}
-          </li>
-        ))}
-        {Object.keys(docs).length === 0 && (
+        {Object.entries(docs)
+          .filter(([id]) => !id.startsWith('__'))
+          .map(([id, doc]) => (
+            <li key={id} style={{ marginBottom: 5 }}>
+              {collectionKey === 'notes' ? (
+                <>
+                  <strong>{doc['title']}</strong>
+                  {doc['text'] ? (
+                    <span style={{ color: '#6b7280' }}> — {doc['text']}</span>
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  <strong>{doc['front']}</strong>
+                  {doc['back'] ? (
+                    <span style={{ color: '#6b7280' }}> → {doc['back']}</span>
+                  ) : null}
+                </>
+              )}
+            </li>
+          ))}
+        {Object.keys(docs).filter((id) => !id.startsWith('__')).length ===
+          0 && (
           <li style={{ listStyle: 'none', color: '#9ca3af' }}>
             No documents yet — click Seed or type above.
           </li>
@@ -497,9 +528,9 @@ export default function App() {
     >
       <h1 style={{ marginBottom: 4 }}>EweserDB Aggregator Demo</h1>
       <p style={{ color: '#6b7280', marginBottom: 24, fontSize: '0.9em' }}>
-        Two independent Hocuspocus sync backends. Click <strong>Seed</strong> on
-        each panel to populate them, then search across both via the
-        aggregator&#39;s full-text index.
+        Two independent Hocuspocus sync backends. Publish a room, click{' '}
+        <strong>Seed</strong>, then search via the aggregator&#39;s full-text
+        index. Private rooms are de-indexed.
       </p>
 
       <div

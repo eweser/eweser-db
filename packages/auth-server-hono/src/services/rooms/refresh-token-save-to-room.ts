@@ -14,7 +14,12 @@ export interface SyncConnectionInfo {
  * Tokens are generated on demand and are not stored in the DB.
  */
 export function getRefreshedSyncToken(room: Room): SyncConnectionInfo {
-  const { token, expiry } = generateSyncToken(room.id, room.collectionKey);
+  const { token, expiry } = generateSyncToken(
+    room.id,
+    room.collectionKey,
+    undefined,
+    room.publicAccess
+  );
   const syncBaseUrl = env.SYNC_SERVER_URL;
   const syncUrl = room.syncUrl ?? syncBaseUrl;
   return {

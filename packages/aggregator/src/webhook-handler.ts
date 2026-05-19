@@ -3,6 +3,7 @@ import type { Context } from 'hono';
 import type { IndexedDocumentInput } from './db/upsert.js';
 
 type WebhookHandlerDeps = {
+  remove: (roomId: string, collectionKey?: string | undefined) => Promise<void>;
   upsert: (input: IndexedDocumentInput) => Promise<void>;
   secret?: string | undefined;
 };
@@ -40,9 +41,32 @@ function readString(
   return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
 
+function isPublicAccess(
+  value: string | undefined
+): value is IndexedDocumentInput['publicAccess'] {
+  return value === 'read' || value === 'write';
+}
+
+function isDeletedDocument(value: unknown): boolean {
+  const record = asRecord(value);
+  return record?._deleted === true;
+}
+
+function withoutDeletedEntries(value: unknown): unknown {
+  const record = asRecord(value);
+  if (!record) return value;
+
+  const next: JsonRecord = {};
+  for (const [key, entry] of Object.entries(record)) {
+    if (isDeletedDocument(entry)) continue;
+    next[key] = entry;
+  }
+  return next;
+}
+
 export function extractIndexableEvent(
   payload: unknown
-): IndexedDocumentInput | null {
+): (IndexedDocumentInput & { shouldDelete: boolean }) | null {
   const root = asRecord(payload);
   const nestedPayload = asRecord(root?.payload);
   const context = asRecord(root?.context) ?? asRecord(nestedPayload?.context);
@@ -63,6 +87,11 @@ export function extractIndexableEvent(
     readString(context, 'userId') ??
     readString(nestedPayload, 'userId');
 
+  const publicAccess =
+    readString(root, 'publicAccess') ??
+    readString(context, 'publicAccess') ??
+    readString(nestedPayload, 'publicAccess');
+
   const documentData =
     root?.documentData ??
     nestedPayload?.documentData ??
@@ -74,11 +103,16 @@ export function extractIndexableEvent(
     return null;
   }
 
+  const shouldDelete =
+    !isPublicAccess(publicAccess) || isDeletedDocument(documentData);
+
   return {
     roomId,
     collectionKey,
     userId,
-    documentData,
+    publicAccess: isPublicAccess(publicAccess) ? publicAccess : 'read',
+    documentData: withoutDeletedEntries(documentData),
+    shouldDelete,
   };
 }
 
@@ -120,7 +154,18 @@ export function createWebhookHandler(deps: WebhookHandlerDeps) {
       );
     }
 
-    await deps.upsert(event);
+    if (event.shouldDelete) {
+      await deps.remove(event.roomId, event.collectionKey);
+      return c.json({ status: 'deindexed' }, 200);
+    }
+
+    await deps.upsert({
+      roomId: event.roomId,
+      collectionKey: event.collectionKey,
+      userId: event.userId,
+      publicAccess: event.publicAccess,
+      documentData: event.documentData,
+    });
     return c.json({ status: 'indexed' }, 200);
   };
 }

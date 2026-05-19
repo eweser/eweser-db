@@ -10,6 +10,7 @@ import { cors } from 'hono/cors';
 import { db } from './db/client.js';
 import { ensureIndexedDocumentsSchema } from './db/ensure-schema.js';
 import {
+  deleteIndexedDocumentsByRoom,
   agentSearchDocuments,
   getDocumentsByRoom,
   searchIndexedDocuments,
@@ -53,6 +54,12 @@ app.get('/ping', (c) => c.text('pong'));
 app.post(
   '/webhooks/hocuspocus',
   createWebhookHandler({
+    remove: async (roomId, collectionKey) => {
+      await deleteIndexedDocumentsByRoom(db, {
+        roomId,
+        ...(collectionKey !== undefined ? { collectionKey } : {}),
+      });
+    },
     upsert: async (input) => {
       await upsertIndexedDocument(db, input);
     },

@@ -8,6 +8,7 @@ import {
 import { getRoomsFromAccessGrant } from '../model/rooms/calls.js';
 import { getUserCount } from '../model/users.js';
 import { createNewUserRoomsAndAuthServerAccess } from '../services/account/create-user-rooms.js';
+import { getStorageProviderProfile } from '../lib/storage.js';
 
 export const accountRouter = new Hono();
 
@@ -41,6 +42,7 @@ accountRouter.get('/bootstrap', requireAuth, async (c) => {
     },
     rooms,
     profileRooms,
+    storageProviderProfile: getStorageProviderProfile(),
     userCount,
   });
 });

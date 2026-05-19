@@ -71,6 +71,20 @@ export async function syncRoomsWithClient(
       await insertRooms(inserts, userId, dbInstance);
     }
 
+    for (const clientRoom of clientRooms) {
+      const serverRoom = serverRooms.find((room) => room.id === clientRoom.id);
+      if (
+        serverRoom &&
+        serverRoom.publicAccess !== clientRoom.publicAccess &&
+        serverRoom.adminAccess.includes(userId)
+      ) {
+        await updateRoom(
+          { id: serverRoom.id, publicAccess: clientRoom.publicAccess },
+          dbInstance
+        );
+      }
+    }
+
     // Handle soft deletes from client
     const clientDeletedRoomIds = clientRooms
       .filter((r) => r._deleted)
