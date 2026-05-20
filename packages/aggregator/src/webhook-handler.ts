@@ -64,6 +64,26 @@ function withoutDeletedEntries(value: unknown): unknown {
   return next;
 }
 
+function readWebhookDocumentData(params: {
+  root: JsonRecord | undefined;
+  nestedPayload: JsonRecord | undefined;
+  payload: unknown;
+}): unknown {
+  const document =
+    params.root?.document ?? params.nestedPayload?.document ?? undefined;
+  const documentRecord = asRecord(document);
+
+  return (
+    params.root?.documentData ??
+    params.nestedPayload?.documentData ??
+    params.root?.state ??
+    params.nestedPayload?.state ??
+    documentRecord?.documents ??
+    document ??
+    params.payload
+  );
+}
+
 export function extractIndexableEvent(
   payload: unknown
 ): (IndexedDocumentInput & { shouldDelete: boolean }) | null {
@@ -92,12 +112,11 @@ export function extractIndexableEvent(
     readString(context, 'publicAccess') ??
     readString(nestedPayload, 'publicAccess');
 
-  const documentData =
-    root?.documentData ??
-    nestedPayload?.documentData ??
-    root?.state ??
-    nestedPayload?.state ??
-    payload;
+  const documentData = readWebhookDocumentData({
+    root,
+    nestedPayload,
+    payload,
+  });
 
   if (!roomId || !collectionKey) {
     return null;

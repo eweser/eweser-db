@@ -14,10 +14,10 @@
   },
   "dependencies": {
     "@hocuspocus/extension-sqlite": "^2.15.0",
-    "@hocuspocus/extension-webhook": "^2.15.0",
     "@eweser/logger": "*",
     "@hocuspocus/server": "^2.15.0",
-    "jsonwebtoken": "^9.0.3"
+    "jsonwebtoken": "^9.0.3",
+    "yjs": "^13.6.27"
   },
   "devDependencies": {
     "@eweser/eslint-config-ts": "^1.15.0",

@@ -50,6 +50,36 @@ describe('extractIndexableEvent', () => {
     });
   });
 
+  it('extracts EweserDB documents from Hocuspocus webhook document payloads', () => {
+    const event = extractIndexableEvent({
+      event: 'change',
+      payload: {
+        documentName: 'd7ea7353-f1fb-4af5-bc9c-37cfd9d6195b',
+        context: {
+          collectionKey: 'notes',
+          publicAccess: 'read',
+          userId: 'user-1',
+        },
+        document: {
+          documents: {
+            note1: { title: 'Searchable public content', type: 'note' },
+          },
+        },
+      },
+    });
+
+    expect(event).toEqual({
+      roomId: 'd7ea7353-f1fb-4af5-bc9c-37cfd9d6195b',
+      collectionKey: 'notes',
+      userId: 'user-1',
+      publicAccess: 'read',
+      documentData: {
+        note1: { title: 'Searchable public content', type: 'note' },
+      },
+      shouldDelete: false,
+    });
+  });
+
   it('marks private or missing-publication events for de-indexing', () => {
     expect(
       extractIndexableEvent({
