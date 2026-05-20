@@ -21,6 +21,8 @@ boundaries are precise enough for Planner or Coder to use.
 3. Read `docs/ai/adr/README.md` and only the ADRs directly related to the
    question.
 4. If there is an existing plan, read that plan and `docs/ai/plans/_template.md`.
+5. If the user asks for smoke-test prompts for this skill, read
+   `references/test-prompts.md`.
 
 ## Grilling Loop
 

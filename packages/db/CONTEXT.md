@@ -21,8 +21,13 @@ TODOs, and temporary design notes.
 - **Remote sync**: Optional Hocuspocus synchronization using a scoped sync token.
 - **Seed data**: First-run documents inserted idempotently by the SDK or app.
   Seed data is not a migration.
-- **Snapshot**: A portable backup bundle for selected rooms. A snapshot is not a
-  live sync replica.
+- **User snapshot**: A portable backup bundle for selected rooms. A user
+  snapshot is not a live sync replica, operator database backup, or federation
+  backup listener.
+- **Restore dry-run**: A restore preview that reports rooms, documents,
+  conflicts, and irreversible actions before CRDT writes happen.
+- **Compatibility migration**: A CRDT-safe change that moves local room data
+  from an older shared schema or SDK expectation to a newer one.
 
 ## Ambiguous Terms
 

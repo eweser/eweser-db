@@ -15,6 +15,14 @@ implementation steps, TODOs, and temporary design notes.
   aggregator after room updates.
 - **Publication context**: The public/private room state attached to update
   forwarding so the aggregator can enforce indexing boundaries.
+- **Federation relay**: A server-side relay connection that carries authorized
+  room updates between EweserDB auth servers.
+- **Origin server**: The server that owns the room's authoritative grants and
+  federation policy.
+- **Home server**: The server a federated user signs in through when accessing a
+  remote room.
+- **Backup-listener relay**: A read-only or standby federation relay used for
+  recovery, not collaboration.
 - **Usage event**: Metadata about a sync session such as duration or room ID.
   Usage events must not contain document content.
 
@@ -24,3 +32,5 @@ implementation steps, TODOs, and temporary design notes.
   user-visible backup behavior.
 - **Public update**: Use only when a room's explicit publication state permits
   indexing; synced updates are not public by default.
+- **Relay**: Clarify whether this means a normal sync relay, federation relay,
+  or backup-listener relay.

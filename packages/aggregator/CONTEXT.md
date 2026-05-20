@@ -11,8 +11,12 @@ implementation steps, TODOs, and temporary design notes.
   discovery.
 - **Webhook event**: A signed or trusted update received from the sync relay for
   possible indexing.
+- **Publication state**: The explicit room state that says whether room data may
+  be considered for indexing.
 - **Indexability**: The policy decision that determines whether a room or
   collection may be indexed.
+- **Indexable room**: A room whose publication state and policy checks allow
+  aggregator indexing.
 - **De-indexing**: Removing or hiding indexed rows when a room becomes private,
   a document is deleted, or publication state is missing.
 - **Public search**: Search over indexed public rows only. Public search must
@@ -25,3 +29,5 @@ implementation steps, TODOs, and temporary design notes.
   collaborators without being publicly indexed.
 - **Visible**: Clarify whether visibility is app-local, collaborator-readable,
   public-searchable, or MCP-readable.
+- **Permission gate**: Prefer `publication state` or `indexability` when
+  discussing public search. Use access-grant language only for auth decisions.

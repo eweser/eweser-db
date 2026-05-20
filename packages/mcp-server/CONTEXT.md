@@ -11,6 +11,8 @@ steps, TODOs, and temporary design notes.
 - **Readable room scope**: The set of rooms an agent may list, search, or read.
 - **Writable room scope**: The set of rooms an agent may create or update
   documents in.
+- **MCP-readable room**: A room included in an agent's readable room scope.
+  MCP-readable does not mean public-searchable.
 - **Default write room**: The room selected for ordinary agent writes such as
   saving session memory.
 - **Agent Journal**: The default Eweser-native memory strategy for session
@@ -28,3 +30,6 @@ steps, TODOs, and temporary design notes.
   content before changing schema or UX.
 - **Access**: Prefer `readable room scope` or `writable room scope` when
   discussing MCP permissions.
+- **Encrypted room access**: Clarify whether the agent receives plaintext from a
+  user-unlocked client workflow or no MCP access at all. Do not imply server-side
+  MCP can read client-held encrypted content.

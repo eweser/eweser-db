@@ -24,6 +24,12 @@ Every new plan must include:
 - Execution summary
 - Self-reflection / instruction improvements
 
+For terminology-heavy plans or runs, especially federation, encrypted rooms,
+public aggregation, MCP/agent access, backups, and compatibility policy, run
+`eweser-grill-with-docs` before implementation approval. It should resolve
+canonical terms into `CONTEXT.md` and the plan's Domain Language section without
+editing product code.
+
 Use `eweser-coder` for coding runs in plan metadata and examples.
 
 Planner creates implementation-ready plans and stops for approval. Coder treats
@@ -51,11 +57,11 @@ plan. Standalone QA is reserved for independent re-QA or audit work.
 
 ### AI Workflow / Tooling
 
-| Plan                                                                                         | Status         | Notes                                                                                                                                                              |
-| -------------------------------------------------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [2026-05-01-codebase-navigation-index.md](./2026-05-01-codebase-navigation-index.md)         | Implemented    | Added maintained folder indexes, selected source headers, validation, and CI for trunk-to-leaf codebase navigation.                                                |
-| [2026-04-29-large-coding-run-orchestrator.md](./2026-04-29-large-coding-run-orchestrator.md) | Implemented v1 | Supervised plan-run orchestrator scripts, metadata contract, dry-run validation, monitor, worker isolation, integration, stop/resume, and QA/review handoff exist. |
-| [2026-05-16-db-readme-todo-backlog.md](./2026-05-16-db-readme-todo-backlog.md)               | Active PR      | Runs 1-3 are implemented in PR #41; the plan now also seeds domain-language and `grill-with-docs` workflow guidance for future backlog runs.                       |
+| Plan                                                                                         | Status         | Notes                                                                                                                                                                                                 |
+| -------------------------------------------------------------------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [2026-05-01-codebase-navigation-index.md](./2026-05-01-codebase-navigation-index.md)         | Implemented    | Added maintained folder indexes, selected source headers, validation, and CI for trunk-to-leaf codebase navigation.                                                                                   |
+| [2026-04-29-large-coding-run-orchestrator.md](./2026-04-29-large-coding-run-orchestrator.md) | Implemented v1 | Supervised plan-run orchestrator scripts, metadata contract, dry-run validation, monitor, worker isolation, integration, stop/resume, and QA/review handoff exist.                                    |
+| [2026-05-16-db-readme-todo-backlog.md](./2026-05-16-db-readme-todo-backlog.md)               | Active PR      | Runs 1-3 are implemented in PR #41; runs 4-13 should pass through `eweser-grill-with-docs` before coding because they introduce federation, encrypted-room, compatibility, and agent-access language. |
 
 ### Design / Copy
 

@@ -17,8 +17,20 @@ implementation steps, TODOs, and temporary design notes.
   admin, read, and write rights.
 - **Sync token**: The short-lived token minted by the auth server for a specific
   sync connection scope.
+- **Grant satisfaction**: The server-side check that an existing access grant
+  covers a new app access request.
 - **Agent token**: A token for MCP or other AI agent access. Agent tokens must
   stay bounded by readable and writable room scopes.
+- **Server identity**: The auth server's stable federation identity, including
+  public verification material and service URLs.
+- **Peer server**: A remote EweserDB auth server registered for federation or
+  backup-listener flows.
+- **Federated principal**: A user or service identity that belongs to a peer
+  server and may appear in room ACL or relay authorization decisions.
+- **Federation request**: A signed server-to-server request with replay
+  protection and explicit peer trust checks.
+- **Backup listener**: A peer-server role authorized to receive selected room
+  updates for recovery, separate from collaborator grants.
 - **Operational mirror**: Auth-server PostgreSQL data that helps enforce auth or
   audit behavior but is not the canonical product data store.
 - **Provider profile**: Non-secret storage-provider metadata visible to users or
@@ -28,5 +40,7 @@ implementation steps, TODOs, and temporary design notes.
 
 - **Grant**: Clarify whether it is an app access grant, room ACL entry, OAuth
   authorization, or sync token claim.
+- **Identity**: Clarify whether it is a local user, app client, agent token,
+  server identity, peer server, or federated principal.
 - **User data**: Product/user configuration that must interoperate belongs in
   EweserDB rooms or shared schemas, not only in auth-server PostgreSQL.
