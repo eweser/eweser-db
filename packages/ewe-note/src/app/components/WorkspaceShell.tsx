@@ -28,6 +28,7 @@ import {
   getModeForMobilePane,
   getWorkspacePaneState,
   readStoredWorkspaceMode,
+  resolveWorkspaceModeHotkeySelection,
   shouldIgnoreWorkspaceHotkeyTarget,
   WORKSPACE_MODE_STORAGE_KEY,
   WORKSPACE_MODE_ARIA_LABELS,
@@ -287,21 +288,35 @@ export function WorkspaceShell({
     const onKeyDown = (event: KeyboardEvent) => {
       if (shouldIgnoreWorkspaceHotkeyTarget(event.target)) return;
 
-      const nextMode = getWorkspaceModeFromHotkey(event);
-      if (!nextMode) return;
+      const requestedMode = getWorkspaceModeFromHotkey(event);
+      if (!requestedMode) return;
       event.preventDefault();
-      setMode(nextMode);
+      setModeState((currentMode) => {
+        const nextMode = resolveWorkspaceModeHotkeySelection(
+          currentMode,
+          requestedMode
+        );
+
+        syncModeChrome(nextMode);
+
+        return nextMode;
+      });
     };
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
+  const syncModeChrome = (nextMode: WorkspaceMode) => {
+    const nextPaneState = getWorkspacePaneState(nextMode);
+    setDesktopSidebarCollapsed(!nextPaneState.sidebarVisible);
+    setDesktopNotesCollapsed(!nextPaneState.notesVisible);
+    setMobilePane(getMobilePaneForMode(nextMode));
+  };
+
   const setMode = (nextMode: WorkspaceMode) => {
     setModeState(nextMode);
-    setDesktopSidebarCollapsed(!getWorkspacePaneState(nextMode).sidebarVisible);
-    setDesktopNotesCollapsed(!getWorkspacePaneState(nextMode).notesVisible);
-    setMobilePane(getMobilePaneForMode(nextMode));
+    syncModeChrome(nextMode);
   };
 
   const setActiveView = (view: WorkspaceView) => {

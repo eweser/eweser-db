@@ -13,6 +13,15 @@ export default defineConfig((configEnv) => ({
     }) as any,
   ],
   build: {
+    ...(process.env.EWESER_EXAMPLES_COMPONENTS_BUILD_WATCH === 'true'
+      ? {
+          watch: {
+            chokidar: {
+              usePolling: true,
+            },
+          },
+        }
+      : {}),
     lib: {
       entry: resolve('src', 'components/index.ts'),
       name: 'ReactViteLibrary',
