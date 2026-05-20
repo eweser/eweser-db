@@ -766,6 +766,12 @@ smoke that returned the unique public note term, and a container-side bootstrap
 smoke proving `roomCount: 7`, `hasFileAttachments: true`, and grant coverage for
 all rooms. Disposable bootstrap smoke rows were cleaned up.
 
+Skill reflection follow-up, 2026-05-20: added self-reflection and
+skill-adjustment suggestions to `eweser-grill-with-docs`. A GitHub rerun exposed
+a pre-existing Ewe Note test cleanup issue where TipTap editors could leave a
+ProseMirror DOM observer alive after jsdom teardown; `task-item.test.ts` now
+destroys editors in `afterEach`.
+
 ## Self-Reflection / Instruction Improvements
 
 - The DB package README accumulated completed and obsolete TODOs because no current plan linked the checklist to implementation status. Keep README backlog items linked to current plan files, and remove items when they are completed or intentionally archived.
