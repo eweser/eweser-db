@@ -9,73 +9,119 @@ body,
 
 :root {
   color-scheme: dark;
-  font-family: 'Inter', 'Segoe UI', 'Helvetica Neue', sans-serif;
-  --background: hsl(222.2 84% 4.9%);
-  --foreground: hsl(210 40% 98%);
-  --card: hsl(222.2 84% 4.9%);
-  --card-foreground: hsl(210 40% 98%);
-  --popover: hsl(222.2 84% 4.9%);
-  --popover-foreground: hsl(210 40% 98%);
-  --primary: hsl(224.21 39.75% 46.86%);
-  --primary-foreground: hsl(223.93 41.18% 95%);
-  --secondary: hsl(21.75 34.78% 45.1%);
-  --secondary-foreground: hsl(22.3 84.96% 95%);
-  --muted: hsl(217.2 32.6% 17.5%);
-  --muted-foreground: hsl(215 20.2% 65.1%);
-  --accent: hsl(217.2 32.6% 17.5%);
-  --accent-foreground: hsl(210 40% 98%);
-  --destructive: hsl(0 62.8% 30.6%);
-  --destructive-foreground: hsl(210 40% 98%);
-  --border: hsl(217.2 32.6% 17.5%);
-  --input: hsl(217.2 32.6% 17.5%);
-  --ring: hsl(212.7 26.8% 83.9%);
-  --radius: 0.75rem;
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  --font-display: Georgia, 'Times New Roman', serif;
+  --background: oklch(0.145 0.024 176);
+  --foreground: oklch(0.955 0.012 96);
+  --card: oklch(0.18 0.023 174);
+  --card-foreground: oklch(0.955 0.012 96);
+  --popover: oklch(0.18 0.023 174);
+  --popover-foreground: oklch(0.955 0.012 96);
+  --primary: oklch(0.72 0.155 141);
+  --primary-foreground: oklch(0.14 0.026 176);
+  --secondary: oklch(0.69 0.09 78);
+  --secondary-foreground: oklch(0.14 0.026 176);
+  --muted: oklch(0.245 0.02 174);
+  --muted-foreground: oklch(0.74 0.019 105);
+  --accent: oklch(0.285 0.055 145);
+  --accent-foreground: oklch(0.955 0.012 96);
+  --destructive: oklch(0.62 0.19 29);
+  --destructive-foreground: oklch(0.96 0.012 80);
+  --border: oklch(0.315 0.023 170);
+  --input: oklch(0.255 0.02 170);
+  --ring: oklch(0.76 0.13 143);
+  --radius: 1rem;
+  --surface-raised: oklch(0.19 0.024 174 / 0.9);
+  --surface-sunken: oklch(0.115 0.021 176 / 0.96);
+  --surface-soft: oklch(0.22 0.025 145 / 0.48);
+  --surface-line: oklch(0.36 0.026 152 / 0.72);
+  --shadow-soft: 0 30px 80px oklch(0.07 0.018 175 / 0.55);
+  --shadow-small: 0 12px 34px oklch(0.07 0.018 175 / 0.32);
+  --code-bg: oklch(0.105 0.025 176);
+  --auth-panel: oklch(0.18 0.025 174 / 0.88);
+  --auth-visual-overlay: linear-gradient(
+    90deg,
+    oklch(0.14 0.025 176 / 0.16),
+    oklch(0.14 0.025 176 / 0.02)
+  );
 }
 
 .light {
   color-scheme: light;
-  --background: hsl(0 0% 100%);
-  --foreground: hsl(222.2 84% 4.9%);
-  --card: hsl(0 0% 100%);
-  --card-foreground: hsl(222.2 84% 4.9%);
-  --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(222.2 84% 4.9%);
-  --primary: hsl(224.21 39.75% 46.86%);
-  --primary-foreground: hsl(223.93 41.18% 95.67%);
-  --secondary: hsl(22.3 84.96% 73.92%);
-  --secondary-foreground: hsl(21.75 34.78% 100%);
-  --muted: hsl(210 40% 96.1%);
-  --muted-foreground: hsl(215.4 16.3% 46.9%);
-  --accent: hsl(210 40% 96.1%);
-  --accent-foreground: hsl(222.2 47.4% 11.2%);
-  --destructive: hsl(0 84.2% 60.2%);
-  --destructive-foreground: hsl(210 40% 98%);
-  --border: hsl(214.3 31.8% 91.4%);
-  --input: hsl(214.3 31.8% 91.4%);
-  --ring: hsl(222.2 84% 4.9%);
+  --background: oklch(0.982 0.014 106);
+  --foreground: oklch(0.205 0.031 176);
+  --card: oklch(0.995 0.008 106);
+  --card-foreground: oklch(0.205 0.031 176);
+  --popover: oklch(0.995 0.008 106);
+  --popover-foreground: oklch(0.205 0.031 176);
+  --primary: oklch(0.51 0.13 143);
+  --primary-foreground: oklch(0.985 0.012 105);
+  --secondary: oklch(0.83 0.084 79);
+  --secondary-foreground: oklch(0.225 0.034 176);
+  --muted: oklch(0.935 0.018 106);
+  --muted-foreground: oklch(0.48 0.026 174);
+  --accent: oklch(0.91 0.05 144);
+  --accent-foreground: oklch(0.205 0.031 176);
+  --destructive: oklch(0.57 0.19 29);
+  --destructive-foreground: oklch(0.985 0.012 105);
+  --border: oklch(0.84 0.018 108);
+  --input: oklch(0.84 0.018 108);
+  --ring: oklch(0.54 0.13 143);
+  --surface-raised: oklch(0.995 0.009 106 / 0.92);
+  --surface-sunken: oklch(0.945 0.022 105 / 0.95);
+  --surface-soft: oklch(0.94 0.041 143 / 0.62);
+  --surface-line: oklch(0.78 0.034 138 / 0.82);
+  --shadow-soft: 0 30px 80px oklch(0.61 0.055 116 / 0.2);
+  --shadow-small: 0 12px 34px oklch(0.61 0.055 116 / 0.16);
+  --code-bg: oklch(0.18 0.024 176);
+  --auth-panel: oklch(0.995 0.01 105 / 0.9);
+  --auth-visual-overlay: linear-gradient(
+    90deg,
+    oklch(0.995 0.01 105 / 0.05),
+    oklch(0.995 0.01 105 / 0.02)
+  );
 }
 
 .dark {
   color-scheme: dark;
-  --background: hsl(222.2 84% 4.9%);
-  --foreground: hsl(210 40% 98%);
-  --card: hsl(222.2 84% 4.9%);
-  --card-foreground: hsl(210 40% 98%);
-  --popover: hsl(222.2 84% 4.9%);
-  --popover-foreground: hsl(210 40% 98%);
-  --primary: hsl(224.21 39.75% 46.86%);
-  --primary-foreground: hsl(223.93 41.18% 95%);
-  --secondary: hsl(21.75 34.78% 45.1%);
-  --secondary-foreground: hsl(22.3 84.96% 95%);
-  --muted: hsl(217.2 32.6% 17.5%);
-  --muted-foreground: hsl(215 20.2% 65.1%);
-  --accent: hsl(217.2 32.6% 17.5%);
-  --accent-foreground: hsl(210 40% 98%);
-  --destructive: hsl(0 62.8% 30.6%);
-  --destructive-foreground: hsl(210 40% 98%);
-  --border: hsl(217.2 32.6% 17.5%);
-  --input: hsl(217.2 32.6% 17.5%);
-  --ring: hsl(212.7 26.8% 83.9%);
+  --background: oklch(0.145 0.024 176);
+  --foreground: oklch(0.955 0.012 96);
+  --card: oklch(0.18 0.023 174);
+  --card-foreground: oklch(0.955 0.012 96);
+  --popover: oklch(0.18 0.023 174);
+  --popover-foreground: oklch(0.955 0.012 96);
+  --primary: oklch(0.72 0.155 141);
+  --primary-foreground: oklch(0.14 0.026 176);
+  --secondary: oklch(0.69 0.09 78);
+  --secondary-foreground: oklch(0.14 0.026 176);
+  --muted: oklch(0.245 0.02 174);
+  --muted-foreground: oklch(0.74 0.019 105);
+  --accent: oklch(0.285 0.055 145);
+  --accent-foreground: oklch(0.955 0.012 96);
+  --destructive: oklch(0.62 0.19 29);
+  --destructive-foreground: oklch(0.96 0.012 80);
+  --border: oklch(0.315 0.023 170);
+  --input: oklch(0.255 0.02 170);
+  --ring: oklch(0.76 0.13 143);
+  --surface-raised: oklch(0.19 0.024 174 / 0.9);
+  --surface-sunken: oklch(0.115 0.021 176 / 0.96);
+  --surface-soft: oklch(0.22 0.025 145 / 0.48);
+  --surface-line: oklch(0.36 0.026 152 / 0.72);
+  --shadow-soft: 0 30px 80px oklch(0.07 0.018 175 / 0.55);
+  --shadow-small: 0 12px 34px oklch(0.07 0.018 175 / 0.32);
+  --code-bg: oklch(0.105 0.025 176);
+  --auth-panel: oklch(0.18 0.025 174 / 0.88);
+  --auth-visual-overlay: linear-gradient(
+    90deg,
+    oklch(0.14 0.025 176 / 0.16),
+    oklch(0.14 0.025 176 / 0.02)
+  );
 }
 
 @theme inline {
@@ -100,7 +146,7 @@ body,
   --color-ring: var(--ring);
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
-  --radius-sm: calc(var(--radius) - 4px);
+  --radius-sm: calc(var(--radius) - 5px);
 }
 
 @layer base {
@@ -111,56 +157,721 @@ body,
   html {
     background:
       radial-gradient(
-        circle at top,
-        rgba(255, 255, 255, 0.08),
-        transparent 38%
-      ),
-      linear-gradient(180deg, #050505 0%, #070707 100%);
-  }
-
-  html.light {
-    background:
-      radial-gradient(
-        circle at top left,
-        rgb(255 255 255 / 0.95),
-        transparent 36%
+        circle at 16% 8%,
+        oklch(0.42 0.06 144 / 0.22),
+        transparent 34%
       ),
       radial-gradient(
-        circle at bottom right,
-        rgb(226 232 240 / 0.88),
-        transparent 30%
+        circle at 86% 0%,
+        oklch(0.45 0.05 210 / 0.16),
+        transparent 34%
       ),
-      linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+      var(--background);
   }
 
   body {
     @apply bg-background text-foreground;
-    background-image:
-      radial-gradient(circle at top, rgba(255, 255, 255, 0.1), transparent 36%),
+    background:
       radial-gradient(
-        circle at 84% 82%,
-        rgba(74, 222, 128, 0.12),
+        circle at 8% 0%,
+        oklch(0.52 0.07 145 / 0.12),
         transparent 28%
       ),
-      linear-gradient(180deg, #050505 0%, #070707 100%);
+      radial-gradient(
+        circle at 96% 14%,
+        oklch(0.72 0.08 85 / 0.08),
+        transparent 28%
+      ),
+      linear-gradient(180deg, var(--background), var(--surface-sunken));
     overflow-x: hidden;
   }
 
   .light body {
-    background-image:
+    background:
       radial-gradient(
-        circle at top left,
-        rgb(255 255 255 / 0.85),
-        transparent 35%
+        circle at 8% 0%,
+        oklch(0.91 0.07 138 / 0.56),
+        transparent 32%
       ),
       radial-gradient(
-        circle at bottom right,
-        rgb(226 232 240 / 0.75),
-        transparent 30%
-      );
+        circle at 96% 14%,
+        oklch(0.94 0.06 78 / 0.5),
+        transparent 28%
+      ),
+      linear-gradient(180deg, var(--background), oklch(0.955 0.024 118));
   }
 
   a {
     @apply text-primary;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+  }
+}
+
+@layer components {
+  .brand-wordmark,
+  .auth-story h1,
+  .mcp-hero-title,
+  .mcp-panel-title {
+    font-family: var(--font-display);
+    letter-spacing: -0.04em;
+  }
+
+  .auth-page {
+    position: relative;
+    isolation: isolate;
+    min-height: calc(100svh - 5rem);
+    overflow: hidden;
+    background:
+      radial-gradient(
+        circle at 12% 14%,
+        oklch(0.75 0.11 142 / 0.14),
+        transparent 28%
+      ),
+      radial-gradient(
+        circle at 86% 76%,
+        oklch(0.78 0.08 84 / 0.15),
+        transparent 30%
+      ),
+      linear-gradient(135deg, var(--background), var(--surface-sunken));
+  }
+
+  .auth-page::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image: radial-gradient(
+      var(--surface-line) 0.8px,
+      transparent 0.8px
+    );
+    background-size: 22px 22px;
+    mask-image: linear-gradient(180deg, oklch(0 0 0), transparent 72%);
+    opacity: 0.24;
+  }
+
+  .auth-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(24rem, 0.7fr);
+    gap: clamp(2rem, 5vw, 5rem);
+    width: min(1180px, calc(100% - 2rem));
+    margin: 0 auto;
+    padding: clamp(2.5rem, 6vw, 5rem) 0;
+    align-items: center;
+  }
+
+  .auth-story {
+    min-width: 0;
+  }
+
+  .auth-kicker,
+  .mcp-eyebrow {
+    margin: 0;
+    color: var(--primary);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .auth-story h1 {
+    max-width: 11ch;
+    margin: 0.7rem 0 0;
+    color: var(--foreground);
+    font-size: clamp(3.2rem, 7vw, 6.6rem);
+    line-height: 0.85;
+  }
+
+  .auth-story-copy {
+    max-width: 42rem;
+    margin-top: 1.35rem;
+    color: var(--muted-foreground);
+    font-size: 1.05rem;
+    line-height: 1.75;
+  }
+
+  .auth-visual-card {
+    position: relative;
+    min-height: clamp(19rem, 38vw, 30rem);
+    margin-top: clamp(1.75rem, 4vw, 3rem);
+    overflow: hidden;
+    border: 1px solid var(--surface-line);
+    border-radius: 2rem;
+    background: var(--surface-raised);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .auth-visual {
+    position: absolute;
+    inset: 0;
+    background-position: center bottom;
+    background-repeat: no-repeat;
+    background-size: cover;
+    transform: scale(1.01);
+  }
+
+  .auth-visual-card::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0;
+    height: 42%;
+    background: linear-gradient(0deg, var(--background), transparent);
+  }
+
+  .auth-orbit-note {
+    position: absolute;
+    right: 1rem;
+    bottom: 1rem;
+    z-index: 1;
+    width: min(22rem, calc(100% - 2rem));
+    border: 1px solid var(--surface-line);
+    border-radius: 1.1rem;
+    background: var(--auth-panel);
+    padding: 1rem;
+    box-shadow: var(--shadow-small);
+    backdrop-filter: blur(10px);
+  }
+
+  .auth-orbit-note strong,
+  .auth-orbit-note span {
+    display: block;
+  }
+
+  .auth-orbit-note strong {
+    color: var(--foreground);
+    font-size: 0.92rem;
+  }
+
+  .auth-orbit-note span {
+    margin-top: 0.35rem;
+    color: var(--muted-foreground);
+    font-size: 0.78rem;
+    line-height: 1.45;
+  }
+
+  .auth-proof-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.8rem;
+    margin-top: 1rem;
+  }
+
+  .auth-proof-item {
+    border: 1px solid var(--surface-line);
+    border-radius: 1rem;
+    background: var(--surface-raised);
+    padding: 0.9rem;
+    color: var(--muted-foreground);
+    font-size: 0.78rem;
+    line-height: 1.45;
+  }
+
+  .auth-proof-index {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--primary);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+  }
+
+  .auth-panel {
+    border: 1px solid var(--surface-line);
+    border-radius: 1.6rem;
+    background: var(--auth-panel);
+    padding: clamp(1.25rem, 3vw, 2rem);
+    box-shadow: var(--shadow-soft);
+    backdrop-filter: blur(18px);
+  }
+
+  .auth-panel-title {
+    margin: 0;
+    color: var(--foreground);
+    font-size: 1.35rem;
+    font-weight: 760;
+    letter-spacing: -0.025em;
+  }
+
+  .auth-panel-copy {
+    margin: 0.55rem 0 1.5rem;
+    color: var(--muted-foreground);
+    font-size: 0.92rem;
+    line-height: 1.55;
+  }
+
+  .app-console {
+    display: grid;
+    grid-template-columns: 17rem minmax(0, 1fr);
+    min-height: calc(100svh - 5rem);
+    background:
+      radial-gradient(
+        circle at 82% 12%,
+        oklch(0.58 0.06 143 / 0.12),
+        transparent 28%
+      ),
+      linear-gradient(180deg, var(--background), var(--surface-sunken));
+  }
+
+  .app-sidebar {
+    position: sticky;
+    top: 5rem;
+    height: calc(100svh - 5rem);
+    border-right: 1px solid var(--surface-line);
+    background: oklch(from var(--surface-raised) l c h / 0.78);
+    padding: 1.25rem;
+    backdrop-filter: blur(16px);
+  }
+
+  .app-sidebar-card {
+    margin-top: auto;
+    border: 1px solid var(--surface-line);
+    border-radius: 1.2rem;
+    background: var(--surface-soft);
+    padding: 1rem;
+  }
+
+  .app-sidebar-title {
+    color: var(--foreground);
+    font-size: 0.92rem;
+    font-weight: 700;
+  }
+
+  .app-sidebar-copy {
+    margin-top: 0.4rem;
+    color: var(--muted-foreground);
+    font-size: 0.78rem;
+    line-height: 1.45;
+  }
+
+  .app-nav {
+    display: grid;
+    gap: 0.35rem;
+    margin-top: 1.5rem;
+  }
+
+  .app-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-radius: 0.9rem;
+    padding: 0.75rem 0.85rem;
+    color: var(--muted-foreground);
+    text-decoration: none;
+    transition:
+      background-color 180ms ease-out,
+      color 180ms ease-out,
+      transform 180ms ease-out;
+  }
+
+  .app-nav-link:hover,
+  .app-nav-link[data-active='true'] {
+    background: var(--accent);
+    color: var(--foreground);
+    transform: translateY(-1px);
+  }
+
+  .mcp-page {
+    min-width: 0;
+    padding: clamp(1rem, 3vw, 2rem);
+  }
+
+  .mcp-page-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(19rem, 0.45fr);
+    gap: 1rem;
+    align-items: stretch;
+    margin-bottom: 1rem;
+  }
+
+  .mcp-page-title {
+    margin: 0.35rem 0 0;
+    color: var(--foreground);
+    font-size: 2rem;
+    font-weight: 780;
+    letter-spacing: -0.045em;
+  }
+
+  .mcp-page-copy {
+    max-width: 54rem;
+    margin: 0.55rem 0 0;
+    color: var(--muted-foreground);
+    font-size: 0.95rem;
+    line-height: 1.55;
+  }
+
+  .mcp-endpoint-panel,
+  .mcp-panel,
+  .mcp-client-card {
+    border: 1px solid var(--surface-line);
+    background: var(--surface-raised);
+    box-shadow: var(--shadow-small);
+  }
+
+  .mcp-endpoint-panel {
+    border-radius: 1.15rem;
+    padding: 1rem;
+  }
+
+  .mcp-code-line {
+    margin-top: 1rem;
+    overflow-wrap: anywhere;
+    border-radius: 0.9rem;
+    background: var(--code-bg);
+    padding: 0.85rem;
+    color: oklch(0.92 0.025 142);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    line-height: 1.5;
+  }
+
+  .mcp-meta-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+    margin-top: 1rem;
+    font-size: 0.82rem;
+  }
+
+  .mcp-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.85rem;
+    margin: 1rem 0;
+  }
+
+  .mcp-summary-card {
+    border: 1px solid var(--surface-line);
+    border-radius: 1.15rem;
+    background: var(--surface-raised);
+    padding: 1rem;
+  }
+
+  .mcp-summary-label {
+    color: var(--muted-foreground);
+    font-size: 0.76rem;
+  }
+
+  .mcp-summary-value {
+    margin-top: 0.35rem;
+    color: var(--foreground);
+    font-size: 1.8rem;
+    font-weight: 760;
+    letter-spacing: -0.04em;
+  }
+
+  .mcp-layout-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(20rem, 0.65fr);
+    gap: 1rem;
+    align-items: start;
+  }
+
+  .mcp-panel,
+  .mcp-client-card {
+    border-radius: 1.35rem;
+    padding: 1.15rem;
+  }
+
+  .mcp-panel-header,
+  .mcp-row-header,
+  .mcp-client-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .mcp-panel-title {
+    margin: 0;
+    color: var(--foreground);
+    font-size: 1.45rem;
+    line-height: 1;
+  }
+
+  .mcp-panel-copy {
+    max-width: 52rem;
+    margin: 0.5rem 0 0;
+    color: var(--muted-foreground);
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+
+  .mcp-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    border: 1px solid var(--surface-line);
+    border-radius: 999px;
+    background: var(--surface-soft);
+    padding: 0.35rem 0.65rem;
+    color: var(--muted-foreground);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .mcp-primer-grid,
+  .mcp-field-grid,
+  .mcp-room-grid,
+  .mcp-client-grid {
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  .mcp-primer-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 1rem 0;
+    border-block: 1px solid var(--surface-line);
+    padding-block: 1rem;
+  }
+
+  .mcp-primer-item,
+  .mcp-room-card,
+  .mcp-writable-room {
+    border: 1px solid var(--surface-line);
+    border-radius: 1rem;
+    background: oklch(from var(--surface-soft) l c h / 0.5);
+    padding: 0.9rem;
+  }
+
+  .mcp-primer-item strong,
+  .mcp-room-title,
+  .mcp-client-title {
+    color: var(--foreground);
+    font-weight: 750;
+  }
+
+  .mcp-primer-item p,
+  .mcp-room-meta,
+  .mcp-client-copy,
+  .mcp-client-muted {
+    color: var(--muted-foreground);
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+
+  .mcp-field-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .mcp-field span {
+    display: block;
+    color: var(--foreground);
+    font-size: 0.84rem;
+    font-weight: 700;
+  }
+
+  .mcp-field select {
+    width: 100%;
+    margin-top: 0.5rem;
+    border: 1px solid var(--input);
+    border-radius: 0.8rem;
+    background: var(--background);
+    padding: 0.72rem 0.8rem;
+    color: var(--foreground);
+  }
+
+  .mcp-field small {
+    display: block;
+    margin-top: 0.45rem;
+    color: var(--muted-foreground);
+    font-size: 0.74rem;
+    line-height: 1.45;
+  }
+
+  .mcp-room-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 1rem;
+  }
+
+  .mcp-room-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 0.85rem;
+    color: var(--muted-foreground);
+    font-size: 0.78rem;
+  }
+
+  .mcp-checkbox {
+    accent-color: var(--primary);
+  }
+
+  .mcp-writable-list {
+    display: grid;
+    gap: 0.7rem;
+    margin-top: 1rem;
+  }
+
+  .mcp-writable-room {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .mcp-clients-section {
+    margin-top: 1rem;
+  }
+
+  .mcp-client-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 1rem;
+  }
+
+  .mcp-client-card {
+    display: flex;
+    min-height: 100%;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .mcp-client-icon,
+  .mcp-summary-icon,
+  .app-nav-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.85rem;
+    background: var(--accent);
+    color: var(--primary);
+  }
+
+  .mcp-client-icon,
+  .mcp-summary-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .app-nav-icon {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .mcp-status-table {
+    display: grid;
+    gap: 0.45rem;
+    border: 1px solid var(--surface-line);
+    border-radius: 1rem;
+    background: oklch(from var(--surface-soft) l c h / 0.5);
+    padding: 0.8rem;
+  }
+
+  .mcp-status-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    color: var(--muted-foreground);
+    font-size: 0.78rem;
+  }
+
+  .mcp-status-row strong {
+    color: var(--foreground);
+    font-weight: 650;
+    text-align: right;
+  }
+
+  .mcp-oauth-box,
+  .mcp-setup-box,
+  .mcp-project-note {
+    border: 1px solid var(--surface-line);
+    border-radius: 1rem;
+    background: oklch(from var(--background) l c h / 0.5);
+    padding: 0.9rem;
+  }
+
+  .mcp-step-list {
+    margin: 0.85rem 0 0;
+    padding-left: 1.25rem;
+    color: var(--muted-foreground);
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+
+  .mcp-setup-code {
+    max-height: 18rem;
+    overflow: auto;
+    border-radius: 0.9rem;
+    background: var(--code-bg);
+    padding: 0.9rem;
+    color: oklch(0.92 0.025 142);
+    font-size: 0.75rem;
+    line-height: 1.5;
+  }
+
+  .mcp-client-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+    margin-top: auto;
+  }
+
+  @media (max-width: 1100px) {
+    .auth-grid,
+    .mcp-page-header,
+    .mcp-layout-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .mcp-summary-grid,
+    .mcp-client-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .mcp-field-grid,
+    .mcp-room-grid,
+    .mcp-primer-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 860px) {
+    .app-console {
+      grid-template-columns: 1fr;
+    }
+
+    .app-sidebar {
+      position: relative;
+      top: 0;
+      height: auto;
+      border-right: 0;
+      border-bottom: 1px solid var(--surface-line);
+    }
+
+    .app-sidebar-card {
+      display: none;
+    }
+
+    .app-nav {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .auth-proof-list,
+    .mcp-summary-grid,
+    .mcp-client-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 620px) {
+    .auth-grid,
+    .mcp-page {
+      width: auto;
+      padding-inline: 1rem;
+    }
+
+    .auth-story h1,
+    .mcp-hero-title {
+      font-size: 3rem;
+    }
+
+    .app-nav {
+      grid-template-columns: 1fr;
+    }
   }
 }

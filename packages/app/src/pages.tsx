@@ -2,6 +2,8 @@ import { collectionKeys, type LoginQueryParams } from '@eweser/shared';
 import { Github, Moon, Sun } from 'lucide-react';
 import { ThemeProvider, useTheme } from 'next-themes';
 import { useEffect, useState, type FormEvent } from 'react';
+import heroPastureImage from './assets/hero-orbit-house.png';
+import loginDarkImage from './assets/login-dark.png';
 import {
   Link,
   Navigate,
@@ -12,7 +14,10 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 import { ProfileEditor } from './components/profile-editor';
-import { ConnectAiPage } from './components/connect-ai-page';
+import {
+  ConnectAiPage,
+  connectAiPreviewOverview,
+} from './components/connect-ai-page';
 import { TurnstileCaptcha } from './components/turnstile';
 import {
   Button,
@@ -57,13 +62,13 @@ const passwordResetRequestedMessage =
 const authRequestTimeoutMs = 15_000;
 
 const authFieldClass =
-  '!h-12 !rounded-xl !border-border !bg-background/80 !px-4 !text-base !text-foreground placeholder:text-muted-foreground shadow-[0_1px_0_rgba(15,23,42,0.03)] focus-visible:ring-emerald-400/40';
+  '!h-12 !rounded-xl !border-input !bg-background/75 !px-4 !text-base !text-foreground placeholder:text-muted-foreground shadow-none focus-visible:ring-2 focus-visible:ring-ring/45';
 
 const authPrimaryButtonClass =
-  '!h-12 !w-full !rounded-xl !bg-primary !px-6 !text-sm !font-semibold !text-primary-foreground shadow-[0_24px_48px_rgba(15,23,42,0.12)] transition-transform hover:-translate-y-0.5 hover:opacity-95';
+  '!h-12 !w-full !rounded-xl !bg-primary !px-6 !text-sm !font-semibold !text-primary-foreground shadow-[0_20px_48px_oklch(0.1_0.025_175_/_0.2)] transition-transform hover:-translate-y-0.5 hover:opacity-95';
 
 const authOutlineButtonClass =
-  '!h-12 !rounded-xl !border-border !bg-background/70 !text-foreground transition-colors hover:bg-accent';
+  '!h-12 !rounded-xl !border-input !bg-background/55 !text-foreground transition-colors hover:bg-accent';
 
 const authLabelClass = 'text-foreground/90';
 
@@ -246,88 +251,79 @@ function AuthLayout({
   const isDark = resolvedTheme !== 'light';
 
   return (
-    <div className="relative isolate min-h-[calc(100svh-5rem)] overflow-hidden bg-background text-foreground">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background: isDark
-            ? 'radial-gradient(circle at top, rgba(255,255,255,0.11), transparent 34%), radial-gradient(circle at 85% 78%, rgba(74,222,128,0.16), transparent 26%), radial-gradient(circle at 18% 86%, rgba(255,255,255,0.06), transparent 20%)'
-            : 'radial-gradient(circle at top, rgba(255,255,255,0.95), transparent 32%), radial-gradient(circle at 85% 78%, rgba(74,222,128,0.12), transparent 24%), radial-gradient(circle at 18% 86%, rgba(148,163,184,0.14), transparent 20%)',
-        }}
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 h-[420px]"
-        style={{
-          background: isDark
-            ? 'linear-gradient(180deg, rgba(74,222,128,0.08) 0%, rgba(5,5,5,0) 72%)'
-            : 'linear-gradient(180deg, rgba(74,222,128,0.06) 0%, rgba(255,255,255,0) 72%)',
-        }}
-      />
+    <main className="auth-page text-foreground">
+      <div className="auth-grid">
+        <section className="auth-story" aria-labelledby="auth-title">
+          <p className="auth-kicker">{eyebrow}</p>
+          <h1 id="auth-title">{title}</h1>
+          <p className="auth-story-copy">{description}</p>
 
-      <main className="mx-auto grid w-full max-w-7xl gap-12 px-6 py-10 lg:min-h-[calc(100svh-5rem)] lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:py-16">
-        <section className="relative max-w-2xl">
-          <p className="mb-5 text-sm font-medium uppercase tracking-[0.32em] text-muted-foreground">
-            {eyebrow}
-          </p>
-          <h1 className="max-w-xl text-4xl font-bold tracking-tight leading-[1.02] text-foreground sm:text-6xl lg:text-7xl">
-            {title}
-          </h1>
-          <p className="mt-6 max-w-xl text-lg leading-8 text-muted-foreground sm:text-xl">
-            {description}
-          </p>
-
-          <ul className="mt-8 space-y-4">
-            {bullets.map((bullet) => (
-              <li
-                key={bullet}
-                className="flex gap-4 text-sm leading-7 text-muted-foreground sm:text-base"
-              >
-                <span className="mt-3 h-2 w-2 shrink-0 rounded-full bg-emerald-400" />
-                <span>{bullet}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section className="relative">
-          <div
-            aria-hidden="true"
-            className="absolute -left-10 top-10 h-28 w-28 rounded-full bg-emerald-400/18 blur-3xl float-slow"
-          />
-          <div
-            aria-hidden="true"
-            className="absolute -right-4 bottom-12 h-32 w-32 rounded-full bg-foreground/10 blur-3xl float-fast"
-          />
-
-          <div className="relative overflow-hidden rounded-[1.75rem] border border-border bg-card/95 shadow-2xl shadow-black/10">
-            <div className="flex items-center gap-2 border-b border-border bg-muted/60 px-4 py-3">
-              <span className="h-3 w-3 rounded-full bg-foreground/20" />
-              <span className="h-3 w-3 rounded-full bg-foreground/20" />
-              <span className="h-3 w-3 rounded-full bg-foreground/20" />
-            </div>
-
-            <div className="p-6 sm:p-8">
-              <div className="mb-8">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground">
-                  {eyebrow}
-                </p>
-                <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
-                  {panelTitle}
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  {panelDescription}
-                </p>
-              </div>
-
-              {children}
+          <div className="auth-visual-card">
+            <div
+              aria-label="Pastoral EweserDB data homestead illustration"
+              className="auth-visual"
+              role="img"
+              style={{
+                backgroundImage: `var(--auth-visual-overlay), url(${isDark ? loginDarkImage : heroPastureImage})`,
+              }}
+            />
+            <div className="auth-orbit-note">
+              <strong>
+                {isDark
+                  ? 'Private access in a quiet workspace.'
+                  : 'Your data layer follows you in daylight.'}
+              </strong>
+              <span>
+                Apps and AI agents connect through scoped grants. You can revoke
+                access without moving your work.
+              </span>
             </div>
           </div>
+
+          <div className="auth-proof-list" aria-label="Authentication benefits">
+            {bullets.map((bullet, index) => (
+              <p key={bullet} className="auth-proof-item">
+                <span className="auth-proof-index">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
+                {bullet}
+              </p>
+            ))}
+          </div>
         </section>
-      </main>
-    </div>
+
+        <aside className="auth-panel" aria-label={panelTitle}>
+          <div className="mb-6">
+            <p className="auth-kicker">Eweser account</p>
+            <h2 className="auth-panel-title">{panelTitle}</h2>
+            <p className="auth-panel-copy">{panelDescription}</p>
+          </div>
+          {children}
+        </aside>
+      </div>
+    </main>
   );
+}
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const session = authClient.useSession();
+  const location = useLocation();
+
+  if (session.isPending) {
+    return <LoadingPanel message="Checking your session..." title="Loading" />;
+  }
+
+  if (!session.data?.user) {
+    const redirectPath = `${location.pathname}${location.search}`;
+    return (
+      <Navigate
+        replace
+        to={`/sign-in?redirect=${encodeURIComponent(redirectPath)}`}
+      />
+    );
+  }
+
+  return <>{children}</>;
 }
 
 function usePersistedLoginQuery() {
@@ -389,27 +385,6 @@ async function postAuthJson<T>(
     throw new Error(message);
   }
   return payload as T;
-}
-
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const session = authClient.useSession();
-  const location = useLocation();
-
-  if (session.isPending) {
-    return <LoadingPanel message="Checking your session..." title="Loading" />;
-  }
-
-  if (!session.data?.user) {
-    const redirectPath = `${location.pathname}${location.search}`;
-    return (
-      <Navigate
-        replace
-        to={`/sign-in?redirect=${encodeURIComponent(redirectPath)}`}
-      />
-    );
-  }
-
-  return <>{children}</>;
 }
 
 function SignInPage() {
@@ -514,6 +489,7 @@ function SignInPage() {
           </Label>
           <Input
             id="sign-in-email"
+            autoComplete="email"
             className={authFieldClass}
             name="email"
             onChange={(event) => setEmail(event.target.value)}
@@ -529,6 +505,7 @@ function SignInPage() {
           </Label>
           <Input
             id="sign-in-password"
+            autoComplete="current-password"
             className={authFieldClass}
             name="password"
             onChange={(event) => setPassword(event.target.value)}
@@ -2215,6 +2192,12 @@ export function AppRoutes() {
         }
         path="/account/connect-ai"
       />
+      {import.meta.env.DEV ? (
+        <Route
+          element={<ConnectAiPage previewOverview={connectAiPreviewOverview} />}
+          path="/design/mcp-preview"
+        />
+      ) : null}
       <Route
         element={
           <ProtectedRoute>
@@ -2241,7 +2224,7 @@ export function AppRoutes() {
 export function AppShell() {
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-      <div className="min-h-screen">
+      <div className="min-h-screen bg-background text-foreground">
         <SiteHeader />
         <AppRoutes />
       </div>

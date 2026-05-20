@@ -62,6 +62,7 @@ dist.*
 # packages/landing/public/assets/ explicitly staged when they are used.
 /design/
 /eweser-landing-*.png
+/eweser-*-final.png
 /landing-css-*.png
 /landing-css-baseline-snapshot.md
 /packages/landing/public/assets/eweser-*.png
