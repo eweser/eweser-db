@@ -183,18 +183,43 @@ examples/
 
 ## E2E Tests
 
-E2E tests run against:
+The default smoke runner is `scripts/run-e2e-smoke.mjs`. It expects the Docker
+backend to already be running, then starts the two frontend Vite servers it
+needs:
 
-- The Docker backend on ports `38101`, `38181`, `38182`, and `38190`
-- The built example-basic preview on port `38110`
+- `@eweser/example-basic` on `EXAMPLE_BASIC_PORT` (`38110` by default)
+- `@eweser/app` on `AUTH_PAGES_PORT` (`38111` by default for E2E)
 
-Run them locally with:
+Fast path:
 
 ```bash
 npm run dev:docker
-npm run build-example:basic
-npm run run-example-preview:basic
 npm run test:e2e
+```
+
+Before spending time debugging Cypress, probe the backend directly:
+
+```bash
+curl -fsS http://127.0.0.1:38101/health
+curl -fsS http://127.0.0.1:38190/health
+docker compose -f docker-compose.dev.yml exec -T postgres pg_isready -U eweser
+```
+
+The runtime-orientation helper uses local listener discovery and may report
+Docker-published ports as `unknown` even when the containers are healthy. Trust
+the direct probes above for E2E readiness.
+
+If port `38110` is already occupied by an existing example-basic dev server,
+reuse it instead of restarting:
+
+```bash
+CYPRESS_BASE_URL=http://127.0.0.1:38110 npm run test:e2e
+```
+
+Use the matching override for the auth app if `38111` is already running:
+
+```bash
+AUTH_PAGES_BASE_URL=http://127.0.0.1:38111 npm run test:e2e
 ```
 
 ## Common Issues

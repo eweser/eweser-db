@@ -25,8 +25,12 @@ auth, sync, example, and Ewe Note workflows.
 ## Key Contracts
 
 - Specs depend on deterministic `data-cy` selectors from examples and apps.
-- Auth and sync smoke tests require the local Docker backend stack started by
-  the smoke runner.
+- Auth and sync smoke tests require the local Docker backend stack, but the
+  smoke runner does not start Docker. Start or verify `npm run dev:docker`
+  first.
+- `npm run test:e2e` starts `@eweser/example-basic` on `38110` and
+  `@eweser/app` on `38111` unless `CYPRESS_BASE_URL` or
+  `AUTH_PAGES_BASE_URL` points at already-running servers.
 
 ## Update Triggers
 
@@ -37,3 +41,19 @@ auth, sync, example, and Ewe Note workflows.
 
 - `npm run test:e2e`: Runs smoke E2E tests.
 - `npm run test:e2e:full`: Runs the full Cypress suite.
+
+Fast smoke path:
+
+```bash
+npm run dev:docker
+curl -fsS http://127.0.0.1:38101/health
+curl -fsS http://127.0.0.1:38190/health
+npm run test:e2e
+```
+
+If the example app is already listening on `38110`, avoid a strict-port failure
+by reusing it:
+
+```bash
+CYPRESS_BASE_URL=http://127.0.0.1:38110 npm run test:e2e
+```
