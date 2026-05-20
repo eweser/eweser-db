@@ -80,6 +80,10 @@ If you are creating, updating, or reviewing index files or source headers,
 also read [`docs/ai/code-indexing.md`](../docs/ai/code-indexing.md) and apply
 its contract in the same change.
 
+Use [`CONTEXT-MAP.md`](../CONTEXT-MAP.md) and the mapped `CONTEXT.md` files for
+canonical EweserDB domain language. Treat those files as glossaries only; plans
+belong in `docs/ai/plans/` and architectural decisions belong in ADRs.
+
 Use the three-phase workflow for substantial or ambiguous work:
 
 1. `01-planner` / `planner` - research and write a scoped plan

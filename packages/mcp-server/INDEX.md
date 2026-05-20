@@ -14,6 +14,7 @@ authorized EweserDB rooms through agent tokens.
 ## Start Here
 
 - [`README.md`](./README.md): Supported clients, configuration, and tools.
+- [`CONTEXT.md`](./CONTEXT.md): MCP and agent-memory glossary.
 - [`package.json`](./package.json): Workspace scripts.
 - [`src/INDEX.md`](./src/): Source navigation map.
 - [`src/index.ts`](./src/index.ts): Stdio MCP server entry point.

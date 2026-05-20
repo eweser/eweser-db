@@ -15,6 +15,8 @@ Every new plan must include:
 - Goal
 - Scope
 - Assumptions / open questions
+- Domain language and relevant `CONTEXT.md` files when the work introduces or
+  changes product terms
 - Runs with id, title, files, steps, tests, verification, dependencies, model
   tier, and risk level
 - Stop conditions
@@ -53,6 +55,7 @@ plan. Standalone QA is reserved for independent re-QA or audit work.
 | -------------------------------------------------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | [2026-05-01-codebase-navigation-index.md](./2026-05-01-codebase-navigation-index.md)         | Implemented    | Added maintained folder indexes, selected source headers, validation, and CI for trunk-to-leaf codebase navigation.                                                |
 | [2026-04-29-large-coding-run-orchestrator.md](./2026-04-29-large-coding-run-orchestrator.md) | Implemented v1 | Supervised plan-run orchestrator scripts, metadata contract, dry-run validation, monitor, worker isolation, integration, stop/resume, and QA/review handoff exist. |
+| [2026-05-16-db-readme-todo-backlog.md](./2026-05-16-db-readme-todo-backlog.md)               | Active PR      | Runs 1-3 are implemented in PR #41; the plan now also seeds domain-language and `grill-with-docs` workflow guidance for future backlog runs.                       |
 
 ### Design / Copy
 

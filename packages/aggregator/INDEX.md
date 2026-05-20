@@ -14,6 +14,7 @@ room data.
 ## Start Here
 
 - [`README.md`](./README.md): Service overview, environment variables, and API.
+- [`CONTEXT.md`](./CONTEXT.md): Public aggregation glossary.
 - [`package.json`](./package.json): Workspace scripts and dependencies.
 - [`src/INDEX.md`](./src/): Source navigation map.
 - [`src/index.ts`](./src/index.ts): Hono app entry point and route wiring.

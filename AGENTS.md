@@ -140,6 +140,17 @@ boundary file.
 If you are creating, updating, or reviewing index files or source headers,
 also read `docs/ai/code-indexing.md` and apply its contract in the same change.
 
+## Domain Language
+
+Use `CONTEXT-MAP.md` and the mapped `CONTEXT.md` files to keep planning,
+implementation, docs, and user-facing copy aligned with EweserDB domain
+language. These files are glossaries only: do not put implementation plans,
+acceptance criteria, TODOs, or temporary design notes in them.
+
+For substantial or ambiguous work, resolve fuzzy terms during planning. Update
+the relevant `CONTEXT.md` when a canonical term is decided. Create or update an
+ADR only for hard-to-reverse decisions that would be surprising without context.
+
 For substantial or ambiguous work, use the Planner -> Coder workflow:
 
 1. Planner: research the request, ask necessary questions, and save an

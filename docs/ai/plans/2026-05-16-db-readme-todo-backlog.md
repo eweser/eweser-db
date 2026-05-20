@@ -105,6 +105,22 @@ Turn the stale `packages/db/README.md` TODO list into an implementation-ready ba
 - Open question: Should federation use `user@server` as the canonical persisted identity immediately, or should the first run introduce federated principal records while preserving local user IDs in current ACL arrays?
 - Open question: What billing provider and pricing model should be used for hosted sync limits? This plan only authorizes usage metering and limit hooks, not payment collection.
 
+## Domain Language
+
+- Context docs: `CONTEXT-MAP.md`, root `CONTEXT.md`, and package-level
+  `CONTEXT.md` files for `@eweser/db`, `@eweser/auth-server-hono`,
+  `@eweser/sync-server`, `@eweser/aggregator`, `@eweser/ewe-note`, and
+  `@eweser/mcp`.
+- New terms: `Agent Journal`, `Project scope`, `Provider profile`,
+  `Publication context`, `Indexability`, and `De-indexing` are now captured as
+  canonical terms for later backlog runs.
+- Changed terms: prefer access grant, room ACL, sync token, readable room
+  scope, and writable room scope instead of generic "permission" or "access"
+  language.
+- ADR candidates: clarify current ADR status and create new ADRs sparingly for
+  hard-to-reverse decisions such as E2EE, federation identity, and
+  schema/versioning policy.
+
 ## Runs
 
 ## Run Order And Manual Test Handoffs
@@ -620,6 +636,62 @@ After each completed run, Coder must update the Execution Summary and add a manu
 - **Model tier**: `strong`
 - **Risk level**: `high`
 
+### Run 14: Agent Domain Language And Grill-With-Docs Workflow
+
+- **Id**: `run-14`
+- **Title**: `Agent Domain Language And Grill-With-Docs Workflow`
+- **UI classification**: `ui: false`
+- **Browser checkpoint**: `none`
+- **Deliverable**:
+  - EweserDB has DDD-style glossary docs, a context map, an
+    Eweser-specific `grill-with-docs` skill, and planner/coder guidance that
+    keeps future backlog runs aligned on domain language before implementation.
+- **Files**:
+  - `CONTEXT-MAP.md`: add bounded-context map and ADR policy.
+  - `CONTEXT.md`: add shared product glossary.
+  - `packages/*/CONTEXT.md`: add package-specific glossaries for DB, auth,
+    sync, aggregator, Ewe Note, and MCP contexts.
+  - `.codex/skills/eweser-grill-with-docs/SKILL.md`: add repo-local grilling
+    skill.
+  - `.codex/skills/eweser-planner/SKILL.md`: require context-map/domain
+    language pass during planning.
+  - `.codex/skills/eweser-coder/SKILL.md`: preserve canonical glossary terms
+    and prefer tracer-bullet test slices.
+  - `docs/ai/plans/_template.md`: add a `Domain Language` section.
+  - `docs/ai/workflows/codex-planner-coder.md`: document planner context-doc
+    updates and plan requirements.
+  - `AGENTS.md`, `.github/copilot-instructions.md`, `INDEX.md`, and package
+    indexes: route agents to the new context docs.
+  - `docs/ai/adr/README.md`: clarify current ADR status.
+- **Steps**:
+  - [x] Seed root and package glossary docs without implementation details.
+  - [x] Add a repo-local grilling skill that asks one question at a time,
+        checks code/docs before asking, updates glossaries inline, and offers
+        ADRs only for hard-to-reverse decisions.
+  - [x] Wire Planner and Coder skills to use the context map and plan domain
+        language section.
+  - [x] Clarify that accepted/implemented ADRs are current decision records
+        unless superseded.
+  - [x] Update plan/index guidance so future backlog work uses canonical terms
+        instead of generic permission/access/memory language.
+- **Tests**:
+  - `npm run code-index:check`
+  - `npx prettier --check <changed markdown files>`
+  - Skill frontmatter validation for `eweser-grill-with-docs`,
+    `eweser-planner`, and `eweser-coder`.
+- **Verification**:
+  - Confirm code-index links are valid, Markdown formatting passes, and the new
+    skill has valid frontmatter.
+- **Manual test handoff**:
+  - Not needed: docs/agent-workflow only. A practical smoke is to invoke
+    `$eweser-grill-with-docs` on a future backlog run and verify it reads
+    `CONTEXT-MAP.md`, challenges ambiguous terms, and updates only glossary or
+    plan docs before implementation.
+- **Dependencies**:
+  - None
+- **Model tier**: `coder`
+- **Risk level**: `low`
+
 ## Stop Conditions
 
 Stop and ask for user approval if:
@@ -656,6 +728,7 @@ Approval does not authorize unrelated refactors, direct pushes to `main`, destru
 | `run-11` | Not started |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |                                                                                                                                                                                                                                                                                                                    |                                                                                                                                                                                                                           |
 | `run-12` | Not started |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |                                                                                                                                                                                                                                                                                                                    |                                                                                                                                                                                                                           |
 | `run-13` | Not started |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |                                                                                                                                                                                                                                                                                                                    |                                                                                                                                                                                                                           |
+| `run-14` | Complete    | `CONTEXT-MAP.md`, `CONTEXT.md`, `packages/db/CONTEXT.md`, `packages/auth-server-hono/CONTEXT.md`, `packages/sync-server/CONTEXT.md`, `packages/aggregator/CONTEXT.md`, `packages/ewe-note/CONTEXT.md`, `packages/mcp-server/CONTEXT.md`, `.codex/skills/eweser-grill-with-docs/SKILL.md`, `.codex/skills/eweser-planner/SKILL.md`, `.codex/skills/eweser-coder/SKILL.md`, `docs/ai/plans/_template.md`, `docs/ai/workflows/codex-planner-coder.md`, `docs/ai/adr/README.md`, `AGENTS.md`, `.github/copilot-instructions.md`, `INDEX.md`, package indexes, `docs/ai/plans/README.md`                                                                           | `npm run code-index:check`; `npx prettier --check <changed markdown files>`; skill frontmatter validation for `eweser-grill-with-docs`, `eweser-planner`, and `eweser-coder`                                                                                                                                       | Added Eweser-specific `grill-with-docs` workflow, seeded bounded-context glossaries, clarified ADR status, and wired future plans/coders to domain-language checks. No product code changes.                              |
 
 Review update, 2026-05-20: pre-PR QA ran `npm run check`,
 `npm run code-index:check`, `npm run build --workspace @eweser/app`,
@@ -680,3 +753,6 @@ all rooms. Disposable bootstrap smoke rows were cleaned up.
 ## Self-Reflection / Instruction Improvements
 
 - The DB package README accumulated completed and obsolete TODOs because no current plan linked the checklist to implementation status. Keep README backlog items linked to current plan files, and remove items when they are completed or intentionally archived.
+- Future backlog runs will be easier for agents if new terms are resolved in
+  `CONTEXT.md` during planning instead of being rediscovered from prose across
+  README, plans, ADRs, and package code.

@@ -20,6 +20,8 @@ shared schemas, auth grants, sync, and interoperable apps.
 - [`LOCAL_DEVELOPMENT.md`](./LOCAL_DEVELOPMENT.md): Local service setup and
   ports.
 - [`AGENTS.md`](./AGENTS.md): Repo-wide agent policy.
+- [`CONTEXT-MAP.md`](./CONTEXT-MAP.md): Domain-language glossary map for
+  planning and AI agents.
 - [`docs/ai/code-indexing.md`](./docs/ai/code-indexing.md): Index format and
   checker contract.
 - [`packages/INDEX.md`](./packages/): Workspace package map.
@@ -46,11 +48,14 @@ shared schemas, auth grants, sync, and interoperable apps.
 - Public package API changes to `@eweser/db`, `@eweser/shared`, or
   `@eweser/examples-components` require a changeset.
 - Never delete migrations or commit secrets.
+- `CONTEXT.md` files are glossaries only. Put implementation plans in
+  `docs/ai/plans/` and architectural decisions in ADRs.
 
 ## Update Triggers
 
 - Update when the monorepo layout, package relationships, root commands,
-  architecture docs, agent workflow, or top-level quality gates change.
+  architecture docs, domain-language map, agent workflow, or top-level quality
+  gates change.
 - Update nearby child indexes when ownership, public entry points, auth/security
   behavior, Yjs behavior, or test commands change.
 

@@ -21,14 +21,15 @@ Planner -> Coder workflow.
 
 1. Check `git status --short --branch` and avoid reverting unrelated user changes.
 2. Read the plan file. The user should provide a path such as `docs/ai/plans/YYYY-MM-DD-feature.md`.
-3. Read `AGENTS.md`, `ARCHITECTURE.md`, `.github/copilot-instructions.md`, and `docs/ai/workflows/codex-planner-coder.md`.
+3. Read `AGENTS.md`, `ARCHITECTURE.md`, `.github/copilot-instructions.md`, `CONTEXT-MAP.md`, and `docs/ai/workflows/codex-planner-coder.md`.
 4. Read the nearest `INDEX.md` before broad `rg` or `find` exploration. For symbol/import/export questions, prefer `npm run code-map:query -- --symbol <name>`, `--file <path>`, or `--package <name>` before dumping source into context.
-5. Read the relevant package `AGENTS.md` for the run scope.
-6. Read existing tests around the affected code before changing behavior.
-7. Identify which run to start from. Default to Run 1 and implement all runs sequentially.
-8. Confirm the plan's approval boundary covers the requested work. If not, stop and ask for approval.
-9. Before running tests, starting services, Cypress, or browser flows, run `~/.codex/skills/eweser-runtime-orientation/scripts/eweser-runtime-orientation.sh status`; run `refresh` if endpoints are unknown or stale.
-10. Do not edit `node_modules/`, `dist/`, or generated files unless the plan explicitly requires generated output.
+5. Read relevant mapped `CONTEXT.md` files for the run scope, especially when the plan's Domain Language section names them.
+6. Read the relevant package `AGENTS.md` for the run scope.
+7. Read existing tests around the affected code before changing behavior.
+8. Identify which run to start from. Default to Run 1 and implement all runs sequentially.
+9. Confirm the plan's approval boundary covers the requested work. If not, stop and ask for approval.
+10. Before running tests, starting services, Cypress, or browser flows, run `~/.codex/skills/eweser-runtime-orientation/scripts/eweser-runtime-orientation.sh status`; run `refresh` if endpoints are unknown or stale.
+11. Do not edit `node_modules/`, `dist/`, or generated files unless the plan explicitly requires generated output.
 
 Read long docs in targeted chunks. Do not concatenate multiple large docs or
 full source files into one command when an index, heading search, or `code-map`
@@ -50,6 +51,7 @@ query can narrow the next file to inspect.
 
 - The approved plan is the approval boundary. Stay inside it.
 - Minimal diff: extend existing patterns before adding new abstractions.
+- Preserve canonical domain terms from the relevant `CONTEXT.md` files. If implementation reveals a terminology correction inside the approval boundary, update the glossary and plan summary.
 - TypeScript strict mode: no `any` unless unavoidable and documented.
 - Yjs writes: always through CRDT helpers such as `docs.set()`, `docs.new()`, or `yDoc.transact()`.
 - Never directly mutate Yjs-observed objects.
@@ -72,6 +74,8 @@ Use sidecars to keep implementation moving, not to obscure ownership.
 
 ## Test strategy
 
+Use tracer-bullet slices where practical: write one failing behavior test,
+implement the smallest useful path, then refactor while keeping tests green.
 Write tests before or alongside implementation:
 
 - Unit tests: Vitest in `packages/*/src/**/*.test.ts`.

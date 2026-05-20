@@ -24,6 +24,8 @@ Planner may:
 - Ask clarifying questions when goal, scope, or acceptance criteria are unclear.
 - Run read-only inspection and small feasibility checks when useful.
 - Create or update plan documents in `docs/ai/plans/`.
+- Create or update `CONTEXT.md` glossary entries when domain language is
+  resolved during planning.
 
 Planner must not:
 
@@ -69,6 +71,8 @@ include:
 - Goal
 - Scope
 - Assumptions / open questions
+- Domain language: relevant `CONTEXT.md` files, new or changed terms, and ADR
+  candidates
 - Runs with id, title, files, steps, tests, verification, dependencies, model
   tier, and risk level
 - For orchestrated UI runs, explicit `ui: true | false` classification and the
