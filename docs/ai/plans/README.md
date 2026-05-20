@@ -28,7 +28,9 @@ For terminology-heavy plans or runs, especially federation, encrypted rooms,
 public aggregation, MCP/agent access, backups, and compatibility policy, run
 `eweser-grill-with-docs` before implementation approval. It should resolve
 canonical terms into `CONTEXT.md` and the plan's Domain Language section without
-editing product code.
+editing product code. Each grilling session should end with a brief
+self-reflection and concrete skill-adjustment suggestions when the workflow
+itself needs improvement.
 
 Use `eweser-coder` for coding runs in plan metadata and examples.
 

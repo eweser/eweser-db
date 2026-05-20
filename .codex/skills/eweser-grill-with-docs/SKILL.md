@@ -6,7 +6,9 @@ description: >
   language before implementation. It uses CONTEXT-MAP.md, package CONTEXT.md
   glossaries, INDEX.md navigation, AGENTS.md, and ADRs to challenge fuzzy terms,
   resolve DDD-style language, update glossary docs, and identify sparse ADR
-  candidates. Planner-style only: do not edit product code.
+  candidates. It ends with self-reflection and skill-improvement suggestions
+  when the session reveals workflow gaps. Planner-style only: do not edit
+  product code.
 ---
 
 # Role: EweserDB Grill With Docs
@@ -37,6 +39,9 @@ boundaries are precise enough for Planner or Coder to use.
 - Stress-test relationships with concrete scenarios, especially around rooms,
   collections, grants, sync, public aggregation, E2EE, backups, and MCP access.
 - Keep terms aligned with user-owned/local-first product language.
+- Notice friction while grilling: repeated ambiguity, missing glossary terms,
+  stale docs, weak examples, or questions that could have been answered from
+  repo context.
 
 ## Updating Docs
 
@@ -46,6 +51,9 @@ boundaries are precise enough for Planner or Coder to use.
 - Add or update a plan's `Domain Language` section when a plan exists.
 - Offer an ADR only when the decision is hard to reverse, broad in impact, and
   surprising without context.
+- If the session reveals a possible improvement to this skill, record it in the
+  final self-reflection. Do not edit the skill itself unless the user's request
+  explicitly includes skill updates.
 
 ## Output
 
@@ -56,5 +64,9 @@ End with:
 - `CONTEXT.md` files changed;
 - ADR candidates, if any;
 - the next planner/coder handoff.
+- self-reflection: what the grilling clarified, what remained hard, and whether
+  the repo docs made the right answer discoverable;
+- skill adjustment suggestions: concrete updates to this skill, its prompt
+  examples, or context-doc workflow, or `None`.
 
 Do not write product code in this skill.
