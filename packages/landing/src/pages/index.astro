@@ -1,129 +1,11 @@
 ---
 import Layout from '../layouts/Layout.astro';
 
-const features = [
-  {
-    glyph: '01',
-    title: 'AI + MCP Access',
-    description:
-      'Give agents controlled access to your data without copy-pasting your life into chat windows.',
-  },
-  {
-    glyph: '02',
-    title: 'Collaborative Notes',
-    description:
-      'Work together in real time with offline-first sync and conflict-free CRDT merging.',
-  },
-  {
-    glyph: '03',
-    title: 'Knowledge Base',
-    description:
-      'Keep structured notes, links, and documents in a system other apps can understand.',
-  },
-  {
-    glyph: '04',
-    title: 'Study Tools',
-    description:
-      'Turn notes into flashcards, summaries, and spaced repetition flows without export gymnastics.',
-  },
-  {
-    glyph: '05',
-    title: 'Publishing',
-    description:
-      'Reuse the same data across sites, docs, newsletters, and knowledge portals.',
-  },
-  {
-    glyph: '06',
-    title: 'Team Memory',
-    description:
-      'Share decisions, references, and working knowledge without locking the team into one interface forever.',
-  },
-];
-
-const devFeatures = [
-  {
-    title: 'Type-safe schemas',
-    description: 'Strongly typed collections, documents, and _ref links keep interop practical instead of theoretical.',
-  },
-  {
-    title: 'Real-time CRDT sync',
-    description: 'IndexedDB locally, Yjs for conflict-free collaboration, and Hocuspocus for live transport.',
-  },
-  {
-    title: 'MCP-ready access',
-    description: 'Connect Claude Desktop, ChatGPT, or your own agent workflows through scoped MCP access.',
-  },
-  {
-    title: 'No prison backend',
-    description: 'Point apps at eweser.com or a self-hosted homeserver without inventing another proprietary island.',
-  },
-  {
-    title: 'Shared app interop',
-    description: 'Build against shared schemas when you want ecosystem compatibility, or extend with private models.',
-  },
-  {
-    title: 'Self-hostable stack',
-    description: 'Own the infra, run your own auth and sync services, and stay independent of anyone else’s moat.',
-  },
-];
-
-const appsMcpCards = [
-  {
-    label: 'Live App',
-    title: 'User-owned auth',
-    description: 'Sign in, approve scopes, and keep trust visible.',
-    accentClass: 'bg-[#d62d20]',
-    metaClass: 'bg-[#a8a29e]',
-    tileClass: 'bg-[#d62d20]',
-    lineWidth: 'w-28',
-    tailWidth: 'w-24',
-  },
-  {
-    label: 'System View',
-    title: 'Personal data',
-    description: 'Collections, schemas, rooms, sync, sharing, and storage.',
-    accentClass: 'bg-[#111111]',
-    metaClass: 'bg-[#a8a29e]',
-    tileClass: 'bg-[#f5f5f4]',
-    lineWidth: 'w-20',
-    tailWidth: 'w-20',
-  },
-  {
-    label: 'Live App',
-    title: 'Connected apps',
-    description: 'Installed tools, granted access, recent usage, and revoke controls.',
-    accentClass: 'bg-[#d62d20]',
-    metaClass: 'bg-[#d62d20]',
-    tileClass: 'bg-[#f5f5f4]',
-    lineWidth: 'w-20',
-    tailWidth: 'w-24',
-  },
-  {
-    label: 'System View',
-    title: 'MCP / AI access',
-    description: 'Clients, permissions, metadata, audit-style visibility, and setup.',
-    accentClass: 'bg-[#111111]',
-    metaClass: 'bg-[#a8a29e]',
-    tileClass: 'bg-[#f5f5f4]',
-    lineWidth: 'w-20',
-    tailWidth: 'w-24',
-  },
-];
-
-const developerPills = ['Type-safe schemas', 'Real-time CRDT sync', 'Shared app interop', 'Self-hostable stack'];
-
-const codeSnippet = `import { Database } from '@eweser/db';
-
-const db = new Database({
-  initialRooms: [{ collectionKey: 'notes', name: 'My Notes' }]
-});
-
-const room = db.getRoom('notes');
-const Notes = room.getDocuments();
-
-Notes.new({ text: 'Hello from any app' });`;
-
 const noteUrl = 'https://note.eweser.com/';
+const docsUrl = 'https://docs.eweser.com';
+const githubUrl = 'https://github.com/eweser/eweser-db';
+const npmUrl = 'https://www.npmjs.com/package/@eweser/db';
+const apiUrl = npmUrl;
 const appUrl = (
   import.meta.env.RAILWAY_SERVICE_APP_URL ??
   import.meta.env.APP_URL ??
@@ -134,413 +16,832 @@ const connectAiUrl = `${appUrl}/sign-in?redirect=%2Fai`;
 const termsUrl = `${appUrl}/statement/terms-of-service`;
 const privacyUrl = `${appUrl}/statement/privacy`;
 const abuseEmail = 'abuse@eweser.com';
+const regeneratedAssetBase = '/assets/regenerated';
+const heroImage = `${regeneratedAssetBase}/hero-orbit-house.png`;
+const substrateQuoteImage = `${regeneratedAssetBase}/permission-landscape-lock.png`;
+const ecosystemCoreImage = `${regeneratedAssetBase}/ownership-sheep-arch.png`;
+const closingImage = `${regeneratedAssetBase}/solar-house-wide.png`;
+
+const howSteps = [
+  {
+    number: '1',
+    title: 'Create an account.',
+    text: "Your profile and data live in 'rooms' you can provision access to.",
+    image: `${regeneratedAssetBase}/step-create-account-house.png`,
+  },
+  {
+    number: '2',
+    title: 'Connect your tools.',
+    text: 'Sign in to Ewe Note, connect an AI client, or install an app. Each one asks for scoped access, not the whole database.',
+    image: `${regeneratedAssetBase}/step-connect-tools-lock.png`,
+  },
+  {
+    number: '3',
+    title: 'Your data stays yours.',
+    text: 'Switch apps. Revoke access. Take your data anywhere. The database belongs to you, not the platform.',
+    image: `${regeneratedAssetBase}/step-own-data-landscape.png`,
+  },
+];
+
+const enclosureList = [
+  'The app owns the database.',
+  'Your context stays trapped in one product.',
+  'Collaboration requires everyone to use the same platform.',
+  'AI agents only help if you copy your life into them.',
+  'Trying something new means starting from zero.',
+  'Export is an escape hatch, not a workflow.',
+];
+
+const openFieldList = [
+  'You own the database.',
+  'Apps compete on experience, not captivity.',
+  'Collaboration can happen over shared user-owned data.',
+  'AI agents get scoped, reviewable access.',
+  "New apps can begin with the user's existing data.",
+  'The cloud can sync without becoming the owner.',
+];
+
+const reversalColumns = [
+  {
+    title: 'App-owned data',
+    eyebrow: 'the old problem',
+    items: [
+      'When apps own your data, you lose.',
+      'Switching apps means rework, manual exporting, and format guessing.',
+      'Every vendor lock-in delays better tools.',
+      'Friction adds up and leaves you less productive at scale.',
+    ],
+  },
+  {
+    title: 'User-owned data',
+    eyebrow: 'the reversal',
+    items: [
+      'Your data stays yours.',
+      'Move to any app, anytime, and switch without data loss.',
+      'Choose tools that respect your data.',
+      'Invest in features, not vendors.',
+      'Upgrade apps with seamless sync everywhere.',
+    ],
+  },
+];
+
+const reversalTransfers = ['Documents', 'Bookmarks', 'Tasks'];
+
+const ecosystemCards = [
+  {
+    title: 'AI + MCP',
+    text: 'Connect the AI clients you choose to the same user-owned data layer. Ask questions, automate tasks, and verify changes under scoped access.',
+    status: 'Notice: We never collect your content. Your data is yours.',
+    tone: 'sky',
+    featured: true,
+    image: `${regeneratedAssetBase}/icon-automation.png`,
+  },
+  {
+    title: 'Collaborative notes',
+    text: 'Co-write notes, share links, and grant view or edit access without moving the work into another silo.',
+    status: 'Private spaces and public work, with room-scoped permissions.',
+    tone: 'meadow',
+    image: `${regeneratedAssetBase}/icon-collaboration.png`,
+  },
+  {
+    title: 'Knowledge base',
+    text: 'Index notes, references, and documents by theme, then let compatible tools read the same context.',
+    status: 'Organize by projects, conversations, and study workflows.',
+    tone: 'water',
+    image: `${regeneratedAssetBase}/icon-knowledge-base.png`,
+  },
+  {
+    title: 'Study tools',
+    text: 'Turn notes, docs, bookmarks, quizzes, flashcards, and summaries into review workflows.',
+    status:
+      'Spaced repetition, feedback, and concept maps can share one source.',
+    tone: 'sun',
+    image: `${regeneratedAssetBase}/icon-study-tools.png`,
+  },
+  {
+    title: 'Micro apps',
+    text: 'Tiny focused apps for tasks, prompts, quick-share tools, and personal workflows.',
+    status: 'Minimal apps, maximum utility, with sync and backup when needed.',
+    tone: 'clay',
+    image: `${regeneratedAssetBase}/icon-micro-apps.png`,
+  },
+  {
+    title: 'Personal sharing',
+    text: 'Publish rooms with versions, fine-grained permissions, and time-limited links.',
+    status: 'All yours, visible only where you choose to share.',
+    tone: 'orchard',
+    image: `${regeneratedAssetBase}/icon-sharing.png`,
+  },
+];
+
+const appCards = [
+  {
+    title: 'Ewe Note',
+    text: 'A writing and knowledge app that stores your notes on your device. Works offline. Syncs across devices when you are connected. Your first app built on EweserDB.',
+    cta: 'Open Ewe Note',
+    href: noteUrl,
+    image: `${regeneratedAssetBase}/ewe-note-writing-pasture.svg`,
+    featured: true,
+  },
+  {
+    title: 'More apps coming',
+    text: 'Flashcards, publishing tools, AI memory review, personal knowledge bases, and more, all built on the same data layer.',
+    cta: 'Explore the ecosystem',
+    href: '#ecosystem',
+    image: `${regeneratedAssetBase}/step-own-data-landscape.png`,
+  },
+  {
+    title: 'Build your own',
+    text: "EweserDB is open. Build a focused app that works with the user's existing data instead of starting another silo.",
+    cta: 'Read the developer docs',
+    href: docsUrl,
+    image: `${regeneratedAssetBase}/build-your-own-app-workbench.svg`,
+    external: true,
+  },
+];
+
+const mcpClients = [
+  { name: 'Cursor', detail: 'Desktop', url: 'cursor.com' },
+  { name: 'Claude', detail: 'Web', url: 'claude.ai/new/chat' },
+  { name: 'ChatGPT', detail: 'Web', url: 'chatgpt.com/gpts/mygpts' },
+  { name: 'GitHub Copilot', detail: 'IDE', url: 'github.com' },
+  { name: 'Cline', detail: 'IDE', url: 'cline.bot' },
+  { name: 'Graydb', detail: 'Docs', url: 'graydb.com/documentation' },
+];
+
+const mcpStatuses = [
+  ['MCP', 'MCP conversation history. No lock in. No data tax.'],
+  ['Memory', 'Scoped context across devices and sessions.'],
+  ['Pasture', 'Auditing by room, grant, and log ID.'],
+];
+
+const developerProofPoints = [
+  'Typed schema',
+  'Built-in grant APIs',
+  'Shard anywhere',
+  'Self-hostable Postgres',
+  'Open MCP access',
+  'Local AI off-ramp',
+  'Existing user data',
+  'Micro-app friendly',
+];
+
+const developerStatuses = [
+  ['Open for schema', 'Full control.'],
+  ['Built on room grants', 'User access by design.'],
+  ['Sovereign storage', 'Balance cost, performance, locale, and compliance.'],
+  ['Cost controls', 'Self-host, private cloud, or managed EweserDB.'],
+  [
+    'Scoped PII access',
+    'Room-scoped permissions instead of platform-wide access.',
+  ],
+  [
+    'On your server, or theirs, yours.',
+    'Dev picks environment: self-host, private cloud, or EweserDB.',
+  ],
+];
 ---
 
 <Layout
-  title="EweserDB — Your data is not their moat."
-  description="EweserDB is a local-first interoperable database for apps that refuse lock-in. Notes, agents, study tools, publishing workflows, and collaborative workspaces can all connect to the same user-owned data."
+  title="EweserDB | Your data is not their pasture."
+  description="EweserDB is a local-first personal data layer rooted on your device. Apps and AI agents connect with scoped access you control."
+  ogImage={heroImage}
 >
-  <header class="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#050505]/80 backdrop-blur-xl">
-    <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-      <a href="/" class="flex items-center gap-3">
-        <img src="/eweser-logo-white.svg" alt="" aria-hidden="true" class="h-8 w-8" />
-        <span class="text-lg font-semibold tracking-tight text-white">EweserDB</span>
-      </a>
-
-      <nav class="hidden items-center gap-6 md:flex">
-        <a href="#problem" class="text-sm text-slate-300 transition-colors hover:text-white">Manifesto</a>
-        <a href="/connected-tools" class="text-sm text-slate-300 transition-colors hover:text-white">Connected Tools</a>
-        <a href="#developers" class="text-sm text-slate-300 transition-colors hover:text-white">Developers</a>
-        <a
-          href="https://docs.eweser.com"
-          target="_blank"
-          rel="noreferrer"
-          class="text-sm text-slate-300 transition-colors hover:text-white"
-        >
-          Docs
+  <main class="pastoral-page">
+    <div class="pastoral-frame">
+      <header class="pastoral-nav">
+        <a href="/" class="brand-lockup" aria-label="EweserDB home">
+          <img src="/eweser-logo.svg" alt="" aria-hidden="true" />
+          <span>EweserDB</span>
         </a>
-      </nav>
 
-      <div class="flex items-center gap-3">
-        <a href={signInUrl} class="hidden text-sm text-slate-300 transition-colors hover:text-white md:inline-flex">
-          Sign in
-        </a>
-        <a
-          href={connectAiUrl}
-          class="hidden items-center justify-center rounded-xl bg-white px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-slate-100 sm:inline-flex"
-        >
-          Connect my AI
-        </a>
-      </div>
-    </div>
-  </header>
+        <nav class="desktop-nav" aria-label="Primary navigation">
+          <a href="#manifesto">Manifesto</a>
+          <a href="#apps">Apps</a>
+          <a href="#mcp">MCP</a>
+          <a href="#developers">Developers</a>
+          <a href={docsUrl} target="_blank" rel="noreferrer">Docs</a>
+        </nav>
 
-  <main>
-    <section class="relative isolate overflow-hidden bg-[#050505] pt-32 pb-20 text-white sm:pt-36 sm:pb-28">
-      <div
-        class="pointer-events-none absolute inset-0"
-        style="background: radial-gradient(circle at top, rgba(255,255,255,0.12), transparent 42%);"
-      ></div>
-      <div
-        class="pointer-events-none absolute inset-x-0 top-0 h-[520px]"
-        style="background: linear-gradient(180deg, rgba(74,222,128,0.12) 0%, rgba(5,5,5,0) 72%);"
-      ></div>
+        <div class="nav-actions">
+          <a href={signInUrl} class="button button-ghost">Sign in</a>
+          <a href={connectAiUrl} class="button button-primary">Connect my AI</a>
+        </div>
 
-      <div class="mx-auto grid w-full max-w-6xl gap-14 px-6 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:gap-12">
-        <div class="min-w-0 max-w-2xl">
-          <p class="mb-5 text-sm font-medium uppercase tracking-[0.28em] text-slate-400 sm:tracking-[0.32em]">
-            Local-first database for user-owned software
-          </p>
-          <h1 class="max-w-xl text-4xl font-bold tracking-tight leading-[1.02] text-white sm:text-6xl lg:text-7xl">
-            Your data
-            <br />
-            <span class="text-slate-400">is not</span>
-            <br />
-            their moat.
-          </h1>
-          <p class="mt-6 max-w-xl text-lg leading-8 text-slate-400 sm:text-xl">
-            EweserDB is a local-first interoperable database for apps that refuse lock-in. Notes, agents, study
-            tools, publishing workflows, and collaborative workspaces can all connect to the same user-owned data.
-          </p>
-
-          <div class="mt-10 flex min-w-0 flex-col gap-4 sm:flex-row">
-            <a
-              href={connectAiUrl}
-              class="inline-flex w-full items-center justify-center rounded-xl bg-white px-6 py-3 font-medium text-black transition-colors hover:bg-slate-100 sm:w-auto"
-            >
-              Connect my AI
-            </a>
-            <a
-              href={noteUrl}
-              class="inline-flex w-full items-center justify-center rounded-xl border border-white/15 px-6 py-3 font-medium text-white transition-colors hover:bg-white/5 sm:w-auto"
-            >
-              Try Ewe Note
-            </a>
+        <details class="mobile-nav">
+          <summary aria-label="Open navigation">
+            <span>Menu</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 7h16M4 12h16M4 17h16"></path>
+            </svg>
+          </summary>
+          <div class="mobile-menu">
+            <a href="#manifesto">Manifesto</a>
+            <a href="#apps">Apps</a>
+            <a href="#mcp">MCP</a>
+            <a href="#developers">Developers</a>
+            <a href={docsUrl} target="_blank" rel="noreferrer">Docs</a>
+            <a href={signInUrl}>Sign in</a>
+            <a href={connectAiUrl}>Connect my AI</a>
           </div>
-        </div>
+        </details>
+      </header>
 
-        <div class="relative min-w-0">
-          <div
-            class="absolute -left-6 top-10 h-24 w-24 rounded-full bg-emerald-400/20 blur-3xl float-slow"
-            aria-hidden="true"
-          ></div>
-          <div
-            class="absolute -right-4 bottom-12 h-32 w-32 rounded-full bg-white/10 blur-3xl float-fast"
-            aria-hidden="true"
-          ></div>
-
-          <div class="relative w-full max-w-full overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#101010] shadow-2xl shadow-black/40">
-            <div class="flex items-center gap-2 border-b border-white/10 bg-[#151515] px-4 py-3">
-              <span class="h-3 w-3 rounded-full bg-white/20"></span>
-              <span class="h-3 w-3 rounded-full bg-white/20"></span>
-              <span class="h-3 w-3 rounded-full bg-white/20"></span>
-            </div>
-
-            <div class="grid gap-6 p-6 sm:p-8">
-              <div class="rounded-[1.35rem] border border-white/10 bg-[#151515] p-4 shadow-2xl float-slow">
-                <div class="mb-4 text-xs font-mono uppercase tracking-[0.24em] text-slate-500">User Auth</div>
-                <div class="space-y-3">
-                  <div class="h-4 w-2/3 rounded bg-white/10"></div>
-                  <div class="relative h-4 overflow-hidden rounded bg-emerald-400/15">
-                    <div class="sheen absolute inset-y-0 left-0 w-1/2 bg-emerald-300/45"></div>
-                  </div>
-                  <div class="h-4 w-3/5 rounded bg-white/10"></div>
-                </div>
-              </div>
-
-              <div class="flex items-center justify-center gap-4 text-emerald-400">
-                <div class="flex h-12 w-12 items-center justify-center rounded-full border border-emerald-400/30">
-                  <div class="h-2.5 w-2.5 rounded-full bg-emerald-400"></div>
-                </div>
-                <span class="text-xs font-mono uppercase tracking-[0.26em] text-emerald-300/80">User-owned data core</span>
-              </div>
-
-              <div class="rounded-[1.35rem] border border-white/10 bg-[#151515] p-4 shadow-2xl float-fast">
-                <div class="mb-4 text-xs font-mono uppercase tracking-[0.24em] text-slate-500">MCP Access</div>
-                <div class="space-y-3">
-                  <div class="h-4 w-3/4 rounded bg-white/10"></div>
-                  <div class="relative h-4 overflow-hidden rounded bg-emerald-400/15">
-                    <div class="sheen absolute inset-y-0 left-0 w-1/2 bg-emerald-300/45"></div>
-                  </div>
-                  <div class="h-4 w-5/6 rounded bg-white/10"></div>
-                </div>
-              </div>
-
-              <div class="grid grid-cols-2 gap-4">
-                <div class="rounded-[1.1rem] border border-white/10 bg-white/5 p-3">
-                  <div class="text-[10px] font-mono uppercase tracking-[0.22em] text-slate-500">Personal Data</div>
-                  <div class="mt-3 h-3 w-3/4 rounded bg-white/10"></div>
-                  <div class="mt-2 h-3 w-1/2 rounded bg-emerald-400/20"></div>
-                </div>
-                <div class="rounded-[1.1rem] border border-white/10 bg-white/5 p-3">
-                  <div class="text-[10px] font-mono uppercase tracking-[0.22em] text-slate-500">Connected Apps</div>
-                  <div class="mt-3 h-3 w-2/3 rounded bg-white/10"></div>
-                  <div class="mt-2 h-3 w-1/2 rounded bg-emerald-400/20"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="problem" class="bg-white px-6 py-24 text-slate-900">
-      <div class="mx-auto max-w-6xl">
-        <div class="mb-16 text-center">
-          <h2 class="text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">Apps became landlords.</h2>
-          <p class="mx-auto mt-4 max-w-3xl text-lg text-slate-500 sm:text-xl">
-            Modern software treats your notes, decisions, documents, and knowledge like platform property.
+      <section id="top" class="hero-spread" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="hero-graphic-label">Own Your Own Data</p>
+          <p class="hero-kicker">A homestead for your data.</p>
+          <h1 id="hero-title">Your data is not their pasture.</h1>
+          <p class="hero-standfirst">
+            The flock follows the platform. Ewe don't have to.
           </p>
-        </div>
-
-        <div class="grid gap-6 md:grid-cols-2 lg:gap-10">
-          <div class="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-8 sm:p-10">
-            <p class="mb-8 text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">The old world</p>
-            <ul class="space-y-5">
-              <li class="flex gap-4 text-lg leading-8 text-slate-700">
-                <span class="mt-3 h-2 w-2 shrink-0 rounded-full bg-rose-400"></span>
-                Your work gets trapped in product-specific databases
-              </li>
-              <li class="flex gap-4 text-lg leading-8 text-slate-700">
-                <span class="mt-3 h-2 w-2 shrink-0 rounded-full bg-rose-400"></span>
-                Switching tools means rebuilding context from scratch
-              </li>
-              <li class="flex gap-4 text-lg leading-8 text-slate-700">
-                <span class="mt-3 h-2 w-2 shrink-0 rounded-full bg-rose-400"></span>
-                Collaboration requires everyone to join the same silo
-              </li>
-              <li class="flex gap-4 text-lg leading-8 text-slate-700">
-                <span class="mt-3 h-2 w-2 shrink-0 rounded-full bg-rose-400"></span>
-                AI agents cannot help unless your data is accessible
-              </li>
-            </ul>
-          </div>
-
-          <div class="rounded-[1.75rem] border border-emerald-400/20 bg-[#050505] p-8 text-white shadow-2xl shadow-black/30 sm:p-10">
-            <p class="mb-8 text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">EweserDB world</p>
-            <ul class="space-y-5">
-              <li class="flex gap-4 text-lg leading-8 text-slate-200">
-                <span class="mt-3 h-2 w-2 shrink-0 rounded-full bg-emerald-400"></span>
-                You own the database
-              </li>
-              <li class="flex gap-4 text-lg leading-8 text-slate-200">
-                <span class="mt-3 h-2 w-2 shrink-0 rounded-full bg-emerald-400"></span>
-                Apps compete to serve you
-              </li>
-              <li class="flex gap-4 text-lg leading-8 text-slate-200">
-                <span class="mt-3 h-2 w-2 shrink-0 rounded-full bg-emerald-400"></span>
-                Offline first. Always available. Always yours.
-              </li>
-              <li class="flex gap-4 text-lg leading-8 text-slate-200">
-                <span class="mt-3 h-2 w-2 shrink-0 rounded-full bg-emerald-400"></span>
-                AI agents plug into user space through scoped MCP access
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        <p class="mx-auto mt-12 max-w-3xl text-center text-lg italic text-slate-500 sm:text-xl">
-          "Own the substrate. Swap the interface."
-        </p>
-      </div>
-    </section>
-
-    <section id="features" class="bg-white px-6 py-24 text-slate-900">
-      <div class="mx-auto max-w-6xl">
-        <div class="mb-16">
-          <h2 class="text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">A bigger playground for your data.</h2>
-          <p class="mt-4 max-w-2xl text-lg text-slate-500 sm:text-xl">
-            Notes are one proof point. The larger story is one user-owned data layer feeding AI tools, collaborative
-            workspaces, study flows, publishing workflows, and team memory.
+          <p class="hero-body">
+            EweserDB is a personal data layer rooted on your device. Apps and AI
+            agents connect to it with your permission. They do not store your
+            data, they read and write through scoped access you can revoke.
+            Local-first, synced across your devices, and self-hostable any time.
           </p>
-        </div>
 
-        <div class="grid gap-x-8 gap-y-12 md:grid-cols-2 lg:grid-cols-3">
-          {features.map((feature) => (
-            <article class="flex flex-col">
-              <div class="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-700">
-                {feature.glyph}
-              </div>
-              <h3 class="text-xl font-semibold text-slate-950">{feature.title}</h3>
-              <p class="mt-3 max-w-sm text-slate-600 leading-7">{feature.description}</p>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-
-    <section id="apps-mcp" class="bg-[#f5f2ec] px-6 py-24 text-slate-900">
-      <div class="mx-auto max-w-6xl">
-        <div class="max-w-3xl">
-          <p class="mb-5 text-xs font-semibold uppercase tracking-[0.28em] text-[#d62d20]">04 // Connected Tools</p>
-          <h2 class="text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">Let apps and agents ask permission.</h2>
-          <p class="mt-4 text-lg text-slate-600 sm:text-xl">
-            The landing page should preview the actual product: entry, ownership, permissions, and agent access.
-          </p>
-        </div>
-
-        <div class="mt-12 grid gap-6 lg:grid-cols-4">
-          {appsMcpCards.map((card) => (
-            <article class="rounded-[1.5rem] border border-stone-300 bg-white p-5 shadow-[6px_6px_0px_rgba(17,17,17,0.08)]">
-              <span class:list={[
-                'inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]',
-                card.label === 'Live App' ? 'bg-[#d62d20] text-white' : 'border border-black bg-[#f6f6f1] text-black',
-              ]}>
-                {card.label}
+          <div class="hero-cta-grid" aria-label="Primary landing actions">
+            <a href={connectAiUrl} class="hero-cta hero-cta-primary">
+              <span>
+                <strong>Connect my AI</strong>
+                <small
+                  >Let Claude, ChatGPT, or Copilot read from a data layer you
+                  control.</small
+                >
               </span>
-              <h3 class="mt-4 text-lg font-semibold uppercase text-slate-950">{card.title}</h3>
-              <p class="mt-2 text-sm leading-6 text-stone-600">{card.description}</p>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 5l7 7-7 7M4 12h12"></path>
+              </svg>
+            </a>
 
-              <div class="mt-5 rounded-2xl bg-[#0f0f10] p-4">
-                <div class:list={['h-2 rounded-full', card.accentClass, 'w-[70px]']}></div>
-                <div class="mt-4 flex items-center gap-3">
-                  <div class:list={['h-2 rounded-full bg-[#f5f5f4]', card.lineWidth]}></div>
-                  <div class:list={['h-2 rounded-full', card.metaClass, card.tailWidth]}></div>
-                  <div class:list={['h-4 w-4 rounded-md', card.tileClass]}></div>
-                </div>
-              </div>
-            </article>
-          ))}
+            <a href={noteUrl} class="hero-cta hero-cta-secondary">
+              <span>
+                <strong>Try Ewe Note</strong>
+                <small>
+                  A notes app rooted on your device. Drop-in for Obsidian and
+                  Karpathy-wiki vaults, extended to every app and agent you
+                  connect.
+                </small>
+              </span>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M7 4h8l4 4v12H7zM15 4v5h5M10 14h6M10 17h4"></path>
+              </svg>
+            </a>
+          </div>
         </div>
-      </div>
-    </section>
-
-    <section id="developers" class="border-y border-white/10 bg-[#050505] px-6 py-24 text-white">
-      <div class="mx-auto max-w-6xl">
-        <div class="mb-16">
-          <p class="mb-6 inline-flex rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-mono font-medium uppercase tracking-[0.28em] text-emerald-300">
-            For Developers
+        <div
+          class="hero-orbit-note"
+          aria-label="Apps and agents permission diagram note"
+        >
+          <div class="orbit-mini" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <p>
+            Apps and AI agents orbit the user's data layer. They do not own it.
           </p>
-          <h2 class="text-4xl font-bold tracking-tight text-white sm:text-5xl">
-            Build the app. Not the prison.
+        </div>
+        <p class="sr-only">
+          Illustrated pastoral valley with a sheep, solar homestead, wind
+          turbines, and dotted permission paths.
+        </p>
+      </section>
+
+      <section
+        id="manifesto"
+        class="landing-section manifesto-section"
+        aria-labelledby="manifesto-title"
+      >
+        <div class="section-intro section-intro-wide">
+          <p class="section-label"># 00 // A note from the maker</p>
+          <h2 id="manifesto-title">Why I built EweserDB.</h2>
+        </div>
+
+        <div class="manifesto-copy">
+          <p class="manifesto-lede">
+            I lost my notes one too many times. Evernote ate years of work.
+            Quizlet wouldn't let my flashcards out. Anki I trusted, but it was a
+            chore to onboard anyone else to it. I wanted to build small, focused
+            apps that synced reliably and worked offline — and every time, the
+            foundation got in the way. So I built the foundation.
+          </p>
+          <p>
+            EweserDB is what I wish I had when I started making educational and
+            map-based apps: a database the user actually owns, that works
+            offline, syncs across devices, and lets independent apps build on
+            the same data without asking each other's permission.
+          </p>
+
+          <details class="manifesto-more">
+            <summary>
+              <span class="manifesto-more-label">Read the rest</span>
+              <span class="manifesto-more-icon" aria-hidden="true">+</span>
+            </summary>
+
+            <div class="manifesto-more-body">
+              <h3>The flip</h3>
+              <p>
+                Today, you ask the app to see your data. <em
+                  >"Facebook, can I see my friends list?"</em
+                > In EweserDB, the app asks you. That sounds small. It isn't. It means
+                you can leave at any time and take everything with you. It means a
+                new app can start with your data already loaded — no onboarding, no
+                import, no "we don't support that format." It means apps have to compete
+                on experience instead of captivity.
+              </p>
+
+              <h3>Beyond notes</h3>
+              <p>
+                I started with knowledge apps because that's the pain I felt.
+                But the pattern goes further. Personal finance trackers you'd
+                actually feel safe using. Lifestyle and health apps that don't
+                profile you. Social tools where the network effect belongs to
+                people, not platforms. Most of these apps aren't computationally
+                complicated. Their giant infrastructure exists to hoard data and
+                serve ads, not to do the thing the user came for.
+              </p>
+
+              <h3>Small apps, real lives</h3>
+              <p>
+                Because there's no backend to build, a developer can ship a
+                useful tool in an afternoon. A focused flashcard app without ten
+                years of feature creep. A reading tracker for a friend. A quiz
+                tool for a class. Try it for ten minutes, decide if you like it,
+                swap to another one tomorrow — your data stays with you the
+                whole time.
+              </p>
+
+              <h3>The bigger picture</h3>
+              <p>
+                Walled gardens stifle innovation, harvest behavior, and
+                concentrate power in a handful of companies. I don't think that
+                arrangement is permanent. I think the substrate can be flipped —
+                quietly, app by app — until owning your own data feels as
+                obvious as owning your own files.
+              </p>
+
+              <h3>Standing on other people's shoulders</h3>
+              <p>
+                EweserDB is a direct answer to Martin Kleppmann's
+                <a
+                  href="https://www.inkandswitch.com/local-first/"
+                  target="_blank"
+                  rel="noreferrer">Local-First Software</a
+                > essay — the question "how do you own your own data in spite of the
+                cloud?" has been rattling around my head ever since I read it. Federated
+                networks like
+                <a
+                  href="https://joinmastodon.org/"
+                  target="_blank"
+                  rel="noreferrer">Mastodon</a
+                > and
+                <a href="https://matrix.org/" target="_blank" rel="noreferrer"
+                  >Matrix</a
+                > showed that you can break the platform monopoly without losing the
+                network. And
+                <a
+                  href="https://github.com/yjs/yjs"
+                  target="_blank"
+                  rel="noreferrer">Yjs</a
+                > and CRDTs already solved half the hard part: making local edits
+                sync without a central referee. EweserDB adds the layer on top — shared
+                schemas, room-scoped permissions, and an app ecosystem so users can
+                actually move between tools that read and write the same data.
+              </p>
+
+              <p class="manifesto-signoff">
+                That's the bet. Thanks for being here.<br />
+                — Jacob
+              </p>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <section
+        id="how-it-works"
+        class="how-works-section"
+        aria-labelledby="how-it-works-title"
+      >
+        <div class="how-works-layout">
+          <div class="how-works-heading">
+            <p class="section-label">00 // How it works</p>
+            <h2 id="how-it-works-title">Three steps to owning your data.</h2>
+            <span class="section-stem" aria-hidden="true"></span>
+          </div>
+
+          <div class="how-steps" aria-label="Three steps to owning your data">
+            {
+              howSteps.map((step) => (
+                <article class:list={['how-step', `how-step-${step.number}`]}>
+                  <div class="how-step-art">
+                    <span class="how-step-number">{step.number}</span>
+                    <img
+                      src={step.image}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </div>
+                  <h3>{step.title}</h3>
+                  <p>{step.text}</p>
+                </article>
+              ))
+            }
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="problem"
+        class="landing-section problem-section"
+        aria-labelledby="problem-title"
+      >
+        <div class="section-art section-art-deed" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+
+        <div class="section-intro section-intro-wide">
+          <p class="section-label">01 // The Problem</p>
+          <h2 id="problem-title">Apps became landlords.</h2>
+          <p>
+            Modern software treats your notes, documents, decisions,
+            relationships, and learning work like platform property. You spend
+            years building context, then a bug, shutdown, bad export, or bloated
+            product roadmap can put that work out of reach.
+          </p>
+        </div>
+
+        <div
+          class="field-comparison"
+          aria-label="Old enclosure and open field comparison"
+        >
+          <article class="comparison-panel comparison-panel-enclosure">
+            <div class="comparison-marker" aria-hidden="true">01</div>
+            <p class="comparison-eyebrow">The old enclosure</p>
+            <ul>
+              {enclosureList.map((item) => <li>{item}</li>)}
+            </ul>
+          </article>
+
+          <blockquote class="substrate-quote">
+            <img
+              src={substrateQuoteImage}
+              alt=""
+              loading="lazy"
+              decoding="async"
+            />
+            <span>Own the substrate.</span>
+            <span>Swap the interface.</span>
+          </blockquote>
+
+          <article class="comparison-panel comparison-panel-field">
+            <div class="comparison-marker" aria-hidden="true">02</div>
+            <p class="comparison-eyebrow">The open field</p>
+            <ul>
+              {openFieldList.map((item) => <li>{item}</li>)}
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section
+        id="reversal"
+        class="landing-section reversal-section"
+        aria-labelledby="reversal-title"
+      >
+        <div class="section-intro">
+          <p class="section-label"># 2 / The Reversal</p>
+          <h2 id="reversal-title">Switch apps. Keep your work.</h2>
+          <p>
+            EweserDB separates the data layer from the app layer. Your notes,
+            bookmarks, tasks, projects, and media live in your pasture. Apps
+            come, use what you allow, and leave. You stay in charge of your
+            data, from anywhere, in the app you want.
+          </p>
+        </div>
+
+        <div class="reversal-grid">
+          <article class="reversal-card reversal-card-old">
+            <span class="reversal-card-icon" aria-hidden="true"></span>
+            <p>{reversalColumns[0].eyebrow}</p>
+            <h3>{reversalColumns[0].title}</h3>
+            <ul>
+              {reversalColumns[0].items.map((item) => <li>{item}</li>)}
+            </ul>
+          </article>
+
+          <div
+            class="reversal-transfer"
+            aria-label="Data that moves between apps"
+          >
+            {reversalTransfers.map((transfer) => <span>{transfer}</span>)}
+          </div>
+
+          <article class="reversal-card reversal-card-new">
+            <span class="reversal-card-icon" aria-hidden="true"></span>
+            <p>{reversalColumns[1].eyebrow}</p>
+            <h3>{reversalColumns[1].title}</h3>
+            <ul>
+              {reversalColumns[1].items.map((item) => <li>{item}</li>)}
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section
+        id="ecosystem"
+        class="landing-section ecosystem-section"
+        aria-labelledby="ecosystem-title"
+      >
+        <div class="section-art section-art-orbit" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+
+        <div class="section-intro section-intro-wide">
+          <p class="section-label"># 3 / Ecosystem</p>
+          <h2 id="ecosystem-title">
+            One sheep. All your data. With you anywhere.
           </h2>
-          <p class="mt-4 max-w-2xl text-lg text-slate-400 sm:text-xl">
-            Add <span class="text-emerald-300">@eweser/db</span> to your app. Shared schemas, CRDT sync, and
-            MCP-ready access patterns give builders useful software without another proprietary island.
+          <p>
+            Notes are one proof point. The bigger story is yours: owned tools,
+            shared layers, collaboration, study tools, and personal knowledge
+            workflows that all work from the same data.
           </p>
         </div>
 
-        <div class="grid min-w-0 items-start gap-8 lg:grid-cols-[0.9fr_1.1fr]">
-          <div class="min-w-0 space-y-6">
-            <div class="min-w-0 overflow-hidden rounded-[1.5rem] border border-white/10 bg-[#111111] shadow-2xl shadow-black/30">
-              <div class="flex items-center gap-2 border-b border-white/10 bg-white/5 px-4 py-3">
-                <span class="h-3 w-3 rounded-full bg-rose-500/90"></span>
-                <span class="h-3 w-3 rounded-full bg-amber-400/90"></span>
-                <span class="h-3 w-3 rounded-full bg-emerald-400/90"></span>
-                <span class="ml-3 text-xs font-mono uppercase tracking-[0.22em] text-slate-500">Terminal</span>
-              </div>
-              <div class="px-6 py-5">
-                <code class="text-sm text-slate-200">$ npm install @eweser/db yjs</code>
-              </div>
-            </div>
-
-            <div class="min-w-0 overflow-hidden rounded-[1.5rem] border border-white/10 bg-[#0c0c0c] shadow-2xl shadow-black/30">
-              <div class="flex items-center gap-2 border-b border-white/10 bg-white/5 px-4 py-3">
-                <span class="h-3 w-3 rounded-full bg-rose-500/90"></span>
-                <span class="h-3 w-3 rounded-full bg-amber-400/90"></span>
-                <span class="h-3 w-3 rounded-full bg-emerald-400/90"></span>
-                <span class="ml-3 text-xs font-mono uppercase tracking-[0.22em] text-slate-500">app.ts</span>
-              </div>
-              <pre class="overflow-x-auto px-6 py-6 text-sm leading-7 text-slate-300"><code>{codeSnippet}</code></pre>
-            </div>
+        <div
+          class="ecosystem-field"
+          aria-label="EweserDB ecosystem capabilities"
+        >
+          <div class="ecosystem-core" aria-hidden="true">
+            <img
+              src={ecosystemCoreImage}
+              alt=""
+              loading="lazy"
+              decoding="async"
+            />
+            <span>User-owned data layer</span>
           </div>
+          <div class="ecosystem-connector-nodes" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="ecosystem-cards">
+            {
+              ecosystemCards.map((card) => (
+                <article
+                  class:list={[
+                    'ecosystem-card',
+                    `ecosystem-card-${card.tone}`,
+                    card.featured && 'ecosystem-card-featured',
+                  ]}
+                >
+                  <img
+                    class="ecosystem-card-icon"
+                    src={card.image}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <h3>{card.title}</h3>
+                  <p>{card.text}</p>
+                  <small>{card.status}</small>
+                </article>
+              ))
+            }
+          </div>
+        </div>
+      </section>
 
-          <div class="grid min-w-0 gap-4 sm:grid-cols-2">
-            {devFeatures.map((feature) => (
-              <article class="min-w-0 rounded-[1.35rem] border border-white/10 bg-white/[0.03] p-6 transition-colors hover:bg-white/[0.06]">
-                <h3 class="text-lg font-semibold text-white">{feature.title}</h3>
-                <p class="mt-3 text-sm leading-7 text-slate-400">{feature.description}</p>
+      <section
+        id="apps"
+        class="landing-section apps-section"
+        aria-labelledby="apps-title"
+      >
+        <div class="section-intro">
+          <p class="section-label"># 4 / Apps</p>
+          <h2 id="apps-title">
+            Apps that work with your data, not against it.
+          </h2>
+          <p>
+            Every app built for EweserDB talks to the same data-rich living
+            layer. You grant it, you revoke it, and you keep your work without
+            lock-in.
+          </p>
+        </div>
+
+        <div class="app-row">
+          {
+            appCards.map((card) => (
+              <article
+                class:list={['app-card', card.featured && 'app-card-featured']}
+              >
+                <div class="app-card-art" aria-hidden="true">
+                  <img
+                    src={card.image}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </div>
+                <h3>{card.title}</h3>
+                <p>{card.text}</p>
+                <a
+                  href={card.href}
+                  target={card.external ? '_blank' : undefined}
+                  rel={card.external ? 'noreferrer' : undefined}
+                >
+                  {card.cta}
+                </a>
               </article>
-            ))}
-          </div>
+            ))
+          }
+        </div>
+      </section>
+
+      <section
+        id="mcp"
+        class="landing-section mcp-section"
+        aria-labelledby="mcp-title"
+      >
+        <div class="mcp-copy">
+          <p class="section-label">04 / AI</p>
+          <h2 id="mcp-title">Give your AI a memory it can't take with it.</h2>
+          <p>
+            Cursor, Claude, ChatGPT, Copilot, Cline, and other AI-driven tools
+            borrow context while they work with you, then move on when the
+            session ends. EweserDB keeps your memory and access policy together,
+            so when you return, your AI is ready to work.
+          </p>
+          <a href={connectAiUrl} class="button button-primary button-large">
+            <span>Connect my AI</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 5l7 7-7 7M4 12h12"></path>
+            </svg>
+          </a>
+          <small>Modern API access. Ready for dev and AI tools.</small>
         </div>
 
-        <div class="mt-12 flex flex-wrap gap-3">
-          {developerPills.map((pill) => (
-            <span class="rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-200">
-              {pill}
-            </span>
-          ))}
-        </div>
-      </div>
-    </section>
-
-    <section id="try" class="bg-[#050505] px-6 py-24 text-white">
-      <div class="mx-auto max-w-6xl rounded-[2rem] border border-white/10 bg-[#0b0b0b] px-8 py-14 shadow-2xl shadow-black/40 sm:px-12">
-        <div class="grid gap-10 lg:grid-cols-[0.7fr_1.3fr] lg:items-center">
-          <div class="flex items-center gap-4">
-            <img src="/eweser-logo-white.svg" alt="" aria-hidden="true" class="h-14 w-14" />
-            <span class="text-xl font-semibold tracking-tight text-white">EweserDB</span>
+        <div class="mcp-console" aria-label="Supported AI clients and status">
+          <ul class="mcp-client-list">
+            {
+              mcpClients.map((client) => (
+                <li>
+                  <strong>
+                    {client.name} · {client.detail}
+                  </strong>
+                  <span>{client.url}</span>
+                </li>
+              ))
+            }
+          </ul>
+          <div class="status-rail">
+            {
+              mcpStatuses.map(([label, status]) => (
+                <p>
+                  <span>{label}</span>
+                  {status}
+                </p>
+              ))
+            }
           </div>
+        </div>
+      </section>
 
-          <div>
-            <h2 class="max-w-3xl text-4xl font-bold tracking-tight text-white sm:text-5xl">
-              Better tools should not require starting over.
-            </h2>
-            <p class="mt-4 max-w-2xl text-lg leading-8 text-slate-400">
-              Try the ecosystem, read the docs, or deploy your own user-owned stack.
-            </p>
-            <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-              <a
-                href={noteUrl}
-                class="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 font-medium text-black transition-colors hover:bg-slate-100"
-              >
-                Try the demo
-              </a>
-              <a
-                href="https://docs.eweser.com"
-                target="_blank"
-                rel="noreferrer"
-                class="inline-flex items-center justify-center rounded-xl border border-white/15 px-6 py-3 font-medium text-white transition-colors hover:bg-white/5"
-              >
-                Read the docs
-              </a>
-              <a
-                href="https://railway.app/new/template?template=https://github.com/eweser/eweser-db"
-                target="_blank"
-                rel="noreferrer"
-                class="inline-flex items-center justify-center rounded-xl border border-white/15 px-6 py-3 font-medium text-white transition-colors hover:bg-white/5"
-              >
-                Self-host it
-              </a>
+      <section
+        id="developers"
+        class="landing-section developers-section"
+        aria-labelledby="developers-title"
+      >
+        <div class="section-art section-art-parcels" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+
+        <div class="section-intro section-intro-wide">
+          <p class="section-label">05 // Developers</p>
+          <h2 id="developers-title">Build the app. Not the enclosure.</h2>
+          <p>
+            EweserDB gives developers a lock-in-free local-first database.
+            Indexed schemas, revocable grants, and MCP-ready access patterns let
+            you build useful apps without herding users into another proprietary
+            backend.
+          </p>
+        </div>
+
+        <div class="developer-grid">
+          <div class="code-panel" aria-label="Install EweserDB">
+            <div class="code-panel-top">
+              <span></span>
+              <span></span>
+              <span></span>
             </div>
+            <pre><code>npm install @eweser/db</code></pre>
+            <p>
+              Then use the EweserDB SDK, MCP server, and portal access from the
+              dev menu below.
+            </p>
+          </div>
+
+          <div class="developer-proof-list" aria-label="Developer proof points">
+            {developerProofPoints.map((point) => <span>{point}</span>)}
           </div>
         </div>
-      </div>
-    </section>
-  </main>
 
-  <footer class="border-t border-slate-200 bg-white px-6 py-12 text-slate-600">
-    <div class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-8 md:flex-row">
-      <div class="flex flex-col items-center gap-2 md:items-start">
-        <div class="flex items-center gap-2">
-          <img src="/eweser-logo.svg" alt="" aria-hidden="true" class="h-6 w-6" />
-          <span class="font-semibold tracking-tight text-slate-950">EweserDB</span>
+        <div class="developer-status-list" aria-label="Feature status notes">
+          {
+            developerStatuses.map(([label, status]) => (
+              <p>
+                <strong>{label}</strong>
+                <span>{status}</span>
+              </p>
+            ))
+          }
         </div>
-        <span class="text-sm italic text-slate-500">"Ewe-ser", pronounced "user". Because you are.</span>
-      </div>
 
-      <div class="flex flex-wrap items-center justify-center gap-6 text-sm font-medium">
-        <a href="https://github.com/eweser/eweser-db" target="_blank" rel="noreferrer" class="transition-colors hover:text-slate-950">
-          GitHub
-        </a>
-        <a href="https://www.npmjs.com/package/@eweser/db" target="_blank" rel="noreferrer" class="transition-colors hover:text-slate-950">
-          npm
-        </a>
-        <a href={signInUrl} class="transition-colors hover:text-slate-950">Sign in</a>
-        <a href={noteUrl} class="transition-colors hover:text-slate-950">Ewe Note</a>
-        <a href={termsUrl} class="transition-colors hover:text-slate-950">Terms</a>
-        <a href={privacyUrl} class="transition-colors hover:text-slate-950">Privacy</a>
-        <a href={`mailto:${abuseEmail}`} class="transition-colors hover:text-slate-950">Abuse</a>
-      </div>
+        <div class="developer-trust-actions">
+          <a
+            href={apiUrl}
+            class="button button-primary"
+            target="_blank"
+            rel="noreferrer">Get API or Get Library</a
+          >
+          <a
+            href={githubUrl}
+            class="button button-outline"
+            target="_blank"
+            rel="noreferrer">View on GitHub</a
+          >
+        </div>
+      </section>
 
-      <div class="flex flex-wrap justify-center gap-2">
-        {['Yjs', 'Hocuspocus', 'better-auth', 'TypeScript', 'MIT'].map((tag) => (
-          <span class="rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs font-mono font-medium text-slate-600">
-            {tag}
-          </span>
-        ))}
-      </div>
+      <section class="closing-pasture" aria-labelledby="closing-title">
+        <div class="closing-illustration" aria-hidden="true">
+          <img src={closingImage} alt="" loading="lazy" decoding="async" />
+        </div>
+        <div class="closing-content">
+          <p class="section-label">Bring it home</p>
+          <h2 id="closing-title">Bring it home.</h2>
+          <p>
+            Connect your AI tools. Try Ewe Note. Your data deserves the world
+            and a field.
+          </p>
+        </div>
+        <div class="closing-actions">
+          <a href={connectAiUrl} class="button button-primary button-large">
+            <span>Connect my AI</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 5l7 7-7 7M4 12h12"></path>
+            </svg>
+          </a>
+          <a href={noteUrl} class="button button-outline button-large">
+            <span>Try Ewe Note</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M7 4h8l4 4v12H7zM15 4v5h5M10 14h6M10 17h4"></path>
+            </svg>
+          </a>
+          <a href={docsUrl} class="text-link" target="_blank" rel="noreferrer"
+            >Read the docs</a
+          >
+          <a href={apiUrl} class="text-link" target="_blank" rel="noreferrer"
+            >Build tools</a
+          >
+          <a href={githubUrl} class="text-link" target="_blank" rel="noreferrer"
+            >View on GitHub</a
+          >
+        </div>
+      </section>
+
+      <footer class="pastoral-footer">
+        <div>
+          <img src="/eweser-logo-white.svg" alt="" aria-hidden="true" />
+          <span>EweserDB</span>
+        </div>
+        <p class="footer-pronunciation">
+          "Ewe own your pastures. EweserDB keeps the rest."
+        </p>
+        <nav aria-label="Footer navigation">
+          <a href={githubUrl} target="_blank" rel="noreferrer">GitHub</a>
+          <a href={apiUrl} target="_blank" rel="noreferrer">API</a>
+          <a href={signInUrl}>Sign in</a>
+          <a href={noteUrl}>Ewe Note</a>
+          <a href={termsUrl}>Terms</a>
+          <a href={privacyUrl}>Privacy</a>
+          <a href={`mailto:${abuseEmail}`}>About</a>
+        </nav>
+      </footer>
     </div>
-  </footer>
+  </main>
 </Layout>

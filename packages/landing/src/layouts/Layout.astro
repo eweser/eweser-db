@@ -8,11 +8,7 @@ interface Props {
   ogImage?: string;
 }
 
-const {
-  title,
-  description,
-  ogImage = '/eweser-logo-white.svg',
-} = Astro.props;
+const { title, description, ogImage = '/eweser-logo-white.svg' } = Astro.props;
 
 const siteUrl = import.meta.env.SITE ?? 'https://eweser.com';
 const canonicalUrl = new URL(Astro.url.pathname, siteUrl).toString();
@@ -42,9 +38,9 @@ const canonicalUrl = new URL(Astro.url.pathname, siteUrl).toString();
     <meta name="twitter:image" content={new URL(ogImage, siteUrl).toString()} />
 
     <link rel="icon" type="image/svg+xml" href="/eweser-logo.svg" />
-    <meta name="theme-color" content="#050505" />
+    <meta name="theme-color" content="oklch(0.94 0.044 87)" />
   </head>
-  <body class="min-h-screen bg-[#050505] text-white antialiased">
+  <body class="min-h-screen antialiased">
     <slot />
   </body>
 </html>
