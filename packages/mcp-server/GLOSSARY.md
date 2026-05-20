@@ -5,9 +5,15 @@ steps, TODOs, and temporary design notes.
 
 ## Terms
 
-- **MCP server**: The local stdio server that exposes authorized EweserDB rooms
-  to AI clients through tools.
+- **MCP server**: The EweserDB MCP surface that exposes authorized rooms to AI
+  clients through tools. It can run as the local stdio `@eweser/mcp` package or
+  through the auth server's remote HTTP `/mcp` endpoint, depending on the
+  client setup path.
+- **Remote MCP endpoint**: The auth-server HTTP MCP route used by OAuth-capable
+  clients and token-backed remote MCP fallbacks.
 - **Agent**: An AI client or workflow acting through an approved agent token.
+- **Agent token**: A bearer token issued by the auth server for MCP or other AI
+  access. Agent tokens must be scoped by readable and writable room scopes.
 - **Readable room scope**: The set of rooms an agent may list, search, or read.
 - **Writable room scope**: The set of rooms an agent may create or update
   documents in.

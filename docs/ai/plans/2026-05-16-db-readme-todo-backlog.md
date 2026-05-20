@@ -113,18 +113,19 @@ Turn the stale `packages/db/README.md` TODO list into an implementation-ready ba
   `GLOSSARY.md` files for `@eweser/db`, `@eweser/auth-server-hono`,
   `@eweser/sync-server`, `@eweser/aggregator`, `@eweser/ewe-note`, and
   `@eweser/mcp`.
-- New terms: `Agent Journal`, `Project scope`, `Provider profile`,
-  `Publication state`, `Publication metadata`, `Indexability`, `De-indexing`,
-  `User snapshot`, `Encrypted room`, `Server identity`, `Peer server`,
-  `Federated principal`, `Backup listener`, `Federation relay`,
-  `Grant satisfaction`, and `Compatibility policy` are now captured as
-  canonical terms for later backlog runs.
+- New terms captured for later backlog runs: Agent Journal, Project scope,
+  Provider profile, Room ACL, Remote sync, Sync relay, Publication state,
+  Publication metadata, Indexability, De-indexing, Public search, User
+  snapshot, Encrypted room, Server identity, Peer server, Federated principal,
+  Backup listener, Federation relay, Grant satisfaction, MCP-readable room,
+  Remote MCP endpoint, and Compatibility policy.
 - Changed terms: prefer access grant, room ACL, sync token, readable room
-  scope, writable room scope, app capability, publication state, and
-  indexability instead of generic "permission", "access", or "public data"
-  language. `Public Aggregation Permission Gate` remains the historical run
-  title, but future docs should describe publication/indexability rather than
-  permissions when the aggregator is the subject.
+  scope, writable room scope, app capability, remote sync, sync relay,
+  publication state, public search, and indexability instead of generic
+  "permission", "access", "sync", or "public data" language. Public
+  Aggregation Permission Gate remains the historical run title, but future docs
+  should describe publication/indexability rather than permissions when the
+  aggregator is the subject.
 - ADR candidates: create new ADRs sparingly for hard-to-reverse decisions such
   as encrypted-room key management, federated identity/server trust, and
   schema/API compatibility policy.

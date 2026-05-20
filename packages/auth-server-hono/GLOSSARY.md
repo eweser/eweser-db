@@ -21,6 +21,8 @@ implementation steps, TODOs, and temporary design notes.
   covers a new app access request.
 - **Agent token**: A token for MCP or other AI agent access. Agent tokens must
   stay bounded by readable and writable room scopes.
+- **Remote MCP endpoint**: The auth-server HTTP `/mcp` route that accepts OAuth
+  bearer tokens or agent tokens and exposes MCP tools over scoped room access.
 - **Server identity**: The auth server's stable federation identity, including
   public verification material and service URLs.
 - **Peer server**: A remote EweserDB auth server registered for federation or

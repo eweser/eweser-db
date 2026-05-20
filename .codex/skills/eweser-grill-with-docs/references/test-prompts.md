@@ -4,11 +4,12 @@ Use these prompts to smoke-test the skill against real EweserDB docs. Each
 prompt should keep the skill in planner/docs mode: glossary and plan edits are
 allowed, product code edits are not. Each prompt should end with
 self-reflection and skill adjustment suggestions, even when the suggestion is
-`None`.
+`None`, unless the skill is waiting for the user's answer to a built-in
+question.
 
-1. `$eweser-grill-with-docs on docs/ai/plans/2026-05-16-db-readme-todo-backlog.md run 4. Stress-test server identity, peer server, federation request, and federated principal language before implementation. Ask one question at a time, update GLOSSARY.md files only when a term is resolved, and finish with self-reflection plus skill adjustment suggestions.`
+1. `$eweser-grill-with-docs on docs/ai/plans/2026-05-16-db-readme-todo-backlog.md run 4. Stress-test server identity, peer server, federation request, and federated principal language before implementation. Use Codex's built-in question UI for the first unresolved question, wait for my answer, update GLOSSARY.md files only when a term is resolved, and finish with self-reflection plus skill adjustment suggestions.`
 
-2. `$eweser-grill-with-docs on docs/ai/plans/2026-05-16-db-readme-todo-backlog.md run 5. Challenge every use of "permission", "access", "identity", and "relay" against the glossary map. Recommend canonical wording from the repo where possible.`
+2. `$eweser-grill-with-docs on docs/ai/plans/2026-05-16-db-readme-todo-backlog.md run 5. Challenge every use of "permission", "access", "identity", and "relay" against the glossary map. Resolve terms from repo evidence where possible, but ask one built-in question and stop when user input is required.`
 
 3. `$eweser-grill-with-docs on docs/ai/plans/2026-05-16-db-readme-todo-backlog.md run 6. Distinguish user snapshot, operator backup, backup listener, sync relay persistence, and federation-as-backup. Update glossary docs if the distinctions are stable.`
 
@@ -27,3 +28,5 @@ self-reflection and skill adjustment suggestions, even when the suggestion is
 10. `$eweser-grill-with-docs on a new feature idea: "let agents read all my notes and make a backup." Force precise EweserDB language for agent tokens, readable room scope, user snapshots, encrypted rooms, and public aggregation before any implementation plan is written.`
 
 11. `$eweser-grill-with-docs on docs/ai/plans/2026-05-16-db-readme-todo-backlog.md run 13. After resolving hosted sync usage language, evaluate whether the skill asked questions that were answerable from docs, whether any glossary docs were missing terms, and whether the skill itself needs a new prompt example or rule.`
+
+12. `$eweser-grill-with-docs over GLOSSARY-MAP.md, GLOSSARY.md, README.md, and ARCHITECTURE.md. Test whether the current product description has stable domain language for rooms, collections, grants, sync, public aggregation, encrypted rooms, backups, and MCP access. Use Codex's built-in question UI for any unresolved term, do not answer your own question, and do not continue until I answer.`

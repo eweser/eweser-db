@@ -28,11 +28,25 @@ boundaries are precise enough for Planner or Coder to use.
 
 ## Grilling Loop
 
-- Ask one question at a time and wait for the user's answer.
-- Provide a recommended answer with each question when the repo gives enough
-  evidence to recommend one.
 - If the answer can be found in code or docs, inspect the repo instead of
   asking the user to restate it.
+- Ask one unresolved question at a time and wait for the user's answer before
+  resolving that term, updating docs for that term, or moving to the next
+  unresolved question.
+- Use Codex's built-in question UI whenever it is available:
+  - Call `request_user_input` with exactly one question.
+  - Provide two or three mutually exclusive options only when the question has
+    clear choices.
+  - Put the repo-recommended option first and suffix its label with
+    `(Recommended)` when a recommendation exists, but do not treat that option
+    as accepted until the user chooses it.
+  - Include a concise free-form path by relying on the client's built-in
+    `Other` option; do not add your own `Other` option.
+- If `request_user_input` is unavailable, ask one concise question in chat and
+  stop the turn immediately. Do not include a final summary, continue the grill,
+  or answer the question yourself.
+- Never self-answer a question after asking it. A recommendation is only a
+  recommendation, not approval to proceed.
 - Challenge glossary conflicts immediately. Example: "The glossary uses
   `access grant`, but this plan says `permission`. Do you mean grant, room ACL,
   or token scope?"

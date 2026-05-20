@@ -24,6 +24,7 @@ curl -fsSL https://raw.githubusercontent.com/eweser/eweser-db/main/scripts/setup
 - `@eweser/app` - React SPA for login, signup, account management, and access grants
 - `@eweser/aggregator` - server-side indexing and public search
 - `@eweser/sync-server` - Hocuspocus sync relay
+- `@eweser/mcp` - MCP tools for authorized agent access to scoped rooms
 - `@eweser/ewe-note` - TipTap-based Obsidian-compatible note-taking app
 - example apps under `examples/`
 
@@ -52,7 +53,7 @@ db.on('roomsLoaded', () => {
   // Ready to use in offline mode immediately.
 });
 
-const room = db.getRoom<Note>(collectionKey, aliasSeed);
+const notesRoom = db.getRoom<Note>('notes', 'my-notes-on-life-and-things');
 
 // This wrapper exposes CRDT-safe document helpers for the room.
 const Notes = db.getDocuments(notesRoom);
@@ -63,7 +64,7 @@ Notes.onChange((event) => {
 
 Notes.new({ text: 'hello world' });
 
-// To sync to the cloud, connect to the auth API.
+// To enable remote sync, connect through the auth API and sync relay.
 const loginUrl = db.generateLoginUrl({ name: 'Basic Example App' });
 
 if (db.getToken()) {
@@ -71,17 +72,27 @@ if (db.getToken()) {
 }
 ```
 
-That is enough to get a local-first database that syncs between devices and apps.
+That is enough to get a local-first database. It remains usable offline and can
+sync between devices and apps when remote sync is connected.
 
 ## Core Ideas
 
 ### Rooms
 
-A room is a Yjs-backed container with access control. It groups documents that share a collection key and schema.
+A room is a Yjs-backed container with a collection key, shared schema, and room
+access control. Rooms are the main authorization and remote-sync boundary.
+Folders and bases can organize room content, but they do not replace room
+collection boundaries.
 
 ### Collections and Schemas
 
 Collections define strongly typed document shapes. Apps that share a schema can interoperate on the same data.
+
+### Remote Sync
+
+Apps load local IndexedDB-backed Yjs state first. Remote sync is optional and
+uses the Hocuspocus sync relay with short-lived sync tokens for scoped room
+connections. Synced does not mean public.
 
 ### References
 
@@ -93,11 +104,34 @@ Use `buildRef()` from `@eweser/shared` to construct refs.
 
 ### Access Control
 
-The auth API handles ACL and access grants. Apps request access through the auth pages SPA and receive room-scoped tokens.
+The auth API owns room ACLs, access grants, sessions, and sync-token issuance.
+Room ACLs define owner/admin/read/write rights. Access grants authorize an app
+or agent for selected rooms and capabilities. Sync tokens authorize a specific
+remote-sync connection.
 
-### Aggregator
+### Public Aggregation
 
-Aggregator services index public room data so apps can search shared content without querying every client directly.
+The aggregator indexes explicitly public rooms for public search. Public search
+is separate from ordinary remote sync, collaborator sharing, and MCP-readable
+agent access.
+
+### User Snapshots
+
+A user snapshot is a portable backup bundle for selected rooms. It is not a
+sync replica, operator database backup, sync relay persistence store, or
+federation backup listener.
+
+### Encrypted Rooms
+
+Ordinary hosted remote sync is not end-to-end encrypted. Encrypted rooms are an
+opt-in room-level capability being planned for sensitive data, with explicit
+tradeoffs for public search, MCP access, recovery, and collaboration.
+
+### MCP and Agent Access
+
+MCP tools expose only rooms included in an agent's readable or writable room
+scope. MCP-readable rooms are not public-searchable unless the room is also
+explicitly public.
 
 ## Example Apps
 
@@ -160,6 +194,7 @@ npm run changeset
 
 ## Notes
 
-- Users should be told that signing in grants the app read/write access to their user-owned database for the duration of the session.
+- Users should be told which room scopes and capabilities an app or agent is
+  being granted for the duration of the session.
 - Historical migration notes are kept in `docs/ai/` and `docs/ai/adr/`.
 - Keep the docs in this repository aligned with the current package layout and workspace scripts.
