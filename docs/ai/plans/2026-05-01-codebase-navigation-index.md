@@ -58,8 +58,8 @@ are the safest starting points before editing.
     depend on relevant codebase context from keyword search, repository search,
     and code graph retrieval:
     https://sourcegraph.com/docs/cody/core-concepts/context
-  - A 2026 AGENTS.md study is a caution against bloated context files:
-    repository context files can encourage broader exploration and instruction
+  - A 2026 AGENTS.md study is a caution against bloated instruction files:
+    repository instruction files can encourage broader exploration and instruction
     following, but unnecessary requirements may reduce task success and increase
     inference cost. Keep root instructions minimal and navigational docs
     on-demand: https://arxiv.org/abs/2602.11988

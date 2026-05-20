@@ -20,7 +20,7 @@ shared schemas, auth grants, sync, and interoperable apps.
 - [`LOCAL_DEVELOPMENT.md`](./LOCAL_DEVELOPMENT.md): Local service setup and
   ports.
 - [`AGENTS.md`](./AGENTS.md): Repo-wide agent policy.
-- [`CONTEXT-MAP.md`](./CONTEXT-MAP.md): Domain-language glossary map for
+- [`GLOSSARY-MAP.md`](./GLOSSARY-MAP.md): Domain-language glossary map for
   planning and AI agents.
 - [`docs/ai/code-indexing.md`](./docs/ai/code-indexing.md): Index format and
   checker contract.
@@ -48,7 +48,7 @@ shared schemas, auth grants, sync, and interoperable apps.
 - Public package API changes to `@eweser/db`, `@eweser/shared`, or
   `@eweser/examples-components` require a changeset.
 - Never delete migrations or commit secrets.
-- `CONTEXT.md` files are glossaries only. Put implementation plans in
+- `GLOSSARY.md` files are glossaries only. Put implementation plans in
   `docs/ai/plans/` and architectural decisions in ADRs.
 
 ## Update Triggers

@@ -15,7 +15,7 @@ EweserDB is a local-first, user-owned database SDK built on Yjs CRDTs. Users own
 - Read `README.md` for product philosophy and API overview.
 - Read `ARCHITECTURE.md` for current system design.
 - Read `LOCAL_DEVELOPMENT.md` for setup and local service details.
-- Treat `docs/ai/` and `docs/ai/adr/` as historical context unless a file explicitly says it is current guidance.
+- Treat `docs/ai/` and `docs/ai/adr/` as historical background unless a file explicitly says it is current guidance.
 - Product/user configuration that must interoperate across apps should live in
   EweserDB rooms or shared schemas. PostgreSQL in `packages/auth-server-hono`
   should be reserved for auth, grants, sessions, OAuth, operational tokens, and
@@ -142,14 +142,14 @@ also read `docs/ai/code-indexing.md` and apply its contract in the same change.
 
 ## Domain Language
 
-Use `CONTEXT-MAP.md` and the mapped `CONTEXT.md` files to keep planning,
+Use `GLOSSARY-MAP.md` and the mapped `GLOSSARY.md` files to keep planning,
 implementation, docs, and user-facing copy aligned with EweserDB domain
 language. These files are glossaries only: do not put implementation plans,
 acceptance criteria, TODOs, or temporary design notes in them.
 
 For substantial or ambiguous work, resolve fuzzy terms during planning. Update
-the relevant `CONTEXT.md` when a canonical term is decided. Create or update an
-ADR only for hard-to-reverse decisions that would be surprising without context.
+the relevant `GLOSSARY.md` when a canonical term is decided. Create or update an
+ADR only for hard-to-reverse decisions that would be surprising without background.
 
 For substantial or ambiguous work, use the Planner -> Coder workflow:
 

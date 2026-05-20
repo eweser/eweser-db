@@ -13,7 +13,7 @@ Tailwind, TipTap, and `@eweser/db`.
 ## Start Here
 
 - [`AGENTS.md`](./AGENTS.md): Frontend/app rules.
-- [`CONTEXT.md`](./CONTEXT.md): Ewe Note base/vault glossary.
+- [`GLOSSARY.md`](./GLOSSARY.md): Ewe Note base/vault glossary.
 - [`README.md`](./README.md): App overview and development setup.
 - [`package.json`](./package.json): Workspace scripts.
 - [`src/INDEX.md`](./src/): Source navigation map.

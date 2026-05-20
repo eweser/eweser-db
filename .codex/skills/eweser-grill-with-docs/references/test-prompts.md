@@ -6,9 +6,9 @@ allowed, product code edits are not. Each prompt should end with
 self-reflection and skill adjustment suggestions, even when the suggestion is
 `None`.
 
-1. `$eweser-grill-with-docs on docs/ai/plans/2026-05-16-db-readme-todo-backlog.md run 4. Stress-test server identity, peer server, federation request, and federated principal language before implementation. Ask one question at a time, update CONTEXT.md files only when a term is resolved, and finish with self-reflection plus skill adjustment suggestions.`
+1. `$eweser-grill-with-docs on docs/ai/plans/2026-05-16-db-readme-todo-backlog.md run 4. Stress-test server identity, peer server, federation request, and federated principal language before implementation. Ask one question at a time, update GLOSSARY.md files only when a term is resolved, and finish with self-reflection plus skill adjustment suggestions.`
 
-2. `$eweser-grill-with-docs on docs/ai/plans/2026-05-16-db-readme-todo-backlog.md run 5. Challenge every use of "permission", "access", "identity", and "relay" against the context map. Recommend canonical wording from the repo where possible.`
+2. `$eweser-grill-with-docs on docs/ai/plans/2026-05-16-db-readme-todo-backlog.md run 5. Challenge every use of "permission", "access", "identity", and "relay" against the glossary map. Recommend canonical wording from the repo where possible.`
 
 3. `$eweser-grill-with-docs on docs/ai/plans/2026-05-16-db-readme-todo-backlog.md run 6. Distinguish user snapshot, operator backup, backup listener, sync relay persistence, and federation-as-backup. Update glossary docs if the distinctions are stable.`
 
@@ -18,12 +18,12 @@ self-reflection and skill adjustment suggestions, even when the suggestion is
 
 6. `$eweser-grill-with-docs on docs/ai/plans/2026-05-16-db-readme-todo-backlog.md run 11. Decide whether "permission page" is acceptable user-facing copy or whether this plan should use access approval, access grant, grant satisfaction, and app capability instead.`
 
-7. `$eweser-grill-with-docs over packages/db/README.md, ARCHITECTURE.md, and CONTEXT-MAP.md. Find stale or ambiguous terms left from the old README TODO list, especially around public data, backups, federation, E2EE, and migrations. Make docs-only glossary or plan edits.`
+7. `$eweser-grill-with-docs over packages/db/README.md, ARCHITECTURE.md, and GLOSSARY-MAP.md. Find stale or ambiguous terms left from the old README TODO list, especially around public data, backups, federation, E2EE, and migrations. Make docs-only glossary or plan edits.`
 
-8. `$eweser-grill-with-docs over packages/aggregator/README.md and packages/aggregator/CONTEXT.md. Check whether public search, public room, publication state, indexability, and de-indexing are consistently named and do not imply private synced data is searchable.`
+8. `$eweser-grill-with-docs over packages/aggregator/README.md and packages/aggregator/GLOSSARY.md. Check whether public search, public room, publication state, indexability, and de-indexing are consistently named and do not imply private synced data is searchable.`
 
-9. `$eweser-grill-with-docs over packages/mcp-server/README.md, packages/mcp-server/CONTEXT.md, and the active AI memory plans. Separate Agent Journal, project wiki, memory scope, readable room scope, and writable room scope.`
+9. `$eweser-grill-with-docs over packages/mcp-server/README.md, packages/mcp-server/GLOSSARY.md, and the active AI memory plans. Separate Agent Journal, project wiki, memory scope, readable room scope, and writable room scope.`
 
 10. `$eweser-grill-with-docs on a new feature idea: "let agents read all my notes and make a backup." Force precise EweserDB language for agent tokens, readable room scope, user snapshots, encrypted rooms, and public aggregation before any implementation plan is written.`
 
-11. `$eweser-grill-with-docs on docs/ai/plans/2026-05-16-db-readme-todo-backlog.md run 13. After resolving hosted sync usage language, evaluate whether the skill asked questions that were answerable from docs, whether any context docs were missing terms, and whether the skill itself needs a new prompt example or rule.`
+11. `$eweser-grill-with-docs on docs/ai/plans/2026-05-16-db-readme-todo-backlog.md run 13. After resolving hosted sync usage language, evaluate whether the skill asked questions that were answerable from docs, whether any glossary docs were missing terms, and whether the skill itself needs a new prompt example or rule.`

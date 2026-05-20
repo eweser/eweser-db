@@ -3,7 +3,7 @@ name: eweser-grill-with-docs
 description: >
   Use this skill in the EweserDB repo when the user wants to stress-test a
   feature, plan, product decision, or naming choice against EweserDB domain
-  language before implementation. It uses CONTEXT-MAP.md, package CONTEXT.md
+  language before implementation. It uses GLOSSARY-MAP.md, package GLOSSARY.md
   glossaries, INDEX.md navigation, AGENTS.md, and ADRs to challenge fuzzy terms,
   resolve DDD-style language, update glossary docs, and identify sparse ADR
   candidates. It ends with self-reflection and skill-improvement suggestions
@@ -18,8 +18,8 @@ boundaries are precise enough for Planner or Coder to use.
 
 ## Startup
 
-1. Read `AGENTS.md`, the nearest `INDEX.md`, and `CONTEXT-MAP.md`.
-2. Read only the relevant `CONTEXT.md` files from the context map.
+1. Read `AGENTS.md`, the nearest `INDEX.md`, and `GLOSSARY-MAP.md`.
+2. Read only the relevant `GLOSSARY.md` files from the glossary map.
 3. Read `docs/ai/adr/README.md` and only the ADRs directly related to the
    question.
 4. If there is an existing plan, read that plan and `docs/ai/plans/_template.md`.
@@ -41,16 +41,16 @@ boundaries are precise enough for Planner or Coder to use.
 - Keep terms aligned with user-owned/local-first product language.
 - Notice friction while grilling: repeated ambiguity, missing glossary terms,
   stale docs, weak examples, or questions that could have been answered from
-  repo context.
+  repo docs.
 
 ## Updating Docs
 
-- When a term is resolved, update the relevant `CONTEXT.md` during the session.
-- Keep `CONTEXT.md` files as glossaries only. Do not put implementation steps,
+- When a term is resolved, update the relevant `GLOSSARY.md` during the session.
+- Keep `GLOSSARY.md` files as glossaries only. Do not put implementation steps,
   TODOs, acceptance criteria, or speculative design notes there.
 - Add or update a plan's `Domain Language` section when a plan exists.
 - Offer an ADR only when the decision is hard to reverse, broad in impact, and
-  surprising without context.
+  surprising without background.
 - If the session reveals a possible improvement to this skill, record it in the
   final self-reflection. Do not edit the skill itself unless the user's request
   explicitly includes skill updates.
@@ -61,12 +61,12 @@ End with:
 
 - resolved canonical terms;
 - open terminology questions, if any;
-- `CONTEXT.md` files changed;
+- `GLOSSARY.md` files changed;
 - ADR candidates, if any;
 - the next planner/coder handoff.
 - self-reflection: what the grilling clarified, what remained hard, and whether
   the repo docs made the right answer discoverable;
 - skill adjustment suggestions: concrete updates to this skill, its prompt
-  examples, or context-doc workflow, or `None`.
+  examples, or glossary workflow, or `None`.
 
 Do not write product code in this skill.

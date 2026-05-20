@@ -24,7 +24,7 @@ Read:
 1. `AGENTS.md`
 2. `ARCHITECTURE.md`
 3. `.github/copilot-instructions.md`
-4. `CONTEXT-MAP.md` and relevant mapped `CONTEXT.md` files
+4. `GLOSSARY-MAP.md` and relevant mapped `GLOSSARY.md` files
 5. `docs/ai/workflows/codex-planner-coder.md`
 6. `docs/ai/plans/_template.md`
 7. Relevant package `AGENTS.md`, for example `packages/db/AGENTS.md`
@@ -34,7 +34,7 @@ Read:
 
 1. Ask only blocking clarifying questions first if the goal, scope, or acceptance criteria are unclear. If uncertainty is non-blocking, record it as an assumption in the plan and keep going.
 2. Research the codebase to understand current state.
-3. Challenge fuzzy or conflicting domain terms against the relevant `CONTEXT.md` files. If a term is resolved, update the glossary immediately.
+3. Challenge fuzzy or conflicting domain terms against the relevant `GLOSSARY.md` files. If a term is resolved, update the glossary immediately.
 4. Run small feasibility experiments only when allowed by the user and useful for planning.
 5. Review architecture boundaries, migration impact, cascading type changes, ADR candidates, and changeset requirements.
 6. For substantial work, save a draft plan to `docs/ai/plans/YYYY-MM-DD-<slug>.md`.
@@ -55,7 +55,7 @@ Use sidecars only for separable research questions.
 
 - Use `scripts/codex/mini-worker.sh code "..."` for local code exploration.
 - Use `scripts/codex/mini-worker.sh web "..."` for current external documentation checks.
-- Use `scripts/codex/mini-worker.sh research "..."` when the question needs both local and external context.
+- Use `scripts/codex/mini-worker.sh research "..."` when the question needs both local and external research.
 - Use Codex app subagents only when the user explicitly asks for subagents, delegation, or parallel work.
 
 ## Questions to ask first
@@ -99,7 +99,7 @@ Use `docs/ai/plans/_template.md`. Save to
 
 ## Domain Language
 
-- Context docs: ...
+- Glossary docs: ...
 - New terms: ...
 - Changed terms: ...
 - ADR candidates: ...

@@ -13,7 +13,7 @@ implementation steps, TODOs, and temporary design notes.
   connection, including room ID, collection key, user identity, and capabilities.
 - **Webhook forwarding**: The sync relay's optional notification path to the
   aggregator after room updates.
-- **Publication context**: The public/private room state attached to update
+- **Publication metadata**: The public/private room state attached to update
   forwarding so the aggregator can enforce indexing boundaries.
 - **Federation relay**: A server-side relay connection that carries authorized
   room updates between EweserDB auth servers.

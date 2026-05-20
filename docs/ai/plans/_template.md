@@ -16,7 +16,7 @@
 
 ## Domain Language
 
-- Context docs: <Relevant CONTEXT.md files, or "None needed".>
+- Glossary docs: <Relevant GLOSSARY.md files, or "None needed".>
 - New terms: <Canonical term and definition, or "None".>
 - Changed terms: <Existing term whose meaning/naming changes, or "None".>
 - ADR candidates: <Hard-to-reverse decisions that may need ADRs, or "None".>

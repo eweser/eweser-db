@@ -21,9 +21,9 @@ Planner -> Coder workflow.
 
 1. Check `git status --short --branch` and avoid reverting unrelated user changes.
 2. Read the plan file. The user should provide a path such as `docs/ai/plans/YYYY-MM-DD-feature.md`.
-3. Read `AGENTS.md`, `ARCHITECTURE.md`, `.github/copilot-instructions.md`, `CONTEXT-MAP.md`, and `docs/ai/workflows/codex-planner-coder.md`.
-4. Read the nearest `INDEX.md` before broad `rg` or `find` exploration. For symbol/import/export questions, prefer `npm run code-map:query -- --symbol <name>`, `--file <path>`, or `--package <name>` before dumping source into context.
-5. Read relevant mapped `CONTEXT.md` files for the run scope, especially when the plan's Domain Language section names them.
+3. Read `AGENTS.md`, `ARCHITECTURE.md`, `.github/copilot-instructions.md`, `GLOSSARY-MAP.md`, and `docs/ai/workflows/codex-planner-coder.md`.
+4. Read the nearest `INDEX.md` before broad `rg` or `find` exploration. For symbol/import/export questions, prefer `npm run code-map:query -- --symbol <name>`, `--file <path>`, or `--package <name>` before dumping source into the prompt.
+5. Read relevant mapped `GLOSSARY.md` files for the run scope, especially when the plan's Domain Language section names them.
 6. Read the relevant package `AGENTS.md` for the run scope.
 7. Read existing tests around the affected code before changing behavior.
 8. Identify which run to start from. Default to Run 1 and implement all runs sequentially.
@@ -51,7 +51,7 @@ query can narrow the next file to inspect.
 
 - The approved plan is the approval boundary. Stay inside it.
 - Minimal diff: extend existing patterns before adding new abstractions.
-- Preserve canonical domain terms from the relevant `CONTEXT.md` files. If implementation reveals a terminology correction inside the approval boundary, update the glossary and plan summary.
+- Preserve canonical domain terms from the relevant `GLOSSARY.md` files. If implementation reveals a terminology correction inside the approval boundary, update the glossary and plan summary.
 - TypeScript strict mode: no `any` unless unavoidable and documented.
 - Yjs writes: always through CRDT helpers such as `docs.set()`, `docs.new()`, or `yDoc.transact()`.
 - Never directly mutate Yjs-observed objects.

@@ -15,7 +15,7 @@ Every new plan must include:
 - Goal
 - Scope
 - Assumptions / open questions
-- Domain language and relevant `CONTEXT.md` files when the work introduces or
+- Domain language and relevant `GLOSSARY.md` files when the work introduces or
   changes product terms
 - Runs with id, title, files, steps, tests, verification, dependencies, model
   tier, and risk level
@@ -27,7 +27,7 @@ Every new plan must include:
 For terminology-heavy plans or runs, especially federation, encrypted rooms,
 public aggregation, MCP/agent access, backups, and compatibility policy, run
 `eweser-grill-with-docs` before implementation approval. It should resolve
-canonical terms into `CONTEXT.md` and the plan's Domain Language section without
+canonical terms into `GLOSSARY.md` and the plan's Domain Language section without
 editing product code. Each grilling session should end with a brief
 self-reflection and concrete skill-adjustment suggestions when the workflow
 itself needs improvement.
@@ -43,7 +43,7 @@ plan. Standalone QA is reserved for independent re-QA or audit work.
 
 - **Current** - Active work or planned work that is still useful as guidance.
 - **Completed** - Implemented or delivered; archived in `./completed/`.
-- **Historical** - Useful context, but superseded by newer plans or current code.
+- **Historical** - Useful background, but superseded by newer plans or current code.
 
 ## Current Plans
 
@@ -55,7 +55,7 @@ plan. Standalone QA is reserved for independent re-QA or audit work.
 | [2026-04-29-ai-memory-strategy-onboarding.md](./2026-04-29-ai-memory-strategy-onboarding.md) | Current plan        | Add default cross-platform AI memory onboarding plus advanced per-project memory strategies.        |
 | [2026-04-28-compliance-and-legal.md](./2026-04-28-compliance-and-legal.md)                   | Launch blocker      | Terms/privacy/abuse/DMCA work remains before public launch.                                         |
 | [2026-04-19-go-live-security-hardening.md](./2026-04-19-go-live-security-hardening.md)       | Launch blocker      | Run 1 complete; final security/go-live closure still open.                                          |
-| [2026-04-03-ai-first-launch-strategy.md](./2026-04-03-ai-first-launch-strategy.md)           | Strategic reference | Partly shipped through MCP/Connect AI; use as positioning and launch-story context.                 |
+| [2026-04-03-ai-first-launch-strategy.md](./2026-04-03-ai-first-launch-strategy.md)           | Strategic reference | Partly shipped through MCP/Connect AI; use as positioning and launch-story background.              |
 
 ### AI Workflow / Tooling
 

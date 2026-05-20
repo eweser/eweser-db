@@ -14,7 +14,7 @@ IndexedDB persistence, and optional WebRTC/Hocuspocus sync.
 ## Start Here
 
 - [`AGENTS.md`](./AGENTS.md): SDK and shared package rules.
-- [`CONTEXT.md`](./CONTEXT.md): SDK room/document glossary.
+- [`GLOSSARY.md`](./GLOSSARY.md): SDK room/document glossary.
 - [`README.md`](./README.md): SDK philosophy and usage examples.
 - [`package.json`](./package.json): Workspace scripts.
 - [`src/INDEX.md`](./src/): Source navigation map.
