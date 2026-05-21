@@ -19,6 +19,7 @@ const privacyUrl = `${appUrl}/statement/privacy`;
 const abuseEmail = 'abuse@eweser.com';
 const imageBase = '/images';
 const heroImage = `${imageBase}/hero-orbit-house.png`;
+const problemImage = `${imageBase}/apps-became-landlords-pasture.png`;
 const substrateQuoteImage = `${imageBase}/permission-landscape-lock.png`;
 const ecosystemCoreImage = `${imageBase}/ownership-sheep-arch.png`;
 const closingImage = `${imageBase}/solar-house-wide.png`;
@@ -162,18 +163,18 @@ const appCards = [
 ];
 
 const mcpClients = [
-  { name: 'Cursor', detail: 'Desktop', url: 'cursor.com' },
-  { name: 'Claude', detail: 'Web', url: 'claude.ai/new/chat' },
-  { name: 'ChatGPT', detail: 'Web', url: 'chatgpt.com/gpts/mygpts' },
-  { name: 'GitHub Copilot', detail: 'IDE', url: 'github.com' },
-  { name: 'Cline', detail: 'IDE', url: 'cline.bot' },
-  { name: 'Graydb', detail: 'Docs', url: 'graydb.com/documentation' },
+  { name: 'Codex', detail: 'CLI', path: 'token-backed MCP config' },
+  { name: 'Claude', detail: 'Desktop', path: 'local stdio MCP' },
+  { name: 'Claude', detail: 'Web', path: 'OAuth remote MCP' },
+  { name: 'ChatGPT', detail: 'Web', path: 'OAuth remote MCP' },
+  { name: 'GitHub Copilot', detail: 'IDE', path: 'token-backed setup' },
+  { name: 'OpenClaw', detail: 'Agent', path: 'streamable-http MCP' },
 ];
 
 const mcpStatuses = [
-  ['MCP', 'MCP conversation history. No lock in. No data tax.'],
-  ['Memory', 'Scoped context across devices and sessions.'],
-  ['Pasture', 'Auditing by room, grant, and log ID.'],
+  ['MCP endpoint', 'Permissioned access to rooms and schemas.'],
+  ['Memory rooms', 'Scoped context across devices and sessions.'],
+  ['Audit trail', 'Room, grant, and log IDs stay reviewable.'],
 ];
 
 const developerProofPoints = [
@@ -204,7 +205,7 @@ const developerStatuses = [
 ---
 
 <Layout
-  title="EweserDB | Your data is not their pasture."
+  title="EweserDB | Your data is not their moat."
   description="EweserDB is a local-first personal data layer rooted on your device. Apps and AI agents connect with scoped access you control."
   ogImage={heroImage}
 >
@@ -252,7 +253,7 @@ const developerStatuses = [
         <div class="hero-copy">
           <p class="hero-graphic-label">Own Your Own Data</p>
           <p class="hero-kicker">A homestead for your data.</p>
-          <h1 id="hero-title">Your data is not their pasture.</h1>
+          <h1 id="hero-title">Your data is not their moat.</h1>
           <p class="hero-standfirst">
             The flock follows the platform. Ewe don't have to.
           </p>
@@ -463,9 +464,7 @@ const developerStatuses = [
         aria-labelledby="problem-title"
       >
         <div class="section-art section-art-deed" aria-hidden="true">
-          <span></span>
-          <span></span>
-          <span></span>
+          <img src={problemImage} alt="" loading="lazy" decoding="async" />
         </div>
 
         <div class="section-intro section-intro-wide">
@@ -522,8 +521,8 @@ const developerStatuses = [
           <h2 id="reversal-title">Switch apps. Keep your work.</h2>
           <p>
             EweserDB separates the data layer from the app layer. Your notes,
-            bookmarks, tasks, projects, and media live in your pasture. Apps
-            come, use what you allow, and leave. You stay in charge of your
+            bookmarks, tasks, projects, and media live in your own data layer.
+            Apps come, use what you allow, and leave. You stay in charge of your
             data, from anywhere, in the app you want.
           </p>
         </div>
@@ -675,10 +674,10 @@ const developerStatuses = [
           <p class="section-label">04 / AI</p>
           <h2 id="mcp-title">Give your AI a memory it can't take with it.</h2>
           <p>
-            Cursor, Claude, ChatGPT, Copilot, Cline, and other AI-driven tools
-            borrow context while they work with you, then move on when the
-            session ends. EweserDB keeps your memory and access policy together,
-            so when you return, your AI is ready to work.
+            Codex, Claude, ChatGPT, GitHub Copilot, OpenClaw, and the apps you
+            choose need context while they work with you. EweserDB keeps memory
+            and access policy together, so each client reads from scoped rooms
+            you can inspect and revoke.
           </p>
           <a href={connectAiUrl} class="button button-primary button-large">
             <span>Connect my AI</span>
@@ -689,7 +688,7 @@ const developerStatuses = [
           <small>Modern API access. Ready for dev and AI tools.</small>
         </div>
 
-        <div class="mcp-console" aria-label="Supported AI clients and status">
+        <div class="mcp-console" aria-label="AI setup paths and access status">
           <ul class="mcp-client-list">
             {
               mcpClients.map((client) => (
@@ -697,7 +696,7 @@ const developerStatuses = [
                   <strong>
                     {client.name} · {client.detail}
                   </strong>
-                  <span>{client.url}</span>
+                  <span>{client.path}</span>
                 </li>
               ))
             }
@@ -783,7 +782,7 @@ const developerStatuses = [
         </div>
       </section>
 
-      <section class="closing-pasture" aria-labelledby="closing-title">
+      <section class="closing-home" aria-labelledby="closing-title">
         <div class="closing-illustration" aria-hidden="true">
           <img src={closingImage} alt="" loading="lazy" decoding="async" />
         </div>
@@ -791,8 +790,8 @@ const developerStatuses = [
           <p class="section-label">Bring it home</p>
           <h2 id="closing-title">Bring it home.</h2>
           <p>
-            Connect your AI tools. Try Ewe Note. Your data deserves the world
-            and a field.
+            Connect your AI tools. Try Ewe Note. Keep the database under your
+            control.
           </p>
         </div>
         <div class="closing-actions">
@@ -826,7 +825,7 @@ const developerStatuses = [
           <span>EweserDB</span>
         </div>
         <p class="footer-pronunciation">
-          "Ewe own your pastures. EweserDB keeps the rest."
+          "You own the database. Apps ask for access."
         </p>
         <nav aria-label="Footer navigation">
           <a href={githubUrl} target="_blank" rel="noreferrer">GitHub</a>

@@ -433,6 +433,16 @@ describe('auth-pages app', () => {
           title: 'Claude Desktop',
           type: 'token',
         },
+        {
+          clientId: 'openclaw',
+          connection: null,
+          description:
+            'Remote HTTP MCP setup for OpenClaw using streamable-http and an explicit Authorization header.',
+          fallbackReason:
+            'OpenClaw stores outbound MCP servers under mcp.servers. Run openclaw mcp set eweser with the generated server JSON.',
+          title: 'OpenClaw',
+          type: 'token',
+        },
       ],
       defaults: {
         allowedCollections: 'all-supported-collections',
@@ -470,6 +480,10 @@ describe('auth-pages app', () => {
       await screen.findByRole('heading', { name: /connect ai/i, level: 2 })
     ).toBeInTheDocument();
     expect(screen.getByText(/claude desktop/i)).toBeInTheDocument();
+    expect(screen.getByText(/openclaw setup/i)).toBeInTheDocument();
+    expect(
+      screen.getAllByText(/openclaw mcp set eweser/i).length
+    ).toBeGreaterThan(0);
     expect(screen.getAllByText(/shared agent memory/i).length).toBeGreaterThan(
       0
     );

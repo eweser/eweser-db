@@ -624,6 +624,64 @@ describe('connectAiRouter', () => {
     );
   });
 
+  it('creates an OpenClaw streamable-http setup payload', async () => {
+    mockGetAgentConfigsByUserId.mockResolvedValueOnce([]);
+    mockCreateAgentConfig.mockResolvedValueOnce({
+      agentConfig: {
+        id: 'agent-uuid-openclaw',
+        userId: mockUser.id,
+        name: 'Connect AI: OpenClaw',
+        type: 'openclaw',
+        endpoint: 'https://eweser.com/mcp',
+        allowedCollections: ['notes'],
+        allowedRooms: [],
+        permissions: 'read',
+        readAllowedCollections: ['notes'],
+        readAllowedRooms: [],
+        isActive: true,
+        tokenHash: 'secret-hash',
+        tokenExpiresAt: new Date('2026-05-01T00:00:00.000Z'),
+        lastAccessAt: null,
+        writeAllowedCollections: ['notes'],
+        writeAllowedFolderIds: [],
+        writeAllowedPathPrefixes: [],
+        writeAllowedRooms: ['room-ai'],
+        createdAt: new Date('2026-04-24T00:00:00.000Z'),
+        updatedAt: null,
+      },
+      token: 'agent-token-123',
+    });
+
+    const res = await authenticatedFetch(
+      app,
+      '/api/account/connect-ai/setup-token',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          clientId: 'openclaw',
+          writableRoomIds: ['room-ai'],
+        }),
+      }
+    );
+
+    expect(res.status).toBe(200);
+    expect(mockCreateAgentConfig).toHaveBeenCalledWith(
+      expect.objectContaining({
+        endpoint: 'https://eweser.com/mcp',
+        name: 'Connect AI: OpenClaw',
+        type: 'openclaw',
+      })
+    );
+    const body = await res.json();
+    expect(body.payload.instructions).toContain('openclaw mcp set eweser');
+    expect(JSON.parse(body.payload.snippet)).toEqual({
+      headers: { Authorization: 'Bearer agent-token-123' },
+      transport: 'streamable-http',
+      url: 'https://eweser.com/mcp',
+    });
+  });
+
   it('rejects token setup with an unauthorized writable room', async () => {
     const res = await authenticatedFetch(
       app,

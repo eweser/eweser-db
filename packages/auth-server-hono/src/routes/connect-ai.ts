@@ -183,17 +183,13 @@ function buildTokenSnippet(
       return {
         configFormat: 'json',
         instructions:
-          'Use this remote HTTP MCP definition in OpenClaw with an explicit Authorization header.',
+          'Run openclaw mcp set eweser with this server definition, or add it under mcp.servers. Then use an OpenClaw coding or messaging profile with MCP tools enabled.',
         snippet: JSON.stringify(
           {
-            mcpServers: {
-              eweser: {
-                type: 'http',
-                url: getPublicMcpUrl(),
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              },
+            url: getPublicMcpUrl(),
+            transport: 'streamable-http',
+            headers: {
+              Authorization: `Bearer ${token}`,
             },
           },
           null,
@@ -250,9 +246,9 @@ function getClientCatalog() {
     {
       clientId: 'openclaw',
       description:
-        'Remote HTTP MCP config with an explicit Authorization header.',
+        'Remote HTTP MCP setup for OpenClaw using streamable-http and an explicit Authorization header.',
       fallbackReason:
-        'OpenClaw docs currently document remote HTTP headers, not a verified remote OAuth flow worth launching here.',
+        'OpenClaw stores outbound MCP servers under mcp.servers. Run openclaw mcp set eweser with the generated server JSON.',
       title: 'OpenClaw',
       type: 'token',
     },

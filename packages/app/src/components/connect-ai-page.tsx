@@ -39,6 +39,14 @@ const oauthClientHelp: Record<'claude-web' | 'chatgpt-web', string[]> = {
   ],
 };
 
+const tokenClientHelp: Partial<Record<ConnectAiClientId, string[]>> = {
+  openclaw: [
+    'Prepare setup here to mint a scoped Eweser agent token.',
+    'Run openclaw mcp set eweser with the generated server JSON.',
+    'Use an OpenClaw coding or messaging profile with MCP tools enabled.',
+  ],
+};
+
 const oauthLaunchUrls: Record<'claude-web' | 'chatgpt-web', string> = {
   'claude-web': 'https://claude.ai/',
   'chatgpt-web': 'https://chatgpt.com/',
@@ -101,6 +109,16 @@ export const connectAiPreviewOverview: ConnectAiOverviewResponse = {
       fallbackReason: null,
       title: 'Claude web',
       type: 'oauth',
+    },
+    {
+      clientId: 'openclaw',
+      connection: null,
+      description:
+        'Remote HTTP MCP setup for OpenClaw using streamable-http and an explicit Authorization header.',
+      fallbackReason:
+        'OpenClaw stores outbound MCP servers under mcp.servers. Run openclaw mcp set eweser with the generated server JSON.',
+      title: 'OpenClaw',
+      type: 'token',
     },
   ],
   defaults: {
@@ -474,7 +492,7 @@ export function ConnectAiPage({
           <div className="mcp-hero-copy">
             <p className="mcp-eyebrow">Account / MCP clients</p>
             <h1 className="mcp-hero-title">
-              Connect AI without surrendering the pasture.
+              Connect AI without surrendering your database.
             </h1>
             <p>
               Use the auth path each client actually supports today. OAuth stays
@@ -576,6 +594,7 @@ export function ConnectAiPage({
             {overview.clients.map((client) => {
               const setup = setupPayloads[client.clientId];
               const working = activeClient === client.clientId;
+              const tokenSteps = tokenClientHelp[client.clientId] ?? null;
               const oauthSteps =
                 client.clientId === 'claude-web' ||
                 client.clientId === 'chatgpt-web'
@@ -606,6 +625,7 @@ export function ConnectAiPage({
                   client={client}
                   mcpUrl={overview.mcpUrl}
                   oauthSteps={oauthSteps}
+                  tokenSteps={tokenSteps}
                   oauthNotice={
                     client.clientId === 'claude-web' ||
                     client.clientId === 'chatgpt-web'
@@ -939,6 +959,7 @@ function ClientCard({
   client,
   mcpUrl,
   oauthSteps,
+  tokenSteps,
   oauthNotice,
   onConnect,
   onRevoke,
@@ -949,6 +970,7 @@ function ClientCard({
   client: ConnectAiClientOverview;
   mcpUrl: string;
   oauthSteps: string[] | null;
+  tokenSteps: string[] | null;
   oauthNotice?: string | undefined;
   onConnect: () => void;
   onRevoke: () => void;
@@ -1035,6 +1057,17 @@ function ClientCard({
           {oauthNotice ? (
             <p className="mt-4 text-xs text-primary">{oauthNotice}</p>
           ) : null}
+        </div>
+      ) : null}
+
+      {client.type !== 'oauth' && tokenSteps ? (
+        <div className="mcp-oauth-box text-sm">
+          <p className="font-medium text-foreground">OpenClaw setup</p>
+          <ol className="mcp-step-list">
+            {tokenSteps.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
         </div>
       ) : null}
 
