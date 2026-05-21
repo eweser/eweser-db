@@ -110,8 +110,8 @@ export const connectAiPreviewOverview: ConnectAiOverviewResponse = {
     tokenTtlSeconds: 2592000,
     writeScope: 'room',
   },
-  dynamicClientRegistrationUrl: 'https://www.eweser.com/oauth/register',
-  mcpUrl: 'https://www.eweser.com/mcp',
+  dynamicClientRegistrationUrl: 'https://eweser.com/oauth/register',
+  mcpUrl: 'https://eweser.com/mcp',
   memoryStrategy: {
     captureModes: [
       {
@@ -169,8 +169,7 @@ export const connectAiPreviewOverview: ConnectAiOverviewResponse = {
       },
     ],
   },
-  oauthMetadataUrl:
-    'https://www.eweser.com/.well-known/oauth-authorization-server',
+  oauthMetadataUrl: 'https://eweser.com/.well-known/oauth-authorization-server',
   smartLinkRule:
     'Never place bearer tokens in URLs. All setup flows stay on authenticated Eweser pages and mint or rotate tokens server-side.',
   writableRooms: [

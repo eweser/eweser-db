@@ -8,7 +8,7 @@ vi.mock('../env.js', () => ({
     AUTH_DOMAIN: 'auth.local',
     AUTH_TRUSTED_ORIGINS: ['http://localhost:3000'],
     AUTH_SERVER_DOMAIN: 'auth.local',
-    AUTH_SERVER_URL: 'https://www.eweser.com',
+    AUTH_SERVER_URL: 'https://eweser.com',
     BETTER_AUTH_BASE_URL: 'http://localhost:3000',
     BETTER_AUTH_SECRET: 'test-auth-secret',
     DATABASE_URL: 'postgres://test:test@localhost:5432/test',
@@ -115,7 +115,7 @@ describe('connectAiRouter', () => {
         userId: mockUser.id,
         name: 'Connect AI: Codex',
         type: 'mcp',
-        endpoint: 'https://www.eweser.com/mcp',
+        endpoint: 'https://eweser.com/mcp',
         allowedCollections: ['notes'],
         allowedRooms: [],
         permissions: 'read',
@@ -140,7 +140,7 @@ describe('connectAiRouter', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.clients).toHaveLength(6);
-    expect(body.mcpUrl).toBe('https://www.eweser.com/mcp');
+    expect(body.mcpUrl).toBe('https://eweser.com/mcp');
     expect(body.smartLinkRule).toContain('Never place bearer tokens in URLs');
     expect(body.memoryStrategy.defaultStrategy).toBe('agent-journal');
     expect(body.memoryStrategy.defaultCaptureMode).toBe('manual');
@@ -238,7 +238,7 @@ describe('connectAiRouter', () => {
         userId: mockUser.id,
         name: 'Connect AI: Codex',
         type: 'mcp',
-        endpoint: 'https://www.eweser.com/mcp',
+        endpoint: 'https://eweser.com/mcp',
         allowedCollections: ['notes'],
         allowedRooms: [],
         permissions: 'read',
@@ -389,7 +389,7 @@ describe('connectAiRouter', () => {
         userId: mockUser.id,
         name: 'Connect AI: Claude Desktop',
         type: 'mcp',
-        endpoint: 'https://www.eweser.com',
+        endpoint: 'https://eweser.com',
         allowedCollections: ['notes'],
         allowedRooms: [],
         permissions: 'read',
@@ -466,7 +466,7 @@ describe('connectAiRouter', () => {
         userId: mockUser.id,
         name: 'Connect AI: Codex',
         type: 'mcp',
-        endpoint: 'https://www.eweser.com/mcp',
+        endpoint: 'https://eweser.com/mcp',
         allowedCollections: ['notes'],
         allowedRooms: [],
         permissions: 'read',
@@ -529,7 +529,7 @@ describe('connectAiRouter', () => {
         userId: mockUser.id,
         name: 'Connect AI: Codex',
         type: 'mcp',
-        endpoint: 'https://www.eweser.com/mcp',
+        endpoint: 'https://eweser.com/mcp',
         allowedCollections: ['notes'],
         allowedRooms: [],
         permissions: 'read',
@@ -585,7 +585,7 @@ describe('connectAiRouter', () => {
         userId: mockUser.id,
         name: 'Connect AI: Codex',
         type: 'mcp',
-        endpoint: 'https://www.eweser.com/mcp',
+        endpoint: 'https://eweser.com/mcp',
         allowedCollections: ['notes'],
         allowedRooms: [],
         permissions: 'read',
@@ -707,7 +707,7 @@ describe('connectAiRouter', () => {
       userId: mockUser.id,
       name: 'Connect AI: Codex',
       type: 'mcp',
-      endpoint: 'https://www.eweser.com/mcp',
+      endpoint: 'https://eweser.com/mcp',
       allowedCollections: ['notes'],
       allowedRooms: [],
       permissions: 'read',

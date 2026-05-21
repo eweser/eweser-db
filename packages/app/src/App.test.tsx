@@ -202,11 +202,11 @@ describe('auth-pages app', () => {
         permissions: 'read',
         tokenTtlSeconds: 604800,
       },
-      dynamicClientRegistrationUrl: 'https://www.eweser.com/oauth/register',
-      mcpUrl: 'https://www.eweser.com/mcp',
+      dynamicClientRegistrationUrl: 'https://eweser.com/oauth/register',
+      mcpUrl: 'https://eweser.com/mcp',
       memoryStrategy: defaultMemoryStrategy(),
       oauthMetadataUrl:
-        'https://www.eweser.com/.well-known/oauth-authorization-server',
+        'https://eweser.com/.well-known/oauth-authorization-server',
       smartLinkRule:
         'Never place bearer tokens in URLs. All setup flows stay on authenticated Eweser pages and mint or rotate tokens server-side.',
       writableRooms: [],
@@ -439,11 +439,11 @@ describe('auth-pages app', () => {
         permissions: 'read',
         tokenTtlSeconds: 604800,
       },
-      dynamicClientRegistrationUrl: 'https://www.eweser.com/oauth/register',
-      mcpUrl: 'https://www.eweser.com/mcp',
+      dynamicClientRegistrationUrl: 'https://eweser.com/oauth/register',
+      mcpUrl: 'https://eweser.com/mcp',
       memoryStrategy: defaultMemoryStrategy(['room-conversations']),
       oauthMetadataUrl:
-        'https://www.eweser.com/.well-known/oauth-authorization-server',
+        'https://eweser.com/.well-known/oauth-authorization-server',
       smartLinkRule:
         'Never place bearer tokens in URLs. All setup flows stay on authenticated Eweser pages and mint or rotate tokens server-side.',
       writableRooms: [
@@ -510,11 +510,11 @@ describe('auth-pages app', () => {
         permissions: 'read',
         tokenTtlSeconds: 604800,
       },
-      dynamicClientRegistrationUrl: 'https://www.eweser.com/oauth/register',
-      mcpUrl: 'https://www.eweser.com/mcp',
+      dynamicClientRegistrationUrl: 'https://eweser.com/oauth/register',
+      mcpUrl: 'https://eweser.com/mcp',
       memoryStrategy: defaultMemoryStrategy(['room-conversations']),
       oauthMetadataUrl:
-        'https://www.eweser.com/.well-known/oauth-authorization-server',
+        'https://eweser.com/.well-known/oauth-authorization-server',
       smartLinkRule:
         'Never place bearer tokens in URLs. All setup flows stay on authenticated Eweser pages and mint or rotate tokens server-side.',
       writableRooms: [
@@ -604,11 +604,11 @@ describe('auth-pages app', () => {
         permissions: 'read',
         tokenTtlSeconds: 604800,
       },
-      dynamicClientRegistrationUrl: 'https://www.eweser.com/oauth/register',
-      mcpUrl: 'https://www.eweser.com/mcp',
+      dynamicClientRegistrationUrl: 'https://eweser.com/oauth/register',
+      mcpUrl: 'https://eweser.com/mcp',
       memoryStrategy: defaultMemoryStrategy(['room-source']),
       oauthMetadataUrl:
-        'https://www.eweser.com/.well-known/oauth-authorization-server',
+        'https://eweser.com/.well-known/oauth-authorization-server',
       smartLinkRule:
         'Never place bearer tokens in URLs. All setup flows stay on authenticated Eweser pages and mint or rotate tokens server-side.',
       writableRooms: [
@@ -706,11 +706,11 @@ describe('auth-pages app', () => {
         permissions: 'read',
         tokenTtlSeconds: 604800,
       },
-      dynamicClientRegistrationUrl: 'https://www.eweser.com/oauth/register',
-      mcpUrl: 'https://www.eweser.com/mcp',
+      dynamicClientRegistrationUrl: 'https://eweser.com/oauth/register',
+      mcpUrl: 'https://eweser.com/mcp',
       memoryStrategy: defaultMemoryStrategy(),
       oauthMetadataUrl:
-        'https://www.eweser.com/.well-known/oauth-authorization-server',
+        'https://eweser.com/.well-known/oauth-authorization-server',
       smartLinkRule:
         'Never place bearer tokens in URLs. All setup flows stay on authenticated Eweser pages and mint or rotate tokens server-side.',
       writableRooms: [],
@@ -729,7 +729,7 @@ describe('auth-pages app', () => {
 
     await waitFor(() => {
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-        'https://www.eweser.com/mcp'
+        'https://eweser.com/mcp'
       );
       expect(window.open).toHaveBeenCalledWith(
         'https://chatgpt.com/',
@@ -775,11 +775,11 @@ describe('auth-pages app', () => {
         permissions: 'read',
         tokenTtlSeconds: 604800,
       },
-      dynamicClientRegistrationUrl: 'https://www.eweser.com/oauth/register',
-      mcpUrl: 'https://www.eweser.com/mcp',
+      dynamicClientRegistrationUrl: 'https://eweser.com/oauth/register',
+      mcpUrl: 'https://eweser.com/mcp',
       memoryStrategy: defaultMemoryStrategy(),
       oauthMetadataUrl:
-        'https://www.eweser.com/.well-known/oauth-authorization-server',
+        'https://eweser.com/.well-known/oauth-authorization-server',
       smartLinkRule:
         'Never place bearer tokens in URLs. All setup flows stay on authenticated Eweser pages and mint or rotate tokens server-side.',
       writableRooms: [],
@@ -807,7 +807,7 @@ describe('auth-pages app', () => {
     expect(
       await screen.findByText(/copy the eweser mcp url from this card/i)
     ).toBeInTheDocument();
-    expect(screen.getByText('https://www.eweser.com/mcp')).toBeInTheDocument();
+    expect(screen.getByText('https://eweser.com/mcp')).toBeInTheDocument();
   });
 
   it('requests password reset from forgot-password page', async () => {

@@ -2,14 +2,15 @@
 import Layout from '../layouts/Layout.astro';
 
 const noteUrl = 'https://note.eweser.com/';
-const docsUrl = 'https://docs.eweser.com';
+const docsUrl =
+  'https://github.com/eweser/eweser-db/tree/main/packages/db#readme';
 const githubUrl = 'https://github.com/eweser/eweser-db';
 const npmUrl = 'https://www.npmjs.com/package/@eweser/db';
 const apiUrl = npmUrl;
 const appUrl = (
   import.meta.env.RAILWAY_SERVICE_APP_URL ??
   import.meta.env.APP_URL ??
-  'https://app.eweser.com'
+  'https://login.eweser.com'
 ).replace(/\/$/, '');
 const signInUrl = `${appUrl}/sign-in`;
 const connectAiUrl = `${appUrl}/sign-in?redirect=%2Fai`;

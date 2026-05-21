@@ -4,11 +4,13 @@ import Layout from '../layouts/Layout.astro';
 const appUrl = (
   import.meta.env.RAILWAY_SERVICE_APP_URL ??
   import.meta.env.APP_URL ??
-  'https://app.eweser.com'
+  'https://login.eweser.com'
 ).replace(/\/$/, '');
 const signInUrl = `${appUrl}/sign-in`;
 const aiSignInUrl = `${appUrl}/sign-in?redirect=%2Fai`;
 const noteUrl = 'https://note.eweser.com/';
+const docsUrl =
+  'https://github.com/eweser/eweser-db/tree/main/packages/db#readme';
 const termsUrl = `${appUrl}/statement/terms-of-service`;
 const privacyUrl = `${appUrl}/statement/privacy`;
 const abuseEmail = 'abuse@eweser.com';
@@ -101,7 +103,7 @@ const comingLater = [
       >
         <a href="/" class="transition-colors hover:text-slate-950">Home</a>
         <a
-          href="https://docs.eweser.com"
+          href={docsUrl}
           target="_blank"
           rel="noreferrer"
           class="transition-colors hover:text-slate-950">Docs</a
