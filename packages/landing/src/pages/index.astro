@@ -17,30 +17,30 @@ const connectAiUrl = `${appUrl}/sign-in?redirect=%2Fai`;
 const termsUrl = `${appUrl}/statement/terms-of-service`;
 const privacyUrl = `${appUrl}/statement/privacy`;
 const abuseEmail = 'abuse@eweser.com';
-const regeneratedAssetBase = '/assets/regenerated';
-const heroImage = `${regeneratedAssetBase}/hero-orbit-house.png`;
-const substrateQuoteImage = `${regeneratedAssetBase}/permission-landscape-lock.png`;
-const ecosystemCoreImage = `${regeneratedAssetBase}/ownership-sheep-arch.png`;
-const closingImage = `${regeneratedAssetBase}/solar-house-wide.png`;
+const imageBase = '/images';
+const heroImage = `${imageBase}/hero-orbit-house.png`;
+const substrateQuoteImage = `${imageBase}/permission-landscape-lock.png`;
+const ecosystemCoreImage = `${imageBase}/ownership-sheep-arch.png`;
+const closingImage = `${imageBase}/solar-house-wide.png`;
 
 const howSteps = [
   {
     number: '1',
     title: 'Create an account.',
     text: "Your profile and data live in 'rooms' you can provision access to.",
-    image: `${regeneratedAssetBase}/step-create-account-house.png`,
+    image: `${imageBase}/step-create-account-house.png`,
   },
   {
     number: '2',
     title: 'Connect your tools.',
     text: 'Sign in to Ewe Note, connect an AI client, or install an app. Each one asks for scoped access, not the whole database.',
-    image: `${regeneratedAssetBase}/step-connect-tools-lock.png`,
+    image: `${imageBase}/step-connect-tools-lock.png`,
   },
   {
     number: '3',
     title: 'Your data stays yours.',
     text: 'Switch apps. Revoke access. Take your data anywhere. The database belongs to you, not the platform.',
-    image: `${regeneratedAssetBase}/step-own-data-landscape.png`,
+    image: `${imageBase}/step-own-data-landscape.png`,
   },
 ];
 
@@ -95,21 +95,21 @@ const ecosystemCards = [
     status: 'Notice: We never collect your content. Your data is yours.',
     tone: 'sky',
     featured: true,
-    image: `${regeneratedAssetBase}/icon-automation.png`,
+    image: `${imageBase}/icon-automation.png`,
   },
   {
     title: 'Collaborative notes',
     text: 'Co-write notes, share links, and grant view or edit access without moving the work into another silo.',
     status: 'Private spaces and public work, with room-scoped permissions.',
     tone: 'meadow',
-    image: `${regeneratedAssetBase}/icon-collaboration.png`,
+    image: `${imageBase}/icon-collaboration.png`,
   },
   {
     title: 'Knowledge base',
     text: 'Index notes, references, and documents by theme, then let compatible tools read the same context.',
     status: 'Organize by projects, conversations, and study workflows.',
     tone: 'water',
-    image: `${regeneratedAssetBase}/icon-knowledge-base.png`,
+    image: `${imageBase}/icon-knowledge-base.png`,
   },
   {
     title: 'Study tools',
@@ -117,21 +117,21 @@ const ecosystemCards = [
     status:
       'Spaced repetition, feedback, and concept maps can share one source.',
     tone: 'sun',
-    image: `${regeneratedAssetBase}/icon-study-tools.png`,
+    image: `${imageBase}/icon-study-tools.png`,
   },
   {
     title: 'Micro apps',
     text: 'Tiny focused apps for tasks, prompts, quick-share tools, and personal workflows.',
     status: 'Minimal apps, maximum utility, with sync and backup when needed.',
     tone: 'clay',
-    image: `${regeneratedAssetBase}/icon-micro-apps.png`,
+    image: `${imageBase}/icon-micro-apps.png`,
   },
   {
     title: 'Personal sharing',
     text: 'Publish rooms with versions, fine-grained permissions, and time-limited links.',
     status: 'All yours, visible only where you choose to share.',
     tone: 'orchard',
-    image: `${regeneratedAssetBase}/icon-sharing.png`,
+    image: `${imageBase}/icon-sharing.png`,
   },
 ];
 
@@ -141,7 +141,7 @@ const appCards = [
     text: 'A writing and knowledge app that stores your notes on your device. Works offline. Syncs across devices when you are connected. Your first app built on EweserDB.',
     cta: 'Open Ewe Note',
     href: noteUrl,
-    image: `${regeneratedAssetBase}/card-ewe-note.png`,
+    image: `${imageBase}/card-ewe-note.png`,
     featured: true,
   },
   {
@@ -149,14 +149,14 @@ const appCards = [
     text: 'Flashcards, publishing tools, AI memory review, personal knowledge bases, and more, all built on the same data layer.',
     cta: 'Explore the ecosystem',
     href: '#ecosystem',
-    image: `${regeneratedAssetBase}/card-more-apps.png`,
+    image: `${imageBase}/card-more-apps.png`,
   },
   {
     title: 'Build your own',
     text: "EweserDB is open. Build a focused app that works with the user's existing data instead of starting another silo.",
     cta: 'Read the developer docs',
     href: docsUrl,
-    image: `${regeneratedAssetBase}/card-build-your-own.png`,
+    image: `${imageBase}/card-build-your-own.png`,
     external: true,
   },
 ];
@@ -835,7 +835,7 @@ const developerStatuses = [
           <a href={noteUrl}>Ewe Note</a>
           <a href={termsUrl}>Terms</a>
           <a href={privacyUrl}>Privacy</a>
-          <a href={`mailto:${abuseEmail}`}>About</a>
+          <a href={`mailto:${abuseEmail}`}>Report abuse</a>
         </nav>
       </footer>
     </div>

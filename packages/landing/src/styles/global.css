@@ -378,8 +378,7 @@ section[id] {
       oklch(0.97 0.03 87 / 0.12) 47%,
       oklch(0.22 0.043 75 / 0.16) 100%
     ),
-    url('/assets/regenerated/hero-orbit-house.png') right bottom / auto 100%
-      no-repeat;
+    url('/images/hero-orbit-house.png') right bottom / auto 100% no-repeat;
   isolation: isolate;
   overflow: hidden;
 }
@@ -1276,8 +1275,7 @@ section[id] {
       oklch(0.96 0.033 88 / 0.78),
       oklch(0.91 0.05 84 / 0.62)
     ),
-    url('/assets/regenerated/solar-house-wide.png') center bottom / cover
-      no-repeat;
+    url('/images/solar-house-wide.png') center bottom / cover no-repeat;
   text-align: center;
   overflow: hidden;
 }
@@ -1990,8 +1988,7 @@ body::before {
       transparent 66%
     ),
     linear-gradient(180deg, var(--landing-surface-hero-glow), transparent 42%),
-    url('/assets/regenerated/hero-orbit-house.png') right bottom / auto 100%
-      no-repeat;
+    url('/images/hero-orbit-house.png') right bottom / auto 100% no-repeat;
   isolation: isolate;
 }
 
@@ -2473,8 +2470,7 @@ body::before {
         var(--landing-surface-hero-panel-compact-soft) 63%,
         transparent 100%
       ),
-      url('/assets/regenerated/hero-orbit-house.png') 64% bottom / auto 64%
-        no-repeat;
+      url('/images/hero-orbit-house.png') 64% bottom / auto 64% no-repeat;
   }
 
   .hero-copy {
@@ -2560,8 +2556,7 @@ body::before {
         var(--landing-surface-hero-panel-mobile-soft) 66%,
         transparent 100%
       ),
-      url('/assets/regenerated/hero-orbit-house.png') 58% bottom / auto 50%
-        no-repeat;
+      url('/images/hero-orbit-house.png') 58% bottom / auto 50% no-repeat;
   }
 
   .hero-copy h1 {
@@ -2679,8 +2674,7 @@ body {
       oklch(0.97 0.03 102 / 0.06) 48%,
       oklch(0.36 0.09 137 / 0.19) 100%
     ),
-    url('/assets/regenerated/hero-orbit-house.png') right bottom / auto 100%
-      no-repeat;
+    url('/images/hero-orbit-house.png') right bottom / auto 100% no-repeat;
 }
 
 .hero-graphic-label,
@@ -4971,8 +4965,7 @@ body {
       transparent 63%
     ),
     linear-gradient(180deg, oklch(0.93 0.06 205 / 0.35), transparent 46%),
-    url('/assets/regenerated/hero-orbit-house.png') right bottom / auto 100%
-      no-repeat;
+    url('/images/hero-orbit-house.png') right bottom / auto 100% no-repeat;
 }
 
 .hero-spread::before {
@@ -5517,8 +5510,7 @@ body {
         oklch(0.995 0.008 198 / 0.28) 58%,
         transparent 75%
       ),
-      url('/assets/regenerated/hero-orbit-house.png') 64% bottom / auto 62%
-        no-repeat;
+      url('/images/hero-orbit-house.png') 64% bottom / auto 62% no-repeat;
   }
 
   .hero-copy {
@@ -5597,8 +5589,7 @@ body {
         oklch(0.995 0.008 198 / 0.28) 66%,
         transparent 100%
       ),
-      url('/assets/regenerated/hero-orbit-house.png') 58% bottom / auto 49%
-        no-repeat;
+      url('/images/hero-orbit-house.png') 58% bottom / auto 49% no-repeat;
   }
 
   .hero-copy h1 {
@@ -5663,8 +5654,7 @@ body {
         oklch(0.995 0.008 198 / 0.28) 70%,
         transparent 100%
       ),
-      url('/assets/regenerated/hero-orbit-house.png') 58% bottom / auto 42%
-        no-repeat;
+      url('/images/hero-orbit-house.png') 58% bottom / auto 42% no-repeat;
   }
 
   .hero-graphic-label {

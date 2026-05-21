@@ -58,20 +58,13 @@ dist.*
 **/*.tsbuildinfo
 .worktree-ports
 
-# Landing design scratch artifacts. Keep production assets under
-# packages/landing/public/assets/ explicitly staged when they are used.
+# Landing design scratch artifacts. Keep finalized landing images under
+# packages/landing/public/images/ explicitly staged when they are used.
 /design/
 /eweser-landing-*.png
 /eweser-*-final.png
 /landing-css-*.png
 /landing-css-baseline-snapshot.md
-/packages/landing/public/assets/eweser-*.png
-/packages/landing/public/assets/mockup/
-/packages/landing/public/assets/sections/
-/packages/landing/public/assets/regenerated/icon-analytics.png
-/packages/landing/public/assets/regenerated/icon-database.png
-/packages/landing/public/assets/regenerated/icon-lock.png
-/packages/landing/public/assets/regenerated/icon-user.png
 
 # gitleaks
 .gitleaks-report.json
