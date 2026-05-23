@@ -15,12 +15,22 @@ Every new plan must include:
 - Goal
 - Scope
 - Assumptions / open questions
+- Domain language and relevant `GLOSSARY.md` files when the work introduces or
+  changes product terms
 - Runs with id, title, files, steps, tests, verification, dependencies, model
   tier, and risk level
 - Stop conditions
 - Approval boundary
 - Execution summary
 - Self-reflection / instruction improvements
+
+For terminology-heavy plans or runs, especially federation, encrypted rooms,
+public aggregation, MCP/agent access, backups, and compatibility policy, run
+`eweser-grill-with-docs` before implementation approval. It should resolve
+canonical terms into `GLOSSARY.md` and the plan's Domain Language section without
+editing product code. Each grilling session should end with a brief
+self-reflection and concrete skill-adjustment suggestions when the workflow
+itself needs improvement.
 
 Use `eweser-coder` for coding runs in plan metadata and examples.
 
@@ -77,13 +87,13 @@ plan. Standalone QA is reserved for independent re-QA or audit work.
 
 ### Deferred Backlog
 
-| Plan                                                                           | Status      | Notes                                                            |
-| ------------------------------------------------------------------------------ | ----------- | ---------------------------------------------------------------- |
-| [2026-05-16-db-readme-todo-backlog.md](./2026-05-16-db-readme-todo-backlog.md) | Proposed    | Consolidates remaining DB README TODOs into implementation runs. |
-| [2026-04-02-phase-4-deploy.md](./2026-04-02-phase-4-deploy.md)                 | Mostly done | Keep only for remaining production polish/cleanup notes.         |
-| [2026-04-02-phase-5-mobile.md](./2026-04-02-phase-5-mobile.md)                 | Deferred    | PWA exists; Capacitor/native app work is not launch-path.        |
-| [2026-04-03-file-storage.md](./2026-04-03-file-storage.md)                     | Deferred    | Object storage, file APIs, and BYO storage provider work.        |
-| [2026-04-05-auto-knowledge-graph.md](./2026-04-05-auto-knowledge-graph.md)     | Deferred    | Later graph/search layer concept.                                |
+| Plan                                                                           | Status      | Notes                                                                                                                      |
+| ------------------------------------------------------------------------------ | ----------- | -------------------------------------------------------------------------------------------------------------------------- |
+| [2026-05-16-db-readme-todo-backlog.md](./2026-05-16-db-readme-todo-backlog.md) | Proposed    | Consolidates remaining DB README TODOs; terminology-heavy runs should pass through `eweser-grill-with-docs` before coding. |
+| [2026-04-02-phase-4-deploy.md](./2026-04-02-phase-4-deploy.md)                 | Mostly done | Keep only for remaining production polish/cleanup notes.                                                                   |
+| [2026-04-02-phase-5-mobile.md](./2026-04-02-phase-5-mobile.md)                 | Deferred    | PWA exists; Capacitor/native app work is not launch-path.                                                                  |
+| [2026-04-03-file-storage.md](./2026-04-03-file-storage.md)                     | Deferred    | Object storage, file APIs, and BYO storage provider work.                                                                  |
+| [2026-04-05-auto-knowledge-graph.md](./2026-04-05-auto-knowledge-graph.md)     | Deferred    | Later graph/search layer concept.                                                                                          |
 
 ## Completed Plans
 

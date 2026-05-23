@@ -14,6 +14,13 @@
 - Assumption: <Known fact or working assumption.>
 - Open question: <Question that must be answered before or during implementation.>
 
+## Domain Language
+
+- Glossary docs: <Relevant GLOSSARY.md files, or "None needed".>
+- New terms: <Canonical term and definition, or "None".>
+- Changed terms: <Existing term whose meaning/naming changes, or "None".>
+- ADR candidates: <Hard-to-reverse decisions that may need ADRs, or "None".>
+
 ## Runs
 
 ## Run Order And Manual Test Handoffs

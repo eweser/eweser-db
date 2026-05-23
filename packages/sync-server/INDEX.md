@@ -15,6 +15,7 @@ token authentication and SQLite persistence.
 ## Start Here
 
 - [`README.md`](./README.md): Service overview and authentication flow.
+- [`GLOSSARY.md`](./GLOSSARY.md): Sync relay glossary.
 - [`package.json`](./package.json): Workspace scripts.
 - [`src/INDEX.md`](./src/): Source navigation map.
 - [`src/index.ts`](./src/index.ts): Hocuspocus server configuration.
