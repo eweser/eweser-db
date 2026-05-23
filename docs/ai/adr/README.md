@@ -2,6 +2,11 @@
 
 Short, permanent records of significant architectural decisions made during EweserDB development.
 
+> Status: active decision index. ADRs with `Accepted` or `Implemented` status
+> are current decision records unless a newer ADR or active plan explicitly
+> supersedes them. Treat ordinary `docs/ai/plans/` files as historical unless
+> marked current in the plans index.
+
 ## Index
 
 | ID                                              | Title                                         | Status      | Date       |

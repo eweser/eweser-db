@@ -14,6 +14,7 @@ sync tokens, OAuth, agent tokens, and remote MCP endpoints.
 ## Start Here
 
 - [`AGENTS.md`](./AGENTS.md): Package-specific auth and database rules.
+- [`GLOSSARY.md`](./GLOSSARY.md): Auth/grant glossary.
 - [`README.md`](./README.md): Service overview, routes, and environment
   variables.
 - [`package.json`](./package.json): Workspace scripts and DB commands.
