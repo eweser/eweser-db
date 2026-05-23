@@ -21,6 +21,22 @@ export interface AccountBootstrapResponse {
   userCount: number;
 }
 
+export interface ConnectedAppGrant {
+  id: string;
+  collections: string[];
+  createdAt: string;
+  domain: string;
+  keepAliveDays: number;
+  requesterType: string;
+  roomIds: string[];
+  status: 'active' | 'revoked';
+  updatedAt: string | null;
+}
+
+export interface ConnectedAppsResponse {
+  connectedApps: ConnectedAppGrant[];
+}
+
 export interface PermissionsRequestBody {
   domain: string;
   redirect: string;
@@ -152,6 +168,20 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export function getAccountBootstrap() {
   return request<AccountBootstrapResponse>('/api/account/bootstrap');
+}
+
+export function getConnectedApps() {
+  return request<ConnectedAppsResponse>('/api/account/connected-apps');
+}
+
+export function revokeConnectedApp(grantId: string) {
+  return request<{ grantId: string; status: 'revoked' }>(
+    '/api/account/connected-apps/revoke',
+    {
+      body: JSON.stringify({ grantId }),
+      method: 'POST',
+    }
+  );
 }
 
 export function submitPermissions(body: PermissionsRequestBody) {

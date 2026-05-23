@@ -1,5 +1,20 @@
 import { collectionKeys, type LoginQueryParams } from '@eweser/shared';
-import { Github, Moon, Sun } from 'lucide-react';
+import {
+  ArrowRight,
+  Bot,
+  CheckCircle2,
+  CircleAlert,
+  Database,
+  FileText,
+  Github,
+  LockKeyhole,
+  Moon,
+  PlugZap,
+  RefreshCw,
+  ShieldCheck,
+  Sun,
+  UserRound,
+} from 'lucide-react';
 import { ThemeProvider, useTheme } from 'next-themes';
 import { useEffect, useState, type FormEvent } from 'react';
 import heroPastureImage from './assets/hero-orbit-house.png';
@@ -30,8 +45,13 @@ import {
 import {
   acceptInvite,
   getAccountBootstrap,
+  getConnectAiOverview,
+  getConnectedApps,
   submitPermissions,
   type AccountBootstrapResponse,
+  type ConnectedAppGrant,
+  type ConnectAiOverviewResponse,
+  revokeConnectedApp,
 } from './lib/api';
 import { authClient } from './lib/auth-client';
 import { appAbsoluteUrl, authApiUrl, signUpCaptchaEnabled } from './lib/config';
@@ -72,32 +92,50 @@ const authOutlineButtonClass =
 
 const authLabelClass = 'text-foreground/90';
 
-const appShellCards = [
-  {
-    description:
-      'Review your profile rooms, connected collections, and app-owned data.',
-    href: '/home',
-    title: 'Account home',
+const collectionCopy: Record<string, { description: string; label: string }> = {
+  agentAccessLogs: {
+    description: 'Records of agent reads and writes against your rooms.',
+    label: 'Agent access logs',
   },
-  {
+  agentConfigs: {
     description:
-      'Inspect installed tools, granted app access, and upcoming revoke controls.',
-    href: '/apps',
-    title: 'Connected apps',
+      'AI client setup, scope, status, expiry, and revocation state.',
+    label: 'Agent configs',
   },
-  {
+  conversations: {
     description:
-      'Set up MCP clients and manage scoped agent access from one place.',
-    href: '/ai',
-    title: 'MCP / AI access',
+      'AI conversation summaries, session notes, decisions, and memory entries.',
+    label: 'Conversations',
   },
-  {
-    description:
-      'Manage email verification, passwords, and two-factor authentication.',
-    href: '/security',
-    title: 'Account security',
+  fileAttachments: {
+    description: 'Files and attachments stored against rooms you control.',
+    label: 'File attachments',
   },
-];
+  flashcards: {
+    description: 'Study material linked back to notes and source context.',
+    label: 'Flashcards',
+  },
+  memoryStrategyConfigs: {
+    description: 'Shared memory strategy settings for connected AI clients.',
+    label: 'Memory strategies',
+  },
+  notes: {
+    description: 'Notes, documents, links, and working context.',
+    label: 'Notes',
+  },
+  profiles: {
+    description: 'Portable identity and account data for Eweser apps.',
+    label: 'Profiles',
+  },
+  projectWikiDrafts: {
+    description: 'Draft project wiki pages staged by AI and apps.',
+    label: 'Project wiki drafts',
+  },
+  projectWikiPages: {
+    description: 'Accepted project wiki pages shared across tools.',
+    label: 'Project wiki pages',
+  },
+};
 
 const lastUpdatedLabel = 'Last updated: May 1, 2026';
 const supportEmail = 'support@eweser.com';
@@ -129,6 +167,56 @@ function readAuthDataToken(result: unknown): string | null {
   }
 
   return typeof data.token === 'string' ? data.token : null;
+}
+
+function formatCollectionKey(collectionKey: string) {
+  return collectionCopy[collectionKey]?.label ?? collectionKey;
+}
+
+function getCollectionDescription(collectionKey: string) {
+  return (
+    collectionCopy[collectionKey]?.description ??
+    'Records stored in an EweserDB collection.'
+  );
+}
+
+function formatDate(value: string | null | undefined) {
+  if (!value) return 'Never';
+  return new Date(value).toLocaleDateString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function getGrantLastActivity(grant: ConnectedAppGrant) {
+  return grant.updatedAt ?? grant.createdAt;
+}
+
+function getGrantCollectionsLabel(grant: ConnectedAppGrant) {
+  if (grant.collections.includes('all')) {
+    return 'All requested collections';
+  }
+  if (grant.collections.length === 0) {
+    return 'Specific rooms only';
+  }
+  return grant.collections.map(formatCollectionKey).join(', ');
+}
+
+function getRoomCollectionCounts(bootstrap: AccountBootstrapResponse) {
+  const counts = new Map<string, number>();
+  bootstrap.rooms.forEach((room) => {
+    counts.set(room.collectionKey, (counts.get(room.collectionKey) ?? 0) + 1);
+  });
+  return counts;
+}
+
+function getConnectedClientCount(overview: ConnectAiOverviewResponse | null) {
+  return (
+    overview?.clients.filter(
+      (client) => client.connection?.status === 'connected'
+    ).length ?? 0
+  );
 }
 
 function ThemeToggle() {
@@ -227,6 +315,156 @@ function SiteHeader() {
         </nav>
       </div>
     </header>
+  );
+}
+
+type AppConsoleSection = 'home' | 'apps' | 'ai' | 'account' | 'security';
+
+function AppConsoleLayout({
+  active,
+  children,
+  note,
+}: {
+  active: AppConsoleSection;
+  children: React.ReactNode;
+  note?: {
+    body: string;
+    title: string;
+  };
+}) {
+  return (
+    <div className="app-console">
+      <aside className="app-sidebar" aria-label="Account sections">
+        <div className="flex items-center gap-3">
+          <span className="app-nav-icon" aria-hidden="true">
+            <Database className="h-4 w-4" />
+          </span>
+          <div>
+            <p className="brand-wordmark text-lg text-foreground">EweserDB</p>
+            <p className="text-xs text-muted-foreground">Personal data home</p>
+          </div>
+        </div>
+
+        <nav className="app-nav">
+          <Link
+            className="app-nav-link"
+            data-active={active === 'home' ? 'true' : undefined}
+            to="/"
+          >
+            <Database className="h-4 w-4" />
+            Data Home
+          </Link>
+          <Link
+            className="app-nav-link"
+            data-active={active === 'apps' ? 'true' : undefined}
+            to="/apps"
+          >
+            <PlugZap className="h-4 w-4" />
+            Apps
+          </Link>
+          <Link
+            className="app-nav-link"
+            data-active={active === 'ai' ? 'true' : undefined}
+            to="/ai"
+          >
+            <Bot className="h-4 w-4" />
+            MCP clients
+          </Link>
+          <Link
+            className="app-nav-link"
+            data-active={active === 'account' ? 'true' : undefined}
+            to="/home"
+          >
+            <UserRound className="h-4 w-4" />
+            Account
+          </Link>
+          <Link
+            className="app-nav-link"
+            data-active={active === 'security' ? 'true' : undefined}
+            to="/security"
+          >
+            <ShieldCheck className="h-4 w-4" />
+            Security
+          </Link>
+        </nav>
+
+        <div className="app-sidebar-card">
+          <p className="app-sidebar-title">{note?.title ?? 'Scoped access'}</p>
+          <p className="app-sidebar-copy">
+            {note?.body ??
+              'Apps and AI clients only appear here after they ask for access.'}
+          </p>
+        </div>
+      </aside>
+
+      <main className="app-page">{children}</main>
+    </div>
+  );
+}
+
+function AppPageHero({
+  actions,
+  body,
+  eyebrow,
+  title,
+}: {
+  actions?: React.ReactNode;
+  body: string;
+  eyebrow: string;
+  title: string;
+}) {
+  return (
+    <section className="app-page-hero">
+      <div>
+        <p className="mcp-eyebrow">{eyebrow}</p>
+        <h1 className="app-page-title">{title}</h1>
+        <p className="app-page-copy">{body}</p>
+      </div>
+      {actions ? <div className="app-page-actions">{actions}</div> : null}
+    </section>
+  );
+}
+
+function AppStatCard({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="app-stat-card">
+      <span className="mcp-summary-icon" aria-hidden="true">
+        {icon}
+      </span>
+      <p className="mcp-summary-label">{label}</p>
+      <p className="mcp-summary-value">{value}</p>
+    </div>
+  );
+}
+
+function EmptyState({
+  action,
+  body,
+  icon,
+  title,
+}: {
+  action?: React.ReactNode;
+  body: string;
+  icon: React.ReactNode;
+  title: string;
+}) {
+  return (
+    <div className="app-empty-state">
+      <span className="app-empty-icon" aria-hidden="true">
+        {icon}
+      </span>
+      <h2>{title}</h2>
+      <p>{body}</p>
+      {action ? <div className="mt-4">{action}</div> : null}
+    </div>
   );
 }
 
@@ -808,72 +1046,493 @@ function AwaitConfirmPage() {
 
 function PersonalDataHomePage() {
   const session = authClient.useSession();
+  const [bootstrap, setBootstrap] = useState<AccountBootstrapResponse | null>(
+    null
+  );
+  const [connectedApps, setConnectedApps] = useState<ConnectedAppGrant[]>([]);
+  const [aiOverview, setAiOverview] =
+    useState<ConnectAiOverviewResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+
+    void Promise.all([
+      getAccountBootstrap(),
+      getConnectedApps().catch(() => ({ connectedApps: [] })),
+      getConnectAiOverview().catch(() => null),
+    ])
+      .then(([bootstrapResult, connectedAppsResult, aiResult]) => {
+        if (!active) return;
+        setBootstrap(bootstrapResult);
+        setConnectedApps(connectedAppsResult.connectedApps);
+        setAiOverview(aiResult);
+      })
+      .catch((requestError: Error) => {
+        if (active) {
+          setError(requestError.message);
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (loading) {
+    return (
+      <LoadingPanel message="Loading your data layer..." title="Data Home" />
+    );
+  }
+
+  if (error || !bootstrap) {
+    return (
+      <AppConsoleLayout active="home">
+        <AppPageHero
+          body="We could not load your account data. Your local rooms remain untouched."
+          eyebrow="Your data layer"
+          title="Data Home unavailable"
+        />
+        <Card className="app-panel p-6">
+          <p className="text-sm text-destructive">
+            {error ?? 'Unable to load your account.'}
+          </p>
+        </Card>
+      </AppConsoleLayout>
+    );
+  }
+
+  const roomCounts = getRoomCollectionCounts(bootstrap);
+  const populatedCollections = collectionKeys.filter(
+    (collectionKey) => roomCounts.get(collectionKey) ?? 0
+  );
+  const collectionRows =
+    populatedCollections.length > 0 ? populatedCollections : collectionKeys;
+  const activeApps = connectedApps.filter((grant) => grant.status === 'active');
+  const connectedAiClients = getConnectedClientCount(aiOverview);
+  const lastGrantActivity = activeApps.map(getGrantLastActivity).sort().at(-1);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
-      <div className="mb-8 max-w-3xl">
-        <p className="text-sm font-medium uppercase tracking-[0.22em] text-muted-foreground">
-          Personal data home
-        </p>
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight text-foreground">
-          Sign in and own your data.
-        </h1>
-        <p className="mt-4 text-lg leading-8 text-muted-foreground">
-          Open Ewe Note, connect an AI client, and manage what your apps can
-          access from one account.
-        </p>
-        {session.data?.user.email ? (
-          <p className="mt-3 text-sm text-muted-foreground">
-            Signed in as {session.data.user.email}
-          </p>
-        ) : null}
+    <AppConsoleLayout
+      active="home"
+      note={{
+        body: 'Nothing shares your rooms without creating a visible grant.',
+        title: 'Visible grants',
+      }}
+    >
+      <AppPageHero
+        actions={
+          <>
+            <Link className="app-primary-action" to="/ai">
+              <Bot className="h-4 w-4" />
+              Connect AI
+            </Link>
+            <Link className="app-secondary-action" to="/apps">
+              Review apps <ArrowRight className="h-4 w-4" />
+            </Link>
+          </>
+        }
+        body="Collections, rooms, connected apps, AI grants, and sync state, all visible from one place. Nothing shares your data without appearing here first."
+        eyebrow="Your data layer"
+        title="Everything your apps can touch."
+      />
+
+      {session.data?.user.email ? (
+        <p className="app-signed-in">Signed in as {session.data.user.email}</p>
+      ) : null}
+
+      <section className="app-stats-grid" aria-label="Data layer summary">
+        <AppStatCard
+          icon={<FileText className="h-5 w-5" />}
+          label="Collections"
+          value={String(collectionRows.length)}
+        />
+        <AppStatCard
+          icon={<Database className="h-5 w-5" />}
+          label="Rooms"
+          value={String(bootstrap.rooms.length)}
+        />
+        <AppStatCard
+          icon={<PlugZap className="h-5 w-5" />}
+          label="Connected apps"
+          value={String(activeApps.length)}
+        />
+        <AppStatCard
+          icon={<Bot className="h-5 w-5" />}
+          label="AI grants"
+          value={String(connectedAiClients)}
+        />
+        <AppStatCard
+          icon={<LockKeyhole className="h-5 w-5" />}
+          label="Storage"
+          value="Local-first"
+        />
+        <AppStatCard
+          icon={<RefreshCw className="h-5 w-5" />}
+          label="Last synced"
+          value={formatDate(lastGrantActivity)}
+        />
+      </section>
+
+      <div className="app-two-column">
+        <section className="app-panel">
+          <div className="app-panel-header">
+            <div>
+              <h2>Your collections</h2>
+              <p>
+                Your data is organised into collections. Apps and AI agents
+                connect to rooms inside a collection, not the whole database.
+              </p>
+            </div>
+            <span className="mcp-chip">{collectionRows.length} visible</span>
+          </div>
+
+          <div className="app-list">
+            {collectionRows.map((collectionKey) => (
+              <div key={collectionKey} className="app-list-row">
+                <div>
+                  <strong>{formatCollectionKey(collectionKey)}</strong>
+                  <p>{getCollectionDescription(collectionKey)}</p>
+                </div>
+                <span className="app-row-meta">
+                  {roomCounts.get(collectionKey) ?? 0} room
+                  {(roomCounts.get(collectionKey) ?? 0) === 1 ? '' : 's'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="app-panel">
+          <div className="app-panel-header">
+            <div>
+              <h2>Where your data lives</h2>
+              <p>
+                Each room is a sync and permission boundary. Granting access to
+                one room does not expose the rest.
+              </p>
+            </div>
+            <span className="mcp-chip">{bootstrap.rooms.length} rooms</span>
+          </div>
+
+          {bootstrap.rooms.length > 0 ? (
+            <div className="app-table" role="table">
+              <div className="app-table-row app-table-head" role="row">
+                <span role="columnheader">Room name</span>
+                <span role="columnheader">Collection</span>
+                <span role="columnheader">Sharing</span>
+                <span role="columnheader">Action</span>
+              </div>
+              {bootstrap.rooms.slice(0, 8).map((room) => (
+                <div key={room.id} className="app-table-row" role="row">
+                  <span role="cell">{room.name}</span>
+                  <span role="cell">
+                    {formatCollectionKey(room.collectionKey)}
+                  </span>
+                  <span role="cell">Scoped grants</span>
+                  <Link role="cell" to="/apps">
+                    Review
+                  </Link>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              body="Rooms are created when you connect an app or sign in to Ewe Note."
+              icon={<Database className="h-5 w-5" />}
+              title="No rooms yet"
+            />
+          )}
+        </section>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {appShellCards.map((card) => (
-          <Link key={card.href} className="no-underline" to={card.href}>
-            <Card className="h-full p-6 transition-colors hover:bg-accent">
-              <h2 className="text-xl font-semibold text-foreground">
-                {card.title}
-              </h2>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                {card.description}
-              </p>
-            </Card>
-          </Link>
-        ))}
+      <div className="app-two-column">
+        <section className="app-panel">
+          <div className="app-panel-header">
+            <div>
+              <h2>Apps with access</h2>
+              <p>Review app grants and revoke access from the apps page.</p>
+            </div>
+            <Link className="app-panel-link" to="/apps">
+              Open apps <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          {activeApps.length > 0 ? (
+            <div className="app-list">
+              {activeApps.slice(0, 4).map((grant) => (
+                <div key={grant.id} className="app-list-row">
+                  <div>
+                    <strong>{grant.domain}</strong>
+                    <p>{getGrantCollectionsLabel(grant)}</p>
+                  </div>
+                  <span className="app-status-pill">Active</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              body="When an app requests access to your data, the request appears before anything is shared."
+              icon={<PlugZap className="h-5 w-5" />}
+              title="No apps connected yet"
+            />
+          )}
+        </section>
+
+        <section className="app-panel">
+          <div className="app-panel-header">
+            <div>
+              <h2>AI clients with access</h2>
+              <p>Every MCP client connected through Eweser appears here.</p>
+            </div>
+            <Link className="app-panel-link" to="/ai">
+              Open AI <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          {aiOverview && connectedAiClients > 0 ? (
+            <div className="app-list">
+              {aiOverview.clients
+                .filter((client) => client.connection?.status === 'connected')
+                .map((client) => (
+                  <div key={client.clientId} className="app-list-row">
+                    <div>
+                      <strong>{client.title}</strong>
+                      <p>{client.type === 'oauth' ? 'OAuth' : 'Token'}</p>
+                    </div>
+                    <span className="app-status-pill">Connected</span>
+                  </div>
+                ))}
+            </div>
+          ) : (
+            <EmptyState
+              action={
+                <Link className="app-panel-link" to="/ai">
+                  Connect a client <ArrowRight className="h-4 w-4" />
+                </Link>
+              }
+              body="Connect Claude, ChatGPT, Copilot, Codex, or another MCP client when you are ready."
+              icon={<Bot className="h-5 w-5" />}
+              title="No AI clients connected yet"
+            />
+          )}
+        </section>
       </div>
-    </div>
+    </AppConsoleLayout>
   );
 }
 
 function ConnectedAppsPage() {
-  return (
-    <div className="mx-auto max-w-5xl px-4 py-10">
-      <div className="mb-8 max-w-3xl">
-        <p className="text-sm font-medium uppercase tracking-[0.22em] text-muted-foreground">
-          Connected apps
-        </p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
-          Apps connect. You stay in control.
-        </h1>
-        <p className="mt-4 text-sm leading-6 text-muted-foreground">
-          This launch shell reserves the authenticated Connected Apps route for
-          installed tools, granted access, recent usage, and revoke controls.
-        </p>
-      </div>
+  const [bootstrap, setBootstrap] = useState<AccountBootstrapResponse | null>(
+    null
+  );
+  const [connectedApps, setConnectedApps] = useState<ConnectedAppGrant[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [revokingGrantId, setRevokingGrantId] = useState<string | null>(null);
 
-      <div className="grid gap-4 md:grid-cols-3">
-        {['Ewe Note', 'AI clients', 'Developer apps'].map((title) => (
-          <Card key={title} className="p-5">
-            <h2 className="text-lg font-semibold">{title}</h2>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              Management controls are coming here as the app shell fills in.
+  async function refreshConnectedApps() {
+    const [bootstrapResult, connectedAppsResult] = await Promise.all([
+      getAccountBootstrap(),
+      getConnectedApps(),
+    ]);
+    setBootstrap(bootstrapResult);
+    setConnectedApps(connectedAppsResult.connectedApps);
+  }
+
+  useEffect(() => {
+    let active = true;
+
+    void refreshConnectedApps()
+      .catch((requestError: Error) => {
+        if (active) {
+          setError(requestError.message);
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  async function handleRevoke(grantId: string) {
+    setRevokingGrantId(grantId);
+    setError(null);
+    try {
+      await revokeConnectedApp(grantId);
+      await refreshConnectedApps();
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'Unable to revoke app access.'
+      );
+    } finally {
+      setRevokingGrantId(null);
+    }
+  }
+
+  if (loading) {
+    return (
+      <LoadingPanel
+        message="Loading connected apps..."
+        title="Connected apps"
+      />
+    );
+  }
+
+  const roomsById = new Map(bootstrap?.rooms.map((room) => [room.id, room]));
+  const activeGrants = connectedApps.filter(
+    (grant) => grant.status === 'active'
+  );
+  const revokedGrants = connectedApps.filter(
+    (grant) => grant.status === 'revoked'
+  );
+
+  return (
+    <AppConsoleLayout
+      active="apps"
+      note={{
+        body: 'Revoke removes the app grant. The app must ask again before it can sync.',
+        title: 'Apps ask first',
+      }}
+    >
+      <AppPageHero
+        body="Review which apps can access your data, what scopes they have, when they last connected, and what you want to revoke. Nothing is shared without showing up here."
+        eyebrow="Connected apps"
+        title="Every app asks first."
+      />
+
+      {error ? <p className="app-error">{error}</p> : null}
+
+      {activeGrants.length > 0 ? (
+        <section className="app-panel">
+          <div className="app-panel-header">
+            <div>
+              <h2>Active grants</h2>
+              <p>
+                These apps can access the collections or rooms listed here until
+                you revoke them.
+              </p>
+            </div>
+            <span className="mcp-chip">{activeGrants.length} active</span>
+          </div>
+
+          <div className="app-table app-connected-table" role="table">
+            <div className="app-table-row app-table-head" role="row">
+              <span role="columnheader">App</span>
+              <span role="columnheader">Collections</span>
+              <span role="columnheader">Rooms</span>
+              <span role="columnheader">Last access</span>
+              <span role="columnheader">Actions</span>
+            </div>
+            {activeGrants.map((grant) => (
+              <div key={grant.id} className="app-table-row" role="row">
+                <span role="cell">
+                  <strong>{grant.domain}</strong>
+                  <small>{grant.requesterType}</small>
+                </span>
+                <span role="cell">{getGrantCollectionsLabel(grant)}</span>
+                <span role="cell">
+                  {grant.roomIds.length > 0
+                    ? grant.roomIds
+                        .map((roomId) => roomsById.get(roomId)?.name ?? roomId)
+                        .join(', ')
+                    : 'Collection-level'}
+                </span>
+                <span role="cell">
+                  {formatDate(getGrantLastActivity(grant))}
+                </span>
+                <span role="cell">
+                  <Button
+                    disabled={revokingGrantId === grant.id}
+                    tone="outline"
+                    type="button"
+                    onClick={() => void handleRevoke(grant.id)}
+                  >
+                    {revokingGrantId === grant.id ? (
+                      <InlineSpinner />
+                    ) : (
+                      'Revoke'
+                    )}
+                  </Button>
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : (
+        <EmptyState
+          action={
+            <Link className="app-panel-link" to="/ai">
+              Connect AI instead <ArrowRight className="h-4 w-4" />
+            </Link>
+          }
+          body="When an app requests access to your data, the request appears here before anything is shared."
+          icon={<PlugZap className="h-5 w-5" />}
+          title="No apps connected yet"
+        />
+      )}
+
+      <section className="app-panel">
+        <div className="app-panel-header">
+          <div>
+            <h2>Waiting for your approval</h2>
+            <p>
+              New app requests arrive through the permission prompt. Review the
+              domain, collections, rooms, and expiry before approving.
             </p>
-          </Card>
-        ))}
-      </div>
-    </div>
+          </div>
+          <span className="mcp-chip">0 pending</span>
+        </div>
+        <div className="app-request-preview">
+          <span className="app-empty-icon" aria-hidden="true">
+            <CircleAlert className="h-5 w-5" />
+          </span>
+          <div>
+            <strong>No pending requests</strong>
+            <p>
+              You will land on the access request screen when an app asks for a
+              grant.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {revokedGrants.length > 0 ? (
+        <section className="app-panel">
+          <div className="app-panel-header">
+            <div>
+              <h2>Revoked access</h2>
+              <p>These apps must request a new grant before they can sync.</p>
+            </div>
+            <span className="mcp-chip">{revokedGrants.length} revoked</span>
+          </div>
+          <div className="app-list">
+            {revokedGrants.map((grant) => (
+              <div key={grant.id} className="app-list-row">
+                <div>
+                  <strong>{grant.domain}</strong>
+                  <p>{getGrantCollectionsLabel(grant)}</p>
+                </div>
+                <span className="app-status-pill app-status-muted">
+                  Revoked
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+    </AppConsoleLayout>
   );
 }
 
@@ -923,32 +1582,44 @@ function AccountHomePage() {
 
   if (error || !bootstrap) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-10">
-        <Card className="p-6">
-          <h2 className="text-2xl font-semibold">Account</h2>
+      <AppConsoleLayout active="account">
+        <AppPageHero
+          body="We could not load your account profile rooms."
+          eyebrow="Account"
+          title="Your identity, your profile."
+        />
+        <Card className="app-panel p-6">
           <p className="mt-3 text-sm text-destructive">
             {error ?? 'Unable to load your account.'}
           </p>
         </Card>
-      </div>
+      </AppConsoleLayout>
     );
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
-      <div className="mb-4 flex justify-end">
-        <div className="flex gap-4">
-          <Link className="text-sm text-slate-300 hover:text-white" to="/ai">
-            Connect AI
-          </Link>
-          <Link
-            className="text-sm text-slate-300 hover:text-white"
-            to="/security"
-          >
-            Account security
-          </Link>
-        </div>
-      </div>
+    <AppConsoleLayout
+      active="account"
+      note={{
+        body: 'Profile room data is portable across Eweser apps.',
+        title: 'Portable identity',
+      }}
+    >
+      <AppPageHero
+        actions={
+          <>
+            <Link className="app-secondary-action" to="/ai">
+              Connect AI <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link className="app-secondary-action" to="/security">
+              Account security <ArrowRight className="h-4 w-4" />
+            </Link>
+          </>
+        }
+        body="Manage the account identity your apps use and inspect profile room data that can move with you."
+        eyebrow="Account"
+        title="Your identity, your profile."
+      />
       {bootstrap.profileRooms.length >= 2 ? (
         <ProfileEditor
           email={bootstrap.user.email}
@@ -956,14 +1627,26 @@ function AccountHomePage() {
           userCount={bootstrap.userCount}
         />
       ) : (
-        <Card className="p-6">
-          <h2 className="text-2xl font-semibold">Account</h2>
-          <p className="mt-3 text-sm text-muted-foreground">
-            Signed in as {bootstrap.user.email}
-          </p>
-        </Card>
+        <section className="app-panel">
+          <div className="app-panel-header">
+            <div>
+              <h2>Profile</h2>
+              <p>Profile rooms will appear here after account bootstrap.</p>
+            </div>
+            <span className="mcp-chip">Signed in</span>
+          </div>
+          <div className="app-list-row">
+            <div>
+              <strong>{bootstrap.user.email}</strong>
+              <p>Current email</p>
+            </div>
+            <span className="app-status-pill">
+              {bootstrap.user.emailVerified ? 'Verified' : 'Unverified'}
+            </span>
+          </div>
+        </section>
       )}
-    </div>
+    </AppConsoleLayout>
   );
 }
 
@@ -1023,14 +1706,18 @@ function PermissionPage() {
 
   if (!loginQuery) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-10">
-        <Card className="p-6">
-          <h2 className="text-2xl font-semibold">Grant permissions</h2>
+      <AppConsoleLayout active="apps">
+        <AppPageHero
+          body="The app request URL is missing required information."
+          eyebrow="Access request"
+          title="Grant access to your data layer."
+        />
+        <Card className="app-panel p-6">
           <p className="mt-3 text-sm text-destructive">
             The access request is invalid.
           </p>
         </Card>
-      </div>
+      </AppConsoleLayout>
     );
   }
 
@@ -1042,14 +1729,18 @@ function PermissionPage() {
 
   if (error || !bootstrap) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-10">
-        <Card className="p-6">
-          <h2 className="text-2xl font-semibold">Grant permissions</h2>
+      <AppConsoleLayout active="apps">
+        <AppPageHero
+          body="We could not load the rooms needed to review this access request."
+          eyebrow="Access request"
+          title="Grant access to your data layer."
+        />
+        <Card className="app-panel p-6">
           <p className="mt-3 text-sm text-destructive">
             {error ?? 'Unable to load your rooms.'}
           </p>
         </Card>
-      </div>
+      </AppConsoleLayout>
     );
   }
 
@@ -1106,92 +1797,119 @@ function PermissionPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10">
-      <Card className="p-6">
-        <div className="mb-6">
-          <h2 className="text-2xl font-semibold">Grant permissions</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {loginQuery.name} at {loginQuery.domain} is requesting access to
-            your database.
-          </p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Start with read access. For AI clients that need to save notes,
-            prefer a dedicated AI Notes room instead of granting broad write
-            access.
-          </p>
+    <AppConsoleLayout
+      active="apps"
+      note={{
+        body: 'The app cannot access anything not listed in this review.',
+        title: 'Review first',
+      }}
+    >
+      <AppPageHero
+        body="Review the app, domain, requested collections, and scope before approving access. You can revoke this any time from connected apps."
+        eyebrow="Access request"
+        title="Grant access to your data layer."
+      />
+
+      <section className="app-panel permission-panel">
+        <div className="permission-summary">
+          <div>
+            <span className="mcp-chip">App</span>
+            <strong>{loginQuery.name}</strong>
+            <p>{loginQuery.domain}</p>
+          </div>
+          <div>
+            <span className="mcp-chip">Requested access</span>
+            <strong>
+              {allowAll ? 'All requested collections' : 'Selected scope'}
+            </strong>
+            <p>
+              {allowAll
+                ? 'Read all collections and rooms this account can grant.'
+                : `${selectedCollections.length} collections, ${selectedRoomIds.length} rooms`}
+            </p>
+          </div>
+          <div>
+            <span className="mcp-chip">Cannot access</span>
+            <strong>Everything else</strong>
+            <p>Unlisted rooms and future grants remain private.</p>
+          </div>
         </div>
 
-        <div className="space-y-6">
-          <div className="rounded-lg border p-4">
-            <label className="flex items-center gap-3 text-sm font-medium">
-              <input
-                checked={allowAll}
-                onChange={(event) => {
-                  const checked = event.target.checked;
-                  setAllowAll(checked);
-                  setSelectedCollections(checked ? ['all'] : []);
-                }}
-                type="checkbox"
-              />
-              Read all collections and rooms
-            </label>
+        <div className="permission-control">
+          <label className="permission-check">
+            <input
+              checked={allowAll}
+              className="mcp-checkbox"
+              onChange={(event) => {
+                const checked = event.target.checked;
+                setAllowAll(checked);
+                setSelectedCollections(checked ? ['all'] : []);
+              }}
+              type="checkbox"
+            />
+            <span>
+              <strong>All accessible data</strong>
+              <small>
+                Use this only when you trust the app with every requested
+                collection.
+              </small>
+            </span>
+          </label>
+        </div>
+
+        {!allowAll ? (
+          <div className="app-two-column">
+            <section className="permission-choice-panel">
+              <h2>Collections</h2>
+              <p>Choose the record types this app may read.</p>
+              <div className="app-list">
+                {availableCollections.map((collectionKey) => (
+                  <label key={collectionKey} className="permission-check">
+                    <input
+                      checked={selectedCollections.includes(collectionKey)}
+                      className="mcp-checkbox"
+                      onChange={(event) =>
+                        toggleCollection(collectionKey, event.target.checked)
+                      }
+                      type="checkbox"
+                    />
+                    <span>
+                      <strong>{formatCollectionKey(collectionKey)}</strong>
+                      <small>{getCollectionDescription(collectionKey)}</small>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </section>
+
+            <section className="permission-choice-panel">
+              <h2>Specific rooms</h2>
+              <p>Limit the grant to room boundaries where possible.</p>
+              <div className="app-list">
+                {bootstrap.rooms.map((room) => (
+                  <label key={room.id} className="permission-check">
+                    <input
+                      checked={selectedRoomIds.includes(room.id)}
+                      className="mcp-checkbox"
+                      onChange={(event) =>
+                        toggleRoom(room.id, event.target.checked)
+                      }
+                      type="checkbox"
+                    />
+                    <span>
+                      <strong>{room.name}</strong>
+                      <small>{formatCollectionKey(room.collectionKey)}</small>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </section>
           </div>
+        ) : null}
 
-          {!allowAll ? (
-            <div className="grid gap-6 lg:grid-cols-2">
-              <div className="rounded-lg border p-4">
-                <h3 className="text-sm font-semibold">Readable collections</h3>
-                <div className="mt-4 space-y-3">
-                  {availableCollections.map((collectionKey) => (
-                    <label
-                      key={collectionKey}
-                      className="flex items-center gap-3 text-sm"
-                    >
-                      <input
-                        checked={selectedCollections.includes(collectionKey)}
-                        onChange={(event) =>
-                          toggleCollection(collectionKey, event.target.checked)
-                        }
-                        type="checkbox"
-                      />
-                      {collectionKey}
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-lg border p-4">
-                <h3 className="text-sm font-semibold">Readable rooms</h3>
-                <div className="mt-4 space-y-3">
-                  {bootstrap.rooms.map((room) => (
-                    <label
-                      key={room.id}
-                      className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm"
-                    >
-                      <span>
-                        <span className="font-medium">{room.name}</span>
-                        <span className="ml-2 text-muted-foreground">
-                          {room.collectionKey}
-                        </span>
-                      </span>
-                      <input
-                        checked={selectedRoomIds.includes(room.id)}
-                        onChange={(event) =>
-                          toggleRoom(room.id, event.target.checked)
-                        }
-                        type="checkbox"
-                      />
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : null}
-
+        <div className="permission-footer">
           <div className="flex flex-wrap items-center gap-3">
-            <Label htmlFor="keep-alive-days">
-              Cancel grant if inactive for
-            </Label>
+            <Label htmlFor="keep-alive-days">Cancel if inactive for</Label>
             <Input
               id="keep-alive-days"
               className="w-24"
@@ -1228,8 +1946,8 @@ function PermissionPage() {
             </Button>
           </div>
         </div>
-      </Card>
-    </div>
+      </section>
+    </AppConsoleLayout>
   );
 }
 
@@ -1395,12 +2113,12 @@ function ForgotPasswordPage() {
     >
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-2">
-          <Label className="text-white/90" htmlFor="forgot-password-email">
+          <Label className={authLabelClass} htmlFor="forgot-password-email">
             Email
           </Label>
           <Input
             id="forgot-password-email"
-            className="!h-12 !rounded-xl !border-white/10 !bg-white/5 !px-4 !text-base !text-white"
+            className={authFieldClass}
             onChange={(event) => setEmail(event.target.value)}
             type="email"
             value={email}
@@ -1413,7 +2131,7 @@ function ForgotPasswordPage() {
           </p>
         ) : null}
         <Button
-          className="!h-12 !w-full !rounded-xl"
+          className={authPrimaryButtonClass}
           disabled={loading}
           type="submit"
         >
@@ -1485,24 +2203,24 @@ function ResetPasswordPage() {
     >
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-2">
-          <Label className="text-white/90" htmlFor="reset-password-new">
+          <Label className={authLabelClass} htmlFor="reset-password-new">
             New password
           </Label>
           <Input
             id="reset-password-new"
-            className="!h-12 !rounded-xl !border-white/10 !bg-white/5 !px-4 !text-base !text-white"
+            className={authFieldClass}
             onChange={(event) => setPassword(event.target.value)}
             type="password"
             value={password}
           />
         </div>
         <div className="space-y-2">
-          <Label className="text-white/90" htmlFor="reset-password-confirm">
+          <Label className={authLabelClass} htmlFor="reset-password-confirm">
             Confirm password
           </Label>
           <Input
             id="reset-password-confirm"
-            className="!h-12 !rounded-xl !border-white/10 !bg-white/5 !px-4 !text-base !text-white"
+            className={authFieldClass}
             onChange={(event) => setConfirmPassword(event.target.value)}
             type="password"
             value={confirmPassword}
@@ -1510,7 +2228,7 @@ function ResetPasswordPage() {
         </div>
         {error ? <p className="text-sm text-red-300">{error}</p> : null}
         <Button
-          className="!h-12 !w-full !rounded-xl"
+          className={authPrimaryButtonClass}
           disabled={loading}
           type="submit"
         >
@@ -1614,105 +2332,150 @@ function SecurityPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
-      <Card className="space-y-5 p-6">
-        <h2 className="text-2xl font-semibold">Account security</h2>
-        <p className="text-sm text-muted-foreground">
-          Email verification and two-factor protection controls.
-        </p>
-        <p className="text-xs text-muted-foreground">
-          Passkeys/WebAuthn are deferred for this launch because current
-          `better-auth` workspace version does not expose stable passkey plugin
-          support.
-        </p>
-        <p className="text-sm">
-          Email verified:{' '}
-          <span className="font-medium">
-            {bootstrap?.user.emailVerified ? 'Yes' : 'No'}
-          </span>
-        </p>
-        {!bootstrap?.user.emailVerified ? (
-          <Button
-            disabled={working}
-            tone="outline"
-            type="button"
-            onClick={() =>
-              void runAction(async () => {
-                await postAuthJson('/send-verification-email', {
-                  callbackURL: appAbsoluteUrl('/verify-email'),
-                });
-              })
-            }
-          >
-            {working ? <InlineSpinner /> : 'Resend verification email'}
-          </Button>
-        ) : null}
+    <AppConsoleLayout
+      active="security"
+      note={{
+        body: 'Email verification and 2FA protect grants, tokens, and account changes.',
+        title: 'Account boundary',
+      }}
+    >
+      <AppPageHero
+        body="Email verification, password, two-factor controls, and active session management live here."
+        eyebrow="Security"
+        title="Keep your account tight."
+      />
 
-        <div className="space-y-2">
-          <Label htmlFor="security-password">Current password</Label>
-          <Input
-            id="security-password"
-            onChange={(event) => setPassword(event.target.value)}
-            type="password"
-            value={password}
-          />
+      <div className="app-two-column">
+        <section className="app-panel">
+          <div className="app-panel-header">
+            <div>
+              <h2>Email verification</h2>
+              <p>Verification is required for sensitive account actions.</p>
+            </div>
+            <span className="app-status-pill">
+              {bootstrap?.user.emailVerified ? 'Verified' : 'Unverified'}
+            </span>
+          </div>
+          {!bootstrap?.user.emailVerified ? (
+            <Button
+              disabled={working}
+              tone="outline"
+              type="button"
+              onClick={() =>
+                void runAction(async () => {
+                  await postAuthJson('/send-verification-email', {
+                    callbackURL: appAbsoluteUrl('/verify-email'),
+                  });
+                })
+              }
+            >
+              {working ? <InlineSpinner /> : 'Resend verification email'}
+            </Button>
+          ) : (
+            <div className="app-request-preview">
+              <span className="app-empty-icon" aria-hidden="true">
+                <CheckCircle2 className="h-5 w-5" />
+              </span>
+              <div>
+                <strong>Email verified</strong>
+                <p>Your email can be used for account recovery and alerts.</p>
+              </div>
+            </div>
+          )}
+        </section>
+
+        <section className="app-panel">
+          <div className="app-panel-header">
+            <div>
+              <h2>Passkeys</h2>
+              <p>
+                WebAuthn is deferred until this better-auth version exposes a
+                stable passkey plugin.
+              </p>
+            </div>
+            <span className="mcp-chip">Planned</span>
+          </div>
+        </section>
+      </div>
+
+      <section className="app-panel">
+        <div className="app-panel-header">
+          <div>
+            <h2>Two-factor authentication</h2>
+            <p>
+              Use your current password to enable, disable, or refresh TOTP.
+            </p>
+          </div>
+          <span className="mcp-chip">TOTP</span>
         </div>
 
-        <div className="flex flex-wrap gap-3">
-          <Button
-            disabled={working || password.length < 1}
-            type="button"
-            onClick={() =>
-              void runAction(async () => {
-                const result = await postAuthJson<{
-                  backupCodes: string[];
-                  totpURI: string;
-                }>('/two-factor/enable', {
-                  password,
-                });
-                setTotpUri(result.totpURI);
-                setBackupCodes(result.backupCodes);
-              })
-            }
-          >
-            Enable 2FA
-          </Button>
-          <Button
-            disabled={working || password.length < 1}
-            tone="outline"
-            type="button"
-            onClick={() =>
-              void runAction(async () => {
-                await postAuthJson('/two-factor/disable', { password });
-                setTotpUri(null);
-              })
-            }
-          >
-            Disable 2FA
-          </Button>
-          <Button
-            disabled={working || password.length < 1}
-            tone="outline"
-            type="button"
-            onClick={() =>
-              void runAction(async () => {
-                const result = await postAuthJson<{ backupCodes: string[] }>(
-                  '/two-factor/generate-backup-codes',
-                  { password }
-                );
-                setBackupCodes(result.backupCodes);
-              })
-            }
-          >
-            Regenerate backup codes
-          </Button>
+        <div className="app-form-grid">
+          <div className="space-y-2">
+            <Label htmlFor="security-password">Current password</Label>
+            <Input
+              id="security-password"
+              onChange={(event) => setPassword(event.target.value)}
+              type="password"
+              value={password}
+            />
+          </div>
+
+          <div className="app-button-cluster">
+            <Button
+              disabled={working || password.length < 1}
+              type="button"
+              onClick={() =>
+                void runAction(async () => {
+                  const result = await postAuthJson<{
+                    backupCodes: string[];
+                    totpURI: string;
+                  }>('/two-factor/enable', {
+                    password,
+                  });
+                  setTotpUri(result.totpURI);
+                  setBackupCodes(result.backupCodes);
+                })
+              }
+            >
+              Enable 2FA
+            </Button>
+            <Button
+              disabled={working || password.length < 1}
+              tone="outline"
+              type="button"
+              onClick={() =>
+                void runAction(async () => {
+                  await postAuthJson('/two-factor/disable', { password });
+                  setTotpUri(null);
+                })
+              }
+            >
+              Disable 2FA
+            </Button>
+            <Button
+              disabled={working || password.length < 1}
+              tone="outline"
+              type="button"
+              onClick={() =>
+                void runAction(async () => {
+                  const result = await postAuthJson<{ backupCodes: string[] }>(
+                    '/two-factor/generate-backup-codes',
+                    { password }
+                  );
+                  setBackupCodes(result.backupCodes);
+                })
+              }
+            >
+              Regenerate backup codes
+            </Button>
+          </div>
         </div>
 
         {totpUri ? (
-          <div className="space-y-2 rounded-md border p-3">
+          <div className="app-code-panel">
             <p className="text-sm font-medium">TOTP URI</p>
             <p className="break-all text-xs text-muted-foreground">{totpUri}</p>
-            <div className="flex gap-2">
+            <div className="mt-3 flex gap-2">
               <Input
                 placeholder="Enter TOTP code"
                 onChange={(event) => setTotpCode(event.target.value)}
@@ -1737,9 +2500,9 @@ function SecurityPage() {
         ) : null}
 
         {backupCodes.length > 0 ? (
-          <div className="space-y-2 rounded-md border p-3">
+          <div className="app-code-panel">
             <p className="text-sm font-medium">Backup codes</p>
-            <ul className="grid grid-cols-2 gap-2 text-xs">
+            <ul className="mt-3 grid grid-cols-2 gap-2 text-xs">
               {backupCodes.map((code) => (
                 <li key={code} className="rounded bg-muted px-2 py-1 font-mono">
                   {code}
@@ -1749,9 +2512,11 @@ function SecurityPage() {
           </div>
         ) : null}
 
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      </Card>
-    </div>
+        {error ? (
+          <p className="mt-4 text-sm text-destructive">{error}</p>
+        ) : null}
+      </section>
+    </AppConsoleLayout>
   );
 }
 
@@ -1803,26 +2568,26 @@ function TwoFactorChallengePage() {
     >
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-2">
-          <Label className="text-white/90" htmlFor="two-factor-code">
+          <Label className={authLabelClass} htmlFor="two-factor-code">
             {mode === 'totp' ? 'Authenticator code' : 'Backup code'}
           </Label>
           <Input
             id="two-factor-code"
-            className="!h-12 !rounded-xl !border-white/10 !bg-white/5 !px-4 !text-base !text-white"
+            className={authFieldClass}
             onChange={(event) => setCode(event.target.value)}
             value={code}
           />
         </div>
         {error ? <p className="text-sm text-red-300">{error}</p> : null}
         <Button
-          className="!h-12 !w-full !rounded-xl"
+          className={authPrimaryButtonClass}
           disabled={working}
           type="submit"
         >
           {working ? <InlineSpinner /> : 'Verify'}
         </Button>
         <Button
-          className="!h-12 !w-full !rounded-xl"
+          className={authOutlineButtonClass}
           disabled={working}
           tone="outline"
           type="button"
