@@ -16,6 +16,8 @@ helpers.
 
 - [`App.tsx`](./App.tsx): Top-level provider and load gate.
 - [`app/INDEX.md`](./app/): Redesigned app shell routes, pages, and context.
+- [`default-tutorial.ts`](./default-tutorial.ts): Starter tutorial note content
+  and dismissal helpers.
 - [`notes-room.tsx`](./notes-room.tsx): React hook for note room state and CRUD.
 - [`components/INDEX.md`](./components/): Editor, layout, sidebar, and UI
   component map.
@@ -37,6 +39,8 @@ helpers.
 
 - UI reads and writes notes through `useNotesRoom()` and `@eweser/db`
   document helpers.
+- The generated default note is a dismissible tutorial stored as normal local
+  note content.
 - Import/export code is user-data sensitive and should avoid lossy transforms.
 - App loading waits until a selected room, note, and Yjs document are ready.
 

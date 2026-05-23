@@ -158,20 +158,40 @@ Verification checklist:
 ### OpenClaw
 
 Current launch path: token-backed remote HTTP config with explicit headers.
+OpenClaw stores outbound MCP server definitions under `mcp.servers`; the signed-in
+Connect AI page generates the token and server JSON for you.
+
+```bash
+openclaw mcp set eweser '{
+  "url": "https://auth.eweser.com/mcp",
+  "transport": "streamable-http",
+  "headers": {
+    "Authorization": "Bearer your-agent-token"
+  }
+}'
+```
+
+Equivalent config file shape:
 
 ```json
 {
-  "mcpServers": {
-    "eweser": {
-      "type": "http",
-      "url": "https://auth.eweser.com/mcp",
-      "headers": {
-        "Authorization": "Bearer your-agent-token"
+  "mcp": {
+    "servers": {
+      "eweser": {
+        "url": "https://auth.eweser.com/mcp",
+        "transport": "streamable-http",
+        "headers": {
+          "Authorization": "Bearer your-agent-token"
+        }
       }
     }
   }
 }
 ```
+
+After saving the server, use an OpenClaw coding or messaging profile with MCP
+tools enabled. Keep the bearer token out of URLs and rotate it from Connect AI if
+the config is copied to the wrong place.
 
 ## OAuth vs Token Paths
 

@@ -4,6 +4,7 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
+    "predev": "npm run build --prefix ../db",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",

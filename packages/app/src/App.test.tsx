@@ -18,7 +18,9 @@ const authMocks = vi.hoisted(() => ({
 const apiMocks = vi.hoisted(() => ({
   acceptInvite: vi.fn(),
   getAccountBootstrap: vi.fn(),
+  getConnectedApps: vi.fn(),
   getConnectAiOverview: vi.fn(),
+  revokeConnectedApp: vi.fn(),
   revokeConnectAi: vi.fn(),
   rotateConnectAiToken: vi.fn(),
   setupConnectAiToken: vi.fn(),
@@ -61,7 +63,9 @@ vi.mock('./lib/auth-client', () => ({
 vi.mock('./lib/api', () => ({
   acceptInvite: apiMocks.acceptInvite,
   getAccountBootstrap: apiMocks.getAccountBootstrap,
+  getConnectedApps: apiMocks.getConnectedApps,
   getConnectAiOverview: apiMocks.getConnectAiOverview,
+  revokeConnectedApp: apiMocks.revokeConnectedApp,
   revokeConnectAi: apiMocks.revokeConnectAi,
   rotateConnectAiToken: apiMocks.rotateConnectAiToken,
   setupConnectAiToken: apiMocks.setupConnectAiToken,
@@ -195,6 +199,25 @@ describe('auth-pages app', () => {
         writeText: vi.fn().mockResolvedValue(undefined),
       },
     });
+    apiMocks.getAccountBootstrap.mockResolvedValue({
+      profileRooms: [],
+      rooms: [],
+      user: {
+        email: 'test@example.com',
+        emailVerified: true,
+        id: 'user-1',
+        image: null,
+        name: 'Test User',
+      },
+      userCount: 1,
+    });
+    apiMocks.getConnectedApps.mockResolvedValue({
+      connectedApps: [],
+    });
+    apiMocks.revokeConnectedApp.mockResolvedValue({
+      grantId: 'grant-1',
+      status: 'revoked',
+    });
     apiMocks.getConnectAiOverview.mockResolvedValue({
       clients: [],
       defaults: {
@@ -202,11 +225,11 @@ describe('auth-pages app', () => {
         permissions: 'read',
         tokenTtlSeconds: 604800,
       },
-      dynamicClientRegistrationUrl: 'https://www.eweser.com/oauth/register',
-      mcpUrl: 'https://www.eweser.com/mcp',
+      dynamicClientRegistrationUrl: 'https://eweser.com/oauth/register',
+      mcpUrl: 'https://eweser.com/mcp',
       memoryStrategy: defaultMemoryStrategy(),
       oauthMetadataUrl:
-        'https://www.eweser.com/.well-known/oauth-authorization-server',
+        'https://eweser.com/.well-known/oauth-authorization-server',
       smartLinkRule:
         'Never place bearer tokens in URLs. All setup flows stay on authenticated Eweser pages and mint or rotate tokens server-side.',
       writableRooms: [],
@@ -249,10 +272,12 @@ describe('auth-pages app', () => {
     renderApp('/');
 
     expect(
-      await screen.findByRole('heading', { name: /sign in and own your data/i })
+      await screen.findByRole('heading', {
+        name: /everything your apps can touch/i,
+      })
     ).toBeInTheDocument();
-    expect(screen.getByText(/connected apps/i)).toBeInTheDocument();
-    expect(screen.getByText(/mcp \/ ai access/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/connected apps/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/ai grants/i).length).toBeGreaterThan(0);
   });
 
   it('uses local redirect query params after normal sign-in', async () => {
@@ -337,7 +362,9 @@ describe('auth-pages app', () => {
     });
 
     expect(
-      await screen.findByRole('heading', { name: /grant permissions/i })
+      await screen.findByRole('heading', {
+        name: /grant access to your data layer/i,
+      })
     ).toBeInTheDocument();
     expect(authMocks.signInEmail.mock.calls[0]?.[0]).toMatchObject({
       email: 'test@example.com',
@@ -433,17 +460,27 @@ describe('auth-pages app', () => {
           title: 'Claude Desktop',
           type: 'token',
         },
+        {
+          clientId: 'openclaw',
+          connection: null,
+          description:
+            'Remote HTTP MCP setup for OpenClaw using streamable-http and an explicit Authorization header.',
+          fallbackReason:
+            'OpenClaw stores outbound MCP servers under mcp.servers. Run openclaw mcp set eweser with the generated server JSON.',
+          title: 'OpenClaw',
+          type: 'token',
+        },
       ],
       defaults: {
         allowedCollections: 'all-supported-collections',
         permissions: 'read',
         tokenTtlSeconds: 604800,
       },
-      dynamicClientRegistrationUrl: 'https://www.eweser.com/oauth/register',
-      mcpUrl: 'https://www.eweser.com/mcp',
+      dynamicClientRegistrationUrl: 'https://eweser.com/oauth/register',
+      mcpUrl: 'https://eweser.com/mcp',
       memoryStrategy: defaultMemoryStrategy(['room-conversations']),
       oauthMetadataUrl:
-        'https://www.eweser.com/.well-known/oauth-authorization-server',
+        'https://eweser.com/.well-known/oauth-authorization-server',
       smartLinkRule:
         'Never place bearer tokens in URLs. All setup flows stay on authenticated Eweser pages and mint or rotate tokens server-side.',
       writableRooms: [
@@ -470,6 +507,10 @@ describe('auth-pages app', () => {
       await screen.findByRole('heading', { name: /connect ai/i, level: 2 })
     ).toBeInTheDocument();
     expect(screen.getByText(/claude desktop/i)).toBeInTheDocument();
+    expect(screen.getByText(/openclaw setup/i)).toBeInTheDocument();
+    expect(
+      screen.getAllByText(/openclaw mcp set eweser/i).length
+    ).toBeGreaterThan(0);
     expect(screen.getAllByText(/shared agent memory/i).length).toBeGreaterThan(
       0
     );
@@ -510,11 +551,11 @@ describe('auth-pages app', () => {
         permissions: 'read',
         tokenTtlSeconds: 604800,
       },
-      dynamicClientRegistrationUrl: 'https://www.eweser.com/oauth/register',
-      mcpUrl: 'https://www.eweser.com/mcp',
+      dynamicClientRegistrationUrl: 'https://eweser.com/oauth/register',
+      mcpUrl: 'https://eweser.com/mcp',
       memoryStrategy: defaultMemoryStrategy(['room-conversations']),
       oauthMetadataUrl:
-        'https://www.eweser.com/.well-known/oauth-authorization-server',
+        'https://eweser.com/.well-known/oauth-authorization-server',
       smartLinkRule:
         'Never place bearer tokens in URLs. All setup flows stay on authenticated Eweser pages and mint or rotate tokens server-side.',
       writableRooms: [
@@ -604,11 +645,11 @@ describe('auth-pages app', () => {
         permissions: 'read',
         tokenTtlSeconds: 604800,
       },
-      dynamicClientRegistrationUrl: 'https://www.eweser.com/oauth/register',
-      mcpUrl: 'https://www.eweser.com/mcp',
+      dynamicClientRegistrationUrl: 'https://eweser.com/oauth/register',
+      mcpUrl: 'https://eweser.com/mcp',
       memoryStrategy: defaultMemoryStrategy(['room-source']),
       oauthMetadataUrl:
-        'https://www.eweser.com/.well-known/oauth-authorization-server',
+        'https://eweser.com/.well-known/oauth-authorization-server',
       smartLinkRule:
         'Never place bearer tokens in URLs. All setup flows stay on authenticated Eweser pages and mint or rotate tokens server-side.',
       writableRooms: [
@@ -706,11 +747,11 @@ describe('auth-pages app', () => {
         permissions: 'read',
         tokenTtlSeconds: 604800,
       },
-      dynamicClientRegistrationUrl: 'https://www.eweser.com/oauth/register',
-      mcpUrl: 'https://www.eweser.com/mcp',
+      dynamicClientRegistrationUrl: 'https://eweser.com/oauth/register',
+      mcpUrl: 'https://eweser.com/mcp',
       memoryStrategy: defaultMemoryStrategy(),
       oauthMetadataUrl:
-        'https://www.eweser.com/.well-known/oauth-authorization-server',
+        'https://eweser.com/.well-known/oauth-authorization-server',
       smartLinkRule:
         'Never place bearer tokens in URLs. All setup flows stay on authenticated Eweser pages and mint or rotate tokens server-side.',
       writableRooms: [],
@@ -729,7 +770,7 @@ describe('auth-pages app', () => {
 
     await waitFor(() => {
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-        'https://www.eweser.com/mcp'
+        'https://eweser.com/mcp'
       );
       expect(window.open).toHaveBeenCalledWith(
         'https://chatgpt.com/',
@@ -775,11 +816,11 @@ describe('auth-pages app', () => {
         permissions: 'read',
         tokenTtlSeconds: 604800,
       },
-      dynamicClientRegistrationUrl: 'https://www.eweser.com/oauth/register',
-      mcpUrl: 'https://www.eweser.com/mcp',
+      dynamicClientRegistrationUrl: 'https://eweser.com/oauth/register',
+      mcpUrl: 'https://eweser.com/mcp',
       memoryStrategy: defaultMemoryStrategy(),
       oauthMetadataUrl:
-        'https://www.eweser.com/.well-known/oauth-authorization-server',
+        'https://eweser.com/.well-known/oauth-authorization-server',
       smartLinkRule:
         'Never place bearer tokens in URLs. All setup flows stay on authenticated Eweser pages and mint or rotate tokens server-side.',
       writableRooms: [],
@@ -807,7 +848,89 @@ describe('auth-pages app', () => {
     expect(
       await screen.findByText(/copy the eweser mcp url from this card/i)
     ).toBeInTheDocument();
-    expect(screen.getByText('https://www.eweser.com/mcp')).toBeInTheDocument();
+    expect(screen.getByText('https://eweser.com/mcp')).toBeInTheDocument();
+  });
+
+  it('renders and revokes connected app grants', async () => {
+    sessionState = {
+      data: {
+        session: { id: 'session-1' },
+        user: { email: 'test@example.com', id: 'user-1' },
+      },
+      error: null,
+      isPending: false,
+      isRefetching: false,
+      refetch: vi.fn().mockResolvedValue(undefined),
+    };
+
+    apiMocks.getAccountBootstrap.mockResolvedValue({
+      profileRooms: [],
+      rooms: [
+        {
+          id: 'room-notes',
+          name: 'Personal Notes',
+          collectionKey: 'notes',
+          syncBaseUrl: null,
+          syncUrl: null,
+        },
+      ],
+      user: {
+        email: 'test@example.com',
+        emailVerified: true,
+        id: 'user-1',
+        image: null,
+        name: 'Test User',
+      },
+      userCount: 1,
+    });
+    apiMocks.getConnectedApps
+      .mockResolvedValueOnce({
+        connectedApps: [
+          {
+            collections: ['notes'],
+            createdAt: '2026-05-01T00:00:00.000Z',
+            domain: 'note.eweser.com',
+            id: 'user-1|note.eweser.com',
+            keepAliveDays: 7,
+            requesterType: 'app',
+            roomIds: ['room-notes'],
+            status: 'active',
+            updatedAt: null,
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        connectedApps: [
+          {
+            collections: ['notes'],
+            createdAt: '2026-05-01T00:00:00.000Z',
+            domain: 'note.eweser.com',
+            id: 'user-1|note.eweser.com',
+            keepAliveDays: 7,
+            requesterType: 'app',
+            roomIds: ['room-notes'],
+            status: 'revoked',
+            updatedAt: '2026-05-02T00:00:00.000Z',
+          },
+        ],
+      });
+
+    renderApp('/apps');
+
+    expect(
+      await screen.findByRole('heading', { name: /every app asks first/i })
+    ).toBeInTheDocument();
+    expect(screen.getByText('note.eweser.com')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /revoke/i }));
+
+    await waitFor(() => {
+      expect(apiMocks.revokeConnectedApp).toHaveBeenCalledWith(
+        'user-1|note.eweser.com'
+      );
+    });
+
+    expect(await screen.findByText(/revoked access/i)).toBeInTheDocument();
   });
 
   it('requests password reset from forgot-password page', async () => {
@@ -877,7 +1000,7 @@ describe('auth-pages app', () => {
     renderApp('/account/security');
 
     expect(
-      await screen.findByRole('heading', { name: /account security/i })
+      await screen.findByRole('heading', { name: /keep your account tight/i })
     ).toBeInTheDocument();
   });
 });

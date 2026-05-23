@@ -6,6 +6,7 @@ import {
   getDefaultMobilePane,
   getMobilePaneForMode,
   getModeForMobilePane,
+  resolveWorkspaceModeHotkeySelection,
   WORKSPACE_MODE_STORAGE_KEY,
   clampWorkspaceMode,
   getWorkspaceModeHotkey,
@@ -106,6 +107,12 @@ describe('workspace layout', () => {
     expect(getModeForMobilePane('notes', 1)).toBe(2);
     expect(getModeForMobilePane('editor', 4)).toBe(1);
     expect(getModeForMobilePane('editor', 2)).toBe(2);
+  });
+
+  it('restores panes 1-3 when mod+1 is pressed again from mode 1', () => {
+    expect(resolveWorkspaceModeHotkeySelection(1, 1)).toBe(3);
+    expect(resolveWorkspaceModeHotkeySelection(4, 1)).toBe(1);
+    expect(resolveWorkspaceModeHotkeySelection(1, 2)).toBe(2);
   });
 
   it('still allows pane shortcuts inside the TipTap editing surface', () => {

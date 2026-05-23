@@ -2,11 +2,13 @@
 import { Editor } from '@tiptap/core';
 import TaskList from '@tiptap/extension-task-list';
 import StarterKit from '@tiptap/starter-kit';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { TaskItemWithExit } from './task-item';
 
+const editors: Editor[] = [];
+
 function createTaskEditor(content: string): Editor {
-  return new Editor({
+  const editor = new Editor({
     extensions: [
       StarterKit,
       TaskList,
@@ -14,9 +16,18 @@ function createTaskEditor(content: string): Editor {
     ],
     content,
   });
+
+  editors.push(editor);
+  return editor;
 }
 
 describe('TaskItemWithExit', () => {
+  afterEach(() => {
+    for (const editor of editors.splice(0)) {
+      editor.destroy();
+    }
+  });
+
   it('continues a task list after pressing Enter in a non-empty task item', () => {
     const editor = createTaskEditor(
       '<ul data-type="taskList"><li data-type="taskItem" data-checked="false"><p>A</p></li></ul>'

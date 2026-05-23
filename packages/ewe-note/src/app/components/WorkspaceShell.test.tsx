@@ -128,6 +128,21 @@ describe('WorkspaceShell', () => {
     expect(screen.queryByText('Notes')).toBeNull();
     expect(screen.queryByText('Metadata')).toBeNull();
     expect(screen.queryByText('Editor')).not.toBeNull();
+
+    fireEvent.keyDown(window, {
+      key: '1',
+      code: 'Digit1',
+      metaKey: true,
+      bubbles: true,
+    });
+
+    await waitFor(() => {
+      expect(window.localStorage.getItem(WORKSPACE_MODE_STORAGE_KEY)).toBe('3');
+    });
+    expect(screen.queryByText('Sidebar')).not.toBeNull();
+    expect(screen.queryByText(/^Notes/)).not.toBeNull();
+    expect(screen.queryByText('Metadata')).toBeNull();
+    expect(screen.queryByText('Editor')).not.toBeNull();
   });
 
   it('ignores workspace hotkeys from editable targets', () => {

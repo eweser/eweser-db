@@ -6,16 +6,15 @@ import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { logger } from './utils';
 import { useGetUserFromDb } from './user';
+import { getDefaultNoteText } from './default-tutorial';
 
 /** to make sure that we only have one default room created, make a new uuid v4 for the default room, but if there is already one in localStorage use that*/
 const randomRoomId = crypto.randomUUID();
 const defaultRoomId = localStorage.getItem('roomId') || randomRoomId;
 const randomNoteId = crypto.randomUUID();
-const defaultNoteId = localStorage.getItem('noteId') || randomNoteId;
+export const defaultNoteId = localStorage.getItem('noteId') || randomNoteId;
 localStorage.setItem('roomId', defaultRoomId);
 localStorage.setItem('noteId', defaultNoteId);
-
-const defaultNoteText = `# Welcome to EweNote! 🐑`;
 
 export function getDeviceType() {
   const userAgent = navigator.userAgent;
@@ -252,7 +251,7 @@ export const DbProvider = ({ children }: { children: ReactNode }) => {
           defaultNotesRoom.getDocuments().get(defaultNoteId) ??
           defaultNotesRoom
             .getDocuments()
-            .new({ text: defaultNoteText }, defaultNoteId);
+            .new({ text: getDefaultNoteText() }, defaultNoteId);
       }
       setDefaultNote(note);
     } catch (error) {
