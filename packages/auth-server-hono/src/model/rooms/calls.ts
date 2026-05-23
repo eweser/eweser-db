@@ -144,6 +144,28 @@ export async function updateRoom(
   return updatedRoom;
 }
 
+export async function updateRoomPublicAccess(
+  {
+    id,
+    publicAccess,
+    userId,
+  }: {
+    id: string;
+    publicAccess: Room['publicAccess'];
+    userId: string;
+  },
+  dbInstance?: DBInstance
+): Promise<Room> {
+  const room = await getRoomById(id, dbInstance);
+  if (!room) {
+    throw new Error('Room not found');
+  }
+  if (!room.adminAccess.includes(userId)) {
+    throw new Error('Room publication requires admin access');
+  }
+  return await updateRoom({ id, publicAccess }, dbInstance);
+}
+
 /**
  * Returns room IDs from an access grant, filtering out soft-deleted rooms.
  */

@@ -43,7 +43,7 @@ plan. Standalone QA is reserved for independent re-QA or audit work.
 
 - **Current** - Active work or planned work that is still useful as guidance.
 - **Completed** - Implemented or delivered; archived in `./completed/`.
-- **Historical** - Useful context, but superseded by newer plans or current code.
+- **Historical** - Useful background, but superseded by newer plans or current code.
 
 ## Current Plans
 
@@ -55,14 +55,15 @@ plan. Standalone QA is reserved for independent re-QA or audit work.
 | [2026-04-29-ai-memory-strategy-onboarding.md](./2026-04-29-ai-memory-strategy-onboarding.md) | Current plan        | Add default cross-platform AI memory onboarding plus advanced per-project memory strategies.        |
 | [2026-04-28-compliance-and-legal.md](./2026-04-28-compliance-and-legal.md)                   | Launch blocker      | Terms/privacy/abuse/DMCA work remains before public launch.                                         |
 | [2026-04-19-go-live-security-hardening.md](./2026-04-19-go-live-security-hardening.md)       | Launch blocker      | Run 1 complete; final security/go-live closure still open.                                          |
-| [2026-04-03-ai-first-launch-strategy.md](./2026-04-03-ai-first-launch-strategy.md)           | Strategic reference | Partly shipped through MCP/Connect AI; use as positioning and launch-story context.                 |
+| [2026-04-03-ai-first-launch-strategy.md](./2026-04-03-ai-first-launch-strategy.md)           | Strategic reference | Partly shipped through MCP/Connect AI; use as positioning and launch-story background.              |
 
 ### AI Workflow / Tooling
 
-| Plan                                                                                         | Status         | Notes                                                                                                                                                              |
-| -------------------------------------------------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [2026-05-01-codebase-navigation-index.md](./2026-05-01-codebase-navigation-index.md)         | Implemented    | Added maintained folder indexes, selected source headers, validation, and CI for trunk-to-leaf codebase navigation.                                                |
-| [2026-04-29-large-coding-run-orchestrator.md](./2026-04-29-large-coding-run-orchestrator.md) | Implemented v1 | Supervised plan-run orchestrator scripts, metadata contract, dry-run validation, monitor, worker isolation, integration, stop/resume, and QA/review handoff exist. |
+| Plan                                                                                         | Status         | Notes                                                                                                                                                                                                 |
+| -------------------------------------------------------------------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [2026-05-01-codebase-navigation-index.md](./2026-05-01-codebase-navigation-index.md)         | Implemented    | Added maintained folder indexes, selected source headers, validation, and CI for trunk-to-leaf codebase navigation.                                                                                   |
+| [2026-04-29-large-coding-run-orchestrator.md](./2026-04-29-large-coding-run-orchestrator.md) | Implemented v1 | Supervised plan-run orchestrator scripts, metadata contract, dry-run validation, monitor, worker isolation, integration, stop/resume, and QA/review handoff exist.                                    |
+| [2026-05-16-db-readme-todo-backlog.md](./2026-05-16-db-readme-todo-backlog.md)               | Active PR      | Runs 1-3 are implemented in PR #41; runs 4-13 should pass through `eweser-grill-with-docs` before coding because they introduce federation, encrypted-room, compatibility, and agent-access language. |
 
 ### Design / Copy
 

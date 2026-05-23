@@ -66,6 +66,10 @@ SYNC_SERVER_URL=wss://<your-railway-domain>/sync
 SYNC_PUBLIC_URL=wss://<your-railway-domain>/sync
 ```
 
+For attachments, map Railway Buckets or another S3-compatible provider into the
+`STORAGE_S3_*` variables documented in
+[file-storage.md](./file-storage.md).
+
 Generate secrets:
 
 ```bash

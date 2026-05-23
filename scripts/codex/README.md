@@ -159,6 +159,11 @@ summary.md        Human-readable monitor summary
 
 - Run `--dry-run` first. It validates the metadata, prints the dependency plan, and writes no state.
 - The orchestrator refuses mutating runs on a dirty working tree unless `--allow-dirty` is passed. Dirty integration branches are risky because worker merges and per-run verification become ambiguous.
+- Worker and final-stage `codex exec` subprocesses run from isolated worker
+  worktrees. Before launch, the orchestrator links the local Codex `auth.json`
+  into the Codex home for that worker checkout so nested workers inherit the
+  same local login. If no local Codex auth file is available, set
+  `OPENAI_API_KEY` or run `codex login` before starting the orchestrator.
 - `--stop` kills the active orchestrator process tree for the plan and marks in-progress state files as `interrupted`.
 - `--resume` reuses existing state and skips completed runs.
 - The default integration mode creates temporary per-run squash commits so multi-run integration can proceed with a clean index, then resets back to the starting commit and leaves the combined diff in the working tree for review. Use `--commit` when you want to keep per-run integration commits.

@@ -16,6 +16,7 @@ export const indexedDocuments = pgTable(
     roomId: uuid('room_id').notNull(),
     collectionKey: text('collection_key').notNull(),
     userId: text('user_id'),
+    publicAccess: text('public_access').notNull().default('private'),
     documentData: jsonb('document_data').$type<unknown>().notNull(),
     updatedAt: timestamp('updated_at', {
       withTimezone: true,

@@ -5,6 +5,7 @@ import type { Context, Next } from 'hono';
 const syncRoomsWithClientMock = vi.fn();
 const getRoomsByIdsMock = vi.fn();
 const getWritableRoomsByUserIdMock = vi.fn();
+const updateRoomPublicAccessMock = vi.fn();
 const updateRoomMock = vi.fn();
 const createRoomInviteLinkMock = vi.fn();
 const verifyRoomInviteTokenMock = vi.fn();
@@ -40,6 +41,7 @@ vi.mock('../services/rooms/sync-rooms-with-client.js', () => ({
 vi.mock('../model/rooms/calls.js', () => ({
   getRoomsByIds: getRoomsByIdsMock,
   getWritableRoomsByUserId: getWritableRoomsByUserIdMock,
+  updateRoomPublicAccess: updateRoomPublicAccessMock,
   updateRoom: updateRoomMock,
 }));
 
@@ -337,9 +339,79 @@ describe('accessGrantRouter', () => {
     await expect(res.json()).resolves.toEqual({ error: 'Invalid room' });
   });
 
+  it('updates publication state for an authorized room', async () => {
+    updateRoomPublicAccessMock.mockResolvedValueOnce({
+      id: 'room-1',
+      publicAccess: 'read',
+    });
+
+    const res = await app.fetch(
+      new Request(
+        'http://localhost/api/access-grant/update-room/room-1/public-access',
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ publicAccess: 'read' }),
+        }
+      )
+    );
+
+    expect(updateRoomPublicAccessMock).toHaveBeenCalledWith({
+      id: 'room-1',
+      publicAccess: 'read',
+      userId: 'grant-1',
+    });
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toEqual({
+      id: 'room-1',
+      publicAccess: 'read',
+    });
+  });
+
+  it('returns 400 for invalid publication state', async () => {
+    const res = await app.fetch(
+      new Request(
+        'http://localhost/api/access-grant/update-room/room-1/public-access',
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ publicAccess: 'everyone' }),
+        }
+      )
+    );
+
+    expect(res.status).toBe(400);
+    await expect(res.json()).resolves.toEqual({
+      error: 'Invalid publicAccess',
+    });
+    expect(updateRoomPublicAccessMock).not.toHaveBeenCalled();
+  });
+
+  it('returns 403 when publication update is not admin-authorized', async () => {
+    updateRoomPublicAccessMock.mockRejectedValueOnce(
+      new Error('Room publication requires admin access')
+    );
+
+    const res = await app.fetch(
+      new Request(
+        'http://localhost/api/access-grant/update-room/room-1/public-access',
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ publicAccess: 'read' }),
+        }
+      )
+    );
+
+    expect(res.status).toBe(403);
+    await expect(res.json()).resolves.toEqual({
+      error: 'Room publication requires admin access',
+    });
+  });
+
   it('refreshes sync token for authorized room', async () => {
     getRoomsByIdsMock.mockResolvedValueOnce([
-      { id: 'room-1', collectionKey: 'notes' },
+      { id: 'room-1', collectionKey: 'notes', publicAccess: 'read' },
     ]);
     generateSyncTokenMock.mockReturnValueOnce({
       token: 'sync-token',
@@ -350,7 +422,12 @@ describe('accessGrantRouter', () => {
       new Request('http://localhost/api/access-grant/refresh-sync-token/room-1')
     );
 
-    expect(generateSyncTokenMock).toHaveBeenCalledWith('room-1', 'notes');
+    expect(generateSyncTokenMock).toHaveBeenCalledWith(
+      'room-1',
+      'notes',
+      undefined,
+      'read'
+    );
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({
       syncUrl: 'ws://localhost:8080',

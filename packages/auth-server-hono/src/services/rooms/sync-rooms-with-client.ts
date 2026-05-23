@@ -49,10 +49,12 @@ export async function syncRoomsWithClient(
 
     const serverRooms = await getRoomsFromAccessGrant(grant, dbInstance);
     const serverRoomIds = serverRooms.map((r) => r.id);
+    const serverRoomIdSet = new Set(serverRoomIds);
+    const serverRoomsById = new Map(serverRooms.map((room) => [room.id, room]));
 
     // Identify new rooms from client
     const newClientRooms = clientRooms.filter(
-      (r) => !serverRoomIds.includes(r.id)
+      (r) => !serverRoomIdSet.has(r.id)
     );
 
     if (newClientRooms.length > 0) {
@@ -71,12 +73,26 @@ export async function syncRoomsWithClient(
       await insertRooms(inserts, userId, dbInstance);
     }
 
+    for (const clientRoom of clientRooms) {
+      const serverRoom = serverRoomsById.get(clientRoom.id);
+      if (
+        serverRoom &&
+        serverRoom.publicAccess !== clientRoom.publicAccess &&
+        serverRoom.adminAccess.includes(userId)
+      ) {
+        await updateRoom(
+          { id: serverRoom.id, publicAccess: clientRoom.publicAccess },
+          dbInstance
+        );
+      }
+    }
+
     // Handle soft deletes from client
     const clientDeletedRoomIds = clientRooms
       .filter((r) => r._deleted)
       .map((r) => r.id);
     for (const id of clientDeletedRoomIds) {
-      if (serverRoomIds.includes(id)) {
+      if (serverRoomIdSet.has(id)) {
         await updateRoom({ id, _deleted: true }, dbInstance);
       }
     }

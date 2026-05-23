@@ -18,7 +18,33 @@ export interface AccountBootstrapResponse {
   user: AuthPagesUser;
   rooms: ServerRoom[];
   profileRooms: ServerRoom[];
+  storageProviderProfile?: {
+    bucket: string | null;
+    configured: boolean;
+    endpoint: string | null;
+    forcePathStyle: boolean;
+    id: string;
+    kind: 's3-compatible';
+    label: string;
+    maxFileSizeMb: number;
+    region: string;
+  } | null;
   userCount: number;
+}
+
+export interface RemoteSnapshotRecord {
+  id: string;
+  accessGrantId: string | null;
+  providerProfileId: string;
+  objectKey: string;
+  filename: string;
+  contentHash: string;
+  sizeBytes: number;
+  roomCount: number;
+  documentCount: number;
+  retentionExpiresAt: string | null;
+  createdAt: string;
+  updatedAt: string | null;
 }
 
 export interface ConnectedAppGrant {
@@ -168,6 +194,18 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export function getAccountBootstrap() {
   return request<AccountBootstrapResponse>('/api/account/bootstrap');
+}
+
+export function getBackupSnapshots() {
+  return request<{ snapshots: RemoteSnapshotRecord[] }>('/api/backups');
+}
+
+export function getBackupSnapshotDownloadUrl(snapshotId: string) {
+  return request<{
+    expiresInSeconds: number;
+    snapshot: RemoteSnapshotRecord;
+    url: string;
+  }>(`/api/backups/${snapshotId}/download-url`);
 }
 
 export function getConnectedApps() {

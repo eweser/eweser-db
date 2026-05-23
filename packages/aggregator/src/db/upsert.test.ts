@@ -12,6 +12,7 @@ describe('upsertIndexedDocument', () => {
       roomId: 'd7ea7353-f1fb-4af5-bc9c-37cfd9d6195b',
       collectionKey: 'notes',
       userId: 'user-1',
+      publicAccess: 'read',
       documentData: { title: 'Draft' },
     });
 
@@ -20,6 +21,7 @@ describe('upsertIndexedDocument', () => {
       roomId: 'd7ea7353-f1fb-4af5-bc9c-37cfd9d6195b',
       collectionKey: 'notes',
       userId: 'user-1',
+      publicAccess: 'read',
       documentData: { title: 'Draft' },
     });
     expect(onConflictDoUpdate).toHaveBeenCalledTimes(1);

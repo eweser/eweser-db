@@ -15,6 +15,7 @@ export function createDevTokenRouter() {
   router.get('/dev-token', (c) => {
     const roomId = c.req.query('room')?.trim();
     const collectionKey = c.req.query('collection')?.trim();
+    const publicAccess = c.req.query('publicAccess')?.trim() ?? 'private';
 
     if (!roomId || !collectionKey) {
       return c.json(
@@ -23,9 +24,21 @@ export function createDevTokenRouter() {
       );
     }
 
-    const token = jwt.sign({ roomId, collectionKey }, env.SYNC_AUTH_SECRET, {
-      expiresIn: '24h',
-    });
+    if (
+      publicAccess !== 'private' &&
+      publicAccess !== 'read' &&
+      publicAccess !== 'write'
+    ) {
+      return c.json({ error: 'Invalid publicAccess' }, 400);
+    }
+
+    const token = jwt.sign(
+      { roomId, collectionKey, publicAccess },
+      env.SYNC_AUTH_SECRET,
+      {
+        expiresIn: '24h',
+      }
+    );
 
     return c.json({ token });
   });

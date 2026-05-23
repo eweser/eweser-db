@@ -17,6 +17,7 @@ import { connectAiRouter } from './routes/connect-ai.js';
 import { oauthRouter, oauthServerMetadata } from './routes/oauth.js';
 import { mcpRouter } from './routes/mcp.js';
 import { filesRouter } from './routes/files.js';
+import { backupsRouter } from './routes/backups.js';
 import { createLogger, initTelemetry } from '@eweser/logger';
 
 await initTelemetry('auth-api');
@@ -124,6 +125,10 @@ app.route('/oauth', oauthRouter);
 app.route('/mcp', mcpRouter);
 app.route('/files', filesRouter);
 app.route('/api/files', filesRouter);
+app.route('/backups', backupsRouter);
+app.route('/backups/', backupsRouter);
+app.route('/api/backups', backupsRouter);
+app.route('/api/backups/', backupsRouter);
 
 serve({ fetch: app.fetch, port: env.PORT }, (info) => {
   log.info(`Auth API running on port ${info.port}`);

@@ -12,6 +12,7 @@ import { syncRoomsWithClient } from '../services/rooms/sync-rooms-with-client.js
 import {
   getRoomsByIds,
   getWritableRoomsByUserId,
+  updateRoomPublicAccess,
   updateRoom,
 } from '../model/rooms/calls.js';
 import { createRoomInviteLink } from '../services/access-grant/create-room-invite-link.js';
@@ -28,6 +29,7 @@ import {
   type ThirdPartyAppPermissions,
 } from '../services/access-grant/create-third-party-app-permissions.js';
 import { collectionKeys } from '@eweser/shared';
+import { parseAccessGrantId } from '../model/access_grants.js';
 import type {
   RegistrySyncRequestBody,
   CreateRoomInviteBody,
@@ -284,6 +286,55 @@ accessGrantRouter.post('/update-room/:roomId', requireJwtAuth, async (c) => {
 });
 
 /**
+ * POST /api/access-grant/update-room/:roomId/public-access
+ * Updates explicit publication state for aggregator indexing.
+ */
+accessGrantRouter.post(
+  '/update-room/:roomId/public-access',
+  requireJwtAuth,
+  async (c) => {
+    const roomId = c.req.param('roomId');
+    const roomIds = c.get('roomIds');
+    const { ownerId } = parseAccessGrantId(c.get('access_grant_id'));
+    const body = (await c.req.json().catch(() => null)) as {
+      publicAccess?: unknown;
+    } | null;
+
+    if (!roomIds.includes(roomId)) {
+      return c.json({ error: 'Invalid room' }, 403);
+    }
+
+    if (
+      body?.publicAccess !== 'private' &&
+      body?.publicAccess !== 'read' &&
+      body?.publicAccess !== 'write'
+    ) {
+      return c.json({ error: 'Invalid publicAccess' }, 400);
+    }
+
+    try {
+      const updated = await updateRoomPublicAccess({
+        id: roomId,
+        publicAccess: body.publicAccess,
+        userId: ownerId,
+      });
+      return c.json(updated);
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Room not found') {
+        return c.json({ error: 'Room not found' }, 404);
+      }
+      if (
+        error instanceof Error &&
+        error.message === 'Room publication requires admin access'
+      ) {
+        return c.json({ error: 'Room publication requires admin access' }, 403);
+      }
+      return c.json({ error: 'Failed to update room publication' }, 500);
+    }
+  }
+);
+
+/**
  * GET /api/access-grant/refresh-sync-token/:roomId
  * Returns a fresh Hocuspocus auth token.
  */
@@ -303,7 +354,12 @@ accessGrantRouter.get(
       return c.json({ error: 'Room not found' }, 404);
     }
 
-    const { token, expiry } = generateSyncToken(roomId, room.collectionKey);
+    const { token, expiry } = generateSyncToken(
+      roomId,
+      room.collectionKey,
+      undefined,
+      room.publicAccess
+    );
 
     const response: RefreshSyncTokenRouteResponse = {
       syncUrl: env.SYNC_SERVER_URL,

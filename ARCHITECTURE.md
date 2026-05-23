@@ -4,7 +4,10 @@
 
 ## Overview
 
-EweserDB is a local-first, user-owned database SDK built on Yjs CRDTs. Users own their data, and apps interoperate over shared schemas.
+EweserDB is a local-first, user-owned database SDK built on Yjs CRDTs. Users
+own their data, and apps interoperate over shared schemas. Room access grants,
+remote sync, public aggregation, user snapshots, encrypted-room planning, and
+MCP access are all scoped around rooms and shared schemas.
 
 ## Runtime Topology
 
@@ -16,12 +19,18 @@ graph TD
   AuthApi["@eweser/auth-server-hono<br/>Hono + better-auth"]
   SyncServer["@eweser/sync-server<br/>Hocuspocus relay"]
   Aggregator["@eweser/aggregator<br/>Public indexing and search"]
+  AIClient["AI client / MCP consumer"]
+  Mcp["@eweser/mcp or Auth API /mcp<br/>MCP tools"]
   Postgres[("PostgreSQL")]
 
   Browser --> Db
   Browser --> AuthPages
+  AIClient --> Mcp
   Db <--> SyncServer
   AuthPages <--> AuthApi
+  Mcp --> AuthApi
+  Mcp --> SyncServer
+  Mcp --> Aggregator
   SyncServer <--> AuthApi
   AuthApi <--> Postgres
   Aggregator <--> Postgres
@@ -64,6 +73,8 @@ e2e/
 | Auth UI       | React SPA built with Vite                            |
 | Sync server   | Hocuspocus with SQLite-backed persistence            |
 | Aggregation   | Server-side indexing over webhook-fed documents      |
+| MCP access    | `@eweser/mcp` plus auth-server remote HTTP `/mcp`    |
+| Backups       | User snapshots plus auth metadata and object storage |
 | Frontend apps | React 18-19, Vite, Tailwind CSS, Radix UI            |
 | Editor        | TipTap in `packages/ewe-note`                        |
 | Testing       | Vitest and Cypress                                   |
@@ -102,13 +113,21 @@ e2e/
 2. The app redirects to or embeds the app SPA for sign-in, signup, and access grants.
 3. The auth API issues session state, room access grants, and sync tokens.
 4. The sync server authenticates the token and relays Yjs updates.
-5. The aggregator receives Hocuspocus webhooks and indexes public data for search.
+5. The aggregator receives Hocuspocus webhooks and indexes explicitly public
+   room data for public search.
+6. MCP clients use an agent token or OAuth token to access only rooms in their
+   readable or writable room scope.
+7. User snapshot flows export selected rooms into portable backup bundles;
+   auth-server PostgreSQL stores only operational snapshot metadata.
 
 ## Key Concepts
 
 ### Rooms
 
-A room is a Yjs-backed container with access control. It groups documents that share a collection key and schema.
+A room is a Yjs-backed container with a collection key, shared schema, and room
+access control. Rooms are the main authorization and remote-sync boundary.
+Folders and bases may organize room content, but they do not replace room
+collection boundaries.
 
 ### Bases And Vaults
 
@@ -125,6 +144,13 @@ mount paths are device-local settings, not canonical synced data.
 
 Collections define strongly typed document shapes. Apps that share a schema can interoperate on the same data.
 
+### Remote Sync
+
+Remote sync is optional Hocuspocus/Yjs synchronization through the sync relay.
+The sync relay authenticates short-lived sync tokens for scoped room
+connections and may forward publication metadata to the aggregator. Remote sync
+does not make a room public.
+
 ### References
 
 Documents can be linked by reference using `_ref` values in the form:
@@ -135,7 +161,10 @@ Use `buildRef()` from `@eweser/shared` to construct refs.
 
 ### Access Control
 
-The auth API handles ACL, auth sessions, room access grants, and sync token issuance.
+The auth API handles sessions, room ACLs, access grants, agent tokens, and sync
+token issuance. Room ACLs define owner/admin/read/write rights. Access grants
+authorize an app or agent for selected rooms and capabilities. Sync tokens
+authorize specific remote-sync connections.
 
 ### Product Configuration
 
@@ -152,9 +181,33 @@ changes over prototype-data compatibility when that improves the long-term
 model. PostgreSQL migrations are still append-only, and published package API
 changes still need changesets.
 
-### Aggregation
+### Public Aggregation
 
-Aggregator services index public room data so apps can search shared content without querying every client directly.
+The aggregator indexes explicitly public rooms for public search. Public search
+is separate from private remote sync, collaborator sharing, and MCP-readable
+agent access.
+
+### User Snapshots And Backups
+
+User snapshots are portable backup bundles for selected rooms. They are not
+sync replicas, operator PostgreSQL backups, sync relay persistence stores, or
+federation backup listeners. Auth-server PostgreSQL may store operational
+snapshot metadata, but user-owned room data remains in rooms, shared schemas,
+and snapshot bundles.
+
+### Encrypted Rooms
+
+Ordinary hosted remote sync is not end-to-end encrypted. Encrypted rooms are an
+opt-in room-level capability being planned for sensitive data. Current and
+future docs must state the tradeoffs clearly, especially reduced or unavailable
+public search, server-side MCP reading, recovery, and collaboration behavior.
+
+### MCP And Agent Access
+
+The MCP surface exposes authorized rooms to AI clients through local stdio or
+the auth server's remote HTTP `/mcp` endpoint. MCP-readable rooms come from an
+agent's readable room scope and are not public-searchable unless the room is
+also explicitly public.
 
 ## Key Files
 
@@ -167,6 +220,7 @@ Aggregator services index public room data so apps can search shared content wit
 - `packages/app/src/` - app SPA
 - `packages/sync-server/src/` - sync relay
 - `packages/aggregator/src/` - public indexing/search
+- `packages/mcp-server/src/` - MCP tools for authorized agent room access
 - `LOCAL_DEVELOPMENT.md` - local setup guide
 
 ## Historical Notes

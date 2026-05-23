@@ -539,7 +539,8 @@ agentsRouter.post('/me/sync-token', combinedAgentAuth, async (c) => {
   const { token, expiry } = generateSyncToken(
     body.roomId,
     room.collectionKey,
-    agent.userId
+    agent.userId,
+    room.publicAccess
   );
   const syncUrl = `${syncBaseUrl}/${body.roomId}`;
 

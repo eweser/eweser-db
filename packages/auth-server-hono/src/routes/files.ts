@@ -15,6 +15,7 @@ import {
   buildAttachmentObjectKey,
   createDownloadUrl,
   getDownloadUrlTtlSeconds,
+  getStorageProviderProfile,
   objectExists,
   objectKeyMatchesRoom,
   storageIsConfigured,
@@ -33,6 +34,7 @@ const uploadAttachmentSchema = z.object({
 
 const presignQuerySchema = z.object({
   objectKey: z.string().min(1),
+  providerProfileId: z.string().min(1).optional(),
   roomId: z.string().min(1),
 });
 
@@ -52,6 +54,20 @@ type RouteActor =
     };
 
 export const filesRouter = new Hono();
+
+function storageProfileError(profileId: string | undefined) {
+  const profile = getStorageProviderProfile(profileId);
+  if (!profile) {
+    return {
+      error: 'Storage provider profile unavailable',
+      status: 400 as const,
+    };
+  }
+  if (!storageIsConfigured(profile.id)) {
+    return { error: 'Object storage is not configured', status: 503 as const };
+  }
+  return null;
+}
 
 async function resolveActor(request: Request): Promise<RouteActor | null> {
   const authHeader = request.headers.get('Authorization');
@@ -126,10 +142,6 @@ async function requireAttachmentRoomAccess(params: {
 }
 
 filesRouter.post('/upload', async (c) => {
-  if (!storageIsConfigured()) {
-    return c.json({ error: 'Object storage is not configured' }, 503);
-  }
-
   const actor = await resolveActor(c.req.raw);
   if (!actor) {
     return c.json({ error: 'Unauthorized' }, 401);
@@ -138,6 +150,7 @@ filesRouter.post('/upload', async (c) => {
   const form = await c.req.formData();
   const roomId = form.get('roomId');
   const attachmentRaw = form.get('attachment');
+  const providerProfileIdRaw = form.get('providerProfileId');
   const file = form.get('file');
 
   if (
@@ -146,6 +159,14 @@ filesRouter.post('/upload', async (c) => {
     !(file instanceof File)
   ) {
     return c.json({ error: 'Invalid upload payload' }, 400);
+  }
+  const providerProfileId =
+    typeof providerProfileIdRaw === 'string' && providerProfileIdRaw.length > 0
+      ? providerProfileIdRaw
+      : env.STORAGE_PROVIDER_PROFILE_ID;
+  const storageError = storageProfileError(providerProfileId);
+  if (storageError) {
+    return c.json({ error: storageError.error }, storageError.status);
   }
 
   const access = await requireAttachmentRoomAccess({
@@ -157,9 +178,13 @@ filesRouter.post('/upload', async (c) => {
     return c.json({ error: access.error }, access.status);
   }
 
-  const parsedAttachment = uploadAttachmentSchema.safeParse(
-    JSON.parse(attachmentRaw)
-  );
+  let rawAttachment: unknown;
+  try {
+    rawAttachment = JSON.parse(attachmentRaw);
+  } catch {
+    return c.json({ error: 'Invalid attachment metadata' }, 400);
+  }
+  const parsedAttachment = uploadAttachmentSchema.safeParse(rawAttachment);
   if (!parsedAttachment.success) {
     return c.json({ error: 'Invalid attachment metadata' }, 400);
   }
@@ -176,7 +201,7 @@ filesRouter.post('/upload', async (c) => {
     filename: parsedAttachment.data.filename || file.name,
   });
 
-  if (!(await objectExists(objectKey))) {
+  if (!(await objectExists(objectKey, providerProfileId))) {
     await uploadObject({
       body: bytes,
       contentType:
@@ -184,6 +209,7 @@ filesRouter.post('/upload', async (c) => {
         parsedAttachment.data.mimeType ||
         'application/octet-stream',
       objectKey,
+      providerProfileId,
     });
   }
 
@@ -197,17 +223,13 @@ filesRouter.post('/upload', async (c) => {
         parsedAttachment.data.mimeType ||
         'application/octet-stream',
       remoteObjectKey: objectKey,
-      remoteProviderProfileId: env.STORAGE_PROVIDER_PROFILE_ID,
+      remoteProviderProfileId: providerProfileId,
       size: bytes.byteLength,
     },
   });
 });
 
 filesRouter.get('/presign', async (c) => {
-  if (!storageIsConfigured()) {
-    return c.json({ error: 'Object storage is not configured' }, 503);
-  }
-
   const actor = await resolveActor(c.req.raw);
   if (!actor) {
     return c.json({ error: 'Unauthorized' }, 401);
@@ -216,6 +238,12 @@ filesRouter.get('/presign', async (c) => {
   const parsedQuery = presignQuerySchema.safeParse(c.req.query());
   if (!parsedQuery.success) {
     return c.json({ error: 'Invalid download request' }, 400);
+  }
+  const providerProfileId =
+    parsedQuery.data.providerProfileId ?? env.STORAGE_PROVIDER_PROFILE_ID;
+  const storageError = storageProfileError(providerProfileId);
+  if (storageError) {
+    return c.json({ error: storageError.error }, storageError.status);
   }
 
   const access = await requireAttachmentRoomAccess({
@@ -233,10 +261,14 @@ filesRouter.get('/presign', async (c) => {
     return c.json({ error: 'Invalid object key' }, 400);
   }
 
-  const url = await createDownloadUrl(parsedQuery.data.objectKey);
+  const url = await createDownloadUrl(
+    parsedQuery.data.objectKey,
+    providerProfileId
+  );
   return c.json({
     expiresInSeconds: getDownloadUrlTtlSeconds(),
     objectKey: parsedQuery.data.objectKey,
+    providerProfileId,
     roomId: parsedQuery.data.roomId,
     url,
   });
@@ -247,6 +279,12 @@ filesRouter.get('/download', async (c) => {
   if (!parsedQuery.success) {
     return c.json({ error: 'Invalid download request' }, 400);
   }
+  const providerProfileId =
+    parsedQuery.data.providerProfileId ?? env.STORAGE_PROVIDER_PROFILE_ID;
+  const storageError = storageProfileError(providerProfileId);
+  if (storageError) {
+    return c.json({ error: storageError.error }, storageError.status);
+  }
 
   const actor = await resolveActor(c.req.raw);
   if (!actor) {
@@ -268,6 +306,23 @@ filesRouter.get('/download', async (c) => {
     return c.json({ error: 'Invalid object key' }, 400);
   }
 
-  const url = await createDownloadUrl(parsedQuery.data.objectKey);
+  const url = await createDownloadUrl(
+    parsedQuery.data.objectKey,
+    providerProfileId
+  );
   return c.redirect(url, 302);
+});
+
+filesRouter.get('/provider-profile', async (c) => {
+  const actor = await resolveActor(c.req.raw);
+  if (!actor) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  const profile = getStorageProviderProfile();
+  if (!profile) {
+    return c.json({ error: 'Storage provider profile unavailable' }, 404);
+  }
+
+  return c.json({ profile });
 });

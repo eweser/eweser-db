@@ -57,6 +57,13 @@
       "when": 1777248000000,
       "tag": "0007_agent_scope_split",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1779148800000,
+      "tag": "0008_backup_snapshots",
+      "breakpoints": true
     }
   ]
 }

@@ -9,6 +9,7 @@ type ObserveDocumentsOptions = {
   roomId: string;
   collectionKey: string;
   userId?: string;
+  publicAccess: 'read' | 'write';
   doc: Doc;
   onUpsert: (input: IndexedDocumentInput) => Promise<void>;
 };
@@ -21,6 +22,7 @@ export function observeRoomDocuments(options: ObserveDocumentsOptions) {
       roomId: options.roomId,
       collectionKey: options.collectionKey,
       userId: options.userId,
+      publicAccess: options.publicAccess,
       documentData: documentsMap.toJSON(),
     });
   };
@@ -52,7 +54,12 @@ export class AggregatorListener {
 
     const doc = new Y.Doc();
     const token = jwt.sign(
-      { roomId, collectionKey, ...(userId !== undefined ? { userId } : {}) },
+      {
+        roomId,
+        collectionKey,
+        publicAccess: 'read',
+        ...(userId !== undefined ? { userId } : {}),
+      },
       env.SYNC_AUTH_SECRET,
       { expiresIn: '1h' }
     );
@@ -67,6 +74,7 @@ export class AggregatorListener {
       roomId,
       collectionKey,
       ...(userId !== undefined ? { userId } : {}),
+      publicAccess: 'read',
       doc,
       onUpsert: this.deps.onUpsert,
     });

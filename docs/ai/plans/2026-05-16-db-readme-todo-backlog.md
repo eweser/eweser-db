@@ -1,22 +1,97 @@
 # Plan: DB README TODO Backlog
 
+<!-- eweser-orchestration -->
+
+```yaml
+orchestration:
+  enabled: true
+  maxParallel: 1
+  baseBranch: db-readme-todo-backlog
+  finalStages: []
+runs:
+  - id: run-1
+    title: Public Aggregation Permission Gate
+    agent: eweser-coder
+    model: strong
+    ui: true
+    browserCheckpoint: none
+    dependsOn: []
+    writeScope:
+      - packages/auth-server-hono/src/**
+      - packages/sync-server/src/**
+      - packages/aggregator/src/**
+      - packages/app/src/**
+      - examples/example-aggregator/src/**
+      - packages/aggregator/README.md
+      - docs/ai/plans/2026-05-16-db-readme-todo-backlog.md
+    tests:
+      - npm test --workspace @eweser/aggregator
+      - npm test --workspace @eweser/auth-server-hono
+      - npm run type-check --workspace @eweser/sync-server
+    changeset: no
+  - id: run-2
+    title: Storage Provider Profiles And Durable File Cache
+    agent: eweser-coder
+    model: strong
+    ui: true
+    browserCheckpoint: none
+    dependsOn:
+      - run-1
+    writeScope:
+      - packages/auth-server-hono/src/**
+      - packages/auth-server-hono/drizzle/**
+      - packages/db/src/**
+      - packages/app/src/**
+      - docs/deployment/**
+      - .changeset/**
+      - docs/ai/plans/2026-05-16-db-readme-todo-backlog.md
+    tests:
+      - npm test --workspace @eweser/auth-server-hono -- files
+      - npm test --workspace @eweser/db -- files
+      - npm run type-check --workspace @eweser/app
+      - npm run build --workspace @eweser/db
+    changeset: maybe
+  - id: run-3
+    title: User Snapshot Backups And Restore
+    agent: eweser-coder
+    model: strong
+    ui: true
+    browserCheckpoint: none
+    dependsOn:
+      - run-2
+    writeScope:
+      - packages/shared/src/**
+      - packages/db/src/**
+      - packages/auth-server-hono/src/**
+      - packages/auth-server-hono/drizzle/**
+      - packages/app/src/**
+      - docs/deployment/**
+      - .changeset/**
+      - docs/ai/plans/2026-05-16-db-readme-todo-backlog.md
+    tests:
+      - npm test --workspace @eweser/db -- backup
+      - npm test --workspace @eweser/auth-server-hono -- backups
+    changeset: maybe
+```
+
 ## Goal
 
-Turn the stale `packages/db/README.md` TODO list into an implementation-ready backlog that finishes the remaining public-data, storage, federation, encryption, compatibility, SDK reliability, search, limits, and hosted-usage work.
+Turn the stale `packages/db/README.md` TODO list into an implementation-ready backlog that finishes the remaining public aggregation, storage, federation, encrypted-room, compatibility, SDK reliability, query, limits, and hosted-usage work.
 
 ## Scope
 
-- In: public aggregation hardening, storage provider profiles, user snapshots/backups, federation, federation-as-backup, opt-in E2EE planning and implementation slices, versioning/backward compatibility, SDK cleanup/reliability, access-grant fast path, cross-collection queries, stress/size guidance, and hosted sync metering.
+- In: public aggregation hardening, storage provider profiles, user snapshots, federation, federation-as-backup listeners, opt-in encrypted-room planning and implementation slices, compatibility policy, SDK cleanup/reliability, existing access-grant fast path, cross-collection queries, stress/size guidance, and hosted sync metering.
 - In: docs and checklist updates needed to keep `packages/db/README.md`, `ARCHITECTURE.md`, package READMEs, deployment docs, and plan indexes aligned with the current architecture.
 - Out: reintroducing Next.js/Supabase patterns, handling real provider credentials in committed files, choosing a paid billing provider implementation before product approval, public-launch legal tasks already tracked by `2026-04-28-compliance-and-legal.md`, and broad app-shell redesign outside the flows listed here.
 
 ## Current Findings
 
 - The old DB README checklist mixed completed, obsolete, partial, and open work. Completed items removed from the README checklist include `newRoom`, self-hosting instructions, baseline offline-first loading, the awareness listener plumbing, and the existing two-sync-server demo shape.
-- Public aggregation exists through `packages/aggregator`, Hocuspocus webhooks, and search routes, but the current webhook path does not prove that only public rooms or collections are indexed. This is the first security-sensitive backlog item.
-- S3-compatible attachment upload, presign, download, SDK helpers, and `fileAttachments` metadata exist. Remaining file work is provider-profile UX/configuration, durable local cache/pinning, and production/self-hosting docs.
-- Same-server room invites and app access grants exist. Federated identity, cross-server invites, server-to-server relay, and federation-as-backup are not implemented. The older federation strategy is historical context, not current guidance.
-- Current docs explicitly avoid E2EE claims. Room content synced through hosted Hocuspocus is plaintext to the server. E2EE conflicts with server-side search and MCP/AI access, so it must be opt-in and explicit.
+- Public aggregation now uses room-level `publicAccess` as the v1 publication state and indexability source of truth. Future public aggregation work should avoid "public data" shorthand and say whether it means public room, indexable room, or public-searchable indexed row.
+- S3-compatible attachment upload, presign, download, SDK helpers, `fileAttachments` metadata, provider-profile status, and durable local cache/pinning now exist. Remaining file work is BYO secret-storage design, live provider smoke coverage, and future provider adapters.
+- User snapshots now exist as v1 JSON bundles with normalized room documents and Yjs update bytes. Future backup-like work must distinguish user snapshots from operator database backups, sync relay persistence, and federation backup listeners.
+- Same-server room invites and app access grants exist. Federated identity, cross-server invites, server-to-server relay, and federation-as-backup are not implemented. The older federation strategy is historical background, not current guidance.
+- Current docs explicitly avoid E2EE claims. Room content synced through hosted Hocuspocus is plaintext to the server. Encrypted rooms conflict with server-side search and MCP/AI access, so they must be opt-in and explicit.
 - Changesets and append-only migration policy exist, but there is no complete room schema/API compatibility strategy, data migration framework, or SDK/server version negotiation.
 - SDK reliability leftovers are small but real: expired `_deleted` cleanup, auth-failure token refresh retry, online recovery/reconnect behavior, optional first-run seeded documents, and a decision on stale WebRTC temp-doc support.
 
@@ -25,11 +100,35 @@ Turn the stale `packages/db/README.md` TODO list into an implementation-ready ba
 - Assumption: EweserDB is still pre-live, so clean long-term schema/API choices are preferred over preserving unused prototype data.
 - Assumption: user-owned product configuration belongs in EweserDB rooms or shared schemas; auth-server PostgreSQL should hold auth, grants, provider profiles, operational tokens, usage events, and audit metadata only.
 - Assumption: initial provider-profile work should support S3-compatible storage first, because the current storage adapter and Railway Buckets decision already point there. Dropbox/Pinata-style providers should be adapter-shaped but not required in the first implementation run unless explicitly approved.
-- Assumption: E2EE should be opt-in per room or per base. It should not silently encrypt public/searchable/MCP-accessible data.
-- Open question: Should public aggregation be controlled at room level only, or do we need collection-level public flags inside room/base metadata as well?
-- Open question: Should user backups store raw Yjs update snapshots, normalized JSON exports, or both?
-- Open question: Should federation use `user@server` as the canonical persisted identity immediately, or should the first run introduce federated principal records while preserving local user IDs in current ACL arrays?
+- Assumption: encrypted rooms should be opt-in and should not silently encrypt public-searchable or MCP-readable data.
+- Resolved: v1 public aggregation is room-level. `publicAccess` is the source of truth for publication state and indexability; collection-level publication flags are future scope.
+- Resolved: v1 user snapshots are JSON bundles containing normalized room documents plus per-room Yjs update bytes. Auth-server PostgreSQL stores operational snapshot metadata only.
+- Open question: Should federation use a `user@server` display form for federated principals immediately, or should the first run introduce separate federated-principal records while preserving local user IDs in current ACL arrays?
+- Open question: Should encrypted room be the primitive, with base-level encryption treated as grouped room policy in Ewe Note and app UX?
 - Open question: What billing provider and pricing model should be used for hosted sync limits? This plan only authorizes usage metering and limit hooks, not payment collection.
+
+## Domain Language
+
+- Glossary docs: `GLOSSARY-MAP.md`, root `GLOSSARY.md`, and package-level
+  `GLOSSARY.md` files for `@eweser/db`, `@eweser/auth-server-hono`,
+  `@eweser/sync-server`, `@eweser/aggregator`, `@eweser/ewe-note`, and
+  `@eweser/mcp`.
+- New terms captured for later backlog runs: Agent Journal, Project scope,
+  Provider profile, Room ACL, Remote sync, Sync relay, Publication state,
+  Publication metadata, Indexability, De-indexing, Public search, User
+  snapshot, Encrypted room, Server identity, Peer server, Federated principal,
+  Backup listener, Federation relay, Grant satisfaction, MCP-readable room,
+  Remote MCP endpoint, and Compatibility policy.
+- Changed terms: prefer access grant, room ACL, sync token, readable room
+  scope, writable room scope, app capability, remote sync, sync relay,
+  publication state, public search, and indexability instead of generic
+  "permission", "access", "sync", or "public data" language. Public
+  Aggregation Permission Gate remains the historical run title, but future docs
+  should describe publication/indexability rather than permissions when the
+  aggregator is the subject.
+- ADR candidates: create new ADRs sparingly for hard-to-reverse decisions such
+  as encrypted-room key management, federated identity/server trust, and
+  schema/API compatibility policy.
 
 ## Runs
 
@@ -57,7 +156,7 @@ After each completed run, Coder must update the Execution Summary and add a manu
 - **Files**:
   - `packages/auth-server-hono/src/routes/access-grant.ts`: add or expose a protected room-publication/update path if no current route fits.
   - `packages/auth-server-hono/src/model/rooms/calls.ts`: add auditable room public-access read/update helpers and any internal aggregator policy lookup.
-  - `packages/sync-server/src/index.ts`: replace or wrap unconditional webhook forwarding with a public-policy-aware on-change path, or include enough signed room context for aggregator-side policy checks.
+  - `packages/sync-server/src/index.ts`: replace or wrap unconditional webhook forwarding with a public-policy-aware on-change path, or include enough signed room metadata for aggregator-side policy checks.
   - `packages/aggregator/src/webhook-handler.ts`: reject or ignore non-public webhook events and handle de-index tombstones.
   - `packages/aggregator/src/db/queries.ts`: add delete/deactivate helpers for rooms that become private or deleted.
   - `packages/aggregator/src/routes/search.ts`: ensure public routes never expose private rows and document error behavior.
@@ -65,22 +164,27 @@ After each completed run, Coder must update the Execution Summary and add a manu
   - `examples/example-aggregator/src/App.tsx`: update demo copy/flow to reflect explicit publication.
   - `docs/ai/plans/2026-05-16-db-readme-todo-backlog.md`: update execution status.
 - **Steps**:
-  - [ ] Decide whether public indexing is room-level only for v1 or room plus collection metadata.
-  - [ ] Add a single source of truth for indexability that uses existing `publicAccess` unless a better current schema is explicitly documented.
-  - [ ] Ensure only room admins/owners can change publication state.
-  - [ ] Make sync-server webhook forwarding policy-aware, or make aggregator perform an authenticated policy lookup before upsert.
-  - [ ] Add de-index behavior for room deletion, public-to-private transitions, and `_deleted` documents.
-  - [ ] Add HMAC/signature validation coverage for webhook payloads that affect public rows.
-  - [ ] Update aggregator docs and example text so “public search” means explicitly published data only.
+  - [x] Decide whether public indexing is room-level only for v1 or room plus collection metadata.
+  - [x] Add a single source of truth for indexability that uses existing `publicAccess` unless a better current schema is explicitly documented.
+  - [x] Ensure only room admins/owners can change publication state.
+  - [x] Make sync-server webhook forwarding policy-aware, or make aggregator perform an authenticated policy lookup before upsert.
+  - [x] Add de-index behavior for room deletion, public-to-private transitions, and `_deleted` documents.
+  - [x] Add HMAC/signature validation coverage for webhook payloads that affect public rows.
+  - [x] Update aggregator docs and example text so “public search” means explicitly published data only.
 - **Tests**:
   - `npm test --workspace @eweser/aggregator`
   - `npm test --workspace @eweser/auth-server-hono`
   - `npm run type-check --workspace @eweser/sync-server`
   - Add or update route/webhook tests proving private rooms are not indexed and public-to-private removes results.
 - **Verification**:
-  - Start `npm run dev:docker`, create one private and one public fixture room, write documents through the SDK/example flow, and verify `/api/search` returns only public data.
+  - Start `npm run dev:docker`, create one private and one public fixture room, write documents through the SDK/example flow, and verify `/api/search` returns only public-searchable indexed rows.
 - **Manual test handoff**:
-  - Use `examples/example-aggregator`, publish one room, search for its content, then make it private and confirm the same search no longer returns it.
+  - Delivered behavior: room-level `publicAccess` is the v1 source of truth. Sync tokens now carry `publicAccess`; the sync server forwards it in webhook metadata; the aggregator stores `public_access`, only returns `read`/`write` rows, de-indexes private/missing-publication/tombstoned events, and strips soft-deleted child documents before indexing. A protected auth route updates room publication state only for admin users, and the aggregator demo has a per-room publish checkbox.
+  - Local services/commands: run `npm run dev:docker`, then run the aggregator demo with `npm run dev --workspace @eweser/example-aggregator` or the repo's aggregator demo command if preferred. If using the local browser-signed demo token path, set `VITE_DEV_SYNC_SECRET` to the same local sync secret outside committed files.
+  - Test data/account assumptions: no production data or provider credentials. Use demo-generated room IDs and seed data from `examples/example-aggregator`.
+  - Manual steps: open the aggregator demo; leave Backend Beta private; publish Backend Alpha; click Seed on both panels; search for an Alpha note term and verify it appears; search for a Beta flashcard term and verify it does not appear; unpublish Backend Alpha and wait for reconnect; search the Alpha term again and verify it no longer appears.
+  - Expected results: only published rooms show in `/api/search`; private rooms do not upsert and cause existing room/collection rows to be removed; deleted/tombstoned content is absent from indexed payloads.
+  - Known gaps/residual risk: full Docker/browser smoke was not run in this coding pass. Public-to-private de-indexing is webhook-driven, so existing connected clients need a refreshed token/reconnect or a subsequent private webhook event; the demo toggle performs that reconnect and emits a publication marker.
 - **Dependencies**:
   - None
 - **Model tier**: `strong`
@@ -106,12 +210,12 @@ After each completed run, Coder must update the Execution Summary and add a manu
   - `docs/deployment/file-storage.md`: document Railway Buckets/S3-compatible setup and self-hosted profile mapping.
   - `.changeset/*`: add if `@eweser/db` or `@eweser/shared` public APIs change.
 - **Steps**:
-  - [ ] Define hosted, self-hosted, and BYO profile metadata. Exclude access keys, secret keys, tokens, and provider dashboards from synced/user-visible data.
-  - [ ] Keep the current env-only path working as the default hosted/self-hosted provider.
-  - [ ] Add BYO S3-compatible profile storage only if there is an approved secret-storage path; otherwise document it as operator-configured env for this run.
-  - [ ] Implement local cache indexing keyed by `remoteProviderProfileId`, `remoteObjectKey`, and `contentHash`.
-  - [ ] Verify downloaded bytes against `contentHash` before marking a file pinned/available.
-  - [ ] Add user-facing setup/error copy for “storage not configured”, “profile unavailable”, and “file too large”.
+  - [x] Define hosted, self-hosted, and BYO profile metadata. Exclude access keys, secret keys, tokens, and provider dashboards from synced/user-visible data.
+  - [x] Keep the current env-only path working as the default hosted/self-hosted provider.
+  - [x] Add BYO S3-compatible profile storage only if there is an approved secret-storage path; otherwise document it as operator-configured env for this run.
+  - [x] Implement local cache indexing keyed by `remoteProviderProfileId`, `remoteObjectKey`, and `contentHash`.
+  - [x] Verify downloaded bytes against `contentHash` before marking a file pinned/available.
+  - [x] Add user-facing setup/error copy for “storage not configured”, “profile unavailable”, and “file too large”.
 - **Tests**:
   - `npm test --workspace @eweser/auth-server-hono -- files`
   - `npm test --workspace @eweser/db -- files`
@@ -120,7 +224,12 @@ After each completed run, Coder must update the Execution Summary and add a manu
 - **Verification**:
   - Mock S3-compatible storage in tests; optionally run a local configured storage smoke only with explicitly provided non-committed credentials.
 - **Manual test handoff**:
-  - Upload an attachment, reload from a fresh browser profile, download it, pin it locally, then simulate server unavailability and verify the pinned file still resolves from local cache.
+  - Delivered behavior: file upload/presign/download now resolve through an explicit S3-compatible provider profile. The default env-backed profile remains the only supported profile in this run; unknown profile ids fail with `Storage provider profile unavailable`, unconfigured storage returns `Object storage is not configured`, and the account app shows secret-safe profile status. SDK downloads now include profile id in presign requests, verify `contentHash`, write verified bytes to an IndexedDB cache, and expose `pinFile`, `unpinFile`, `removeCachedFile`, and `getFileCacheStatus`.
+  - Local services/commands: use the auth API with object-storage env configured as documented in `docs/deployment/file-storage.md`; run the app with `npm run dev --workspace @eweser/app` if checking the account storage card.
+  - Test data/account assumptions: use a signed-in local account with a writable `fileAttachments` room and non-production S3-compatible credentials in ignored env only.
+  - Manual steps: upload an attachment through the existing attachment flow or route; verify the returned metadata has `remoteProviderProfileId`; reload in a fresh browser profile; download the file; call or exercise the SDK `pinFile` path; stop or block network access to the auth/storage service; call `downloadFile` for the same attachment and confirm cached bytes are returned.
+  - Expected results: profile metadata is visible without secrets; wrong profile ids fail; hash mismatch prevents caching; pinned verified bytes remain available locally.
+  - Known gaps/residual risk: no real provider credentials or live S3 smoke were used in this coding pass. User-submitted BYO credentials remain intentionally out of scope until a separate secret-storage design is approved.
 - **Dependencies**:
   - None
 - **Model tier**: `strong`
@@ -144,12 +253,12 @@ After each completed run, Coder must update the Execution Summary and add a manu
   - `docs/deployment/digital-ocean.md` and `docs/deployment/file-storage.md`: distinguish operator backups from user snapshots.
   - `.changeset/*`: add for public `@eweser/db` or `@eweser/shared` API changes.
 - **Steps**:
-  - [ ] Decide and document snapshot format: Yjs update bytes, normalized JSON export, or a bundle containing both.
-  - [ ] Store backup metadata in user-owned room data when it should sync across apps; store operational upload state in auth-server Postgres only if needed.
-  - [ ] Add snapshot creation for selected rooms and all accessible rooms.
-  - [ ] Add restore dry-run that reports target rooms, document counts, conflicts, and irreversible actions before writing.
-  - [ ] Add restore apply behavior using CRDT-safe writes, with keep-both conflict handling by default.
-  - [ ] Add retention defaults and cleanup hooks that never delete snapshots without explicit user/admin policy.
+  - [x] Decide and document snapshot format: Yjs update bytes, normalized JSON export, or a bundle containing both.
+  - [x] Store backup metadata in user-owned room data when it should sync across apps; store operational upload state in auth-server Postgres only if needed.
+  - [x] Add snapshot creation for selected rooms and all accessible rooms.
+  - [x] Add restore dry-run that reports target rooms, document counts, conflicts, and irreversible actions before writing.
+  - [x] Add restore apply behavior using CRDT-safe writes, with keep-both conflict handling by default.
+  - [x] Add retention defaults and cleanup hooks that never delete snapshots without explicit user/admin policy.
 - **Tests**:
   - `npm test --workspace @eweser/db -- backup`
   - `npm test --workspace @eweser/auth-server-hono -- backups`
@@ -157,7 +266,12 @@ After each completed run, Coder must update the Execution Summary and add a manu
 - **Verification**:
   - Create a fixture room, snapshot it, delete/modify documents locally, run restore dry-run, apply restore, and verify documents match expected state.
 - **Manual test handoff**:
-  - From the app/settings flow, create a backup, rename or delete a note, restore from the backup, and verify restored data plus conflict messaging.
+  - Delivered behavior: `@eweser/db` exports snapshot helpers for creating v1 JSON bundles, serializing/parsing snapshots, dry-run restore, CRDT-safe restore, upload, list, signed-download lookup, and hash-checked download. Snapshot bundles include normalized room documents plus per-room base64 Yjs updates. Auth API routes at `/api/backups` upload/list/download snapshot metadata through the configured storage provider profile. Account home lists saved snapshots and can request a signed download URL. Operational snapshot metadata is stored in auth-server PostgreSQL; no provider secrets are exposed.
+  - Local services/commands: run `npm run dev:docker`, then run the auth app with `npm run dev --workspace @eweser/app` and an SDK-using app or console harness that can access a logged-in `Database` instance. Object-storage env must be configured as described in `docs/deployment/file-storage.md`.
+  - Test data/account assumptions: use a local signed-in account, local rooms with non-production note/fixture data, and ignored S3-compatible credentials only.
+  - Manual steps: create or load a room with at least one document; call `createDatabaseSnapshot({ db })`; call `dryRunRestoreDatabaseSnapshot({ db, snapshot })` and confirm room/document counts; call `uploadDatabaseSnapshot({ db, snapshot })`; open account home and verify the snapshot row appears; download the snapshot; edit or delete a fixture document locally; call `restoreDatabaseSnapshot({ db, snapshot })`; verify the original and restored documents both exist when IDs conflict.
+  - Expected results: snapshot upload stores an object under the backup prefix, account home lists secret-safe snapshot metadata, downloads verify `contentHash`, dry-run reports conflicts before writes, and restore defaults to keep-both conflict handling.
+  - Known gaps/residual risk: no live S3/provider smoke or browser manual pass was run in this coding pass. The account UI lists/downloads snapshots; create and restore are SDK-level flows for now because room data lives in client apps, not the auth account shell. Expired retention metadata is recorded but no automatic deletion job exists by design.
 - **Dependencies**:
   - `run-2`
 - **Model tier**: `strong`
@@ -207,7 +321,7 @@ After each completed run, Coder must update the Execution Summary and add a manu
 - **UI classification**: `ui: true`
 - **Browser checkpoint**: `focused`
 - **Deliverable**:
-  - A user on one auth server can invite a user on another auth server to a room; the recipient can access the room through their home server with enforced read/write permissions.
+  - A user on one auth server can invite a federated principal from another auth server to a room; the recipient can access the room through their home server with enforced room ACL/access-grant behavior.
 - **Files**:
   - `packages/auth-server-hono/src/routes/federation.ts`: invite, accept, room-token issuance, and relay lifecycle APIs.
   - `packages/auth-server-hono/src/services/access-grant/*`: extend invite/grant logic to federated principals.
@@ -219,10 +333,10 @@ After each completed run, Coder must update the Execution Summary and add a manu
   - `e2e/cypress/tests/*`: add two-server federated share smoke if practical.
   - `.changeset/*`: add for published SDK/shared API changes.
 - **Steps**:
-  - [ ] Define federated principal storage and display behavior.
+  - [ ] Define federated principal storage and display behavior, including whether `user@server` is display-only or persisted.
   - [ ] Add remote invite send/receive flow using signed server-to-server requests from `run-4`.
   - [ ] Add relay sync connection where a participating server acts as a Hocuspocus client to the origin server.
-  - [ ] Enforce read/write/admin permissions at the origin and recipient home server.
+  - [ ] Enforce read/write/admin room ACL and access-grant behavior at the origin and recipient home server.
   - [ ] Ensure revocation and room deletion disconnect or disable relay access.
   - [ ] Add a two-server local test harness with deterministic ports and isolated databases.
   - [ ] Update docs to explain federation as server relay, not P2P or ActivityPub.
@@ -255,7 +369,7 @@ After each completed run, Coder must update the Execution Summary and add a manu
   - `docs/deployment/federation.md`: operator setup, trust model, and recovery steps.
   - `docs/security-go-live-checklist.md`: add federation backup drill once implemented.
 - **Steps**:
-  - [ ] Define “backup listener” separately from a human collaborator grant.
+  - [ ] Define `backup listener` separately from a human collaborator grant, user snapshot, operator database backup, and sync relay persistence store.
   - [ ] Add room-level opt-in for backup peers with read-only default.
   - [ ] Track last relay sync time, last error, and room byte/update counts without logging content.
   - [ ] Add restore/failover dry-run that shows which rooms would be imported or reattached.
@@ -281,7 +395,7 @@ After each completed run, Coder must update the Execution Summary and add a manu
 - **UI classification**: `ui: false`
 - **Browser checkpoint**: `none`
 - **Deliverable**:
-  - A current ADR and prototype-level technical decision for opt-in encrypted rooms, including multi-device key sharing, recovery limits, collaboration/search/MCP tradeoffs, and migration boundaries. Should be user freindly and allow authenticating with various methods like passkey, authenticator app, etc.
+  - A current ADR and prototype-level technical decision for opt-in encrypted rooms, including multi-device key sharing, recovery limits, collaboration/search/MCP tradeoffs, and migration boundaries. The decision should separate account authentication factors such as passkeys or authenticator apps from room-key unlock and recovery mechanics.
 - **Files**:
   - `docs/ai/adr/*`: add room-level E2EE ADR.
   - `ARCHITECTURE.md`: update only after decision is accepted as current.
@@ -291,7 +405,7 @@ After each completed run, Coder must update the Execution Summary and add a manu
   - [ ] Define threat model: hosted server, malicious app, lost device, collaborator, MCP/AI agent, public aggregator.
   - [ ] Decide encryption granularity: whole Yjs update stream, document fields, room snapshots, or separate encrypted payload documents.
   - [ ] Decide key storage and multi-device transfer: passphrase-derived, device key wrapping, recovery phrase, or explicit export/import.
-  - [ ] Decide what encrypted rooms lose: server-side search, public aggregation, remote MCP reading, account recovery, and possibly collaborative editing.
+  - [ ] Decide what encrypted rooms lose or degrade: server-side search, public aggregation, server-side MCP reading, account recovery, and possibly collaborative editing.
   - [ ] Prototype a minimal encrypt/decrypt round trip with real Yjs docs in a test or document why implementation should wait.
   - [ ] Define migration behavior for converting a plaintext room to encrypted and back, including stop conditions.
 - **Tests**:
@@ -419,25 +533,25 @@ After each completed run, Coder must update the Execution Summary and add a manu
 - **Model tier**: `coder`
 - **Risk level**: `medium`
 
-### Run 11: Access Grant Existing-Permission Fast Path
+### Run 11: Existing Access Grant Fast Path
 
 - **Id**: `run-11`
-- **Title**: `Access Grant Existing-Permission Fast Path`
+- **Title**: `Existing Access Grant Fast Path`
 - **UI classification**: `ui: true`
 - **Browser checkpoint**: `focused`
 - **Deliverable**:
-  - If a signed-in user already has a valid app grant that satisfies the login request, the auth app redirects back with a token instead of showing the permission page.
+  - If a signed-in user already has a valid access grant that satisfies the login request, the auth app redirects back with a token instead of showing the access approval page.
 - **Files**:
   - `packages/auth-server-hono/src/services/access-grant/create-third-party-app-permissions.ts`: factor grant satisfaction comparison and token minting.
   - `packages/auth-server-hono/src/routes/access-grant.ts`: add a safe “resolve existing grant” endpoint or extend bootstrap response.
-  - `packages/app/src/lib/login-query.ts`: route post-auth flow through grant resolution before building the permission path.
+  - `packages/app/src/lib/login-query.ts`: route post-auth flow through grant resolution before building the access approval path.
   - `packages/app/src/pages.tsx`: handle auto-redirect loading/error states.
   - `packages/auth-server-hono/src/routes/access-grant.test.ts`: cover exact match, superset match, invalid grant, and insufficient grant.
   - `packages/app/src/*test*`: cover redirect behavior.
 - **Steps**:
   - [ ] Define “matches” and “satisfies”: exact domain, valid grant, non-expired/keepAlive policy, requested collections and rooms are subsets of existing grant.
   - [ ] Add server-side check that mints a fresh token only for the signed-in owner and matching domain/redirect validation.
-  - [ ] Preserve the permission page when the requested access exceeds the existing grant.
+  - [ ] Preserve the access approval page when the requested access exceeds the existing grant.
   - [ ] Avoid client-side-only decisions; the server must own grant satisfaction and token issuance.
   - [ ] Add copy for the brief “already approved, redirecting” state if visible.
 - **Tests**:
@@ -445,9 +559,9 @@ After each completed run, Coder must update the Execution Summary and add a manu
   - `npm test --workspace @eweser/app`
   - `npm run type-check --workspace @eweser/app`
 - **Verification**:
-  - Sign in once and approve a grant, sign in again from the same requesting app, and verify it redirects without showing permission UI; request broader permissions and verify the page still appears.
+  - Sign in once and approve a grant, sign in again from the same requesting app, and verify it redirects without showing access approval UI; request broader capabilities and verify the page still appears.
 - **Manual test handoff**:
-  - Use `examples/example-basic` login twice with the same domain/collections/rooms, then with broader permissions.
+  - Use `examples/example-basic` login twice with the same domain/collections/rooms, then with broader requested capabilities.
 - **Dependencies**:
   - None
 - **Model tier**: `coder`
@@ -531,6 +645,73 @@ After each completed run, Coder must update the Execution Summary and add a manu
 - **Model tier**: `strong`
 - **Risk level**: `high`
 
+### Run 14: Agent Domain Language And Grill-With-Docs Workflow
+
+- **Id**: `run-14`
+- **Title**: `Agent Domain Language And Grill-With-Docs Workflow`
+- **UI classification**: `ui: false`
+- **Browser checkpoint**: `none`
+- **Deliverable**:
+  - EweserDB has DDD-style glossary docs, a glossary map, an
+    Eweser-specific `grill-with-docs` skill, and planner/coder guidance that
+    keeps future backlog runs aligned on domain language before implementation.
+- **Files**:
+  - `GLOSSARY-MAP.md`: add bounded-glossary map and ADR policy.
+  - `GLOSSARY.md`: add shared product glossary.
+  - `packages/*/GLOSSARY.md`: add package-specific glossaries for DB, auth,
+    sync, aggregator, Ewe Note, and MCP language areas.
+  - `.codex/skills/eweser-grill-with-docs/SKILL.md`: add repo-local grilling
+    skill.
+  - `.codex/skills/eweser-grill-with-docs/references/test-prompts.md`: add
+    smoke prompts for future backlog and docs-language checks.
+  - `.codex/skills/eweser-planner/SKILL.md`: require glossary-map/domain
+    language pass during planning.
+  - `.codex/skills/eweser-coder/SKILL.md`: preserve canonical glossary terms
+    and prefer tracer-bullet test slices.
+  - `docs/ai/plans/_template.md`: add a `Domain Language` section.
+  - `docs/ai/workflows/codex-planner-coder.md`: document planner glossary-doc
+    updates and plan requirements.
+  - `AGENTS.md`, `.github/copilot-instructions.md`, `INDEX.md`, and package
+    indexes: route agents to the new glossary docs.
+  - `docs/ai/adr/README.md`: clarify current ADR status.
+- **Steps**:
+  - [x] Seed root and package glossary docs without implementation details.
+  - [x] Add a repo-local grilling skill that asks one question at a time,
+        checks code/docs before asking, updates glossaries inline, and offers
+        ADRs only for hard-to-reverse decisions.
+  - [x] Wire Planner and Coder skills to use the glossary map and plan domain
+        language section.
+  - [x] Clarify that accepted/implemented ADRs are current decision records
+        unless superseded.
+  - [x] Update plan/index guidance so future backlog work uses canonical terms
+        instead of generic permission/access/memory language.
+  - [x] Add smoke-test prompts and refine remaining backlog terminology for
+        federation, encrypted rooms, snapshots, public aggregation, and
+        compatibility policy.
+  - [x] Add a self-reflection output step so each grilling session records what
+        the skill clarified, what remained hard, and any concrete suggestions
+        for adjusting the skill or prompt examples.
+  - [x] Rename the shared language files to `GLOSSARY.md`/`GLOSSARY-MAP.md`,
+        and update skills, indexes, and plan references to use glossary
+        terminology.
+- **Tests**:
+  - `npm run code-index:check`
+  - `npx prettier --check <changed markdown files>`
+  - Skill frontmatter validation for `eweser-grill-with-docs`,
+    `eweser-planner`, and `eweser-coder`.
+- **Verification**:
+  - Confirm code-index links are valid, Markdown formatting passes, and the new
+    skill has valid frontmatter.
+- **Manual test handoff**:
+  - Not needed: docs/agent-workflow only. A practical smoke is to invoke
+    `$eweser-grill-with-docs` on a future backlog run and verify it reads
+    `GLOSSARY-MAP.md`, challenges ambiguous terms, and updates only glossary or
+    plan docs before implementation.
+- **Dependencies**:
+  - None
+- **Model tier**: `coder`
+- **Risk level**: `low`
+
 ## Stop Conditions
 
 Stop and ask for user approval if:
@@ -539,35 +720,76 @@ Stop and ask for user approval if:
 - A run requires real storage provider credentials, billing provider credentials, OAuth secrets, private keys, or production data.
 - A public package API change is needed but no changeset can be added.
 - A PostgreSQL schema change is needed but no append-only Drizzle migration can be generated.
-- E2EE implementation requires sending room keys to the server, aggregator, MCP server, logs, screenshots, or ordinary memory.
+- Encrypted-room implementation requires sending room keys to the server, aggregator, MCP server, logs, screenshots, or ordinary memory.
 - Federation design requires deleting or rewriting existing migrations, bypassing room ACL checks, or trusting unsigned server-to-server requests.
-- Verification exposes private-data leakage through aggregator search, logs, usage telemetry, backups, or public docs.
+- Verification exposes private-data leakage through aggregator search, logs, usage telemetry, user snapshots, backup listeners, or public docs.
 - The work drifts into app-shell redesign, public legal/compliance launch tasks, or payment collection beyond metering hooks.
 
 ## Approval Boundary
 
 Approval of this plan authorizes Coder to implement the runs above, make focused supporting edits needed for those runs, write/update tests, run relevant verification, perform internal QA, fix issues found inside this boundary, create required changesets, generate append-only migrations where explicitly called out, and update this plan's execution summary.
 
-Approval does not authorize unrelated refactors, direct pushes to `main`, destructive git operations, migration deletion, secret handling in committed files, production credential use, real payment collection, reintroducing Next.js/Supabase architecture, or claiming E2EE/public-search safety before the relevant run is implemented and verified.
+Approval does not authorize unrelated refactors, direct pushes to `main`, destructive git operations, migration deletion, secret handling in committed files, production credential use, real payment collection, reintroducing Next.js/Supabase architecture, or claiming encrypted-room/public-search safety before the relevant run is implemented and verified.
 
 ## Execution Summary
 
-| Run      | Status      | Files Changed | Verification | Notes |
-| -------- | ----------- | ------------- | ------------ | ----- |
-| `run-1`  | Not started |               |              |       |
-| `run-2`  | Not started |               |              |       |
-| `run-3`  | Not started |               |              |       |
-| `run-4`  | Not started |               |              |       |
-| `run-5`  | Not started |               |              |       |
-| `run-6`  | Not started |               |              |       |
-| `run-7`  | Not started |               |              |       |
-| `run-8`  | Not started |               |              |       |
-| `run-9`  | Not started |               |              |       |
-| `run-10` | Not started |               |              |       |
-| `run-11` | Not started |               |              |       |
-| `run-12` | Not started |               |              |       |
-| `run-13` | Not started |               |              |       |
+| Run      | Status      | Files Changed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Verification                                                                                                                                                                                                                                                                                                       | Notes                                                                                                                                                                                                                                                                                     |
+| -------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `run-1`  | Complete    | `packages/aggregator/src/**`, `packages/aggregator/README.md`, `packages/auth-server-hono/src/model/rooms/calls.ts`, `packages/auth-server-hono/src/routes/access-grant.ts`, `packages/auth-server-hono/src/routes/access-grant.test.ts`, `packages/auth-server-hono/src/routes/agents.ts`, `packages/auth-server-hono/src/services/rooms/*`, `packages/auth-server-hono/src/services/sync-token.ts`, `packages/sync-server/src/index.ts`, `examples/example-aggregator/src/App.tsx`                                                                                                                                                                           | `npm test --workspace @eweser/aggregator`; `npm test --workspace @eweser/auth-server-hono`; `npm run type-check --workspace @eweser/sync-server`; `npm run type-check --workspace @eweser/aggregator`; `npm run build --workspace @eweser/example-aggregator`                                                      | Implemented room-level public aggregation gate and manual-test handoff. Follow-up fixed serialized Yjs webhook payloads; local Docker SDK-style search smoke now passes for published content.                                                                                            |
+| `run-2`  | Complete    | `packages/auth-server-hono/src/lib/storage.ts`, `packages/auth-server-hono/src/routes/files.ts`, `packages/auth-server-hono/src/routes/files.test.ts`, `packages/auth-server-hono/src/routes/account.ts`, `packages/auth-server-hono/src/routes/account.test.ts`, `packages/db/src/utils/files.ts`, `packages/db/src/utils/files.test.ts`, `packages/app/src/lib/api.ts`, `packages/app/src/pages.tsx`, `docs/deployment/file-storage.md`, `docs/deployment/railway.md`, `.changeset/file-cache-pinning.md`                                                                                                                                                    | `npm test --workspace @eweser/auth-server-hono -- files`; `npm test --workspace @eweser/db -- files`; `npm run type-check --workspace @eweser/app`; `npm run build --workspace @eweser/db`                                                                                                                         | Added env-backed storage provider profile resolution, secret-safe profile status, profile-aware file routes, verified SDK cache/pinning helpers, docs, and changeset. Follow-up added `fileAttachments` bootstrap/repair.                                                                 |
+| `run-3`  | Complete    | `packages/db/src/utils/backup.ts`, `packages/db/src/utils/backup.test.ts`, `packages/db/src/index.ts`, `packages/db/src/utils/index.ts`, `packages/auth-server-hono/src/db/schema/backup_snapshots.ts`, `packages/auth-server-hono/src/model/backup-snapshots.ts`, `packages/auth-server-hono/src/routes/backups.ts`, `packages/auth-server-hono/src/routes/backups.test.ts`, `packages/auth-server-hono/src/index.ts`, `packages/auth-server-hono/drizzle/0008_backup_snapshots.sql`, `packages/app/src/lib/api.ts`, `packages/app/src/pages.tsx`, `docs/deployment/file-storage.md`, `docs/deployment/digital-ocean.md`, `.changeset/file-cache-pinning.md`  | `npm test --workspace @eweser/db -- backup`; `npm test --workspace @eweser/auth-server-hono -- backups`; `npm test --workspace @eweser/auth-server-hono -- files`; `npm run build --workspace @eweser/db`; `npm run type-check --workspace @eweser/app`; `npm run type-check --workspace @eweser/auth-server-hono` | Added v1 snapshot bundle helpers, server-mediated upload/list/download routes, backup snapshot metadata table/migration, account snapshot listing/download UI, docs, and changeset. No live S3/browser smoke was run.                                                                     |
+| `run-4`  | Not started |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |                                                                                                                                                                                                                                                                                                                    |                                                                                                                                                                                                                                                                                           |
+| `run-5`  | Not started |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |                                                                                                                                                                                                                                                                                                                    |                                                                                                                                                                                                                                                                                           |
+| `run-6`  | Not started |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |                                                                                                                                                                                                                                                                                                                    |                                                                                                                                                                                                                                                                                           |
+| `run-7`  | Not started |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |                                                                                                                                                                                                                                                                                                                    |                                                                                                                                                                                                                                                                                           |
+| `run-8`  | Not started |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |                                                                                                                                                                                                                                                                                                                    |                                                                                                                                                                                                                                                                                           |
+| `run-9`  | Not started |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |                                                                                                                                                                                                                                                                                                                    |                                                                                                                                                                                                                                                                                           |
+| `run-10` | Not started |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |                                                                                                                                                                                                                                                                                                                    |                                                                                                                                                                                                                                                                                           |
+| `run-11` | Not started |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |                                                                                                                                                                                                                                                                                                                    |                                                                                                                                                                                                                                                                                           |
+| `run-12` | Not started |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |                                                                                                                                                                                                                                                                                                                    |                                                                                                                                                                                                                                                                                           |
+| `run-13` | Not started |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |                                                                                                                                                                                                                                                                                                                    |                                                                                                                                                                                                                                                                                           |
+| `run-14` | Complete    | `GLOSSARY-MAP.md`, `GLOSSARY.md`, `packages/db/GLOSSARY.md`, `packages/auth-server-hono/GLOSSARY.md`, `packages/sync-server/GLOSSARY.md`, `packages/aggregator/GLOSSARY.md`, `packages/ewe-note/GLOSSARY.md`, `packages/mcp-server/GLOSSARY.md`, `.codex/skills/eweser-grill-with-docs/SKILL.md`, `.codex/skills/eweser-grill-with-docs/references/test-prompts.md`, `.codex/skills/eweser-planner/SKILL.md`, `.codex/skills/eweser-coder/SKILL.md`, `docs/ai/plans/_template.md`, `docs/ai/workflows/codex-planner-coder.md`, `docs/ai/adr/README.md`, `AGENTS.md`, `.github/copilot-instructions.md`, `INDEX.md`, package indexes, `docs/ai/plans/README.md` | `npm run code-index:check`; `npx prettier --check <changed markdown files>`; skill frontmatter validation for `eweser-grill-with-docs`, `eweser-planner`, and `eweser-coder`                                                                                                                                       | Added Eweser-specific `grill-with-docs` workflow, seeded bounded-language glossaries, clarified ADR status, wired future plans/coders to domain-language checks, added smoke prompts, and required end-of-session skill self-reflection/improvement suggestions. No product code changes. |
+
+Review update, 2026-05-20: pre-PR QA ran `npm run check`,
+`npm run code-index:check`, `npm run build --workspace @eweser/app`,
+`npm run build --workspace @eweser/aggregator`, and
+`npm run build --workspace @eweser/example-aggregator`. The review also made
+the forgot-password app test compatible with per-worktree auth API URLs and
+formatted `test-mcp-client.mjs` because it blocked the repo-wide Prettier gate.
+Live Docker/browser and real S3-provider smoke checks remain manual gaps.
+
+Manual tester fix update, 2026-05-20: fixed the two open issues from the
+Run 2/3 smoke. Published aggregator demo content is now searchable because the
+sync server posts serialized EweserDB Yjs state through a custom aggregator
+webhook extension, and the aggregator accepts the current Hocuspocus payload
+shape. New-account bootstrap now ensures seven starter rooms, including a
+private `fileAttachments` room, and repairs already-bootstrapped accounts that
+miss that room. Verification included sync-server, aggregator, and auth-server
+unit/type checks, a rebuilt local Docker stack, an SDK-style sync-to-search
+smoke that returned the unique public note term, and a container-side bootstrap
+smoke proving `roomCount: 7`, `hasFileAttachments: true`, and grant coverage for
+all rooms. Disposable bootstrap smoke rows were cleaned up.
+
+Skill reflection follow-up, 2026-05-20: added self-reflection and
+skill-adjustment suggestions to `eweser-grill-with-docs`. A GitHub rerun exposed
+a pre-existing Ewe Note test cleanup issue where TipTap editors could leave a
+ProseMirror DOM observer alive after jsdom teardown; `task-item.test.ts` now
+destroys editors in `afterEach`.
+
+Glossary naming follow-up, 2026-05-20: renamed the shared language files to
+`GLOSSARY.md`/`GLOSSARY-MAP.md` because glossary is the clearer term for this
+repo's DDD-style shared language layer.
 
 ## Self-Reflection / Instruction Improvements
 
 - The DB package README accumulated completed and obsolete TODOs because no current plan linked the checklist to implementation status. Keep README backlog items linked to current plan files, and remove items when they are completed or intentionally archived.
+- Future backlog runs will be easier for agents if new terms are resolved in
+  `GLOSSARY.md` during planning instead of being rediscovered from prose across
+  README, plans, ADRs, and package code.
+- Grilling sessions should include a small self-reflection at the end. This
+  keeps useful workflow lessons close to the plan and produces concrete
+  suggestions for updating the skill when it misses repo evidence, asks avoidable
+  questions, or lacks a good prompt example.
+- Use `GLOSSARY.md` and `GLOSSARY-MAP.md` for the shared language layer. The
+  word "context" is too broad for these files and should be reserved for
+  ordinary prose or UI terms such as context menus.

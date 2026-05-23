@@ -7,9 +7,9 @@
 import { Server } from '@hocuspocus/server';
 import type { Extension } from '@hocuspocus/server';
 import { SQLite } from '@hocuspocus/extension-sqlite';
-import { Webhook } from '@hocuspocus/extension-webhook';
 import jwt from 'jsonwebtoken';
 import { createLogger, initTelemetry } from '@eweser/logger';
+import { createAggregatorWebhookExtension } from './aggregator-webhook.js';
 
 await initTelemetry('sync-server');
 
@@ -25,8 +25,11 @@ const extensions: Extension[] = [new SQLite({ database: dbPath })];
 
 if (aggregatorWebhookUrl) {
   extensions.push(
-    new Webhook({
+    createAggregatorWebhookExtension({
       url: aggregatorWebhookUrl,
+      onError: (error) => {
+        log.error({ error }, 'Aggregator webhook failed');
+      },
       ...(webhookSecret ? { secret: webhookSecret } : {}),
     })
   );
@@ -47,6 +50,7 @@ const server = Server.configure({
         roomId: string;
         userId?: string;
         collectionKey?: string;
+        publicAccess?: 'private' | 'read' | 'write';
       };
       return {
         user: {
@@ -56,6 +60,7 @@ const server = Server.configure({
         roomId: decoded.roomId,
         userId: decoded.userId,
         collectionKey: decoded.collectionKey,
+        publicAccess: decoded.publicAccess ?? 'private',
       };
     } catch {
       throw new Error('Invalid token');

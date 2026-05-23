@@ -1,14 +1,18 @@
 #!/usr/bin/env node
 import { spawn, spawnSync } from 'node:child_process';
 import {
+  chmodSync,
+  copyFileSync,
   existsSync,
   mkdirSync,
   readFileSync,
   readdirSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+import { basename, dirname, join, relative, resolve } from 'node:path';
+import { homedir } from 'node:os';
 import process from 'node:process';
 
 const CONSERVATIVE_SCOPE_PREFIXES = [
@@ -719,6 +723,7 @@ async function startWorker(run, context) {
       mergeDependenciesIntoWorktree(context.plan, run, worktree, logFile);
     const workerStartRef = gitOutput(['rev-parse', 'HEAD'], worktree);
     materializePlanForWorker(context.plan, run, worktree);
+    ensureCodexAuthForWorktree(worktree, context.repoRoot, logFile);
     const prompt = workerPrompt(context.plan, run);
     const args = [
       'exec',
@@ -1013,6 +1018,7 @@ function runFinalStages(plan, layout, repoRoot) {
       status: 'in_progress',
       startedAt: new Date().toISOString(),
     });
+    ensureCodexAuthForWorktree(repoRoot, repoRoot, logFile);
     const result = spawnSync(
       'codex',
       [
@@ -1353,6 +1359,74 @@ function runShell(command, cwd, logFile) {
     `$ ${command}\n${result.stdout ?? ''}${result.stderr ?? ''}`
   );
   if (result.status !== 0) throw new Error(`Command failed: ${command}`);
+}
+
+function ensureCodexAuthForWorktree(worktree, repoRoot, logFile) {
+  if (process.env.OPENAI_API_KEY) return;
+
+  const targetHome = codexWorkspaceHome(worktree);
+  const targetAuth = join(targetHome, 'auth.json');
+  if (existsSync(targetAuth)) return;
+
+  const sourceAuth = findCodexAuthSource(repoRoot, targetAuth);
+  if (!sourceAuth) {
+    throw new Error(
+      `Codex auth is not available for nested worker home ${targetHome}. Run codex login for this checkout, or provide OPENAI_API_KEY before starting the orchestrator.`
+    );
+  }
+
+  mkdirSync(targetHome, { recursive: true });
+  try {
+    symlinkSync(sourceAuth, targetAuth);
+    appendLog(
+      logFile,
+      `Linked Codex auth for nested worker home: ${targetHome}\n`
+    );
+  } catch (error) {
+    if (existsSync(targetAuth)) return;
+    rmSync(targetAuth, { force: true });
+    copyFileSync(sourceAuth, targetAuth);
+    chmodSync(targetAuth, 0o600);
+    appendLog(
+      logFile,
+      `Copied Codex auth for nested worker home after symlink failed: ${targetHome} (${error instanceof Error ? error.message : String(error)})\n`
+    );
+  }
+}
+
+function findCodexAuthSource(repoRoot, targetAuth) {
+  const candidates = [
+    join(codexBaseHome(), 'auth.json'),
+    join(codexWorkspaceHome(repoRoot), 'auth.json'),
+    process.env.CODEX_HOME ? join(process.env.CODEX_HOME, 'auth.json') : '',
+    process.env.CODEX_HOME_BASE
+      ? join(process.env.CODEX_HOME_BASE, 'auth.json')
+      : '',
+    join(homedir(), '.codex', 'auth.json'),
+  ];
+
+  for (const candidate of new Set(candidates.filter(Boolean))) {
+    if (resolve(candidate) !== resolve(targetAuth) && existsSync(candidate))
+      return candidate;
+  }
+  return undefined;
+}
+
+function codexWorkspaceHome(worktree) {
+  const resolved = resolve(worktree);
+  const slug = `${resolved.replaceAll(/[\\/]+/g, '_')}_${basename(resolved)}`;
+  return join(codexBaseHome(), 'worktrees', slug);
+}
+
+function codexBaseHome() {
+  if (process.env.CODEX_HOME_BASE) return resolve(process.env.CODEX_HOME_BASE);
+  if (process.env.CODEX_HOME) {
+    const codexHome = resolve(process.env.CODEX_HOME);
+    if (basename(dirname(codexHome)) === 'worktrees')
+      return dirname(dirname(codexHome));
+    return codexHome;
+  }
+  return join(homedir(), '.codex');
 }
 
 function spawnLogged(command, args, logFile, options = {}) {

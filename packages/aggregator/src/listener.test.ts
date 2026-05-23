@@ -30,6 +30,7 @@ describe('observeRoomDocuments', () => {
       roomId: 'd7ea7353-f1fb-4af5-bc9c-37cfd9d6195b',
       collectionKey: 'notes',
       userId: 'user-1',
+      publicAccess: 'read',
       doc,
       onUpsert,
     });
@@ -38,6 +39,13 @@ describe('observeRoomDocuments', () => {
     documentsMap.set('draft', { title: 'Updated title' });
 
     expect(onUpsert).toHaveBeenCalledTimes(2);
+    expect(onUpsert).toHaveBeenLastCalledWith({
+      roomId: 'd7ea7353-f1fb-4af5-bc9c-37cfd9d6195b',
+      collectionKey: 'notes',
+      userId: 'user-1',
+      publicAccess: 'read',
+      documentData: { draft: { title: 'Updated title' } },
+    });
     stopListening();
   });
 });

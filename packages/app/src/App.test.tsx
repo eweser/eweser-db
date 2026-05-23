@@ -964,7 +964,13 @@ describe('auth-pages app', () => {
 
     const call = (fetch as unknown as { mock: { calls: unknown[][] } }).mock
       .calls[0];
-    expect(String(call?.[0])).toContain('/api/auth/forget-password');
+    const requestUrl = new URL(String(call?.[0]), window.location.origin);
+    const requestInit = call?.[1] as RequestInit | undefined;
+    expect(requestUrl.pathname).toMatch(/\/forget-password$/);
+    expect(requestInit?.method).toBe('POST');
+    expect(JSON.parse(String(requestInit?.body))).toMatchObject({
+      email: 'recover@example.com',
+    });
     expect(
       await screen.findByText(
         /if an account exists, password reset instructions were sent\./i
