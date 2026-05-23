@@ -206,31 +206,44 @@ Run unit tests by first starting the docker backend (make sure you have Docker r
 
 Run e2e tests headless once with `npm run test:e2e`, or with `npm run dev-e2e` to open the Cypress GUI.
 
-# To Do
+# Remaining To Do
+
+Detailed planning for this backlog lives in
+`docs/ai/plans/2026-05-16-db-readme-todo-backlog.md`.
 
 Priority:
 
-- [ ] **Federated Sharing,**: user can invite someone from a different auth server to a room.
-- [ ] **Public data**: set up ‘aggregator’ listeners when a user marks a collection as public. These will be node servers invited to the room that listen for changes to the collection. How to aggregate and serve to public listeners?
-- [ ] **Files:** set up file hosting provider services like Pinata, Dropbox, etc. and give users the option to connect their accounts to the app.
-- [ ] **Backups** - user can add storage account (dropbox, pinata, etc) that store snapshots of the database in the file hosting provider.
-- [ ] End 2 End **Encryption** — multiple devices?
-- [ ] Versioning strategy for schema/api changes. How to maintain backwards compatibility with older versions of the database.
+- [ ] **Public data hardening:** only index rooms or collections that are
+      explicitly public, and make the public-search contract auditable.
+- [ ] **Storage provider profiles:** finish user/admin configuration for hosted,
+      self-hosted, and bring-your-own S3-compatible storage providers.
+- [ ] **User backups:** let users create database snapshots into their configured
+      storage provider, with restore drills and retention rules.
+- [ ] **Federated sharing:** users can invite someone from a different auth
+      server to a room.
+- [ ] **Federation as backup:** users can opt into a trusted second server as a
+      listener/relay for selected rooms.
+- [ ] **End-to-end encryption:** design and implement opt-in encrypted rooms
+      across multiple devices, with honest limits around collaboration, search,
+      and recovery.
+- [ ] **Versioning strategy:** define schema/API compatibility rules, room data
+      migrations, SDK version negotiation, and release/change documentation.
 
-Nice to haves:
+SDK and product polish:
 
-- [ ] Add WebRTC to addTempDocToRoom()
-- [ ] create an async cron job that runs after the db loads, and once a day, to delete items with the \_deleted flag whose ttl has expired.
-- [ ] set up the ‘awareness’ listeners for shared editing.
-- [ ] example of next.js, server-side rendering workarounds
-- [ ] give some instructions on self-hosting.
-- [ ] make 2 servers and federate them. Figure out a federation-as-backup strategy for users, for example inviting another of our accounts as a listener to each of your rooms.
-- [ ] “Joins” or aggregation searches across collections. e.g. select all documents in the `notes` collection that have a ref to a document in the `flashcards` collection.
-- [ ] Stress testing. warnings about room or document size limits
-- [ ] **offline mode:** offline first - allow interacting with app before ever signed up or logged in. This might just need to be an example, not db feature. Might need to add an 'initialValues' option to create and connect room.
-
-- [ ] regenerate token on failed room connection
-- [ ] newRoom
-- [ ] don't send to permissions page if grant already exists and matches the login request permissions. just redirect back with token.
-- [ ] reimplement server ping, online check, reload when re-online.
-- [ ] track users' active sync hours and charge them for it or limit after a certain amount, based on the sync provider pricing model.
+- [ ] Add a deleted-document cleanup job for items whose `_deleted` flag is set
+      and `_ttl` has expired.
+- [ ] Decide whether WebRTC temporary documents are still part of the roadmap;
+      either implement the current-room-safe shape or remove the stale API/deps.
+- [ ] Add a cross-collection query/search layer for refs, such as finding notes
+      that reference flashcards.
+- [ ] Add stress testing and documented room/document size guidance.
+- [ ] Add an optional seeded-room API if `initialRooms` is not enough for
+      first-run offline app data.
+- [ ] Retry sync-token refresh and reconnect after room authentication failures.
+- [ ] Skip the permission page when an existing valid grant already satisfies
+      the login request.
+- [ ] Finish online recovery behavior: ping, online checks, reconnect or reload
+      when appropriate after network/auth-server recovery.
+- [ ] Track active sync usage and enforce billing or free-tier limits based on
+      the hosted sync-provider cost model.

@@ -49,10 +49,12 @@ export async function syncRoomsWithClient(
 
     const serverRooms = await getRoomsFromAccessGrant(grant, dbInstance);
     const serverRoomIds = serverRooms.map((r) => r.id);
+    const serverRoomIdSet = new Set(serverRoomIds);
+    const serverRoomsById = new Map(serverRooms.map((room) => [room.id, room]));
 
     // Identify new rooms from client
     const newClientRooms = clientRooms.filter(
-      (r) => !serverRoomIds.includes(r.id)
+      (r) => !serverRoomIdSet.has(r.id)
     );
 
     if (newClientRooms.length > 0) {
@@ -72,7 +74,7 @@ export async function syncRoomsWithClient(
     }
 
     for (const clientRoom of clientRooms) {
-      const serverRoom = serverRooms.find((room) => room.id === clientRoom.id);
+      const serverRoom = serverRoomsById.get(clientRoom.id);
       if (
         serverRoom &&
         serverRoom.publicAccess !== clientRoom.publicAccess &&
@@ -90,7 +92,7 @@ export async function syncRoomsWithClient(
       .filter((r) => r._deleted)
       .map((r) => r.id);
     for (const id of clientDeletedRoomIds) {
-      if (serverRoomIds.includes(id)) {
+      if (serverRoomIdSet.has(id)) {
         await updateRoom({ id, _deleted: true }, dbInstance);
       }
     }

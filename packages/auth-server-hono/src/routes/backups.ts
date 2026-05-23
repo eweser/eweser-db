@@ -30,14 +30,15 @@ import {
 const DEFAULT_RETENTION_DAYS = 90;
 const SNAPSHOT_CONTENT_TYPE = 'application/vnd.eweser.snapshot+json';
 
-const uploadMetadataSchema = z.object({
-  createdAt: z.string().datetime().optional(),
-  documentCount: z.number().int().nonnegative(),
-  filename: z.string().min(1).max(200).optional(),
-  providerProfileId: z.string().min(1).optional(),
-  retentionDays: z.number().int().positive().max(3650).optional(),
-  roomCount: z.number().int().nonnegative(),
-});
+const uploadMetadataSchema = z
+  .object({
+    documentCount: z.number().int().nonnegative(),
+    filename: z.string().min(1).max(200).optional(),
+    providerProfileId: z.string().min(1).optional(),
+    retentionDays: z.number().int().positive().max(3650).optional(),
+    roomCount: z.number().int().nonnegative(),
+  })
+  .strict();
 
 type AccessGrantJWT = {
   access_grant_id: string;

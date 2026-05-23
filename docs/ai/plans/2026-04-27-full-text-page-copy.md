@@ -1269,3 +1269,34 @@ Architecture decision resolved: `packages/app` expands into the full authenticat
 | MCP / AI Access          | `app.eweser.com/ai`                    | `packages/app`                  |
 | Account Security         | `app.eweser.com/security`              | `packages/app`                  |
 | Ewe Note                 | `note.eweser.com`                      | `packages/ewe-note` (Vite SPA)  |
+
+## Execution Summary
+
+2026-05-23 app surface completion:
+
+- Replaced the placeholder authenticated app surface with a styled Personal Data Home, Connected Apps page, Account page, Security page, and access request review using the same console vocabulary as the MCP page.
+- Added data-driven Data Home summaries from account bootstrap, connected app grants, and Connect AI overview.
+- Added `GET /api/account/connected-apps` and `POST /api/account/connected-apps/revoke` so Connected Apps can list and revoke owner-scoped app grants without exposing the auth-server self grant.
+- Tightened auth/recovery form styling to match the updated auth pages and added missing MCP hero/card CSS.
+- Updated app and auth-server tests for the new route behavior, protected-page copy, and revoke flow.
+
+Verification:
+
+- `~/.codex/skills/eweser-runtime-orientation/scripts/eweser-runtime-orientation.sh status`
+- `~/.codex/skills/eweser-runtime-orientation/scripts/eweser-runtime-orientation.sh refresh`
+- `npm run type-check --workspace @eweser/app`
+- `npm run type-check --workspace @eweser/auth-server-hono`
+- `npm test --workspace @eweser/app`
+- `npm test --workspace @eweser/auth-server-hono`
+- `npm run lint --workspace @eweser/app`
+- `npm run lint --workspace @eweser/auth-server-hono`
+- `npm run build --workspace @eweser/app`
+- Browser smoke at `http://127.0.0.1:5178/sign-in` and `http://127.0.0.1:5178/design/mcp-preview`; visual render succeeded. The local auth API was not running, so the dev server logged expected `ECONNREFUSED 127.0.0.1:38101` proxy errors for `get-session`.
+
+Remaining risk:
+
+- Browser smoke did not exercise a real signed-in session because the local auth API/Postgres stack was not running in this turn. Protected-route behavior is covered by React tests with mocked session/API state.
+
+## Self-Reflection / Instruction Improvements
+
+- Runtime orientation correctly showed port `5173` was not a trustworthy app UI listener; browser smoke should confirm page identity before using an existing localhost port.

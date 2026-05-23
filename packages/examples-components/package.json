@@ -7,8 +7,8 @@
   "version": "3.0.0",
   "type": "module",
   "scripts": {
-    "typescript-watch": "tsc --watch",
-    "vite-build-watch": "vite build --watch",
+    "typescript-watch": "tsc --watch --watchFile fixedpollinginterval --watchDirectory fixedpollinginterval --fallbackPolling priorityinterval",
+    "vite-build-watch": "EWESER_EXAMPLES_COMPONENTS_BUILD_WATCH=true vite build --watch",
     "dev": "run-p vite-build-watch typescript-watch",
     "build": "tsc && vite build",
     "lint": "eslint .",

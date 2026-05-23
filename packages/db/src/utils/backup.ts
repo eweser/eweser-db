@@ -197,12 +197,12 @@ function createRestoredDocumentId(originalId: string) {
   return `${originalId}-restored-${Date.now()}-${randomString(6)}`;
 }
 
-function cloneDocumentForRestore(
+function prepareDocumentForRestore(
   db: Database,
   snapshotRoom: SnapshotRoom,
-  document: EweDocument
+  document: EweDocument,
+  documentId: string
 ): EweDocument {
-  const documentId = createRestoredDocumentId(document._id);
   return {
     ...document,
     _id: documentId,
@@ -214,6 +214,19 @@ function cloneDocumentForRestore(
     }),
     _updated: Date.now(),
   } as EweDocument;
+}
+
+function cloneDocumentForRestore(
+  db: Database,
+  snapshotRoom: SnapshotRoom,
+  document: EweDocument
+): EweDocument {
+  return prepareDocumentForRestore(
+    db,
+    snapshotRoom,
+    document,
+    createRestoredDocumentId(document._id)
+  );
 }
 
 async function sha256Hex(bytes: Uint8Array): Promise<string> {
@@ -381,7 +394,9 @@ export async function restoreDatabaseSnapshot(params: {
           continue;
         }
 
-        documents.set(document);
+        documents.set(
+          prepareDocumentForRestore(params.db, snapshotRoom, document, id)
+        );
         if (hasConflict) {
           result.updatedDocuments += 1;
         } else {
@@ -434,7 +449,6 @@ export async function uploadDatabaseSnapshot(params: {
     `eweser-snapshot-${snapshot.createdAt.slice(0, 10)}.json`;
 
   const metadata = {
-    createdAt: snapshot.createdAt,
     documentCount: snapshot.documentCount,
     filename,
     providerProfileId: params.providerProfileId,

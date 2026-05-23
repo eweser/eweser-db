@@ -47,6 +47,22 @@ export interface RemoteSnapshotRecord {
   updatedAt: string | null;
 }
 
+export interface ConnectedAppGrant {
+  id: string;
+  collections: string[];
+  createdAt: string;
+  domain: string;
+  keepAliveDays: number;
+  requesterType: string;
+  roomIds: string[];
+  status: 'active' | 'revoked';
+  updatedAt: string | null;
+}
+
+export interface ConnectedAppsResponse {
+  connectedApps: ConnectedAppGrant[];
+}
+
 export interface PermissionsRequestBody {
   domain: string;
   redirect: string;
@@ -190,6 +206,20 @@ export function getBackupSnapshotDownloadUrl(snapshotId: string) {
     snapshot: RemoteSnapshotRecord;
     url: string;
   }>(`/api/backups/${snapshotId}/download-url`);
+}
+
+export function getConnectedApps() {
+  return request<ConnectedAppsResponse>('/api/account/connected-apps');
+}
+
+export function revokeConnectedApp(grantId: string) {
+  return request<{ grantId: string; status: 'revoked' }>(
+    '/api/account/connected-apps/revoke',
+    {
+      body: JSON.stringify({ grantId }),
+      method: 'POST',
+    }
+  );
 }
 
 export function submitPermissions(body: PermissionsRequestBody) {

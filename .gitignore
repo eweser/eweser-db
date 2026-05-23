@@ -31,7 +31,6 @@ types
 .env.*
 !.env.example
 !**/example.env
-.worktree-ports
 .ai-secrets/
 .agent-secrets/
 .ai/
@@ -57,6 +56,15 @@ dist.*
 # TypeScript incremental build artifacts
 *.tsbuildinfo
 **/*.tsbuildinfo
+.worktree-ports
+
+# Landing design scratch artifacts. Keep finalized landing images under
+# packages/landing/public/images/ explicitly staged when they are used.
+/design/
+/eweser-landing-*.png
+/eweser-*-final.png
+/landing-css-*.png
+/landing-css-baseline-snapshot.md
 
 # gitleaks
 .gitleaks-report.json

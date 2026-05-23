@@ -17,17 +17,19 @@ import type { Room } from '../room.js';
 
 function createRoomFixture(
   options: {
+    authServer?: string;
     collectionKey?: CollectionKey;
     id?: string;
     name?: string;
     text?: string;
   } = {}
 ) {
+  const authServer = options.authServer ?? 'https://auth.example.com';
   const collectionKey = options.collectionKey ?? 'notes';
   const id = options.id ?? 'room-1';
   const ydoc = new Y.Doc();
   const documents = getDocuments(
-    'https://auth.example.com',
+    authServer,
     collectionKey,
     id
   )<EweDocument>(ydoc);
@@ -49,10 +51,14 @@ function createRoomFixture(
   return room;
 }
 
-function createFakeDatabase(rooms: Room<EweDocument>[] = []) {
+function createFakeDatabase(
+  rooms: Room<EweDocument>[] = [],
+  options: { authServer?: string } = {}
+) {
+  const authServer = options.authServer ?? 'https://auth.example.com';
   const roomMap = new Map(rooms.map((room) => [room.id, room]));
   const db = {
-    authServer: 'https://auth.example.com',
+    authServer,
     registry: [],
     allRooms: vi.fn(() => Array.from(roomMap.values())),
     getRoom: vi.fn((_collectionKey: CollectionKey, roomId: string) =>
@@ -62,6 +68,7 @@ function createFakeDatabase(rooms: Room<EweDocument>[] = []) {
     loadRoom: vi.fn(),
     newRoom: vi.fn((options) => {
       const room = createRoomFixture({
+        authServer,
         collectionKey: options.collectionKey,
         id: options.id,
         name: options.name,
@@ -123,6 +130,27 @@ describe('database snapshot helpers', () => {
         doc._id.startsWith('doc-1-restored-')
       )
     ).toBe(true);
+  });
+
+  it('rewrites restored document refs for the target auth server', async () => {
+    const sourceRoom = createRoomFixture({ text: 'portable' });
+    const { db: sourceDb } = createFakeDatabase([sourceRoom]);
+    const snapshot = await createDatabaseSnapshot({ db: sourceDb });
+    const { db: targetDb, roomMap } = createFakeDatabase([], {
+      authServer: 'https://auth.target.example',
+    });
+
+    await restoreDatabaseSnapshot({
+      db: targetDb,
+      snapshot,
+      conflictStrategy: 'overwrite',
+    });
+
+    const restoredDocument = roomMap.get('room-1')?.getDocuments().get('doc-1');
+    expect(restoredDocument?._id).toBe('doc-1');
+    expect(restoredDocument?._ref).toBe(
+      'https://auth.target.example|notes|room-1|doc-1'
+    );
   });
 
   it('uploads snapshot bytes and lists remote snapshots through the auth API', async () => {

@@ -231,4 +231,34 @@ describe('backupsRouter', () => {
     });
     expect(uploadObjectMock).not.toHaveBeenCalled();
   });
+
+  it('rejects unused snapshot creation-time metadata', async () => {
+    const form = new FormData();
+    form.append(
+      'metadata',
+      JSON.stringify({
+        createdAt: '2026-05-19T00:00:00.000Z',
+        filename: 'snapshot.json',
+        roomCount: 1,
+        documentCount: 2,
+      })
+    );
+    form.append('snapshot', new File([new Uint8Array([1])], 'snapshot.json'));
+
+    const response = await app.fetch(
+      new Request('http://localhost/api/backups/upload', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${await accessGrantToken()}`,
+        },
+        body: form,
+      })
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Invalid snapshot metadata',
+    });
+    expect(uploadObjectMock).not.toHaveBeenCalled();
+  });
 });

@@ -45,6 +45,9 @@ export default defineConfig({
   server: {
     port: devPort,
     strictPort: false,
+    watch: {
+      usePolling: true,
+    },
     proxy: {
       '/api': {
         target: authServerTarget,

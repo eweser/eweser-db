@@ -67,13 +67,15 @@ plan. Standalone QA is reserved for independent re-QA or audit work.
 
 ### Design / Copy
 
-| Plan                                                                                                   | Status            | Notes                                                                                 |
-| ------------------------------------------------------------------------------------------------------ | ----------------- | ------------------------------------------------------------------------------------- |
-| [2026-04-27-core-figma-design-system-recovery.md](./2026-04-27-core-figma-design-system-recovery.md)   | Next big design   | Redesign eweser.com landing, auth pages, Data Home/app shell, and app-store surfaces. |
-| [2026-04-27-full-text-page-copy.md](./2026-04-27-full-text-page-copy.md)                               | Current source    | Canonical copy target for landing, app shell, auth, permissions, and MCP pages.       |
-| [2026-04-27-core-copy-deck.md](./2026-04-27-core-copy-deck.md)                                         | Superseded source | Kept because it explains the copy process; exact copy moved to full-text page copy.   |
-| [2026-04-27-landing-page-story-pass.md](./2026-04-27-landing-page-story-pass.md)                       | Reference         | Narrative direction for the current landing work.                                     |
-| [2026-04-27-authenticated-surfaces-design-pass.md](./2026-04-27-authenticated-surfaces-design-pass.md) | Reference         | IA/design guidance for Personal Data Home, Connected Apps, MCP, and auth.             |
+| Plan                                                                                                   | Status            | Notes                                                                                  |
+| ------------------------------------------------------------------------------------------------------ | ----------------- | -------------------------------------------------------------------------------------- |
+| [2026-05-18-landing-theme-css-cleanup.md](./2026-05-18-landing-theme-css-cleanup.md)                   | Proposed plan     | Refactor landing CSS into semantic theme tokens so primary colors can be adjusted.     |
+| [2026-05-18-landing-page-completion-handoff.md](./2026-05-18-landing-page-completion-handoff.md)       | Proposed handoff  | Finish the public landing page from real copy using the brighter optimistic direction. |
+| [2026-04-27-core-figma-design-system-recovery.md](./2026-04-27-core-figma-design-system-recovery.md)   | Next big design   | Redesign eweser.com landing, auth pages, Data Home/app shell, and app-store surfaces.  |
+| [2026-04-27-full-text-page-copy.md](./2026-04-27-full-text-page-copy.md)                               | Current source    | Canonical copy target for landing, app shell, auth, permissions, and MCP pages.        |
+| [2026-04-27-core-copy-deck.md](./2026-04-27-core-copy-deck.md)                                         | Superseded source | Kept because it explains the copy process; exact copy moved to full-text page copy.    |
+| [2026-04-27-landing-page-story-pass.md](./2026-04-27-landing-page-story-pass.md)                       | Reference         | Narrative direction for the current landing work.                                      |
+| [2026-04-27-authenticated-surfaces-design-pass.md](./2026-04-27-authenticated-surfaces-design-pass.md) | Reference         | IA/design guidance for Personal Data Home, Connected Apps, MCP, and auth.              |
 
 ### Ewe Note UX
 
@@ -86,12 +88,13 @@ plan. Standalone QA is reserved for independent re-QA or audit work.
 
 ### Deferred Backlog
 
-| Plan                                                                       | Status      | Notes                                                     |
-| -------------------------------------------------------------------------- | ----------- | --------------------------------------------------------- |
-| [2026-04-02-phase-4-deploy.md](./2026-04-02-phase-4-deploy.md)             | Mostly done | Keep only for remaining production polish/cleanup notes.  |
-| [2026-04-02-phase-5-mobile.md](./2026-04-02-phase-5-mobile.md)             | Deferred    | PWA exists; Capacitor/native app work is not launch-path. |
-| [2026-04-03-file-storage.md](./2026-04-03-file-storage.md)                 | Deferred    | Object storage, file APIs, and BYO storage provider work. |
-| [2026-04-05-auto-knowledge-graph.md](./2026-04-05-auto-knowledge-graph.md) | Deferred    | Later graph/search layer concept.                         |
+| Plan                                                                           | Status      | Notes                                                                                                                      |
+| ------------------------------------------------------------------------------ | ----------- | -------------------------------------------------------------------------------------------------------------------------- |
+| [2026-05-16-db-readme-todo-backlog.md](./2026-05-16-db-readme-todo-backlog.md) | Proposed    | Consolidates remaining DB README TODOs; terminology-heavy runs should pass through `eweser-grill-with-docs` before coding. |
+| [2026-04-02-phase-4-deploy.md](./2026-04-02-phase-4-deploy.md)                 | Mostly done | Keep only for remaining production polish/cleanup notes.                                                                   |
+| [2026-04-02-phase-5-mobile.md](./2026-04-02-phase-5-mobile.md)                 | Deferred    | PWA exists; Capacitor/native app work is not launch-path.                                                                  |
+| [2026-04-03-file-storage.md](./2026-04-03-file-storage.md)                     | Deferred    | Object storage, file APIs, and BYO storage provider work.                                                                  |
+| [2026-04-05-auto-knowledge-graph.md](./2026-04-05-auto-knowledge-graph.md)     | Deferred    | Later graph/search layer concept.                                                                                          |
 
 ## Completed Plans
 

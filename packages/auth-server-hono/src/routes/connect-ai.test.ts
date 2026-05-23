@@ -8,7 +8,7 @@ vi.mock('../env.js', () => ({
     AUTH_DOMAIN: 'auth.local',
     AUTH_TRUSTED_ORIGINS: ['http://localhost:3000'],
     AUTH_SERVER_DOMAIN: 'auth.local',
-    AUTH_SERVER_URL: 'https://www.eweser.com',
+    AUTH_SERVER_URL: 'https://eweser.com',
     BETTER_AUTH_BASE_URL: 'http://localhost:3000',
     BETTER_AUTH_SECRET: 'test-auth-secret',
     DATABASE_URL: 'postgres://test:test@localhost:5432/test',
@@ -115,7 +115,7 @@ describe('connectAiRouter', () => {
         userId: mockUser.id,
         name: 'Connect AI: Codex',
         type: 'mcp',
-        endpoint: 'https://www.eweser.com/mcp',
+        endpoint: 'https://eweser.com/mcp',
         allowedCollections: ['notes'],
         allowedRooms: [],
         permissions: 'read',
@@ -140,7 +140,7 @@ describe('connectAiRouter', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.clients).toHaveLength(6);
-    expect(body.mcpUrl).toBe('https://www.eweser.com/mcp');
+    expect(body.mcpUrl).toBe('https://eweser.com/mcp');
     expect(body.smartLinkRule).toContain('Never place bearer tokens in URLs');
     expect(body.memoryStrategy.defaultStrategy).toBe('agent-journal');
     expect(body.memoryStrategy.defaultCaptureMode).toBe('manual');
@@ -238,7 +238,7 @@ describe('connectAiRouter', () => {
         userId: mockUser.id,
         name: 'Connect AI: Codex',
         type: 'mcp',
-        endpoint: 'https://www.eweser.com/mcp',
+        endpoint: 'https://eweser.com/mcp',
         allowedCollections: ['notes'],
         allowedRooms: [],
         permissions: 'read',
@@ -389,7 +389,7 @@ describe('connectAiRouter', () => {
         userId: mockUser.id,
         name: 'Connect AI: Claude Desktop',
         type: 'mcp',
-        endpoint: 'https://www.eweser.com',
+        endpoint: 'https://eweser.com',
         allowedCollections: ['notes'],
         allowedRooms: [],
         permissions: 'read',
@@ -466,7 +466,7 @@ describe('connectAiRouter', () => {
         userId: mockUser.id,
         name: 'Connect AI: Codex',
         type: 'mcp',
-        endpoint: 'https://www.eweser.com/mcp',
+        endpoint: 'https://eweser.com/mcp',
         allowedCollections: ['notes'],
         allowedRooms: [],
         permissions: 'read',
@@ -529,7 +529,7 @@ describe('connectAiRouter', () => {
         userId: mockUser.id,
         name: 'Connect AI: Codex',
         type: 'mcp',
-        endpoint: 'https://www.eweser.com/mcp',
+        endpoint: 'https://eweser.com/mcp',
         allowedCollections: ['notes'],
         allowedRooms: [],
         permissions: 'read',
@@ -585,7 +585,7 @@ describe('connectAiRouter', () => {
         userId: mockUser.id,
         name: 'Connect AI: Codex',
         type: 'mcp',
-        endpoint: 'https://www.eweser.com/mcp',
+        endpoint: 'https://eweser.com/mcp',
         allowedCollections: ['notes'],
         allowedRooms: [],
         permissions: 'read',
@@ -622,6 +622,64 @@ describe('connectAiRouter', () => {
         writeAllowedRooms: ['room-ai'],
       })
     );
+  });
+
+  it('creates an OpenClaw streamable-http setup payload', async () => {
+    mockGetAgentConfigsByUserId.mockResolvedValueOnce([]);
+    mockCreateAgentConfig.mockResolvedValueOnce({
+      agentConfig: {
+        id: 'agent-uuid-openclaw',
+        userId: mockUser.id,
+        name: 'Connect AI: OpenClaw',
+        type: 'openclaw',
+        endpoint: 'https://eweser.com/mcp',
+        allowedCollections: ['notes'],
+        allowedRooms: [],
+        permissions: 'read',
+        readAllowedCollections: ['notes'],
+        readAllowedRooms: [],
+        isActive: true,
+        tokenHash: 'secret-hash',
+        tokenExpiresAt: new Date('2026-05-01T00:00:00.000Z'),
+        lastAccessAt: null,
+        writeAllowedCollections: ['notes'],
+        writeAllowedFolderIds: [],
+        writeAllowedPathPrefixes: [],
+        writeAllowedRooms: ['room-ai'],
+        createdAt: new Date('2026-04-24T00:00:00.000Z'),
+        updatedAt: null,
+      },
+      token: 'agent-token-123',
+    });
+
+    const res = await authenticatedFetch(
+      app,
+      '/api/account/connect-ai/setup-token',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          clientId: 'openclaw',
+          writableRoomIds: ['room-ai'],
+        }),
+      }
+    );
+
+    expect(res.status).toBe(200);
+    expect(mockCreateAgentConfig).toHaveBeenCalledWith(
+      expect.objectContaining({
+        endpoint: 'https://eweser.com/mcp',
+        name: 'Connect AI: OpenClaw',
+        type: 'openclaw',
+      })
+    );
+    const body = await res.json();
+    expect(body.payload.instructions).toContain('openclaw mcp set eweser');
+    expect(JSON.parse(body.payload.snippet)).toEqual({
+      headers: { Authorization: 'Bearer agent-token-123' },
+      transport: 'streamable-http',
+      url: 'https://eweser.com/mcp',
+    });
   });
 
   it('rejects token setup with an unauthorized writable room', async () => {
@@ -707,7 +765,7 @@ describe('connectAiRouter', () => {
       userId: mockUser.id,
       name: 'Connect AI: Codex',
       type: 'mcp',
-      endpoint: 'https://www.eweser.com/mcp',
+      endpoint: 'https://eweser.com/mcp',
       allowedCollections: ['notes'],
       allowedRooms: [],
       permissions: 'read',

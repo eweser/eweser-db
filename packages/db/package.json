@@ -38,8 +38,8 @@
   "scripts": {
     "test": "vitest --run --pool=threads",
     "build": "rm -rf dist; tsc --project tsconfig.build.json && npx vite build",
-    "typescript-watch": "tsc --watch --project tsconfig.build.json",
-    "vite-build-watch": "vite build --watch",
+    "typescript-watch": "tsc --watch --project tsconfig.build.json --watchFile fixedpollinginterval --watchDirectory fixedpollinginterval --fallbackPolling priorityinterval",
+    "vite-build-watch": "EWESER_DB_BUILD_WATCH=true vite build --watch",
     "dev": "run-p vite-build-watch typescript-watch",
     "clean": "rm -rf dist",
     "type-check": "tsc --noEmit",

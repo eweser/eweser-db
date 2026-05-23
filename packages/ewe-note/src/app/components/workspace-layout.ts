@@ -85,6 +85,17 @@ export function getWorkspaceModeFromHotkey(
   return null;
 }
 
+export function resolveWorkspaceModeHotkeySelection(
+  currentMode: WorkspaceMode,
+  requestedMode: WorkspaceMode
+): WorkspaceMode {
+  if (requestedMode === 1 && currentMode === 1) {
+    return 3;
+  }
+
+  return requestedMode;
+}
+
 export function getWorkspacePaneState(mode: WorkspaceMode): WorkspacePaneState {
   switch (mode) {
     case 1:

@@ -135,6 +135,11 @@ explicitly public.
 
 ## Example Apps
 
+### Landing
+
+- Dev URL: `http://localhost:4000/`
+- Source: `packages/landing`
+
 ### Kitchen Sink (All Features)
 
 - Dev URL: `http://localhost:38110/`
@@ -161,18 +166,54 @@ npm run dev:docker
 
 `npm run dev:docker` starts the backend services from `docker-compose.dev.yml`.
 
-In separate terminals, run the frontend workspaces you need:
+For all apps in one shot (recommended when using VS Code), prepare local ports
+and start the backend:
 
 ```bash
-npm run dev
-npm run dev --workspace @eweser/app
-npm run dev --workspace @eweser/ewe-note
+cp -n .worktree-ports.example .worktree-ports
+source .worktree-ports 2>/dev/null || true
+npm run dev:docker
 ```
 
-`npm run dev` covers the shared SDK and example workspaces under `examples/`.
+If this checkout was created with `ewtnew`, `.worktree-ports` is generated for
+the worktree automatically by `scripts/worktree-env.mjs`.
 
+Then in VS Code: `Tasks: Run Task` → `Run All Dev`.
+
+That task starts:
+
+- Docker backend
+- DB dev server
+- Shared package dev server
+- Landing page
+- App SPA
+- Example basic, multi-room, interop notes, and interop flashcards
+- Examples components watcher
+- Ewe Note
+
+If you are not in VS Code, start these in separate terminals:
+
+```bash
+npm run dev --workspace @eweser/db
+npm run dev --workspace @eweser/shared
+cd packages/landing && npm run dev -- --host 127.0.0.1 --port "${LANDING_PORT:-4000}" --strictPort
+cd packages/app && npm run dev -- --host 127.0.0.1 --port "${AUTH_PAGES_PORT:-${APP_PORT:-3001}}" --strictPort
+cd examples/example-basic && npm run dev -- --host 127.0.0.1 --port "${EXAMPLE_BASIC_PORT:-38110}" --strictPort
+cd examples/example-multi-room && npm run dev -- --host 127.0.0.1 --port "${EXAMPLE_MULTI_ROOM_PORT:-38120}" --strictPort
+cd examples/example-interop-notes && npm run dev -- --host 127.0.0.1 --port "${EXAMPLE_INTEROP_NOTES_PORT:-38130}" --strictPort
+cd examples/example-interop-flashcards && npm run dev -- --host 127.0.0.1 --port "${EXAMPLE_INTEROP_FLASHCARDS_PORT:-38140}" --strictPort
+cd packages/ewe-note && npm run dev -- --host 127.0.0.1 --port "${EWE_NOTE_PORT:-5181}" --strictPort
+```
+
+`npm run dev` covers shared package + example packages, but not landing or app, so use the full command list above when you need every app.
+
+- Landing page: `http://localhost:4000/`
 - Auth API health: `http://localhost:38101/health`
 - Auth pages dev server: `http://localhost:3001/auth/`
+- Example basic app: `http://localhost:38110/`
+- Multi-room app: `http://localhost:38120/`
+- Notes interop: `http://localhost:38130/`
+- Flashcards interop: `http://localhost:38140/`
 - Ewe Note dev server: `http://localhost:5181/`
 
 Run unit tests with `npm run test`.

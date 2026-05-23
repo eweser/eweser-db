@@ -6,10 +6,15 @@
  */
 import type { Room, Note, Documents } from '@eweser/db';
 import { useState, useEffect, useMemo } from 'react';
-import { useDb } from './db';
+import { defaultNoteId, useDb } from './db';
 import type { GetDocuments } from '@eweser/db';
 import type { FolderBase } from '@eweser/shared';
 import type { Map as YMap } from 'yjs';
+import {
+  DEFAULT_NOTE_AFTER_TUTORIAL_DISMISS_TEXT,
+  isDefaultTutorialDismissalChecked,
+  markDefaultTutorialDismissed,
+} from './default-tutorial';
 
 export type NotesRoomType = {
   room: Room<Note> | null;
@@ -75,8 +80,40 @@ export const useNotesRoom = (
     setSelectedNoteId(newNote._id);
   };
 
+  const dismissDefaultTutorialIfChecked = (text: string, note: Note) => {
+    if (
+      note._id !== defaultNoteId ||
+      !isDefaultTutorialDismissalChecked(text)
+    ) {
+      return false;
+    }
+    if (!room.ydoc) return false;
+
+    let nextNoteId: string | null = null;
+    room.ydoc.transact(() => {
+      const existingNotes = Notes.toArray(
+        Notes.sortByRecent(Notes.getUndeleted())
+      );
+      const nextNote =
+        existingNotes.find((candidate) => candidate._id !== note._id) ??
+        Notes.new({ text: DEFAULT_NOTE_AFTER_TUTORIAL_DISMISS_TEXT });
+      Notes.delete(note._id, 0);
+      nextNoteId = nextNote._id;
+    });
+
+    markDefaultTutorialDismissed();
+
+    if (nextNoteId) {
+      setSelectedNoteId(nextNoteId);
+    }
+
+    return true;
+  };
+
   const updateNoteText = (text: string, note?: Note) => {
     if (!note) return;
+    if (dismissDefaultTutorialIfChecked(text, note)) return;
+
     note.text = text;
     Notes.set(note);
   };

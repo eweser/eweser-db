@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { db } from '../db/drizzle.js';
 import type { DBInstance } from '../db/drizzle.js';
 import { accessGrants } from '../db/schema/access_grants.js';
@@ -30,7 +30,21 @@ export async function getAccessGrantById(id: string, dbInstance?: DBInstance) {
   if (results.length !== 1) {
     throw new Error('Access grant not found');
   }
-  return results[0];
+  const accessGrant = results[0];
+  if (!accessGrant) {
+    throw new Error('Access grant not found');
+  }
+  return accessGrant;
+}
+
+export async function getAccessGrantsByOwnerId(
+  ownerId: string,
+  dbInstance?: DBInstance
+) {
+  return await (dbInstance ?? db)
+    .select()
+    .from(accessGrants)
+    .where(eq(accessGrants.ownerId, ownerId));
 }
 
 export async function insertAccessGrants(
@@ -55,5 +69,29 @@ export async function updateAccessGrant(
   if (updated.length !== 1) {
     throw new Error('Failed to update access grant');
   }
-  return updated[0];
+  const accessGrant = updated[0];
+  if (!accessGrant) {
+    throw new Error('Failed to update access grant');
+  }
+  return accessGrant;
+}
+
+export async function revokeAccessGrantForOwner(
+  id: string,
+  ownerId: string,
+  dbInstance?: DBInstance
+) {
+  const updated = await (dbInstance ?? db)
+    .update(accessGrants)
+    .set({ isValid: false, updatedAt: new Date() })
+    .where(and(eq(accessGrants.id, id), eq(accessGrants.ownerId, ownerId)))
+    .returning();
+  if (updated.length !== 1) {
+    throw new Error('Access grant not found');
+  }
+  const accessGrant = updated[0];
+  if (!accessGrant) {
+    throw new Error('Access grant not found');
+  }
+  return accessGrant;
 }

@@ -4,6 +4,15 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   build: {
     emptyOutDir: false,
+    ...(process.env.EWESER_DB_BUILD_WATCH === 'true'
+      ? {
+          watch: {
+            chokidar: {
+              usePolling: true,
+            },
+          },
+        }
+      : {}),
     lib: {
       name: 'eweser-db',
       entry: resolve(__dirname, 'src/index.ts'),
