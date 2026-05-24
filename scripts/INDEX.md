@@ -64,5 +64,7 @@ tests, secret scanning, agent orchestration, and code-index validation.
   Runs the deterministic memory diagnostic report against a fixture.
 - `node scripts/worktree-env.mjs setup --worktree . --shared-checkout .`:
   Refreshes ignored local env files for the current checkout.
+- `node --test scripts/worktree-env.test.mjs`: Verifies generated per-worktree
+  auth API env points at the API auth route.
 - `npm run test:e2e`: Exercises the E2E smoke runner.
 - `bash scripts/ai-secrets/scan-secrets.sh`: Runs secret scanning when relevant.
