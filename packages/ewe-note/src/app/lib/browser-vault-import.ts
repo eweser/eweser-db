@@ -13,6 +13,7 @@ import {
   type FolderBase,
 } from '@eweser/shared';
 import type { Doc } from 'yjs';
+import { putBrowserAttachmentCache } from './browser-attachment-cache';
 
 const IGNORED_DIRS = new Set(['.obsidian', '.trash', '.git', 'node_modules']);
 const MARKDOWN_EXTENSION = '.md';
@@ -455,6 +456,58 @@ function buildAttachmentParentRefs(
   return refsByTarget;
 }
 
+function findAttachmentParentNoteRefs(
+  refsByTarget: Map<string, string[]>,
+  sourcePath: string
+) {
+  const normalizedTarget = normalizeSlashes(sourcePath).toLowerCase();
+  const fileNameTarget = getFileName(normalizedTarget);
+  return Array.from(
+    new Set([
+      ...(refsByTarget.get(normalizedTarget) ?? []),
+      ...(refsByTarget.get(fileNameTarget) ?? []),
+    ])
+  );
+}
+
+async function cacheBrowserAttachmentBytes({
+  attachment,
+  baseId,
+  bytes,
+  contentHash,
+  warnings,
+}: {
+  attachment: PreparedVaultAttachment;
+  baseId: string;
+  bytes: ArrayBuffer;
+  contentHash: string;
+  warnings: string[];
+}): Promise<'available' | 'unknown'> {
+  try {
+    const cached = await putBrowserAttachmentCache({
+      baseId,
+      blob: new Blob([bytes], { type: attachment.mimeType }),
+      contentHash,
+      filename: attachment.filename,
+      mimeType: attachment.mimeType,
+      sourcePath: attachment.sourcePath,
+    });
+
+    if (cached) return 'available';
+    warnings.push(
+      `Attachment bytes not cached locally: ${attachment.sourcePath} (browser cache unavailable)`
+    );
+    return 'unknown';
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : 'Unknown browser cache error.';
+    warnings.push(
+      `Attachment bytes not cached locally: ${attachment.sourcePath} (${message})`
+    );
+    return 'unknown';
+  }
+}
+
 export async function importVaultFromFiles(params: {
   db: Database;
   files: FileList | File[];
@@ -544,17 +597,16 @@ export async function importVaultFromFiles(params: {
     });
   }
 
-  let attachmentsUploaded = 0;
-  let attachmentsSkipped = prepared.attachmentCount;
-  if (params.remoteSyncEnabled && prepared.attachments.length > 0) {
-    const parentRefsByTarget = buildAttachmentParentRefs(
-      params.db,
-      noteRoomId,
-      prepared.notes
-    );
-    const Attachments = attachmentsRoom.getDocuments();
-    attachmentsSkipped = 0;
+  const parentRefsByTarget = buildAttachmentParentRefs(
+    params.db,
+    noteRoomId,
+    prepared.notes
+  );
+  const Attachments = attachmentsRoom.getDocuments();
 
+  let attachmentsUploaded = 0;
+  let attachmentsSkipped = 0;
+  if (params.remoteSyncEnabled && prepared.attachments.length > 0) {
     let attachmentIndex = 0;
     for (const attachment of prepared.attachments) {
       attachmentIndex += 1;
@@ -568,14 +620,17 @@ export async function importVaultFromFiles(params: {
       try {
         const bytes = await attachment.file.arrayBuffer();
         const contentHash = await sha256Hex(bytes);
-        const normalizedTarget = normalizeSlashes(
+        const localAvailability = await cacheBrowserAttachmentBytes({
+          attachment,
+          baseId: noteRoomId,
+          bytes,
+          contentHash,
+          warnings,
+        });
+        const parentNoteRefs = findAttachmentParentNoteRefs(
+          parentRefsByTarget,
           attachment.sourcePath
-        ).toLowerCase();
-        const fileNameTarget = getFileName(normalizedTarget);
-        const parentNoteRefs = [
-          ...(parentRefsByTarget.get(normalizedTarget) ?? []),
-          ...(parentRefsByTarget.get(fileNameTarget) ?? []),
-        ];
+        );
 
         const uploaded = await uploadFile({
           db: params.db,
@@ -584,7 +639,7 @@ export async function importVaultFromFiles(params: {
             baseId: noteRoomId,
             filename: attachment.filename,
             mimeType: attachment.mimeType,
-            ...(parentNoteRefs.length > 0 ? { parentNoteRefs } : {}),
+            parentNoteRefs,
             size: attachment.file.size,
             sourcePath: attachment.sourcePath,
             sourceVault: prepared.vaultName,
@@ -610,6 +665,7 @@ export async function importVaultFromFiles(params: {
           baseId: noteRoomId,
           contentHash,
           filename: attachment.filename,
+          localAvailability,
           mimeType: attachment.mimeType,
           ...(parentNoteRefs.length > 0 ? { parentNoteRefs } : {}),
           size: attachment.file.size,
@@ -631,9 +687,65 @@ export async function importVaultFromFiles(params: {
   }
 
   if (!params.remoteSyncEnabled && prepared.attachments.length > 0) {
-    warnings.push(
-      'Attachments were skipped because remote sync is not active. Sign in first to upload vault files.'
-    );
+    let attachmentIndex = 0;
+    for (const attachment of prepared.attachments) {
+      attachmentIndex += 1;
+      params.onProgress?.({
+        current: attachmentIndex,
+        message: `Recording local attachment metadata for ${attachment.sourcePath}`,
+        phase: 'writing',
+        total: prepared.attachments.length,
+      });
+
+      try {
+        const bytes = await attachment.file.arrayBuffer();
+        const contentHash = await sha256Hex(bytes);
+        const localAvailability = await cacheBrowserAttachmentBytes({
+          attachment,
+          baseId: noteRoomId,
+          bytes,
+          contentHash,
+          warnings,
+        });
+        const parentNoteRefs = findAttachmentParentNoteRefs(
+          parentRefsByTarget,
+          attachment.sourcePath
+        );
+        const attachmentId = await generateStableId(
+          `${noteRoomId}:${attachment.sourcePath}`
+        );
+        const now = Date.now();
+        Attachments.set({
+          _created: now,
+          _id: attachmentId,
+          _ref: buildRef({
+            authServer: params.db.authServer,
+            collectionKey: 'fileAttachments',
+            documentId: attachmentId,
+            roomId: attachmentsRoomId,
+          }),
+          _updated: now,
+          baseId: noteRoomId,
+          contentHash,
+          filename: attachment.filename,
+          localAvailability,
+          mimeType: attachment.mimeType,
+          ...(parentNoteRefs.length > 0 ? { parentNoteRefs } : {}),
+          size: attachment.file.size,
+          sourcePath: attachment.sourcePath,
+          sourceVault: prepared.vaultName,
+        });
+      } catch (error) {
+        attachmentsSkipped += 1;
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'Unknown attachment metadata error.';
+        warnings.push(
+          `Attachment skipped: ${attachment.sourcePath} (${message})`
+        );
+      }
+    }
   }
 
   params.setSelectedRoom?.(noteRoom);

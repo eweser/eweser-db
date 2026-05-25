@@ -21,6 +21,7 @@ import type { SlashMenuState } from '@/editor/slash-commands';
 import { resolveSlashMenuState } from '@/editor/slash-commands';
 import type { XmlFragment } from 'yjs';
 import type { Note, Room } from '@eweser/db';
+import type { AttachmentResolverContext } from '@/utils/attachment-resolver';
 import {
   editorJsonToMarkdown,
   markdownToEditorHtml,
@@ -75,12 +76,22 @@ interface TiptapEditorProps {
   onEditorFocusChange?: (focused: boolean) => void;
   sourceMode?: boolean;
   onSourceModeChange?: (sourceMode: boolean) => void;
+  attachmentContext?: AttachmentResolverContext;
 }
 
 interface LinkDialogState {
   open: boolean;
   kind: 'link' | 'external-link';
   href: string;
+}
+
+interface ShouldRefreshLocalEditorContentOptions {
+  collaborationReady: boolean;
+  focused: boolean;
+  hasEditor: boolean;
+  noteText: string;
+  pendingEditorMarkdown: string | null;
+  sourceMode: boolean;
 }
 
 function debounce(func: (markdown: string, note: Note) => void, wait: number) {
@@ -142,6 +153,23 @@ const ImageNode = Node.create({
       height: {
         default: null,
         parseHTML: (element) => element.getAttribute('height'),
+      },
+      sourcePath: {
+        default: null,
+        parseHTML: (element) =>
+          element.getAttribute('data-ewe-attachment-source'),
+        renderHTML: (attributes) =>
+          attributes.sourcePath
+            ? { 'data-ewe-attachment-source': attributes.sourcePath }
+            : {},
+      },
+      originalSource: {
+        default: null,
+        parseHTML: (element) => element.getAttribute('data-ewe-ofm-source'),
+        renderHTML: (attributes) =>
+          attributes.originalSource
+            ? { 'data-ewe-ofm-source': attributes.originalSource }
+            : {},
       },
     };
   },
@@ -224,6 +252,18 @@ function saveEditor(
   save(editorJsonToMarkdown(editor.getJSON() as JSONContent), note);
 }
 
+export function shouldRefreshLocalEditorContent({
+  collaborationReady,
+  focused,
+  hasEditor,
+  noteText,
+  pendingEditorMarkdown,
+  sourceMode,
+}: ShouldRefreshLocalEditorContentOptions): boolean {
+  if (!hasEditor || collaborationReady || sourceMode || focused) return false;
+  return pendingEditorMarkdown === null || pendingEditorMarkdown === noteText;
+}
+
 export function TiptapEditor({
   note,
   doc,
@@ -237,6 +277,7 @@ export function TiptapEditor({
   onEditorFocusChange,
   sourceMode = false,
   onSourceModeChange,
+  attachmentContext,
 }: TiptapEditorProps) {
   const noteRef = useRef(note);
   const fragment = useMemo(
@@ -245,10 +286,11 @@ export function TiptapEditor({
   );
   const collaborationReady = isCollaborationReady(fragment, provider);
   const initialHtml = useMemo(
-    () => markdownToEditorHtml(note.text),
-    [note.text]
+    () => markdownToEditorHtml(note.text, attachmentContext),
+    [attachmentContext, note.text]
   );
   const debouncedSaveRef = useRef<ReturnType<typeof debounce> | null>(null);
+  const pendingEditorMarkdownRef = useRef<string | null>(null);
   const suppressEditorSaveRef = useRef(false);
   const [slashMenuState, setSlashMenuState] = useState<SlashMenuState | null>(
     null
@@ -267,6 +309,9 @@ export function TiptapEditor({
 
   useEffect(() => {
     noteRef.current = note;
+    if (pendingEditorMarkdownRef.current === note.text) {
+      pendingEditorMarkdownRef.current = null;
+    }
     if (!sourceMode) {
       setSourceValue(note.text);
     }
@@ -326,10 +371,9 @@ export function TiptapEditor({
           setSlashMenuState(null);
         }
 
-        debouncedSaveRef.current?.(
-          editorJsonToMarkdown(editor.getJSON() as JSONContent),
-          noteRef.current
-        );
+        const markdown = editorJsonToMarkdown(editor.getJSON() as JSONContent);
+        pendingEditorMarkdownRef.current = markdown;
+        debouncedSaveRef.current?.(markdown, noteRef.current);
       },
       onDestroy() {
         onEditorReady?.(null);
@@ -346,6 +390,29 @@ export function TiptapEditor({
     },
     [selectedNoteId, doc, provider?.awareness]
   );
+
+  useEffect(() => {
+    const activeEditor = editor;
+    if (
+      !activeEditor ||
+      !shouldRefreshLocalEditorContent({
+        collaborationReady,
+        focused,
+        hasEditor: true,
+        noteText: note.text,
+        pendingEditorMarkdown: pendingEditorMarkdownRef.current,
+        sourceMode,
+      })
+    ) {
+      return;
+    }
+
+    suppressEditorSaveRef.current = true;
+    activeEditor.commands.setContent(initialHtml, false);
+    window.setTimeout(() => {
+      suppressEditorSaveRef.current = false;
+    }, 500);
+  }, [collaborationReady, editor, focused, initialHtml, note.text, sourceMode]);
 
   const closeSlashMenu = useCallback(() => setSlashMenuState(null), []);
   const toggleSourceMode = useCallback(() => {
@@ -431,12 +498,21 @@ export function TiptapEditor({
     debouncedSaveRef.current?.flush();
     onSaveMarkdown(sourceValue, noteRef.current);
     suppressEditorSaveRef.current = true;
-    editor?.commands.setContent(markdownToEditorHtml(sourceValue), false);
+    editor?.commands.setContent(
+      markdownToEditorHtml(sourceValue, attachmentContext),
+      false
+    );
     window.setTimeout(() => {
       suppressEditorSaveRef.current = false;
     }, 500);
     onSourceModeChange?.(false);
-  }, [editor, onSaveMarkdown, onSourceModeChange, sourceValue]);
+  }, [
+    attachmentContext,
+    editor,
+    onSaveMarkdown,
+    onSourceModeChange,
+    sourceValue,
+  ]);
 
   useEffect(() => {
     if (!onSourceModeChange) return;

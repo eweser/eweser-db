@@ -19,6 +19,30 @@ export interface ImageEmbedOptions {
   height?: number;
 }
 
+export interface ParsedImageEmbed {
+  /** Attachment target as written inside the embed, without dimension alias. */
+  target: string;
+  /** Raw pipe alias, if present. Obsidian uses numeric aliases for dimensions. */
+  alias?: string;
+  /** Display width in pixels (if specified via |300 or |640x480 syntax). */
+  width?: number;
+  /** Display height in pixels (if specified via |640x480 syntax). */
+  height?: number;
+  /** Original Obsidian source string, preserving the user's target spelling. */
+  originalSource: string;
+}
+
+const IMAGE_EXTENSIONS = new Set([
+  '.avif',
+  '.bmp',
+  '.gif',
+  '.jpeg',
+  '.jpg',
+  '.png',
+  '.svg',
+  '.webp',
+]);
+
 /**
  * Parse Obsidian image embed syntax alias to extract dimension hints.
  *
@@ -46,6 +70,40 @@ export function parseImageDimensions(alias: string | undefined): {
   }
 
   return {};
+}
+
+export function isImagePath(path: string): boolean {
+  const cleanPath = path.split(/[?#]/, 1)[0] ?? path;
+  const lastDot = cleanPath.lastIndexOf('.');
+  if (lastDot === -1) return false;
+  return IMAGE_EXTENSIONS.has(cleanPath.slice(lastDot).toLowerCase());
+}
+
+/**
+ * Parse the inner text of an Obsidian image embed.
+ *
+ * Examples:
+ *   image.png          → target image.png
+ *   image.png|300      → target image.png, width 300
+ *   image.png|640x480  → target image.png, width 640, height 480
+ */
+export function parseImageEmbed(raw: string): ParsedImageEmbed | null {
+  const normalized = raw.trim();
+  if (!normalized) return null;
+
+  const [rawTarget = '', ...aliasParts] = normalized.split('|');
+  const target = rawTarget.trim();
+  if (!target) return null;
+
+  const alias = aliasParts.join('|').trim() || undefined;
+  const dimensions = parseImageDimensions(alias);
+
+  return {
+    target,
+    ...(alias ? { alias } : {}),
+    ...dimensions,
+    originalSource: `![[${normalized}]]`,
+  };
 }
 
 /**

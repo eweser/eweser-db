@@ -5,6 +5,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@eweser/db': path.resolve(__dirname, './src/test/mocks/eweser-db.ts'),
+      '@eweser/shared': path.resolve(__dirname, '../shared/src/index.ts'),
     },
   },
   test: {

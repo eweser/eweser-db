@@ -11,35 +11,121 @@
  *   - Tags: #tag (preserved as-is)
  */
 
-import type { VaultConfig } from '../utils/attachment-resolver';
+import { parseImageEmbed } from './image-embed';
+import {
+  isResolvableImageTarget,
+  normalizeAttachmentResolverContext,
+  resolveAttachmentEmbed,
+  type AttachmentResolverContext,
+  type ResolvedAttachmentEmbed,
+  type VaultConfig,
+} from '../utils/attachment-resolver';
 
 // ---------------------------------------------------------------------------
 // Pre-processing: OFM -> Standard Markdown (for import into the editor)
 // ---------------------------------------------------------------------------
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function attr(name: string, value: string | number | undefined): string {
+  if (value === undefined || value === '') return '';
+  return ` ${name}="${escapeHtml(String(value))}"`;
+}
+
+function renderResolvedImage(resolution: ResolvedAttachmentEmbed): string {
+  return `<img${attr('src', resolution.url)}${attr(
+    'alt',
+    resolution.filename
+  )}${attr('data-ewe-attachment-source', resolution.sourcePath)}${attr(
+    'data-ewe-ofm-source',
+    resolution.originalSource
+  )}${attr('width', resolution.width)}${attr('height', resolution.height)} />`;
+}
+
+function renderMissingImage(
+  originalSource: string,
+  target: string,
+  width?: number,
+  height?: number
+): string {
+  return `<span class="ewe-broken-attachment" data-ewe-broken-attachment="true"${attr(
+    'data-ewe-ofm-source',
+    originalSource
+  )}${attr('data-ewe-attachment-target', target)}${attr('data-width', width)}${attr(
+    'data-height',
+    height
+  )} title="Attachment not found">${escapeHtml(originalSource)}</span>`;
+}
+
+function hasAttachmentResolutionInput(
+  context: AttachmentResolverContext
+): boolean {
+  return Boolean(
+    Object.prototype.hasOwnProperty.call(context, 'attachments') ||
+    context.attachmentUrls ||
+    context.vaultConfig
+  );
+}
 
 /**
  * Transform OFM-specific syntax into editor-compatible markdown
  * before passing to tryParseMarkdownToBlocks().
  *
  * @param ofm - Obsidian Flavored Markdown source
- * @param vaultConfig - Optional vault config for resolving attachment URLs
+ * @param context - Optional vault config or imported attachment metadata for resolving attachment URLs
  * @param noteSourcePath - Optional note source path for relative attachment resolution
  */
 export function ofmToMarkdown(
   ofm: string,
-  vaultConfig?: VaultConfig,
+  context?: VaultConfig | AttachmentResolverContext,
   noteSourcePath?: string
 ): string {
+  const attachmentContext = normalizeAttachmentResolverContext(
+    context,
+    noteSourcePath
+  );
   let result = ofm;
 
   // Preserve block comments %%...%% as plain text for source fidelity.
 
-  // Preserve all embeds as source-visible OFM until a real TipTap node owns
-  // media/embed serialization. This avoids image/media data loss on editor save.
+  // Render imported image embeds when their attachment metadata is available,
+  // but leave non-media note embeds as OFM source text to avoid data loss.
   result = result.replace(/!\[\[([^\]]+)\]\]/g, (_match, raw: string) => {
-    void vaultConfig;
-    void noteSourcePath;
-    return `![[${String(raw).trim()}]]`;
+    const parsed = parseImageEmbed(String(raw));
+    if (!parsed) return `![[${String(raw).trim()}]]`;
+
+    if (!hasAttachmentResolutionInput(attachmentContext)) {
+      return parsed.originalSource;
+    }
+
+    if (!isResolvableImageTarget(parsed.target, attachmentContext)) {
+      return parsed.originalSource;
+    }
+
+    const resolution = resolveAttachmentEmbed(parsed.target, {
+      ...attachmentContext,
+      originalSource: parsed.originalSource,
+      ...(parsed.width ? { width: parsed.width } : {}),
+      ...(parsed.height ? { height: parsed.height } : {}),
+    });
+
+    if (resolution.status === 'resolved') {
+      return renderResolvedImage(resolution);
+    }
+
+    return renderMissingImage(
+      resolution.originalSource,
+      resolution.target,
+      resolution.width,
+      resolution.height
+    );
   });
 
   // Wiki links with alias: [[Note Name|Alias]] → [Alias](wiki://Note Name)
@@ -74,6 +160,24 @@ export function ofmToMarkdown(
 // Post-processing: Standard Markdown -> OFM
 // ---------------------------------------------------------------------------
 
+function decodeHtmlAttribute(value: string): string {
+  return value
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
+}
+
+function getHtmlAttribute(tag: string, name: string): string | undefined {
+  const match = tag.match(new RegExp(`${name}=["']([^"']+)["']`, 'i'));
+  return match ? decodeHtmlAttribute(match[1]) : undefined;
+}
+
+function isObsidianEmbedSource(value: string | undefined): value is string {
+  return Boolean(value?.startsWith('![[') && value.endsWith(']]'));
+}
+
 /**
  * Transform serialized markdown back to OFM syntax.
  *
@@ -84,6 +188,23 @@ export function ofmToMarkdown(
  */
 export function markdownToOfm(markdown: string): string {
   let result = markdown;
+
+  result = result.replace(/<img\b([^>]*)>/gi, (match, attrs: string) => {
+    const originalSource = getHtmlAttribute(attrs, 'data-ewe-ofm-source');
+    if (isObsidianEmbedSource(originalSource)) return originalSource;
+    return match;
+  });
+
+  result = result.replace(
+    /<span\b([^>]*)data-ewe-broken-attachment=["']true["']([^>]*)>([\s\S]*?)<\/span>/gi,
+    (match, beforeAttrs: string, afterAttrs: string, body: string) => {
+      const attrs = `${beforeAttrs} ${afterAttrs}`;
+      const originalSource = getHtmlAttribute(attrs, 'data-ewe-ofm-source');
+      if (isObsidianEmbedSource(originalSource)) return originalSource;
+      const bodyText = body.replace(/<[^>]+>/g, '').trim();
+      return isObsidianEmbedSource(bodyText) ? bodyText : match;
+    }
+  );
 
   // Back-compat for markdown image links written without a metadata token.
   result = result.replace(
