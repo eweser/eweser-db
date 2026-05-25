@@ -53,23 +53,24 @@ function buildMetadata(email, mode) {
   };
 }
 
-async function findExactUser(sql, email, { forUpdate = false } = {}) {
+export async function findExactUser(sql, email, { forUpdate = false } = {}) {
+  const canonicalEmail = validateTesterEmail(email).toLowerCase();
   const rows = forUpdate
     ? await sql`
         SELECT id, email, email_verified
         FROM users
-        WHERE email = ${email}
+        WHERE lower(email) = ${canonicalEmail}
         FOR UPDATE
       `
     : await sql`
         SELECT id, email, email_verified
         FROM users
-        WHERE email = ${email}
+        WHERE lower(email) = ${canonicalEmail}
       `;
 
   if (rows.length !== 1) {
     throw new Error(
-      `Expected exactly one user for ${redactEmail(email)}; found ${rows.length}.`
+      `Expected exactly one user for ${redactEmail(canonicalEmail)}; found ${rows.length}.`
     );
   }
 
