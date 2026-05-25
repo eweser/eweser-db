@@ -34,7 +34,7 @@ const howSteps = [
   {
     number: '2',
     title: 'Connect your tools.',
-    text: 'Sign in to Ewe Note, connect an AI client, or install an app. Each one asks for scoped access, not the whole database.',
+    text: 'Sign in to Ewe Note, connect a supported MCP client, or install an app. Each one asks for scoped access, not the whole database.',
     image: `${imageBase}/step-connect-tools-lock.png`,
   },
   {
@@ -92,8 +92,9 @@ const reversalTransfers = ['Documents', 'Bookmarks', 'Tasks'];
 const ecosystemCards = [
   {
     title: 'AI + MCP',
-    text: 'Connect the AI clients you choose to the same user-owned data layer. Ask questions, automate tasks, and verify changes under scoped access.',
-    status: 'Notice: We never collect your content. Your data is yours.',
+    text: 'Start with token-backed MCP access to scoped rooms, then expand to hosted OAuth clients as those flows are verified.',
+    status:
+      'Local proof covers token setup, MCP room list/search, and Agent Journal writes.',
     tone: 'sky',
     featured: true,
     image: `${imageBase}/icon-automation.png`,
@@ -139,7 +140,7 @@ const ecosystemCards = [
 const appCards = [
   {
     title: 'Ewe Note',
-    text: 'A writing and knowledge app that stores your notes on your device. Works offline. Syncs across devices when you are connected. Your first app built on EweserDB.',
+    text: 'A writing and knowledge app that stores your notes on your device. Works offline, uses Eweser rooms for sync, and is the first app built on EweserDB. Rich Obsidian-style embeds, breadcrumbs, and wiki-link polish are still in progress.',
     cta: 'Open Ewe Note',
     href: noteUrl,
     image: `${imageBase}/card-ewe-note.png`,
@@ -164,17 +165,39 @@ const appCards = [
 
 const mcpClients = [
   { name: 'Codex', detail: 'CLI', path: 'token-backed MCP config' },
-  { name: 'Claude', detail: 'Desktop', path: 'local stdio MCP' },
-  { name: 'Claude', detail: 'Web', path: 'OAuth remote MCP' },
-  { name: 'ChatGPT', detail: 'Web', path: 'OAuth remote MCP' },
-  { name: 'GitHub Copilot', detail: 'IDE', path: 'token-backed setup' },
-  { name: 'OpenClaw', detail: 'Agent', path: 'streamable-http MCP' },
+  { name: 'Claude', detail: 'Desktop', path: 'token-backed local MCP' },
+  {
+    name: 'Claude',
+    detail: 'Web',
+    path: 'OAuth remote MCP, production proof pending',
+  },
+  {
+    name: 'ChatGPT',
+    detail: 'Web',
+    path: 'OAuth remote MCP, production proof pending',
+  },
+  {
+    name: 'GitHub Copilot',
+    detail: 'IDE',
+    path: 'token-backed setup, separate client proof pending',
+  },
+  {
+    name: 'OpenClaw',
+    detail: 'Agent',
+    path: 'streamable-http MCP, separate client proof pending',
+  },
 ];
 
 const mcpStatuses = [
-  ['MCP endpoint', 'Permissioned access to rooms and schemas.'],
-  ['Memory rooms', 'Scoped context across devices and sessions.'],
-  ['Audit trail', 'Room, grant, and log IDs stay reviewable.'],
+  [
+    'MCP endpoint',
+    'Token-backed setup, room list/search, and one Agent Journal write verified locally.',
+  ],
+  ['Memory rooms', 'Scoped context across apps and sessions.'],
+  [
+    'Hosted OAuth',
+    'Remote web-client flows stay behind sign-in; hosted production validation is pending.',
+  ],
 ];
 
 const developerProofPoints = [
@@ -261,7 +284,8 @@ const developerStatuses = [
             EweserDB is a personal data layer rooted on your device. Apps and AI
             agents connect to it with your permission. They do not store your
             data, they read and write through scoped access you can revoke.
-            Local-first, synced across your devices, and self-hostable any time.
+            Local-first, designed for sync across your devices, and
+            self-hostable any time.
           </p>
 
           <div class="hero-cta-grid" aria-label="Primary landing actions">
@@ -269,8 +293,8 @@ const developerStatuses = [
               <span>
                 <strong>Connect my AI</strong>
                 <small
-                  >Let Claude, ChatGPT, or Copilot read from a data layer you
-                  control.</small
+                  >Set up supported clients with scoped access to a data layer
+                  you control.</small
                 >
               </span>
               <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -282,9 +306,9 @@ const developerStatuses = [
               <span>
                 <strong>Try Ewe Note</strong>
                 <small>
-                  A notes app rooted on your device. Drop-in for Obsidian and
-                  Karpathy-wiki vaults, extended to every app and agent you
-                  connect.
+                  A local-first notes proof point rooted on your device.
+                  Imported-vault embeds, breadcrumbs, and wiki-link polish are
+                  still in progress.
                 </small>
               </span>
               <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -523,7 +547,7 @@ const developerStatuses = [
             EweserDB separates the data layer from the app layer. Your notes,
             bookmarks, tasks, projects, and media live in your own data layer.
             Apps come, use what you allow, and leave. You stay in charge of your
-            data, from anywhere, in the app you want.
+            data across apps, in the app you want.
           </p>
         </div>
 
@@ -685,7 +709,10 @@ const developerStatuses = [
               <path d="M9 5l7 7-7 7M4 12h12"></path>
             </svg>
           </a>
-          <small>Modern API access. Ready for dev and AI tools.</small>
+          <small>
+            Token-backed local setup is verified; hosted OAuth remains behind
+            sign-in.
+          </small>
         </div>
 
         <div class="mcp-console" aria-label="AI setup paths and access status">
