@@ -86,7 +86,7 @@ const passwordResetRequestedMessage =
 const authRequestTimeoutMs = 15_000;
 
 const authFieldClass =
-  '!h-12 !rounded-xl !border-input !bg-background/75 !px-4 !text-base !text-foreground placeholder:text-muted-foreground shadow-none focus-visible:ring-2 focus-visible:ring-ring/45';
+  'auth-input-field !h-12 !rounded-xl !px-4 !text-base !text-foreground placeholder:text-muted-foreground shadow-none';
 
 const authPrimaryButtonClass =
   '!h-12 !w-full !rounded-xl !bg-primary !px-6 !text-sm !font-semibold !text-primary-foreground shadow-[0_20px_48px_oklch(0.1_0.025_175_/_0.2)] transition-transform hover:-translate-y-0.5 hover:opacity-95';

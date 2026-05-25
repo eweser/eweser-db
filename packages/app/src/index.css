@@ -402,6 +402,53 @@ body,
     line-height: 1.55;
   }
 
+  .auth-input-field {
+    border: 1px solid var(--surface-line) !important;
+    background: color-mix(
+      in oklch,
+      var(--surface-sunken) 82%,
+      transparent
+    ) !important;
+    box-shadow:
+      inset 0 0 0 1px color-mix(in oklch, var(--foreground) 8%, transparent),
+      0 1px 0 color-mix(in oklch, var(--foreground) 7%, transparent);
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease,
+      box-shadow 150ms ease;
+  }
+
+  .auth-input-field:hover {
+    border-color: color-mix(
+      in oklch,
+      var(--ring) 55%,
+      var(--surface-line)
+    ) !important;
+    background: color-mix(
+      in oklch,
+      var(--surface-sunken) 68%,
+      var(--background)
+    ) !important;
+  }
+
+  .auth-input-field:focus-visible {
+    border-color: var(--ring) !important;
+    box-shadow:
+      0 0 0 4px color-mix(in oklch, var(--ring) 24%, transparent),
+      inset 0 0 0 1px color-mix(in oklch, var(--foreground) 12%, transparent);
+    outline: none;
+  }
+
+  .auth-input-field:-webkit-autofill,
+  .auth-input-field:-webkit-autofill:focus {
+    border-color: var(--ring) !important;
+    -webkit-text-fill-color: var(--foreground);
+    caret-color: var(--foreground);
+    box-shadow:
+      0 0 0 1000px var(--background) inset,
+      0 0 0 4px color-mix(in oklch, var(--ring) 18%, transparent);
+  }
+
   .app-console {
     display: grid;
     grid-template-columns: 17rem minmax(0, 1fr);
