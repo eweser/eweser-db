@@ -192,6 +192,7 @@ describe('EnhancedSidebar', () => {
     expect(
       screen.queryByRole('button', { name: 'Open note **Child note**' })
     ).toBeNull();
+    expect(screen.getAllByText('1 direct')).toHaveLength(2);
 
     fireEvent.click(noteButton);
 

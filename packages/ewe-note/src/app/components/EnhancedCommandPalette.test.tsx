@@ -35,6 +35,15 @@ function PaletteHarness() {
 }
 
 describe('EnhancedCommandPalette', () => {
+  const importedNote = {
+    id: 'note-source',
+    title: 'Overview',
+    folder: '',
+    tags: [],
+    sourcePath: 'Areas/Overview.md',
+    sourceBreadcrumb: ['Areas', 'Overview.md'],
+  };
+
   beforeEach(() => {
     globalThis.ResizeObserver = class ResizeObserver {
       observe() {}
@@ -95,5 +104,27 @@ describe('EnhancedCommandPalette', () => {
     expect(new Set(values).size).toBe(2);
     expect(values).toContain('recent-note:note-1:Untitled');
     expect(values).toContain('recent-note:note-2:Untitled');
+  });
+
+  it('shows source paths for imported notes in search results', () => {
+    mockUseNotes.mockReturnValue({
+      folders: [],
+      addNote: vi.fn(() => ({ id: 'note-created' })),
+      searchNotes: vi.fn(() => [importedNote]),
+      getRecentNotes: vi.fn(() => []),
+    });
+
+    const { container } = render(
+      <EnhancedCommandPalette open onOpenChange={vi.fn()} />
+    );
+
+    fireEvent.change(
+      container.querySelector(
+        '[data-cy="ewe-note-command-input"]'
+      ) as HTMLInputElement,
+      { target: { value: 'Areas/Overview' } }
+    );
+
+    expect(screen.getByText('Areas/Overview.md')).not.toBeNull();
   });
 });

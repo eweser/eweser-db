@@ -22,6 +22,8 @@ vi.mock('../contexts/NotesContext', () => ({
         tags: [],
         pinned: false,
         updatedAt: '2026-05-04T00:00:00.000Z',
+        sourcePath: 'Projects/Folder note.md',
+        sourceBreadcrumb: ['Projects', 'Folder note.md'],
       },
     ],
     folders: [{ id: 'folder-1', name: 'Projects' }],
@@ -38,6 +40,8 @@ vi.mock('../contexts/NotesContext', () => ({
         tags: [],
         pinned: false,
         updatedAt: '2026-05-04T00:00:00.000Z',
+        sourcePath: 'Projects/Folder note.md',
+        sourceBreadcrumb: ['Projects', 'Folder note.md'],
       },
     ]),
   }),
@@ -73,11 +77,29 @@ describe('NotesListPane', () => {
     expect(
       within(filterBanner as HTMLElement).getByText('Projects')
     ).not.toBeNull();
+    expect(
+      within(filterBanner as HTMLElement).getByText('Including subfolders')
+    ).not.toBeNull();
 
     fireEvent.click(
       screen.getByRole('button', { name: 'Clear current filter' })
     );
 
     expect(onViewChange).toHaveBeenCalledWith('recent');
+  });
+
+  it('shows imported source paths in note list metadata', () => {
+    render(
+      <NotesListPane
+        activeView="folder:folder-1"
+        onSearchClick={vi.fn()}
+        selectedNoteId={null}
+        mode={3}
+        onModeChange={vi.fn()}
+        onViewChange={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('Projects/Folder note.md')).not.toBeNull();
   });
 });

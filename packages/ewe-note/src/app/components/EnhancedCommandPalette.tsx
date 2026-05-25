@@ -188,7 +188,7 @@ export function EnhancedCommandPalette({
                           </div>
                           <div className="flex items-center gap-2 mt-0.5">
                             <span className="text-xs text-muted-foreground">
-                              {folders.find((f) => f.id === note.folder)?.name}
+                              {getNoteLocationLabel(note, folders)}
                             </span>
                             {note.tags.length > 0 && (
                               <>
@@ -339,7 +339,7 @@ export function EnhancedCommandPalette({
                               {note.title}
                             </div>
                             <div className="text-xs text-muted-foreground truncate">
-                              {folders.find((f) => f.id === note.folder)?.name}
+                              {getNoteLocationLabel(note, folders)}
                             </div>
                           </div>
                         </Command.Item>
@@ -387,5 +387,14 @@ export function EnhancedCommandPalette({
       ) : null}
       <TemplatesDialog open={templatesOpen} onOpenChange={setTemplatesOpen} />
     </>
+  );
+}
+
+function getNoteLocationLabel(
+  note: { folder: string; sourcePath?: string },
+  folders: Array<{ id: string; name: string }>
+) {
+  return (
+    note.sourcePath ?? folders.find((folder) => folder.id === note.folder)?.name
   );
 }
