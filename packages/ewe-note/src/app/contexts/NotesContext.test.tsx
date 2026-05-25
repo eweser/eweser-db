@@ -511,6 +511,99 @@ describe('NotesContext parity behavior', () => {
     expect(overview?.backlinks).toContain(linking?.id);
   });
 
+  it('resolves imported wiki links by path extension, basename, alias, and heading', async () => {
+    latestContext = undefined;
+    const now = Date.now();
+    const importedNote = {
+      _id: 'note-imported-target',
+      _ref: 'local|notes|room-notes|note-imported-target',
+      _created: now,
+      _updated: now,
+      text: '# Canonical Note Title\n\n## Install Steps\n\nImported target.',
+      frontmatter: { title: 'Canonical Note Title' },
+      tags: [],
+      aliases: ['Imported Alias'],
+      folderIds: [],
+      wikiLinks: [],
+      attachmentRefs: [],
+      sourcePath: '  .\\Projects\\Deep\\Original File.md  ',
+      sourceVault: 'feature-vault',
+    } as unknown as DbNote;
+    const linkingNote = {
+      _id: 'note-imported-linking',
+      _ref: 'local|notes|room-notes|note-imported-linking',
+      _created: now + 1,
+      _updated: now + 1,
+      text: [
+        'Read [[Projects/Deep/Original File.md#Install Steps|setup guide]].',
+        'Then compare [[Original File]] and [[Imported Alias]].',
+      ].join('\n'),
+      frontmatter: {},
+      tags: [],
+      aliases: [],
+      folderIds: [],
+      wikiLinks: [],
+      attachmentRefs: [],
+      sourcePath: 'Linking.md',
+      sourceVault: 'feature-vault',
+    } as unknown as DbNote;
+    const docs = new FakeDocuments([importedNote, linkingNote]);
+    const room = createRoom('room-notes', 'Notes', docs);
+
+    dbState = createDbState(room);
+    mockUseDb.mockImplementation(() => dbState);
+    mockUseFolders.mockReturnValue({
+      folders: [],
+      createFolder: vi.fn(),
+      renameFolder: vi.fn(),
+      deleteFolder: vi.fn(),
+    });
+
+    render(
+      <NotesProvider>
+        <Probe />
+      </NotesProvider>
+    );
+
+    await waitFor(() => {
+      expect(latestContext?.notes.length).toBe(2);
+    });
+
+    const target = latestContext?.notes.find(
+      (note) => note.id === 'note-imported-target'
+    );
+    const linking = latestContext?.notes.find(
+      (note) => note.id === 'note-imported-linking'
+    );
+
+    expect(target?.title).toBe('Canonical Note Title');
+    expect(target?.sourcePath).toBe('Projects/Deep/Original File.md');
+    expect(
+      latestContext?.resolveWikiLink('Projects/Deep/Original File.md')
+    ).toBe(target?.id);
+    expect(latestContext?.resolveWikiLink('Original File')).toBe(target?.id);
+    expect(latestContext?.resolveWikiLink('Imported Alias')).toBe(target?.id);
+    expect(linking?.outgoingLinks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          target: 'Projects/Deep/Original File.md',
+          heading: 'Install Steps',
+          alias: 'setup guide',
+          noteId: target?.id,
+        }),
+        expect.objectContaining({
+          target: 'Original File',
+          noteId: target?.id,
+        }),
+        expect.objectContaining({
+          target: 'Imported Alias',
+          noteId: target?.id,
+        }),
+      ])
+    );
+    expect(target?.backlinks).toEqual([linking?.id]);
+  });
+
   it('keeps templates available and creates today notes in the Daily Notes folder', async () => {
     await renderProviderWithFixtures([
       '09 Daily Notes and Templates.md',
