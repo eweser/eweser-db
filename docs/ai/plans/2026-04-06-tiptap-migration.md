@@ -25,7 +25,17 @@ Replace BlockNote in EweNote with a TipTap 2.x editor layer that preserves local
 - Assumption: EweNote still needs ProseMirror fluency. The migration must treat TipTap as a ProseMirror framework, not as a complete product editor.
 - Assumption: EweNote is pre-live enough that a clean editor document model is preferable to preserving every prototype artifact, but the migration must avoid silent data loss for notes stored in EweserDB markdown strings.
 - Assumption: Current user-facing notes are primarily persisted as markdown text in EweserDB documents; BlockNote/Yjs fragments may exist and must be inspected before implementation chooses a migration path.
-- Open question: Should the new editor keep a separate explicit title field in frontmatter, derive title from the first heading, or enforce one canonical title model in the editor UI? UX testing shows the current split is confusing, so this must be decided in Run 1 before coding beyond the baseline.
+- Resolved on 2026-05-25 grill: the canonical title model is an explicit title
+  field in note metadata/frontmatter. Import may seed it from first H1 or
+  filename, but later body H1 changes must not silently overwrite the canonical
+  title.
+- Resolved on 2026-05-25 grill: migrate existing prototype notes by reseeding
+  TipTap/ProseMirror documents from persisted Markdown/frontmatter. Old
+  BlockNote/Yjs fragments are manual recovery evidence only unless an
+  implementation probe proves Markdown is insufficient.
+- Resolved on 2026-05-25 grill: this migration is not a dogfood or launch
+  blocker unless the current editor fails the required production import/edit
+  proof.
 
 ## Prior Research Re-Read
 

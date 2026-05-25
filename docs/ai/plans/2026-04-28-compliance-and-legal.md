@@ -167,3 +167,13 @@ Before launch:
   - Register the DMCA designated agent with the U.S. Copyright Office and keep the public contact in sync.
   - Ensure `abuse@eweser.com`, `privacy@eweser.com`, `copyright@eweser.com`, and `support@eweser.com` mailboxes or aliases exist and are monitored.
   - Decide whether account deletion and data export can remain manual for launch or need product endpoints before public signup.
+
+## Execution Update — 2026-05-25 Grill
+
+- Private production dogfood in Jacob's own Ewe Note account may proceed before
+  DMCA agent registration and legal mailbox verification are complete.
+- Public signup remains blocked until DMCA registration and monitored legal
+  contacts are resolved.
+- Account deletion and data export may be a documented manual operator process
+  for initial public signup only if the monitored privacy/support mailbox and
+  response process are real. Product endpoints remain a follow-up.

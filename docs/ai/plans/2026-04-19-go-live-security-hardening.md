@@ -89,6 +89,11 @@ Close the remaining launch-blocking security gaps identified in the latest revie
 
 - **Recommended Agent**: `03-qa` (Smart)
 - **Reason**: Independent verification should be strict and evidence-driven before launch.
+- **2026-05-25 grill gate**: This final verification blocks public signup and
+  launch claims. It does not block Jacob's private production dogfood import
+  into his own Ewe Note account, provided the run uses approved `.env`
+  presence-only preflights, logged-in browser auth, scoped MCP grants, and no
+  production data outside the approved account/base.
 - [ ] Re-run full validation gates after Runs 1-3
 - [ ] Re-execute checklist audit and produce PASS/FAIL with file-level evidence
 - [ ] Confirm no regressions in auth, MCP, OAuth, and CI security checks

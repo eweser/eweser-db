@@ -52,6 +52,14 @@ EweserDB rather than being locked in auth-server PostgreSQL.
   If true automatic capture needs background processing or client hooks beyond
   this plan, Coder must stop and move that implementation to the automatic
   capture follow-up draft plan.
+- Resolved on 2026-05-25 grill: prompt-instructed automatic capture is allowed
+  for Jacob's private dogfood only. It is not public-launch safe and must not be
+  marketed as safe automatic memory until a stronger secure-memory,
+  redaction/filtering, provenance, and delete/undo design is approved.
+- Resolved on 2026-05-25 grill: imported personal strategy docs in the
+  `Eweser Strategy` base may be readable by one Codex MCP dogfood grant, but
+  writes are limited to a new `Dogfood verification` note unless Jacob approves
+  a specific imported-doc edit.
 - Open question: none for the first implementation pass.
 
 ## Product Model
@@ -113,6 +121,13 @@ are checked in, and CI has a deterministic fallback path.
 | `manual`  | Memory is saved only by explicit user/agent action.   | Must work end-to-end and remain the safest default.                                                                                                                                  |
 | `suggest` | Agent can stage proposed memories for review.         | Must be represented and tested if review UI/API is implemented; otherwise Coder must stop before claiming it is functional.                                                          |
 | `auto`    | System captures memory automatically based on policy. | Must be configurable as a future-capable setting; if real auto-capture requires new hooks/background services, defer implementation to `2026-04-29-ai-memory-auto-capture-draft.md`. |
+
+Private dogfood exception: Jacob may test prompt-instructed `auto` capture with
+Codex MCP against approved dogfood rooms. That exception must preserve
+provenance and easy deletion, must not be used as a public-launch claim, and
+must not override room-specific write restrictions such as imported
+`Eweser Strategy` strategy docs being read-only except for the verification
+note.
 
 ### Scope Levels
 

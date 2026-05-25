@@ -23,8 +23,16 @@ Make EweNote feel like a trustworthy local-first note app by fixing launch-block
 - Assumption: The app is pre-live, so clean UX/data model fixes can break unused prototype behavior if documented.
 - Assumption: Editor text scale, markdown task serialization, title/body conflict, and outline heading command behavior should be solved or finalized during the ProseMirror editor plan.
 - Assumption: The current PWA manifest `start_url` and `scope` are wrong for local dev because the active React routes are rooted at `/`, `/editor/:noteId`, and `/settings`, not `/notes/`.
-- Open question: Should templates remain local-only for the next launch pass, or move into user-owned EweserDB data? This does not block launch-blocker fixes.
-- Open question: Should Tasks become an actionable task manager now, or should the UI stay read-only but be clearly framed as "tasks found in notes"? Current testing suggests the visible Tasks nav should not imply more than it does.
+- Resolved on 2026-05-25 grill: personal-docs dogfood should use the current
+  editor. TipTap is not a dogfood or launch blocker unless the current editor
+  fails the required import/edit proof.
+- Resolved on 2026-05-25 grill: UX work should be driven by concrete dogfood
+  findings first, especially the production `Eweser Strategy` import/edit loop.
+- Resolved on 2026-05-25 grill: Tasks v1 is a "found in notes" view with
+  source-note navigation, not a standalone task manager.
+- Resolved on 2026-05-25 grill: templates are low priority. Keep or
+  de-emphasize local-only templates if they already work, but do not make them a
+  launch-critical testing emphasis or synced-template promise.
 
 ## Verified Findings Driving This Plan
 

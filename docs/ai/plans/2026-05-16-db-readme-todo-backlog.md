@@ -103,9 +103,15 @@ Turn the stale `packages/db/README.md` TODO list into an implementation-ready ba
 - Assumption: encrypted rooms should be opt-in and should not silently encrypt public-searchable or MCP-readable data.
 - Resolved: v1 public aggregation is room-level. `publicAccess` is the source of truth for publication state and indexability; collection-level publication flags are future scope.
 - Resolved: v1 user snapshots are JSON bundles containing normalized room documents plus per-room Yjs update bytes. Auth-server PostgreSQL stores operational snapshot metadata only.
-- Open question: Should federation use a `user@server` display form for federated principals immediately, or should the first run introduce separate federated-principal records while preserving local user IDs in current ACL arrays?
-- Open question: Should encrypted room be the primitive, with base-level encryption treated as grouped room policy in Ewe Note and app UX?
-- Open question: What billing provider and pricing model should be used for hosted sync limits? This plan only authorizes usage metering and limit hooks, not payment collection.
+- Resolved on 2026-05-25 grill: federated principals should be explicit records keyed by server identity and user id. `user@server` is display/presentation, not the only stored representation.
+- Resolved on 2026-05-25 grill: federated public search is a separate run after server trust. It uses peer fan-out over explicit trusted peers, searches public rooms only, returns local results first and federated public results second, and labels origin servers.
+- Resolved on 2026-05-25 grill: granted federated collaborative rooms are not part of public federated search. They should be synced locally first, then searched locally by the app.
+- Resolved on 2026-05-25 grill: federation-as-backup is deferred and is not launch-critical.
+- Resolved on 2026-05-25 grill: encrypted rooms are secure-room/vault-room opt-ins. They must show UI badges/tooltips explaining that remote web MCP, server-side search, and public aggregation are unavailable.
+- Resolved on 2026-05-25 grill: secure-room v1 uses recovery phrase/export for key transfer. Do not send room keys to auth-server, sync-server, aggregator, logs, screenshots, ordinary memory, or remote web MCP sessions.
+- Resolved on 2026-05-25 grill: ChatGPT/web remote connectors use plaintext MCP-readable rooms only until a separate local bridge or key-delegation design is approved.
+- Resolved on 2026-05-25 grill: v1 hosted sync limits are generous abuse caps for ordinary app data, not the primary pricing line. Paid tiers should focus on hosted file storage and backups instead of BYO storage.
+- Open question: What billing provider and pricing model should be used for paid hosted file storage and backups? This plan only authorizes content-free usage metering, generous abuse caps, and limit hooks, not payment collection.
 
 ## Domain Language
 
@@ -134,7 +140,14 @@ Turn the stale `packages/db/README.md` TODO list into an implementation-ready ba
 
 ## Run Order And Manual Test Handoffs
 
-Run order: start with `run-1` before any public-search product claims. `run-2`, `run-4`, `run-7`, `run-9`, `run-10`, and `run-11` can be implemented concurrently in separate worktrees if their shared-package changes are coordinated. `run-3` depends on `run-2`. `run-5` depends on `run-4`. `run-6` depends on `run-4` and preferably `run-5`. `run-8` depends on `run-7`. `run-12` should happen before or alongside `run-13` so metering limits are informed by actual load data.
+Run order: start with `run-1` before any public-search product claims. `run-2`, `run-4`, `run-7`, `run-9`, `run-10`, and `run-11` can be implemented concurrently in separate worktrees if their shared-package changes are coordinated. `run-3` depends on `run-2`. `run-4a` depends on `run-4`. `run-5` depends on `run-4` and can proceed independently of `run-4a` after server trust is ready. `run-6` is deferred. `run-8` depends on `run-7`. `run-12` should happen before or alongside `run-13` so metering limits are informed by actual load data.
+
+Feature verification should prove shared behavior in a small example app before
+Ewe Note becomes the integration test surface. For federation, search,
+collaboration, secure rooms, and cross-collection queries, add or update a
+focused `examples/*` app plus a fast Cypress path first, then add Ewe Note e2e
+coverage for the composed user workflow. Ewe Note is the dogfood app, not the
+first place to debug every SDK/server contract.
 
 After each completed run, Coder must update the Execution Summary and add a manual-test handoff with:
 
@@ -314,6 +327,60 @@ After each completed run, Coder must update the Execution Summary and add a manu
 - **Model tier**: `strong`
 - **Risk level**: `high`
 
+### Run 4A: Federated Public Search Fan-Out
+
+- **Id**: `run-4a`
+- **Title**: `Federated Public Search Fan-Out`
+- **UI classification**: `ui: true`
+- **Browser checkpoint**: `focused`
+- **Deliverable**:
+  - A home server can query its local public aggregator plus trusted peer public
+    search endpoints, return local results first and federated public results
+    second, label origin servers, and avoid exposing private, merely shared, or
+    granted-room data.
+- **Files**:
+  - `packages/auth-server-hono/src/routes/federation.ts`: signed peer search
+    proxy or capability endpoint if search fan-out belongs behind auth-server.
+  - `packages/aggregator/src/routes/search.ts`: peer-safe public-search shape
+    and origin metadata if the aggregator owns fan-out.
+  - `packages/aggregator/src/db/queries.ts`: preserve public-only filters and
+    add result metadata needed for federated display.
+  - `examples/example-aggregator/src/*` or a focused new `examples/*` app:
+    demonstrate local-first plus federated-public results with deterministic
+    two-server fixture data.
+  - `e2e/cypress/tests/*`: add fast example-app federated search smoke before
+    any Ewe Note search UX test.
+  - Ewe Note search UI/tests only after the example app proves the shared
+    contract.
+- **Steps**:
+  - [ ] Use the `run-4` peer registry and signed request verification; do not
+        query arbitrary open search endpoints.
+  - [ ] Query only public-search endpoints for explicitly public rooms.
+  - [ ] Keep local/granted app results separate from federated public results;
+        granted collaborative rooms should already be locally synced before app
+        search uses them.
+  - [ ] Include origin server labels on every federated result.
+  - [ ] Add timeout/error handling so unavailable peers degrade the federated
+        section, not local search.
+  - [ ] Prove the behavior in a micro-example app before adding Ewe Note e2e.
+- **Tests**:
+  - `npm test --workspace @eweser/aggregator`
+  - `npm test --workspace @eweser/auth-server-hono -- federation`
+  - Fast Cypress spec against the focused example app.
+  - Ewe Note e2e only for the integrated user-facing search workflow.
+- **Verification**:
+  - Two trusted local peers: public room results appear with origin labels,
+    private and granted-only room content does not appear in federated public
+    results, and local results remain usable when the peer times out.
+- **Manual test handoff**:
+  - Run the focused example app against two local servers first, then run the
+    Ewe Note search flow and confirm local/granted results are visually
+    separate from federated public results.
+- **Dependencies**:
+  - `run-4`
+- **Model tier**: `strong`
+- **Risk level**: `high`
+
 ### Run 5: Federated Room Sharing And Relay Sync
 
 - **Id**: `run-5`
@@ -321,7 +388,7 @@ After each completed run, Coder must update the Execution Summary and add a manu
 - **UI classification**: `ui: true`
 - **Browser checkpoint**: `focused`
 - **Deliverable**:
-  - A user on one auth server can invite a federated principal from another auth server to a room; the recipient can access the room through their home server with enforced room ACL/access-grant behavior.
+  - A user on one auth server can invite a federated principal from another auth server to a room; the recipient can read and write through their home server with enforced origin-authoritative room ACL/access-grant behavior.
 - **Files**:
   - `packages/auth-server-hono/src/routes/federation.ts`: invite, accept, room-token issuance, and relay lifecycle APIs.
   - `packages/auth-server-hono/src/services/access-grant/*`: extend invite/grant logic to federated principals.
@@ -330,23 +397,27 @@ After each completed run, Coder must update the Execution Summary and add a manu
   - `packages/sync-server/src/index.ts`: add relay connection management or extract a federation relay extension module.
   - `packages/db/src/methods/connection/generateShareRoomLink.ts`: support federated invite targets if SDK surface is approved.
   - `packages/app/src/pages.tsx` and/or Ewe Note share UI: invite by `user@server` and display remote server badges.
-  - `e2e/cypress/tests/*`: add two-server federated share smoke if practical.
+  - `examples/*`: add or update a focused two-server collaboration example before Ewe Note integration.
+  - `e2e/cypress/tests/*`: add fast example-app two-server federated share smoke before Ewe Note e2e coverage.
   - `.changeset/*`: add for published SDK/shared API changes.
 - **Steps**:
-  - [ ] Define federated principal storage and display behavior, including whether `user@server` is display-only or persisted.
+  - [ ] Store federated principals as explicit records keyed by server identity and user id; use `user@server` as UX display.
   - [ ] Add remote invite send/receive flow using signed server-to-server requests from `run-4`.
   - [ ] Add relay sync connection where a participating server acts as a Hocuspocus client to the origin server.
-  - [ ] Enforce read/write/admin room ACL and access-grant behavior at the origin and recipient home server.
+  - [ ] Enforce read/write room ACL and access-grant behavior with the origin server authoritative for room writes.
+  - [ ] Keep private federated collaborative rooms out of remote server aggregators and public/agent search indexes in v1.
   - [ ] Ensure revocation and room deletion disconnect or disable relay access.
   - [ ] Add a two-server local test harness with deterministic ports and isolated databases.
+  - [ ] Prove read/write relay behavior in a micro-example app before adding Ewe Note collaboration UX/e2e coverage.
   - [ ] Update docs to explain federation as server relay, not P2P or ActivityPub.
 - **Tests**:
   - `npm test --workspace @eweser/auth-server-hono -- federation access-grant`
   - `npm run type-check --workspace @eweser/sync-server`
   - `npm test --workspace @eweser/db`
-  - Targeted Cypress/e2e two-server smoke if the harness is stable.
+  - Fast Cypress/e2e two-server smoke against the focused example app.
+  - Ewe Note e2e for the composed collaboration workflow after the example smoke passes.
 - **Verification**:
-  - Two local servers: Alice on server A shares a room with Bob on server B; Bob edits when granted write access; Alice sees the edit; revocation prevents further Bob writes.
+  - Two local servers: Alice on server A shares a room with Bob on server B; Bob edits when granted write access; Alice sees the edit; revocation prevents further Bob writes; no private shared-room content appears in remote public search.
 - **Manual test handoff**:
   - Provide exact two-server startup commands, user/account assumptions, invite URL, expected room registry state on both servers, and the revocation check.
 - **Dependencies**:
@@ -358,10 +429,16 @@ After each completed run, Coder must update the Execution Summary and add a manu
 
 - **Id**: `run-6`
 - **Title**: `Federation As Backup`
+- **Status**: `deferred by 2026-05-25 grill`
 - **UI classification**: `ui: true`
 - **Browser checkpoint**: `focused`
 - **Deliverable**:
-  - Users can nominate a trusted peer server as a read-only or standby backup listener for selected rooms, inspect backup freshness, and restore or fail over from that peer when appropriate.
+  - Deferred follow-up. Users eventually may nominate a trusted peer server as
+    a read-only or standby backup listener for selected rooms, inspect backup
+    freshness, and restore or fail over from that peer when appropriate.
+  - This is not crucial for the current dogfood or launch path; do not schedule
+    implementation until federation identity, federated public search, and
+    federated collaborative sharing have clearer production evidence.
 - **Files**:
   - `packages/auth-server-hono/src/routes/federation.ts`: backup-listener registration, status, revoke, and restore/failover endpoints.
   - `packages/sync-server/src/index.ts` or federation relay module: idle relay lifecycle and persistence health reporting.
@@ -395,7 +472,13 @@ After each completed run, Coder must update the Execution Summary and add a manu
 - **UI classification**: `ui: false`
 - **Browser checkpoint**: `none`
 - **Deliverable**:
-  - A current ADR and prototype-level technical decision for opt-in encrypted rooms, including multi-device key sharing, recovery limits, collaboration/search/MCP tradeoffs, and migration boundaries. The decision should separate account authentication factors such as passkeys or authenticator apps from room-key unlock and recovery mechanics.
+  - A current ADR and prototype-level technical decision for opt-in secure
+    rooms, including recovery phrase/export key transfer, recovery limits,
+    collaboration/search/MCP tradeoffs, and migration boundaries. The decision
+    should separate account authentication factors such as passkeys or
+    authenticator apps from room-key unlock and recovery mechanics.
+  - The first use case is secure vault rooms: room content that intentionally
+    loses remote web MCP access, server-side search, and public aggregation.
 - **Files**:
   - `docs/ai/adr/*`: add room-level E2EE ADR.
   - `ARCHITECTURE.md`: update only after decision is accepted as current.
@@ -404,8 +487,14 @@ After each completed run, Coder must update the Execution Summary and add a manu
 - **Steps**:
   - [ ] Define threat model: hosted server, malicious app, lost device, collaborator, MCP/AI agent, public aggregator.
   - [ ] Decide encryption granularity: whole Yjs update stream, document fields, room snapshots, or separate encrypted payload documents.
-  - [ ] Decide key storage and multi-device transfer: passphrase-derived, device key wrapping, recovery phrase, or explicit export/import.
-  - [ ] Decide what encrypted rooms lose or degrade: server-side search, public aggregation, server-side MCP reading, account recovery, and possibly collaborative editing.
+  - [ ] Use recovery phrase/export as the v1 key transfer model; do not design
+        server-held room keys or account-password recovery in this run.
+  - [ ] Document that ChatGPT/web-style remote MCP connectors can use only
+        plaintext MCP-readable rooms until a separate local bridge or
+        key-delegation design is approved.
+  - [ ] Decide what secure rooms lose or degrade: server-side search, public
+        aggregation, remote web MCP reading, account recovery, and possibly
+        collaborative editing.
   - [ ] Prototype a minimal encrypt/decrypt round trip with real Yjs docs in a test or document why implementation should wait.
   - [ ] Define migration behavior for converting a plaintext room to encrypted and back, including stop conditions.
 - **Tests**:
@@ -427,7 +516,10 @@ After each completed run, Coder must update the Execution Summary and add a manu
 - **UI classification**: `ui: true`
 - **Browser checkpoint**: `focused`
 - **Deliverable**:
-  - Users can create or mark selected rooms as encrypted, unlock them on another device with approved key material, and see clear limitations when search, public aggregation, or MCP access is unavailable.
+  - Users can create or mark selected rooms as secure, unlock them on another
+    device with recovery phrase/export key material, and see clear limitations
+    when remote web MCP, server-side search, or public aggregation is
+    unavailable.
 - **Files**:
   - `packages/shared/src/collections/*`: add encryption metadata types if shared room metadata is needed.
   - `packages/db/src/room.ts`: add encrypted-room metadata and local unlock state.
@@ -435,19 +527,24 @@ After each completed run, Coder must update the Execution Summary and add a manu
   - `packages/db/src/utils/*`: key derivation, key wrapping, and encrypted storage helpers.
   - `packages/auth-server-hono/src/routes/access-grant.ts`: ensure grants and sync tokens do not leak room keys.
   - `packages/aggregator/src/webhook-handler.ts`: reject encrypted rooms from plaintext indexing.
-  - `packages/app/src/pages.tsx` and Ewe Note settings: unlock/create encrypted room UI with warnings.
+  - `packages/app/src/pages.tsx` and Ewe Note room/base settings: unlock/create secure-room UI with badges, tooltips, and warnings.
+  - `examples/*`: minimal secure-room example before Ewe Note UI integration.
+  - `e2e/cypress/tests/*`: fast example-app secure-room smoke before Ewe Note e2e coverage.
   - `.changeset/*`: add for published SDK/shared API changes.
 - **Steps**:
   - [ ] Implement the smallest room-level E2EE shape approved in `run-7`.
   - [ ] Keep keys client-side; never send keys to auth-server, sync-server, aggregator, logs, screenshots, ordinary memory, or Yjs plaintext fields.
-  - [ ] Add lock/unlock state and explicit user-facing unavailable states for search/MCP/public aggregation.
-  - [ ] Add multi-device key import/export or pairing flow.
+  - [ ] Add lock/unlock state and explicit user-facing unavailable states for remote web MCP, server-side search, and public aggregation.
+  - [ ] Add recovery phrase/export key transfer. Device pairing can follow later.
+  - [ ] Prove lock/unlock and search unavailability in a micro-example app before adding Ewe Note room/base management e2e coverage.
   - [ ] Add migration guardrails and rollback behavior.
   - [ ] Update legal/privacy copy only to the exact shipped capability.
 - **Tests**:
   - `npm test --workspace @eweser/db -- encryption`
   - `npm test --workspace @eweser/aggregator`
   - `npm test --workspace @eweser/app`
+  - Fast Cypress spec against the secure-room example app.
+  - Ewe Note e2e for room/base secure labels and limitations after the example smoke passes.
   - `npm run check` if cross-package changes land.
 - **Verification**:
   - Create encrypted room, sync through Hocuspocus, unlock on second browser profile, verify server-side search does not expose plaintext and locked clients cannot read content.
@@ -465,7 +562,13 @@ After each completed run, Coder must update the Execution Summary and add a manu
 - **UI classification**: `ui: false`
 - **Browser checkpoint**: `none`
 - **Deliverable**:
-  - EweserDB has documented compatibility rules, machine-readable SDK/server/schema versions, room data migration helpers, and tests that prevent accidental incompatible public API or schema changes.
+  - EweserDB has documented pre-live and post-launch compatibility rules,
+    machine-readable SDK/server/schema versions, room data migration helpers,
+    and tests that prevent accidental incompatible public API or schema changes.
+  - Pre-live breaking changes remain allowed when they serve the clean long-term
+    model, but dogfood data must have deterministic migration or fixture
+    handling and the post-launch guarantee must be documented before public
+    signup.
 - **Files**:
   - `packages/shared/src/versioning/*`: add schema version contracts and migration metadata helpers if approved.
   - `packages/db/src/*`: expose SDK compatibility metadata and room migration hooks if public.
@@ -481,6 +584,7 @@ After each completed run, Coder must update the Execution Summary and add a manu
   - [ ] Add compatibility tests with old fixture documents and current code.
   - [ ] Update changeset guidance for schema-breaking, schema-additive, and internal-only changes.
   - [ ] Add docs for pre-live breaking-change policy versus post-launch compatibility guarantees.
+  - [ ] Include at least one dogfood-data migration/fixture scenario, not only synthetic old fixtures.
 - **Tests**:
   - `npm test --workspace @eweser/shared -- version`
   - `npm test --workspace @eweser/db -- migration version`
@@ -502,7 +606,7 @@ After each completed run, Coder must update the Execution Summary and add a manu
 - **UI classification**: `ui: false`
 - **Browser checkpoint**: `none`
 - **Deliverable**:
-  - The SDK cleans expired soft-deleted docs, refreshes sync tokens after auth failures, reconnects predictably after online recovery, supports any approved first-run seed API, and either implements or removes stale WebRTC temp-doc scope.
+  - The SDK cleans expired soft-deleted docs, refreshes sync tokens after auth failures, reconnects predictably after online recovery, supports an approved idempotent first-run seed API, and removes stale WebRTC/temp-doc scope unless a future product plan reintroduces it.
 - **Files**:
   - `packages/db/src/index.ts`: lifecycle options, startup scheduling, online recovery hooks, optional seeded data API.
   - `packages/db/src/methods/connection/loadRoom.ts`: authentication-failed token refresh/reconnect behavior.
@@ -518,8 +622,8 @@ After each completed run, Coder must update the Execution Summary and add a manu
   - [ ] On `authenticationFailed`, clear stale room sync token, call `refreshSyncToken`, and reconnect once with bounded backoff before surfacing error.
   - [ ] Listen to browser online/offline events where available and reconcile with existing ping polling.
   - [ ] Decide whether “reload when re-online” means reconnect rooms, reload registry, or full page reload; implement reconnect/registry refresh by default unless app-level reload is explicitly approved.
-  - [ ] Decide if `initialRooms` is enough. If not, add `initialDocuments`/seed callback semantics that are idempotent and CRDT-safe.
-  - [ ] Decide WebRTC fate: implement a contained temp-doc API with clear non-secure warning, or remove `y-webrtc` dependency/types and stale default peers.
+  - [ ] Add `initialDocuments`/seed callback semantics that are idempotent and CRDT-safe.
+  - [ ] Remove `y-webrtc` dependency/types and stale default peers unless a future approved plan reintroduces contained temp-doc collaboration.
 - **Tests**:
   - `npm test --workspace @eweser/db`
   - `npm run type-check --workspace @eweser/db`
@@ -613,7 +717,13 @@ After each completed run, Coder must update the Execution Summary and add a manu
 - **UI classification**: `ui: true`
 - **Browser checkpoint**: `focused`
 - **Deliverable**:
-  - The project has repeatable stress tests for room/document/load behavior, documented warning thresholds, and hosted sync usage metering hooks that can later connect to billing or free-tier limits.
+  - The project has repeatable stress tests for room/document/load behavior,
+    documented generous abuse thresholds for ordinary hosted sync, and hosted
+    usage metering hooks that can later support operational abuse controls and
+    storage/backup tiering.
+  - This run must not frame ordinary app-data sync as a tight free-tier paywall.
+    Paid-tier planning should focus on hosted file storage and backups versus
+    bring-your-own storage.
 - **Files**:
   - `scripts/stress/*` or `packages/db/src/*.stress.test.ts`: add deterministic load generators for room count, document size, and concurrent sync.
   - `packages/sync-server/src/index.ts`: emit connection/session usage events without document content.
@@ -629,7 +739,8 @@ After each completed run, Coder must update the Execution Summary and add a manu
   - [ ] Record current thresholds and warnings without overstating guarantees.
   - [ ] Add sync-server usage events for connection start/stop, room ID, collection key, user ID where known, and duration. Do not log document content.
   - [ ] Add auth-server aggregation for daily active sync minutes/hours by user and room.
-  - [ ] Add limit hooks that can warn or reject new hosted sync connections when a configured free-tier limit is exceeded.
+  - [ ] Add limit hooks that can flag or reject abnormal abuse patterns while keeping normal app-data sync generous.
+  - [ ] Keep hosted files/backups quota language separate from ordinary sync usage.
   - [ ] Keep payment-provider integration out of this run unless separately approved.
 - **Tests**:
   - `npm test --workspace @eweser/auth-server-hono -- usage`

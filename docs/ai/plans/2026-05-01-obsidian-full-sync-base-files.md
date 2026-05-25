@@ -20,6 +20,10 @@ Make Ewe Note fully syncable with Obsidian vaults, including Markdown notes, fol
 - 2026-05-04 privacy decision: use a scrubbed local copy of the real vault as the first live-sync target, not the original vault. Default the scrubbed copy to skip secret-flagged text files and skip attachments unless explicitly approved later.
 - 2026-05-04 continuation note: image and other binary file handling is now the main product blocker. Current code preserves attachment inventory and hashes; it does not yet provide local attachment rendering from mounted real vaults, remote object storage, S3-compatible bucket setup, or bring-your-own-storage provider configuration.
 - 2026-05-05 storage decision: implement an S3-compatible storage adapter with Railway Buckets as the first hosted provider. Keep the metadata and auth route shape provider-agnostic so MinIO/R2/S3-compatible providers can be added later without changing synced attachment documents.
+- 2026-05-25 grill decision: `docs/personal` is now a production dogfood
+  blocker. Move those tracked personal strategy docs into Jacob's production
+  Ewe Note account as the canonical `Eweser Strategy` base, then replace the
+  repo copies with a minimal pointer after verification.
 
 ## Architecture Decision
 
@@ -41,6 +45,22 @@ Make Ewe Note fully syncable with Obsidian vaults, including Markdown notes, fol
 - Resolved on 2026-05-05: use Railway Buckets first through an S3-compatible adapter; do not special-case MinIO in the initial hosted implementation.
 - Open question: Should the first real-vault pass run in `--inventory-only --no-content --local-only` mode and produce only counts, extension summaries, and redacted secret findings?
 - Open question: Should secret-bearing notes be skipped, redacted, encrypted client-side, or synced only into a specifically marked local-only/private base until E2EE exists?
+- Resolved on 2026-05-25 for `docs/personal`: run inventory first. If possible
+  secrets or sensitive lines are flagged, stop and ask before importing flagged
+  files.
+- Resolved on 2026-05-25 for `docs/personal`: import one Markdown file per Ewe
+  Note note into production base `Eweser Strategy`, preserving filename/source
+  path metadata for traceability.
+- Resolved on 2026-05-25 for `docs/personal`: use logged-in browser Ewe Note UI
+  for the production import. Use the current editor; TipTap is not a blocker
+  unless the current editor fails the import/edit proof.
+- Resolved on 2026-05-25 for `docs/personal`: grant one Codex MCP dogfood agent
+  read/write access to the base, but allow writes only to a new verification
+  note named `Dogfood verification` unless Jacob explicitly approves a specific
+  imported-doc edit.
+- Resolved on 2026-05-25 for `docs/personal`: after verified import and edit
+  loop, replace repo `docs/personal` content with a minimal pointer. Do not
+  rewrite Git history.
 
 ## Runs
 
@@ -56,6 +76,53 @@ After each completed run, Coder must update the Execution Summary and add a manu
 - manual steps;
 - expected results;
 - known gaps or residual risk.
+
+### Run 0B: Production Personal Strategy Docs Dogfood
+
+- **Id**: `run-0b`
+- **Title**: `Production Personal Strategy Docs Dogfood`
+- **Deliverable**:
+  - `docs/personal` has been safely inventoried, imported into Jacob's
+    production Ewe Note account as base `Eweser Strategy`, verified through an
+    edit loop, and replaced in the repo by a minimal pointer.
+- **Files**:
+  - `docs/personal/*`: replace with a minimal pointer only after verified
+    production import.
+  - `docs/ai/research/2026-05-25-current-plan-grillme-gate.md`: keep dogfood
+    result and blockers current.
+  - Ewe Note/Cypress docs or tests only if the import/edit proof exposes a
+    product gap that needs a follow-up card.
+- **Steps**:
+  - [ ] Run a redacted inventory over `docs/personal`; never print secret
+        values.
+  - [ ] Stop and ask if the inventory flags possible secrets or sensitive
+        lines.
+  - [ ] Import one note per Markdown file into production Ewe Note base
+        `Eweser Strategy` via logged-in browser UI.
+  - [ ] Create and edit a new `Dogfood verification` note in that base.
+  - [ ] Verify Codex MCP can read/search the base.
+  - [ ] Verify Codex MCP writes only the `Dogfood verification` note; imported
+        strategy docs remain read-only unless Jacob separately approves a
+        specific edit.
+  - [ ] Replace repo `docs/personal` content with a minimal pointer to the
+        canonical production Ewe Note base.
+- **Tests**:
+  - Presence-only production preflight; never print secret values.
+  - Focused Ewe Note e2e or browser smoke for import/edit if existing coverage
+    does not already exercise the path.
+- **Verification**:
+  - Production Ewe Note shows imported notes, the verification note edit
+    persists, Codex MCP search finds expected content, and no repo content
+    remains beyond the minimal pointer.
+- **Manual test handoff**:
+  - Open production Ewe Note in the logged-in browser, confirm base name
+    `Eweser Strategy`, inspect a sample imported note, edit the verification
+    note, and confirm Codex MCP did not edit imported strategy docs.
+- **Dependencies**:
+  - Private production dogfood is allowed before DMCA/mailbox closure, but
+    public signup remains blocked by legal/security launch gates.
+- **Model tier**: `strong`
+- **Risk level**: `high`
 
 ### Run 0A: Secret-Safe Real Vault Inventory Preflight
 
