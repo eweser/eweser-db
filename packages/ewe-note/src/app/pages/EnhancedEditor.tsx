@@ -28,13 +28,29 @@ import {
 } from '../components/ui/dropdown-menu';
 import Editor from '@/components/editor';
 import { useDb } from '@/db';
-import { parseWikiHref } from '@/extensions/wiki-link';
+import { slugHeading } from '@/editor/markdown';
+import { parseWikiHref, type WikiLinkResolution } from '@/extensions/wiki-link';
 import {
   WorkspaceShell,
   useWorkspaceShell,
 } from '../components/WorkspaceShell';
 import type { Note } from '../contexts/NotesContext';
 import { useIsMobile } from '../components/ui/use-mobile';
+
+export function buildEditorWikiLinkPath(
+  noteId: string,
+  parsed: WikiLinkResolution
+) {
+  const hashTarget = parsed.blockRef
+    ? `^${parsed.blockRef}`
+    : parsed.heading
+      ? slugHeading(parsed.heading)
+      : '';
+
+  return hashTarget
+    ? `/editor/${noteId}#${encodeURIComponent(hashTarget)}`
+    : `/editor/${noteId}`;
+}
 
 export function EnhancedEditor() {
   const [focusMode, setFocusMode] = useState(false);
@@ -94,7 +110,7 @@ export function EnhancedEditor() {
 
     const matched = resolveWikiLink(parsed.noteName);
     if (matched) {
-      navigate(`/editor/${matched}`);
+      navigate(buildEditorWikiLinkPath(matched, parsed));
       return;
     }
 
@@ -103,7 +119,7 @@ export function EnhancedEditor() {
       folder: note?.folder,
       content: `# ${parsed.noteName}\n\n`,
     });
-    navigate(`/editor/${created.id}`);
+    navigate(buildEditorWikiLinkPath(created.id, parsed));
   };
   const { allRooms, selectedRoom, setSelectedRoom, setSelectedNoteId } =
     useDb();

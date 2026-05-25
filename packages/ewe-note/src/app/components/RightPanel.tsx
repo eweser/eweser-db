@@ -242,6 +242,9 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
                           link.raw ||
                           `${link.target}:${link.noteId ?? link.alias}`
                         }
+                        role="status"
+                        aria-label={`Unresolved wiki link: ${link.target}`}
+                        data-cy="ewe-note-unresolved-wiki-link"
                         className="w-full flex items-start gap-2 px-2 py-2 rounded bg-muted/30"
                       >
                         <FileText className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
