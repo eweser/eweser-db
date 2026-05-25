@@ -38,5 +38,6 @@ COPY --from=builder /workspace/packages/app/dist /usr/share/nginx/html
 EXPOSE 80
 
 ENV PORT=80
+ENV AUTH_API_PROXY_URL=https://auth.eweser.com
 
-CMD ["sh", "-c", "envsubst '${PORT}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
+CMD ["sh", "-c", "envsubst '${PORT} ${AUTH_API_PROXY_URL}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]

@@ -37,6 +37,8 @@ npm run dev
 | Variable                  | Description                                               |
 | ------------------------- | --------------------------------------------------------- |
 | `VITE_AUTH_SERVER_URL`    | URL of the auth API server                                |
+| `VITE_AUTH_API_URL`       | Auth client base URL. Defaults to same-origin `/api/auth` |
+| `AUTH_API_PROXY_URL`      | Runtime nginx proxy target for same-origin auth paths     |
 | `VITE_TURNSTILE_SITE_KEY` | Optional Cloudflare Turnstile site key for signup captcha |
 
 ## Docker
