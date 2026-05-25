@@ -28,6 +28,10 @@ tests, secret scanning, agent orchestration, and code-index validation.
   Audits memory fixtures, MCP audit JSONL, and optional Codex session logs for
   useful recall, bounded context, and safety failures.
 - [`codex/README.md`](./codex/README.md): Codex helper script notes.
+- [`ops/verify-prod-test-user.mjs`](./ops/verify-prod-test-user.mjs):
+  Local operator-only production tester helper. Requires explicit `--dry-run` or
+  `--apply`, `DATABASE_URL`, and `EWESER_PROD_TEST_EMAIL`; never add a public
+  bypass route for this flow.
 
 ## Children
 
@@ -36,6 +40,7 @@ tests, secret scanning, agent orchestration, and code-index validation.
 - [`hooks/`](./hooks/): Pre-push autofix and verification scripts.
 - [`code-index/`](./code-index/): Index validation tooling.
 - [`code-map/`](./code-map/): Local generated code-map experiment tooling.
+- [`ops/`](./ops/): Local operator helpers for narrow production maintenance.
 
 ## Key Contracts
 
@@ -62,6 +67,9 @@ tests, secret scanning, agent orchestration, and code-index validation.
   Reports likely agent flailing patterns from new local sessions.
 - `npm run memory:diagnose -- --fixture scripts/memory/fixtures/passing-agent-journal.json`:
   Runs the deterministic memory diagnostic report against a fixture.
+- `node --test scripts/ops/verify-prod-test-user.test.mjs`: Verifies the
+  production tester helper's argument parsing and redaction behavior without
+  production credentials.
 - `node scripts/worktree-env.mjs setup --worktree . --shared-checkout .`:
   Refreshes ignored local env files for the current checkout.
 - `node --test scripts/worktree-env.test.mjs`: Verifies generated per-worktree
