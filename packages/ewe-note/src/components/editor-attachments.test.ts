@@ -41,6 +41,14 @@ function roomWithAttachments(attachments: AttachmentDocument[]) {
   };
 }
 
+function unloadedRoom() {
+  return {
+    getDocuments() {
+      throw new Error('attachment ydoc is still loading');
+    },
+  };
+}
+
 describe('editor attachment context helpers', () => {
   it('collects only file attachments belonging to the selected note room', () => {
     const attachments = collectNoteRoomAttachments(
@@ -51,6 +59,17 @@ describe('editor attachment context helpers', () => {
           attachment('Assets/deleted.png', { _deleted: true }),
         ]),
       ],
+      'notes-room-1'
+    );
+
+    expect(attachments.map((entry) => entry.sourcePath)).toEqual([
+      'Assets/cover.png',
+    ]);
+  });
+
+  it('skips unloaded attachment rooms while collecting selected note attachments', () => {
+    const attachments = collectNoteRoomAttachments(
+      [unloadedRoom(), roomWithAttachments([attachment('Assets/cover.png')])],
       'notes-room-1'
     );
 

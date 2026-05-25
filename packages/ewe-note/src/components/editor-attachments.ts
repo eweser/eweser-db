@@ -25,6 +25,16 @@ export type AttachmentRoomSource = {
   getDocuments: () => AttachmentDocuments;
 };
 
+function getLoadedAttachmentDocuments(
+  room: AttachmentRoomSource
+): AttachmentDocuments | undefined {
+  try {
+    return room.getDocuments();
+  } catch {
+    return undefined;
+  }
+}
+
 function attachmentDocumentsToArray(
   documents:
     | readonly AttachmentRecord[]
@@ -37,11 +47,14 @@ export function collectNoteRoomAttachments(
   attachmentRooms: readonly AttachmentRoomSource[],
   noteRoomId: string
 ): FileAttachmentBase[] {
-  return attachmentRooms.flatMap((room) =>
-    attachmentDocumentsToArray(room.getDocuments().getUndeleted()).filter(
+  return attachmentRooms.flatMap((room) => {
+    const documents = getLoadedAttachmentDocuments(room);
+    if (!documents) return [];
+
+    return attachmentDocumentsToArray(documents.getUndeleted()).filter(
       (attachment) => !attachment._deleted && attachment.baseId === noteRoomId
-    )
-  );
+    );
+  });
 }
 
 export function buildEditorAttachmentContext({
@@ -93,7 +106,10 @@ export function useEditorAttachmentContext({
   );
 
   useEffect(() => {
-    const documents = attachmentRooms.map((room) => room.getDocuments());
+    const documents = attachmentRooms.flatMap((room) => {
+      const attachmentDocuments = getLoadedAttachmentDocuments(room);
+      return attachmentDocuments ? [attachmentDocuments] : [];
+    });
     const refreshAttachments = () => {
       setAttachments(collectNoteRoomAttachments(attachmentRooms, noteRoomId));
     };

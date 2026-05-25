@@ -345,6 +345,29 @@ describe('TipTap markdown bridge', () => {
     expect(resolved.originalSource).toBe('![[image.png]]');
   });
 
+  it.each(['image.png?raw=1', 'image.png#preview'])(
+    'resolves image embed target %s after stripping query or fragment metadata',
+    (target) => {
+      const resolved = resolveAttachmentEmbed(target, {
+        attachments: [attachment('Attachments/image.png')],
+        attachmentUrls: {
+          'Attachments/image.png': 'blob:resolved-image',
+        },
+        noteSourcePath: 'Notes/Imported Note.md',
+      });
+
+      expect(resolved.status).toBe('resolved');
+      if (resolved.status !== 'resolved') {
+        throw new Error(
+          `Expected ${target} to resolve to the attachment record.`
+        );
+      }
+      expect(resolved.sourcePath).toBe('Attachments/image.png');
+      expect(resolved.url).toBe('blob:resolved-image');
+      expect(resolved.originalSource).toBe(`![[${target}]]`);
+    }
+  );
+
   it.each(['../secret.png', '..\\secret.png', '%2e%2e/secret.png'])(
     'keeps unsafe vault image embed target %s source-visible instead of constructing local URLs',
     (target) => {

@@ -87,6 +87,17 @@ const ATTACHMENT_FOLDERS = [
   '_attachments',
 ];
 
+const RESOLVABLE_IMAGE_EXTENSIONS = new Set([
+  '.avif',
+  '.bmp',
+  '.gif',
+  '.jpeg',
+  '.jpg',
+  '.png',
+  '.svg',
+  '.webp',
+]);
+
 function normalizeAttachmentPath(path: string): string {
   return path.replace(/\\/g, '/').replace(/^\.\//, '').replace(/\/+/g, '/');
 }
@@ -105,20 +116,28 @@ function decodeAttachmentPathForSafety(path: string): string | null {
   return decoded;
 }
 
-function isSafeVaultRelativePath(path: string): boolean {
+function normalizeSafeAttachmentTarget(path: string): string | null {
   const targetPath = path.split(/[?#]/, 1)[0]?.trim() ?? '';
   const decoded = decodeAttachmentPathForSafety(targetPath);
-  if (!decoded) return false;
+  if (!decoded) return null;
 
   const normalized = normalizeAttachmentPath(decoded);
-  if (!normalized || normalized.startsWith('/')) return false;
-  if (/^[a-z][a-z0-9+.-]*:/i.test(normalized)) return false;
+  if (!normalized || normalized.startsWith('/')) return null;
+  if (/^[a-z][a-z0-9+.-]*:/i.test(normalized)) return null;
   for (const character of normalized) {
     const codePoint = character.charCodeAt(0);
-    if (codePoint <= 31 || codePoint === 127) return false;
+    if (codePoint <= 31 || codePoint === 127) return null;
   }
 
-  return normalized.split('/').every((segment) => segment !== '..');
+  if (normalized.split('/').some((segment) => segment === '..')) {
+    return null;
+  }
+
+  return normalized;
+}
+
+function isSafeVaultRelativePath(path: string): boolean {
+  return normalizeSafeAttachmentTarget(path) !== null;
 }
 
 function attachmentKey(path: string): string {
@@ -172,9 +191,10 @@ export function getAttachmentCandidates(
   attachmentName: string,
   noteSourcePath?: string
 ): string[] {
-  if (!isSafeVaultRelativePath(attachmentName)) return [];
+  const normalizedAttachmentName =
+    normalizeSafeAttachmentTarget(attachmentName);
+  if (!normalizedAttachmentName) return [];
 
-  const normalizedAttachmentName = normalizeAttachmentPath(attachmentName);
   const candidates: string[] = [];
 
   // 1. Exact path as given (e.g. "Attachments/image.png")
@@ -214,7 +234,9 @@ export function findAttachmentForTarget(
   attachmentName: string,
   context: AttachmentResolverContext = {}
 ): FileAttachmentBase | undefined {
-  if (!isSafeVaultRelativePath(attachmentName)) return undefined;
+  const normalizedAttachmentName =
+    normalizeSafeAttachmentTarget(attachmentName);
+  if (!normalizedAttachmentName) return undefined;
 
   const attachments = context.attachments;
   if (!attachments?.length) return undefined;
@@ -230,7 +252,7 @@ export function findAttachmentForTarget(
   );
   if (exact) return exact;
 
-  const targetBaseName = baseName(attachmentName).toLowerCase();
+  const targetBaseName = baseName(normalizedAttachmentName).toLowerCase();
   return attachments.find(
     (attachment) =>
       baseName(attachment.sourcePath).toLowerCase() === targetBaseName ||
@@ -242,27 +264,18 @@ export function isResolvableImageTarget(
   attachmentName: string,
   context: AttachmentResolverContext = {}
 ): boolean {
-  if (!isSafeVaultRelativePath(attachmentName)) return false;
+  const normalizedName = normalizeSafeAttachmentTarget(attachmentName);
+  if (!normalizedName) return false;
 
   const matchedAttachment = findAttachmentForTarget(attachmentName, context);
   if (matchedAttachment) return isImageAttachment(matchedAttachment);
 
-  const normalizedName =
-    normalizeAttachmentPath(attachmentName).split(/[?#]/, 1)[0] ??
-    attachmentName;
   const lastDot = normalizedName.lastIndexOf('.');
   if (lastDot === -1) return false;
 
-  return new Set([
-    '.avif',
-    '.bmp',
-    '.gif',
-    '.jpeg',
-    '.jpg',
-    '.png',
-    '.svg',
-    '.webp',
-  ]).has(normalizedName.slice(lastDot).toLowerCase());
+  return RESOLVABLE_IMAGE_EXTENSIONS.has(
+    normalizedName.slice(lastDot).toLowerCase()
+  );
 }
 
 function findMaterializedUrl(
@@ -270,6 +283,10 @@ function findMaterializedUrl(
   attachmentName: string,
   context: AttachmentResolverContext
 ): string | undefined {
+  const normalizedAttachmentName =
+    normalizeSafeAttachmentTarget(attachmentName);
+  if (!normalizedAttachmentName) return undefined;
+
   const attachmentUrls = context.attachmentUrls;
   if (attachmentUrls) {
     const urlEntries = Object.entries(attachmentUrls);
@@ -289,7 +306,7 @@ function findMaterializedUrl(
     }
 
     const targetBaseName = baseName(
-      attachment?.sourcePath ?? attachmentName
+      attachment?.sourcePath ?? normalizedAttachmentName
     ).toLowerCase();
     for (const [key, url] of urlEntries) {
       if (baseName(key).toLowerCase() === targetBaseName && url) return url;
