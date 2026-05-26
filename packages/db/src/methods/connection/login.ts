@@ -26,7 +26,7 @@ export const login =
     db.useSync = true;
     pollConnection(db); // start polling for auth server connection status if db was started in offline mode previously
     if (options?.loadAllRooms) {
-      await db.loadRooms(db.registry); // connects the sync providers. Could make this more atomic in the future to avoid creating too many connections.
+      await db.loadRooms(db.registry, true); // connects the sync providers. Could make this more atomic in the future to avoid creating too many connections.
     }
     db.emit('onLoggedInChange', true);
     return true;

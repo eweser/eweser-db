@@ -47,7 +47,7 @@ describe('login', () => {
     expect(result).toBe(true);
     expect(db.useSync).toBe(true);
     expect(pollConnectionMock).toHaveBeenCalledWith(db);
-    expect(db.loadRooms).toHaveBeenCalledWith(db.registry);
+    expect(db.loadRooms).toHaveBeenCalledWith(db.registry, true);
     expect(db.emit).toHaveBeenCalledWith('onLoggedInChange', true);
   });
 });
