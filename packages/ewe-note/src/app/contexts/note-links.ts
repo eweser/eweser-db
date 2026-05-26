@@ -40,6 +40,56 @@ export function normalizeWikiTarget(target: string): string {
     .replace(/\s+/g, ' ');
 }
 
+export function normalizeSourcePath(sourcePath?: string) {
+  const normalized = sourcePath
+    ?.trim()
+    .replace(/\\/g, '/')
+    .replace(/^\.\/+/, '')
+    .replace(/\/+/g, '/')
+    .trim();
+  return normalized || undefined;
+}
+
+function withoutMarkdownExtension(target: string) {
+  return target.replace(/\.md$/i, '').trim();
+}
+
+function uniqueNonEmpty(values: Array<string | null | undefined>) {
+  return Array.from(
+    new Set(values.map((value) => value?.trim()).filter(Boolean) as string[])
+  );
+}
+
+export function getSourcePathTargets(sourcePath?: string): string[] {
+  const normalized = normalizeSourcePath(sourcePath);
+  if (!normalized) return [];
+
+  const extensionless = withoutMarkdownExtension(normalized);
+  const basename = normalized.split('/').filter(Boolean).at(-1) ?? normalized;
+  const basenameExtensionless = withoutMarkdownExtension(basename);
+
+  return uniqueNonEmpty([
+    normalized,
+    extensionless,
+    basename,
+    basenameExtensionless,
+  ]);
+}
+
+export function getNormalizedWikiTargetKeys(target: string): string[] {
+  return uniqueNonEmpty([target, ...getSourcePathTargets(target)]).map(
+    (value) => normalizeWikiTarget(value)
+  );
+}
+
+export function getNormalizedWikiTargetEntries(
+  target: string
+): Array<{ key: string; mention: string }> {
+  return uniqueNonEmpty([target, ...getSourcePathTargets(target)]).map(
+    (mention) => ({ key: normalizeWikiTarget(mention), mention })
+  );
+}
+
 function parseWikiHrefTarget(href: string): ExtractedWikiLink | null {
   if (!href.startsWith('wiki://')) return null;
 

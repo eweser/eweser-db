@@ -8,7 +8,11 @@ import { buildDefaultUntitledNoteTitle, UNTITLED_TITLE } from './note-titles';
 import {
   extractWikiLinkTargets,
   extractUnlinkedMentions,
+  getNormalizedWikiTargetEntries,
+  getNormalizedWikiTargetKeys,
+  getSourcePathTargets,
   linkUnlinkedMentionInMarkdown,
+  normalizeSourcePath,
   normalizeWikiTarget,
   type OutgoingWikiLink,
   type UnlinkedMention,
@@ -129,22 +133,6 @@ function normalize(text: string) {
   return normalizeWikiTarget(text);
 }
 
-function getSourcePathTarget(sourcePath?: string) {
-  const normalized = normalizeSourcePath(sourcePath);
-  if (!normalized) return null;
-  return normalized.replace(/\.md$/i, '').trim() || null;
-}
-
-function normalizeSourcePath(sourcePath?: string) {
-  const normalized = sourcePath
-    ?.trim()
-    .replace(/\\/g, '/')
-    .replace(/^\.\/+/, '')
-    .replace(/\/+/g, '/')
-    .trim();
-  return normalized || undefined;
-}
-
 function buildSourceMetadata(
   source: Pick<DbNote, 'sourcePath' | 'sourceVault'>
 ) {
@@ -238,36 +226,33 @@ function buildResolvableTargets(notes: InternalNote[]): ResolvableTargets {
   const mentionsByNoteId = new Map<string, Set<string>>();
 
   for (const note of notes) {
-    const normalizedTitle = normalize(note.title);
     const noteMentions = mentionsByNoteId.get(note.id) ?? new Set<string>();
-    noteMentions.add(normalizedTitle);
-    mentionsByNoteId.set(note.id, noteMentions);
-
-    if (!targets.has(normalizedTitle)) {
-      targets.set(normalizedTitle, { noteId: note.id, mention: note.title });
-    }
-
-    const sourcePathTarget = getSourcePathTarget(note.source.sourcePath);
-    if (sourcePathTarget) {
-      const normalizedPath = normalize(sourcePathTarget);
-      noteMentions.add(normalizedPath);
-      mentionsByNoteId.set(note.id, noteMentions);
-      if (!targets.has(normalizedPath)) {
-        targets.set(normalizedPath, {
-          noteId: note.id,
-          mention: sourcePathTarget,
-        });
+    const addTarget = (target: string, mention = target) => {
+      for (const entry of getNormalizedWikiTargetEntries(target)) {
+        const normalizedTarget = entry.key;
+        noteMentions.add(normalizedTarget);
+        if (!targets.has(normalizedTarget)) {
+          targets.set(normalizedTarget, {
+            noteId: note.id,
+            mention: mention === target ? entry.mention : mention,
+          });
+        }
       }
+    };
+
+    addTarget(note.title, note.title);
+
+    for (const sourcePathTarget of getSourcePathTargets(
+      note.source.sourcePath
+    )) {
+      addTarget(sourcePathTarget, sourcePathTarget);
     }
 
     for (const alias of note.aliases) {
-      const normalizedAlias = normalize(alias);
-      noteMentions.add(normalizedAlias);
-      mentionsByNoteId.set(note.id, noteMentions);
-      if (!targets.has(normalizedAlias)) {
-        targets.set(normalizedAlias, { noteId: note.id, mention: alias });
-      }
+      addTarget(alias, alias);
     }
+
+    mentionsByNoteId.set(note.id, noteMentions);
   }
 
   return { candidates: targets, mentionsByNoteId };
@@ -295,6 +280,19 @@ function normalizeResolvableTargets(
   );
 }
 
+function resolveTargetId(
+  resolvableTargets: Map<string, ResolvableTargetValue>,
+  target: string
+) {
+  for (const targetKey of getNormalizedWikiTargetKeys(target)) {
+    const candidate = resolvableTargets.get(targetKey);
+    if (typeof candidate === 'string') return candidate;
+    if (candidate?.noteId) return candidate.noteId;
+  }
+
+  return null;
+}
+
 function buildOutboundLinks(
   note: InternalNote,
   resolvableTargets: Map<string, ResolvableTargetValue>
@@ -303,17 +301,9 @@ function buildOutboundLinks(
   const seen = new Set<string>();
 
   const outgoingLinks = raw.map((entry) => {
-    const targetKey = normalize(entry.target);
     return {
       ...entry,
-      noteId:
-        entry.noteId ??
-        (() => {
-          const candidate = resolvableTargets.get(targetKey);
-          return typeof candidate === 'string'
-            ? candidate
-            : (candidate?.noteId ?? null);
-        })(),
+      noteId: entry.noteId ?? resolveTargetId(resolvableTargets, entry.target),
       raw: entry.raw,
     };
   });
@@ -844,21 +834,33 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
 
   const wikiResolutionMap = useMemo(() => {
     const map = new Map<string, string>();
-    for (const note of notes) {
-      map.set(normalize(note.title), note.id);
-      for (const alias of note.aliases) {
-        map.set(normalize(alias), note.id);
+    const addTarget = (target: string, noteId: string, overwrite = true) => {
+      for (const targetKey of getNormalizedWikiTargetKeys(target)) {
+        if (overwrite || !map.has(targetKey)) {
+          map.set(targetKey, noteId);
+        }
       }
-      const sourcePathTarget = getSourcePathTarget(note.sourcePath);
-      if (sourcePathTarget && !map.has(normalize(sourcePathTarget))) {
-        map.set(normalize(sourcePathTarget), note.id);
+    };
+
+    for (const note of notes) {
+      addTarget(note.title, note.id);
+      for (const alias of note.aliases) {
+        addTarget(alias, note.id);
+      }
+      for (const sourcePathTarget of getSourcePathTargets(note.sourcePath)) {
+        addTarget(sourcePathTarget, note.id, false);
       }
     }
     return map;
   }, [notes]);
 
   const resolveWikiLink = (target: string) => {
-    return wikiResolutionMap.get(normalize(target)) ?? null;
+    for (const targetKey of getNormalizedWikiTargetKeys(target)) {
+      const noteId = wikiResolutionMap.get(targetKey);
+      if (noteId) return noteId;
+    }
+
+    return null;
   };
 
   const convertUnlinkedMentionToLink = (
