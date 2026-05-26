@@ -95,6 +95,9 @@ const authOutlineButtonClass =
   '!h-12 !rounded-xl !border-input !bg-background/55 !text-foreground transition-colors hover:bg-accent';
 
 const authLabelClass = 'text-foreground/90';
+const authFormClass = 'auth-form';
+const authFieldGroupClass = 'auth-field-group';
+const authSocialButtonGridClass = 'auth-social-grid';
 
 const collectionCopy: Record<string, { description: string; label: string }> = {
   agentAccessLogs: {
@@ -499,7 +502,12 @@ function AuthLayout({
           <p className="auth-kicker">{eyebrow}</p>
           <h1 id="auth-title">{title}</h1>
           <p className="auth-story-copy">{description}</p>
+        </section>
 
+        <section
+          className="auth-supporting"
+          aria-label="Authentication benefits"
+        >
           <div className="auth-visual-card">
             <div
               aria-label="Pastoral EweserDB data homestead illustration"
@@ -724,8 +732,8 @@ function SignInPage() {
       panelTitle="Welcome back"
       title="Sign in to provision and manage your data"
     >
-      <form className="space-y-4" onSubmit={handleSubmit}>
-        <div className="space-y-2">
+      <form className={authFormClass} onSubmit={handleSubmit}>
+        <div className={authFieldGroupClass}>
           <Label className={authLabelClass} htmlFor="sign-in-email">
             Email
           </Label>
@@ -741,7 +749,7 @@ function SignInPage() {
           />
         </div>
 
-        <div className="space-y-2">
+        <div className={authFieldGroupClass}>
           <Label className={authLabelClass} htmlFor="sign-in-password">
             Password
           </Label>
@@ -771,7 +779,7 @@ function SignInPage() {
           )}
         </Button>
 
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className={authSocialButtonGridClass}>
           <Button
             className={authOutlineButtonClass}
             disabled={loading}
@@ -938,8 +946,8 @@ function SignUpPage() {
       panelTitle="Create an account"
       title="Create an account and take control of your data"
     >
-      <form className="space-y-4" onSubmit={handleSubmit}>
-        <div className="space-y-2">
+      <form className={authFormClass} onSubmit={handleSubmit}>
+        <div className={authFieldGroupClass}>
           <Label className={authLabelClass} htmlFor="sign-up-name">
             Name
           </Label>
@@ -951,7 +959,7 @@ function SignUpPage() {
           />
         </div>
 
-        <div className="space-y-2">
+        <div className={authFieldGroupClass}>
           <Label className={authLabelClass} htmlFor="sign-up-email">
             Email
           </Label>
@@ -964,7 +972,7 @@ function SignUpPage() {
           />
         </div>
 
-        <div className="space-y-2">
+        <div className={authFieldGroupClass}>
           <Label className={authLabelClass} htmlFor="sign-up-password">
             Password
           </Label>
@@ -2300,8 +2308,8 @@ function ForgotPasswordPage() {
       panelTitle="Forgot password"
       title="Reset your password"
     >
-      <form className="space-y-4" onSubmit={handleSubmit}>
-        <div className="space-y-2">
+      <form className={authFormClass} onSubmit={handleSubmit}>
+        <div className={authFieldGroupClass}>
           <Label className={authLabelClass} htmlFor="forgot-password-email">
             Email
           </Label>
@@ -2390,8 +2398,8 @@ function ResetPasswordPage() {
       panelTitle="Reset password"
       title="Set a new password"
     >
-      <form className="space-y-4" onSubmit={handleSubmit}>
-        <div className="space-y-2">
+      <form className={authFormClass} onSubmit={handleSubmit}>
+        <div className={authFieldGroupClass}>
           <Label className={authLabelClass} htmlFor="reset-password-new">
             New password
           </Label>
@@ -2403,7 +2411,7 @@ function ResetPasswordPage() {
             value={password}
           />
         </div>
-        <div className="space-y-2">
+        <div className={authFieldGroupClass}>
           <Label className={authLabelClass} htmlFor="reset-password-confirm">
             Confirm password
           </Label>
@@ -2755,8 +2763,8 @@ function TwoFactorChallengePage() {
       panelTitle="Verify code"
       title="Confirm it is you"
     >
-      <form className="space-y-4" onSubmit={handleSubmit}>
-        <div className="space-y-2">
+      <form className={authFormClass} onSubmit={handleSubmit}>
+        <div className={authFieldGroupClass}>
           <Label className={authLabelClass} htmlFor="two-factor-code">
             {mode === 'totp' ? 'Authenticator code' : 'Backup code'}
           </Label>
