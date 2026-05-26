@@ -48,7 +48,7 @@ export const syncRegistry =
       rooms &&
       typeof rooms === 'object' &&
       Array.isArray(rooms) &&
-      rooms.length >= 2
+      rooms.length >= 1
     ) {
       db.debug('setting new rooms', rooms);
       // TODO: if a new room was created locally before the sync finishes, this might overwrite it

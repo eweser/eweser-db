@@ -47,8 +47,8 @@ describe('syncRegistry', () => {
     expect(db.emit).toHaveBeenCalledWith('registrySync', 'error', 'boom');
   });
 
-  it('updates token, registry and userId on success', async () => {
-    const rooms = [{ id: 'room-1' }, { id: 'room-2' }];
+  it('updates token, registry and userId on success with a single returned room', async () => {
+    const rooms = [{ id: 'room-1', name: 'Notes', collectionKey: 'notes' }];
 
     const db = {
       registry: [],
