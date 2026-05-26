@@ -51,7 +51,8 @@ Browser Checkpoint may:
 
 - Open the relevant local UI in the in-app browser or Playwright CLI.
 - Verify 1 to 3 critical user-visible flows or surfaces from the target run.
-- Capture concise evidence, including short notes and screenshots when useful.
+- Capture concise evidence, including short notes, required screenshots for
+  UI-visible changes, and qualitative visual assessment of those screenshots.
 - Report whether a broader manual test gate is still needed.
 
 Browser Checkpoint must not:
@@ -69,8 +70,14 @@ Browser Checkpoint must not:
    - one primary route or view;
    - one key interaction if relevant;
    - one responsive or empty/error state only if the run specifically touched it.
-4. Record concise evidence.
-5. Report findings first. If there are no findings, say so clearly.
+4. Capture a screenshot for every UI-visible change under review. Prefer
+   before/after screenshots when the visual delta is meaningful.
+5. Inspect the screenshot, not just the DOM. Check spacing, alignment, balance,
+   wrapping, overflow, density, responsive fit, and whether labels, inputs,
+   buttons, and panels feel visually coherent. Treat cramped, unbalanced,
+   clipped, or inconsistent UI as a finding.
+6. Record concise evidence.
+7. Report findings first. If there are no findings, say so clearly.
 
 ## Report Format
 
@@ -95,6 +102,8 @@ Result: `pass | pass with notes | fail | blocked`
 
 - Checked:
 - Not checked:
+- Screenshots:
+- Visual assessment:
 - Services/commands used:
 
 ### Follow-up

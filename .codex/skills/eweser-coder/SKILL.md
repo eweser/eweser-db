@@ -112,6 +112,11 @@ After all implementation runs are complete:
 5. If an issue requires scope outside the approval boundary, document it and ask for approval before fixing.
 6. Update the plan's execution summary with completed runs, changed files, verification commands, skipped checks, and remaining risk.
 7. Add self-reflection / instruction improvements to the plan. Use `None` only if no useful improvement was found.
+8. For UI-visible changes, run browser verification, inspect the screenshots,
+   and hand off screenshot paths plus a qualitative visual assessment covering
+   spacing, alignment, balance, wrapping, overflow, density, responsive fit, and
+   whether the UI looks acceptable.
+9. For backend, infrastructure, auth, sync, storage, or API-flow changes that alter how data moves, hand off a concise Mermaid diagram or state why a diagram is not useful.
 
 ## Handoff
 

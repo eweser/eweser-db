@@ -131,6 +131,25 @@ npm test --workspace @eweser/db
 `AGENTS.md` is the top-level repository policy. The canonical human-readable
 Codex workflow is `docs/ai/workflows/codex-planner-coder.md`.
 
+## Review Evidence Rule
+
+Use visual aids when they make review faster:
+
+- User-visible UI changes must include at least one screenshot in the QA,
+  browser-checkpoint, or PR handoff. Prefer before/after screenshots when the
+  visual delta is meaningful.
+- A screenshot alone is not enough. The reviewer must inspect it and state a
+  qualitative visual assessment: spacing, alignment, balance, wrapping,
+  overflow, density, responsive fit, and whether the UI looks acceptable for the
+  product. Cramped, unbalanced, clipped, or visually inconsistent UI is a
+  review finding even when the DOM and tests pass.
+- Backend, infrastructure, auth, sync, storage, or API-flow changes that alter
+  how data moves through the system must include a concise diagram in the QA or
+  PR handoff. Prefer Mermaid diagrams in Markdown so the artifact stays
+  reviewable in GitHub.
+- If screenshots or diagrams are not useful or cannot be produced, state why in
+  the verification gaps instead of silently omitting them.
+
 ## Code Navigation Index
 
 Before broad exploration, read the nearest `INDEX.md`.

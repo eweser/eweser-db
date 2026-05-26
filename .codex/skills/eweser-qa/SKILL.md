@@ -74,7 +74,31 @@ Use the repo's current canonical commands when they differ.
 - Dead code: no unused imports or commented-out blocks.
 - Migration safety: no deleted migrations; new migration files added if schema changed.
 
-### 4. Active PR comments
+### 4. Review evidence
+
+- UI-visible changes: run a browser check against the changed surface and
+  capture at least one screenshot. Prefer before/after screenshots when the
+  diff changes layout, copy, styling, empty states, or interaction feedback.
+- Inspect the screenshot and report a qualitative visual assessment. Check
+  spacing, alignment, balance, wrapping, overflow, density, responsive fit, and
+  whether the UI looks acceptable for the product. Cramped, unbalanced, clipped,
+  or visually inconsistent UI is a QA finding even when tests pass.
+- Backend, infrastructure, auth, sync, storage, or API-flow changes: include a
+  concise Mermaid diagram when the change alters how data moves, where
+  validation occurs, or which boundary owns a responsibility.
+- If evidence is not applicable or is blocked, say so explicitly in
+  Verification Gaps with the reason.
+
+Example backend diagram:
+
+```mermaid
+flowchart LR
+  Client --> AuthAPI[Auth API]
+  AuthAPI --> Grants[(room grants)]
+  Grants --> Sync[Sync server]
+```
+
+### 5. Active PR comments
 
 For QA involving an active PR:
 
@@ -84,7 +108,7 @@ For QA involving an active PR:
 4. If fixing comments is explicitly requested, apply the smallest scoped fix and re-review the touched diff before verification.
 5. Report which comments are unresolved, addressed, blocked, or intentionally deferred.
 
-### 5. Optional read-only sidecars
+### 6. Optional read-only sidecars
 
 Use sidecars only for separable read-only work:
 
@@ -94,7 +118,7 @@ Use sidecars only for separable read-only work:
 
 Keep fixes local unless the user explicitly asks for parallel code edits with disjoint ownership.
 
-### 6. QA report
+### 7. QA report
 
 ```markdown
 ## QA Report: <Plan Title>
@@ -102,6 +126,12 @@ Keep fixes local unless the user explicitly asks for parallel code edits with di
 ### Findings
 
 - <issue> (severity: blocking | warning | suggestion)
+
+### Review Evidence
+
+- Screenshots: <paths/links or not applicable with reason>
+- Visual assessment: <pass/fail notes from inspecting screenshots>
+- Diagrams: <Mermaid block/link or not applicable with reason>
 
 ### Tests
 

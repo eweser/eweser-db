@@ -43,8 +43,12 @@ The Next.js/Supabase migration is complete. Do not treat old migration plans as 
 2. Type safety: no `any` unless there is a specific documented reason.
 3. Changesets: behavior or API changes to `@eweser/db`, `@eweser/shared`, or `@eweser/examples-components` need `npm run changeset`.
 4. Tests: run the narrowest relevant tests first, then `npm run check` when changes cross package boundaries.
-5. Yjs patterns: use CRDT operations and room/document helpers; never mutate Yjs-observed objects directly.
-6. Dependency hygiene: keep versions unified across workspaces where practical.
+5. UI-visible changes require browser testing, screenshots, and qualitative
+   assessment of those screenshots. Check spacing, alignment, balance, wrapping,
+   overflow, density, responsive fit, and whether the UI looks acceptable; a
+   screenshot alone is not sufficient evidence.
+6. Yjs patterns: use CRDT operations and room/document helpers; never mutate Yjs-observed objects directly.
+7. Dependency hygiene: keep versions unified across workspaces where practical.
 
 ## Package Relationships
 

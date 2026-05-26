@@ -25,5 +25,6 @@
   },
   "[json]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
-  }
+  },
+  "window.title": "${rootName}${separator}${activeRepositoryBranchName}${separator}[Branch: main]"
 }

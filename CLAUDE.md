@@ -58,6 +58,10 @@ Use `eweser_search` to recall decisions and session notes:
 - Monorepo with npm workspaces — changes to `packages/shared` affect all consumers
 - Yjs CRDT operations — never direct mutation
 - Changesets required for published package changes (`npm run changeset`)
+- UI-visible changes require browser testing, screenshots, and qualitative
+  assessment of those screenshots. Check spacing, alignment, balance, wrapping,
+  overflow, density, responsive fit, and whether the UI looks acceptable; a
+  screenshot alone is not sufficient evidence.
 
 ## Common Commands
 

@@ -38,6 +38,12 @@ git --no-pager log --oneline main..HEAD
 - `packages/...` - <what changed>
 - `packages/...` - <what changed>
 
+## Review Evidence
+
+- Screenshots: <links/paths for UI-visible changes, or Not applicable>
+- Visual assessment: <pass/fail notes from inspecting UI screenshots>
+- Diagrams: <Mermaid diagram or Not applicable>
+
 ## Testing
 
 - [ ] Unit tests pass (`npm test`)
@@ -50,6 +56,9 @@ git --no-pager log --oneline main..HEAD
 - [ ] No secrets committed
 - [ ] No direct Yjs mutations introduced
 - [ ] Database migrations added, not modified, if schema changed
+- [ ] UI-visible changes include screenshots, or the PR explains why not
+- [ ] UI screenshots have been inspected for spacing, alignment, balance, wrapping, overflow, density, and responsive fit
+- [ ] Backend/data-flow changes include a concise diagram, or the PR explains why not
 ```
 
 ## Rules
