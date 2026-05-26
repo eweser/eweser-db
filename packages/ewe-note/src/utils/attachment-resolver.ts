@@ -98,19 +98,24 @@ const RESOLVABLE_IMAGE_EXTENSIONS = new Set([
   '.webp',
 ]);
 
+const PERCENT_ESCAPE_PATTERN = /%[0-9a-f]{2}/i;
+
 function normalizeAttachmentPath(path: string): string {
   return path.replace(/\\/g, '/').replace(/^\.\//, '').replace(/\/+/g, '/');
 }
 
 function decodeAttachmentPathForSafety(path: string): string | null {
   let decoded = path;
+  let decodedAtLeastOnce = false;
   for (let attempt = 0; attempt < 2; attempt += 1) {
+    if (!PERCENT_ESCAPE_PATTERN.test(decoded)) break;
     try {
       const next = decodeURIComponent(decoded);
       if (next === decoded) break;
       decoded = next;
+      decodedAtLeastOnce = true;
     } catch {
-      return null;
+      return decodedAtLeastOnce ? decoded : null;
     }
   }
   return decoded;
