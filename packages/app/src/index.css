@@ -411,7 +411,7 @@ body,
     ) !important;
     box-shadow:
       inset 0 0 0 1px color-mix(in oklch, var(--foreground) 8%, transparent),
-      0 1px 0 color-mix(in oklch, var(--foreground) 7%, transparent);
+      0 1px 0 color-mix(in oklch, var(--foreground) 7%, transparent) !important;
     transition:
       background-color 150ms ease,
       border-color 150ms ease,
@@ -435,7 +435,7 @@ body,
     border-color: var(--ring) !important;
     box-shadow:
       0 0 0 4px color-mix(in oklch, var(--ring) 24%, transparent),
-      inset 0 0 0 1px color-mix(in oklch, var(--foreground) 12%, transparent);
+      inset 0 0 0 1px color-mix(in oklch, var(--foreground) 12%, transparent) !important;
     outline: none;
   }
 
@@ -446,7 +446,7 @@ body,
     caret-color: var(--foreground);
     box-shadow:
       0 0 0 1000px var(--background) inset,
-      0 0 0 4px color-mix(in oklch, var(--ring) 18%, transparent);
+      0 0 0 4px color-mix(in oklch, var(--ring) 18%, transparent) !important;
   }
 
   .app-console {
