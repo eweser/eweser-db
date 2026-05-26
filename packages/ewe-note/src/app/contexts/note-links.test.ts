@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   extractWikiLinkTargets,
   extractUnlinkedMentions,
+  getNormalizedWikiTargetEntries,
   linkUnlinkedMentionInMarkdown,
   normalizeWikiTarget,
 } from './note-links';
@@ -152,6 +153,51 @@ describe('note link extraction', () => {
         mention: 'artificial intelligence',
         start: 16,
         end: 39,
+      },
+    ]);
+  });
+
+  it('pairs source path target keys with their matching mention variants', () => {
+    const sourcePathEntries = getNormalizedWikiTargetEntries(
+      'Vault/Original File.md'
+    );
+    const candidates = new Map(
+      sourcePathEntries.map(({ key, mention }) => [
+        key,
+        { noteId: 'note-source', mention },
+      ])
+    );
+
+    expect(sourcePathEntries).toEqual([
+      {
+        key: 'vault original file md',
+        mention: 'Vault/Original File.md',
+      },
+      {
+        key: 'vault original file',
+        mention: 'Vault/Original File',
+      },
+      {
+        key: 'original file md',
+        mention: 'Original File.md',
+      },
+      {
+        key: 'original file',
+        mention: 'Original File',
+      },
+    ]);
+    expect(
+      extractUnlinkedMentions(
+        'Original File should be linked.',
+        candidates,
+        new Set()
+      )
+    ).toEqual([
+      {
+        noteId: 'note-source',
+        mention: 'Original File',
+        start: 0,
+        end: 13,
       },
     ]);
   });
