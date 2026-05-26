@@ -463,6 +463,36 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
                 Metadata
               </h3>
               <div className="space-y-2 text-xs">
+                {note.sourcePath ? (
+                  <div className="flex justify-between gap-3">
+                    <span className="shrink-0 text-muted-foreground">
+                      Source path
+                    </span>
+                    <span className="min-w-0 text-right [overflow-wrap:anywhere]">
+                      {note.sourcePath}
+                    </span>
+                  </div>
+                ) : null}
+                {note.sourceVault ? (
+                  <div className="flex justify-between gap-3">
+                    <span className="shrink-0 text-muted-foreground">
+                      Source vault
+                    </span>
+                    <span className="min-w-0 text-right [overflow-wrap:anywhere]">
+                      {note.sourceVault}
+                    </span>
+                  </div>
+                ) : null}
+                {note.sourceDirectory ? (
+                  <div className="flex justify-between gap-3">
+                    <span className="shrink-0 text-muted-foreground">
+                      Directory
+                    </span>
+                    <span className="min-w-0 text-right [overflow-wrap:anywhere]">
+                      {note.sourceDirectory}
+                    </span>
+                  </div>
+                ) : null}
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Created</span>
                   <span>{new Date(note.createdAt).toLocaleDateString()}</span>

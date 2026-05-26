@@ -20,6 +20,10 @@ export interface Note {
   title: string;
   content: string;
   folder: string;
+  sourcePath?: string;
+  sourceVault?: string;
+  sourceDirectory?: string;
+  sourceBreadcrumb?: string[];
   tags: string[];
   properties: Record<string, string>;
   aliases: string[];
@@ -126,8 +130,35 @@ function normalize(text: string) {
 }
 
 function getSourcePathTarget(sourcePath?: string) {
-  if (!sourcePath) return null;
-  return sourcePath.replace(/\.md$/i, '').trim() || null;
+  const normalized = normalizeSourcePath(sourcePath);
+  if (!normalized) return null;
+  return normalized.replace(/\.md$/i, '').trim() || null;
+}
+
+function normalizeSourcePath(sourcePath?: string) {
+  const normalized = sourcePath
+    ?.trim()
+    .replace(/\\/g, '/')
+    .replace(/^\.\/+/, '')
+    .replace(/\/+/g, '/')
+    .trim();
+  return normalized || undefined;
+}
+
+function buildSourceMetadata(
+  source: Pick<DbNote, 'sourcePath' | 'sourceVault'>
+) {
+  const sourcePath = normalizeSourcePath(source.sourcePath);
+  const sourceVault = source.sourceVault?.trim() || undefined;
+  const sourceBreadcrumb = sourcePath?.split('/').filter(Boolean);
+  const sourceDirectory = sourceBreadcrumb?.slice(0, -1).join('/') || undefined;
+
+  return {
+    ...(sourcePath ? { sourcePath } : {}),
+    ...(sourceVault ? { sourceVault } : {}),
+    ...(sourceDirectory ? { sourceDirectory } : {}),
+    ...(sourceBreadcrumb?.length ? { sourceBreadcrumb } : {}),
+  };
 }
 
 function deriveTitle(note: DbNote) {
@@ -452,6 +483,7 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
           title,
           content: source.text,
           folder: folderId,
+          ...buildSourceMetadata(source),
           tags: source.tags ?? [],
           properties: stringifyProperties(source.frontmatter),
           createdAt: new Date(source._created).toISOString(),
@@ -546,6 +578,7 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
         canonicalRoom && room.id !== canonicalRoom.id
           ? `room:${room.id}`
           : (source.folderIds?.[0] ?? ''),
+      ...buildSourceMetadata(source),
       tags: source.tags ?? [],
       properties: stringifyProperties(source.frontmatter),
       createdAt: new Date(source._created).toISOString(),
@@ -791,11 +824,20 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     const lowered = normalize(query);
     return notes.filter((note) => {
       const propertyText = Object.values(note.properties).join(' ');
+      const sourceText = [
+        note.sourcePath,
+        note.sourceVault,
+        note.sourceDirectory,
+        note.sourceBreadcrumb?.join(' '),
+      ]
+        .filter(Boolean)
+        .join(' ');
       return (
         normalize(note.title).includes(lowered) ||
         normalize(note.content).includes(lowered) ||
         normalize(note.tags.join(' ')).includes(lowered) ||
-        normalize(propertyText).includes(lowered)
+        normalize(propertyText).includes(lowered) ||
+        normalize(sourceText).includes(lowered)
       );
     });
   };
@@ -806,6 +848,10 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
       map.set(normalize(note.title), note.id);
       for (const alias of note.aliases) {
         map.set(normalize(alias), note.id);
+      }
+      const sourcePathTarget = getSourcePathTarget(note.sourcePath);
+      if (sourcePathTarget && !map.has(normalize(sourcePathTarget))) {
+        map.set(normalize(sourcePathTarget), note.id);
       }
     }
     return map;

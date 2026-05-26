@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Database, Note } from '@eweser/db';
 import type { FileAttachmentBase } from '@eweser/shared';
 import {
@@ -24,6 +24,14 @@ type AttachmentDocuments = {
 export type AttachmentRoomSource = {
   getDocuments: () => AttachmentDocuments;
 };
+
+type RoomCollectionSource = {
+  collectionKey?: string;
+};
+
+function getAttachmentRooms(db: Database): AttachmentRoomSource[] {
+  return db.getRooms('fileAttachments') as unknown as AttachmentRoomSource[];
+}
 
 function getLoadedAttachmentDocuments(
   room: AttachmentRoomSource
@@ -94,16 +102,39 @@ export function useEditorAttachmentContext({
   note: Note;
   noteRoomId: string;
 }): AttachmentResolverContext | undefined {
-  const attachmentRooms = useMemo<AttachmentRoomSource[]>(
-    () => db.getRooms('fileAttachments') as unknown as AttachmentRoomSource[],
-    [db]
-  );
+  const [attachmentRooms, setAttachmentRooms] = useState<
+    AttachmentRoomSource[]
+  >(() => getAttachmentRooms(db));
   const [attachments, setAttachments] = useState<FileAttachmentBase[]>(() =>
     collectNoteRoomAttachments(attachmentRooms, noteRoomId)
   );
   const [attachmentUrls, setAttachmentUrls] = useState<Record<string, string>>(
     {}
   );
+
+  useEffect(() => {
+    const refreshAttachmentRooms = () => {
+      setAttachmentRooms(getAttachmentRooms(db));
+    };
+    const handleRoomLoaded = (room: RoomCollectionSource) => {
+      if (room.collectionKey === 'fileAttachments') {
+        refreshAttachmentRooms();
+      }
+    };
+    const handleRoomsLoaded = (rooms: readonly RoomCollectionSource[]) => {
+      if (rooms.some((room) => room.collectionKey === 'fileAttachments')) {
+        refreshAttachmentRooms();
+      }
+    };
+
+    db.on('roomLoaded', handleRoomLoaded);
+    db.on('roomsLoaded', handleRoomsLoaded);
+
+    return () => {
+      db.off('roomLoaded', handleRoomLoaded);
+      db.off('roomsLoaded', handleRoomsLoaded);
+    };
+  }, [db]);
 
   useEffect(() => {
     const documents = attachmentRooms.flatMap((room) => {

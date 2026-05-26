@@ -336,11 +336,25 @@ describe('NotesContext parity behavior', () => {
       (note) => note.title === 'Links Navigation Edge Cases'
     );
     const alexNote = latestContext?.notes.find((note) => note.title === 'Alex');
+    const projectOverviewNote = latestContext?.notes.find(
+      (note) => note.sourcePath === 'Projects/Overview.md'
+    );
 
     expect(propertiesNote).toBeDefined();
     expect(linkTargetNote).toBeDefined();
     expect(edgeCasesNote).toBeDefined();
     expect(alexNote).toBeDefined();
+    expect(projectOverviewNote).toMatchObject({
+      title: 'Overview',
+      sourcePath: 'Projects/Overview.md',
+      sourceVault: 'feature-vault',
+      sourceDirectory: 'Projects',
+      sourceBreadcrumb: ['Projects', 'Overview.md'],
+    });
+
+    expect(
+      latestContext?.searchNotes('Projects/Overview').map((note) => note.id)
+    ).toContain(projectOverviewNote?.id);
 
     expect(latestContext?.resolveWikiLink('Properties Guide')).toBe(
       propertiesNote?.id
@@ -418,6 +432,83 @@ describe('NotesContext parity behavior', () => {
           ?.content
       ).toContain('[[Alex]] should become linked here.');
     });
+  });
+
+  it('uses normalized source paths when resolving outgoing links and backlinks', async () => {
+    latestContext = undefined;
+    const now = Date.now();
+    const overviewNote = {
+      _id: 'note-overview',
+      _ref: 'local|notes|room-notes|note-overview',
+      _created: now,
+      _updated: now,
+      text: '# Overview\n\nImported overview.',
+      frontmatter: {},
+      tags: [],
+      aliases: [],
+      folderIds: [],
+      wikiLinks: [],
+      attachmentRefs: [],
+      sourcePath: '  .\\Projects\\Overview.md  ',
+      sourceVault: 'feature-vault',
+    } as unknown as DbNote;
+    const linkingNote = {
+      _id: 'note-linking',
+      _ref: 'local|notes|room-notes|note-linking',
+      _created: now + 1,
+      _updated: now + 1,
+      text: 'Read [[Projects/Overview]] for details.',
+      frontmatter: {},
+      tags: [],
+      aliases: [],
+      folderIds: [],
+      wikiLinks: [],
+      attachmentRefs: [],
+      sourcePath: 'Linking.md',
+      sourceVault: 'feature-vault',
+    } as unknown as DbNote;
+    const docs = new FakeDocuments([overviewNote, linkingNote]);
+    const room = createRoom('room-notes', 'Notes', docs);
+
+    dbState = createDbState(room);
+    mockUseDb.mockImplementation(() => dbState);
+    mockUseFolders.mockReturnValue({
+      folders: [],
+      createFolder: vi.fn(),
+      renameFolder: vi.fn(),
+      deleteFolder: vi.fn(),
+    });
+
+    render(
+      <NotesProvider>
+        <Probe />
+      </NotesProvider>
+    );
+
+    await waitFor(() => {
+      expect(latestContext?.notes.length).toBe(2);
+    });
+
+    const overview = latestContext?.notes.find(
+      (note) => note.id === 'note-overview'
+    );
+    const linking = latestContext?.notes.find(
+      (note) => note.id === 'note-linking'
+    );
+
+    expect(overview?.sourcePath).toBe('Projects/Overview.md');
+    expect(latestContext?.resolveWikiLink('Projects/Overview')).toBe(
+      overview?.id
+    );
+    expect(linking?.outgoingLinks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          target: 'Projects/Overview',
+          noteId: overview?.id,
+        }),
+      ])
+    );
+    expect(overview?.backlinks).toContain(linking?.id);
   });
 
   it('keeps templates available and creates today notes in the Daily Notes folder', async () => {

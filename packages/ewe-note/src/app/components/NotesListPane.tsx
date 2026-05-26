@@ -48,6 +48,7 @@ export function NotesListPane({
 
   const incompleteTasks = tasks.filter((task) => !task.completed);
   const filterLabel = getFilterLabel(activeView, folders);
+  const filterSubLabel = getFilterSubLabel(activeView);
 
   return (
     <aside className="flex h-full min-h-0 w-full shrink-0 flex-col border-r border-border bg-card/80 md:h-screen">
@@ -56,6 +57,11 @@ export function NotesListPane({
           <div className="flex items-center justify-between gap-2 rounded-xl bg-accent/60 px-3 py-2">
             <div className="min-w-0 text-sm text-foreground">
               <span className="font-medium">{filterLabel}</span>
+              {filterSubLabel ? (
+                <div className="mt-0.5 text-xs text-muted-foreground">
+                  {filterSubLabel}
+                </div>
+              ) : null}
             </div>
             <button
               type="button"
@@ -124,6 +130,7 @@ export function NotesListPane({
               const isActive = note.id === selectedNoteId;
               const folderName =
                 folders.find((folder) => folder.id === note.folder)?.name ?? '';
+              const sourceLabel = note.sourcePath ?? '';
               const tagPreview = note.tags[0] ? note.tags[0] : null;
 
               return (
@@ -153,8 +160,14 @@ export function NotesListPane({
                       <div className="mt-1 line-clamp-2 text-sm leading-5 text-muted-foreground">
                         {stripMarkdown(note.content)}
                       </div>
-                      {folderName || tagPreview ? (
+                      {sourceLabel || folderName || tagPreview ? (
                         <div className="mt-2 flex items-center gap-2 text-[11px] text-muted-foreground">
+                          {sourceLabel ? (
+                            <span className="truncate">{sourceLabel}</span>
+                          ) : null}
+                          {sourceLabel && (folderName || tagPreview) ? (
+                            <span>•</span>
+                          ) : null}
                           {folderName ? (
                             <span className="truncate">{folderName}</span>
                           ) : null}
@@ -227,6 +240,11 @@ function getFilterLabel(
     const folderId = activeView.replace('folder:', '');
     return folders.find((folder) => folder.id === folderId)?.name ?? 'Folder';
   }
+  return null;
+}
+
+function getFilterSubLabel(activeView: WorkspaceView) {
+  if (activeView.startsWith('folder:')) return 'Including subfolders';
   return null;
 }
 

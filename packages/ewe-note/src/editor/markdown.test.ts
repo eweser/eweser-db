@@ -345,6 +345,24 @@ describe('TipTap markdown bridge', () => {
     expect(resolved.originalSource).toBe('![[image.png]]');
   });
 
+  it('resolves percent-encoded targets that decode to literal percent filenames', () => {
+    const resolved = resolveAttachmentEmbed('100%25.png', {
+      attachments: [attachment('Attachments/100%.png')],
+      attachmentUrls: {
+        'Attachments/100%.png': 'blob:resolved-percent-image',
+      },
+      noteSourcePath: 'Notes/Imported Note.md',
+    });
+
+    expect(resolved.status).toBe('resolved');
+    if (resolved.status !== 'resolved') {
+      throw new Error('Expected 100%25.png to resolve to 100%.png.');
+    }
+    expect(resolved.sourcePath).toBe('Attachments/100%.png');
+    expect(resolved.url).toBe('blob:resolved-percent-image');
+    expect(resolved.originalSource).toBe('![[100%25.png]]');
+  });
+
   it.each(['image.png?raw=1', 'image.png#preview'])(
     'resolves image embed target %s after stripping query or fragment metadata',
     (target) => {

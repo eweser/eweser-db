@@ -655,7 +655,7 @@ function FolderItem({
           {folder.name}
         </span>
         <span className="shrink-0 self-center text-[11px] text-muted-foreground">
-          {folderNotes.length}
+          {folderNotes.length} direct
         </span>
       </button>
       <DropdownMenu>
