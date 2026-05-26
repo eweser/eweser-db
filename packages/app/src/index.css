@@ -256,14 +256,23 @@ body,
   .auth-grid {
     display: grid;
     grid-template-columns: minmax(0, 1.05fr) minmax(24rem, 0.7fr);
+    grid-template-areas:
+      'story panel'
+      'supporting panel';
     gap: clamp(2rem, 5vw, 5rem);
     width: min(1180px, calc(100% - 2rem));
     margin: 0 auto;
     padding: clamp(2.5rem, 6vw, 5rem) 0;
-    align-items: center;
+    align-items: start;
   }
 
   .auth-story {
+    grid-area: story;
+    min-width: 0;
+  }
+
+  .auth-supporting {
+    grid-area: supporting;
     min-width: 0;
   }
 
@@ -379,6 +388,9 @@ body,
   }
 
   .auth-panel {
+    grid-area: panel;
+    align-self: start;
+    margin-top: clamp(2.25rem, 8vw, 7rem);
     border: 1px solid var(--surface-line);
     border-radius: 1.6rem;
     background: var(--auth-panel);
@@ -400,6 +412,73 @@ body,
     color: var(--muted-foreground);
     font-size: 0.92rem;
     line-height: 1.55;
+  }
+
+  .auth-form {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .auth-field-group {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .auth-field-group label {
+    margin: 0;
+  }
+
+  .auth-social-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .auth-input-field {
+    border: 1px solid var(--surface-line) !important;
+    background: color-mix(
+      in oklch,
+      var(--surface-sunken) 82%,
+      transparent
+    ) !important;
+    box-shadow:
+      inset 0 0 0 1px color-mix(in oklch, var(--foreground) 8%, transparent),
+      0 1px 0 color-mix(in oklch, var(--foreground) 7%, transparent) !important;
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease,
+      box-shadow 150ms ease;
+  }
+
+  .auth-input-field:hover {
+    border-color: color-mix(
+      in oklch,
+      var(--ring) 55%,
+      var(--surface-line)
+    ) !important;
+    background: color-mix(
+      in oklch,
+      var(--surface-sunken) 68%,
+      var(--background)
+    ) !important;
+  }
+
+  .auth-input-field:focus-visible {
+    border-color: var(--ring) !important;
+    box-shadow:
+      0 0 0 4px color-mix(in oklch, var(--ring) 24%, transparent),
+      inset 0 0 0 1px color-mix(in oklch, var(--foreground) 12%, transparent) !important;
+    outline: none;
+  }
+
+  .auth-input-field:-webkit-autofill,
+  .auth-input-field:-webkit-autofill:focus {
+    border-color: var(--ring) !important;
+    -webkit-text-fill-color: var(--foreground);
+    caret-color: var(--foreground);
+    box-shadow:
+      0 0 0 1000px var(--background) inset,
+      0 0 0 4px color-mix(in oklch, var(--ring) 18%, transparent) !important;
   }
 
   .app-console {
@@ -1209,6 +1288,18 @@ body,
       grid-template-columns: 1fr;
     }
 
+    .auth-grid {
+      grid-template-areas:
+        'story'
+        'panel'
+        'supporting';
+      gap: clamp(1.25rem, 4vw, 2rem);
+    }
+
+    .auth-panel {
+      margin-top: 0;
+    }
+
     .app-page-actions {
       justify-content: flex-start;
     }
@@ -1267,12 +1358,13 @@ body,
     .app-page,
     .mcp-page {
       width: auto;
+      padding-block: 2rem;
       padding-inline: 1rem;
     }
 
     .auth-story h1,
     .mcp-hero-title {
-      font-size: 3rem;
+      font-size: 2.75rem;
     }
 
     .app-page-title {
