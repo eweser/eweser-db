@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import type { FileAttachmentBase } from '@eweser/shared';
 import {
   editorJsonToMarkdown,
   markdownToEditorHtml,
@@ -9,6 +10,7 @@ import {
 } from './markdown';
 import { markdownToOfm, ofmToMarkdown } from '../extensions/ofm-serializer';
 import { parseCalloutHeader } from '../extensions/callout';
+import { resolveAttachmentEmbed } from '../utils/attachment-resolver';
 import {
   FEATURE_VAULT_MATRIX,
   readFeatureVaultFixture,
@@ -51,6 +53,24 @@ function normalizeOfmText(value: string): string {
     .replace(/[ \t]+\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
+}
+
+function attachment(
+  sourcePath: string,
+  overrides: Partial<FileAttachmentBase> = {}
+): FileAttachmentBase {
+  const filename = sourcePath.split('/').pop() ?? sourcePath;
+  return {
+    baseId: 'notes-room-1',
+    contentHash: `hash:${sourcePath}`,
+    filename,
+    localAvailability: 'available',
+    mimeType: 'image/png',
+    size: 12,
+    sourcePath,
+    sourceVault: 'test-vault',
+    ...overrides,
+  };
 }
 
 describe('TipTap markdown bridge', () => {
@@ -229,15 +249,64 @@ describe('TipTap markdown bridge', () => {
     expect(back).toContain('![[Notes/Session 1#Topic Heading]]');
   });
 
-  it('preserves media embeds as source-visible OFM until a media node owns them', () => {
+  it('keeps image embeds source-visible when no attachment context is available', () => {
     const source = '![[Attachments/test-image.png|640x480]]';
     const toEditor = ofmToMarkdown(source);
-    const back = markdownToOfm(toEditor);
     const html = markdownToEditorHtml(source);
 
-    expect(toEditor).toContain('![[Attachments/test-image.png|640x480]]');
-    expect(back).toContain('![[Attachments/test-image.png|640x480]]');
+    expect(toEditor).toBe(source);
     expect(html).toContain('![[Attachments/test-image.png|640x480]]');
+    expect(html).not.toContain('data-ewe-broken-attachment="true"');
+  });
+
+  it('renders available Obsidian image embeds as image HTML with resolver metadata', () => {
+    const source = [
+      '![[image.png]]',
+      '![[Assets/diagram.png|300]]',
+      '![[wide.png|640x480]]',
+    ].join('\n');
+    const html = markdownToEditorHtml(source, {
+      attachments: [
+        attachment('Attachments/image.png'),
+        attachment('Assets/diagram.png'),
+        attachment('Media/wide.png', { filename: 'wide.png' }),
+      ],
+      attachmentUrls: {
+        'Attachments/image.png': 'blob:available-cover',
+        'Assets/diagram.png': 'blob:available-diagram',
+        'Media/wide.png': 'blob:available-wide',
+      },
+      noteSourcePath: 'Notes/Imported Note.md',
+    });
+
+    expect(html).toContain('<img');
+    expect(html).toContain('src="blob:available-cover"');
+    expect(html).toContain(
+      'data-ewe-attachment-source="Attachments/image.png"'
+    );
+    expect(html).toContain('data-ewe-ofm-source="![[image.png]]"');
+    expect(html).toContain('src="blob:available-diagram"');
+    expect(html).toContain('data-ewe-attachment-source="Assets/diagram.png"');
+    expect(html).toContain('width="300"');
+    expect(html).toContain('src="blob:available-wide"');
+    expect(html).toContain('width="640"');
+    expect(html).toContain('height="480"');
+  });
+
+  it('renders missing Obsidian image embeds as non-destructive placeholders', () => {
+    const source = 'Before ![[missing.png|300]] after';
+    const html = markdownToEditorHtml(source, {
+      attachments: [attachment('Attachments/other.png')],
+      attachmentUrls: { 'Attachments/other.png': 'blob:other' },
+      noteSourcePath: 'Notes/Imported Note.md',
+    });
+    const toEditor = ofmToMarkdown(source, { attachments: [] });
+    const back = markdownToOfm(toEditor);
+
+    expect(html).toContain('data-ewe-broken-attachment="true"');
+    expect(html).toContain('data-ewe-ofm-source="![[missing.png|300]]"');
+    expect(html).toContain('![[missing.png|300]]');
+    expect(back).toContain('![[missing.png|300]]');
     expect(
       editorJsonToMarkdown({
         type: 'doc',
@@ -247,14 +316,78 @@ describe('TipTap markdown bridge', () => {
             content: [
               {
                 type: 'text',
-                text: '![[Attachments/test-image.png|640x480]]',
+                text: '![[missing.png|300]]',
               },
             ],
           },
         ],
       })
-    ).toBe('![[Attachments/test-image.png|640x480]]');
+    ).toBe('![[missing.png|300]]');
   });
+
+  it('resolves image embed targets through Obsidian attachment metadata candidates', () => {
+    const resolved = resolveAttachmentEmbed('image.png', {
+      attachments: [attachment('Attachments/image.png')],
+      attachmentUrls: {
+        'Attachments/image.png': 'blob:resolved-image',
+      },
+      noteSourcePath: 'Notes/Imported Note.md',
+    });
+
+    expect(resolved.status).toBe('resolved');
+    if (resolved.status !== 'resolved') {
+      throw new Error(
+        'Expected image.png to resolve to the attachment record.'
+      );
+    }
+    expect(resolved.sourcePath).toBe('Attachments/image.png');
+    expect(resolved.url).toBe('blob:resolved-image');
+    expect(resolved.originalSource).toBe('![[image.png]]');
+  });
+
+  it.each(['image.png?raw=1', 'image.png#preview'])(
+    'resolves image embed target %s after stripping query or fragment metadata',
+    (target) => {
+      const resolved = resolveAttachmentEmbed(target, {
+        attachments: [attachment('Attachments/image.png')],
+        attachmentUrls: {
+          'Attachments/image.png': 'blob:resolved-image',
+        },
+        noteSourcePath: 'Notes/Imported Note.md',
+      });
+
+      expect(resolved.status).toBe('resolved');
+      if (resolved.status !== 'resolved') {
+        throw new Error(
+          `Expected ${target} to resolve to the attachment record.`
+        );
+      }
+      expect(resolved.sourcePath).toBe('Attachments/image.png');
+      expect(resolved.url).toBe('blob:resolved-image');
+      expect(resolved.originalSource).toBe(`![[${target}]]`);
+    }
+  );
+
+  it.each(['../secret.png', '..\\secret.png', '%2e%2e/secret.png'])(
+    'keeps unsafe vault image embed target %s source-visible instead of constructing local URLs',
+    (target) => {
+      const source = `![[${target}]]`;
+      const context = {
+        vaultConfig: {
+          localServerBaseUrl: 'http://localhost:5174',
+          strategy: 'local_file' as const,
+          vaultPath: '/Users/jacob/vault',
+        },
+      };
+
+      expect(resolveAttachmentEmbed(target, context).status).toBe('missing');
+
+      const html = markdownToEditorHtml(source, context);
+      expect(html).toContain(source);
+      expect(html).not.toContain('/vault/');
+      expect(html).not.toContain('file://');
+    }
+  );
 
   it('serializes vault image nodes to OFM instead of dropping them', () => {
     expect(
@@ -273,6 +406,36 @@ describe('TipTap markdown bridge', () => {
         ],
       })
     ).toBe('![[Attachments/test-image.png|640x480]]');
+  });
+
+  it('serializes rendered image nodes with attachment resolver metadata back to OFM', () => {
+    expect(
+      editorJsonToMarkdown({
+        type: 'doc',
+        content: [
+          {
+            type: 'image',
+            attrs: {
+              src: 'blob:rendered-diagram',
+              alt: 'diagram.png',
+              sourcePath: 'Assets/diagram.png',
+              width: 300,
+            },
+          },
+          {
+            type: 'image',
+            attrs: {
+              src: 'blob:rendered-wide',
+              alt: 'wide.png',
+              originalSource: '![[wide.png|640x480]]',
+              sourcePath: 'Media/wide.png',
+              width: 640,
+              height: 480,
+            },
+          },
+        ],
+      })
+    ).toBe('![[Assets/diagram.png|300]]\n\n![[wide.png|640x480]]');
   });
 
   it('uses one slug contract for editor headings and outline links', () => {

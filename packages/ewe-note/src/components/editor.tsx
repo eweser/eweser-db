@@ -11,6 +11,7 @@ import { useNotesRoom } from '@/notes-room';
 import { Icons } from '@/lib/icons';
 import FrontmatterEditor from '@/components/frontmatter-editor';
 import { TiptapEditor } from '@/components/tiptap-editor';
+import { useEditorAttachmentContext } from '@/components/editor-attachments';
 import type { Editor as TiptapEditorInstance } from '@tiptap/react';
 
 const darkModeCursorColors = [
@@ -83,6 +84,7 @@ export default function Editor({
       updateNoteText={updateNoteText}
       updateNoteFrontmatter={updateNoteFrontmatter}
       note={note}
+      noteRoomId={selectedRoom.id}
       showFrontmatterEditor={showFrontmatterEditor}
       onEditorReady={onEditorReady}
       onEditorFocusChange={onEditorFocusChange}
@@ -100,6 +102,7 @@ function EditorInternal({
   updateNoteText,
   updateNoteFrontmatter,
   note,
+  noteRoomId,
   showFrontmatterEditor,
   onEditorReady,
   onEditorFocusChange,
@@ -116,6 +119,7 @@ function EditorInternal({
     note?: Note
   ) => void;
   note: Note;
+  noteRoomId: string;
   showFrontmatterEditor: boolean;
   onEditorReady?: (editor: TiptapEditorInstance | null) => void;
   onEditorFocusChange?: (focused: boolean) => void;
@@ -123,8 +127,13 @@ function EditorInternal({
   sourceMode?: boolean;
   onSourceModeChange?: (sourceMode: boolean) => void;
 }) {
-  const { user } = useDb();
+  const { db, user } = useDb();
   const { resolvedMode } = useTheme();
+  const attachmentContext = useEditorAttachmentContext({
+    db,
+    note,
+    noteRoomId,
+  });
   const usedTheme = resolvedMode;
   const cursorColors =
     usedTheme === 'dark' ? darkModeCursorColors : lightModeCursorColors;
@@ -153,6 +162,7 @@ function EditorInternal({
           onNavigateWikiLink={onNavigateWikiLink}
           sourceMode={sourceMode}
           onSourceModeChange={onSourceModeChange}
+          attachmentContext={attachmentContext}
         />
       </div>
     </div>

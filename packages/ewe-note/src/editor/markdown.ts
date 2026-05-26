@@ -2,6 +2,7 @@ import type { JSONContent } from '@tiptap/react';
 import MarkdownIt from 'markdown-it';
 import { markdownToOfm, ofmToMarkdown } from '../extensions/ofm-serializer';
 import { toImageEmbedSyntax } from '../extensions/image-embed';
+import type { AttachmentResolverContext } from '../utils/attachment-resolver';
 
 const markdown = new MarkdownIt({
   html: true,
@@ -59,12 +60,18 @@ function preprocessTaskLines(source: string): string {
   return output.join('\n');
 }
 
-function markdownToEditorMarkdown(source: string): string {
-  return ofmToMarkdown(source);
+function markdownToEditorMarkdown(
+  source: string,
+  attachmentContext?: AttachmentResolverContext
+): string {
+  return ofmToMarkdown(source, attachmentContext);
 }
 
-export function markdownToEditorHtml(source: string): string {
-  const normalized = markdownToEditorMarkdown(source);
+export function markdownToEditorHtml(
+  source: string,
+  attachmentContext?: AttachmentResolverContext
+): string {
+  const normalized = markdownToEditorMarkdown(source, attachmentContext);
   return renderHighlightHtml(markdown.render(preprocessTaskLines(normalized)));
 }
 
@@ -175,18 +182,35 @@ function decodeVaultSrc(src: string) {
   }
 }
 
+function isImageEmbedSource(value: string): boolean {
+  return value.startsWith('![[') && value.endsWith(']]');
+}
+
 function renderImage(node: JSONContent): string {
   const src = String(node.attrs?.src ?? '');
   const alt = String(node.attrs?.alt ?? '');
+  const originalSource = String(node.attrs?.originalSource ?? '');
+  const sourcePath = String(node.attrs?.sourcePath ?? '');
   const vaultPath = decodeVaultSrc(src);
   const width = Number(node.attrs?.width);
   const height = Number(node.attrs?.height);
+  const dimensions = {
+    ...(Number.isFinite(width) && width > 0 ? { width } : {}),
+    ...(Number.isFinite(height) && height > 0 ? { height } : {}),
+  };
+
+  if (isImageEmbedSource(originalSource)) {
+    return originalSource;
+  }
+
+  if (sourcePath) {
+    return toImageEmbedSyntax({ sourcePath, ...dimensions });
+  }
 
   if (vaultPath) {
     return toImageEmbedSyntax({
       sourcePath: vaultPath,
-      ...(Number.isFinite(width) && width > 0 ? { width } : {}),
-      ...(Number.isFinite(height) && height > 0 ? { height } : {}),
+      ...dimensions,
     });
   }
 
