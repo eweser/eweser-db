@@ -55,7 +55,33 @@ export function buildAppPath(base: string, path = '/') {
   return `${normalizedBase}${normalizedPath}`;
 }
 
-export const routerBase = normalizeBase(import.meta.env.BASE_URL ?? '/');
+const notesMountPath = '/notes';
+
+export function resolveRouterBase(
+  viteBase = import.meta.env.BASE_URL ?? '/',
+  pathname = typeof window === 'undefined' ? '/' : window.location.pathname
+) {
+  const normalizedViteBase = normalizeBase(viteBase);
+
+  if (normalizedViteBase !== '/') {
+    return normalizedViteBase;
+  }
+
+  const normalizedPathname = pathname.startsWith('/')
+    ? pathname
+    : `/${pathname}`;
+
+  if (
+    normalizedPathname === notesMountPath ||
+    normalizedPathname.startsWith(`${notesMountPath}/`)
+  ) {
+    return notesMountPath;
+  }
+
+  return '/';
+}
+
+export const routerBase = resolveRouterBase(import.meta.env.BASE_URL ?? '/');
 
 export const AUTH_SERVER = resolveAuthServerUrl();
 

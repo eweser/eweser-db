@@ -30,6 +30,8 @@ including page routes, note context, and product-specific app components.
 
 - Route changes must stay aligned with links and navigation commands in the app
   components.
+- Browser routes must honor the configured router base so the app works at both
+  the local root path and the deployed `/notes` mount point.
 - Notes state should preserve local-first behavior through `@eweser/db` and the
   existing room hooks.
 - User-visible workflow changes should keep Cypress selectors stable or update
