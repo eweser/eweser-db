@@ -8,6 +8,7 @@ import { buildDefaultUntitledNoteTitle, UNTITLED_TITLE } from './note-titles';
 import {
   extractWikiLinkTargets,
   extractUnlinkedMentions,
+  getNormalizedWikiTargetEntries,
   getNormalizedWikiTargetKeys,
   getSourcePathTargets,
   linkUnlinkedMentionInMarkdown,
@@ -227,10 +228,14 @@ function buildResolvableTargets(notes: InternalNote[]): ResolvableTargets {
   for (const note of notes) {
     const noteMentions = mentionsByNoteId.get(note.id) ?? new Set<string>();
     const addTarget = (target: string, mention = target) => {
-      for (const normalizedTarget of getNormalizedWikiTargetKeys(target)) {
+      for (const entry of getNormalizedWikiTargetEntries(target)) {
+        const normalizedTarget = entry.key;
         noteMentions.add(normalizedTarget);
         if (!targets.has(normalizedTarget)) {
-          targets.set(normalizedTarget, { noteId: note.id, mention });
+          targets.set(normalizedTarget, {
+            noteId: note.id,
+            mention: mention === target ? entry.mention : mention,
+          });
         }
       }
     };

@@ -82,6 +82,14 @@ export function getNormalizedWikiTargetKeys(target: string): string[] {
   );
 }
 
+export function getNormalizedWikiTargetEntries(
+  target: string
+): Array<{ key: string; mention: string }> {
+  return uniqueNonEmpty([target, ...getSourcePathTargets(target)]).map(
+    (mention) => ({ key: normalizeWikiTarget(mention), mention })
+  );
+}
+
 function parseWikiHrefTarget(href: string): ExtractedWikiLink | null {
   if (!href.startsWith('wiki://')) return null;
 
