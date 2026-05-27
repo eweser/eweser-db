@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { ThemeProvider, useTheme } from 'next-themes';
 import { useEffect, useState, type FormEvent } from 'react';
+import EweserLogo from './assets/eweser-logo.svg';
 import heroPastureImage from './assets/hero-orbit-house.png';
 import loginDarkImage from './assets/login-dark.png';
 import {
@@ -249,12 +250,12 @@ function SiteHeader() {
     <header className="sticky top-0 z-50 border-b border-border/70 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
         <Link className="flex items-center gap-3 no-underline" to="/">
-          <span
+          <img
+            alt="EweserDB"
             aria-hidden="true"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground"
-          >
-            <span className="h-2.5 w-2.5 rounded-full bg-foreground/80" />
-          </span>
+            className="h-8 w-auto"
+            src={EweserLogo}
+          />
           <span className="text-lg font-semibold tracking-tight text-foreground">
             EweserDB
           </span>
