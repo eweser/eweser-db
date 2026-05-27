@@ -73,7 +73,7 @@ export const connectAiPreviewOverview: ConnectAiOverviewResponse = {
         writeRoomCount: 1,
       },
       description:
-        'Local stdio setup with @eweser/mcp and a short-lived agent token.',
+        'HTTP SSE MCP setup with @eweser/mcp and a short-lived agent token.',
       fallbackReason: null,
       title: 'Claude Desktop',
       type: 'token',
