@@ -94,7 +94,7 @@ const ecosystemCards = [
     title: 'AI + MCP',
     text: 'Start with token-backed MCP access to scoped rooms, then expand to hosted OAuth clients as those flows are verified.',
     status:
-      'Local proof covers token setup, MCP room list/search, and Agent Journal writes.',
+      'Production proof covers token bootstrap, core MCP operations, and Agent Journal writes.',
     tone: 'sky',
     featured: true,
     image: `${imageBase}/icon-automation.png`,
@@ -191,7 +191,7 @@ const mcpClients = [
 const mcpStatuses = [
   [
     'MCP endpoint',
-    'Token-backed setup, room list/search, and one Agent Journal write verified locally.',
+    'Production-verified token bootstrap, core MCP operations including Agent Journal writes.',
   ],
   ['Memory rooms', 'Scoped context across apps and sessions.'],
   [
@@ -710,8 +710,8 @@ const developerStatuses = [
             </svg>
           </a>
           <small>
-            Token-backed local setup is verified; hosted OAuth remains behind
-            sign-in.
+            Token-backed setup is production-verified; hosted OAuth and
+            non-Claude-Desktop client proofs remain behind sign-in.
           </small>
         </div>
 

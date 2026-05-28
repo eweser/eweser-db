@@ -32,7 +32,7 @@ const availableTools = [
       'Local desktop setup using the Eweser MCP server and token-backed access.',
     href: aiSignInUrl,
     path: 'Token-backed MCP setup',
-    status: 'Local token setup plus MCP room list/search are verified.',
+    status: 'Production-verified token setup with full MCP operation coverage.',
     title: 'Claude Desktop',
   },
   {
@@ -71,7 +71,7 @@ const availableTools = [
       'Token-backed setup for Codex workflows that need permissioned Eweser data.',
     href: aiSignInUrl,
     path: 'Token-backed setup',
-    status: 'Uses the verified token-backed MCP setup path.',
+    status: 'Uses the production-verified token-backed MCP setup path.',
     title: 'Codex',
   },
   {
@@ -167,10 +167,11 @@ const comingLater = [
           Current verification and setup paths
         </h2>
         <p class="mt-3 max-w-3xl text-sm leading-6 text-stone-600">
-          Local testing has verified sign-in, Ewe Note save, token-backed MCP
-          setup, room list/search, and one Agent Journal write. Hosted
-          production and OAuth client validation remains pending until the
-          hosted tester pass completes.
+          Production testing has verified token bootstrap, core MCP operations
+          including search and Agent Journal writes, and Claude Desktop
+          integration through HTTP SSE transport. OAuth client validation and
+          non-Claude-Desktop client proofs remain pending until those specific
+          flows are verified.
         </p>
         <div class="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {
