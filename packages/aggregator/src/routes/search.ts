@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import type { FederatedSearchResult } from '../federation/types.js';
 
 type SearchDocument = {
   id: string;
@@ -17,6 +18,13 @@ type SearchRouteDeps = {
     offset?: number;
   }) => Promise<SearchDocument[]>;
   getDocumentsByRoom: (roomId: string) => Promise<SearchDocument[]>;
+  /** Optional federated search. When provided, /search returns federated results. */
+  federatedSearch?: ((params: {
+    query: string;
+    collectionKey?: string | undefined;
+    limit?: number;
+    offset?: number;
+  }) => Promise<FederatedSearchResult>) | undefined;
 };
 
 export function createSearchRouter(deps: SearchRouteDeps) {
@@ -36,6 +44,24 @@ export function createSearchRouter(deps: SearchRouteDeps) {
     }
 
     try {
+      // If federated search is configured, use it
+      if (deps.federatedSearch) {
+        const result = await deps.federatedSearch({
+          query,
+          collectionKey,
+          limit,
+          offset,
+        });
+        return c.json(
+          {
+            local: result.local,
+            federated: result.federated,
+          },
+          200
+        );
+      }
+
+      // Fallback: local-only search
       const results = await deps.searchDocuments({
         query,
         collectionKey,
