@@ -27,16 +27,22 @@ describe('parsePeers', () => {
       'peer1|https://peer1.example.com/api|s1,peer2|https://peer2.example.com/api|s2'
     );
     expect(peers).toHaveLength(2);
-    expect(peers[0]!.label).toBe('peer1');
-    expect(peers[1]!.label).toBe('peer2');
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const p0 = peers[0]!;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const p1 = peers[1]!;
+    expect(p0.label).toBe('peer1');
+    expect(p1.label).toBe('peer2');
   });
 
   it('trims whitespace around peer entries', () => {
     const peers = parsePeers(' peer1 | https://peer1.example.com/api | s1 ');
     expect(peers).toHaveLength(1);
-    expect(peers[0]!.label).toBe('peer1');
-    expect(peers[0]!.url).toBe('https://peer1.example.com/api');
-    expect(peers[0]!.secret).toBe('s1');
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const p = peers[0]!;
+    expect(p.label).toBe('peer1');
+    expect(p.url).toBe('https://peer1.example.com/api');
+    expect(p.secret).toBe('s1');
   });
 
   it('throws on malformed entry (missing parts)', () => {
@@ -82,12 +88,16 @@ describe('loadPeers / resetPeerCache', () => {
     resetPeerCache();
     const peers = loadPeers();
     expect(peers).toHaveLength(1);
-    expect(peers[0]!.label).toBe('peer1');
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const p = peers[0]!;
+    expect(p.label).toBe('peer1');
   });
 
   it('rejects the env override parameter', () => {
     const peers = loadPeers('custom|https://custom.example.com/api|secret');
     expect(peers).toHaveLength(1);
-    expect(peers[0]!.label).toBe('custom');
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const p2 = peers[0]!;
+    expect(p2.label).toBe('custom');
   });
 });

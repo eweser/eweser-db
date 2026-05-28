@@ -84,8 +84,10 @@ describe('federatedSearch', () => {
     const result = await federatedSearch(deps, { query: 'test' });
     expect(result.local).toEqual(mockLocalDocs);
     expect(result.federated).toHaveLength(1);
-    expect(result.federated[0]!.peer).toBe('bad-peer');
-    expect(result.federated[0]!.results).toEqual([]);
-    expect(result.federated[0]!.error).toBeDefined();
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const firstPeer = result.federated[0]!;
+    expect(firstPeer.peer).toBe('bad-peer');
+    expect(firstPeer.results).toEqual([]);
+    expect(firstPeer.error).toBeDefined();
   });
 });

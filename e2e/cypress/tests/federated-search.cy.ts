@@ -51,6 +51,7 @@ describe('federated search micro-example', () => {
 
       // Peer entry must have a peer label
       expect(peerEntry).to.have.property('peer');
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       expect(peerEntry.peer).to.be.a('string').and.not.be.empty;
       // Must include the port of Peer B
       expect(peerEntry.peer).to.contain('3092');

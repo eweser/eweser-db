@@ -83,7 +83,7 @@ function simpleSearch(
   offset = 0
 ) {
   const terms = query.toLowerCase().split(/\s+/);
-  let filtered = collectionKey
+  const filtered = collectionKey
     ? docs.filter((d) => d.collectionKey === collectionKey)
     : docs;
 
@@ -175,7 +175,7 @@ peerA.get('/api/search', async (c) => {
   const localResults = simpleSearch(peerADocuments, query, collectionKey, 25);
 
   // 2. Federated fan-out to Peer B
-  let federated: Array<{
+  const federated: Array<{
     peer: string;
     results: ReturnType<typeof simpleSearch>;
     error?: string;
@@ -336,7 +336,9 @@ peerA.get('/', (c) => {
 // ── Start both servers ─────────────────────────────────────────────────
 
 serve({ fetch: peerA.fetch, port: 3091 });
+// eslint-disable-next-line no-console
 console.log('Peer A running at http://localhost:3091');
 
 serve({ fetch: peerB.fetch, port: 3092 });
+// eslint-disable-next-line no-console
 console.log('Peer B running at http://localhost:3092');
