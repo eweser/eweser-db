@@ -30,7 +30,7 @@ import type { IndexeddbPersistence } from 'y-indexeddb';
 import type { Doc } from 'yjs';
 import type { GetDocuments } from './utils/getDocuments.js';
 
-export type ProviderOptions = 'WebRTC' | 'Hocuspocus' | 'IndexedDB';
+export type ProviderOptions = 'Hocuspocus' | 'IndexedDB';
 export type indexedDBProviderPolyfill = (
   roomId: string,
   yDoc: Doc

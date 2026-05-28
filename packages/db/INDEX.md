@@ -3,7 +3,7 @@
 ## Plain English
 
 This package is the browser SDK for local-first EweserDB rooms, documents,
-IndexedDB persistence, and optional WebRTC/Hocuspocus sync.
+IndexedDB persistence, and optional Hocuspocus sync.
 
 ## Owns
 

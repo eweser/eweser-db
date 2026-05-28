@@ -233,8 +233,7 @@ SDK and product polish:
 
 - [ ] Add a deleted-document cleanup job for items whose `_deleted` flag is set
       and `_ttl` has expired.
-- [ ] Decide whether WebRTC temporary documents are still part of the roadmap;
-      either implement the current-room-safe shape or remove the stale API/deps.
+- [x] WebRTC temporary documents removed; stale API, deps, and docs cleaned up.
 - [ ] Add a cross-collection query/search layer for refs, such as finding notes
       that reference flashcards.
 - [ ] Add stress testing and documented room/document size guidance.

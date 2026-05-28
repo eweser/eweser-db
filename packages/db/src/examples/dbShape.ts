@@ -174,7 +174,6 @@ const _room = new Room({
   _ttl: null, // '12-12-12' if deleted,
 
   indexedDbProvider: null,
-  webRtcProvider: null,
   syncProvider: null,
   ydoc: null,
 });
