@@ -85,7 +85,8 @@ const localSearch = async (params: {
     limit?: number;
     offset?: number;
   } = { query: params.query };
-  if (params.collectionKey !== undefined) qParams.collectionKey = params.collectionKey;
+  if (params.collectionKey !== undefined)
+    qParams.collectionKey = params.collectionKey;
   if (params.limit !== undefined) qParams.limit = params.limit;
   if (params.offset !== undefined) qParams.offset = params.offset;
   return searchIndexedDocuments(db, qParams);
@@ -100,10 +101,7 @@ const federatedSearchFn =
         limit?: number;
         offset?: number;
       }): Promise<FederatedSearchResult> => {
-        return federatedSearch(
-          { peers: trustedPeers, localSearch },
-          params
-        );
+        return federatedSearch({ peers: trustedPeers, localSearch }, params);
       }
     : undefined;
 
@@ -129,7 +127,8 @@ if (trustedPeers.length > 0) {
           limit?: number;
           offset?: number;
         } = { query: params.query };
-        if (params.collectionKey !== undefined) qParams.collectionKey = params.collectionKey;
+        if (params.collectionKey !== undefined)
+          qParams.collectionKey = params.collectionKey;
         if (params.limit !== undefined) qParams.limit = params.limit;
         if (params.offset !== undefined) qParams.offset = params.offset;
         return searchIndexedDocuments(db, qParams);

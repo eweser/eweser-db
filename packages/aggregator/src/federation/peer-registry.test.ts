@@ -11,7 +11,9 @@ describe('parsePeers', () => {
   });
 
   it('parses a single peer', () => {
-    const peers = parsePeers('eweser.com|https://aggregator.eweser.com/api|secret1');
+    const peers = parsePeers(
+      'eweser.com|https://aggregator.eweser.com/api|secret1'
+    );
     expect(peers).toHaveLength(1);
     expect(peers[0]).toEqual({
       label: 'eweser.com',
@@ -38,7 +40,9 @@ describe('parsePeers', () => {
   });
 
   it('throws on malformed entry (missing parts)', () => {
-    expect(() => parsePeers('label|url')).toThrow('expected "label|url|secret"');
+    expect(() => parsePeers('label|url')).toThrow(
+      'expected "label|url|secret"'
+    );
   });
 
   it('throws on empty label', () => {
@@ -74,8 +78,7 @@ describe('loadPeers / resetPeerCache', () => {
   });
 
   it('returns parsed peers from env', () => {
-    process.env.TRUSTED_PEERS =
-      'peer1|https://peer1.example.com/api|s1';
+    process.env.TRUSTED_PEERS = 'peer1|https://peer1.example.com/api|s1';
     resetPeerCache();
     const peers = loadPeers();
     expect(peers).toHaveLength(1);
@@ -83,9 +86,7 @@ describe('loadPeers / resetPeerCache', () => {
   });
 
   it('rejects the env override parameter', () => {
-    const peers = loadPeers(
-      'custom|https://custom.example.com/api|secret'
-    );
+    const peers = loadPeers('custom|https://custom.example.com/api|secret');
     expect(peers).toHaveLength(1);
     expect(peers[0]!.label).toBe('custom');
   });

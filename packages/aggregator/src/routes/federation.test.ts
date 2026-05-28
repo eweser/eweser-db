@@ -1,7 +1,10 @@
 import { Hono } from 'hono';
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { createFederationRouter } from './federation.js';
-import { signRequest, type FederationSearchRequest } from '../federation/request-signing.js';
+import {
+  signRequest,
+  type FederationSearchRequest,
+} from '../federation/request-signing.js';
 import type { PeerConfig } from '../federation/types.js';
 
 const TRUSTED_PEER: PeerConfig = {

@@ -35,7 +35,8 @@ const peerADocuments: IndexedDoc[] = [
   {
     id: 'a-1',
     title: 'Local Weather Report',
-    content: 'The weather forecast for the week shows sunny skies and mild temperatures across the region.',
+    content:
+      'The weather forecast for the week shows sunny skies and mild temperatures across the region.',
     roomId: 'room-a-1',
     collectionKey: 'notes',
     userId: 'alice',
@@ -43,7 +44,8 @@ const peerADocuments: IndexedDoc[] = [
   {
     id: 'a-2',
     title: 'Meeting Notes: Q2 Planning',
-    content: 'Discussed Q2 product roadmap including federation features and public search enhancements.',
+    content:
+      'Discussed Q2 product roadmap including federation features and public search enhancements.',
     roomId: 'room-a-1',
     collectionKey: 'notes',
     userId: 'alice',
@@ -54,7 +56,8 @@ const peerBDocuments: IndexedDoc[] = [
   {
     id: 'b-1',
     title: 'Federated Search Design Doc',
-    content: 'Architecture proposal for federated public search across EweserDB peers with signed requests.',
+    content:
+      'Architecture proposal for federated public search across EweserDB peers with signed requests.',
     roomId: 'room-b-1',
     collectionKey: 'notes',
     userId: 'bob',
@@ -62,7 +65,8 @@ const peerBDocuments: IndexedDoc[] = [
   {
     id: 'b-2',
     title: 'Weather Tracking System',
-    content: 'The new weather tracking system will aggregate data from multiple peer servers across regions.',
+    content:
+      'The new weather tracking system will aggregate data from multiple peer servers across regions.',
     roomId: 'room-b-1',
     collectionKey: 'notes',
     userId: 'bob',
@@ -141,7 +145,13 @@ peerB.post('/api/federation/search', async (c) => {
   const limit = (body.limit as number) ?? 50;
   const offset = (body.offset as number) ?? 0;
 
-  const results = simpleSearch(peerBDocuments, query, collectionKey, limit, offset);
+  const results = simpleSearch(
+    peerBDocuments,
+    query,
+    collectionKey,
+    limit,
+    offset
+  );
 
   return c.json({ results, total: results.length }, 200);
 });
@@ -195,7 +205,10 @@ peerA.get('/api/search', async (c) => {
         results: ReturnType<typeof simpleSearch>;
         total: number;
       };
-      federated.push({ peer: 'Peer B (localhost:3092)', results: data.results });
+      federated.push({
+        peer: 'Peer B (localhost:3092)',
+        results: data.results,
+      });
     } else {
       const errorText = await res.text();
       federated.push({

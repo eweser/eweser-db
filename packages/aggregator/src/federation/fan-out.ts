@@ -4,8 +4,15 @@
  * Results are returned with origin labels.
  */
 
-import type { PeerConfig, SearchResult, FederatedSearchResult } from './types.js';
-import { type FederationSearchRequest, createSignedHeaders } from './request-signing.js';
+import type {
+  PeerConfig,
+  SearchResult,
+  FederatedSearchResult,
+} from './types.js';
+import {
+  type FederationSearchRequest,
+  createSignedHeaders,
+} from './request-signing.js';
 
 /** Timeout per peer request in ms. */
 const PEER_TIMEOUT_MS = 5_000;
@@ -125,7 +132,9 @@ async function queryPeer(
     return data.results ?? [];
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') {
-      throw new Error(`Peer "${peer.label}" timed out after ${PEER_TIMEOUT_MS}ms`);
+      throw new Error(
+        `Peer "${peer.label}" timed out after ${PEER_TIMEOUT_MS}ms`
+      );
     }
     throw err;
   } finally {

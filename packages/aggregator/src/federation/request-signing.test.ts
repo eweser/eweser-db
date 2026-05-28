@@ -27,10 +27,7 @@ describe('signRequest', () => {
 
   it('produces different signatures for different inputs', () => {
     const sig1 = signRequest(body, SECRET);
-    const sig2 = signRequest(
-      { ...body, query: 'different query' },
-      SECRET
-    );
+    const sig2 = signRequest({ ...body, query: 'different query' }, SECRET);
     expect(sig1).not.toBe(sig2);
   });
 

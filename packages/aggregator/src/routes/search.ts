@@ -19,12 +19,14 @@ type SearchRouteDeps = {
   }) => Promise<SearchDocument[]>;
   getDocumentsByRoom: (roomId: string) => Promise<SearchDocument[]>;
   /** Optional federated search. When provided, /search returns federated results. */
-  federatedSearch?: ((params: {
-    query: string;
-    collectionKey?: string | undefined;
-    limit?: number;
-    offset?: number;
-  }) => Promise<FederatedSearchResult>) | undefined;
+  federatedSearch?:
+    | ((params: {
+        query: string;
+        collectionKey?: string | undefined;
+        limit?: number;
+        offset?: number;
+      }) => Promise<FederatedSearchResult>)
+    | undefined;
 };
 
 export function createSearchRouter(deps: SearchRouteDeps) {
