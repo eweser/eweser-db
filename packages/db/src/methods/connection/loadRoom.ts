@@ -183,7 +183,6 @@ export async function loadSync(
     room.syncProvider?.off('synced', handleSynced);
     room.syncProvider?.off('authenticationFailed', handleAuthenticationFailed);
     room.syncProvider?.disconnect();
-    room.webRtcProvider?.disconnect();
     emitConnectionChange('disconnected');
   };
   if (awaitConnection) {

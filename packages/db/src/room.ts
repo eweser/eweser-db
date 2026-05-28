@@ -1,13 +1,12 @@
 /**
  * Purpose: Room model for client-side document storage and sync providers.
  * Exports: Room class and room option types.
- * Touches: Yjs docs, IndexedDB, WebRTC, Hocuspocus sync, and access grants.
+ * Touches: Yjs docs, IndexedDB, Hocuspocus sync, and access grants.
  * Read before editing: packages/db/src/INDEX.md and packages/db/AGENTS.md.
  */
 import type { CollectionKey, EweDocument, ServerRoom } from '@eweser/shared';
 import type { HocuspocusProvider } from '@hocuspocus/provider';
 import type { IndexeddbPersistence } from 'y-indexeddb';
-import type { WebrtcProvider } from 'y-webrtc';
 import type { RoomConnectionStatus, RoomEvents } from './events.js';
 import { TypedEventEmitter } from './events.js';
 import type { Database, YDoc } from './index.js';
@@ -33,7 +32,6 @@ export type NewRoomOptions<T extends EweDocument> = {
   _deleted?: boolean | null;
   _ttl?: string | null;
   indexedDbProvider?: IndexeddbPersistence | null;
-  webRtcProvider?: WebrtcProvider | null;
   syncProvider?: HocuspocusProvider | null;
   ydoc?: YDoc<T> | null;
 };
@@ -59,7 +57,6 @@ export class Room<T extends EweDocument>
   _ttl: string | null;
 
   indexedDbProvider?: IndexeddbPersistence | null;
-  webRtcProvider?: WebrtcProvider | null;
   syncProvider?: HocuspocusProvider | null;
   ydoc?: YDoc<T> | null;
 
@@ -69,7 +66,6 @@ export class Room<T extends EweDocument>
 
   disconnect = () => {
     this.syncProvider?.disconnect();
-    this.webRtcProvider?.disconnect();
     this.emit('roomConnectionChange', 'disconnected', this);
   };
 
@@ -110,9 +106,6 @@ export class Room<T extends EweDocument>
 
     if (options.indexedDbProvider) {
       this.indexedDbProvider = options.indexedDbProvider;
-    }
-    if (options.webRtcProvider) {
-      this.webRtcProvider = options.webRtcProvider;
     }
     if (options.syncProvider) {
       this.syncProvider = options.syncProvider;
