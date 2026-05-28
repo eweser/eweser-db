@@ -53,21 +53,22 @@ describe('RoomCrypto', () => {
     expect(crypto.status).toBe('unlocked');
   });
 
-  it('unlock with wrong phrase throws', async () => {
+  it('unlock with wrong phrase produces incompatible key', async () => {
     const { crypto } = await RoomCrypto.createEncrypted();
-    crypto.lock();
 
-    const wrongPhrase = await generateRecoveryPhraseAsync();
-    await crypto.unlock(wrongPhrase); // This succeeds but produces a wrong key
-
-    // Using the wrong key to decrypt fails (GCM auth tag)
+    // Encrypt with the correct key
     const doc = new Y.Doc();
     doc.getMap('test').set('x', 1);
     const update = Y.encodeStateAsUpdate(doc);
+    const encrypted = await crypto.encryptUpdate(update);
 
-    // Re-lock and unlock with original phrase
+    // Lock and unlock with a different phrase
     crypto.lock();
-    await expect(crypto.encryptUpdate(update)).rejects.toThrow('locked');
+    const wrongPhrase = await generateRecoveryPhraseAsync();
+    await crypto.unlock(wrongPhrase);
+
+    // Decrypting with the wrong key fails (GCM auth tag mismatch)
+    await expect(crypto.decryptUpdate(encrypted)).rejects.toThrow();
   });
 
   it('encryptUpdate throws when locked', async () => {

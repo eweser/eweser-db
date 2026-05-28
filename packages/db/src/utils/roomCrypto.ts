@@ -135,8 +135,9 @@ export class RoomCrypto {
     this.status = 'unlocked';
   }
 
-  /** Lock the room — drops the key from memory. */
+  /** Lock the room — drops the key from memory. No-op for non-encrypted rooms. */
   lock(): void {
+    if (this.status === 'no-encryption') return;
     this._roomKey = null;
     this.status = 'locked';
   }

@@ -6,6 +6,8 @@ export { newDocument, buildRef, randomString } from '@eweser/shared';
 export * from './files.js';
 export * from './backup.js';
 export * from './seedRoom.js';
+export * from './encryption.js';
+export { RoomCrypto } from './roomCrypto.js';
 
 export const wait = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));

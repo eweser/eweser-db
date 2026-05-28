@@ -120,7 +120,9 @@ describe('seedRoom', () => {
 
     // User modifies the doc
     const docs = getDocsMap(room);
-    const [docId, doc] = Array.from(docs.entries())[0];
+    const entry = Array.from(docs.entries())[0];
+    expect(entry).toBeDefined();
+    const [docId, doc] = entry as [string, TestDoc];
     expect(docId).toBeDefined();
     yDoc.transact(() => {
       docs.set(docId, { ...doc, title: 'User modified' } as TestDoc);

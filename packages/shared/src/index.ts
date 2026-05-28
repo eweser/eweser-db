@@ -29,5 +29,5 @@ export type ServerRoom = {
   _deleted: boolean | null;
   _ttl: string | null;
   /** Room encryption metadata (null for non-encrypted rooms). */
-  encryption?: RoomEncryptionMetadata | null;
+  encryption: RoomEncryptionMetadata | null;
 };

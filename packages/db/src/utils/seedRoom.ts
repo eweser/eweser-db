@@ -67,14 +67,18 @@ export async function seedRoom<T extends EweDocument>(
 /**
  * Internal: apply a resolved document array to a room's Y.Doc.
  * Callers must check idempotency before calling.
+ * Accepts EweDocument (not generic T) for db-level seeds where the
+ * seed type doesn't match the room's document type parameter.
  */
-function writeSeedDocs<T extends EweDocument>(
-  room: Room<T>,
-  resolvedDocs: DocumentWithoutBase<T>[]
+function writeSeedDocs(
+  room: Room<EweDocument>,
+  resolvedDocs: DocumentWithoutBase<EweDocument>[]
 ): number {
   const yDoc = room.ydoc;
   if (!yDoc) throw new Error('room.ydoc is null');
-  const documents = yDoc.getMap('documents') as TypedMap<Documents<T>>;
+  const documents = yDoc.getMap('documents') as TypedMap<
+    Documents<EweDocument>
+  >;
   let count = 0;
 
   yDoc.transact(() => {
@@ -87,7 +91,7 @@ function writeSeedDocs<T extends EweDocument>(
         documentId,
       });
       const seededDoc = newDocument(documentId, ref, doc);
-      documents.set(documentId, seededDoc as T);
+      documents.set(documentId, seededDoc as EweDocument);
       count++;
     }
   });

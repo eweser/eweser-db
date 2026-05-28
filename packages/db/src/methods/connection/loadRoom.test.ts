@@ -111,6 +111,7 @@ describe('loadRoom', () => {
       updatedAt: null,
       _deleted: false,
       _ttl: null,
+      encryption: null,
     };
 
     const room = await loadRoom(db)(serverRoom, {
@@ -174,6 +175,7 @@ describe('loadRoom', () => {
       updatedAt: null,
       _deleted: false,
       _ttl: null,
+      encryption: null,
     };
 
     const room = await loadRoom(db)(serverRoom, {
@@ -231,6 +233,7 @@ describe('loadRoom', () => {
       updatedAt: null,
       _deleted: false,
       _ttl: null,
+      encryption: null,
     };
 
     const room = await loadRoom(db)(serverRoom, {

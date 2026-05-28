@@ -79,7 +79,11 @@ describe('Yjs update-level AES-256-GCM round trip', () => {
 
     // Tamper: flip a byte in the ciphertext (after the IV)
     const tampered = new Uint8Array(encrypted);
-    tampered[IV_LENGTH + 1] ^= 0xff;
+    const tamperIdx = IV_LENGTH + 1;
+
+    if (tampered[tamperIdx] !== undefined) {
+      tampered[tamperIdx] ^= 0xff;
+    }
 
     await expect(decryptYjsUpdate(tampered, key)).rejects.toThrow();
   });
