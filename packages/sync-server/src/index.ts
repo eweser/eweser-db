@@ -44,9 +44,10 @@ const server = Server.configure({
   async onRequest(data) {
     // Capability/version endpoint aligned with ADR-0010 surface.
     const { request, response } = data;
+    const pathname = (request.url ?? '').split('?')[0];
     if (
       request.method === 'GET' &&
-      (request.url === '/capabilities' || request.url === '/version')
+      (pathname === '/capabilities' || pathname === '/version')
     ) {
       response.writeHead(200, { 'Content-Type': 'application/json' });
       response.end(

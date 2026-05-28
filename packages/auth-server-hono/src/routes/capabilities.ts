@@ -28,8 +28,10 @@ function getVersion(): string {
 
 capabilitiesRouter.get('/', (c) => {
   const oauthProviders: string[] = [];
-  if (env.GITHUB_CLIENT_ID) oauthProviders.push('github');
-  if (env.GOOGLE_CLIENT_ID) oauthProviders.push('google');
+  if (env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET)
+    oauthProviders.push('github');
+  if (env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET)
+    oauthProviders.push('google');
 
   return c.json({
     server: 'eweser-db',

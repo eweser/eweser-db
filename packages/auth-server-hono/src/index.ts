@@ -31,7 +31,7 @@ const log = createLogger('auth-server');
 try {
   loadServerIdentity({
     authUrl: env.AUTH_SERVER_URL,
-    syncUrl: env.SYNC_SERVER_PUBLIC_URL ?? env.SYNC_SERVER_URL,
+    syncUrl: env.SYNC_SERVER_URL,
     federationUrl: env.AUTH_SERVER_URL,
   });
   log.info('Federation server identity loaded');
