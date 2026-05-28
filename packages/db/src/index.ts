@@ -13,6 +13,7 @@ import type {
   ProviderOptions,
   Registry,
 } from './types.js';
+import type { DocumentWithoutBase } from '@eweser/shared';
 import type { NewRoomOptions, Room } from './room.js';
 import { roomToServerRoom } from './room.js';
 import { collections } from './types.js';
@@ -58,6 +59,19 @@ const defaultRtcPeers = [
   'wss://y-webrtc-signaling-us.herokuapp.com',
 ];
 
+export interface DocSeed {
+  /** Collection key for the room */
+  collectionKey: CollectionKey;
+  /** Room ID (room will be created if it doesn't already exist) */
+  roomId: string;
+  /** Room name (only used when creating a new room) */
+  roomName?: string;
+  /** Document ID */
+  docId: string;
+  /** Document data without auto-generated base fields */
+  doc: DocumentWithoutBase<EweDocument>;
+}
+
 export interface DatabaseOptions {
   authServer?: string;
   /**
@@ -77,6 +91,8 @@ export interface DatabaseOptions {
   /** a polyfill for localStorage for react native apps */
   localStoragePolyfill?: LocalStoragePolyfill;
   pollForStatus?: boolean;
+  /** Optional document seeds: idempotent — documents are only created if they don't already exist */
+  seedDocuments?: DocSeed[];
 }
 
 export class Database extends TypedEventEmitter<DatabaseEvents> {
@@ -234,6 +250,52 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     }, this.registrySyncIntervalMs);
   }
 
+  /** Seed documents into rooms. Idempotent: existing documents are not overwritten. */
+  async seedDocuments(seeds: DocSeed[]) {
+    for (const seed of seeds) {
+      const existing = this.collections[seed.collectionKey]?.[seed.roomId];
+      if (!existing) {
+        this.newRoom<EweDocument>({
+          collectionKey: seed.collectionKey,
+          name: seed.roomName ?? seed.roomId,
+          id: seed.roomId,
+        });
+      }
+    }
+
+    for (const seed of seeds) {
+      const room = this.collections[seed.collectionKey]?.[seed.roomId];
+      if (!room) {
+        this.warn(
+          'seedDocuments: room not found',
+          seed.collectionKey,
+          seed.roomId
+        );
+        continue;
+      }
+
+      if (!room.ydoc) {
+        await room.load({ loadRemote: false });
+        if (!room.ydoc) {
+          this.warn('seedDocuments: failed to load room ydoc', seed.roomId);
+          continue;
+        }
+      }
+
+      const docs = room.getDocuments();
+      if (!docs.get(seed.docId)) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        docs.new(seed.doc as any, seed.docId);
+        this.debug(
+          'seedDocuments: seeded doc',
+          seed.docId,
+          'into room',
+          seed.roomId
+        );
+      }
+    }
+  }
+
   constructor(optionsPassed?: DatabaseOptions) {
     super();
     if (optionsPassed?.pollForStatus) {
@@ -298,6 +360,9 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
       (r) => !initializedRoomIds.has(r.id)
     );
     this.loadRooms(remainingRegistryRooms);
+    if (options.seedDocuments?.length) {
+      void this.seedDocuments(options.seedDocuments);
+    }
     this.pollForRegistrySync();
     this.rollingSync();
     this.emit('initialized');
