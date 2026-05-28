@@ -4,7 +4,12 @@
  * Touches: Yjs docs, IndexedDB, WebRTC, Hocuspocus sync, and access grants.
  * Read before editing: packages/db/src/INDEX.md and packages/db/AGENTS.md.
  */
-import type { CollectionKey, EweDocument, ServerRoom } from '@eweser/shared';
+import type {
+  CollectionKey,
+  EweDocument,
+  ServerRoom,
+  RoomEncryptionMetadata,
+} from '@eweser/shared';
 import type { HocuspocusProvider } from '@hocuspocus/provider';
 import type { IndexeddbPersistence } from 'y-indexeddb';
 import type { WebrtcProvider } from 'y-webrtc';
@@ -15,6 +20,7 @@ import type { GetDocuments } from './utils/getDocuments.js';
 import { getDocuments } from './utils/getDocuments.js';
 import type { RemoteLoadOptions } from './methods/connection/loadRoom.js';
 import { loadSync } from './methods/connection/loadRoom.js';
+import { RoomCrypto } from './utils/roomCrypto.js';
 
 export type NewRoomOptions<T extends EweDocument> = {
   db: Database;
@@ -36,6 +42,8 @@ export type NewRoomOptions<T extends EweDocument> = {
   webRtcProvider?: WebrtcProvider | null;
   syncProvider?: HocuspocusProvider | null;
   ydoc?: YDoc<T> | null;
+  /** Room encryption metadata. When set, the room uses E2EE. */
+  encryption?: RoomEncryptionMetadata | null;
 };
 
 export class Room<T extends EweDocument>
@@ -57,6 +65,12 @@ export class Room<T extends EweDocument>
   updatedAt: string | null;
   _deleted: boolean | null;
   _ttl: string | null;
+
+  /** Room encryption metadata (null for non-encrypted rooms). */
+  encryption: RoomEncryptionMetadata | null;
+
+  /** Client-side crypto unlock/lock state. Never serialized. */
+  private _crypto: RoomCrypto;
 
   indexedDbProvider?: IndexeddbPersistence | null;
   webRtcProvider?: WebrtcProvider | null;
@@ -90,6 +104,59 @@ export class Room<T extends EweDocument>
     this.addingAwareness = false;
   };
 
+  // -----------------------------------------------------------------------
+  // Encryption API (per ADR-0011)
+  // -----------------------------------------------------------------------
+
+  /** Whether the room key is currently available for encrypt/decrypt. */
+  get isUnlocked(): boolean {
+    return this._crypto.isUnlocked;
+  }
+
+  /**
+   * Unlock the room with a BIP39 recovery phrase.
+   * The key is derived in WebCrypto and held in memory only.
+   */
+  async unlock(phrase: string): Promise<void> {
+    await this._crypto.unlock(phrase);
+  }
+
+  /**
+   * Unlock the room with an exported raw key (base64).
+   */
+  async unlockWithRawKey(rawKeyBase64: string): Promise<void> {
+    await this._crypto.unlockWithRawKey(rawKeyBase64);
+  }
+
+  /**
+   * Lock the room — drops the CryptoKey from memory.
+   * Writes will fail until unlock() is called again.
+   */
+  lock(): void {
+    this._crypto.lock();
+  }
+
+  /**
+   * Encrypt a Yjs update before it leaves the client.
+   * Throws if the room is locked.
+   */
+  async encryptUpdate(update: Uint8Array): Promise<Uint8Array> {
+    return this._crypto.encryptUpdate(update);
+  }
+
+  /**
+   * Decrypt a Yjs update received from the sync relay.
+   * Throws if the room is locked or the update is tampered.
+   */
+  async decryptUpdate(encrypted: Uint8Array): Promise<Uint8Array> {
+    return this._crypto.decryptUpdate(encrypted);
+  }
+
+  /** Export the raw room key as base64 (for key file sharing). */
+  async exportRawKeyBase64(): Promise<string> {
+    return this._crypto.exportRawKeyBase64();
+  }
+
   constructor(options: NewRoomOptions<T>) {
     super();
     this.db = options.db;
@@ -107,6 +174,12 @@ export class Room<T extends EweDocument>
     this.updatedAt = options.updatedAt ?? new Date().toISOString();
     this._deleted = options._deleted ?? false;
     this._ttl = options._ttl ?? null;
+
+    // Encryption state
+    this.encryption = options.encryption ?? null;
+    this._crypto = this.encryption
+      ? RoomCrypto.locked(this.encryption)
+      : RoomCrypto.none();
 
     if (options.indexedDbProvider) {
       this.indexedDbProvider = options.indexedDbProvider;

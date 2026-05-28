@@ -10,6 +10,7 @@ import { SQLite } from '@hocuspocus/extension-sqlite';
 import jwt from 'jsonwebtoken';
 import { createLogger, initTelemetry } from '@eweser/logger';
 import { createAggregatorWebhookExtension } from './aggregator-webhook.js';
+import { getCapabilitiesResponse } from './capabilities.js';
 
 await initTelemetry('sync-server');
 
@@ -40,6 +41,24 @@ if (aggregatorWebhookUrl) {
 const server = Server.configure({
   port,
   extensions,
+  async onRequest(data) {
+    // Capability/version endpoint aligned with ADR-0010 surface.
+    const { request, response } = data;
+    if (
+      request.method === 'GET' &&
+      (request.url === '/capabilities' || request.url === '/version')
+    ) {
+      response.writeHead(200, { 'Content-Type': 'application/json' });
+      response.end(
+        JSON.stringify(
+          getCapabilitiesResponse({
+            webhooksEnabled: Boolean(aggregatorWebhookUrl),
+          })
+        )
+      );
+      return;
+    }
+  },
   async onAuthenticate({ token }) {
     if (!token) {
       throw new Error('Authentication required');

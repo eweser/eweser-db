@@ -18,11 +18,26 @@ import { oauthRouter, oauthServerMetadata } from './routes/oauth.js';
 import { mcpRouter } from './routes/mcp.js';
 import { filesRouter } from './routes/files.js';
 import { backupsRouter } from './routes/backups.js';
+import { wellKnownRouter } from './routes/well-known.js';
+import { capabilitiesRouter } from './routes/capabilities.js';
 import { createLogger, initTelemetry } from '@eweser/logger';
+import { loadServerIdentity } from './services/federation/index.js';
 
 await initTelemetry('auth-api');
 
 const log = createLogger('auth-server');
+
+// Initialize server identity for federation (non-fatal if it fails in dev)
+try {
+  loadServerIdentity({
+    authUrl: env.AUTH_SERVER_URL,
+    syncUrl: env.SYNC_SERVER_PUBLIC_URL ?? env.SYNC_SERVER_URL,
+    federationUrl: env.AUTH_SERVER_URL,
+  });
+  log.info('Federation server identity loaded');
+} catch (error) {
+  log.error({ error }, 'Failed to load federation server identity');
+}
 
 export const app = new Hono();
 
@@ -105,11 +120,15 @@ app.use('*', async (c, next) => {
 
 app.get('/health', (c) => c.json({ status: 'ok' }));
 app.get('/ping', (c) => c.text('pong'));
+app.route('/capabilities', capabilitiesRouter);
 
 // OAuth 2.0 Authorization Server metadata (RFC 8414)
 app.get('/.well-known/oauth-authorization-server', (c) =>
   c.json(oauthServerMetadata())
 );
+
+// EweserDB federation server identity
+app.route('/.well-known', wellKnownRouter);
 
 app.route('/account', accountRouter);
 app.route('/api/account', accountRouter);
