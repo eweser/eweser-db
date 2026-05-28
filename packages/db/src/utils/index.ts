@@ -5,6 +5,7 @@ import type { Database } from '../index.js';
 export { newDocument, buildRef, randomString } from '@eweser/shared';
 export * from './files.js';
 export * from './backup.js';
+export * from './seedRoom.js';
 
 export const wait = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));

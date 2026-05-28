@@ -5,11 +5,13 @@
  * Read before editing: packages/shared/INDEX.md and packages/db/AGENTS.md.
  */
 import type { CollectionKey, PublicAccessType } from './collections/index.js';
+import type { RoomEncryptionMetadata } from './encryption.js';
 
 export * from './collections/index.js';
 export * from './utils/index.js';
 export * from './api/index.js';
 export * from './memory-evaluation/index.js';
+export * from './encryption.js';
 
 /** Should match the rooms schema in the auth-server. Unfortunately we can't see the null values as undefined or else drizzle types will be out of sync. */
 export type ServerRoom = {
@@ -26,4 +28,6 @@ export type ServerRoom = {
   updatedAt: string | null;
   _deleted: boolean | null;
   _ttl: string | null;
+  /** Room encryption metadata (null for non-encrypted rooms). */
+  encryption?: RoomEncryptionMetadata | null;
 };
