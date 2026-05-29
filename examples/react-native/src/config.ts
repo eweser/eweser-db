@@ -16,6 +16,3 @@ export const DEV_USERNAME =
   (process.env.VITE_DEV_USERNAME ?? dev) ? dummyUserName : '';
 export const DEV_PASSWORD =
   (process.env.VITE_DEV_PASSWORD ?? dev) ? dummyUserPass : '';
-
-const localWebRtcServer = 'ws://localhost:4444';
-export const WEB_RTC_PEERS = dev || ci ? [localWebRtcServer] : undefined;

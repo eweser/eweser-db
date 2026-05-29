@@ -56,8 +56,6 @@ const db = new Database({
   authServer: config.AUTH_SERVER,
   // set `logLevel` to 0 to see debug messages in the console
   logLevel: 0,
-  // use this to sync webRTC locally with the test-rpc-server started with `npm run start-test-rpc-server`
-  webRTCPeers: config.WEB_RTC_PEERS,
   initialRooms,
   localStoragePolyfill,
 });
