@@ -59,17 +59,17 @@ const defaultRtcPeers = [
   'wss://y-webrtc-signaling-us.herokuapp.com',
 ];
 
-export interface DocSeed {
+export interface DocSeed<T extends CollectionKey = CollectionKey> {
   /** Collection key for the room */
-  collectionKey: CollectionKey;
+  collectionKey: T;
   /** Room ID (room will be created if it doesn't already exist) */
   roomId: string;
   /** Room name (only used when creating a new room) */
   roomName?: string;
   /** Document ID */
   docId: string;
-  /** Document data without auto-generated base fields */
-  doc: DocumentWithoutBase<EweDocument>;
+  /** Document data without auto-generated base fields, typed by collectionKey */
+  doc: DocumentWithoutBase<CollectionToDocument[T]>;
 }
 
 export interface DatabaseOptions {
@@ -253,8 +253,12 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
   /** Seed documents into rooms. Idempotent: existing documents are not overwritten. */
   async seedDocuments(seeds: DocSeed[]) {
     for (const seed of seeds) {
-      const existing = this.collections[seed.collectionKey]?.[seed.roomId];
-      if (!existing) {
+      const roomInCollections =
+        this.collections[seed.collectionKey]?.[seed.roomId];
+      const roomInRegistry = this.registry.some(
+        (r) => r.id === seed.roomId && r.collectionKey === seed.collectionKey
+      );
+      if (!roomInCollections && !roomInRegistry) {
         this.newRoom<EweDocument>({
           collectionKey: seed.collectionKey,
           name: seed.roomName ?? seed.roomId,
@@ -284,14 +288,28 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
 
       const docs = room.getDocuments();
       if (!docs.get(seed.docId)) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        docs.new(seed.doc as any, seed.docId);
-        this.debug(
-          'seedDocuments: seeded doc',
-          seed.docId,
-          'into room',
-          seed.roomId
-        );
+        try {
+          // The seed's doc type is guaranteed by DocSeed's generic at call site.
+          // Inside heterogeneous iteration over all collection keys, the per-key
+          // type information is lost — cast the function rather than the argument
+          // to bypass contravariant intersection narrowing.
+          (docs.new as (doc: unknown, id?: string) => EweDocument)(
+            seed.doc,
+            seed.docId
+          );
+          this.debug(
+            'seedDocuments: seeded doc',
+            seed.docId,
+            'into room',
+            seed.roomId
+          );
+        } catch (err) {
+          this.warn(
+            'seedDocuments: failed to create document',
+            seed.docId,
+            err
+          );
+        }
       }
     }
   }
@@ -359,9 +377,12 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     const remainingRegistryRooms = this.registry.filter(
       (r) => !initializedRoomIds.has(r.id)
     );
-    this.loadRooms(remainingRegistryRooms);
+    const loadPromise = this.loadRooms(remainingRegistryRooms);
     if (options.seedDocuments?.length) {
-      void this.seedDocuments(options.seedDocuments);
+      const seeds = options.seedDocuments;
+      loadPromise.then(() => {
+        this.seedDocuments(seeds);
+      });
     }
     this.pollForRegistrySync();
     this.rollingSync();

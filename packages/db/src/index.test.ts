@@ -1,11 +1,14 @@
-import type { DatabaseOptions, DocSeed } from '.';
+import type { DatabaseOptions, DocSeed, Note } from '.';
 import { Database } from '.';
-import { it, expect } from 'vitest';
+import { it, expect, afterAll } from 'vitest';
 import { wait } from '@eweser/shared';
 
 // Ensure window is available in Node test environment (needed by getAccessGrantTokenFromUrl)
 const _originalWindow = globalThis.window;
 globalThis.window = globalThis.window ?? ({} as Window & typeof globalThis);
+afterAll(() => {
+  globalThis.window = _originalWindow;
+});
 
 const collectionKeys = [
   'notes',
@@ -49,13 +52,13 @@ it.todo(
 );
 
 it('seedDocuments creates documents in a room', async () => {
-  const seeds: DocSeed[] = [
+  const seeds: DocSeed<'notes'>[] = [
     {
       collectionKey: 'notes',
       roomId: 'seed-test-room',
       roomName: 'Seed Test Room',
       docId: 'seed-doc-1',
-      doc: { text: 'seeded content' } as DocSeed['doc'],
+      doc: { text: 'seeded content' } as DocSeed<'notes'>['doc'],
     },
   ];
 
@@ -79,8 +82,7 @@ it('seedDocuments creates documents in a room', async () => {
   const docs = room.getDocuments();
   const doc = docs.get('seed-doc-1');
   expect(doc).toBeDefined();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  expect((doc as any)?.text).toBe('seeded content');
+  expect((doc as Note).text).toBe('seeded content');
   expect(doc?._id).toBe('seed-doc-1');
   expect(typeof doc?._created).toBe('number');
   expect(typeof doc?._updated).toBe('number');
