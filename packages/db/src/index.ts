@@ -17,6 +17,7 @@ import type { NewRoomOptions, Room } from './room.js';
 import { roomToServerRoom } from './room.js';
 import { collections } from './types.js';
 import { setupLogger, TypedEventEmitter } from './events.js';
+import type { SeedDocuments } from './utils/seedRoom.js';
 
 import { collectionKeys, wait } from '@eweser/shared';
 import { getDocuments } from './utils/getDocuments.js';
@@ -77,6 +78,14 @@ export interface DatabaseOptions {
   /** a polyfill for localStorage for react native apps */
   localStoragePolyfill?: LocalStoragePolyfill;
   pollForStatus?: boolean;
+  /**
+   * Documents or a seed callback to populate rooms on their first load.
+   * Only applied when a room has no existing documents (idempotent across
+   * reloads and reconnects). Room-level `initialDocuments` takes priority.
+   * Use when `initialRooms` alone is not enough — e.g. offline-first apps
+   * that need pre-populated data before sync is available.
+   */
+  initialDocuments?: SeedDocuments<EweDocument>;
 }
 
 export class Database extends TypedEventEmitter<DatabaseEvents> {
@@ -86,6 +95,8 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
   online = false;
   isPolling = false;
   offlineOnly = false;
+  /** @internal Documents or seed callback from DatabaseOptions, applied to rooms on first load. */
+  _initialDocuments?: SeedDocuments<EweDocument> | null;
   /** these rooms will be synced for one second and then disconnected sequentially. Remove the id from this array and the next iteration will not sync that room when it reaches it*/
   collectionKeysForRollingSync: CollectionKey[] = [];
 
@@ -275,6 +286,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     if (typeof options.logLevel === 'number') {
       this.logLevel = options.logLevel;
     }
+    this._initialDocuments = options.initialDocuments ?? null;
     setupLogger(this);
     this.debug('Database created with options', options);
 

@@ -76,5 +76,6 @@ export function roomToServerRoom(room: Room): AcceptRoomInviteResponse {
     updatedAt: room.updatedAt?.toISOString() ?? null,
     _deleted: room._deleted ?? null,
     _ttl: room._ttl?.toISOString() ?? null,
+    encryption: null,
   };
 }
