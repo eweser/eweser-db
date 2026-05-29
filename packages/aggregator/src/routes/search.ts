@@ -46,7 +46,7 @@ export function createSearchRouter(deps: SearchRouteDeps) {
     }
 
     try {
-      // If federated search is configured, use it
+      // If federated search is configured, add federated field alongside stable results
       if (deps.federatedSearch) {
         const result = await deps.federatedSearch({
           query,
@@ -56,14 +56,14 @@ export function createSearchRouter(deps: SearchRouteDeps) {
         });
         return c.json(
           {
-            local: result.local,
+            results: result.local,
             federated: result.federated,
           },
           200
         );
       }
 
-      // Fallback: local-only search
+      // Fallback: local-only search (stable { results } shape)
       const results = await deps.searchDocuments({
         query,
         collectionKey,

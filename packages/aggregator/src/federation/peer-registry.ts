@@ -26,15 +26,17 @@ export function parsePeers(raw: string | undefined): PeerConfig[] {
         `Invalid TRUSTED_PEERS entry #${i + 1}: label, url, and secret must be non-empty`
       );
     }
+    // Normalize: strip trailing slash so `${url}/federation/search` doesn't double-slash
+    const normalizedUrl = url.replace(/\/+$/, '');
     // Validate URL
     try {
-      new URL(url);
+      new URL(normalizedUrl);
     } catch {
       throw new Error(
         `Invalid TRUSTED_PEERS entry #${i + 1}: "${url}" is not a valid URL`
       );
     }
-    return { label, url, secret };
+    return { label, url: normalizedUrl, secret };
   });
 }
 

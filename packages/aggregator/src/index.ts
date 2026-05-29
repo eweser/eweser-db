@@ -115,27 +115,26 @@ app.route(
 );
 
 // Federation endpoint: receive search requests from trusted peers
-if (trustedPeers.length > 0) {
-  app.route(
-    '/api/federation',
-    createFederationRouter({
-      peers: trustedPeers,
-      searchDocuments: async (params) => {
-        const qParams: {
-          query: string;
-          collectionKey?: string | undefined;
-          limit?: number;
-          offset?: number;
-        } = { query: params.query };
-        if (params.collectionKey !== undefined)
-          qParams.collectionKey = params.collectionKey;
-        if (params.limit !== undefined) qParams.limit = params.limit;
-        if (params.offset !== undefined) qParams.offset = params.offset;
-        return searchIndexedDocuments(db, qParams);
-      },
-    })
-  );
-}
+// Always mounted so peers can reach you even when no outgoing peers are configured.
+app.route(
+  '/api/federation',
+  createFederationRouter({
+    peers: trustedPeers,
+    searchDocuments: async (params) => {
+      const qParams: {
+        query: string;
+        collectionKey?: string | undefined;
+        limit?: number;
+        offset?: number;
+      } = { query: params.query };
+      if (params.collectionKey !== undefined)
+        qParams.collectionKey = params.collectionKey;
+      if (params.limit !== undefined) qParams.limit = params.limit;
+      if (params.offset !== undefined) qParams.offset = params.offset;
+      return searchIndexedDocuments(db, qParams);
+    },
+  })
+);
 
 // Dev-only: token generator for the example app to authenticate against sync servers.
 // Never mount in production.

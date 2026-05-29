@@ -92,7 +92,66 @@ describe('createFederationRouter', () => {
     );
     expect(res.status).toBe(400);
     await expect(res.json()).resolves.toEqual({
-      error: 'Request too old',
+      error: 'Request timestamp skew too large',
+    });
+  });
+
+  it('returns 400 for future-dated request (ahead by more than 5 minutes)', async () => {
+    const futureTimestamp = Date.now() + 10 * 60 * 1000; // 10 minutes in the future
+    const { body, sig } = makeSignedBody({ timestamp: futureTimestamp });
+
+    const res = await app.fetch(
+      new Request('http://localhost/api/federation/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Eweser-Federation-Signature': sig,
+        },
+        body: JSON.stringify(body),
+      })
+    );
+    expect(res.status).toBe(400);
+    await expect(res.json()).resolves.toEqual({
+      error: 'Request timestamp skew too large',
+    });
+  });
+
+  it('returns 400 for duplicate nonce (replay attack)', async () => {
+    const body: FederationSearchRequest = {
+      query: 'test',
+      timestamp: Date.now(),
+      nonce: 'unique-nonce-12345',
+    };
+    const sig = signRequest(body, TRUSTED_PEER.secret);
+
+    // First use — should succeed
+    searchDocuments.mockResolvedValueOnce([]);
+    const res1 = await app.fetch(
+      new Request('http://localhost/api/federation/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Eweser-Federation-Signature': sig,
+        },
+        body: JSON.stringify(body),
+      })
+    );
+    expect(res1.status).toBe(200);
+
+    // Replay — should be rejected
+    const res2 = await app.fetch(
+      new Request('http://localhost/api/federation/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Eweser-Federation-Signature': sig,
+        },
+        body: JSON.stringify(body),
+      })
+    );
+    expect(res2.status).toBe(400);
+    await expect(res2.json()).resolves.toEqual({
+      error: 'Duplicate request (nonce already used)',
     });
   });
 

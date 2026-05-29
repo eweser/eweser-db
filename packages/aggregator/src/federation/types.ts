@@ -9,7 +9,10 @@ export interface SearchResult {
   collectionKey: string;
   userId: string | null;
   documentData: unknown;
-  updatedAt: Date;
+  /** Local results carry Date; peer responses arrive as ISO strings. */
+  updatedAt: Date | string;
+  /** Relevance rank from full-text search (present on local results). */
+  rank?: number;
 }
 
 /** A trusted federated peer definition. */

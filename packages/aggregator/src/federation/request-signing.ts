@@ -14,6 +14,8 @@ export interface FederationSearchRequest {
   limit?: number;
   offset?: number;
   timestamp: number;
+  /** Unique request id for replay protection. Optional — receiver enforces when present. */
+  nonce?: string;
 }
 
 /** Sign a federation search request body. Returns the hex signature. */

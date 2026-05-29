@@ -3,6 +3,7 @@
  *
  * Mounted at POST /api/federation/search.
  * Verifies the HMAC signature of incoming requests before querying the local index.
+ * Maintains a nonce cache for replay protection within the freshness window.
  */
 
 import { Hono } from 'hono';
@@ -11,6 +12,16 @@ import {
   verifySignature,
 } from '../federation/request-signing.js';
 import type { PeerConfig } from '../federation/types.js';
+
+/** Maximum acceptable clock skew for timestamps (5 minutes). */
+const MAX_SKEW_MS = 5 * 60 * 1000;
+
+/**
+ * Nonce cache to prevent replay attacks.
+ * Stores nonce → insertion time pairs and periodically evicts entries
+ * older than the freshness window.
+ */
+const nonceCache = new Map<string, number>();
 
 type FederationRouteDeps = {
   peers: PeerConfig[];
@@ -26,6 +37,10 @@ export function createFederationRouter(deps: FederationRouteDeps) {
   const router = new Hono();
 
   router.post('/search', async (c) => {
+    if (deps.peers.length === 0) {
+      return c.json({ error: 'Federation not configured' }, 404);
+    }
+
     const sig = c.req.header('X-Eweser-Federation-Signature');
     if (!sig) {
       return c.json({ error: 'Missing federation signature' }, 401);
@@ -59,10 +74,23 @@ export function createFederationRouter(deps: FederationRouteDeps) {
       return c.json({ error: 'Invalid federation signature' }, 403);
     }
 
-    // Reject stale requests (older than 5 minutes)
-    const maxAgeMs = 5 * 60 * 1000;
-    if (Date.now() - body.timestamp > maxAgeMs) {
-      return c.json({ error: 'Request too old' }, 400);
+    // Reject stale or future-dated requests (absolute skew > freshness window)
+    const skew = Math.abs(Date.now() - body.timestamp);
+    if (skew > MAX_SKEW_MS) {
+      return c.json({ error: 'Request timestamp skew too large' }, 400);
+    }
+
+    // Reject duplicate nonces (replay protection within freshness window)
+    if (body.nonce) {
+      // Evict stale entries opportunistically
+      const cutoff = Date.now() - MAX_SKEW_MS;
+      for (const [key, ts] of nonceCache) {
+        if (ts < cutoff) nonceCache.delete(key);
+      }
+      if (nonceCache.has(body.nonce)) {
+        return c.json({ error: 'Duplicate request (nonce already used)' }, 400);
+      }
+      nonceCache.set(body.nonce, Date.now());
     }
 
     try {

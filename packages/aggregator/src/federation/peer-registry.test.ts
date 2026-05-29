@@ -60,6 +60,20 @@ describe('parsePeers', () => {
       'not a valid URL'
     );
   });
+
+  it('normalizes trailing slash from peer URL', () => {
+    const peers = parsePeers('peer1|https://peer1.example.com/api/|s1');
+    expect(peers).toHaveLength(1);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(peers[0]!.url).toBe('https://peer1.example.com/api');
+  });
+
+  it('normalizes multiple trailing slashes from peer URL', () => {
+    const peers = parsePeers('peer1|https://peer1.example.com/api///|s1');
+    expect(peers).toHaveLength(1);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(peers[0]!.url).toBe('https://peer1.example.com/api');
+  });
 });
 
 describe('loadPeers / resetPeerCache', () => {
@@ -93,7 +107,7 @@ describe('loadPeers / resetPeerCache', () => {
     expect(p.label).toBe('peer1');
   });
 
-  it('rejects the env override parameter', () => {
+  it('uses the env override parameter when provided', () => {
     const peers = loadPeers('custom|https://custom.example.com/api|secret');
     expect(peers).toHaveLength(1);
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

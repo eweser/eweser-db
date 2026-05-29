@@ -4,6 +4,7 @@
  * Results are returned with origin labels.
  */
 
+import { randomUUID } from 'node:crypto';
 import type {
   PeerConfig,
   SearchResult,
@@ -96,6 +97,7 @@ async function queryPeer(
   const body: FederationSearchRequest = {
     query: params.query,
     timestamp: Date.now(),
+    nonce: randomUUID(),
   };
   if (params.collectionKey !== undefined) {
     body.collectionKey = params.collectionKey;
