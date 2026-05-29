@@ -7,6 +7,7 @@
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { readFileSync } from 'node:fs';
 import { db } from './db/client.js';
 import { ensureIndexedDocumentsSchema } from './db/ensure-schema.js';
 import {
@@ -48,8 +49,37 @@ app.use(
   })
 );
 
+let _aggregatorVersion: string | null = null;
+function getAggregatorVersion(): string {
+  if (_aggregatorVersion) return _aggregatorVersion;
+  try {
+    const pkg = JSON.parse(
+      readFileSync(new URL('../package.json', import.meta.url), 'utf-8')
+    ) as { version: string };
+    _aggregatorVersion = pkg.version;
+  } catch {
+    _aggregatorVersion = '0.0.0';
+  }
+  return _aggregatorVersion;
+}
+
 app.get('/health', (c) => c.json({ status: 'ok' }));
 app.get('/ping', (c) => c.text('pong'));
+
+app.get('/capabilities', (c) =>
+  c.json({
+    server: 'eweser-db',
+    component: 'aggregator',
+    version: getAggregatorVersion(),
+    capabilities: {
+      search: {
+        endpoint: '/api/search',
+        agentSearch: Boolean(env.EWESER_AUTH_URL),
+        fullTextSearch: true,
+      },
+    },
+  })
+);
 
 app.post(
   '/webhooks/hocuspocus',
