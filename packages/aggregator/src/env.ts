@@ -14,6 +14,8 @@ const envSchema = z.object({
   WEBHOOK_SECRET: z.string().optional(),
   /** Base URL of the EweserDB auth server (for agent token verification). Optional — if omitted, agent search endpoint is disabled. */
   EWESER_AUTH_URL: z.string().url().optional(),
+  /** Comma-separated trusted peer configs: label|url|secret,label|url|secret. */
+  TRUSTED_PEERS: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

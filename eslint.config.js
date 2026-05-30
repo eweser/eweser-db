@@ -39,6 +39,7 @@ export default [
       'packages/sync-server/src/**/*.ts',
       'packages/aggregator/src/**/*.ts',
       'packages/mcp-server/src/**/*.ts',
+      'examples/federated-search/src/**/*.ts',
       'packages/logger/src/**/*.ts',
       'scripts/**/*.ts',
     ],
