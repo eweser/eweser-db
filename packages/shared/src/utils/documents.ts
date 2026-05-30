@@ -47,6 +47,55 @@ export const buildRef = (params: {
   return `${authServer}|${collectionKey}|${roomId}|${documentId}`;
 };
 
+export interface ParsedRef {
+  authServer: string;
+  collectionKey: CollectionKey;
+  roomId: string;
+  documentId: string;
+}
+
+/**
+ * Reverse of buildRef: parse a ref string into its components.
+ * Validates the format and throws descriptive errors for malformed refs.
+ * @param ref - A ref string in the format `${authServer}|${collectionKey}|${roomId}|${documentId}`
+ * @returns ParsedRef with typed components
+ * @throws Error if ref is empty, has wrong part count, or contains empty parts
+ */
+export const parseRef = (ref: string): ParsedRef => {
+  if (!ref || typeof ref !== 'string') {
+    throw new Error('ref must be a non-empty string');
+  }
+  const parts = ref.split('|');
+  if (parts.length !== 4) {
+    throw new Error(
+      `Invalid ref format. Expected "authServer|collectionKey|roomId|documentId" (4 parts) but got ${parts.length} part${parts.length === 1 ? '' : 's'}`
+    );
+  }
+  const fieldNames = ['authServer', 'collectionKey', 'roomId', 'documentId'];
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    if (!part) {
+      throw new Error(`${fieldNames[i]} is empty in ref: "${ref}"`);
+    }
+  }
+  const [authServer, collectionKey, roomId, documentId] = [
+    parts[0] ?? '',
+    parts[1] ?? '',
+    parts[2] ?? '',
+    parts[3] ?? '',
+  ];
+  if (!authServer || !collectionKey || !roomId || !documentId) {
+    // Already validated above — safety fallback
+    throw new Error(`Empty component in ref: "${ref}"`);
+  }
+  return {
+    authServer,
+    collectionKey: collectionKey as CollectionKey,
+    roomId,
+    documentId,
+  };
+};
+
 export const randomString = (length: number) =>
   Math.random()
     .toString(36)

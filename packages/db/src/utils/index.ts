@@ -7,6 +7,7 @@ export * from './files.js';
 export * from './backup.js';
 export * from './seedRoom.js';
 export * from './encryption.js';
+export * from './query.js';
 export { RoomCrypto } from './roomCrypto.js';
 
 export const wait = (ms: number) =>
