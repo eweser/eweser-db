@@ -116,11 +116,38 @@ vi.mock('../../db', () => ({
     syncStatusLabel: 'Local only',
     syncStatusDescription: 'Stored on this device',
     user: { firstName: 'Guest' },
+    selectedRoom: null,
+    allRooms: [],
+    createSecureRoom: vi.fn(),
+    lockCurrentRoom: vi.fn(),
+    unlockCurrentRoom: vi.fn(),
+    recoveryPhrase: null,
+    dismissRecoveryPhrase: vi.fn(),
+    showUnlockInput: false,
+    setShowUnlockInput: vi.fn(),
+    unlockPhraseInput: '',
+    setUnlockPhraseInput: vi.fn(),
+    showImport: false,
+    setShowImport: vi.fn(),
+    importKeyInput: '',
+    setImportKeyInput: vi.fn(),
+    exportRoomKey: vi.fn(),
+    importRoomKey: vi.fn(),
+    exportedKey: null,
+    creatingSecure: false,
+    secureRoomMessage: null,
   }),
 }));
 
 vi.mock('./ShareFolderDialog', () => ({
   ShareFolderDialog: () => null,
+}));
+
+vi.mock('../../components/ui/tooltip', () => ({
+  Tooltip: ({ children }: { children: React.ReactNode }) => children,
+  TooltipContent: () => null,
+  TooltipTrigger: ({ children }: { children: React.ReactNode }) => children,
+  TooltipProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 vi.mock('react-dnd', () => ({

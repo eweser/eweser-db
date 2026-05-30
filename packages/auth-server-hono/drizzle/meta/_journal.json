@@ -64,6 +64,13 @@
       "when": 1779148800000,
       "tag": "0008_backup_snapshots",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1780118760000,
+      "tag": "0009_federated_principals",
+      "breakpoints": true
     }
   ]
 }

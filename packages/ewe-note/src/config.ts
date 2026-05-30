@@ -110,3 +110,8 @@ export const dev = env === 'dev';
 export const ci = env === 'ci';
 
 export const showSignup = env !== 'prod';
+
+/** Aggregator API base URL for federated search. */
+export const AGGREGATOR_URL =
+  import.meta.env.VITE_AGGREGATOR_URL ??
+  (import.meta.env.DEV ? 'http://localhost:38190' : '/api');

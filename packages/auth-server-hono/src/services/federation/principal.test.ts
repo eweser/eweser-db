@@ -21,19 +21,30 @@ function chain(resolveValue: unknown[] = []) {
   const where = vi.fn();
   where.mockResolvedValue(resolveValue);
 
-  const from = vi.fn();
-  const values = vi.fn();
-  const set = vi.fn();
-  const onConflictDoNothing = vi.fn();
   const returning = vi.fn();
   returning.mockResolvedValue(resolveValue);
 
-  const chainable = { from: vi.fn(), where: vi.fn(), values: vi.fn(), set: vi.fn(), onConflictDoNothing: vi.fn(), returning: vi.fn() };
-  chainable.from.mockReturnValue({ where, from: chainable.from });
+  const chainable = {
+    from: vi.fn(),
+    where: vi.fn(),
+    values: vi.fn(),
+    set: vi.fn(),
+    onConflictDoNothing: vi.fn(),
+    returning: vi.fn(),
+  };
+  chainable.from.mockReturnValue({
+    where: chainable.where,
+    from: chainable.from,
+  });
   chainable.where.mockReturnValue({ where: chainable.where, returning });
-  chainable.values.mockReturnValue({ onConflictDoNothing, returning, values: chainable.values, from: chainable.from });
+  chainable.values.mockReturnValue({
+    onConflictDoNothing: chainable.onConflictDoNothing,
+    returning,
+    values: chainable.values,
+    from: chainable.from,
+  });
   chainable.onConflictDoNothing.mockReturnValue({ returning });
-  chainable.set.mockReturnValue({ where, set: chainable.set });
+  chainable.set.mockReturnValue({ where: chainable.where, set: chainable.set });
   chainable.returning = returning;
 
   // For db.select().from(t).where(...)
@@ -44,7 +55,14 @@ function chain(resolveValue: unknown[] = []) {
   // For db.insert(t) → { values }
   const insertResult = { values: chainable.values };
 
-  return { selectResult, updateResult, insertResult, chainable, where, returning };
+  return {
+    selectResult,
+    updateResult,
+    insertResult,
+    chainable,
+    where,
+    returning,
+  };
 }
 
 vi.mock('../../db/drizzle.js', () => {
@@ -60,11 +78,7 @@ vi.mock('../../db/drizzle.js', () => {
 });
 
 // Import after mock
-const { db } = await import('../../db/drizzle.js');
-const { defaultChain } = await import('../../db/drizzle.js') as unknown as { defaultChain: ReturnType<typeof chain> };
-const {
-  satisfiesAccessLevel,
-} = await import('./principal.js');
+const { satisfiesAccessLevel } = await import('./principal.js');
 
 // ─── Pure logic tests ──────────────────────────────────────────────
 

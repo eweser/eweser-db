@@ -5,7 +5,15 @@
  * Touches: useDb for secure room state, Tooltip and Dialog for UI.
  * Read before editing: packages/ewe-note/src/INDEX.md and AGENTS.md.
  */
-import { Lock, Unlock, Shield, ShieldAlert, ShieldCheck, Key, Download, Upload, Eye } from 'lucide-react';
+import {
+  Lock,
+  Unlock,
+  Shield,
+  ShieldAlert,
+  ShieldCheck,
+  Download,
+  Upload,
+} from 'lucide-react';
 import { useDb } from '../../db';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -46,7 +54,6 @@ export function SecureRoomControls() {
     creatingSecure,
     secureRoomMessage,
     allRooms,
-    setSelectedRoom,
   } = useDb();
 
   const isEncrypted = Boolean(selectedRoom?.encryption);
@@ -76,7 +83,10 @@ export function SecureRoomControls() {
   }, [createSecureRoom]);
 
   return (
-    <div data-cy="secure-room-controls" className="border-t border-sidebar-border px-3 py-3">
+    <div
+      data-cy="secure-room-controls"
+      className="border-t border-sidebar-border px-3 py-3"
+    >
       {/* Room encryption status bar */}
       <div className="mb-2 flex items-center gap-2">
         {/* Encryption badge with tooltip */}
@@ -94,32 +104,51 @@ export function SecureRoomControls() {
             >
               {isEncrypted ? (
                 isUnlocked ? (
-                  <><ShieldCheck className="h-3 w-3" /> E2EE</>
+                  <>
+                    <ShieldCheck className="h-3 w-3" /> E2EE
+                  </>
                 ) : (
-                  <><ShieldAlert className="h-3 w-3" /> Locked</>
+                  <>
+                    <ShieldAlert className="h-3 w-3" /> Locked
+                  </>
                 )
               ) : (
-                <><Shield className="h-3 w-3" /> Standard</>
+                <>
+                  <Shield className="h-3 w-3" /> Standard
+                </>
               )}
             </div>
           </TooltipTrigger>
-          <TooltipContent side="top" className="max-w-64 text-xs" data-cy="secure-room-badge-tooltip">
+          <TooltipContent
+            side="top"
+            className="max-w-64 text-xs"
+            data-cy="secure-room-badge-tooltip"
+          >
             {isEncrypted ? (
               <div className="space-y-1.5">
                 <p className="font-medium">
-                  {isUnlocked ? 'End-to-end encrypted' : 'End-to-end encrypted (locked)'}
+                  {isUnlocked
+                    ? 'End-to-end encrypted'
+                    : 'End-to-end encrypted (locked)'}
                 </p>
-                <p>This room uses client-side encryption. Content is not readable by the server.</p>
+                <p>
+                  This room uses client-side encryption. Content is not readable
+                  by the server.
+                </p>
                 <ul className="list-disc pl-4 text-muted-foreground">
                   <li>Remote web MCP: Unavailable</li>
                   <li>Server-side search: Unavailable</li>
                   <li>Public aggregation: Not supported</li>
                 </ul>
-                <p className="text-muted-foreground">Keys stay on this device only.</p>
+                <p className="text-muted-foreground">
+                  Keys stay on this device only.
+                </p>
               </div>
             ) : (
-              <p>This room is not encrypted. Content stored as plain text on the sync server.
-              Ordinary hosted rooms are not end-to-end encrypted.</p>
+              <p>
+                This room is not encrypted. Content stored as plain text on the
+                sync server. Ordinary hosted rooms are not end-to-end encrypted.
+              </p>
             )}
           </TooltipContent>
         </Tooltip>
@@ -315,7 +344,8 @@ export function SecureRoomControls() {
           <DialogHeader>
             <DialogTitle>Import Room Key</DialogTitle>
             <DialogDescription>
-              Paste an exported base64 key to unlock this room on another device.
+              Paste an exported base64 key to unlock this room on another
+              device.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
@@ -351,13 +381,16 @@ export function SecureRoomControls() {
       </Dialog>
 
       {/* Exported key dialog */}
-      <Dialog open={showExportDialog && Boolean(exportedKey)} onOpenChange={setShowExportDialog}>
+      <Dialog
+        open={showExportDialog && Boolean(exportedKey)}
+        onOpenChange={setShowExportDialog}
+      >
         <DialogContent data-cy="secure-room-export-dialog">
           <DialogHeader>
             <DialogTitle>Exported Room Key</DialogTitle>
             <DialogDescription>
-              Share this key with another device to grant access. The key
-              does not leave the client.
+              Share this key with another device to grant access. The key does
+              not leave the client.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">

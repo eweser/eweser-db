@@ -17,9 +17,8 @@
  *   - When our user accepts via the origin server, the peer sends us a
  *     signed accept notification and we update accordingly
  */
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { db } from '../../db/drizzle.js';
-import type { DBInstance } from '../../db/drizzle.js';
 import {
   federatedPrincipals,
   type FederatedPrincipal,
@@ -172,8 +171,7 @@ export async function revokeAllFederatedPrincipalsForRoom(
     .where(
       and(
         eq(federatedPrincipals.roomId, roomId),
-        eq(federatedPrincipals.inviteStatus, 'accepted'),
-        eq(federatedPrincipals.inviteStatus, 'pending')
+        inArray(federatedPrincipals.inviteStatus, ['accepted', 'pending'])
       )
     )
     .returning();
@@ -202,7 +200,9 @@ export async function checkFederatedGrant(
 
   if (!principal) return null;
   if (principal.inviteStatus !== 'accepted') return null;
-  if (!satisfiesAccessLevel(principal.accessLevel as AccessLevel, requiredAccess))
+  if (
+    !satisfiesAccessLevel(principal.accessLevel as AccessLevel, requiredAccess)
+  )
     return null;
 
   return principal;
@@ -217,7 +217,12 @@ export async function hasWriteAccessViaFederation(
   serverDomain: string,
   remoteUserId: string
 ): Promise<boolean> {
-  const grant = await checkFederatedGrant(roomId, serverDomain, remoteUserId, 'write');
+  const grant = await checkFederatedGrant(
+    roomId,
+    serverDomain,
+    remoteUserId,
+    'write'
+  );
   return grant !== null;
 }
 
@@ -227,6 +232,11 @@ export async function hasAdminAccessViaFederation(
   serverDomain: string,
   remoteUserId: string
 ): Promise<boolean> {
-  const grant = await checkFederatedGrant(roomId, serverDomain, remoteUserId, 'admin');
+  const grant = await checkFederatedGrant(
+    roomId,
+    serverDomain,
+    remoteUserId,
+    'admin'
+  );
   return grant !== null;
 }

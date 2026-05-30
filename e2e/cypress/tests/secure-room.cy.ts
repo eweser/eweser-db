@@ -1,9 +1,5 @@
 /// <reference types="cypress" />
 
-const fullE2E =
-  Cypress.env('FULL_E2E') === true || Cypress.env('FULL_E2E') === 'true';
-const describeFull = fullE2E ? describe : describe.skip;
-
 const secureRoomBaseUrl =
   Cypress.env('SECURE_ROOM_BASE_URL') ?? 'http://localhost:38130';
 
@@ -57,8 +53,11 @@ describe('secure-room example app', () => {
         const secureRoomButton = Array.from(buttons).find((btn) =>
           btn.textContent?.includes('🔒 Secure Notes')
         );
+        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
         expect(secureRoomButton).to.exist;
-        const secureRoomId = secureRoomButton?.getAttribute('data-cy')?.replace('secure-room-select-', '');
+        const secureRoomId = secureRoomButton
+          ?.getAttribute('data-cy')
+          ?.replace('secure-room-select-', '');
         expect(secureRoomId).to.be.a('string');
 
         // Create a new note
@@ -106,6 +105,7 @@ describe('secure-room example app', () => {
       .then((text) => {
         // Should contain a base64 string (at least 44 chars for 32 bytes)
         const match = text.match(/[A-Za-z0-9+/=]{40,}/);
+        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
         expect(match).to.not.be.null;
       });
   });
@@ -121,9 +121,18 @@ describe('secure-room example app', () => {
     cy.getBySel('secure-room-aggregator-unavailable').should('exist');
 
     // Verify each mentions "unavailable" or "not supported"
-    cy.getBySel('secure-room-search-unavailable').should('contain.text', 'Unavailable');
-    cy.getBySel('secure-room-mcp-unavailable').should('contain.text', 'Unavailable');
-    cy.getBySel('secure-room-aggregator-unavailable').should('contain.text', 'Not supported');
+    cy.getBySel('secure-room-search-unavailable').should(
+      'contain.text',
+      'Unavailable'
+    );
+    cy.getBySel('secure-room-mcp-unavailable').should(
+      'contain.text',
+      'Unavailable'
+    );
+    cy.getBySel('secure-room-aggregator-unavailable').should(
+      'contain.text',
+      'Not supported'
+    );
   });
 
   it('shows encrypted placeholder after reload of a locked room', () => {
@@ -137,7 +146,9 @@ describe('secure-room example app', () => {
       const secureRoomButton = Array.from(buttons).find((btn) =>
         btn.textContent?.includes('🔒 Secure Notes')
       );
-      const secureRoomId = secureRoomButton?.getAttribute('data-cy')?.replace('secure-room-select-', '');
+      const secureRoomId = secureRoomButton
+        ?.getAttribute('data-cy')
+        ?.replace('secure-room-select-', '');
       cy.getBySel(`secure-room-new-note-${secureRoomId}`).click();
       cy.get('textarea[data-cy^="secure-room-note-editor-"]')
         .first()
