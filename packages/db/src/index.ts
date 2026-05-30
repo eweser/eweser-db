@@ -53,11 +53,6 @@ export * from './utils/index.js';
 export * from './utils/files.js';
 export * from './utils/backup.js';
 export * from './types.js';
-const defaultRtcPeers = [
-  'wss://signaling.yjs.debv',
-  'wss://y-webrtc-signaling-eu.herokuapp.com',
-  'wss://y-webrtc-signaling-us.herokuapp.com',
-];
 
 export interface DatabaseOptions {
   authServer?: string;
@@ -67,13 +62,11 @@ export interface DatabaseOptions {
    */
   logLevel?: number;
   /** Which providers to use. By default uses all.
-   * Currently indexedDB is required and webRTC and Hocuspocus are optional
+   * Currently indexedDB is required and Hocuspocus is optional
    * Setting only indexedDB will make the database offline only
    */
   providers?: ProviderOptions[];
   indexedDBProviderPolyfill?: indexedDBProviderPolyfill;
-  /** provide a list of peers to use instead of the default */
-  webRTCPeers?: string[];
   initialRooms?: Omit<NewRoomOptions<EweDocument>, 'db'>[];
   /** a polyfill for localStorage for react native apps */
   localStoragePolyfill?: LocalStoragePolyfill;
@@ -102,7 +95,6 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
 
   /** Set to false before login so offline-first stays the default until sync is enabled. */
   useSync = false;
-  useWebRTC = true;
   useIndexedDB = true;
   indexedDBProviderPolyfill?: indexedDBProviderPolyfill;
 
@@ -110,8 +102,6 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
   collections: Collections = collections;
   registry: Registry = [];
   accessGrantToken = '';
-
-  webRtcPeers: string[] = defaultRtcPeers;
 
   // METHODS
 
@@ -256,10 +246,6 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
       this.authServer = options.authServer;
     }
     if (options.providers) {
-      if (!options.providers.includes('WebRTC')) {
-        this.webRtcPeers = [];
-        this.useWebRTC = false;
-      }
       if (options.providers.includes('Hocuspocus')) {
         this.useSync = true;
       }
@@ -278,10 +264,6 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
       this.offlineOnly = true;
     } else {
       pollConnection(this); // start polling for auth server connection status
-      if (options?.webRTCPeers) {
-        // note that webRtc is only for tempDocs because they are not secure/encrypted yet so we dont want to sync all our long lived yDocs (rooms) with the webRTC peers.
-        this.webRtcPeers = options?.webRTCPeers;
-      }
     }
     if (typeof options.logLevel === 'number') {
       this.logLevel = options.logLevel;
