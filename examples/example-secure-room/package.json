@@ -1,0 +1,54 @@
+{
+  "name": "@eweser/example-secure-room",
+  "version": "1.15.0",
+  "private": true,
+  "description": "EweserDB example demonstrating secure (E2EE) rooms: create, lock/unlock, export/import recovery key material, and unavailable states for server-side search",
+  "keywords": [
+    "user-owned",
+    "crdt",
+    "interoperable",
+    "local-first",
+    "encrypted",
+    "e2ee"
+  ],
+  "author": "EweserDB",
+  "type": "module",
+  "homepage": "https://github.com/eweser/eweserdb",
+  "license": "MIT",
+  "directories": {
+    "src": "src"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eweser/eweserdb.git"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview --host",
+    "clean": "rm -rf dist",
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit",
+    "test": "vitest --run --passWithNoTests"
+  },
+  "bugs": {
+    "url": "https://github.com/eweser/eweserdb/issues"
+  },
+  "dependencies": {
+    "@eweser/db": "^1.15.0",
+    "@eweser/examples-components": "^3.0.0",
+    "buffer": "^6.0.3",
+    "events": "3.3.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@eweser/eslint-config-react-ts": "^1.15.0",
+    "@types/react": "^19.2.4",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "eslint": "^9.39.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.2"
+  }
+}
