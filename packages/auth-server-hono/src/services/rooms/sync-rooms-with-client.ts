@@ -127,6 +127,7 @@ export async function syncRoomsWithClient(
             createdAt: r.createdAt.toISOString(),
             updatedAt: r.updatedAt?.toISOString() ?? null,
             _ttl: r._ttl?.toISOString() ?? null,
+            encryption: null,
           }) as ServerRoom
       ),
       token: newToken,

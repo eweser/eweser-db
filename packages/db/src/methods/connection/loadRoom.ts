@@ -9,6 +9,7 @@ import type { RoomConnectionStatus } from '../../events.js';
 import { wait } from '@eweser/shared';
 import { Awareness } from 'y-protocols/awareness';
 import type { EweDocument } from '@eweser/shared';
+import { applySeedIfNeeded } from '../../utils/seedRoom.js';
 
 const TOKEN_EXPIRY_BUFFER_MS = 5 * 60 * 1000;
 
@@ -183,7 +184,6 @@ export async function loadSync(
     room.syncProvider?.off('synced', handleSynced);
     room.syncProvider?.off('authenticationFailed', handleAuthenticationFailed);
     room.syncProvider?.disconnect();
-    room.webRtcProvider?.disconnect();
     emitConnectionChange('disconnected');
   };
   if (awaitConnection) {
@@ -236,6 +236,17 @@ export const loadRoom =
 
     if (!localLoaded) {
       await loadLocal(db, room);
+      // Apply first-run seed if configured (idempotent — skips when documents exist).
+      try {
+        const result = await applySeedIfNeeded(room);
+        if (result.seeded) {
+          db.debug(
+            `seeded room "${room.name}" with ${result.count} document(s)`
+          );
+        }
+      } catch (e) {
+        db.warn('seedRoom failed (non-fatal)', e);
+      }
     }
 
     if (loadRemote && shouldLoadSync && !syncLoaded) {

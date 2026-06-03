@@ -119,6 +119,40 @@ Refresh the page and notice the data persists.
 Turn off your internet and notice the data still updates in the browser app.
 Turn it back on and watch the sync propagate to the other device.
 
+## Seeding initial documents
+
+For offline-first apps that need pre-populated data before sync is available, use the `initialDocuments` seed API. It is **idempotent** — documents are only written on the very first load of a room, and never overwrite existing or user-modified data.
+
+```ts
+// Database-level seed: applied to every room that loads for the first time.
+const db = new Database({
+  initialRooms: [{ collectionKey: 'notes', name: 'My Notes' }],
+  initialDocuments: [{ title: 'Welcome', text: 'Your notes sync here.' }],
+});
+
+// Room-level seed: takes priority over the database-level seed.
+const room = db.newRoom<Note>({
+  collectionKey: 'notes',
+  name: 'Project Notes',
+  initialDocuments: [
+    { title: 'Getting Started', text: 'This is a project workspace.' },
+  ],
+});
+
+// Async callback seed (useful for generated data):
+const db2 = new Database({
+  initialRooms: [{ collectionKey: 'notes', name: 'Guided Notes' }],
+  initialDocuments: async (room, db) => [
+    { title: `Welcome to ${room.name}`, text: 'Generated at startup.' },
+  ],
+});
+```
+
+**When to use seed API vs. app-level import:**
+
+- Use **seed API** when your app needs a known set of documents present on first launch before the user does anything (templates, onboarding guides, default workspaces).
+- Use **app-level import** when you are migrating data from another system, restoring a backup, or the user is explicitly importing content after the app is already running.
+
 # Features
 
 ## Structure
@@ -233,12 +267,14 @@ SDK and product polish:
 
 - [ ] Add a deleted-document cleanup job for items whose `_deleted` flag is set
       and `_ttl` has expired.
-- [ ] Decide whether WebRTC temporary documents are still part of the roadmap;
-      either implement the current-room-safe shape or remove the stale API/deps.
+- [x] ~~Decide whether WebRTC temporary documents are still part of the roadmap;
+      Removed: stale `y-webrtc` dependency and WebRTC provider support. Decision
+      is that Hocuspocus remains the sole remote sync path; WebRTC temp-doc
+      collaboration may be reintroduced in a future approved plan.~~
 - [ ] Add a cross-collection query/search layer for refs, such as finding notes
       that reference flashcards.
 - [ ] Add stress testing and documented room/document size guidance.
-- [ ] Add an optional seeded-room API if `initialRooms` is not enough for
+- [x] Add an optional seeded-room API if `initialRooms` is not enough for
       first-run offline app data.
 - [ ] Retry sync-token refresh and reconnect after room authentication failures.
 - [ ] Skip the permission page when an existing valid grant already satisfies

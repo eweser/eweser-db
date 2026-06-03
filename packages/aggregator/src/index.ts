@@ -1,12 +1,13 @@
 /**
  * Purpose: Aggregator Hono service entry point for public indexing and search.
  * Exports: Hono app and side-effect server startup outside tests.
- * Touches: Webhooks, indexed documents, search routes, CORS, and telemetry.
+ * Touches: Webhooks, indexed documents, search routes, CORS, federation, and telemetry.
  * Read before editing: packages/aggregator/INDEX.md and ARCHITECTURE.md.
  */
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { readFileSync } from 'node:fs';
 import { db } from './db/client.js';
 import { ensureIndexedDocumentsSchema } from './db/ensure-schema.js';
 import {
@@ -20,7 +21,10 @@ import { env } from './env.js';
 import { createAgentSearchRouter } from './routes/agent-search.js';
 import { createDevTokenRouter } from './routes/dev-token.js';
 import { createSearchRouter } from './routes/search.js';
+import { createFederationRouter } from './routes/federation.js';
 import { createWebhookHandler } from './webhook-handler.js';
+import { loadPeers, federatedSearch } from './federation/index.js';
+import type { FederatedSearchResult } from './federation/types.js';
 import { createLogger, initTelemetry } from '@eweser/logger';
 
 const log = createLogger('aggregator');
@@ -48,8 +52,37 @@ app.use(
   })
 );
 
+let _aggregatorVersion: string | null = null;
+function getAggregatorVersion(): string {
+  if (_aggregatorVersion) return _aggregatorVersion;
+  try {
+    const pkg = JSON.parse(
+      readFileSync(new URL('../package.json', import.meta.url), 'utf-8')
+    ) as { version: string };
+    _aggregatorVersion = pkg.version;
+  } catch {
+    _aggregatorVersion = '0.0.0';
+  }
+  return _aggregatorVersion;
+}
+
 app.get('/health', (c) => c.json({ status: 'ok' }));
 app.get('/ping', (c) => c.text('pong'));
+
+app.get('/capabilities', (c) =>
+  c.json({
+    server: 'eweser-db',
+    component: 'aggregator',
+    version: getAggregatorVersion(),
+    capabilities: {
+      search: {
+        endpoint: '/api/search',
+        agentSearch: Boolean(env.EWESER_AUTH_URL),
+        fullTextSearch: true,
+      },
+    },
+  })
+);
 
 app.post(
   '/webhooks/hocuspocus',
@@ -67,17 +100,69 @@ app.post(
   })
 );
 
+// Load trusted peers for federation
+const trustedPeers = loadPeers(env.TRUSTED_PEERS);
+
+const localSearch = async (params: {
+  query: string;
+  collectionKey?: string | undefined;
+  limit?: number;
+  offset?: number;
+}) => {
+  const qParams: {
+    query: string;
+    collectionKey?: string | undefined;
+    limit?: number;
+    offset?: number;
+  } = { query: params.query };
+  if (params.collectionKey !== undefined)
+    qParams.collectionKey = params.collectionKey;
+  if (params.limit !== undefined) qParams.limit = params.limit;
+  if (params.offset !== undefined) qParams.offset = params.offset;
+  return searchIndexedDocuments(db, qParams);
+};
+
+// Federated search: wire into search route if peers are configured
+const federatedSearchFn =
+  trustedPeers.length > 0
+    ? async (params: {
+        query: string;
+        collectionKey?: string | undefined;
+        limit?: number;
+        offset?: number;
+      }): Promise<FederatedSearchResult> => {
+        return federatedSearch({ peers: trustedPeers, localSearch }, params);
+      }
+    : undefined;
+
 app.route(
   '/api',
   createSearchRouter({
-    searchDocuments: async ({ query, collectionKey, limit, offset }) =>
-      await searchIndexedDocuments(db, {
-        query,
-        ...(collectionKey !== undefined ? { collectionKey } : {}),
-        ...(limit !== undefined ? { limit } : {}),
-        ...(offset !== undefined ? { offset } : {}),
-      }),
-    getDocumentsByRoom: async (roomId) => await getDocumentsByRoom(db, roomId),
+    searchDocuments: localSearch,
+    getDocumentsByRoom: async (roomId) => getDocumentsByRoom(db, roomId),
+    federatedSearch: federatedSearchFn,
+  })
+);
+
+// Federation endpoint: receive search requests from trusted peers
+// Always mounted so peers can reach you even when no outgoing peers are configured.
+app.route(
+  '/api/federation',
+  createFederationRouter({
+    peers: trustedPeers,
+    searchDocuments: async (params) => {
+      const qParams: {
+        query: string;
+        collectionKey?: string | undefined;
+        limit?: number;
+        offset?: number;
+      } = { query: params.query };
+      if (params.collectionKey !== undefined)
+        qParams.collectionKey = params.collectionKey;
+      if (params.limit !== undefined) qParams.limit = params.limit;
+      if (params.offset !== undefined) qParams.offset = params.offset;
+      return searchIndexedDocuments(db, qParams);
+    },
   })
 );
 
@@ -118,6 +203,12 @@ export async function startServer() {
   serve({ fetch: app.fetch, port: env.PORT });
 
   log.info(`Aggregator server running on port ${env.PORT}`);
+  if (trustedPeers.length > 0) {
+    log.info(
+      { peers: trustedPeers.map((p) => p.label) },
+      `Federated search enabled with ${trustedPeers.length} trusted peer(s)`
+    );
+  }
 }
 
 if (process.env.NODE_ENV !== 'test') {

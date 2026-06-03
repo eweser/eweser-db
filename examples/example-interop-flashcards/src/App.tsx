@@ -11,7 +11,6 @@ const sharedRoomId = 'interop-shared-room-v1';
 const db = new Database({
   authServer: config.AUTH_SERVER,
   logLevel: 0,
-  ...(config.WEB_RTC_PEERS ? { webRTCPeers: config.WEB_RTC_PEERS } : {}),
   initialRooms: [
     { collectionKey: notesCollection, id: sharedRoomId, name: 'Interop Notes' },
     {
