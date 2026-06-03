@@ -12,7 +12,6 @@ localStorage.setItem('multi-room-default-id', defaultRoomId);
 const db = new Database({
   authServer: config.AUTH_SERVER,
   logLevel: 0,
-  ...(config.WEB_RTC_PEERS ? { webRTCPeers: config.WEB_RTC_PEERS } : {}),
   initialRooms: [
     {
       collectionKey,
