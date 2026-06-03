@@ -115,10 +115,9 @@ export function verifySignedRequest<T extends SignedFederationPayload>(
  * Throws if the server domain in the envelope doesn't match the payload or
  * if signature verification fails.
  */
-export function verifySignedRequestFromServer<T extends SignedFederationPayload>(
-  envelope: SignedFederationEnvelope,
-  expectedServerDomain?: string
-): T {
+export function verifySignedRequestFromServer<
+  T extends SignedFederationPayload,
+>(envelope: SignedFederationEnvelope, expectedServerDomain?: string): T {
   const payload = verifySignedRequest<T>(envelope);
 
   if (expectedServerDomain && payload.issuerDomain !== expectedServerDomain) {

@@ -38,4 +38,3 @@ encrypted) rooms in EweserDB.
 
 - `npm run build --workspace @eweser/example-secure-room`: Builds the example.
 - `e2e/cypress/tests/secure-room.cy.ts`: Cypress E2E spec.
-

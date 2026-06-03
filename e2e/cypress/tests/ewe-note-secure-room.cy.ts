@@ -39,7 +39,10 @@ describe('ewe-note secure room UI', () => {
 
     // Tooltip should explain standard rooms are not E2EE
     getSecureRoomBadge().trigger('mouseenter');
-    cy.getBySel('secure-room-badge-tooltip').should('contain.text', 'not encrypted');
+    cy.getBySel('secure-room-badge-tooltip').should(
+      'contain.text',
+      'not encrypted'
+    );
     getSecureRoomBadge().trigger('mouseleave');
   });
 
@@ -50,7 +53,9 @@ describe('ewe-note secure room UI', () => {
     cy.getBySel('secure-room-create-button').click();
 
     // Verify recovery phrase is displayed
-    cy.getBySel('secure-room-recovery-phrase', { timeout: 10000 }).should('exist');
+    cy.getBySel('secure-room-recovery-phrase', { timeout: 10000 }).should(
+      'exist'
+    );
     cy.getBySel('secure-room-phrase-text')
       .invoke('text')
       .then((phrase) => {
@@ -66,16 +71,27 @@ describe('ewe-note secure room UI', () => {
 
     // Unavailable states should be visible
     cy.getBySel('secure-room-unavailable-states').should('exist');
-    cy.getBySel('secure-room-search-unavailable').should('contain.text', 'disabled');
-    cy.getBySel('secure-room-mcp-unavailable').should('contain.text', 'disabled');
-    cy.getBySel('secure-room-aggregator-unavailable').should('contain.text', 'disabled');
+    cy.getBySel('secure-room-search-unavailable').should(
+      'contain.text',
+      'disabled'
+    );
+    cy.getBySel('secure-room-mcp-unavailable').should(
+      'contain.text',
+      'disabled'
+    );
+    cy.getBySel('secure-room-aggregator-unavailable').should(
+      'contain.text',
+      'disabled'
+    );
   });
 
   it('locks and unlocks a secure room', () => {
     visitHome();
 
     cy.getBySel('secure-room-create-button').click();
-    cy.getBySel('secure-room-recovery-phrase', { timeout: 10000 }).should('exist');
+    cy.getBySel('secure-room-recovery-phrase', { timeout: 10000 }).should(
+      'exist'
+    );
 
     // Get the recovery phrase
     cy.getBySel('secure-room-phrase-text')
@@ -115,7 +131,9 @@ describe('ewe-note secure room UI', () => {
     visitHome();
 
     cy.getBySel('secure-room-create-button').click();
-    cy.getBySel('secure-room-recovery-phrase', { timeout: 10000 }).should('exist');
+    cy.getBySel('secure-room-recovery-phrase', { timeout: 10000 }).should(
+      'exist'
+    );
 
     // Dismiss recovery phrase
     cy.getBySel('secure-room-phrase-dismiss').click();
@@ -133,15 +151,23 @@ describe('ewe-note secure room UI', () => {
     visitHome();
 
     cy.getBySel('secure-room-create-button').click();
-    cy.getBySel('secure-room-recovery-phrase', { timeout: 10000 }).should('exist');
+    cy.getBySel('secure-room-recovery-phrase', { timeout: 10000 }).should(
+      'exist'
+    );
 
     // Hover over badge to see tooltip
     getSecureRoomBadge().trigger('mouseenter');
     cy.getBySel('secure-room-badge-tooltip').should('be.visible');
-    cy.getBySel('secure-room-badge-tooltip').should('contain.text', 'end-to-end encrypted');
+    cy.getBySel('secure-room-badge-tooltip').should(
+      'contain.text',
+      'end-to-end encrypted'
+    );
     cy.getBySel('secure-room-badge-tooltip').should('contain.text', 'MCP');
     cy.getBySel('secure-room-badge-tooltip').should('contain.text', 'search');
-    cy.getBySel('secure-room-badge-tooltip').should('contain.text', 'aggregation');
+    cy.getBySel('secure-room-badge-tooltip').should(
+      'contain.text',
+      'aggregation'
+    );
     getSecureRoomBadge().trigger('mouseleave');
   });
 
@@ -149,7 +175,9 @@ describe('ewe-note secure room UI', () => {
     visitHome();
 
     cy.getBySel('secure-room-create-button').click();
-    cy.getBySel('secure-room-recovery-phrase', { timeout: 10000 }).should('exist');
+    cy.getBySel('secure-room-recovery-phrase', { timeout: 10000 }).should(
+      'exist'
+    );
 
     // Dismiss recovery phrase
     cy.getBySel('secure-room-phrase-dismiss').click();
@@ -163,6 +191,7 @@ describe('ewe-note secure room UI', () => {
       .invoke('text')
       .then((text) => {
         const match = text.match(/[A-Za-z0-9+/=]{40,}/);
+        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
         expect(match).to.not.be.null;
       });
   });
@@ -172,7 +201,9 @@ describe('ewe-note secure room UI', () => {
       visitHome();
 
       cy.getBySel('secure-room-create-button').click();
-      cy.getBySel('secure-room-recovery-phrase', { timeout: 10000 }).should('exist');
+      cy.getBySel('secure-room-recovery-phrase', { timeout: 10000 }).should(
+        'exist'
+      );
 
       // Keep phrase for later unlock
       cy.getBySel('secure-room-phrase-text')

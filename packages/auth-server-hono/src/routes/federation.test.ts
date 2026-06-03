@@ -134,7 +134,10 @@ describe('POST /api/federation/remote/invite', () => {
     const res = await app.request('/api/federation/remote/invite', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ token: 'bad-token', serverDomain: 'server-b.com' }),
+      body: JSON.stringify({
+        token: 'bad-token',
+        serverDomain: 'server-b.com',
+      }),
     });
     expect(res.status).toBe(403);
   });
@@ -152,7 +155,10 @@ describe('POST /api/federation/remote/invite', () => {
     const res = await app.request('/api/federation/remote/invite', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ token: 'valid-token', serverDomain: 'server-a.com' }),
+      body: JSON.stringify({
+        token: 'valid-token',
+        serverDomain: 'server-a.com',
+      }),
     });
     expect(res.status).toBe(400);
     await expect(res.json()).resolves.toMatchObject({
@@ -175,7 +181,10 @@ describe('POST /api/federation/remote/invite', () => {
     const res = await app.request('/api/federation/remote/invite', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ token: 'valid-token', serverDomain: 'server-a.com' }),
+      body: JSON.stringify({
+        token: 'valid-token',
+        serverDomain: 'server-a.com',
+      }),
     });
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -197,7 +206,10 @@ describe('POST /api/federation/remote/invite', () => {
     const res = await app.request('/api/federation/remote/invite', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ token: 'valid-token', serverDomain: 'server-a.com' }),
+      body: JSON.stringify({
+        token: 'valid-token',
+        serverDomain: 'server-a.com',
+      }),
     });
     expect(res.status).toBe(500);
   });
@@ -212,7 +224,10 @@ describe('POST /api/federation/remote/accept', () => {
     const res = await app.request('/api/federation/remote/accept', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ token: 'bad-token', serverDomain: 'server-b.com' }),
+      body: JSON.stringify({
+        token: 'bad-token',
+        serverDomain: 'server-b.com',
+      }),
     });
     expect(res.status).toBe(403);
   });
@@ -227,12 +242,17 @@ describe('POST /api/federation/remote/accept', () => {
       requestId: 'req-3',
     });
     getFederatedPrincipalMock.mockResolvedValueOnce(SAMPLE_PRINCIPAL);
-    updateFederatedPrincipalStatusMock.mockResolvedValueOnce(ACCEPTED_PRINCIPAL);
+    updateFederatedPrincipalStatusMock.mockResolvedValueOnce(
+      ACCEPTED_PRINCIPAL
+    );
 
     const res = await app.request('/api/federation/remote/accept', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ token: 'valid-token', serverDomain: 'server-a.com' }),
+      body: JSON.stringify({
+        token: 'valid-token',
+        serverDomain: 'server-a.com',
+      }),
     });
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toMatchObject({
@@ -259,7 +279,10 @@ describe('POST /api/federation/remote/accept', () => {
     const res = await app.request('/api/federation/remote/accept', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ token: 'valid-token', serverDomain: 'server-a.com' }),
+      body: JSON.stringify({
+        token: 'valid-token',
+        serverDomain: 'server-a.com',
+      }),
     });
     expect(res.status).toBe(404);
   });
@@ -280,7 +303,10 @@ describe('POST /api/federation/remote/revoke', () => {
     const res = await app.request('/api/federation/remote/revoke', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ token: 'valid-token', serverDomain: 'server-a.com' }),
+      body: JSON.stringify({
+        token: 'valid-token',
+        serverDomain: 'server-a.com',
+      }),
     });
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({ success: true });
@@ -303,7 +329,10 @@ describe('POST /api/federation/remote/revoke', () => {
     const res = await app.request('/api/federation/remote/revoke', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ token: 'valid-token', serverDomain: 'server-a.com' }),
+      body: JSON.stringify({
+        token: 'valid-token',
+        serverDomain: 'server-a.com',
+      }),
     });
     expect(res.status).toBe(200);
     expect(updateFederatedPrincipalStatusMock).toHaveBeenCalledWith(
@@ -334,7 +363,9 @@ describe('POST /api/federation/submit-invite', () => {
       body: JSON.stringify({ roomId: 'not-a-uuid' }),
     });
     expect(res.status).toBe(400);
-    await expect(res.json()).resolves.toMatchObject({ error: 'Invalid request' });
+    await expect(res.json()).resolves.toMatchObject({
+      error: 'Invalid request',
+    });
   });
 
   it('returns 403 when room is not in JWT room list', async () => {

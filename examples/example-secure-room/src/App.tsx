@@ -53,12 +53,6 @@ const badgeStyle: React.CSSProperties = {
   marginLeft: 8,
 };
 
-const encryptedBadge: React.CSSProperties = {
-  ...badgeStyle,
-  background: '#fef3c7',
-  color: '#92400e',
-};
-
 const unlockedBadge: React.CSSProperties = {
   ...badgeStyle,
   background: '#d1fae5',
@@ -264,15 +258,16 @@ const App = () => {
           style={{ ...styles.statusBar, marginBottom: 16 }}
           data-cy="secure-room-header"
         >
-          <h1 style={{ margin: 0, fontSize: '1.3em' }}>
-            Secure Room Demo
-          </h1>
+          <h1 style={{ margin: 0, fontSize: '1.3em' }}>Secure Room Demo</h1>
           <div style={styles.logoutButtonsDiv}>
             <span style={{ fontSize: '0.85em', marginRight: 8 }}>
               {db.getToken() ? 'Logged In' : 'Logged Out'}
             </span>
             <a href={loginUrl} style={{ textDecoration: 'none' }}>
-              <button style={styles.logoutButton} data-cy="secure-room-login-button">
+              <button
+                style={styles.logoutButton}
+                data-cy="secure-room-login-button"
+              >
                 Login
               </button>
             </a>
@@ -307,7 +302,13 @@ const App = () => {
 
         {/* ── Room toolbar ──────────────────────────────────────────── */}
         <div
-          style={{ ...sectionStyle, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}
+          style={{
+            ...sectionStyle,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            flexWrap: 'wrap',
+          }}
           data-cy="secure-room-toolbar"
         >
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', flex: 1 }}>
@@ -355,12 +356,8 @@ const App = () => {
               {/* Room panel */}
               <SecureRoomPanel
                 room={selectedRoom}
-                isUnlocked={
-                  selectedRoom.encryption ? isUnlocked : true
-                }
-                recoveryPhrase={
-                  selectedRoom.encryption ? recoveryPhrase : ''
-                }
+                isUnlocked={selectedRoom.encryption ? isUnlocked : true}
+                recoveryPhrase={selectedRoom.encryption ? recoveryPhrase : ''}
                 exportedKey={exportedKey}
                 importKeyInput={importKeyInput}
                 showImport={showImport}
@@ -394,17 +391,28 @@ const App = () => {
                   <h3 style={{ margin: '0 0 8px', fontSize: '1em' }}>
                     Unavailable Features
                   </h3>
-                  <p style={unavailableStyle} data-cy="secure-room-search-unavailable">
-                    🔍 Server-side search: <strong>Unavailable</strong> — content
-                    is encrypted end-to-end and cannot be indexed server-side.
+                  <p
+                    style={unavailableStyle}
+                    data-cy="secure-room-search-unavailable"
+                  >
+                    🔍 Server-side search: <strong>Unavailable</strong> —
+                    content is encrypted end-to-end and cannot be indexed
+                    server-side.
                   </p>
-                  <p style={unavailableStyle} data-cy="secure-room-mcp-unavailable">
-                    🖥️ Remote MCP access: <strong>Unavailable</strong> — MCP tools
-                    cannot read encrypted room content.
+                  <p
+                    style={unavailableStyle}
+                    data-cy="secure-room-mcp-unavailable"
+                  >
+                    🖥️ Remote MCP access: <strong>Unavailable</strong> — MCP
+                    tools cannot read encrypted room content.
                   </p>
-                  <p style={unavailableStyle} data-cy="secure-room-aggregator-unavailable">
-                    🌐 Public aggregation: <strong>Not supported</strong> — encrypted
-                    rooms cannot be published to the aggregator search index.
+                  <p
+                    style={unavailableStyle}
+                    data-cy="secure-room-aggregator-unavailable"
+                  >
+                    🌐 Public aggregation: <strong>Not supported</strong> —
+                    encrypted rooms cannot be published to the aggregator search
+                    index.
                   </p>
                 </div>
               )}
@@ -512,11 +520,14 @@ const SecureRoomPanel = ({
     <div style={sectionStyle} data-cy={`secure-room-panel-${room.id}`}>
       {/* Room title bar */}
       <div
-        style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          marginBottom: 12,
+        }}
       >
-        <h2 style={{ margin: 0, fontSize: '1.1em' }}>
-          {room.name}
-        </h2>
+        <h2 style={{ margin: 0, fontSize: '1.1em' }}>{room.name}</h2>
         {encryptionBadge}
 
         {/* Lock / Unlock controls for encrypted rooms */}
@@ -561,14 +572,21 @@ const SecureRoomPanel = ({
           <strong style={{ fontSize: '0.85em', color: '#92400e' }}>
             Recovery Phrase (save this securely!)
           </strong>
-          <div style={phraseBoxStyle} data-cy="secure-room-phrase-text">{recoveryPhrase}</div>
+          <div style={phraseBoxStyle} data-cy="secure-room-phrase-text">
+            {recoveryPhrase}
+          </div>
         </div>
       )}
 
       {/* Unlock input */}
       {showUnlockInput && isEncrypted && (
         <div
-          style={{ marginBottom: 12, display: 'flex', gap: 6, alignItems: 'center' }}
+          style={{
+            marginBottom: 12,
+            display: 'flex',
+            gap: 6,
+            alignItems: 'center',
+          }}
           data-cy="secure-room-unlock-input-area"
         >
           <input
@@ -599,7 +617,13 @@ const SecureRoomPanel = ({
       {/* Export / Import key */}
       {isEncrypted && isUnlocked && (
         <div
-          style={{ marginBottom: 12, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}
+          style={{
+            marginBottom: 12,
+            display: 'flex',
+            gap: 6,
+            alignItems: 'center',
+            flexWrap: 'wrap',
+          }}
         >
           <button
             data-cy="secure-room-export-key-button"
@@ -641,7 +665,12 @@ const SecureRoomPanel = ({
       {/* Import input */}
       {showImport && isEncrypted && (
         <div
-          style={{ marginBottom: 12, display: 'flex', gap: 6, alignItems: 'center' }}
+          style={{
+            marginBottom: 12,
+            display: 'flex',
+            gap: 6,
+            alignItems: 'center',
+          }}
           data-cy="secure-room-import-input-area"
         >
           <input
@@ -743,9 +772,7 @@ const SecureRoomPanel = ({
                       style={{ ...styles.editor, minHeight: 60 }}
                       value={notes[selectedNoteId]?.text ?? ''}
                       data-cy={`secure-room-note-editor-${note._id}`}
-                      onChange={(event) =>
-                        updateNote(note, event.target.value)
-                      }
+                      onChange={(event) => updateNote(note, event.target.value)}
                       onBlur={() => setSelectedNoteId('')}
                     />
                   ) : (

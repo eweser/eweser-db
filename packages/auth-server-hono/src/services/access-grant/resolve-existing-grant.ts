@@ -1,10 +1,9 @@
 /**
- * Purpose: Fast-path grant satisfaction check — looks up an existing access grant
- * and mints a fresh token if the existing grant satisfies the request scope,
- * without creating or updating the grant.
- *
- * Key design: The satisfies() function is a pure check exported for unit testing.
- * resolveExistingGrant() is the full service that does DB lookup + token minting.
+ * Purpose: Fast-path grant satisfaction check — looks up an existing access
+ * grant and mints a fresh token if it satisfies the request scope.
+ * Exports: satisfies, resolveExistingGrant
+ * Touches: AccessGrant model, JWT/HMAC token minting, Zod validation
+ * Read before editing: packages/auth-server-hono/AGENTS.md
  */
 
 import type { AccessGrant } from '../../model/access_grants.js';

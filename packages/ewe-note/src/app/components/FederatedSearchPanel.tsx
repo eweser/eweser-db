@@ -1,9 +1,9 @@
 /**
- * Purpose: Federated search panel for the Ewe Note sidebar.
- * Uses useFederatedSearch to query the aggregator and display
- * local and federated results with origin peer labels.
- * Touches: useFederatedSearch for search state and actions.
- * Read before editing: packages/ewe-note/src/INDEX.md and AGENTS.md.
+ * Purpose: Federated search panel for the Ewe Note sidebar. Uses
+ * useFederatedSearch to query the aggregator and display results.
+ * Exports: FederatedSearchPanel
+ * Touches: useFederatedSearch, Search/X icons, Input
+ * Read before editing: packages/ewe-note/src/INDEX.md, AGENTS.md
  */
 import { useState, useCallback } from 'react';
 import { Search, X } from 'lucide-react';

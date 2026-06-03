@@ -1,9 +1,9 @@
 /**
- * Purpose: Secure room controls for the Ewe Note sidebar.
- * Shows encryption badge with tooltip explaining unavailable server-side features,
- * lock/unlock controls, create secure room button, and recovery phrase display.
- * Touches: useDb for secure room state, Tooltip and Dialog for UI.
- * Read before editing: packages/ewe-note/src/INDEX.md and AGENTS.md.
+ * Purpose: Secure room controls for the Ewe Note sidebar. Shows encryption
+ * badge, lock/unlock controls, create secure room button, recovery phrase.
+ * Exports: SecureRoomControls
+ * Touches: useSecureRoom hook, Tooltip, Dialog, Input
+ * Read before editing: packages/ewe-note/src/INDEX.md, AGENTS.md
  */
 import {
   Lock,
