@@ -6,7 +6,7 @@ import {
 } from './request-signing.js';
 import type { FederationSearchRequest } from './request-signing.js';
 
-const SECRET = 'test-shared-secret';
+const SECRET = 'test-secret';
 
 const body: FederationSearchRequest = {
   query: 'hello world',

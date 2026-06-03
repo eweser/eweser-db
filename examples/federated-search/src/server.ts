@@ -18,7 +18,7 @@ import { Hono } from 'hono';
 import { createHmac } from 'node:crypto';
 
 // ── Shared secret for inter-peer trust ────────────────────────────────
-const SHARED_SECRET = 'demo-shared-secret-for-federated-search';
+const SHARED_SECRET = 'dev-secret';
 
 // ── In-memory indexed documents (simulating full-text search) ─────────
 
