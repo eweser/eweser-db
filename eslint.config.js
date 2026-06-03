@@ -57,6 +57,7 @@ export default [
       'examples/example-interop-notes/src/**/*.{ts,tsx}',
       'examples/example-interop-flashcards/src/**/*.{ts,tsx}',
       'examples/example-aggregator/src/**/*.{ts,tsx}',
+      'examples/example-secure-room/src/**/*.{ts,tsx}',
       'e2e/cypress/**/*.ts',
     ],
   })),

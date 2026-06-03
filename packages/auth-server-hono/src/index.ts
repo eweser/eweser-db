@@ -20,6 +20,7 @@ import { filesRouter } from './routes/files.js';
 import { backupsRouter } from './routes/backups.js';
 import { wellKnownRouter } from './routes/well-known.js';
 import { capabilitiesRouter } from './routes/capabilities.js';
+import { federationRouter } from './routes/federation.js';
 import { createLogger, initTelemetry } from '@eweser/logger';
 import { loadServerIdentity } from './services/federation/index.js';
 
@@ -148,6 +149,10 @@ app.route('/backups', backupsRouter);
 app.route('/backups/', backupsRouter);
 app.route('/api/backups', backupsRouter);
 app.route('/api/backups/', backupsRouter);
+
+// Federation routes
+app.route('/federation', federationRouter);
+app.route('/api/federation', federationRouter);
 
 serve({ fetch: app.fetch, port: env.PORT }, (info) => {
   log.info(`Auth API running on port ${info.port}`);

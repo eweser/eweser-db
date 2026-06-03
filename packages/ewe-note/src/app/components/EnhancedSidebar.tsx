@@ -24,6 +24,8 @@ import {
   type Folder as NotesFolder,
 } from '../contexts/NotesContext';
 import { ShareFolderDialog } from '../components/ShareFolderDialog';
+import { SecureRoomControls } from './SecureRoomControls';
+import { FederatedSearchPanel } from './FederatedSearchPanel';
 import { useDb } from '../../db';
 import {
   Dialog,
@@ -392,6 +394,10 @@ function SidebarContent({
           </div>
         </div>
       </nav>
+
+      <FederatedSearchPanel />
+
+      <SecureRoomControls />
 
       <div className="hidden border-t border-sidebar-border p-2 md:block">
         <div className="grid grid-cols-3 gap-1">

@@ -1,9 +1,16 @@
 import 'yjs';
-import { Database } from '@eweser/db';
+import { Database, RoomCrypto } from '@eweser/db';
 import type { CollectionKey, Note, Room } from '@eweser/db';
 import * as config from './config';
 import type { ReactNode } from 'react';
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { logger } from './utils';
 import { useGetUserFromDb } from './user';
 import { getDefaultNoteText } from './default-tutorial';
@@ -110,6 +117,25 @@ export type DbContextType = {
     avatar: string;
   };
   signOut: () => void;
+  // Secure room properties
+  createSecureRoom: () => Promise<void>;
+  lockCurrentRoom: () => void;
+  unlockCurrentRoom: (phrase: string) => Promise<void>;
+  recoveryPhrase: string | null;
+  dismissRecoveryPhrase: () => void;
+  showUnlockInput: boolean;
+  setShowUnlockInput: (val: boolean) => void;
+  unlockPhraseInput: string;
+  setUnlockPhraseInput: (val: string) => void;
+  showImport: boolean;
+  setShowImport: (val: boolean) => void;
+  importKeyInput: string;
+  setImportKeyInput: (val: string) => void;
+  exportRoomKey: () => Promise<void>;
+  importRoomKey: (key: string) => Promise<void>;
+  exportedKey: string | null;
+  creatingSecure: boolean;
+  secureRoomMessage: string | null;
 };
 
 export type EweNoteSyncStatus =
@@ -234,6 +260,123 @@ export const DbProvider = ({ children }: { children: ReactNode }) => {
     db.getRooms(collectionKey)
   );
   const allRoomIds = allRooms.map((room) => room.id);
+
+  // Secure room state
+  const [creatingSecure, setCreatingSecure] = useState(false);
+  const [recoveryPhrase, setRecoveryPhrase] = useState<string | null>(null);
+  const [exportedKey, setExportedKey] = useState<string | null>(null);
+  const [importKeyInput, setImportKeyInput] = useState('');
+  const [showImport, setShowImport] = useState(false);
+  const [unlockPhraseInput, setUnlockPhraseInput] = useState('');
+  const [showUnlockInput, setShowUnlockInput] = useState(false);
+  const [secureRoomMessage, setSecureRoomMessage] = useState<string | null>(
+    null
+  );
+
+  const showSecureMessage = useCallback((msg: string) => {
+    setSecureRoomMessage(msg);
+    const id = window.setTimeout(() => setSecureRoomMessage(null), 3000);
+    return () => window.clearTimeout(id);
+  }, []);
+
+  // ── Secure room actions ──────────────────────────────────────────
+  const createSecureRoom = useCallback(async () => {
+    try {
+      setCreatingSecure(true);
+      const { crypto: roomCrypto, recoveryPhrase: phrase } =
+        await RoomCrypto.createEncrypted();
+
+      if (!roomCrypto.metadata) {
+        showSecureMessage('Failed to create encryption metadata');
+        return;
+      }
+
+      const room = db.newRoom<Note>({
+        collectionKey,
+        id: crypto.randomUUID(),
+        name: '\u{1F512} Secure Notes',
+        encryption: roomCrypto.metadata,
+      });
+
+      await room.unlock(phrase);
+
+      setRecoveryPhrase(phrase);
+      setAllRooms(db.getRooms(collectionKey));
+      showSecureMessage('Secure room created! Save your recovery phrase.');
+    } catch (err) {
+      showSecureMessage(
+        `Error creating secure room: ${err instanceof Error ? err.message : String(err)}`
+      );
+    } finally {
+      setCreatingSecure(false);
+    }
+  }, [showSecureMessage]);
+
+  const lockCurrentRoom = useCallback(() => {
+    if (!selectedRoom || !selectedRoom.encryption) return;
+    try {
+      selectedRoom.lock();
+      showSecureMessage('Room locked. Content is now encrypted.');
+    } catch (err) {
+      showSecureMessage(
+        `Error locking: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
+  }, [selectedRoom, showSecureMessage]);
+
+  const unlockCurrentRoom = useCallback(
+    async (phrase: string) => {
+      if (!selectedRoom || !selectedRoom.encryption || !phrase) return;
+      try {
+        await selectedRoom.unlock(phrase);
+        setShowUnlockInput(false);
+        setUnlockPhraseInput('');
+        showSecureMessage('Room unlocked. Content is now readable.');
+      } catch (err) {
+        showSecureMessage(
+          `Unlock failed: ${err instanceof Error ? err.message : String(err)}`
+        );
+      }
+    },
+    [selectedRoom, showSecureMessage]
+  );
+
+  const dismissRecoveryPhrase = useCallback(() => {
+    setRecoveryPhrase(null);
+  }, []);
+
+  const exportRoomKey = useCallback(async () => {
+    if (!selectedRoom || !selectedRoom.isUnlocked) {
+      showSecureMessage('Room must be unlocked to export the key.');
+      return;
+    }
+    try {
+      const rawKey = await selectedRoom.exportRawKeyBase64();
+      setExportedKey(rawKey);
+      showSecureMessage('Key exported as base64.');
+    } catch (err) {
+      showSecureMessage(
+        `Export failed: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
+  }, [selectedRoom, showSecureMessage]);
+
+  const importRoomKey = useCallback(
+    async (key: string) => {
+      if (!selectedRoom || !selectedRoom.encryption || !key) return;
+      try {
+        await selectedRoom.unlockWithRawKey(key);
+        setShowImport(false);
+        setImportKeyInput('');
+        showSecureMessage('Key imported. Room unlocked.');
+      } catch (err) {
+        showSecureMessage(
+          `Import failed: ${err instanceof Error ? err.message : String(err)}`
+        );
+      }
+    },
+    [selectedRoom, showSecureMessage]
+  );
 
   useEffect(() => {
     if (!selectedRoom && defaultNotesRoom) {
@@ -381,6 +524,25 @@ export const DbProvider = ({ children }: { children: ReactNode }) => {
       setSelectedNoteId,
       user,
       signOut,
+      // Secure room
+      createSecureRoom,
+      lockCurrentRoom,
+      unlockCurrentRoom,
+      recoveryPhrase,
+      dismissRecoveryPhrase,
+      showUnlockInput,
+      setShowUnlockInput,
+      unlockPhraseInput,
+      setUnlockPhraseInput,
+      showImport,
+      setShowImport,
+      importKeyInput,
+      setImportKeyInput,
+      exportRoomKey,
+      importRoomKey,
+      exportedKey,
+      creatingSecure,
+      secureRoomMessage,
     }),
     [
       loaded,
@@ -397,6 +559,25 @@ export const DbProvider = ({ children }: { children: ReactNode }) => {
       allRoomIds,
       setSelectedNoteId,
       user,
+      // Secure room deps
+      createSecureRoom,
+      lockCurrentRoom,
+      unlockCurrentRoom,
+      recoveryPhrase,
+      dismissRecoveryPhrase,
+      showUnlockInput,
+      setShowUnlockInput,
+      unlockPhraseInput,
+      setUnlockPhraseInput,
+      showImport,
+      setShowImport,
+      importKeyInput,
+      setImportKeyInput,
+      exportRoomKey,
+      importRoomKey,
+      exportedKey,
+      creatingSecure,
+      secureRoomMessage,
     ]
   );
 
