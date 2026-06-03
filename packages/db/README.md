@@ -170,6 +170,59 @@ Say you wanted to store a reference to a note from a flashcard, you could add th
 }
 ```
 
+## Local loaded-room queries
+
+The SDK provides local-only query helpers that operate exclusively on rooms
+whose Yjs document is currently loaded in memory. They do **not** make server,
+aggregator, or indexing calls.
+
+```ts
+import { parseRef } from '@eweser/shared';
+import { resolveRef, findDocumentsReferencing } from '@eweser/db';
+```
+
+### `parseRef(ref)`
+
+Reverse of `buildRef`: splits a ref string into its typed components. Throws a
+descriptive error if the ref is malformed.
+
+```ts
+const parsed = parseRef(noteRef);
+// { authServer: 'https://www.eweser.com', collectionKey: 'notes', roomId: '...', documentId: '...' }
+```
+
+### `resolveRef(db, ref)`
+
+Given a ref string, returns the document if its room is loaded and the document
+exists. Returns `null` if the room is not loaded, the document is deleted, or
+the document does not exist.
+
+```ts
+const note = resolveRef(db, noteRef);
+// Note | null
+```
+
+### `findDocumentsReferencing(db, ref)`
+
+Searches all loaded rooms (across all collections) for documents that reference
+the given ref. A document is considered referencing if any of its string-typed
+field values or string-array elements exactly equal the ref. Deleted documents
+are excluded.
+
+This is an O(all_documents) scan suited for small-to-medium local datasets. For
+server-side search, use the aggregator API instead.
+
+```ts
+const referencing = findDocumentsReferencing(db, noteRef);
+// [Flashcard, Note, ...] — documents that reference noteRef
+```
+
+**Limitations:**
+
+- Only searches rooms whose ydoc is loaded (not yet loaded or disconnected rooms are skipped).
+- Does not perform fuzzy matching or server-side indexing.
+- Order is deterministic but not explicitly sorted; sort results client-side if needed.
+
 ## Rooms
 
 A `room` could be conceptualized as a 'folder' or 'group' of documents. Each room is a
