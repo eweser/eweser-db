@@ -13,7 +13,6 @@ import type {
   ProviderOptions,
   Registry,
 } from './types.js';
-import type { DocumentWithoutBase } from '@eweser/shared';
 import type { NewRoomOptions, Room } from './room.js';
 import { roomToServerRoom } from './room.js';
 import { collections } from './types.js';
@@ -54,19 +53,6 @@ export * from './utils/index.js';
 export * from './utils/files.js';
 export * from './utils/backup.js';
 export * from './types.js';
-
-export interface DocSeed<T extends CollectionKey = CollectionKey> {
-  /** Collection key for the room */
-  collectionKey: T;
-  /** Room ID (room will be created if it doesn't already exist) */
-  roomId: string;
-  /** Room name (only used when creating a new room) */
-  roomName?: string;
-  /** Document ID */
-  docId: string;
-  /** Document data without auto-generated base fields, typed by collectionKey */
-  doc: DocumentWithoutBase<CollectionToDocument[T]>;
-}
 
 export interface DatabaseOptions {
   authServer?: string;
@@ -249,70 +235,6 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     }, this.registrySyncIntervalMs);
   }
 
-  /** Seed documents into rooms. Idempotent: existing documents are not overwritten. */
-  async seedDocuments(seeds: DocSeed[]) {
-    for (const seed of seeds) {
-      const roomInCollections =
-        this.collections[seed.collectionKey]?.[seed.roomId];
-      const roomInRegistry = this.registry.some(
-        (r) => r.id === seed.roomId && r.collectionKey === seed.collectionKey
-      );
-      if (!roomInCollections && !roomInRegistry) {
-        this.newRoom<EweDocument>({
-          collectionKey: seed.collectionKey,
-          name: seed.roomName ?? seed.roomId,
-          id: seed.roomId,
-        });
-      }
-    }
-
-    for (const seed of seeds) {
-      const room = this.collections[seed.collectionKey]?.[seed.roomId];
-      if (!room) {
-        this.warn(
-          'seedDocuments: room not found',
-          seed.collectionKey,
-          seed.roomId
-        );
-        continue;
-      }
-
-      if (!room.ydoc) {
-        await room.load({ loadRemote: false });
-        if (!room.ydoc) {
-          this.warn('seedDocuments: failed to load room ydoc', seed.roomId);
-          continue;
-        }
-      }
-
-      const docs = room.getDocuments();
-      if (!docs.get(seed.docId)) {
-        try {
-          // The seed's doc type is guaranteed by DocSeed's generic at call site.
-          // Inside heterogeneous iteration over all collection keys, the per-key
-          // type information is lost — cast the function rather than the argument
-          // to bypass contravariant intersection narrowing.
-          (docs.new as (doc: unknown, id?: string) => EweDocument)(
-            seed.doc,
-            seed.docId
-          );
-          this.debug(
-            'seedDocuments: seeded doc',
-            seed.docId,
-            'into room',
-            seed.roomId
-          );
-        } catch (err) {
-          this.warn(
-            'seedDocuments: failed to create document',
-            seed.docId,
-            err
-          );
-        }
-      }
-    }
-  }
-
   constructor(optionsPassed?: DatabaseOptions) {
     super();
     if (optionsPassed?.pollForStatus) {
@@ -369,13 +291,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     const remainingRegistryRooms = this.registry.filter(
       (r) => !initializedRoomIds.has(r.id)
     );
-    const loadPromise = this.loadRooms(remainingRegistryRooms);
-    if (options.seedDocuments?.length) {
-      const seeds = options.seedDocuments;
-      loadPromise.then(() => {
-        this.seedDocuments(seeds);
-      });
-    }
+    this.loadRooms(remainingRegistryRooms);
     this.pollForRegistrySync();
     this.rollingSync();
     this.emit('initialized');
