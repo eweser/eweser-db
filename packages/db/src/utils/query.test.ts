@@ -1,11 +1,10 @@
 /**
  * Purpose: Tests for local loaded-room query helpers (resolveRef and
- * findDocumentsReferencing).
- *
- * Covers: valid/invalid refs, unloaded rooms, deleted docs, multiple
- * collections, deterministic ordering/limits.
- *
- * Read before editing: packages/db/src/utils/query.ts and packages/db/AGENTS.md.
+ * findDocumentsReferencing). Covers valid/invalid refs, unloaded rooms,
+ * deleted docs, multiple collections, deterministic ordering/limits.
+ * Exports: (test file)
+ * Touches: query.ts, yjs, vitest
+ * Read before editing: packages/db/src/utils/query.ts, packages/db/AGENTS.md
  */
 import * as Y from 'yjs';
 import { describe, expect, it } from 'vitest';
@@ -109,7 +108,7 @@ describe('resolveRef', () => {
       documentId: 'doc-1',
     });
 
-    const result = resolveRef(db as unknown as Database, ref);
+    const result = resolveRef<TestDoc>(db as unknown as Database, ref);
 
     expect(result).not.toBeNull();
     expect(result?._id).toBe('doc-1');
@@ -208,7 +207,7 @@ describe('resolveRef', () => {
       documentId: 'doc-custom',
     });
 
-    const result = resolveRef(db as unknown as Database, ref);
+    const result = resolveRef<TestDoc>(db as unknown as Database, ref);
     expect(result?.title).toBe('Custom Title');
   });
 

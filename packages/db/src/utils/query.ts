@@ -1,10 +1,9 @@
 /**
  * Purpose: Local loaded-room query helpers for resolving refs and finding
- * cross-collection references. These operate exclusively on rooms whose ydoc
- * is currently loaded in memory — they do not make server or aggregator calls.
- *
- * Touches: Database instance, room ydocs, ref parsing via @eweser/shared.
- * Read before editing: packages/db/AGENTS.md and packages/shared/src/utils/documents.ts.
+ * cross-collection references. Operates only on loaded room ydocs.
+ * Exports: resolveRef, findDocumentsReferencing
+ * Touches: Database instance, room ydocs, ref parsing via @eweser/shared
+ * Read before editing: packages/db/AGENTS.md, packages/shared/src/utils/documents.ts
  */
 import { parseRef } from '@eweser/shared';
 import type { EweDocument } from '@eweser/shared';
