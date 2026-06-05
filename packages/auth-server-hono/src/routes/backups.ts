@@ -4,7 +4,6 @@
  * Touches: Access-grant/session auth, object storage, and backup snapshot metadata.
  * Read before editing: packages/auth-server-hono/src/INDEX.md and AGENTS.md.
  */
-import { createHash } from 'node:crypto';
 import { Hono, type Context } from 'hono';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
@@ -20,11 +19,11 @@ import type { BackupSnapshot } from '../db/schema/backup_snapshots.js';
 import {
   buildSnapshotObjectKey,
   createDownloadUrl,
+  createUploadUrl,
   getDownloadUrlTtlSeconds,
   getStorageProviderProfile,
   objectExists,
   storageIsConfigured,
-  uploadObject,
 } from '../lib/storage.js';
 
 const DEFAULT_RETENTION_DAYS = 90;
@@ -37,6 +36,19 @@ const uploadMetadataSchema = z
     providerProfileId: z.string().min(1).optional(),
     retentionDays: z.number().int().positive().max(3650).optional(),
     roomCount: z.number().int().nonnegative(),
+  })
+  .strict();
+
+const directUploadMetadataSchema = uploadMetadataSchema.extend({
+  contentHash: z.string().regex(/^[a-f0-9]{64}$/),
+  filename: z.string().min(1).max(200),
+  sizeBytes: z.number().int().nonnegative(),
+});
+
+const directUploadSchema = z
+  .object({
+    metadata: directUploadMetadataSchema,
+    providerProfileId: z.string().min(1).optional(),
   })
   .strict();
 
@@ -134,61 +146,110 @@ function serializeSnapshot(snapshot: BackupSnapshot) {
 }
 
 backupsRouter.post('/upload', async (c) => {
+  return c.json(
+    {
+      error:
+        'Proxy backup uploads are disabled. Use /api/backups/prepare-upload and upload directly to object storage.',
+    },
+    410
+  );
+});
+
+backupsRouter.post('/prepare-upload', async (c) => {
   const actor = await resolveActor(c.req.raw);
   if (!actor) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
 
-  const form = await c.req.formData();
-  const metadataRaw = form.get('metadata');
-  const providerProfileIdRaw = form.get('providerProfileId');
-  const snapshot = form.get('snapshot');
-
-  if (typeof metadataRaw !== 'string' || !(snapshot instanceof File)) {
+  let rawBody: unknown;
+  try {
+    rawBody = await c.req.json();
+  } catch {
     return c.json({ error: 'Invalid snapshot upload payload' }, 400);
   }
 
-  let rawMetadata: unknown;
-  try {
-    rawMetadata = JSON.parse(metadataRaw);
-  } catch {
-    return c.json({ error: 'Invalid snapshot metadata' }, 400);
-  }
-  const parsedMetadata = uploadMetadataSchema.safeParse(rawMetadata);
-  if (!parsedMetadata.success) {
-    return c.json({ error: 'Invalid snapshot metadata' }, 400);
+  const parsedBody = directUploadSchema.safeParse(rawBody);
+  if (!parsedBody.success) {
+    return c.json({ error: 'Invalid snapshot upload payload' }, 400);
   }
 
   const providerProfileId =
-    parsedMetadata.data.providerProfileId ??
-    (typeof providerProfileIdRaw === 'string' && providerProfileIdRaw.length > 0
-      ? providerProfileIdRaw
-      : env.STORAGE_PROVIDER_PROFILE_ID);
+    parsedBody.data.metadata.providerProfileId ??
+    parsedBody.data.providerProfileId ??
+    env.STORAGE_PROVIDER_PROFILE_ID;
   const storageError = storageProfileError(providerProfileId);
   if (storageError) {
     return c.json({ error: storageError.error }, storageError.status);
   }
 
-  if (snapshot.size > env.STORAGE_MAX_FILE_SIZE_MB * 1024 * 1024) {
+  const metadata = parsedBody.data.metadata;
+  if (metadata.sizeBytes > env.STORAGE_MAX_FILE_SIZE_MB * 1024 * 1024) {
     return c.json({ error: 'Snapshot exceeds configured size limit' }, 413);
   }
 
-  const bytes = new Uint8Array(await snapshot.arrayBuffer());
-  const contentHash = createHash('sha256').update(bytes).digest('hex');
-  const filename = parsedMetadata.data.filename ?? snapshot.name;
   const objectKey = buildSnapshotObjectKey({
-    contentHash,
-    filename,
+    contentHash: metadata.contentHash,
+    filename: metadata.filename,
+    userId: actor.userId,
+  });
+  const exists = await objectExists(objectKey, providerProfileId);
+
+  return c.json({
+    objectKey,
+    providerProfileId,
+    upload: exists
+      ? null
+      : {
+          expiresInSeconds: getDownloadUrlTtlSeconds(),
+          headers: {
+            'content-type': SNAPSHOT_CONTENT_TYPE,
+          },
+          method: 'PUT',
+          url: await createUploadUrl({
+            contentType: SNAPSHOT_CONTENT_TYPE,
+            objectKey,
+            providerProfileId,
+          }),
+        },
+  });
+});
+
+backupsRouter.post('/complete-upload', async (c) => {
+  const actor = await resolveActor(c.req.raw);
+  if (!actor) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  let rawBody: unknown;
+  try {
+    rawBody = await c.req.json();
+  } catch {
+    return c.json({ error: 'Invalid snapshot upload payload' }, 400);
+  }
+
+  const parsedBody = directUploadSchema.safeParse(rawBody);
+  if (!parsedBody.success) {
+    return c.json({ error: 'Invalid snapshot upload payload' }, 400);
+  }
+
+  const metadata = parsedBody.data.metadata;
+  const providerProfileId =
+    metadata.providerProfileId ??
+    parsedBody.data.providerProfileId ??
+    env.STORAGE_PROVIDER_PROFILE_ID;
+  const storageError = storageProfileError(providerProfileId);
+  if (storageError) {
+    return c.json({ error: storageError.error }, storageError.status);
+  }
+
+  const objectKey = buildSnapshotObjectKey({
+    contentHash: metadata.contentHash,
+    filename: metadata.filename,
     userId: actor.userId,
   });
 
   if (!(await objectExists(objectKey, providerProfileId))) {
-    await uploadObject({
-      body: bytes,
-      contentType: snapshot.type || SNAPSHOT_CONTENT_TYPE,
-      objectKey,
-      providerProfileId,
-    });
+    return c.json({ error: 'Snapshot object was not uploaded' }, 409);
   }
 
   const created = await insertBackupSnapshot({
@@ -196,12 +257,12 @@ backupsRouter.post('/upload', async (c) => {
     accessGrantId: actor.kind === 'grant' ? actor.accessGrantId : null,
     providerProfileId,
     objectKey,
-    filename,
-    contentHash,
-    sizeBytes: bytes.byteLength,
-    roomCount: parsedMetadata.data.roomCount,
-    documentCount: parsedMetadata.data.documentCount,
-    retentionExpiresAt: retentionExpiry(parsedMetadata.data.retentionDays),
+    filename: metadata.filename,
+    contentHash: metadata.contentHash,
+    sizeBytes: metadata.sizeBytes,
+    roomCount: metadata.roomCount,
+    documentCount: metadata.documentCount,
+    retentionExpiresAt: retentionExpiry(metadata.retentionDays),
   });
 
   return c.json({ snapshot: serializeSnapshot(created) });

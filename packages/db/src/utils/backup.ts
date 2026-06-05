@@ -88,6 +88,16 @@ type SnapshotApiResponse = {
   snapshot: RemoteSnapshotRecord;
 };
 
+type SnapshotPrepareUploadResponse = {
+  objectKey: string;
+  providerProfileId: string;
+  upload: {
+    headers: Record<string, string>;
+    method: 'PUT';
+    url: string;
+  } | null;
+};
+
 type SnapshotListResponse = {
   snapshots: RemoteSnapshotRecord[];
 };
@@ -449,28 +459,57 @@ export async function uploadDatabaseSnapshot(params: {
     `eweser-snapshot-${snapshot.createdAt.slice(0, 10)}.json`;
 
   const metadata = {
+    contentHash: await sha256Hex(bytes),
     documentCount: snapshot.documentCount,
     filename,
     providerProfileId: params.providerProfileId,
     retentionDays: params.retentionDays,
     roomCount: snapshot.roomCount,
+    sizeBytes: bytes.byteLength,
   };
-  const form = new FormData();
-  form.append('metadata', JSON.stringify(metadata));
-  if (params.providerProfileId) {
-    form.append('providerProfileId', params.providerProfileId);
-  }
-  form.append(
-    'snapshot',
-    new Blob([bytes], { type: SNAPSHOT_CONTENT_TYPE }),
-    filename
+
+  const prepared = await fetchJson<SnapshotPrepareUploadResponse>(
+    params.db,
+    '/api/backups/prepare-upload',
+    {
+      body: JSON.stringify({
+        metadata,
+        ...(params.providerProfileId
+          ? { providerProfileId: params.providerProfileId }
+          : {}),
+      }),
+      headers: {
+        'content-type': 'application/json',
+      },
+      method: 'POST',
+    }
   );
+
+  if (prepared.upload) {
+    const response = await fetch(prepared.upload.url, {
+      body: new Blob([bytes], { type: SNAPSHOT_CONTENT_TYPE }),
+      headers: prepared.upload.headers,
+      method: prepared.upload.method,
+    });
+    if (!response.ok) {
+      throw new Error(`Direct snapshot upload failed: ${response.status}`);
+    }
+  }
 
   const data = await fetchJson<SnapshotApiResponse>(
     params.db,
-    '/api/backups/upload',
+    '/api/backups/complete-upload',
     {
-      body: form,
+      body: JSON.stringify({
+        metadata: {
+          ...metadata,
+          providerProfileId: prepared.providerProfileId,
+        },
+        providerProfileId: prepared.providerProfileId,
+      }),
+      headers: {
+        'content-type': 'application/json',
+      },
       method: 'POST',
     }
   );

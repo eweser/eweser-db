@@ -4,7 +4,6 @@
  * Touches: Access-grant auth, room access checks, and object storage adapter.
  * Read before editing: packages/auth-server-hono/src/INDEX.md and AGENTS.md.
  */
-import { createHash } from 'node:crypto';
 import { Hono } from 'hono';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
@@ -14,23 +13,32 @@ import { getRoomById } from '../model/rooms/calls.js';
 import {
   buildAttachmentObjectKey,
   createDownloadUrl,
+  createUploadUrl,
   getDownloadUrlTtlSeconds,
   getStorageProviderProfile,
   objectExists,
   objectKeyMatchesRoom,
   storageIsConfigured,
-  uploadObject,
 } from '../lib/storage.js';
 
 const uploadAttachmentSchema = z.object({
   baseId: z.string().min(1),
+  contentHash: z.string().regex(/^[a-f0-9]{64}$/),
   filename: z.string().min(1),
   mimeType: z.string().min(1),
   parentNoteRefs: z.array(z.string()).optional(),
-  size: z.number().int().nonnegative().optional(),
+  size: z.number().int().nonnegative(),
   sourcePath: z.string().min(1),
   sourceVault: z.string().min(1).optional(),
 });
+
+const prepareUploadSchema = z
+  .object({
+    attachment: uploadAttachmentSchema,
+    providerProfileId: z.string().min(1).optional(),
+    roomId: z.string().min(1),
+  })
+  .strict();
 
 const presignQuerySchema = z.object({
   objectKey: z.string().min(1),
@@ -142,28 +150,36 @@ async function requireAttachmentRoomAccess(params: {
 }
 
 filesRouter.post('/upload', async (c) => {
+  return c.json(
+    {
+      error:
+        'Proxy uploads are disabled. Use /api/files/prepare-upload and upload directly to object storage.',
+    },
+    410
+  );
+});
+
+filesRouter.post('/prepare-upload', async (c) => {
   const actor = await resolveActor(c.req.raw);
   if (!actor) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
 
-  const form = await c.req.formData();
-  const roomId = form.get('roomId');
-  const attachmentRaw = form.get('attachment');
-  const providerProfileIdRaw = form.get('providerProfileId');
-  const file = form.get('file');
-
-  if (
-    typeof roomId !== 'string' ||
-    typeof attachmentRaw !== 'string' ||
-    !(file instanceof File)
-  ) {
+  let rawBody: unknown;
+  try {
+    rawBody = await c.req.json();
+  } catch {
     return c.json({ error: 'Invalid upload payload' }, 400);
   }
+
+  const parsedBody = prepareUploadSchema.safeParse(rawBody);
+  if (!parsedBody.success) {
+    return c.json({ error: 'Invalid upload payload' }, 400);
+  }
+
+  const { attachment, roomId } = parsedBody.data;
   const providerProfileId =
-    typeof providerProfileIdRaw === 'string' && providerProfileIdRaw.length > 0
-      ? providerProfileIdRaw
-      : env.STORAGE_PROVIDER_PROFILE_ID;
+    parsedBody.data.providerProfileId ?? env.STORAGE_PROVIDER_PROFILE_ID;
   const storageError = storageProfileError(providerProfileId);
   if (storageError) {
     return c.json({ error: storageError.error }, storageError.status);
@@ -178,54 +194,41 @@ filesRouter.post('/upload', async (c) => {
     return c.json({ error: access.error }, access.status);
   }
 
-  let rawAttachment: unknown;
-  try {
-    rawAttachment = JSON.parse(attachmentRaw);
-  } catch {
-    return c.json({ error: 'Invalid attachment metadata' }, 400);
-  }
-  const parsedAttachment = uploadAttachmentSchema.safeParse(rawAttachment);
-  if (!parsedAttachment.success) {
-    return c.json({ error: 'Invalid attachment metadata' }, 400);
-  }
-
-  if (file.size > env.STORAGE_MAX_FILE_SIZE_MB * 1024 * 1024) {
+  if (attachment.size > env.STORAGE_MAX_FILE_SIZE_MB * 1024 * 1024) {
     return c.json({ error: 'File exceeds configured size limit' }, 413);
   }
 
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  const contentHash = createHash('sha256').update(bytes).digest('hex');
   const objectKey = buildAttachmentObjectKey({
     roomId,
-    contentHash,
-    filename: parsedAttachment.data.filename || file.name,
+    contentHash: attachment.contentHash,
+    filename: attachment.filename,
   });
-
-  if (!(await objectExists(objectKey, providerProfileId))) {
-    await uploadObject({
-      body: bytes,
-      contentType:
-        file.type ||
-        parsedAttachment.data.mimeType ||
-        'application/octet-stream',
-      objectKey,
-      providerProfileId,
-    });
-  }
+  const exists = await objectExists(objectKey, providerProfileId);
+  const contentType = attachment.mimeType || 'application/octet-stream';
 
   return c.json({
     attachment: {
-      ...parsedAttachment.data,
-      contentHash,
+      ...attachment,
       localAvailability: 'unknown',
-      mimeType:
-        file.type ||
-        parsedAttachment.data.mimeType ||
-        'application/octet-stream',
+      objectKey,
+      providerProfileId,
       remoteObjectKey: objectKey,
       remoteProviderProfileId: providerProfileId,
-      size: bytes.byteLength,
     },
+    upload: exists
+      ? null
+      : {
+          expiresInSeconds: getDownloadUrlTtlSeconds(),
+          headers: {
+            'content-type': contentType,
+          },
+          method: 'PUT',
+          url: await createUploadUrl({
+            contentType,
+            objectKey,
+            providerProfileId,
+          }),
+        },
   });
 });
 

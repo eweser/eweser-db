@@ -3,14 +3,16 @@ import { Hono } from 'hono';
 
 const getRoomByIdMock = vi.fn();
 const createDownloadUrlMock = vi.fn();
+const createUploadUrlMock = vi.fn();
 const getStorageProviderProfileMock = vi.fn();
 const objectExistsMock = vi.fn();
 const storageIsConfiguredMock = vi.fn();
-const uploadObjectMock = vi.fn();
 const getSessionMock = vi.fn();
 const TEST_SERVER_SIGNING_KEY = ['1234567890', '1234567890123456789012'].join(
   ''
 );
+const TEST_CONTENT_HASH = 'a'.repeat(64);
+const DIFFERENT_TEST_CONTENT_HASH = 'b'.repeat(64);
 
 vi.mock('../auth.js', () => ({
   auth: {
@@ -43,13 +45,13 @@ vi.mock('../lib/storage.js', () => ({
     filename: string;
   }) => `rooms/${roomId}/${contentHash}/${filename}`,
   createDownloadUrl: createDownloadUrlMock,
+  createUploadUrl: createUploadUrlMock,
   getDownloadUrlTtlSeconds: () => 900,
   getStorageProviderProfile: getStorageProviderProfileMock,
   objectExists: objectExistsMock,
   objectKeyMatchesRoom: (roomId: string, objectKey: string) =>
     objectKey.startsWith(`rooms/${roomId}/`),
   storageIsConfigured: storageIsConfiguredMock,
-  uploadObject: uploadObjectMock,
 }));
 
 const { filesRouter } = await import('./files.js');
@@ -75,6 +77,7 @@ describe('filesRouter', () => {
     });
     objectExistsMock.mockResolvedValue(false);
     createDownloadUrlMock.mockResolvedValue('https://bucket.example.com/file');
+    createUploadUrlMock.mockResolvedValue('https://bucket.example.com/upload');
     getSessionMock.mockResolvedValue(null);
     getRoomByIdMock.mockResolvedValue({
       id: 'attachments-room',
@@ -87,26 +90,33 @@ describe('filesRouter', () => {
     });
   });
 
-  it('uploads an attachment for an authorized access-grant token', async () => {
-    const form = new FormData();
-    form.append('roomId', 'attachments-room');
-    form.append(
-      'attachment',
-      JSON.stringify({
+  it('rejects legacy proxy uploads before accepting file bytes', async () => {
+    const response = await app.fetch(
+      new Request('http://localhost/api/files/upload', {
+        method: 'POST',
+      })
+    );
+
+    expect(response.status).toBe(410);
+    await expect(response.json()).resolves.toEqual({
+      error:
+        'Proxy uploads are disabled. Use /api/files/prepare-upload and upload directly to object storage.',
+    });
+  });
+
+  it('prepares a direct attachment upload for an authorized access-grant token', async () => {
+    const body = {
+      roomId: 'attachments-room',
+      attachment: {
         baseId: 'base-1',
+        contentHash: TEST_CONTENT_HASH,
         filename: 'diagram.png',
         mimeType: 'image/png',
         size: 4,
         sourcePath: 'Attachments/diagram.png',
         sourceVault: 'Work',
-      })
-    );
-    form.append(
-      'file',
-      new File([new Uint8Array([1, 2, 3, 4])], 'diagram.png', {
-        type: 'image/png',
-      })
-    );
+      },
+    };
 
     const token = await import('jsonwebtoken').then(({ default: jwt }) =>
       jwt.sign(
@@ -119,44 +129,53 @@ describe('filesRouter', () => {
     );
 
     const response = await app.fetch(
-      new Request('http://localhost/api/files/upload', {
+      new Request('http://localhost/api/files/prepare-upload', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
+          'content-type': 'application/json',
         },
-        body: form,
+        body: JSON.stringify(body),
       })
     );
 
     expect(response.status).toBe(200);
     const payload = (await response.json()) as {
       attachment: { remoteProviderProfileId: string; remoteObjectKey: string };
+      upload: { headers: Record<string, string>; method: string; url: string };
     };
     expect(payload.attachment.remoteProviderProfileId).toBe('railway-buckets');
     expect(payload.attachment.remoteObjectKey).toContain(
       'rooms/attachments-room/'
     );
-    expect(uploadObjectMock).toHaveBeenCalledOnce();
-    expect(uploadObjectMock).toHaveBeenCalledWith(
-      expect.objectContaining({ providerProfileId: 'railway-buckets' })
+    expect(payload.upload).toEqual({
+      expiresInSeconds: 900,
+      headers: { 'content-type': 'image/png' },
+      method: 'PUT',
+      url: 'https://bucket.example.com/upload',
+    });
+    expect(createUploadUrlMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contentType: 'image/png',
+        providerProfileId: 'railway-buckets',
+      })
     );
   });
 
   it('rejects unavailable provider profiles before upload', async () => {
     getStorageProviderProfileMock.mockReturnValueOnce(null);
-    const form = new FormData();
-    form.append('roomId', 'attachments-room');
-    form.append(
-      'attachment',
-      JSON.stringify({
+    const body = {
+      roomId: 'attachments-room',
+      providerProfileId: 'unknown-profile',
+      attachment: {
         baseId: 'base-1',
+        contentHash: DIFFERENT_TEST_CONTENT_HASH,
         filename: 'diagram.png',
         mimeType: 'image/png',
+        size: 1,
         sourcePath: 'Attachments/diagram.png',
-      })
-    );
-    form.append('providerProfileId', 'unknown-profile');
-    form.append('file', new File([new Uint8Array([1])], 'diagram.png'));
+      },
+    };
 
     const token = await import('jsonwebtoken').then(({ default: jwt }) =>
       jwt.sign(
@@ -169,12 +188,13 @@ describe('filesRouter', () => {
     );
 
     const response = await app.fetch(
-      new Request('http://localhost/api/files/upload', {
+      new Request('http://localhost/api/files/prepare-upload', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
+          'content-type': 'application/json',
         },
-        body: form,
+        body: JSON.stringify(body),
       })
     );
 
@@ -182,7 +202,7 @@ describe('filesRouter', () => {
     await expect(response.json()).resolves.toEqual({
       error: 'Storage provider profile unavailable',
     });
-    expect(uploadObjectMock).not.toHaveBeenCalled();
+    expect(createUploadUrlMock).not.toHaveBeenCalled();
   });
 
   it('returns a presigned url for a session-authorized reader', async () => {

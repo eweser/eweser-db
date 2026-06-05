@@ -2,10 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Hono } from 'hono';
 
 const createDownloadUrlMock = vi.fn();
+const createUploadUrlMock = vi.fn();
 const getStorageProviderProfileMock = vi.fn();
 const objectExistsMock = vi.fn();
 const storageIsConfiguredMock = vi.fn();
-const uploadObjectMock = vi.fn();
 const getSessionMock = vi.fn();
 const insertBackupSnapshotMock = vi.fn();
 const listBackupSnapshotsMock = vi.fn();
@@ -13,6 +13,7 @@ const getBackupSnapshotForActorMock = vi.fn();
 const TEST_SERVER_SIGNING_KEY = ['1234567890', '1234567890123456789012'].join(
   ''
 );
+const TEST_CONTENT_HASH = 'a'.repeat(64);
 
 vi.mock('../auth.js', () => ({
   auth: {
@@ -41,11 +42,11 @@ vi.mock('../lib/storage.js', () => ({
     filename: string;
   }) => `backups/${userId}/${contentHash}/${filename}`,
   createDownloadUrl: createDownloadUrlMock,
+  createUploadUrl: createUploadUrlMock,
   getDownloadUrlTtlSeconds: () => 900,
   getStorageProviderProfile: getStorageProviderProfileMock,
   objectExists: objectExistsMock,
   storageIsConfigured: storageIsConfiguredMock,
-  uploadObject: uploadObjectMock,
 }));
 
 vi.mock('../model/backup-snapshots.js', () => ({
@@ -110,52 +111,95 @@ describe('backupsRouter', () => {
     createDownloadUrlMock.mockResolvedValue(
       'https://bucket.example.com/snapshot'
     );
+    createUploadUrlMock.mockResolvedValue(
+      'https://bucket.example.com/snapshot-upload'
+    );
     getSessionMock.mockResolvedValue(null);
     insertBackupSnapshotMock.mockResolvedValue(snapshotRow());
     listBackupSnapshotsMock.mockResolvedValue([snapshotRow()]);
     getBackupSnapshotForActorMock.mockResolvedValue(snapshotRow());
   });
 
-  it('uploads a snapshot for an access-grant actor', async () => {
-    const form = new FormData();
-    form.append(
-      'metadata',
-      JSON.stringify({
-        filename: 'snapshot.json',
-        roomCount: 1,
-        documentCount: 2,
-      })
-    );
-    form.append(
-      'snapshot',
-      new File([new Uint8Array([1, 2, 3])], 'snapshot.json', {
-        type: 'application/json',
-      })
-    );
-
+  it('rejects legacy proxy snapshot uploads', async () => {
     const response = await app.fetch(
       new Request('http://localhost/api/backups/upload', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${await accessGrantToken()}`,
         },
-        body: form,
+      })
+    );
+
+    expect(response.status).toBe(410);
+    await expect(response.json()).resolves.toEqual({
+      error:
+        'Proxy backup uploads are disabled. Use /api/backups/prepare-upload and upload directly to object storage.',
+    });
+  });
+
+  it('prepares and completes a direct snapshot upload for an access-grant actor', async () => {
+    const metadata = {
+      contentHash: TEST_CONTENT_HASH,
+      documentCount: 2,
+      filename: 'snapshot.json',
+      roomCount: 1,
+      sizeBytes: 100,
+    };
+
+    const response = await app.fetch(
+      new Request('http://localhost/api/backups/prepare-upload', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${await accessGrantToken()}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ metadata }),
       })
     );
 
     expect(response.status).toBe(200);
-    const body = await response.json();
+    await expect(response.json()).resolves.toEqual({
+      objectKey: `backups/user-1/${metadata.contentHash}/snapshot.json`,
+      providerProfileId: 'railway-buckets',
+      upload: {
+        expiresInSeconds: 900,
+        headers: {
+          'content-type': 'application/vnd.eweser.snapshot+json',
+        },
+        method: 'PUT',
+        url: 'https://bucket.example.com/snapshot-upload',
+      },
+    });
+    expect(createUploadUrlMock).toHaveBeenCalledWith({
+      contentType: 'application/vnd.eweser.snapshot+json',
+      objectKey: `backups/user-1/${metadata.contentHash}/snapshot.json`,
+      providerProfileId: 'railway-buckets',
+    });
+
+    objectExistsMock.mockResolvedValueOnce(true);
+    const completeResponse = await app.fetch(
+      new Request('http://localhost/api/backups/complete-upload', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${await accessGrantToken()}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ metadata }),
+      })
+    );
+
+    expect(completeResponse.status).toBe(200);
+    const body = await completeResponse.json();
     expect(body.snapshot.id).toBe('58e14414-8fa6-4c31-86f1-bf78fc153a2b');
     expect(insertBackupSnapshotMock).toHaveBeenCalledWith(
       expect.objectContaining({
         accessGrantId: 'user-1|app.local',
+        contentHash: metadata.contentHash,
         documentCount: 2,
+        objectKey: `backups/user-1/${metadata.contentHash}/snapshot.json`,
         providerProfileId: 'railway-buckets',
         userId: 'user-1',
       })
-    );
-    expect(uploadObjectMock).toHaveBeenCalledWith(
-      expect.objectContaining({ providerProfileId: 'railway-buckets' })
     );
   });
 
@@ -203,25 +247,24 @@ describe('backupsRouter', () => {
 
   it('rejects unavailable provider profiles before upload', async () => {
     getStorageProviderProfileMock.mockReturnValueOnce(null);
-    const form = new FormData();
-    form.append(
-      'metadata',
-      JSON.stringify({
-        filename: 'snapshot.json',
-        roomCount: 1,
-        documentCount: 2,
-      })
-    );
-    form.append('providerProfileId', 'unknown-profile');
-    form.append('snapshot', new File([new Uint8Array([1])], 'snapshot.json'));
 
     const response = await app.fetch(
-      new Request('http://localhost/api/backups/upload', {
+      new Request('http://localhost/api/backups/prepare-upload', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${await accessGrantToken()}`,
+          'Content-Type': 'application/json',
         },
-        body: form,
+        body: JSON.stringify({
+          metadata: {
+            contentHash: TEST_CONTENT_HASH,
+            documentCount: 2,
+            filename: 'snapshot.json',
+            roomCount: 1,
+            sizeBytes: 1,
+          },
+          providerProfileId: 'unknown-profile',
+        }),
       })
     );
 
@@ -229,36 +272,34 @@ describe('backupsRouter', () => {
     await expect(response.json()).resolves.toEqual({
       error: 'Storage provider profile unavailable',
     });
-    expect(uploadObjectMock).not.toHaveBeenCalled();
+    expect(createUploadUrlMock).not.toHaveBeenCalled();
   });
 
   it('rejects unused snapshot creation-time metadata', async () => {
-    const form = new FormData();
-    form.append(
-      'metadata',
-      JSON.stringify({
-        createdAt: '2026-05-19T00:00:00.000Z',
-        filename: 'snapshot.json',
-        roomCount: 1,
-        documentCount: 2,
-      })
-    );
-    form.append('snapshot', new File([new Uint8Array([1])], 'snapshot.json'));
-
     const response = await app.fetch(
-      new Request('http://localhost/api/backups/upload', {
+      new Request('http://localhost/api/backups/prepare-upload', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${await accessGrantToken()}`,
+          'Content-Type': 'application/json',
         },
-        body: form,
+        body: JSON.stringify({
+          metadata: {
+            contentHash: TEST_CONTENT_HASH,
+            createdAt: '2026-05-19T00:00:00.000Z',
+            documentCount: 2,
+            filename: 'snapshot.json',
+            roomCount: 1,
+            sizeBytes: 1,
+          },
+        }),
       })
     );
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
-      error: 'Invalid snapshot metadata',
+      error: 'Invalid snapshot upload payload',
     });
-    expect(uploadObjectMock).not.toHaveBeenCalled();
+    expect(createUploadUrlMock).not.toHaveBeenCalled();
   });
 });

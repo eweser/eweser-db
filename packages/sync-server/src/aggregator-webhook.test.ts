@@ -13,7 +13,7 @@ describe('createAggregatorWebhookExtension', () => {
     vi.unstubAllGlobals();
   });
 
-  it('posts serialized EweserDB document state to the aggregator after debounce', async () => {
+  it('posts bounded public document summaries to the aggregator after debounce', async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 });
     vi.stubGlobal('fetch', fetchMock);
     const extension = createAggregatorWebhookExtension({
@@ -23,7 +23,9 @@ describe('createAggregatorWebhookExtension', () => {
     });
     const sourceDoc = new Y.Doc();
     sourceDoc.getMap('documents').set('note1', {
+      sourcePath: 'Public.md',
       text: 'searchable aggregator payload',
+      unusedLargeField: 'x'.repeat(200),
     });
 
     await extension.onChange?.({
@@ -58,19 +60,18 @@ describe('createAggregatorWebhookExtension', () => {
           collectionKey: 'notes',
           publicAccess: 'read',
         },
-        document: {
-          documents: {
-            note1: { text: 'searchable aggregator payload' },
+        documentData: {
+          note1: {
+            sourcePath: 'Public.md',
+            text: 'searchable aggregator payload',
           },
         },
         documentName: 'room-1',
-        requestHeaders: {},
-        requestParameters: {},
       },
     });
   });
 
-  it('merges multiple updates for the same room before posting', async () => {
+  it('merges multiple updates for the same room before posting summaries', async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 });
     vi.stubGlobal('fetch', fetchMock);
     const extension = createAggregatorWebhookExtension({
@@ -131,17 +132,84 @@ describe('createAggregatorWebhookExtension', () => {
           collectionKey: 'notes',
           publicAccess: 'read',
         },
-        document: {
-          documents: {
-            note1: { text: 'first aggregator payload' },
-            note2: { text: 'second aggregator payload' },
-          },
+        documentData: {
+          note1: { text: 'first aggregator payload' },
+          note2: { text: 'second aggregator payload' },
         },
         documentName: 'room-1',
-        requestHeaders: {},
-        requestParameters: {},
       },
     });
+  });
+
+  it('sends a tiny deindexing event for private rooms', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal('fetch', fetchMock);
+    const extension = createAggregatorWebhookExtension({
+      debounceMs: 10,
+      url: 'http://aggregator.local/webhooks/hocuspocus',
+    });
+    const sourceDoc = new Y.Doc();
+    sourceDoc.getMap('documents').set('note1', {
+      text: 'private content must not leave the sync server',
+    });
+
+    await extension.onChange?.({
+      context: {
+        collectionKey: 'notes',
+        publicAccess: 'private',
+      },
+      document: new Y.Doc(),
+      documentName: 'room-1',
+      instance: {
+        documents: new Map(),
+      },
+      requestHeaders: {},
+      requestParameters: new URLSearchParams(),
+      update: Y.encodeStateAsUpdate(sourceDoc),
+    } as onChangePayload);
+
+    await vi.advanceTimersByTimeAsync(10);
+
+    const [, init] = fetchMock.mock.calls[0] as [
+      string,
+      { body: string; headers: Record<string, string>; method: string },
+    ];
+    expect(JSON.parse(init.body)).toEqual({
+      event: 'change',
+      payload: {
+        context: {
+          collectionKey: 'notes',
+          publicAccess: 'private',
+        },
+        documentData: {},
+        documentName: 'room-1',
+      },
+    });
+  });
+
+  it('skips events without collection metadata', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal('fetch', fetchMock);
+    const extension = createAggregatorWebhookExtension({
+      debounceMs: 10,
+      url: 'http://aggregator.local/webhooks/hocuspocus',
+    });
+
+    await extension.onChange?.({
+      context: {},
+      document: new Y.Doc(),
+      documentName: 'room-1',
+      instance: {
+        documents: new Map(),
+      },
+      requestHeaders: {},
+      requestParameters: new URLSearchParams(),
+      update: Y.encodeStateAsUpdate(new Y.Doc()),
+    } as onChangePayload);
+
+    await vi.advanceTimersByTimeAsync(10);
+
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('reports failed webhook posts through onError', async () => {
@@ -155,7 +223,10 @@ describe('createAggregatorWebhookExtension', () => {
     });
 
     await extension.onChange?.({
-      context: {},
+      context: {
+        collectionKey: 'notes',
+        publicAccess: 'read',
+      },
       document: new Y.Doc(),
       documentName: 'room-1',
       instance: {

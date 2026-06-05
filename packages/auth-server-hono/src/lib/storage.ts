@@ -185,6 +185,25 @@ export async function createDownloadUrl(
   );
 }
 
+export async function createUploadUrl(params: {
+  contentType: string;
+  objectKey: string;
+  providerProfileId?: string | undefined;
+}): Promise<string> {
+  const client = createStorageClient(params.providerProfileId);
+  const { bucket } = ensureStorageConfig(params.providerProfileId);
+
+  return getSignedUrl(
+    client,
+    new PutObjectCommand({
+      Bucket: bucket,
+      Key: params.objectKey,
+      ContentType: params.contentType,
+    }),
+    { expiresIn: PRESIGN_TTL_SECONDS }
+  );
+}
+
 export function getDownloadUrlTtlSeconds(): number {
   return PRESIGN_TTL_SECONDS;
 }
