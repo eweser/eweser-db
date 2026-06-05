@@ -6,6 +6,7 @@ type FileBody = Blob | Uint8Array | ArrayBuffer;
 type UploadAttachmentMetadata = Pick<
   FileAttachment,
   | 'baseId'
+  | 'contentHash'
   | 'filename'
   | 'mimeType'
   | 'parentNoteRefs'
@@ -16,6 +17,11 @@ type UploadAttachmentMetadata = Pick<
 
 type UploadResponse = {
   attachment: FileAttachment;
+  upload: {
+    headers: Record<string, string>;
+    method: 'PUT';
+    url: string;
+  } | null;
 };
 
 type PresignResponse = {
@@ -69,6 +75,16 @@ function resolveBlob(file: FileBody, fallbackMimeType: string): Blob {
   }
 
   return new Blob([Uint8Array.from(file)], { type: fallbackMimeType });
+}
+
+async function resolveBytes(file: FileBody): Promise<Uint8Array> {
+  if (file instanceof Blob) {
+    return new Uint8Array(await file.arrayBuffer());
+  }
+  if (file instanceof ArrayBuffer) {
+    return new Uint8Array(file);
+  }
+  return Uint8Array.from(file);
 }
 
 function cacheKey(attachment: CacheableAttachment): string | null {
@@ -184,23 +200,48 @@ async function fetchJson<T>(
 export async function uploadFile(params: {
   db: Database;
   file: FileBody;
-  metadata: UploadAttachmentMetadata;
+  metadata: Omit<UploadAttachmentMetadata, 'contentHash'> &
+    Partial<Pick<UploadAttachmentMetadata, 'contentHash'>>;
   providerProfileId?: string | undefined;
   roomId: string;
 }): Promise<FileAttachment> {
+  const bytes = await resolveBytes(params.file);
+  const contentHash = params.metadata.contentHash ?? (await sha256Hex(bytes));
+  const metadata: UploadAttachmentMetadata = {
+    ...params.metadata,
+    contentHash,
+    size: params.metadata.size ?? bytes.byteLength,
+  };
   const blob = resolveBlob(params.file, params.metadata.mimeType);
-  const form = new FormData();
-  form.append('roomId', params.roomId);
-  form.append('attachment', JSON.stringify(params.metadata));
-  if (params.providerProfileId) {
-    form.append('providerProfileId', params.providerProfileId);
-  }
-  form.append('file', blob, params.metadata.filename);
 
-  const data = await fetchJson<UploadResponse>(params.db, '/api/files/upload', {
-    body: form,
-    method: 'POST',
-  });
+  const data = await fetchJson<UploadResponse>(
+    params.db,
+    '/api/files/prepare-upload',
+    {
+      body: JSON.stringify({
+        attachment: metadata,
+        ...(params.providerProfileId
+          ? { providerProfileId: params.providerProfileId }
+          : {}),
+        roomId: params.roomId,
+      }),
+      headers: {
+        'content-type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
+
+  if (data.upload) {
+    const response = await fetch(data.upload.url, {
+      body: blob,
+      headers: data.upload.headers,
+      method: data.upload.method,
+    });
+    if (!response.ok) {
+      throw new Error(`Direct file upload failed: ${response.status}`);
+    }
+  }
 
   return data.attachment;
 }

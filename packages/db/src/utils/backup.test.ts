@@ -153,7 +153,7 @@ describe('database snapshot helpers', () => {
     );
   });
 
-  it('uploads snapshot bytes and lists remote snapshots through the auth API', async () => {
+  it('prepares a direct snapshot upload and lists remote snapshots through the auth API', async () => {
     const room = createRoomFixture();
     const { db } = createFakeDatabase([room]);
     const remoteSnapshot = {
@@ -170,8 +170,26 @@ describe('database snapshot helpers', () => {
       createdAt: '2026-05-19T00:00:00.000Z',
       updatedAt: null,
     };
+    const prepareResponse = {
+      objectKey: 'backups/user-1/hash/snapshot.json',
+      providerProfileId: 'railway-buckets',
+      upload: {
+        headers: {
+          'content-type': 'application/vnd.eweser.snapshot+json',
+        },
+        method: 'PUT',
+        url: 'https://bucket.example.com/snapshot-upload',
+      },
+    };
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(prepareResponse), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 200 }))
       .mockResolvedValueOnce(
         new Response(JSON.stringify({ snapshot: remoteSnapshot }), {
           status: 200,
@@ -193,16 +211,39 @@ describe('database snapshot helpers', () => {
       })
     ).resolves.toEqual(remoteSnapshot);
     expect(fetchMock.mock.calls[0]?.[0]).toBe(
-      'https://auth.example.com/api/backups/upload'
+      'https://auth.example.com/api/backups/prepare-upload'
     );
-    expect(
-      (fetchMock.mock.calls[0]?.[1]?.body as FormData).get('snapshot')
-    ).toBeInstanceOf(File);
+    const prepareBody = JSON.parse(
+      fetchMock.mock.calls[0]?.[1]?.body as string
+    );
+    expect(prepareBody.metadata).toEqual(
+      expect.objectContaining({
+        documentCount: 1,
+        filename: 'snapshot.json',
+        providerProfileId: 'railway-buckets',
+        roomCount: 1,
+      })
+    );
+    expect(prepareBody.metadata.contentHash).toMatch(/^[a-f0-9]{64}$/);
+    expect(fetchMock.mock.calls[1]?.[0]).toBe(
+      'https://bucket.example.com/snapshot-upload'
+    );
+    expect(fetchMock.mock.calls[1]?.[1]).toEqual(
+      expect.objectContaining({
+        headers: {
+          'content-type': 'application/vnd.eweser.snapshot+json',
+        },
+        method: 'PUT',
+      })
+    );
+    expect(fetchMock.mock.calls[2]?.[0]).toBe(
+      'https://auth.example.com/api/backups/complete-upload'
+    );
 
     await expect(listDatabaseSnapshots({ db })).resolves.toEqual([
       remoteSnapshot,
     ]);
-    expect(fetchMock.mock.calls[1]?.[0]).toBe(
+    expect(fetchMock.mock.calls[3]?.[0]).toBe(
       'https://auth.example.com/api/backups'
     );
   });

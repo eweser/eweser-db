@@ -26,18 +26,15 @@ function createMemoryCache() {
   return { cache, records };
 }
 
-const verifiedFixtureHash = [
-  '06df4f7e1394f1c',
-  '57cc6583fba4d806',
-  '0a5a66f4f4771c14',
-  'aeff6b9af8a28c9b3',
-].join('');
-const differentFixtureHash = [
-  '9f64a747e1b97f13',
-  '1fabb6b447296c9b',
-  '6f0201e79fb3c535',
-  '6e6c77e89b6a806a',
-].join('');
+async function fixtureHash(bytes: Uint8Array) {
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+const verifiedFixtureHash = await fixtureHash(new Uint8Array([9, 8, 7]));
+const differentFixtureHash = await fixtureHash(new Uint8Array([1, 2, 3, 4]));
 
 describe('file helpers', () => {
   const getToken = vi.fn(() => 'grant-token');
@@ -51,27 +48,35 @@ describe('file helpers', () => {
     vi.restoreAllMocks();
   });
 
-  it('uploads multipart form data to the auth server', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({
-          attachment: {
-            _id: 'attachment-1',
-            _createdAt: new Date().toISOString(),
-            _updatedAt: new Date().toISOString(),
-            baseId: 'base-1',
-            contentHash: 'hash',
-            filename: 'file.png',
-            mimeType: 'image/png',
-            remoteObjectKey: 'rooms/attachments/hash/file.png',
-            remoteProviderProfileId: 'railway-buckets',
-            size: 4,
-            sourcePath: 'Attachments/file.png',
-          },
-        }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } }
+  it('prepares a direct upload and PUTs bytes to object storage', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            attachment: {
+              _id: 'attachment-1',
+              _createdAt: new Date().toISOString(),
+              _updatedAt: new Date().toISOString(),
+              baseId: 'base-1',
+              contentHash: differentFixtureHash,
+              filename: 'file.png',
+              mimeType: 'image/png',
+              remoteObjectKey: `rooms/attachments/${differentFixtureHash}/file.png`,
+              remoteProviderProfileId: 'railway-buckets',
+              size: 4,
+              sourcePath: 'Attachments/file.png',
+            },
+            upload: {
+              headers: { 'content-type': 'image/png' },
+              method: 'PUT',
+              url: 'https://bucket.example.com/upload',
+            },
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
       )
-    );
+      .mockResolvedValueOnce(new Response(null, { status: 200 }));
 
     const attachment = await uploadFile({
       db: db as never,
@@ -87,18 +92,37 @@ describe('file helpers', () => {
       providerProfileId: 'railway-buckets',
     });
 
-    expect(attachment.remoteObjectKey).toBe('rooms/attachments/hash/file.png');
+    expect(attachment.remoteObjectKey).toBe(
+      `rooms/attachments/${differentFixtureHash}/file.png`
+    );
     expect(fetchMock.mock.calls[0]?.[0]).toBe(
-      'https://auth.example.com/api/files/upload'
+      'https://auth.example.com/api/files/prepare-upload'
     );
     const init = fetchMock.mock.calls[0]?.[1];
     expect(init?.method).toBe('POST');
     expect((init?.headers as Record<string, string>).Authorization).toBe(
       'Bearer grant-token'
     );
-    expect(init?.body).toBeInstanceOf(FormData);
-    expect((init?.body as FormData).get('providerProfileId')).toBe(
-      'railway-buckets'
+    expect(JSON.parse(init?.body as string)).toEqual({
+      attachment: {
+        baseId: 'base-1',
+        contentHash: differentFixtureHash,
+        filename: 'file.png',
+        mimeType: 'image/png',
+        size: 4,
+        sourcePath: 'Attachments/file.png',
+      },
+      providerProfileId: 'railway-buckets',
+      roomId: 'attachments-room',
+    });
+    expect(fetchMock.mock.calls[1]).toEqual(
+      expect.arrayContaining([
+        'https://bucket.example.com/upload',
+        expect.objectContaining({
+          headers: { 'content-type': 'image/png' },
+          method: 'PUT',
+        }),
+      ])
     );
   });
 
