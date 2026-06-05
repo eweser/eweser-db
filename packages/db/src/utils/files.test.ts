@@ -27,14 +27,15 @@ function createMemoryCache() {
 }
 
 async function fixtureHash(bytes: Uint8Array) {
-  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  const buffer = bytes.buffer.slice(
+    bytes.byteOffset,
+    bytes.byteOffset + bytes.byteLength
+  ) as ArrayBuffer;
+  const digest = await crypto.subtle.digest('SHA-256', buffer);
   return Array.from(new Uint8Array(digest))
     .map((byte) => byte.toString(16).padStart(2, '0'))
     .join('');
 }
-
-const verifiedFixtureHash = await fixtureHash(new Uint8Array([9, 8, 7]));
-const differentFixtureHash = await fixtureHash(new Uint8Array([1, 2, 3, 4]));
 
 describe('file helpers', () => {
   const getToken = vi.fn(() => 'grant-token');
@@ -49,6 +50,9 @@ describe('file helpers', () => {
   });
 
   it('prepares a direct upload and PUTs bytes to object storage', async () => {
+    const differentFixtureHash = await fixtureHash(
+      new Uint8Array([1, 2, 3, 4])
+    );
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(
@@ -156,6 +160,7 @@ describe('file helpers', () => {
 
   it('downloads, verifies, and caches bytes from a presigned url', async () => {
     const { cache } = createMemoryCache();
+    const verifiedFixtureHash = await fixtureHash(new Uint8Array([9, 8, 7]));
     vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(
         new Response(
@@ -191,6 +196,7 @@ describe('file helpers', () => {
 
   it('returns cached bytes without fetching and can pin or unpin them', async () => {
     const { cache } = createMemoryCache();
+    const verifiedFixtureHash = await fixtureHash(new Uint8Array([9, 8, 7]));
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(
@@ -237,6 +243,9 @@ describe('file helpers', () => {
 
   it('rejects downloads when content hash verification fails', async () => {
     const { cache } = createMemoryCache();
+    const differentFixtureHash = await fixtureHash(
+      new Uint8Array([1, 2, 3, 4])
+    );
     vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(
         new Response(
