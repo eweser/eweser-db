@@ -4,6 +4,7 @@ import removeMarkdown from 'markdown-to-text';
 import { useDb } from '@/db';
 import { useFolders } from '@/notes-room';
 import { collectFolderTreeIds } from './folder-tree';
+import { writeBrowserLocalVaultNotes } from '../lib/browser-local-vault';
 import { buildDefaultUntitledNoteTitle, UNTITLED_TITLE } from './note-titles';
 import {
   extractWikiLinkTargets,
@@ -404,10 +405,14 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
       try {
         const docs = typedRoom.getDocuments();
         const handler = () => {
+          const roomNotes = getNotes(typedRoom);
           setNotesByRoomId((prev) => ({
             ...prev,
-            [typedRoom.id]: getNotes(typedRoom),
+            [typedRoom.id]: roomNotes,
           }));
+          void writeBrowserLocalVaultNotes(typedRoom.id, roomNotes).catch(
+            () => undefined
+          );
         };
         docs.onChange(handler);
         handlers.push({ room: typedRoom, handler });

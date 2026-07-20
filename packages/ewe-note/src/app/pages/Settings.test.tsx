@@ -133,15 +133,15 @@ describe('Settings', () => {
     ).toBeGreaterThan(0);
   });
 
-  it('shows the real vault import entry point in sync settings', () => {
+  it('shows the local vault entry point in sync settings', () => {
     render(<Settings />);
 
     expect(
-      screen.getByRole('button', { name: 'Choose vault folder' })
+      screen.getByRole('button', { name: 'Open vault folder' })
     ).toBeTruthy();
     expect(
       screen.getByText(
-        'Choose an Obsidian vault folder to import markdown locally. Sign in first if you want attachments uploaded and synced across devices.'
+        'Open a local Markdown folder and edit its files in EweNote. Sign in first if you also want the room synced across devices.'
       )
     ).toBeTruthy();
   });

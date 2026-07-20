@@ -43,6 +43,8 @@ helpers.
   note content.
 - Import/export code is user-data sensitive and should avoid lossy transforms.
 - App loading waits until a selected room, note, and Yjs document are ready.
+- Browser-mounted Markdown vaults use the existing notes room and editor;
+  EweNote changes are written back through persisted local file handles.
 
 ## Update Triggers
 
