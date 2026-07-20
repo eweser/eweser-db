@@ -14,6 +14,10 @@ import {
 } from '@eweser/shared';
 import type { Doc } from 'yjs';
 import { putBrowserAttachmentCache } from './browser-attachment-cache';
+import {
+  registerBrowserLocalVaultFiles,
+  type BrowserWritableFileHandle,
+} from './browser-local-vault';
 
 const IGNORED_DIRS = new Set(['.obsidian', '.trash', '.git', 'node_modules']);
 const MARKDOWN_EXTENSION = '.md';
@@ -114,6 +118,7 @@ export type BrowserVaultImportResult = {
   remoteSyncEnabled: boolean;
   skippedPaths: string[];
   warnings: string[];
+  localFileBacked: boolean;
 };
 
 function normalizeSlashes(path: string) {
@@ -511,9 +516,11 @@ async function cacheBrowserAttachmentBytes({
 export async function importVaultFromFiles(params: {
   db: Database;
   files: FileList | File[];
+  handlesBySourcePath?: ReadonlyMap<string, BrowserWritableFileHandle>;
   onProgress?: (progress: BrowserVaultImportProgress) => void;
   remoteSyncEnabled: boolean;
   setSelectedRoom?: (room: Room<Note> | null) => void;
+  targetNoteRoomId?: string;
 }) {
   const prepared = await prepareVaultImport(params.files, params.onProgress);
   if (prepared.noteCount === 0) {
@@ -529,19 +536,25 @@ export async function importVaultFromFiles(params: {
     total: 1,
   });
 
-  const noteRoomId = crypto.randomUUID();
-  const attachmentsRoomId = crypto.randomUUID();
+  const noteRoomId = params.targetNoteRoomId ?? crypto.randomUUID();
+  const attachmentsRoomId = `${noteRoomId}-attachments`;
 
-  params.db.newRoom<Note>({
-    collectionKey: 'notes',
-    id: noteRoomId,
-    name: prepared.vaultName,
-  });
-  params.db.newRoom<FileAttachment>({
-    collectionKey: 'fileAttachments',
-    id: attachmentsRoomId,
-    name: `${prepared.vaultName} Attachments`,
-  });
+  if (!params.db.getRoom<Note>('notes', noteRoomId)) {
+    params.db.newRoom<Note>({
+      collectionKey: 'notes',
+      id: noteRoomId,
+      name: prepared.vaultName,
+    });
+  }
+  if (
+    !params.db.getRoom<FileAttachment>('fileAttachments', attachmentsRoomId)
+  ) {
+    params.db.newRoom<FileAttachment>({
+      collectionKey: 'fileAttachments',
+      id: attachmentsRoomId,
+      name: `${prepared.vaultName} Attachments`,
+    });
+  }
 
   const noteRoom = (await resolveNotesRoom(
     params.db,
@@ -594,6 +607,14 @@ export async function importVaultFromFiles(params: {
       message: `Imported ${note.sourcePath}`,
       phase: 'writing',
       total: prepared.noteCount,
+    });
+  }
+
+  if (params.handlesBySourcePath) {
+    await registerBrowserLocalVaultFiles({
+      handlesBySourcePath: params.handlesBySourcePath,
+      notes: prepared.notes,
+      roomId: noteRoomId,
     });
   }
 
@@ -765,5 +786,6 @@ export async function importVaultFromFiles(params: {
     remoteSyncEnabled: params.remoteSyncEnabled,
     skippedPaths: prepared.skippedPaths,
     warnings,
+    localFileBacked: Boolean(params.handlesBySourcePath),
   } satisfies BrowserVaultImportResult;
 }

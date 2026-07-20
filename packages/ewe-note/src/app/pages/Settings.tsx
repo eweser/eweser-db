@@ -29,6 +29,10 @@ import {
   type BrowserVaultImportProgress,
   type BrowserVaultImportResult,
 } from '../lib/browser-vault-import';
+import {
+  pickBrowserLocalVault,
+  supportsBrowserLocalVaults,
+} from '../lib/browser-local-vault';
 
 const SETTINGS_SECTIONS = [
   { id: 'account', label: 'Account' },
@@ -143,8 +147,43 @@ export function Settings() {
     target.scrollIntoView({ block: 'start', behavior: 'smooth' });
   };
 
-  const openVaultPicker = () => {
-    vaultInputRef.current?.click();
+  const openVaultPicker = async () => {
+    if (!supportsBrowserLocalVaults()) {
+      vaultInputRef.current?.click();
+      return;
+    }
+
+    setVaultImportError(null);
+    setVaultImportResult(null);
+    try {
+      setVaultImportProgress({
+        current: 0,
+        message: 'Opening local vault',
+        phase: 'parsing',
+        total: 1,
+      });
+      const mounted = await pickBrowserLocalVault();
+      const existingRoom = allRooms.find(
+        (room) => room.name === mounted.vaultName
+      );
+      const result = await importVaultFromFiles({
+        db,
+        files: mounted.files,
+        handlesBySourcePath: mounted.handlesBySourcePath,
+        onProgress: setVaultImportProgress,
+        remoteSyncEnabled: canSyncRemotely,
+        setSelectedRoom,
+        targetNoteRoomId: existingRoom?.id,
+      });
+      setVaultImportResult(result);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
+      setVaultImportError(
+        error instanceof Error ? error.message : 'Vault open failed.'
+      );
+    } finally {
+      setVaultImportProgress(null);
+    }
   };
 
   const handleVaultInputChange = async (
@@ -413,11 +452,11 @@ export function Settings() {
                     />
                     <InfoBlock
                       icon={Download}
-                      title="Obsidian vault import"
+                      title="Local Markdown vault"
                       description={
                         canSyncRemotely
-                          ? 'Choose an Obsidian vault folder to create synced notes and attachment rooms from the browser.'
-                          : 'Choose an Obsidian vault folder to import markdown locally. Sign in first if you want attachments uploaded and synced across devices.'
+                          ? 'Open a local Markdown folder as an EweNote room. Edits write back to disk and sync across devices.'
+                          : 'Open a local Markdown folder and edit its files in EweNote. Sign in first if you also want the room synced across devices.'
                       }
                     />
                     <div className="space-y-2 rounded-lg bg-accent/35 px-4 py-4">
@@ -452,25 +491,25 @@ export function Settings() {
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="space-y-1">
                         <div className="text-sm font-medium text-foreground">
-                          Import an Obsidian vault
+                          Open a local vault
                         </div>
                         <p className="text-sm text-muted-foreground">
                           {canSyncRemotely
-                            ? 'This creates a notes room plus a paired attachment room, then uploads files through the auth API.'
-                            : 'This creates a local notes room immediately. Attachments stay out until sync is enabled.'}
+                            ? 'Markdown files become normal synced EweNote notes while this desktop keeps writable links to the originals.'
+                            : 'Markdown files become normal local EweNote notes and edits write back to the originals.'}
                         </p>
                       </div>
                       <button
                         data-cy="ewe-note-settings-import-vault"
                         disabled={importingVault}
-                        onClick={openVaultPicker}
+                        onClick={() => void openVaultPicker()}
                         type="button"
                         className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         <Download className="h-4 w-4" />
                         {importingVault
-                          ? 'Importing vault...'
-                          : 'Choose vault folder'}
+                          ? 'Opening vault...'
+                          : 'Open vault folder'}
                       </button>
                     </div>
 
@@ -506,10 +545,12 @@ export function Settings() {
                         className="space-y-3 rounded-lg border border-border/70 bg-background/70 px-3 py-3 text-sm"
                       >
                         <div className="font-medium text-foreground">
-                          Vault imported
+                          {vaultImportResult.localFileBacked
+                            ? 'Local vault opened'
+                            : 'Vault imported'}
                         </div>
                         <div className="text-muted-foreground">
-                          {vaultImportResult.notesImported} notes imported into{' '}
+                          {vaultImportResult.notesImported} notes available in{' '}
                           {importedRoom?.name ?? 'a new room'}.{' '}
                           {vaultImportResult.remoteSyncEnabled
                             ? `${vaultImportResult.attachmentsUploaded} attachments uploaded`
