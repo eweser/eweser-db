@@ -101,6 +101,9 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
   collectionKeys: CollectionKey[] = collectionKeys;
   collections: Collections = collections;
   registry: Registry = [];
+  /** @internal Rooms supplied by this app instance remain available locally
+   * even when the signed-in server registry does not contain them. */
+  _initialRoomIds = new Set<string>();
   accessGrantToken = '';
 
   // METHODS
@@ -277,7 +280,9 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     if (options.initialRooms) {
       const registryRoomIds = this.registry.map((r) => r.id);
       for (const room of options.initialRooms) {
-        const registryRoom = roomToServerRoom(this.newRoom<EweDocument>(room));
+        const initializedRoom = this.newRoom<EweDocument>(room);
+        this._initialRoomIds.add(initializedRoom.id);
+        const registryRoom = roomToServerRoom(initializedRoom);
         if (room.id && !registryRoomIds.includes(room.id)) {
           this.registry.push(registryRoom);
         }
