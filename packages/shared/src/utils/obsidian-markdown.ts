@@ -171,13 +171,47 @@ function stripCodeBlocks(text: string): string {
  * For complex YAML, real consumers should use the `js-yaml` library.
  */
 function parseSimpleYaml(yaml: string): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
   const lines = yaml.split('\n');
-  let i = 0;
+  const result = parseYamlBlock(lines, 0, 0);
+  return result.value as Record<string, unknown>;
+}
+
+/**
+ * Parse a YAML block starting at `startIndex` with base indent `baseIndent`.
+ * Returns the parsed value and the index after the last consumed line.
+ */
+function parseYamlBlock(
+  lines: string[],
+  startIndex: number,
+  baseIndent: number
+): { value: unknown; nextIndex: number } {
+  const result: Record<string, unknown> = {};
+  let i = startIndex;
 
   while (i < lines.length) {
     const line = lines[i] ?? '';
-    const keyMatch = line.match(/^([a-zA-Z_][a-zA-Z0-9_ -]*):\s*(.*)/);
+    const trimmed = line.trimStart();
+
+    if (trimmed === '' || trimmed.startsWith('#')) {
+      i++;
+      continue;
+    }
+
+    const indent = line.length - trimmed.length;
+    if (indent < baseIndent) {
+      // We've gone back up a level
+      break;
+    }
+    if (indent > baseIndent) {
+      // This is a continuation of a parent multi-line value; skip.
+      // Multi-line scalars (|, >) are not supported by this parser.
+      i++;
+      continue;
+    }
+
+    const keyMatch = trimmed.match(
+      /^([a-zA-Z_][a-zA-Z0-9_ -]*):\s*(.*)/
+    );
     if (!keyMatch) {
       i++;
       continue;
@@ -186,15 +220,59 @@ function parseSimpleYaml(yaml: string): Record<string, unknown> {
     const key = (keyMatch[1] as string).trim();
     const valueStr = (keyMatch[2] as string).trim();
 
+    i++;
+
     if (valueStr === '' || valueStr === null) {
-      // Could be a block list
-      const listItems: unknown[] = [];
-      i++;
-      while (i < lines.length && (lines[i] ?? '').match(/^\s+-\s+/)) {
-        listItems.push(parseScalar((lines[i] ?? '').replace(/^\s+-\s+/, '')));
-        i++;
+      // Could be a nested block, a block list, or null
+      if (i < lines.length) {
+        const nextLine = lines[i] ?? '';
+        const nextTrimmed = nextLine.trimStart();
+        const nextIndent = nextLine.length - nextTrimmed.length;
+
+        if (nextIndent > baseIndent) {
+          // Check if it's a block list (starts with -)
+          if (nextTrimmed.startsWith('- ')) {
+            const listItems: unknown[] = [];
+            while (
+              i < lines.length &&
+              (lines[i] ?? '').trimStart().startsWith('- ')
+            ) {
+              const itemIndent =
+                (lines[i] ?? '').length - (lines[i] ?? '').trimStart().length;
+              const itemValue = (lines[i] ?? '').replace(/^\s+-\s+/, '');
+              if (
+                itemValue === '' &&
+                i + 1 < lines.length &&
+                (lines[i + 1] ?? '').length -
+                  (lines[i + 1] ?? '').trimStart().length >
+                  itemIndent
+              ) {
+                // Nested block inside list item
+                const nested = parseYamlBlock(
+                  lines,
+                  i + 1,
+                  (lines[i + 1] ?? '').length -
+                    (lines[i + 1] ?? '').trimStart().length
+                );
+                listItems.push(nested.value);
+                i = nested.nextIndex;
+              } else {
+                listItems.push(parseScalar(itemValue));
+                i++;
+              }
+            }
+            result[key] = listItems;
+            continue;
+          }
+
+          // Nested object block
+          const nested = parseYamlBlock(lines, i, nextIndent);
+          result[key] = nested.value;
+          i = nested.nextIndex;
+          continue;
+        }
       }
-      result[key] = listItems.length > 0 ? listItems : null;
+      result[key] = null;
       continue;
     }
 
@@ -208,11 +286,9 @@ function parseSimpleYaml(yaml: string): Record<string, unknown> {
     } else {
       result[key] = parseScalar(valueStr);
     }
-
-    i++;
   }
 
-  return result;
+  return { value: result, nextIndex: i };
 }
 
 function parseScalar(value: string): unknown {
@@ -231,19 +307,51 @@ function parseScalar(value: string): unknown {
   return value;
 }
 
-function serializeYamlLines(obj: Record<string, unknown>): string {
+function serializeYamlLines(
+  obj: Record<string, unknown>,
+  currentIndent = 0
+): string {
+  const indent = '  '.repeat(currentIndent);
   return Object.entries(obj)
     .map(([key, value]) => {
       if (value === null || value === undefined) {
-        return `${key}:`;
+        return `${indent}${key}:`;
       }
       if (Array.isArray(value)) {
-        if (value.length === 0) return `${key}: []`;
-        return `${key}:\n${value.map((v) => `  - ${serializeScalar(v)}`).join('\n')}`;
+        if (value.length === 0) return `${indent}${key}: []`;
+        const items = value.map((v) => {
+          if (isRecord(v)) {
+            const nested = serializeYamlLines(v, currentIndent + 2)
+              .split('\n')
+              .join('\n  ');
+            return `${indent}  - ${nested.slice(indent.length + 4)}`;
+          }
+          if (Array.isArray(v)) {
+            const subItems = v
+              .map((sv) => `${indent}    - ${serializeScalar(sv)}`)
+              .join('\n');
+            return `${indent}  -\n${subItems}`;
+          }
+          return `${indent}  - ${serializeScalar(v)}`;
+        });
+        return `${indent}${key}:\n${items.join('\n')}`;
       }
-      return `${key}: ${serializeScalar(value)}`;
+      if (isRecord(value)) {
+        const nested = serializeYamlLines(value, currentIndent + 1);
+        return `${indent}${key}:\n${nested}`;
+      }
+      return `${indent}${key}: ${serializeScalar(value)}`;
     })
     .join('\n');
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    !(value instanceof Date)
+  );
 }
 
 function serializeScalar(value: unknown): string {

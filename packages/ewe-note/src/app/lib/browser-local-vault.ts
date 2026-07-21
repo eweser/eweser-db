@@ -2,8 +2,9 @@ import type { Note } from '@eweser/db';
 import { serializeFrontmatter } from '@eweser/shared';
 
 const DB_NAME = 'ewe-note-browser-local-vaults';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = 'mounted-files';
+const VAULT_ROOM_STORE = 'vault-rooms';
 const IGNORED_DIRECTORIES = new Set([
   '.git',
   '.obsidian',
@@ -22,6 +23,9 @@ export type BrowserWritableFileHandle = {
   getFile(): Promise<File>;
   createWritable(): Promise<BrowserWritable>;
   queryPermission?(options: { mode: 'readwrite' }): Promise<PermissionState>;
+  requestPermission?(options: {
+    mode: 'readwrite';
+  }): Promise<PermissionState>;
 };
 
 export type BrowserDirectoryHandle = {
@@ -56,6 +60,8 @@ type MountedFileEntry = {
 
 const mountedFileCache = new Map<string, MountedFileEntry>();
 const writeQueues = new Map<string, Promise<void>>();
+const permissionDeniedKeys = new Set<string>();
+const vaultRoomCache = new Map<string, string>();
 
 function mountedFileKey(roomId: string, noteId: string) {
   return `${roomId}\u0000${noteId}`;
@@ -92,6 +98,11 @@ async function openMountedFilesDb(): Promise<IDBDatabase | null> {
       if (!request.result.objectStoreNames.contains(STORE_NAME)) {
         request.result.createObjectStore(STORE_NAME, { keyPath: 'key' });
       }
+      if (!request.result.objectStoreNames.contains(VAULT_ROOM_STORE)) {
+        request.result.createObjectStore(VAULT_ROOM_STORE, {
+          keyPath: 'vaultName',
+        });
+      }
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () =>
@@ -115,6 +126,59 @@ async function putMountedFile(entry: MountedFileEntry) {
     db.close();
   }
 }
+
+async function getVaultRoomId(vaultName: string): Promise<string | null> {
+  const cached = vaultRoomCache.get(vaultName);
+  if (cached) return cached;
+
+  const db = await openMountedFilesDb();
+  if (!db) return null;
+
+  try {
+    const transaction = db.transaction(VAULT_ROOM_STORE, 'readonly');
+    const request = transaction.objectStore(VAULT_ROOM_STORE).get(vaultName);
+    const result = await new Promise<
+      { vaultName: string; roomId: string } | undefined
+    >((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () =>
+        reject(request.error ?? new Error('IndexedDB read failed'));
+    });
+    await transactionDone(transaction);
+    if (result?.roomId) {
+      vaultRoomCache.set(vaultName, result.roomId);
+      return result.roomId;
+    }
+    return null;
+  } catch {
+    return null;
+  } finally {
+    db.close();
+  }
+}
+
+async function setVaultRoomId(vaultName: string, roomId: string) {
+  vaultRoomCache.set(vaultName, roomId);
+  const db = await openMountedFilesDb();
+  if (!db) return;
+
+  try {
+    const transaction = db.transaction(VAULT_ROOM_STORE, 'readwrite');
+    transaction.objectStore(VAULT_ROOM_STORE).put({ vaultName, roomId });
+    await transactionDone(transaction);
+  } catch {
+    // Non-critical — persist best-effort
+  } finally {
+    db.close();
+  }
+}
+
+export {
+  /** Look up a saved room id for a given vault directory name. */
+  getVaultRoomId as getBrowserLocalVaultRoomId,
+  /** Persist the room id associated with a vault directory name. */
+  setVaultRoomId as setBrowserLocalVaultRoomId,
+};
 
 async function loadMountedFiles(roomId: string) {
   const cached = Array.from(mountedFileCache.values()).filter(
@@ -253,10 +317,25 @@ export async function writeBrowserLocalVaultNotes(
     const nextWrite = previousWrite.then(async () => {
       if (markdown === entry.lastRoomMarkdown) return;
 
-      const permission = entry.handle.queryPermission
-        ? await entry.handle.queryPermission({ mode: 'readwrite' })
-        : 'granted';
-      if (permission !== 'granted') return;
+      let permission: PermissionState = 'granted';
+      if (entry.handle.queryPermission) {
+        permission = await entry.handle.queryPermission({
+          mode: 'readwrite',
+        });
+      }
+
+      if (permission !== 'granted' && entry.handle.requestPermission) {
+        permission = await entry.handle.requestPermission({
+          mode: 'readwrite',
+        });
+      }
+
+      if (permission !== 'granted') {
+        permissionDeniedKeys.add(entry.key);
+        return;
+      }
+
+      permissionDeniedKeys.delete(entry.key);
 
       const writable = await entry.handle.createWritable();
       await writable.write(markdown);
@@ -276,13 +355,39 @@ export async function writeBrowserLocalVaultNotes(
 export async function clearBrowserLocalVaultsForTests() {
   mountedFileCache.clear();
   writeQueues.clear();
+  permissionDeniedKeys.clear();
+  vaultRoomCache.clear();
   const db = await openMountedFilesDb();
   if (!db) return;
   try {
-    const transaction = db.transaction(STORE_NAME, 'readwrite');
+    const transaction = db.transaction(
+      [STORE_NAME, VAULT_ROOM_STORE],
+      'readwrite'
+    );
     transaction.objectStore(STORE_NAME).clear();
+    transaction.objectStore(VAULT_ROOM_STORE).clear();
     await transactionDone(transaction);
   } finally {
     db.close();
   }
+}
+
+export function getBrowserLocalVaultPermissionState(
+  roomId: string
+): 'granted' | 'partial' | 'denied' | 'none' {
+  const entries = Array.from(mountedFileCache.values()).filter(
+    (entry) => entry.roomId === roomId
+  );
+  if (entries.length === 0) return 'none';
+
+  let deniedCount = 0;
+  for (const entry of entries) {
+    if (permissionDeniedKeys.has(entry.key)) {
+      deniedCount++;
+    }
+  }
+
+  if (deniedCount === 0) return 'granted';
+  if (deniedCount === entries.length) return 'denied';
+  return 'partial';
 }

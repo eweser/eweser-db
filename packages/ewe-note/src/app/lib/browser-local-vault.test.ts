@@ -3,8 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { indexedDB } from 'fake-indexeddb';
 import {
   clearBrowserLocalVaultsForTests,
+  getBrowserLocalVaultPermissionState,
+  getBrowserLocalVaultRoomId,
   pickBrowserLocalVault,
   registerBrowserLocalVaultFiles,
+  setBrowserLocalVaultRoomId,
   writeBrowserLocalVaultNotes,
   type BrowserDirectoryHandle,
   type BrowserWritableFileHandle,
@@ -107,5 +110,62 @@ describe('browser local vault bridge', () => {
 
     expect(write).toHaveBeenCalledWith('# Updated in EweNote\n');
     expect(fileContents).toBe('# Updated in EweNote\n');
+  });
+
+  it('tracks permission as denied when queryPermission+requestPermission both deny', async () => {
+    let fileContents = '# Original\n';
+    const handle: BrowserWritableFileHandle = {
+      kind: 'file',
+      name: 'note.md',
+      getFile: async () => new File([fileContents], 'note.md'),
+      queryPermission: async () => 'prompt',
+      requestPermission: async () => 'denied',
+      createWritable: async () => ({
+        write: async (next: string) => {
+          fileContents = next;
+        },
+        close: async () => undefined,
+      }),
+    };
+    const note = {
+      _id: 'n1',
+      frontmatter: {},
+      sourcePath: 'note.md',
+      sourceVault: 'my-vault',
+      text: '# Original\n',
+    };
+
+    await registerBrowserLocalVaultFiles({
+      handlesBySourcePath: new Map([['note.md', handle]]),
+      notes: [note],
+      roomId: 'room-1',
+    });
+
+    // Before write, permission should be 'granted' (no denials yet)
+    expect(getBrowserLocalVaultPermissionState('room-1')).toBe('granted');
+
+    await writeBrowserLocalVaultNotes('room-1', [
+      { ...note, text: '# Changed but denied\n' },
+    ]);
+
+    // Write should NOT have happened
+    expect(fileContents).toBe('# Original\n');
+    // Permission state should reflect denied
+    expect(getBrowserLocalVaultPermissionState('room-1')).toBe('denied');
+  });
+
+  it('stores and retrieves vault room mappings', async () => {
+    await setBrowserLocalVaultRoomId('my-vault', 'room-abc');
+    const roomId = await getBrowserLocalVaultRoomId('my-vault');
+    expect(roomId).toBe('room-abc');
+  });
+
+  it('returns null for unknown vault room mappings', async () => {
+    const roomId = await getBrowserLocalVaultRoomId('nonexistent');
+    expect(roomId).toBeNull();
+  });
+
+  it('returns none when no mounted files exist for permission check', () => {
+    expect(getBrowserLocalVaultPermissionState('empty-room')).toBe('none');
   });
 });
