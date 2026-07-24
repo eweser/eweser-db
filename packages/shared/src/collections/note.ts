@@ -11,6 +11,14 @@ export type NoteVaultSyncMetadata = {
   lastFileHash?: string;
   /** SHA-256 hash of the last Eweser note content materialized to disk. */
   lastEweserHash?: string;
+  /**
+   * Exact Markdown bytes last read from the source file.
+   *
+   * The vault bridge uses this only while the parsed note fields still match
+   * lastEweserHash. Once the note changes in Eweser, normal serialization
+   * replaces this source representation.
+   */
+  sourceMarkdown?: string;
   /** ISO timestamp for the last successful vault sync operation. */
   lastSyncedAt?: string;
 };

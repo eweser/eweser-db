@@ -396,6 +396,7 @@ async function noteFromFile(
       return entry;
     }),
     attachmentRefs: [],
+    sourceMarkdown: rawContent,
   };
 }
 
@@ -1021,6 +1022,7 @@ export class EweserRoomVaultSyncEngine {
       sourceMtimeMs: mtime?.getTime(),
       lastFileHash: currentFileHash,
       lastEweserHash: hashMarkdown(markdown),
+      sourceMarkdown: imported.sourceMarkdown,
       lastSyncedAt: new Date().toISOString(),
     };
   }
@@ -1065,7 +1067,7 @@ export class EweserRoomVaultSyncEngine {
 
     await mkdir(dirname(conflictFullPath), { recursive: true });
     await writeFile(conflictFullPath, incomingContent, 'utf-8');
-    await this.writeNoteToFile(existing);
+    await this.materializeNote(existing);
     await this.upsertFileIntoRoom(conflictPath, false);
 
     console.log(
@@ -1085,7 +1087,7 @@ export class EweserRoomVaultSyncEngine {
     const Notes = this.requireNotes();
     this.roomChangeHandler = () => {
       for (const note of Notes.getUndeletedToArray()) {
-        void this.writeNoteToFile(note);
+        void this.materializeNote(note);
       }
     };
     Notes.onChange(this.roomChangeHandler);
@@ -1188,10 +1190,15 @@ export class EweserRoomVaultSyncEngine {
     );
   }
 
-  private async writeNoteToFile(note: Note): Promise<void> {
+  async materializeNote(note: Note): Promise<void> {
     const imported = noteToImported(note);
     const fullPath = join(this.vaultPath, imported.sourcePath);
-    const content = noteToMarkdown(imported);
+    const serialized = noteToMarkdown(imported);
+    const content =
+      note.vaultSync?.sourceMarkdown &&
+      note.vaultSync.lastEweserHash === hashMarkdown(serialized)
+        ? note.vaultSync.sourceMarkdown
+        : serialized;
 
     let existing: string | null = null;
     try {

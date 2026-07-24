@@ -20,6 +20,9 @@ Obsidian-compatible vault data with Ewe Note data shapes.
 - [`vault-sync.ts`](./vault-sync.ts): Local vault/state sync engine and
   Eweser notes-room sync mode, including remote attachment upload/materialize
   support through S3-compatible storage helpers.
+- [`openwiki-transport-dogfood.ts`](./openwiki-transport-dogfood.ts): Focused
+  two-directory proof that generic OpenWiki-generated Markdown crosses an
+  Eweser notes room with identical paths, bytes, frontmatter, and hashes.
 
 ## Children
 
@@ -44,3 +47,5 @@ Obsidian-compatible vault data with Ewe Note data shapes.
 
 - `npm test --workspace @eweser/ewe-note -- import-vault`: Runs import tests.
 - `npm test --workspace @eweser/ewe-note -- vault-sync`: Runs vault sync tests.
+- `npx tsx packages/ewe-note/src/cli/openwiki-transport-dogfood.ts`: Runs the
+  public-fixture Markdown transport proof.
