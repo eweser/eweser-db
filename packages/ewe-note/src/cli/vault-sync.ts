@@ -887,6 +887,24 @@ export class EweserRoomVaultSyncEngine {
     return this.requireAttachments();
   }
 
+  /**
+   * Attach isolated in-memory documents without starting storage or sync.
+   *
+   * @internal Intended only for deterministic CLI proofs and unit harnesses.
+   */
+  attachDocumentsForInMemoryHarness(documents: {
+    notes: GetDocuments<Note>;
+    attachments?: GetDocuments<FileAttachment>;
+  }): void {
+    if (this.db || this.watcher || this.Notes || this.Attachments) {
+      throw new Error(
+        'In-memory documents must be attached before the room sync starts.'
+      );
+    }
+    this.Notes = documents.notes;
+    this.Attachments = documents.attachments ?? null;
+  }
+
   async onFileChange(relPath: string): Promise<void> {
     if (this.writing.has(relPath)) return;
 
@@ -1022,7 +1040,10 @@ export class EweserRoomVaultSyncEngine {
       sourceMtimeMs: mtime?.getTime(),
       lastFileHash: currentFileHash,
       lastEweserHash: hashMarkdown(markdown),
-      sourceMarkdown: imported.sourceMarkdown,
+      ...(typeof imported.sourceMarkdown === 'string' &&
+      imported.sourceMarkdown !== markdown
+        ? { sourceMarkdown: imported.sourceMarkdown }
+        : {}),
       lastSyncedAt: new Date().toISOString(),
     };
   }
@@ -1195,7 +1216,7 @@ export class EweserRoomVaultSyncEngine {
     const fullPath = join(this.vaultPath, imported.sourcePath);
     const serialized = noteToMarkdown(imported);
     const content =
-      note.vaultSync?.sourceMarkdown &&
+      typeof note.vaultSync?.sourceMarkdown === 'string' &&
       note.vaultSync.lastEweserHash === hashMarkdown(serialized)
         ? note.vaultSync.sourceMarkdown
         : serialized;

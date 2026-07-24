@@ -73,13 +73,10 @@ function createRoomHarness(vaultPath: string, vaultName = 'Test Vault') {
     'fileAttachments',
     attachmentsRoomId
   )<FileAttachment>(new Y.Doc());
-  Object.assign(
-    engine as unknown as {
-      Notes: typeof Notes;
-      Attachments: typeof Attachments;
-    },
-    { Notes, Attachments }
-  );
+  engine.attachDocumentsForInMemoryHarness({
+    notes: Notes,
+    attachments: Attachments,
+  });
   return { Attachments, engine, Notes, roomId, vaultName };
 }
 
@@ -235,6 +232,21 @@ describe('EweserRoomVaultSyncEngine', () => {
     const materialized = await readFile(join(vaultPath, 'Edited.md'), 'utf8');
     expect(materialized).toContain('Edited in Eweser');
     expect(materialized).not.toBe(sourceMarkdown);
+  });
+
+  it('does not duplicate canonical Markdown in room metadata', async () => {
+    const vaultPath = await createTempVault();
+    await writeFile(
+      join(vaultPath, 'Canonical.md'),
+      'Canonical body\n',
+      'utf8'
+    );
+    const { engine } = createRoomHarness(vaultPath);
+
+    await engine.onFileChange('Canonical.md');
+
+    const [imported] = engine.getNotes();
+    expect(imported?.vaultSync).not.toHaveProperty('sourceMarkdown');
   });
 
   it('bootstraps existing vault notes into the notes room', async () => {

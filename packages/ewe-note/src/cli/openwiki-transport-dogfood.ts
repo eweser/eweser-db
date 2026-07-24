@@ -12,7 +12,7 @@ import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { getDocuments, type GetDocuments, type Note } from '@eweser/shared';
+import { getDocuments, type Note } from '@eweser/shared';
 import * as Y from 'yjs';
 import { EweserRoomVaultSyncEngine } from './vault-sync';
 
@@ -43,13 +43,6 @@ function sha256(bytes: string | Buffer): string {
 
 function frontmatterBytes(markdown: string): string {
   return markdown.match(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/u)?.[0] ?? '';
-}
-
-function attachNotes(
-  engine: EweserRoomVaultSyncEngine,
-  Notes: GetDocuments<Note>
-): void {
-  Object.assign(engine as unknown as { Notes: GetDocuments<Note> }, { Notes });
 }
 
 export async function runOpenWikiTransportDogfood(): Promise<OpenWikiTransportDogfoodResult> {
@@ -100,8 +93,10 @@ export async function runOpenWikiTransportDogfood(): Promise<OpenWikiTransportDo
     roomId,
     remoteSync: false,
   });
-  attachNotes(sourceEngine, sourceNotes);
-  attachNotes(destinationEngine, destinationNotes);
+  sourceEngine.attachDocumentsForInMemoryHarness({ notes: sourceNotes });
+  destinationEngine.attachDocumentsForInMemoryHarness({
+    notes: destinationNotes,
+  });
 
   await sourceEngine.onFileChange(FIXTURE_RELATIVE_PATH);
   Y.applyUpdate(destinationYDoc, Y.encodeStateAsUpdate(sourceYDoc));
