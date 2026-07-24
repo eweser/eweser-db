@@ -104,6 +104,8 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
   /** @internal Rooms supplied by this app instance remain available locally
    * even when the signed-in server registry does not contain them. */
   _initialRoomIds = new Set<string>();
+  /** @internal Locally created rooms that still need server registration. */
+  _pendingRegistryRoomIds = new Set<string>();
   accessGrantToken = '';
 
   // METHODS

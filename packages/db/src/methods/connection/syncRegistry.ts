@@ -41,8 +41,10 @@ export const syncRegistry =
   async () => {
     db.emit('registrySync', 'syncing');
     const previousRooms = [...db.registry];
+    const newRoomIds = [...db._pendingRegistryRoomIds];
     const body: RegistrySyncRequestBody = {
       rooms: db.registry,
+      newRoomIds,
     };
     if (!db.getToken()) {
       return false;
@@ -82,6 +84,9 @@ export const syncRegistry =
       unloadRoomsMissingFromRegistry(db, previousRooms, rooms);
       setLocalRegistry(db)(rooms);
       db.registry = rooms;
+      for (const roomId of newRoomIds) {
+        db._pendingRegistryRoomIds.delete(roomId);
+      }
     } else {
       return false;
     }

@@ -18,6 +18,7 @@ describe('syncRegistry', () => {
   it('returns false when token is missing', async () => {
     const db = {
       registry: [],
+      _pendingRegistryRoomIds: new Set(),
       getToken: () => '',
       emit: vi.fn(),
       serverFetch: vi.fn(),
@@ -32,6 +33,7 @@ describe('syncRegistry', () => {
   it('returns false when server fetch returns error', async () => {
     const db = {
       registry: [],
+      _pendingRegistryRoomIds: new Set(),
       userId: '',
       accessGrantToken: '',
       getToken: () => 'token',
@@ -52,6 +54,7 @@ describe('syncRegistry', () => {
 
     const db = {
       registry: [],
+      _pendingRegistryRoomIds: new Set(),
       userId: '',
       accessGrantToken: '',
       getToken: () => 'token',
@@ -107,6 +110,7 @@ describe('syncRegistry', () => {
       registry: [staleRoom, localRoom, canonicalRoom],
       collections: { notes },
       _initialRoomIds: new Set([localRoom.id]),
+      _pendingRegistryRoomIds: new Set(),
       userId: '',
       accessGrantToken: '',
       getToken: () => 'token',
@@ -137,5 +141,38 @@ describe('syncRegistry', () => {
     expect(canonicalDisconnect).not.toHaveBeenCalled();
     expect(notes).toHaveProperty(canonicalRoom.id);
     expect(staleRoomPresentWhenSuccessEmitted).toBe(false);
+  });
+
+  it('sends only locally created rooms as pending registrations', async () => {
+    const newRoom = {
+      id: 'new-room',
+      name: 'New notes',
+      collectionKey: 'notes',
+    };
+    const db = {
+      registry: [newRoom],
+      _pendingRegistryRoomIds: new Set([newRoom.id]),
+      userId: '',
+      accessGrantToken: '',
+      getToken: () => 'token',
+      emit: vi.fn(),
+      info: vi.fn(),
+      debug: vi.fn(),
+      serverFetch: vi.fn().mockResolvedValue({
+        data: { rooms: [newRoom], token: 'next-token', userId: 'user-1' },
+        error: null,
+      }),
+    } as unknown as Database;
+
+    await syncRegistry(db)();
+
+    expect(db.serverFetch).toHaveBeenCalledWith(
+      '/api/access-grant/sync-registry',
+      {
+        method: 'POST',
+        body: { rooms: [newRoom], newRoomIds: [newRoom.id] },
+      }
+    );
+    expect(db._pendingRegistryRoomIds).toEqual(new Set());
   });
 });

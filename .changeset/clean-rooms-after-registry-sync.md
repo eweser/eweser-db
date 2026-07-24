@@ -1,5 +1,6 @@
 ---
 '@eweser/db': patch
+'@eweser/shared': patch
 ---
 
-Remove stale loaded rooms after the signed-in server registry has removed them, while preserving rooms initialized by the current local app.
+Reconcile stale loaded rooms after registry sync without letting cached rooms recreate themselves server-side.

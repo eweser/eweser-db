@@ -49,7 +49,10 @@ accessGrantRouter.post('/sync-registry', async (c) => {
   if (!token) return c.json({ error: 'No token provided' }, 401);
 
   const body = (await c.req.json()) as RegistrySyncRequestBody;
-  const result = await syncRoomsWithClient(token, body.rooms);
+  const newRoomIds = Array.isArray(body.newRoomIds)
+    ? body.newRoomIds.filter((id): id is string => typeof id === 'string')
+    : [];
+  const result = await syncRoomsWithClient(token, body.rooms, newRoomIds);
   return c.json(result);
 });
 

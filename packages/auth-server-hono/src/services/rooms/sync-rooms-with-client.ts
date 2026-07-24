@@ -19,13 +19,29 @@ export interface AccessGrantJWT {
   roomIds: string[];
 }
 
+export function getNewClientRooms(
+  clientRooms: ServerRoom[],
+  serverRoomIds: Set<string>,
+  newRoomIds: string[]
+) {
+  const pendingRoomIds = new Set(newRoomIds);
+
+  return clientRooms.filter(
+    (room) =>
+      pendingRoomIds.has(room.id) &&
+      !serverRoomIds.has(room.id) &&
+      !room._deleted
+  );
+}
+
 /**
  * Syncs client rooms with server.
  * Hard cutover: uses syncUrl/syncBaseUrl directly.
  */
 export async function syncRoomsWithClient(
   token: string,
-  clientRooms: ServerRoom[]
+  clientRooms: ServerRoom[],
+  newRoomIds: string[]
 ): Promise<RegistrySyncResponse> {
   const secret = env.SERVER_SECRET;
   const decoded = jwt.verify(token, secret) as AccessGrantJWT;
@@ -52,9 +68,13 @@ export async function syncRoomsWithClient(
     const serverRoomIdSet = new Set(serverRoomIds);
     const serverRoomsById = new Map(serverRooms.map((room) => [room.id, room]));
 
-    // Identify new rooms from client
-    const newClientRooms = clientRooms.filter(
-      (r) => !serverRoomIdSet.has(r.id)
+    // Only rooms explicitly created by this client may be added to the
+    // authoritative server registry. Cached rooms omitted from a grant must
+    // remain omitted so a stale device cannot recreate them.
+    const newClientRooms = getNewClientRooms(
+      clientRooms,
+      serverRoomIdSet,
+      newRoomIds
     );
 
     if (newClientRooms.length > 0) {
