@@ -47,6 +47,8 @@ export interface ImportedNote {
   }>;
   /** Attachment file names referenced in this note */
   attachmentRefs: string[];
+  /** Exact source Markdown when the importer has direct file access. */
+  sourceMarkdown?: string;
 }
 
 export type VaultFileCategory =

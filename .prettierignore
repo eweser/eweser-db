@@ -21,3 +21,5 @@ packages/auth-server/supabase/.temp/**
 packages/landing/.astro/**
 # Changeset metadata files
 .changeset/**
+# Byte-exact upstream-generated transport fixtures
+packages/ewe-note/test-fixtures/openwiki-generated/openwiki/**

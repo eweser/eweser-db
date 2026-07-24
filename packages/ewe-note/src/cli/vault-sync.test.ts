@@ -9,6 +9,7 @@ import {
   VaultSyncEngine,
   waitForRemoteSyncProviderReady,
 } from './vault-sync';
+import { runOpenWikiTransportDogfood } from './openwiki-transport-dogfood';
 import { generateNoteId } from './import-vault';
 
 function createProvider(initialSynced = false) {
@@ -72,13 +73,10 @@ function createRoomHarness(vaultPath: string, vaultName = 'Test Vault') {
     'fileAttachments',
     attachmentsRoomId
   )<FileAttachment>(new Y.Doc());
-  Object.assign(
-    engine as unknown as {
-      Notes: typeof Notes;
-      Attachments: typeof Attachments;
-    },
-    { Notes, Attachments }
-  );
+  engine.attachDocumentsForInMemoryHarness({
+    notes: Notes,
+    attachments: Attachments,
+  });
   return { Attachments, engine, Notes, roomId, vaultName };
 }
 
@@ -202,6 +200,55 @@ describe('VaultSyncEngine', () => {
 });
 
 describe('EweserRoomVaultSyncEngine', () => {
+  it('transports changed OpenWiki Markdown byte-for-byte between isolated directories', async () => {
+    const result = await runOpenWikiTransportDogfood();
+    tempRoots.push(join(result.sourceRoot, '..'));
+
+    expect(result.sourceRelativePath).toBe('openwiki/index.md');
+    expect(result.destinationRelativePath).toBe(result.sourceRelativePath);
+    expect(result.destinationSha256).toBe(result.sourceSha256);
+    expect(result.destinationFrontmatterSha256).toBe(
+      result.sourceFrontmatterSha256
+    );
+    expect(result.byteIdentical).toBe(true);
+    expect(result.frontmatterByteIdentical).toBe(true);
+  });
+
+  it('stops using retained source Markdown after Eweser note fields change', async () => {
+    const vaultPath = await createTempVault();
+    const sourceMarkdown =
+      '---\ntitle: "Quoted source title"\n---\nOriginal body\n';
+    await writeFile(join(vaultPath, 'Edited.md'), sourceMarkdown, 'utf8');
+    const { engine, Notes } = createRoomHarness(vaultPath);
+    await engine.onFileChange('Edited.md');
+
+    const [imported] = engine.getNotes();
+    if (!imported) throw new Error('Expected imported note.');
+    Notes.set({ ...imported, text: 'Edited in Eweser\n' });
+    const edited = Notes.get(imported._id);
+    if (!edited) throw new Error('Expected edited note.');
+    await engine.materializeNote(edited);
+
+    const materialized = await readFile(join(vaultPath, 'Edited.md'), 'utf8');
+    expect(materialized).toContain('Edited in Eweser');
+    expect(materialized).not.toBe(sourceMarkdown);
+  });
+
+  it('does not duplicate canonical Markdown in room metadata', async () => {
+    const vaultPath = await createTempVault();
+    await writeFile(
+      join(vaultPath, 'Canonical.md'),
+      'Canonical body\n',
+      'utf8'
+    );
+    const { engine } = createRoomHarness(vaultPath);
+
+    await engine.onFileChange('Canonical.md');
+
+    const [imported] = engine.getNotes();
+    expect(imported?.vaultSync).not.toHaveProperty('sourceMarkdown');
+  });
+
   it('bootstraps existing vault notes into the notes room', async () => {
     const vaultPath = await createTempVault();
     await writeFile(join(vaultPath, 'One.md'), 'First #alpha\n', 'utf-8');
