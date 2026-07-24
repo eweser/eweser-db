@@ -120,6 +120,12 @@ describe('importVaultFromFiles', () => {
     ].join('');
 
     expect(notes).toHaveLength(1);
+    expect(result.attachmentsRoomId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    );
+    expect(result.attachmentsRoomId).not.toBe(
+      `${result.noteRoomId}-attachments`
+    );
     expect(result.attachmentsUploaded).toBe(0);
     expect(result.attachmentsSkipped).toBe(0);
     expect(attachments).toHaveLength(1);
