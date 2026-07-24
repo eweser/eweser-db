@@ -23,6 +23,7 @@ export const newRoom =
 
     const registryRoom = roomToServerRoom(room);
     db.registry.push(registryRoom);
+    db._pendingRegistryRoomIds.add(room.id);
     setLocalRegistry(db)(db.registry);
 
     db.loadRoom(room as unknown as Room<EweDocument>);
