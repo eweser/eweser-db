@@ -196,6 +196,67 @@ describe('loadRoom', () => {
     expect(db.emit).toHaveBeenCalledWith('roomLoaded', room);
   });
 
+  it('hydrates server sync metadata onto an already-loaded local room', async () => {
+    const refreshSyncToken = vi.fn().mockResolvedValue({
+      syncUrl: 'ws://localhost:8080',
+      syncToken: 'sync-token',
+      tokenExpiry: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+    });
+    const db = {
+      collections: {
+        notes: {},
+        flashcards: {},
+        profiles: {},
+      },
+      indexedDBProviderPolyfill: undefined,
+      getToken: () => 'access-grant-token',
+      useSync: true,
+      refreshSyncToken,
+      emit: vi.fn(),
+      info: vi.fn(),
+      debug: vi.fn(),
+      error: vi.fn(),
+    } as unknown as Database;
+    const localRoom: ServerRoom = {
+      id: 'room-registered',
+      name: 'Registered Room',
+      collectionKey: 'notes',
+      tokenExpiry: null,
+      syncUrl: null,
+      publicAccess: 'private',
+      readAccess: [],
+      writeAccess: [],
+      adminAccess: [],
+      createdAt: null,
+      updatedAt: null,
+      _deleted: false,
+      _ttl: null,
+      encryption: null,
+    };
+
+    const room = await loadRoom(db)(localRoom, {
+      loadRemote: false,
+      awaitLoadRemote: false,
+    });
+    const localYdoc = room.ydoc;
+    const registeredRoom = {
+      ...localRoom,
+      syncUrl: 'ws://localhost:8080',
+    };
+
+    const loadedRoom = await loadRoom(db)(registeredRoom, {
+      loadRemote: true,
+      awaitLoadRemote: false,
+    });
+
+    expect(loadedRoom).toBe(room);
+    expect(loadedRoom.ydoc).toBe(localYdoc);
+    expect(loadedRoom.syncUrl).toBe('ws://localhost:8080');
+    expect(loadedRoom.syncProvider).toBe(providerInstances[0]);
+    expect(providerInstances).toHaveLength(1);
+    expect(initializeDocAndLocalProviderMock).toHaveBeenCalledTimes(1);
+  });
+
   it('returns an already loaded room without rebuilding local state', async () => {
     const refreshSyncToken = vi.fn().mockResolvedValue({
       syncUrl: 'ws://localhost:8080',
