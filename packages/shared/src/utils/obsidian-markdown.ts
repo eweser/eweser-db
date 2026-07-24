@@ -171,13 +171,60 @@ function stripCodeBlocks(text: string): string {
  * For complex YAML, real consumers should use the `js-yaml` library.
  */
 function parseSimpleYaml(yaml: string): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
   const lines = yaml.split('\n');
-  let i = 0;
+  const result = parseYamlBlock(lines, 0, 0);
+  return isRecord(result.value) ? result.value : {};
+}
+
+/**
+ * Parse a YAML block starting at `startIndex` with base indent `baseIndent`.
+ * Returns the parsed value and the index after the last consumed line.
+ */
+function parseYamlBlock(
+  lines: string[],
+  startIndex: number,
+  baseIndent: number
+): { value: unknown; nextIndex: number } {
+  const first = nextYamlContentLine(lines, startIndex);
+  if (!first || first.indent < baseIndent) {
+    return { value: {}, nextIndex: first?.index ?? lines.length };
+  }
+  if (first.indent === baseIndent && isYamlListItem(first.trimmed)) {
+    return parseYamlSequence(lines, first.index, baseIndent);
+  }
+
+  return parseYamlMapping(lines, first.index, baseIndent);
+}
+
+function parseYamlMapping(
+  lines: string[],
+  startIndex: number,
+  baseIndent: number
+): { value: Record<string, unknown>; nextIndex: number } {
+  const result: Record<string, unknown> = {};
+  let i = startIndex;
 
   while (i < lines.length) {
     const line = lines[i] ?? '';
-    const keyMatch = line.match(/^([a-zA-Z_][a-zA-Z0-9_ -]*):\s*(.*)/);
+    const trimmed = line.trimStart();
+
+    if (trimmed === '' || trimmed.startsWith('#')) {
+      i++;
+      continue;
+    }
+
+    const indent = line.length - trimmed.length;
+    if (indent < baseIndent) {
+      // We've gone back up a level
+      break;
+    }
+    if (indent > baseIndent) {
+      // Unsupported continuation such as a multi-line scalar.
+      i++;
+      continue;
+    }
+
+    const keyMatch = trimmed.match(/^([a-zA-Z_][a-zA-Z0-9_ -]*):\s*(.*)/);
     if (!keyMatch) {
       i++;
       continue;
@@ -186,33 +233,94 @@ function parseSimpleYaml(yaml: string): Record<string, unknown> {
     const key = (keyMatch[1] as string).trim();
     const valueStr = (keyMatch[2] as string).trim();
 
-    if (valueStr === '' || valueStr === null) {
-      // Could be a block list
-      const listItems: unknown[] = [];
-      i++;
-      while (i < lines.length && (lines[i] ?? '').match(/^\s+-\s+/)) {
-        listItems.push(parseScalar((lines[i] ?? '').replace(/^\s+-\s+/, '')));
-        i++;
+    i++;
+
+    if (valueStr === '') {
+      const next = nextYamlContentLine(lines, i);
+      if (next && next.indent > baseIndent) {
+        const nested = parseYamlBlock(lines, next.index, next.indent);
+        result[key] = nested.value;
+        i = nested.nextIndex;
+        continue;
       }
-      result[key] = listItems.length > 0 ? listItems : null;
+      result[key] = null;
       continue;
     }
 
-    // Inline list: [a, b, c]
-    if (valueStr.startsWith('[')) {
-      const inner = valueStr.slice(1, valueStr.lastIndexOf(']'));
-      result[key] = inner
-        .split(',')
-        .map((s) => parseScalar(s.trim()))
-        .filter((s) => s !== '');
-    } else {
-      result[key] = parseScalar(valueStr);
-    }
-
-    i++;
+    result[key] = parseYamlInlineValue(valueStr);
   }
 
-  return result;
+  return { value: result, nextIndex: i };
+}
+
+function parseYamlSequence(
+  lines: string[],
+  startIndex: number,
+  baseIndent: number
+): { value: unknown[]; nextIndex: number } {
+  const result: unknown[] = [];
+  let i = startIndex;
+
+  while (i < lines.length) {
+    const current = nextYamlContentLine(lines, i);
+    if (!current) {
+      return { value: result, nextIndex: lines.length };
+    }
+    if (current.indent < baseIndent) break;
+    if (current.indent !== baseIndent || !isYamlListItem(current.trimmed)) {
+      break;
+    }
+
+    const itemValue = current.trimmed.match(/^-(?:\s+(.*))?$/)?.[1] ?? '';
+    i = current.index + 1;
+    if (itemValue !== '') {
+      result.push(parseYamlInlineValue(itemValue));
+      continue;
+    }
+
+    const next = nextYamlContentLine(lines, i);
+    if (next && next.indent > baseIndent) {
+      const nested = parseYamlBlock(lines, next.index, next.indent);
+      result.push(nested.value);
+      i = nested.nextIndex;
+      continue;
+    }
+    result.push(null);
+  }
+
+  return { value: result, nextIndex: i };
+}
+
+function nextYamlContentLine(
+  lines: string[],
+  startIndex: number
+): { index: number; indent: number; trimmed: string } | null {
+  for (let index = startIndex; index < lines.length; index++) {
+    const line = lines[index] ?? '';
+    const trimmed = line.trimStart();
+    if (trimmed === '' || trimmed.startsWith('#')) continue;
+    return {
+      index,
+      indent: line.length - trimmed.length,
+      trimmed,
+    };
+  }
+  return null;
+}
+
+function isYamlListItem(trimmed: string): boolean {
+  return /^-(?:\s+.*)?$/.test(trimmed);
+}
+
+function parseYamlInlineValue(value: string): unknown {
+  if (value === '[]') return [];
+  if (value === '{}') return {};
+  if (value.startsWith('[') && value.endsWith(']')) {
+    const inner = value.slice(1, -1).trim();
+    if (inner === '') return [];
+    return inner.split(',').map((entry) => parseScalar(entry.trim()));
+  }
+  return parseScalar(value);
 }
 
 function parseScalar(value: string): unknown {
@@ -231,19 +339,78 @@ function parseScalar(value: string): unknown {
   return value;
 }
 
-function serializeYamlLines(obj: Record<string, unknown>): string {
-  return Object.entries(obj)
-    .map(([key, value]) => {
-      if (value === null || value === undefined) {
-        return `${key}:`;
+function serializeYamlLines(
+  obj: Record<string, unknown>,
+  currentIndent = 0
+): string {
+  return serializeYamlObject(obj, currentIndent).join('\n');
+}
+
+function serializeYamlObject(
+  obj: Record<string, unknown>,
+  currentIndent: number
+): string[] {
+  const indent = '  '.repeat(currentIndent);
+  const lines: string[] = [];
+  for (const [key, value] of Object.entries(obj)) {
+    if (value === null || value === undefined) {
+      lines.push(`${indent}${key}:`);
+    } else if (Array.isArray(value)) {
+      if (value.length === 0) {
+        lines.push(`${indent}${key}: []`);
+      } else {
+        lines.push(`${indent}${key}:`);
+        lines.push(...serializeYamlArray(value, currentIndent + 1));
       }
-      if (Array.isArray(value)) {
-        if (value.length === 0) return `${key}: []`;
-        return `${key}:\n${value.map((v) => `  - ${serializeScalar(v)}`).join('\n')}`;
+    } else if (isRecord(value)) {
+      if (Object.keys(value).length === 0) {
+        lines.push(`${indent}${key}: {}`);
+      } else {
+        lines.push(`${indent}${key}:`);
+        lines.push(...serializeYamlObject(value, currentIndent + 1));
       }
-      return `${key}: ${serializeScalar(value)}`;
-    })
-    .join('\n');
+    } else {
+      lines.push(`${indent}${key}: ${serializeScalar(value)}`);
+    }
+  }
+  return lines;
+}
+
+function serializeYamlArray(
+  values: unknown[],
+  currentIndent: number
+): string[] {
+  const indent = '  '.repeat(currentIndent);
+  const lines: string[] = [];
+  for (const value of values) {
+    if (Array.isArray(value)) {
+      if (value.length === 0) {
+        lines.push(`${indent}- []`);
+      } else {
+        lines.push(`${indent}-`);
+        lines.push(...serializeYamlArray(value, currentIndent + 1));
+      }
+    } else if (isRecord(value)) {
+      if (Object.keys(value).length === 0) {
+        lines.push(`${indent}- {}`);
+      } else {
+        lines.push(`${indent}-`);
+        lines.push(...serializeYamlObject(value, currentIndent + 1));
+      }
+    } else {
+      lines.push(`${indent}- ${serializeScalar(value)}`);
+    }
+  }
+  return lines;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    !(value instanceof Date)
+  );
 }
 
 function serializeScalar(value: unknown): string {
