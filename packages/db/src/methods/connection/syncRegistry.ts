@@ -35,10 +35,11 @@ function unloadRoomsMissingFromRegistry(
   }
 }
 
-export const syncRegistry =
-  (db: Database) =>
-  /** sends the registry to the server to check for additions/subtractions on either side */
-  async () => {
+export const syncRegistry = (db: Database) => {
+  let inFlightSync: Promise<boolean> | null = null;
+
+  /** Sends one registry snapshot to the server. */
+  const syncOnce = async () => {
     db.emit('registrySync', 'syncing');
     const previousRooms = [...db.registry];
     const newRoomIds = [...db._pendingRegistryRoomIds];
@@ -80,12 +81,20 @@ export const syncRegistry =
       rooms.length >= 1
     ) {
       db.debug('setting new rooms', rooms);
-      // TODO: if a new room was created locally before the sync finishes, this might overwrite it
-      unloadRoomsMissingFromRegistry(db, previousRooms, rooms);
-      setLocalRegistry(db)(rooms);
-      db.registry = rooms;
+      const serverRoomIds = new Set(rooms.map((room) => room.id));
+      const roomsCreatedDuringSync = db.registry.filter(
+        (room) =>
+          db._pendingRegistryRoomIds.has(room.id) && !serverRoomIds.has(room.id)
+      );
+      const nextRooms = [...rooms, ...roomsCreatedDuringSync];
+
+      unloadRoomsMissingFromRegistry(db, previousRooms, nextRooms);
+      setLocalRegistry(db)(nextRooms);
+      db.registry = nextRooms;
       for (const roomId of newRoomIds) {
-        db._pendingRegistryRoomIds.delete(roomId);
+        if (serverRoomIds.has(roomId)) {
+          db._pendingRegistryRoomIds.delete(roomId);
+        }
       }
     } else {
       return false;
@@ -94,3 +103,39 @@ export const syncRegistry =
     db.emit('registrySync', 'success');
     return true;
   };
+
+  /** Sends the registry to the server and drains rooms created mid-sync. */
+  return async () => {
+    if (inFlightSync) {
+      return inFlightSync;
+    }
+
+    inFlightSync = (async () => {
+      do {
+        const pendingBefore = new Set(db._pendingRegistryRoomIds);
+        const synced = await syncOnce();
+        if (!synced) {
+          return false;
+        }
+
+        if (
+          db._pendingRegistryRoomIds.size > 0 &&
+          pendingBefore.size === db._pendingRegistryRoomIds.size &&
+          [...pendingBefore].every((roomId) =>
+            db._pendingRegistryRoomIds.has(roomId)
+          )
+        ) {
+          return false;
+        }
+      } while (db._pendingRegistryRoomIds.size > 0);
+
+      return true;
+    })();
+
+    try {
+      return await inFlightSync;
+    } finally {
+      inFlightSync = null;
+    }
+  };
+};
