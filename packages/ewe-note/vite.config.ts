@@ -41,6 +41,9 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
+    // TipTap collaboration and cursor currently resolve different versions.
+    // They must share y-prosemirror's singleton ProseMirror PluginKeys.
+    dedupe: ['y-prosemirror'],
   },
   server: {
     port: devPort,
