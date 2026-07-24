@@ -14,6 +14,7 @@ import {
 import { logger } from './utils';
 import { useGetUserFromDb } from './user';
 import { getDefaultNoteText } from './default-tutorial';
+import { loginWithPrioritizedNoteSync } from './prioritized-room-sync';
 
 /** to make sure that we only have one default room created, make a new uuid v4 for the default room, but if there is already one in localStorage use that*/
 const randomRoomId = crypto.randomUUID();
@@ -421,8 +422,11 @@ export const DbProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     async function login() {
-      const loginRes = await db.login({ loadAllRooms: true }); // beware this could be way too many if you have a lot of rooms. Better to call db.loadRooms() on the ones you actually need.
+      const loginRes = await loginWithPrioritizedNoteSync(db, (error) => {
+        logger('Error loading non-note rooms in the background', error);
+      });
       if (loginRes) {
+        setAllRooms(db.getRooms('notes'));
         setLoggedIn(true);
       }
     }
