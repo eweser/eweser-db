@@ -165,8 +165,9 @@ export function Settings() {
         total: 1,
       });
       const mounted = await pickBrowserLocalVault();
-      const existingRoomId =
-        await getBrowserLocalVaultRoomId(mounted.vaultName);
+      const existingRoomId = await getBrowserLocalVaultRoomId(
+        mounted.directoryHandle
+      );
       const existingRoom = existingRoomId
         ? allRooms.find((room) => room.id === existingRoomId)
         : undefined;
@@ -179,7 +180,10 @@ export function Settings() {
         setSelectedRoom,
         targetNoteRoomId: existingRoom?.id,
       });
-      await setBrowserLocalVaultRoomId(mounted.vaultName, result.noteRoomId);
+      await setBrowserLocalVaultRoomId(
+        mounted.directoryHandle,
+        result.noteRoomId
+      );
       setVaultImportResult(result);
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return;

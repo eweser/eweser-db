@@ -2,7 +2,7 @@ import type { Note } from '@eweser/db';
 import { serializeFrontmatter } from '@eweser/shared';
 
 const DB_NAME = 'ewe-note-browser-local-vaults';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const STORE_NAME = 'mounted-files';
 const VAULT_ROOM_STORE = 'vault-rooms';
 const IGNORED_DIRECTORIES = new Set([
@@ -23,14 +23,13 @@ export type BrowserWritableFileHandle = {
   getFile(): Promise<File>;
   createWritable(): Promise<BrowserWritable>;
   queryPermission?(options: { mode: 'readwrite' }): Promise<PermissionState>;
-  requestPermission?(options: {
-    mode: 'readwrite';
-  }): Promise<PermissionState>;
+  requestPermission?(options: { mode: 'readwrite' }): Promise<PermissionState>;
 };
 
 export type BrowserDirectoryHandle = {
   kind: 'directory';
   name: string;
+  isSameEntry?(other: BrowserDirectoryHandle): Promise<boolean>;
   values(): AsyncIterableIterator<
     BrowserDirectoryHandle | BrowserWritableFileHandle
   >;
@@ -58,10 +57,17 @@ type MountedFileEntry = {
   sourceVault: string;
 };
 
+type VaultRoomBinding = {
+  vaultId: string;
+  directoryHandle: BrowserDirectoryHandle;
+  roomId: string;
+  vaultName: string;
+};
+
 const mountedFileCache = new Map<string, MountedFileEntry>();
 const writeQueues = new Map<string, Promise<void>>();
 const permissionDeniedKeys = new Set<string>();
-const vaultRoomCache = new Map<string, string>();
+const vaultRoomCache: VaultRoomBinding[] = [];
 
 function mountedFileKey(roomId: string, noteId: string) {
   return `${roomId}\u0000${noteId}`;
@@ -98,9 +104,20 @@ async function openMountedFilesDb(): Promise<IDBDatabase | null> {
       if (!request.result.objectStoreNames.contains(STORE_NAME)) {
         request.result.createObjectStore(STORE_NAME, { keyPath: 'key' });
       }
+      const existingVaultRoomStore = request.result.objectStoreNames.contains(
+        VAULT_ROOM_STORE
+      )
+        ? request.transaction?.objectStore(VAULT_ROOM_STORE)
+        : null;
+      if (
+        existingVaultRoomStore &&
+        existingVaultRoomStore.keyPath !== 'vaultId'
+      ) {
+        request.result.deleteObjectStore(VAULT_ROOM_STORE);
+      }
       if (!request.result.objectStoreNames.contains(VAULT_ROOM_STORE)) {
         request.result.createObjectStore(VAULT_ROOM_STORE, {
-          keyPath: 'vaultName',
+          keyPath: 'vaultId',
         });
       }
     };
@@ -127,27 +144,49 @@ async function putMountedFile(entry: MountedFileEntry) {
   }
 }
 
-async function getVaultRoomId(vaultName: string): Promise<string | null> {
-  const cached = vaultRoomCache.get(vaultName);
-  if (cached) return cached;
+async function isSameDirectory(
+  first: BrowserDirectoryHandle,
+  second: BrowserDirectoryHandle
+): Promise<boolean> {
+  if (first === second) return true;
+  try {
+    if (first.isSameEntry) return await first.isSameEntry(second);
+    if (second.isSameEntry) return await second.isSameEntry(first);
+  } catch {
+    return false;
+  }
+  return false;
+}
 
+async function findVaultRoomBinding(
+  directoryHandle: BrowserDirectoryHandle
+): Promise<VaultRoomBinding | null> {
+  for (const binding of vaultRoomCache) {
+    if (await isSameDirectory(binding.directoryHandle, directoryHandle)) {
+      return binding;
+    }
+  }
   const db = await openMountedFilesDb();
   if (!db) return null;
 
   try {
     const transaction = db.transaction(VAULT_ROOM_STORE, 'readonly');
-    const request = transaction.objectStore(VAULT_ROOM_STORE).get(vaultName);
-    const result = await new Promise<
-      { vaultName: string; roomId: string } | undefined
-    >((resolve, reject) => {
+    const request = transaction.objectStore(VAULT_ROOM_STORE).getAll();
+    const results = await new Promise<VaultRoomBinding[]>((resolve, reject) => {
       request.onsuccess = () => resolve(request.result);
       request.onerror = () =>
         reject(request.error ?? new Error('IndexedDB read failed'));
     });
     await transactionDone(transaction);
-    if (result?.roomId) {
-      vaultRoomCache.set(vaultName, result.roomId);
-      return result.roomId;
+    for (const binding of results) {
+      if (
+        binding?.roomId &&
+        binding.directoryHandle &&
+        (await isSameDirectory(binding.directoryHandle, directoryHandle))
+      ) {
+        vaultRoomCache.push(binding);
+        return binding;
+      }
     }
     return null;
   } catch {
@@ -157,14 +196,40 @@ async function getVaultRoomId(vaultName: string): Promise<string | null> {
   }
 }
 
-async function setVaultRoomId(vaultName: string, roomId: string) {
-  vaultRoomCache.set(vaultName, roomId);
+async function getVaultRoomId(
+  directoryHandle: BrowserDirectoryHandle
+): Promise<string | null> {
+  return (await findVaultRoomBinding(directoryHandle))?.roomId ?? null;
+}
+
+async function setVaultRoomId(
+  directoryHandle: BrowserDirectoryHandle,
+  roomId: string
+) {
+  const existing = await findVaultRoomBinding(directoryHandle);
+  const binding: VaultRoomBinding = {
+    vaultId:
+      existing?.vaultId ??
+      globalThis.crypto?.randomUUID?.() ??
+      `vault-${Date.now()}-${Math.random()}`,
+    directoryHandle,
+    roomId,
+    vaultName: directoryHandle.name,
+  };
+  const cachedIndex = existing
+    ? vaultRoomCache.findIndex((entry) => entry.vaultId === existing.vaultId)
+    : -1;
+  if (cachedIndex >= 0) {
+    vaultRoomCache[cachedIndex] = binding;
+  } else {
+    vaultRoomCache.push(binding);
+  }
   const db = await openMountedFilesDb();
   if (!db) return;
 
   try {
     const transaction = db.transaction(VAULT_ROOM_STORE, 'readwrite');
-    transaction.objectStore(VAULT_ROOM_STORE).put({ vaultName, roomId });
+    transaction.objectStore(VAULT_ROOM_STORE).put(binding);
     await transactionDone(transaction);
   } catch {
     // Non-critical — persist best-effort
@@ -174,9 +239,9 @@ async function setVaultRoomId(vaultName: string, roomId: string) {
 }
 
 export {
-  /** Look up a saved room id for a given vault directory name. */
+  /** Look up a saved room id for the exact selected vault directory. */
   getVaultRoomId as getBrowserLocalVaultRoomId,
-  /** Persist the room id associated with a vault directory name. */
+  /** Persist the room id associated with the exact selected vault directory. */
   setVaultRoomId as setBrowserLocalVaultRoomId,
 };
 
@@ -273,7 +338,11 @@ export async function pickBrowserLocalVault() {
     mode: 'readwrite',
   });
   const collected = await collectDirectoryFiles(directory, directory.name);
-  return { ...collected, vaultName: directory.name };
+  return {
+    ...collected,
+    directoryHandle: directory,
+    vaultName: directory.name,
+  };
 }
 
 export async function registerBrowserLocalVaultFiles(params: {
@@ -356,7 +425,7 @@ export async function clearBrowserLocalVaultsForTests() {
   mountedFileCache.clear();
   writeQueues.clear();
   permissionDeniedKeys.clear();
-  vaultRoomCache.clear();
+  vaultRoomCache.length = 0;
   const db = await openMountedFilesDb();
   if (!db) return;
   try {

@@ -125,6 +125,47 @@ describe('frontmatter round-trip', () => {
     });
   });
 
+  it('round-trips arrays containing objects and nested arrays', () => {
+    const frontmatter = {
+      projects: [
+        {
+          name: 'Alpha',
+          owners: ['Jane', 'Ravi'],
+          stages: [['draft', 'review'], ['approved']],
+        },
+        {
+          name: 'Beta',
+          owners: [],
+        },
+      ],
+    };
+
+    const reserialized = serializeFrontmatter(frontmatter, 'Body');
+    const { frontmatter: reparsed } = parseFrontmatter(reserialized);
+
+    expect(reparsed).toEqual(frontmatter);
+  });
+
+  it('parses dash-only markers for nested list items', () => {
+    const markdown = [
+      '---',
+      'projects:',
+      '  -',
+      '    name: Alpha',
+      '    tags:',
+      '      - one',
+      '      - two',
+      '  -',
+      '    name: Beta',
+      '---',
+      'Body',
+    ].join('\n');
+
+    expect(parseFrontmatter(markdown).frontmatter).toEqual({
+      projects: [{ name: 'Alpha', tags: ['one', 'two'] }, { name: 'Beta' }],
+    });
+  });
+
   it('round-trips mixed flat and nested', () => {
     const original =
       '---\ntitle: Mixed\ncount: 42\nmetadata:\n  author: Jane\n  tags:\n    - one\n    - two\n---\nBody';

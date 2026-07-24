@@ -154,15 +154,54 @@ describe('browser local vault bridge', () => {
     expect(getBrowserLocalVaultPermissionState('room-1')).toBe('denied');
   });
 
-  it('stores and retrieves vault room mappings', async () => {
-    await setBrowserLocalVaultRoomId('my-vault', 'room-abc');
-    const roomId = await getBrowserLocalVaultRoomId('my-vault');
+  it('stores and retrieves vault room mappings by directory identity', async () => {
+    const directory: BrowserDirectoryHandle = {
+      kind: 'directory',
+      name: 'my-vault',
+      async isSameEntry(other) {
+        return other === directory;
+      },
+      async *values() {},
+    };
+
+    await setBrowserLocalVaultRoomId(directory, 'room-abc');
+    const roomId = await getBrowserLocalVaultRoomId(directory);
     expect(roomId).toBe('room-abc');
   });
 
-  it('returns null for unknown vault room mappings', async () => {
-    const roomId = await getBrowserLocalVaultRoomId('nonexistent');
-    expect(roomId).toBeNull();
+  it('keeps same-named directories mapped to separate rooms', async () => {
+    const first: BrowserDirectoryHandle = {
+      kind: 'directory',
+      name: 'notes',
+      async isSameEntry(other) {
+        return other === first;
+      },
+      async *values() {},
+    };
+    const second: BrowserDirectoryHandle = {
+      kind: 'directory',
+      name: 'notes',
+      async isSameEntry(other) {
+        return other === second;
+      },
+      async *values() {},
+    };
+
+    await setBrowserLocalVaultRoomId(first, 'room-a');
+    await setBrowserLocalVaultRoomId(second, 'room-b');
+
+    expect(await getBrowserLocalVaultRoomId(first)).toBe('room-a');
+    expect(await getBrowserLocalVaultRoomId(second)).toBe('room-b');
+  });
+
+  it('returns null for an unknown vault directory', async () => {
+    const unknown: BrowserDirectoryHandle = {
+      kind: 'directory',
+      name: 'nonexistent',
+      async *values() {},
+    };
+
+    expect(await getBrowserLocalVaultRoomId(unknown)).toBeNull();
   });
 
   it('returns none when no mounted files exist for permission check', () => {
