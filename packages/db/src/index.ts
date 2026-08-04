@@ -48,6 +48,17 @@ import { pingServer } from './utils/connection/pingServer.js';
 import { pollConnection } from './utils/connection/pollConnection.js';
 import { newRoom } from './methods/newRoom.js';
 import { renameRoom } from './methods/renameRoom.js';
+import {
+  deleteRoom,
+  getActiveRegistryRooms,
+  getRoomDeletionEligibility,
+} from './methods/deleteRoom.js';
+
+export {
+  RoomDeletionError,
+  type RoomDeletionBlockCode,
+  type RoomDeletionEligibility,
+} from './methods/deleteRoom.js';
 
 export * from './utils/index.js';
 export * from './utils/files.js';
@@ -168,6 +179,8 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
 
   newRoom = newRoom(this);
   renameRoom = renameRoom(this);
+  deleteRoom = deleteRoom(this);
+  getRoomDeletionEligibility = getRoomDeletionEligibility(this);
 
   generateShareRoomLink = generateShareRoomLink(this);
   pingServer = pingServer(this);
@@ -295,8 +308,9 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     }
     /** load all rooms in the registry locally, skipping any already handled above */
     const initializedRoomIds = new Set(initializedRooms.map((r) => r.id));
-    const remainingRegistryRooms = this.registry.filter(
-      (r) => !initializedRoomIds.has(r.id)
+    const remainingRegistryRooms = getActiveRegistryRooms(
+      this.registry,
+      initializedRoomIds
     );
     this.loadRooms(remainingRegistryRooms);
     this.pollForRegistrySync();

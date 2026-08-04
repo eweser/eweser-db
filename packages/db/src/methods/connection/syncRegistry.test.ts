@@ -77,6 +77,75 @@ describe('syncRegistry', () => {
     expect(db.registry).toEqual(rooms);
   });
 
+  it('accepts an empty authoritative registry after the final room is deleted', async () => {
+    const deletedRoom = {
+      id: 'deleted-room',
+      name: 'Empty vault',
+      collectionKey: 'notes',
+      _deleted: true,
+    };
+    const db = {
+      registry: [deletedRoom],
+      collections: { notes: {} },
+      _initialRoomIds: new Set(),
+      _pendingRegistryRoomIds: new Set(),
+      userId: '',
+      accessGrantToken: '',
+      getToken: () => 'token',
+      emit: vi.fn(),
+      info: vi.fn(),
+      debug: vi.fn(),
+      serverFetch: vi.fn().mockResolvedValue({
+        data: { rooms: [], token: 'next-token', userId: 'user-1' },
+        error: null,
+      }),
+    } as unknown as Database;
+
+    await expect(syncRegistry(db)()).resolves.toBe(true);
+    expect(db.registry).toEqual([]);
+    expect(setLocalRegistryMock).toHaveBeenCalledWith([]);
+  });
+
+  it('restores a room when the server rejects its tombstone', async () => {
+    const authoritativeRoom = {
+      id: 'shared-room',
+      name: 'Shared notes',
+      collectionKey: 'notes',
+    };
+    const tombstone = { ...authoritativeRoom, _deleted: true };
+    const loadRooms = vi.fn().mockResolvedValue(undefined);
+    const db = {
+      registry: [tombstone],
+      collections: { notes: {} },
+      _initialRoomIds: new Set(),
+      _pendingRegistryRoomIds: new Set(),
+      userId: '',
+      accessGrantToken: '',
+      getToken: () => 'token',
+      emit: vi.fn(),
+      info: vi.fn(),
+      debug: vi.fn(),
+      loadRooms,
+      serverFetch: vi.fn().mockResolvedValue({
+        data: {
+          rooms: [authoritativeRoom],
+          token: 'next-token',
+          userId: 'user-1',
+        },
+        error: null,
+      }),
+    } as unknown as Database;
+
+    await expect(syncRegistry(db)()).resolves.toBe(false);
+    expect(db.registry).toEqual([authoritativeRoom]);
+    expect(loadRooms).toHaveBeenCalledWith([authoritativeRoom], undefined, 0);
+    expect(db.emit).toHaveBeenCalledWith(
+      'registrySync',
+      'error',
+      'The server did not authorize one or more room deletions.'
+    );
+  });
+
   it('unloads stale rooms after the server removes them while preserving current initial rooms', async () => {
     const staleRoom = {
       id: 'stale-room',

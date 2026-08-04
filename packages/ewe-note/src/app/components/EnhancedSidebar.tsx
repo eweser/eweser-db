@@ -28,6 +28,15 @@ import { SecureRoomControls } from './SecureRoomControls';
 import { FederatedSearchPanel } from './FederatedSearchPanel';
 import { useDb } from '../../db';
 import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from './ui/alert-dialog';
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -103,8 +112,15 @@ function SidebarContent({
     getNotesInFolder,
     moveNote,
   } = useNotes();
-  const { loggedIn, syncStatus, syncStatusLabel, syncStatusDescription, user } =
-    useDb();
+  const {
+    deleteVault,
+    getVaultDeletionEligibility,
+    loggedIn,
+    syncStatus,
+    syncStatusLabel,
+    syncStatusDescription,
+    user,
+  } = useDb();
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
     new Set(['work', 'personal', 'development', 'daily'])
   );
@@ -120,6 +136,10 @@ function SidebarContent({
     parentId?: string | null;
     initialName: string;
   } | null>(null);
+  const [vaultPendingDelete, setVaultPendingDelete] =
+    useState<NotesFolder | null>(null);
+  const [deletingVault, setDeletingVault] = useState(false);
+  const [vaultDeleteError, setVaultDeleteError] = useState<string | null>(null);
   const knownFolderIdsRef = useRef<Set<string>>(new Set());
 
   const childFoldersByParent = useMemo(() => {
@@ -212,6 +232,37 @@ function SidebarContent({
       updateFolder(childFolder.id, { parentId: folder.parentId })
     );
     deleteFolder(folder.id);
+  };
+
+  const requestVaultDeletion = (folder: NotesFolder) => {
+    if (
+      !folder.roomId ||
+      getVaultDeletionEligibility(folder.roomId).canDelete !== true
+    ) {
+      return;
+    }
+    setVaultDeleteError(null);
+    setVaultPendingDelete(folder);
+  };
+
+  const confirmVaultDeletion = async () => {
+    if (!vaultPendingDelete?.roomId) return;
+    setDeletingVault(true);
+    setVaultDeleteError(null);
+    try {
+      await deleteVault(vaultPendingDelete.roomId);
+      setVaultPendingDelete(null);
+      onViewChange?.('recent');
+      navigate('/');
+    } catch (error) {
+      setVaultDeleteError(
+        error instanceof Error
+          ? error.message
+          : 'EweNote could not delete this vault.'
+      );
+    } finally {
+      setDeletingVault(false);
+    }
   };
 
   const incompleteTasks = tasks.filter((t) => !t.completed);
@@ -378,6 +429,7 @@ function SidebarContent({
                   })
                 }
                 onDelete={handleDeleteFolder}
+                onDeleteVault={requestVaultDeletion}
               />
             ))}
             {folders.length === 0 ? (
@@ -475,6 +527,55 @@ function SidebarContent({
         dataCySubmit="ewe-note-folder-submit"
         onSubmit={handleFolderSubmit}
       />
+      <AlertDialog
+        open={Boolean(vaultPendingDelete)}
+        onOpenChange={(open) => {
+          if (!open && !deletingVault) {
+            setVaultPendingDelete(null);
+            setVaultDeleteError(null);
+          }
+        }}
+      >
+        <AlertDialogContent data-cy="ewe-note-delete-vault-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Delete “{vaultPendingDelete?.name}”?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block">
+                This removes this empty vault from EweNote. If it is synced, it
+                will disappear from your synced devices too. This cannot be
+                undone in EweNote.
+              </span>
+              <span className="block">
+                Files in a mounted filesystem vault are not deleted.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {vaultDeleteError ? (
+            <p
+              role="alert"
+              className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+            >
+              {vaultDeleteError}
+            </p>
+          ) : null}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingVault}>
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={deletingVault}
+              onClick={() => void confirmVaultDeletion()}
+              data-cy="ewe-note-confirm-delete-vault"
+            >
+              {deletingVault ? 'Deleting…' : 'Delete vault'}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </aside>
   );
 }
@@ -495,6 +596,7 @@ interface FolderBranchProps {
   onShareFolder: (folderId: string, folderName: string) => void;
   onRename: (folder: NotesFolder) => void;
   onDelete: (folder: NotesFolder) => void;
+  onDeleteVault: (folder: NotesFolder) => void;
 }
 
 function FolderBranch({
@@ -513,6 +615,7 @@ function FolderBranch({
   onShareFolder,
   onRename,
   onDelete,
+  onDeleteVault,
 }: FolderBranchProps) {
   const navigate = useNavigate();
   const folderNotes = getDirectNotesInFolder(folder.id);
@@ -534,6 +637,7 @@ function FolderBranch({
         onShareFolder={() => onShareFolder(folder.id, folder.name)}
         onRename={() => onRename(folder)}
         onDelete={() => onDelete(folder)}
+        onDeleteVault={() => onDeleteVault(folder)}
       />
 
       {isExpanded && (childFolders.length > 0 || folderNotes.length > 0) ? (
@@ -556,6 +660,7 @@ function FolderBranch({
               onShareFolder={onShareFolder}
               onRename={onRename}
               onDelete={onDelete}
+              onDeleteVault={onDeleteVault}
             />
           ))}
           {folderNotes.map((note) => (
@@ -625,6 +730,7 @@ interface FolderItemProps {
   onShareFolder: () => void;
   onRename: () => void;
   onDelete: () => void;
+  onDeleteVault: () => void;
 }
 
 function FolderItem({
@@ -640,7 +746,18 @@ function FolderItem({
   onShareFolder,
   onRename,
   onDelete,
+  onDeleteVault,
 }: FolderItemProps) {
+  const { getVaultDeletionEligibility } = useDb();
+  const vaultDeletion = folder.roomId
+    ? getVaultDeletionEligibility(folder.roomId)
+    : undefined;
+  const canDeleteVault =
+    folder.kind === 'shared-room' && vaultDeletion?.canDelete === true;
+  const showDirectDelete = folder.kind === 'folder' || canDeleteVault;
+  const deleteLabel =
+    folder.kind === 'shared-room' ? 'Delete vault' : 'Delete folder';
+  const handleDelete = folder.kind === 'shared-room' ? onDeleteVault : onDelete;
   const [{ isOver }, drop] = useDrop<
     DraggedNoteItem,
     unknown,
@@ -690,14 +807,18 @@ function FolderItem({
           {folder.name}
         </span>
       </button>
-      {folder.kind === 'folder' ? (
+      {showDirectDelete ? (
         <button
           type="button"
-          aria-label={`Delete folder ${folder.name}`}
-          title={`Delete folder ${folder.name}`}
-          onClick={onDelete}
+          aria-label={`${deleteLabel} ${folder.name}`}
+          title={`${deleteLabel} ${folder.name}`}
+          onClick={handleDelete}
           className="shrink-0 self-center rounded-full p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          data-cy={`ewe-note-delete-folder-${folder.id}`}
+          data-cy={
+            folder.kind === 'shared-room'
+              ? `ewe-note-delete-vault-${folder.roomId}`
+              : `ewe-note-delete-folder-${folder.id}`
+          }
         >
           <Trash2 className="h-4 w-4" />
         </button>
@@ -706,7 +827,7 @@ function FolderItem({
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            aria-label={`Folder actions for ${folder.name}`}
+            aria-label={`${folder.kind === 'shared-room' ? 'Vault' : 'Folder'} actions for ${folder.name}`}
             className="shrink-0 self-center rounded-full p-1 text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
             data-cy={`ewe-note-folder-actions-${folder.id}`}
           >
@@ -729,7 +850,7 @@ function FolderItem({
             disabled={folder.kind === 'shared-room'}
           >
             <Share className="mr-2 h-4 w-4" />
-            Share folder
+            {folder.kind === 'shared-room' ? 'Share vault' : 'Share folder'}
           </DropdownMenuItem>
           {folder.kind === 'folder' ? (
             <DropdownMenuItem onClick={onRename}>
@@ -738,9 +859,33 @@ function FolderItem({
             </DropdownMenuItem>
           ) : null}
           {folder.kind === 'folder' ? (
-            <DropdownMenuItem onClick={onDelete}>
+            <DropdownMenuItem onClick={onDelete} variant="destructive">
               <Trash2 className="mr-2 h-4 w-4" />
               Delete folder
+            </DropdownMenuItem>
+          ) : null}
+          {folder.kind === 'shared-room' ? (
+            <DropdownMenuItem
+              onClick={onDeleteVault}
+              disabled={!canDeleteVault}
+              aria-label={
+                vaultDeletion && !vaultDeletion.canDelete
+                  ? `Delete vault. ${vaultDeletion.reason}`
+                  : 'Delete vault'
+              }
+              variant="destructive"
+              className="items-start data-[disabled]:opacity-80"
+              data-cy={`ewe-note-delete-vault-menu-${folder.roomId}`}
+            >
+              <Trash2 className="mr-2 mt-0.5 h-4 w-4 shrink-0" />
+              <span className="flex min-w-0 flex-col">
+                <span>Delete vault</span>
+                {vaultDeletion && !vaultDeletion.canDelete ? (
+                  <span className="max-w-56 whitespace-normal text-xs leading-4 text-muted-foreground">
+                    {vaultDeletion.reason}
+                  </span>
+                ) : null}
+              </span>
             </DropdownMenuItem>
           ) : null}
         </DropdownMenuContent>

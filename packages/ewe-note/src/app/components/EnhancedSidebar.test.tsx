@@ -1,5 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -12,6 +18,15 @@ const updateFolder = vi.fn();
 const deleteFolder = vi.fn();
 const addNote = vi.fn(() => ({ id: 'note-created' }));
 const moveNote = vi.fn();
+const deleteVault = vi.fn().mockResolvedValue(undefined);
+let vaultDeletionEligibility:
+  | { canDelete: true; noteCount: 0 }
+  | {
+      canDelete: false;
+      code: 'not-empty';
+      reason: string;
+      noteCount: number;
+    } = { canDelete: true, noteCount: 0 };
 const useDrag = vi.fn((_spec: unknown) => [{ isDragging: false }, vi.fn()]);
 const useDrop = vi.fn((_spec: unknown) => [{ isOver: false }, vi.fn()]);
 const makeNote = (overrides: Partial<Record<string, unknown>> = {}) => ({
@@ -92,6 +107,14 @@ vi.mock('../contexts/NotesContext', () => ({
         expanded: true,
         kind: 'folder',
       },
+      {
+        id: 'room:secure-room',
+        name: '🔒 Secure Notes',
+        parentId: null,
+        expanded: true,
+        kind: 'shared-room',
+        roomId: 'secure-room',
+      },
     ],
     tasks: [],
     addNote,
@@ -113,6 +136,8 @@ vi.mock('../components/ThemeProvider', () => ({
 
 vi.mock('../../db', () => ({
   useDb: () => ({
+    deleteVault,
+    getVaultDeletionEligibility: () => vaultDeletionEligibility,
     loggedIn: false,
     syncStatus: 'local-only',
     syncStatusLabel: 'Local only',
@@ -169,6 +194,9 @@ describe('EnhancedSidebar', () => {
     deleteFolder.mockClear();
     addNote.mockClear();
     moveNote.mockClear();
+    deleteVault.mockReset();
+    deleteVault.mockResolvedValue(undefined);
+    vaultDeletionEligibility = { canDelete: true, noteCount: 0 };
     useDrag.mockClear();
     useDrop.mockClear();
     mockNavigate.mockClear();
@@ -297,6 +325,61 @@ describe('EnhancedSidebar', () => {
       'Delete "Projects" and move 2 notes plus keep 1 subfolder?'
     );
     expect(deleteFolder).toHaveBeenCalledWith('root-folder');
+  });
+
+  it('confirms deletion of an eligible empty vault and returns to the library', async () => {
+    const onViewChange = vi.fn();
+    render(
+      <EnhancedSidebar
+        onSearchClick={vi.fn()}
+        activeView="folder:room:secure-room"
+        onViewChange={onViewChange}
+      />
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Delete vault 🔒 Secure Notes' })
+    );
+
+    expect(
+      screen.getByRole('heading', { name: 'Delete “🔒 Secure Notes”?' })
+    ).not.toBeNull();
+    expect(
+      screen.getByText(/Files in a mounted filesystem vault are not deleted/)
+    ).not.toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete vault' }));
+
+    await waitFor(() => {
+      expect(deleteVault).toHaveBeenCalledWith('secure-room');
+      expect(onViewChange).toHaveBeenCalledWith('recent');
+      expect(mockNavigate).toHaveBeenCalledWith('/');
+    });
+  });
+
+  it('keeps a non-empty vault deletion visible with a specific disabled reason', () => {
+    vaultDeletionEligibility = {
+      canDelete: false,
+      code: 'not-empty',
+      reason: 'Move or delete its 2 notes first.',
+      noteCount: 2,
+    };
+    render(<EnhancedSidebar onSearchClick={vi.fn()} activeView="recent" />);
+
+    expect(
+      screen.queryByRole('button', { name: 'Delete vault 🔒 Secure Notes' })
+    ).toBeNull();
+    fireEvent.pointerDown(
+      screen.getByRole('button', {
+        name: 'Vault actions for 🔒 Secure Notes',
+      })
+    );
+
+    const item = screen.getByRole('menuitem', {
+      name: 'Delete vault. Move or delete its 2 notes first.',
+    });
+    expect(item.getAttribute('data-disabled')).not.toBeNull();
+    expect(deleteVault).not.toHaveBeenCalled();
   });
 
   it('exposes a pinned notes filter in the rail', () => {
