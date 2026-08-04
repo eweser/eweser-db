@@ -74,14 +74,14 @@ export const syncRegistry = (db: Database) => {
       return false;
     }
 
-    if (
-      rooms &&
-      typeof rooms === 'object' &&
-      Array.isArray(rooms) &&
-      rooms.length >= 1
-    ) {
+    if (rooms && typeof rooms === 'object' && Array.isArray(rooms)) {
       db.debug('setting new rooms', rooms);
       const serverRoomIds = new Set(rooms.map((room) => room.id));
+      const rejectedTombstoneRooms = rooms.filter((room) =>
+        previousRooms.some(
+          (previousRoom) => previousRoom.id === room.id && previousRoom._deleted
+        )
+      );
       const roomsCreatedDuringSync = db.registry.filter(
         (room) =>
           db._pendingRegistryRoomIds.has(room.id) && !serverRoomIds.has(room.id)
@@ -95,6 +95,16 @@ export const syncRegistry = (db: Database) => {
         if (serverRoomIds.has(roomId)) {
           db._pendingRegistryRoomIds.delete(roomId);
         }
+      }
+
+      if (rejectedTombstoneRooms.length > 0) {
+        await db.loadRooms(rejectedTombstoneRooms, db.useSync, 0);
+        db.emit(
+          'registrySync',
+          'error',
+          'The server did not authorize one or more room deletions.'
+        );
+        return false;
       }
     } else {
       return false;

@@ -85,6 +85,54 @@ describe('ewe-note secure room UI', () => {
     );
   });
 
+  it('cancels and then deletes an empty secure vault, which stays absent after reload', () => {
+    visitHome();
+
+    cy.getBySel('secure-room-create-button').click();
+    cy.getBySel('secure-room-recovery-phrase', { timeout: 10000 }).should(
+      'exist'
+    );
+    cy.getBySel('secure-room-phrase-dismiss').click();
+
+    cy.get('button[data-cy^="ewe-note-delete-vault-"]')
+      .should('have.attr', 'aria-label', 'Delete vault 🔒 Secure Notes')
+      .click();
+    cy.getBySel('ewe-note-delete-vault-dialog')
+      .should('be.visible')
+      .and('contain.text', 'mounted filesystem vault are not deleted');
+    cy.contains('button', 'Cancel').click();
+    cy.getBySel('ewe-note-delete-vault-dialog').should('not.exist');
+    cy.contains('🔒 Secure Notes').should('exist');
+
+    cy.get('button[data-cy^="ewe-note-delete-vault-"]').click();
+    cy.getBySel('ewe-note-confirm-delete-vault').click();
+    cy.contains('🔒 Secure Notes').should('not.exist');
+
+    cy.reload();
+    cy.getBySel('ewe-note-sidebar', { timeout: 10000 }).should('exist');
+    cy.contains('🔒 Secure Notes').should('not.exist');
+  });
+
+  it('explains why a non-empty secure vault cannot be deleted', () => {
+    visitHome();
+
+    cy.getBySel('secure-room-create-button').click();
+    cy.getBySel('secure-room-recovery-phrase', { timeout: 10000 }).should(
+      'exist'
+    );
+    cy.getBySel('secure-room-phrase-dismiss').click();
+
+    cy.get('button[aria-label="Vault actions for 🔒 Secure Notes"]').click();
+    cy.contains('[role="menuitem"]', 'New note').click();
+    cy.getBySel('ewe-note-editor', { timeout: 10000 }).should('exist');
+
+    cy.get('button[data-cy^="ewe-note-delete-vault-"]').should('not.exist');
+    cy.get('button[aria-label="Vault actions for 🔒 Secure Notes"]').click();
+    cy.get('[data-cy^="ewe-note-delete-vault-menu-"]')
+      .should('have.attr', 'data-disabled')
+      .and('contain.text', 'Move or delete its 1 note first.');
+  });
+
   it('locks and unlocks a secure room', () => {
     visitHome();
 

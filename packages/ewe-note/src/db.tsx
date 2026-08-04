@@ -1,6 +1,11 @@
 import 'yjs';
 import { Database, RoomCrypto } from '@eweser/db';
-import type { CollectionKey, Note, Room } from '@eweser/db';
+import type {
+  CollectionKey,
+  Note,
+  Room,
+  RoomDeletionEligibility,
+} from '@eweser/db';
 import * as config from './config';
 import type { ReactNode } from 'react';
 import {
@@ -112,6 +117,8 @@ export type DbContextType = {
   setSelectedNoteId: (noteId: string | null) => void;
   allRooms: Room<Note>[];
   allRoomIds: string[];
+  getVaultDeletionEligibility: (roomId: string) => RoomDeletionEligibility;
+  deleteVault: (roomId: string) => Promise<void>;
   user: {
     firstName: string;
     lastName: string;
@@ -280,6 +287,44 @@ export const DbProvider = ({ children }: { children: ReactNode }) => {
     return () => window.clearTimeout(id);
   }, []);
 
+  const getVaultDeletionEligibility = useCallback(
+    (roomId: string): RoomDeletionEligibility => {
+      const room = db.getRoom<Note>(collectionKey, roomId);
+      if (!room) {
+        return {
+          canDelete: false,
+          code: 'not-loaded',
+          reason: 'Open this vault before deleting it.',
+        };
+      }
+      return db.getRoomDeletionEligibility(room);
+    },
+    []
+  );
+
+  const deleteVault = useCallback(
+    async (roomId: string) => {
+      const room = db.getRoom<Note>(collectionKey, roomId);
+      if (!room) {
+        throw new Error('This vault is no longer available.');
+      }
+
+      await db.deleteRoom(room);
+
+      const remainingRooms = db.getRooms<'notes'>('notes');
+      setAllRooms(remainingRooms);
+      if (selectedRoom?.id === roomId) {
+        setSelectedRoom(
+          remainingRooms.find((candidate) => candidate.id === defaultRoomId) ??
+            remainingRooms[0] ??
+            null
+        );
+        setSelectedNoteId(null);
+      }
+    },
+    [selectedRoom]
+  );
+
   // ── Secure room actions ──────────────────────────────────────────
   const createSecureRoom = useCallback(async () => {
     try {
@@ -302,6 +347,8 @@ export const DbProvider = ({ children }: { children: ReactNode }) => {
       await room.unlock(phrase);
 
       setRecoveryPhrase(phrase);
+      setSelectedRoom(room);
+      setSelectedNoteId(null);
       setAllRooms(db.getRooms(collectionKey));
       showSecureMessage('Secure room created! Save your recovery phrase.');
     } catch (err) {
@@ -525,6 +572,8 @@ export const DbProvider = ({ children }: { children: ReactNode }) => {
       selectedNoteId: selectedNoteId ?? defaultNote?._id ?? defaultNoteId,
       allRooms,
       allRoomIds,
+      getVaultDeletionEligibility,
+      deleteVault,
       setSelectedNoteId,
       user,
       signOut,
@@ -561,6 +610,8 @@ export const DbProvider = ({ children }: { children: ReactNode }) => {
       defaultNote,
       allRooms,
       allRoomIds,
+      getVaultDeletionEligibility,
+      deleteVault,
       setSelectedNoteId,
       user,
       // Secure room deps

@@ -34,6 +34,21 @@ export function getNewClientRooms(
   );
 }
 
+export function getAuthorizedDeletedRoomIds(
+  clientRooms: Array<Pick<ServerRoom, 'id' | '_deleted'>>,
+  serverRooms: Array<Pick<ServerRoom, 'id' | 'adminAccess'>>,
+  userId: string
+) {
+  const serverRoomsById = new Map(serverRooms.map((room) => [room.id, room]));
+
+  return clientRooms
+    .filter((room) => room._deleted)
+    .filter((room) =>
+      serverRoomsById.get(room.id)?.adminAccess.includes(userId)
+    )
+    .map((room) => room.id);
+}
+
 /**
  * Syncs client rooms with server.
  * Hard cutover: uses syncUrl/syncBaseUrl directly.
@@ -108,13 +123,13 @@ export async function syncRoomsWithClient(
     }
 
     // Handle soft deletes from client
-    const clientDeletedRoomIds = clientRooms
-      .filter((r) => r._deleted)
-      .map((r) => r.id);
+    const clientDeletedRoomIds = getAuthorizedDeletedRoomIds(
+      clientRooms,
+      serverRooms,
+      userId
+    );
     for (const id of clientDeletedRoomIds) {
-      if (serverRoomIdSet.has(id)) {
-        await updateRoom({ id, _deleted: true }, dbInstance);
-      }
+      await updateRoom({ id, _deleted: true }, dbInstance);
     }
 
     const finalRooms = await getRoomsFromAccessGrant(grant, dbInstance);
