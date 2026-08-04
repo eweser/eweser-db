@@ -12,6 +12,8 @@ const updateFolder = vi.fn();
 const deleteFolder = vi.fn();
 const addNote = vi.fn(() => ({ id: 'note-created' }));
 const moveNote = vi.fn();
+const useDrag = vi.fn((_spec: unknown) => [{ isDragging: false }, vi.fn()]);
+const useDrop = vi.fn((_spec: unknown) => [{ isOver: false }, vi.fn()]);
 const makeNote = (overrides: Partial<Record<string, unknown>> = {}) => ({
   id: 'note-1',
   roomId: 'room-1',
@@ -152,7 +154,8 @@ vi.mock('../../components/ui/tooltip', () => ({
 
 vi.mock('react-dnd', () => ({
   DndProvider: ({ children }: { children: ReactNode }) => children,
-  useDrop: () => [{ isOver: false }, vi.fn()],
+  useDrag: (spec: unknown) => useDrag(spec),
+  useDrop: (spec: unknown) => useDrop(spec),
 }));
 
 vi.mock('react-dnd-html5-backend', () => ({
@@ -166,6 +169,8 @@ describe('EnhancedSidebar', () => {
     deleteFolder.mockClear();
     addNote.mockClear();
     moveNote.mockClear();
+    useDrag.mockClear();
+    useDrop.mockClear();
     mockNavigate.mockClear();
     getDirectNotesInFolder.mockClear();
     getNotesInFolder.mockClear();
@@ -224,6 +229,44 @@ describe('EnhancedSidebar', () => {
     fireEvent.click(noteButton);
 
     expect(mockNavigate).toHaveBeenCalledWith('/editor/note-1');
+  });
+
+  it('makes each direct note a drag source with its current folder', () => {
+    render(<EnhancedSidebar onSearchClick={vi.fn()} activeView="recent" />);
+
+    expect(
+      document.querySelector('[data-cy="ewe-note-note-drag-source-note-1"]')
+    ).not.toBeNull();
+    expect(useDrag).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'note',
+        item: { noteId: 'note-1', folderId: 'root-folder' },
+      })
+    );
+  });
+
+  it('moves a dragged note when it is dropped on another folder', () => {
+    render(<EnhancedSidebar onSearchClick={vi.fn()} activeView="recent" />);
+
+    const childFolderDropSpec = useDrop.mock.calls
+      .map(
+        ([spec]) =>
+          spec as {
+            drop?: (item: { noteId: string; folderId: string }) => void;
+          }
+      )
+      .find((spec) => {
+        const item = { noteId: 'note-1', folderId: 'root-folder' };
+        moveNote.mockClear();
+        spec.drop?.(item);
+        return moveNote.mock.calls.some(
+          ([noteId, folderId]) =>
+            noteId === item.noteId && folderId === 'child-folder'
+        );
+      });
+
+    expect(childFolderDropSpec).toBeDefined();
+    expect(moveNote).toHaveBeenCalledWith('note-1', 'child-folder');
   });
 
   it('offers mobile folder actions that can create a subfolder', () => {
