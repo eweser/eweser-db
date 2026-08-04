@@ -683,16 +683,25 @@ function FolderItem({
             : 'hover:bg-sidebar-accent/70'
         }`}
         onClick={onClick}
-        title={folder.name}
+        title={`${folder.name} (${folderNotes.length} direct)`}
       >
         <FolderOpen className="h-4 w-4 shrink-0 self-start text-muted-foreground" />
         <span className="min-w-0 flex-1 truncate whitespace-nowrap text-sm leading-5">
           {folder.name}
         </span>
-        <span className="shrink-0 self-center text-[11px] text-muted-foreground">
-          {folderNotes.length} direct
-        </span>
       </button>
+      {folder.kind === 'folder' ? (
+        <button
+          type="button"
+          aria-label={`Delete folder ${folder.name}`}
+          title={`Delete folder ${folder.name}`}
+          onClick={onDelete}
+          className="shrink-0 self-center rounded-full p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          data-cy={`ewe-note-delete-folder-${folder.id}`}
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      ) : null}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button

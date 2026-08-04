@@ -15,6 +15,7 @@ import {
   FolderInput,
   FileCode,
   Eye,
+  Trash2,
 } from 'lucide-react';
 import { RightPanel } from '../components/RightPanel';
 import { useNotes } from '../contexts/NotesContext';
@@ -369,6 +370,16 @@ function EditorWorkspace({
               />
             </button>
           ) : null}
+          <button
+            type="button"
+            aria-label="Delete note"
+            data-cy="ewe-note-delete-note-button"
+            onClick={onDelete}
+            className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            title="Delete note"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
