@@ -15,6 +15,10 @@ You create a GitHub pull request summarizing completed work on the EweserDB mono
 1. Confirm QA has passed.
 2. Ensure the working tree state is understood with `git status`.
 3. Confirm with the user before pushing or publishing a branch unless they already asked for PR creation.
+4. Treat `publish`, `open a PR`, `create a PR`, and equivalent requests as
+   authorization for a ready-for-review pull request by default. Use a draft
+   only when the user explicitly asks for one or a known blocker makes the PR
+   unreviewable. Pending CI alone is not a reason to create a draft.
 
 ## Workflow
 
@@ -64,5 +68,8 @@ git --no-pager log --oneline main..HEAD
 ## Rules
 
 - Base branch is always `main`.
-- Draft the PR if any checklist item is unresolved.
+- Open a ready-for-review PR by default when the user asks to publish or create
+  a PR. Never silently downgrade the request to a draft.
+- Use a draft only when the user explicitly requests one or a known blocker
+  makes the PR unreviewable; state that blocker in the handoff.
 - Never push directly to `main`.
