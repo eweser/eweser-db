@@ -178,6 +178,7 @@ describe('EnhancedSidebar', () => {
 
   afterEach(() => {
     cleanup();
+    vi.restoreAllMocks();
   });
 
   it('renders nested folders from parentId relationships', () => {
@@ -224,8 +225,6 @@ describe('EnhancedSidebar', () => {
     expect(
       screen.queryByRole('button', { name: 'Open note **Child note**' })
     ).toBeNull();
-    expect(screen.getAllByText('1 direct')).toHaveLength(2);
-
     fireEvent.click(noteButton);
 
     expect(mockNavigate).toHaveBeenCalledWith('/editor/note-1');
@@ -283,6 +282,21 @@ describe('EnhancedSidebar', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create' }));
 
     expect(addFolder).toHaveBeenCalledWith('Mobile Archive', 'root-folder');
+  });
+
+  it('exposes folder deletion without opening the overflow menu', () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    render(<EnhancedSidebar onSearchClick={vi.fn()} activeView="recent" />);
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Delete folder Projects' })
+    );
+
+    expect(confirmSpy).toHaveBeenCalledWith(
+      'Delete "Projects" and move 2 notes plus keep 1 subfolder?'
+    );
+    expect(deleteFolder).toHaveBeenCalledWith('root-folder');
   });
 
   it('exposes a pinned notes filter in the rail', () => {

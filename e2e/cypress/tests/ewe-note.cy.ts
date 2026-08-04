@@ -114,6 +114,23 @@ describe('ewe-note app', () => {
     cy.contains(folderName).should('exist');
   });
 
+  it('deletes a folder from its visible sidebar action', () => {
+    const folderName = `Delete Folder ${Date.now()}`;
+    visitHome();
+
+    cy.getBySel('ewe-note-new-folder-trigger').click();
+    cy.getBySel('ewe-note-folder-name-input').type(folderName);
+    cy.getBySel('ewe-note-folder-submit').click();
+    cy.contains(folderName).should('exist');
+
+    cy.window().then((win) => {
+      cy.stub(win, 'confirm').returns(true);
+    });
+
+    cy.get(`button[aria-label="Delete folder ${folderName}"]`).click();
+    cy.contains(folderName).should('not.exist');
+  });
+
   it('moves an open note to a folder from visible note actions', () => {
     const folderName = `Move Target ${Date.now()}`;
     const noteTitle = `Move me ${Date.now()}`;
@@ -201,7 +218,7 @@ describe('ewe-note app', () => {
     cy.getBySel('ewe-note-sidebar').should('not.exist');
   });
 
-  it('deletes a note from the editor menu and returns home', () => {
+  it('deletes a note from the visible editor action and returns home', () => {
     visitHome();
 
     createNote('# Delete me');
@@ -210,8 +227,7 @@ describe('ewe-note app', () => {
       cy.stub(win, 'confirm').returns(true);
     });
 
-    cy.getBySel('ewe-note-editor-menu-trigger').click();
-    cy.getBySel('ewe-note-delete-note').click();
+    cy.getBySel('ewe-note-delete-note-button').click();
 
     cy.url({ timeout: 10000 }).should('not.include', '/editor/');
     cy.getBySel('ewe-note-sidebar').should('exist');
