@@ -15,6 +15,7 @@ import {
   isDefaultTutorialDismissalChecked,
   markDefaultTutorialDismissed,
 } from './default-tutorial';
+import { getFirstHeading, getSyncedTitle } from './app/contexts/note-titles';
 
 export type NotesRoomType = {
   room: Room<Note> | null;
@@ -114,7 +115,19 @@ export const useNotesRoom = (
     if (!note) return;
     if (dismissDefaultTutorialIfChecked(text, note)) return;
 
+    const frontmatterTitle = note.frontmatter?.title;
+    const currentTitle =
+      typeof frontmatterTitle === 'string' && frontmatterTitle.trim()
+        ? frontmatterTitle.trim()
+        : getFirstHeading(note.text);
+    const syncedTitle = currentTitle
+      ? getSyncedTitle(currentTitle, note.text, text)
+      : null;
+
     note.text = text;
+    if (syncedTitle) {
+      note.frontmatter = { ...note.frontmatter, title: syncedTitle };
+    }
     Notes.set(note);
   };
 
