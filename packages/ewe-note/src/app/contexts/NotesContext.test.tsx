@@ -321,10 +321,9 @@ describe('NotesContext parity behavior', () => {
       content: '# 2026-08-04 09:40 Untitled\n\nDraft',
     });
 
-    latestContext?.updateNote(
-      note?.id ?? '',
-      { content: '# Unsynced TODO\n\nDraft' }
-    );
+    latestContext?.updateNote(note?.id ?? '', {
+      content: '# Unsynced TODO\n\nDraft',
+    });
 
     await waitFor(() => {
       expect(
@@ -333,10 +332,9 @@ describe('NotesContext parity behavior', () => {
       ).toBe('Unsynced TODO');
     });
 
-    latestContext?.updateNote(
-      note?.id ?? '',
-      { content: '# Unsynced priorities\n\nDraft' }
-    );
+    latestContext?.updateNote(note?.id ?? '', {
+      content: '# Unsynced priorities\n\nDraft',
+    });
 
     await waitFor(() => {
       expect(
@@ -346,10 +344,9 @@ describe('NotesContext parity behavior', () => {
     });
 
     latestContext?.updateNote(note?.id ?? '', { title: 'Pinned title' });
-    latestContext?.updateNote(
-      note?.id ?? '',
-      { content: '# A different heading\n\nDraft' }
-    );
+    latestContext?.updateNote(note?.id ?? '', {
+      content: '# A different heading\n\nDraft',
+    });
 
     await waitFor(() => {
       expect(
