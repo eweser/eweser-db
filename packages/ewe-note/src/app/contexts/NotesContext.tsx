@@ -5,7 +5,12 @@ import { useDb } from '@/db';
 import { useFolders } from '@/notes-room';
 import { collectFolderTreeIds } from './folder-tree';
 import { writeBrowserLocalVaultNotes } from '../lib/browser-local-vault';
-import { buildDefaultUntitledNoteTitle, UNTITLED_TITLE } from './note-titles';
+import {
+  buildDefaultUntitledNoteTitle,
+  getFirstHeading,
+  getSyncedTitle,
+  UNTITLED_TITLE,
+} from './note-titles';
 import {
   extractWikiLinkTargets,
   extractUnlinkedMentions,
@@ -156,9 +161,9 @@ function deriveTitle(note: DbNote) {
     return fmTitle.trim();
   }
 
-  const headingMatch = note.text.match(/^#\s+(.+)$/m);
-  if (headingMatch?.[1]) {
-    return headingMatch[1].trim();
+  const heading = getFirstHeading(note.text);
+  if (heading) {
+    return heading;
   }
 
   const plain = removeMarkdown(note.text).trim();
@@ -650,6 +655,16 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
 
     if (updates.content !== undefined) {
       next.text = updates.content;
+      const currentTitle = deriveTitle(found.source);
+      const syncedTitle = getSyncedTitle(
+        currentTitle,
+        found.source.text,
+        updates.content
+      );
+
+      if (syncedTitle) {
+        nextFrontmatter.title = syncedTitle;
+      }
     }
 
     if (updates.title !== undefined) {

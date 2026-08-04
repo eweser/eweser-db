@@ -313,6 +313,52 @@ describe('NotesContext parity behavior', () => {
     );
   });
 
+  it('synchronizes an automatic title with first-heading edits', async () => {
+    await renderProviderWithFixtures(['01 Markdown Syntax.md']);
+
+    const note = latestContext?.addNote({
+      title: '2026-08-04 09:40 Untitled',
+      content: '# 2026-08-04 09:40 Untitled\n\nDraft',
+    });
+
+    latestContext?.updateNote(
+      note?.id ?? '',
+      { content: '# Unsynced TODO\n\nDraft' }
+    );
+
+    await waitFor(() => {
+      expect(
+        latestContext?.notes.find((candidate) => candidate.id === note?.id)
+          ?.title
+      ).toBe('Unsynced TODO');
+    });
+
+    latestContext?.updateNote(
+      note?.id ?? '',
+      { content: '# Unsynced priorities\n\nDraft' }
+    );
+
+    await waitFor(() => {
+      expect(
+        latestContext?.notes.find((candidate) => candidate.id === note?.id)
+          ?.title
+      ).toBe('Unsynced priorities');
+    });
+
+    latestContext?.updateNote(note?.id ?? '', { title: 'Pinned title' });
+    latestContext?.updateNote(
+      note?.id ?? '',
+      { content: '# A different heading\n\nDraft' }
+    );
+
+    await waitFor(() => {
+      expect(
+        latestContext?.notes.find((candidate) => candidate.id === note?.id)
+          ?.title
+      ).toBe('Pinned title');
+    });
+  });
+
   it('resolves fixture links, backlinks, title derivation, and unlinked mention conversion', async () => {
     await renderProviderWithFixtures([
       '01 Markdown Syntax.md',
