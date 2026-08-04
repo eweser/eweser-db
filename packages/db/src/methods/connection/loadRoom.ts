@@ -216,8 +216,17 @@ export const loadRoom =
 
     const { roomId, collectionKey } = validate(serverRoom);
 
-    const room = (db.collections[collectionKey][roomId] ??
+    const existingRoom = db.collections[collectionKey][roomId];
+    const room = (existingRoom ??
       new Room({ db, ...serverRoom })) as unknown as Room<EweDocument>;
+
+    // A new local room is loaded before its first registry sync, so it does not
+    // have the server-assigned sync URL yet. Hydrate that connection metadata
+    // on the next load while preserving the room's existing local Y.Doc.
+    if (existingRoom) {
+      room.syncUrl = serverRoom.syncUrl;
+      room.tokenExpiry = serverRoom.tokenExpiry;
+    }
     db.info('loading room', { room, serverRoom });
 
     const { localLoaded, syncLoaded, shouldLoadSync } = checkLoadedState(db)(

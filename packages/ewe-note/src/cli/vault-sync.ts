@@ -396,6 +396,7 @@ async function noteFromFile(
       return entry;
     }),
     attachmentRefs: [],
+    sourceMarkdown: rawContent,
   };
 }
 
@@ -886,6 +887,24 @@ export class EweserRoomVaultSyncEngine {
     return this.requireAttachments();
   }
 
+  /**
+   * Attach isolated in-memory documents without starting storage or sync.
+   *
+   * @internal Intended only for deterministic CLI proofs and unit harnesses.
+   */
+  attachDocumentsForInMemoryHarness(documents: {
+    notes: GetDocuments<Note>;
+    attachments?: GetDocuments<FileAttachment>;
+  }): void {
+    if (this.db || this.watcher || this.Notes || this.Attachments) {
+      throw new Error(
+        'In-memory documents must be attached before the room sync starts.'
+      );
+    }
+    this.Notes = documents.notes;
+    this.Attachments = documents.attachments ?? null;
+  }
+
   async onFileChange(relPath: string): Promise<void> {
     if (this.writing.has(relPath)) return;
 
@@ -1021,6 +1040,10 @@ export class EweserRoomVaultSyncEngine {
       sourceMtimeMs: mtime?.getTime(),
       lastFileHash: currentFileHash,
       lastEweserHash: hashMarkdown(markdown),
+      ...(typeof imported.sourceMarkdown === 'string' &&
+      imported.sourceMarkdown !== markdown
+        ? { sourceMarkdown: imported.sourceMarkdown }
+        : {}),
       lastSyncedAt: new Date().toISOString(),
     };
   }
@@ -1065,7 +1088,7 @@ export class EweserRoomVaultSyncEngine {
 
     await mkdir(dirname(conflictFullPath), { recursive: true });
     await writeFile(conflictFullPath, incomingContent, 'utf-8');
-    await this.writeNoteToFile(existing);
+    await this.materializeNote(existing);
     await this.upsertFileIntoRoom(conflictPath, false);
 
     console.log(
@@ -1085,7 +1108,7 @@ export class EweserRoomVaultSyncEngine {
     const Notes = this.requireNotes();
     this.roomChangeHandler = () => {
       for (const note of Notes.getUndeletedToArray()) {
-        void this.writeNoteToFile(note);
+        void this.materializeNote(note);
       }
     };
     Notes.onChange(this.roomChangeHandler);
@@ -1188,10 +1211,15 @@ export class EweserRoomVaultSyncEngine {
     );
   }
 
-  private async writeNoteToFile(note: Note): Promise<void> {
+  async materializeNote(note: Note): Promise<void> {
     const imported = noteToImported(note);
     const fullPath = join(this.vaultPath, imported.sourcePath);
-    const content = noteToMarkdown(imported);
+    const serialized = noteToMarkdown(imported);
+    const content =
+      typeof note.vaultSync?.sourceMarkdown === 'string' &&
+      note.vaultSync.lastEweserHash === hashMarkdown(serialized)
+        ? note.vaultSync.sourceMarkdown
+        : serialized;
 
     let existing: string | null = null;
     try {

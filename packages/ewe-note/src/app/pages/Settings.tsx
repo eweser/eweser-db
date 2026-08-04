@@ -30,7 +30,9 @@ import {
   type BrowserVaultImportResult,
 } from '../lib/browser-vault-import';
 import {
+  getBrowserLocalVaultRoomId,
   pickBrowserLocalVault,
+  setBrowserLocalVaultRoomId,
   supportsBrowserLocalVaults,
 } from '../lib/browser-local-vault';
 
@@ -163,9 +165,12 @@ export function Settings() {
         total: 1,
       });
       const mounted = await pickBrowserLocalVault();
-      const existingRoom = allRooms.find(
-        (room) => room.name === mounted.vaultName
+      const existingRoomId = await getBrowserLocalVaultRoomId(
+        mounted.directoryHandle
       );
+      const existingRoom = existingRoomId
+        ? allRooms.find((room) => room.id === existingRoomId)
+        : undefined;
       const result = await importVaultFromFiles({
         db,
         files: mounted.files,
@@ -175,6 +180,10 @@ export function Settings() {
         setSelectedRoom,
         targetNoteRoomId: existingRoom?.id,
       });
+      await setBrowserLocalVaultRoomId(
+        mounted.directoryHandle,
+        result.noteRoomId
+      );
       setVaultImportResult(result);
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return;

@@ -116,13 +116,18 @@ describe('accessGrantRouter', () => {
           authorization: 'Bearer access-token',
           'content-type': 'application/json',
         },
-        body: JSON.stringify({ rooms: [{ id: 'room-1' }] }),
+        body: JSON.stringify({
+          rooms: [{ id: 'room-1' }],
+          newRoomIds: ['room-1'],
+        }),
       })
     );
 
-    expect(syncRoomsWithClientMock).toHaveBeenCalledWith('access-token', [
-      { id: 'room-1' },
-    ]);
+    expect(syncRoomsWithClientMock).toHaveBeenCalledWith(
+      'access-token',
+      [{ id: 'room-1' }],
+      ['room-1']
+    );
     expect(res.status).toBe(200);
   });
 
