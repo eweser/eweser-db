@@ -38,7 +38,7 @@ import {
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { getSyncStatusDotClass } from './sync-status-visual';
-import { DndProvider, useDrop } from 'react-dnd';
+import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import {
   DropdownMenu,
@@ -559,27 +559,56 @@ function FolderBranch({
             />
           ))}
           {folderNotes.map((note) => (
-            <button
+            <DraggableNoteItem
               key={note.id}
-              type="button"
-              onClick={() => navigate(`/editor/${note.id}`)}
-              className={`flex w-full min-w-0 items-start gap-2 rounded-2xl px-3 py-2 text-left text-sm transition-colors ${
-                currentNoteId === note.id
-                  ? 'bg-sidebar-accent text-sidebar-foreground'
-                  : 'hover:bg-sidebar-accent/70'
-              }`}
-              title={formatTreeNoteTitle(note.title)}
-              aria-label={`Open note ${formatTreeNoteTitle(note.title)}`}
-            >
-              <FileText className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-              <span className="min-w-0 flex-1 truncate leading-5">
-                {formatTreeNoteTitle(note.title)}
-              </span>
-            </button>
+              note={note}
+              isActive={currentNoteId === note.id}
+              onOpen={() => navigate(`/editor/${note.id}`)}
+            />
           ))}
         </div>
       ) : null}
     </div>
+  );
+}
+
+function DraggableNoteItem({
+  note,
+  isActive,
+  onOpen,
+}: {
+  note: NotesNote;
+  isActive: boolean;
+  onOpen: () => void;
+}) {
+  const [{ isDragging }, drag] = useDrag<
+    DraggedNoteItem,
+    unknown,
+    { isDragging: boolean }
+  >({
+    type: ItemTypes.NOTE,
+    item: { noteId: note.id, folderId: note.folder },
+    collect: (monitor) => ({ isDragging: monitor.isDragging() }),
+  });
+  const title = formatTreeNoteTitle(note.title);
+
+  return (
+    <button
+      ref={drag}
+      type="button"
+      onClick={onOpen}
+      data-cy={`ewe-note-note-drag-source-${note.id}`}
+      className={`flex w-full min-w-0 items-start gap-2 rounded-md py-1.5 pl-10 pr-3 text-left text-sm transition-colors ${
+        isActive
+          ? 'bg-sidebar-accent text-sidebar-foreground'
+          : 'hover:bg-sidebar-accent/70'
+      } ${isDragging ? 'cursor-grabbing opacity-50' : 'cursor-grab'}`}
+      title={`Drag to move • ${title}`}
+      aria-label={`Open note ${title}`}
+    >
+      <FileText className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+      <span className="min-w-0 flex-1 truncate leading-5">{title}</span>
+    </button>
   );
 }
 
@@ -631,8 +660,8 @@ function FolderItem({
   return (
     <div
       ref={drop}
-      className={`flex w-full min-w-0 items-center gap-1 rounded-2xl transition-colors ${
-        isOver ? 'border border-primary/30 bg-primary/10' : ''
+      className={`flex w-full min-w-0 items-center gap-1 rounded-md transition-colors ${
+        isOver ? 'bg-primary/15 ring-1 ring-primary/40' : ''
       }`}
     >
       <button
@@ -648,7 +677,7 @@ function FolderItem({
         )}
       </button>
       <button
-        className={`flex min-w-0 flex-1 items-center gap-2 rounded-2xl px-3 py-2 text-left transition-colors ${
+        className={`flex min-w-0 flex-1 items-center gap-2 rounded-md px-3 py-1.5 text-left transition-colors ${
           active
             ? 'bg-sidebar-accent text-sidebar-foreground'
             : 'hover:bg-sidebar-accent/70'
@@ -657,7 +686,7 @@ function FolderItem({
         title={folder.name}
       >
         <FolderOpen className="h-4 w-4 shrink-0 self-start text-muted-foreground" />
-        <span className="min-w-0 flex-1 text-sm leading-5 [overflow-wrap:anywhere]">
+        <span className="min-w-0 flex-1 truncate whitespace-nowrap text-sm leading-5">
           {folder.name}
         </span>
         <span className="shrink-0 self-center text-[11px] text-muted-foreground">
