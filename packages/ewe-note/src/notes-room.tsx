@@ -66,7 +66,7 @@ export const useNotesRoom = (
   // listen for changes to the ydoc and update the state
   useEffect(() => {
     const handleNotesChange = () => {
-      setNotes(Notes.getUndeleted());
+      setNotes(Notes.sortByRecent(Notes.getUndeleted()));
     };
     Notes.onChange(handleNotesChange);
     handleNotesChange();

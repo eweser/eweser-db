@@ -34,11 +34,12 @@ describe('useNotesRoom', () => {
     const documents = {
       unobserve,
     };
+    const sortByRecent = vi.fn((notes: Record<string, Note>) => notes);
 
     const Notes = {
       documents,
       getUndeleted: () => records,
-      sortByRecent: (notes: Record<string, Note>) => notes,
+      sortByRecent,
       onChange: vi.fn(() => {
         records = { ...records, [createdNote._id]: createdNote };
       }),
@@ -66,6 +67,7 @@ describe('useNotesRoom', () => {
     await waitFor(() => {
       expect(visibleNotes?.[createdNote._id]).toEqual(createdNote);
     });
+    expect(sortByRecent).toHaveBeenLastCalledWith(records);
 
     view.unmount();
     expect(unobserve).toHaveBeenCalledOnce();
