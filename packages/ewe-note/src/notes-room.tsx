@@ -68,6 +68,7 @@ export const useNotesRoom = (
       setNotes(Notes.getUndeleted());
     };
     Notes.onChange(handleNotesChange);
+    handleNotesChange();
     return () => {
       Notes.documents.unobserve(handleNotesChange);
     };
