@@ -122,6 +122,7 @@ export type DbContextType = {
   user: {
     firstName: string;
     lastName: string;
+    email: string;
     avatar: string;
   };
   signOut: () => void;

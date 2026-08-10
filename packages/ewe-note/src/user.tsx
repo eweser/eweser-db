@@ -4,11 +4,13 @@ import { useEffect, useMemo, useState } from 'react';
 type UserState = {
   firstName: string;
   lastName: string;
+  email: string;
   avatar: string;
 };
 
 type AccountBootstrapResponse = {
   user?: {
+    email?: string | null;
     image?: string | null;
     name?: string | null;
   };
@@ -32,6 +34,7 @@ export const useGetUserFromDb = (db: Database, canFetchAccount = false) => {
   const [user, setUser] = useState<UserState>({
     firstName: '',
     lastName: '',
+    email: '',
     avatar: '',
   });
   const [accountUser, setAccountUser] = useState<UserState | null>(null);
@@ -64,12 +67,22 @@ export const useGetUserFromDb = (db: Database, canFetchAccount = false) => {
 
     async function loadAccountUser() {
       try {
+        const token = db.getToken();
         const response = await fetch(
-          new URL('/api/account/bootstrap', db.authServer).toString(),
-          {
-            credentials: 'include',
-            signal: controller.signal,
-          }
+          new URL(
+            token ? '/api/account/identity' : '/api/account/bootstrap',
+            db.authServer
+          ).toString(),
+          token
+            ? {
+                headers: { Authorization: `Bearer ${token}` },
+                referrerPolicy: 'no-referrer',
+                signal: controller.signal,
+              }
+            : {
+                credentials: 'include',
+                signal: controller.signal,
+              }
         );
 
         if (!response.ok) {
@@ -82,6 +95,7 @@ export const useGetUserFromDb = (db: Database, canFetchAccount = false) => {
         setAccountUser({
           firstName: names.firstName,
           lastName: names.lastName,
+          email: data.user?.email ?? '',
           avatar: data.user?.image ?? '',
         });
       } catch (error) {
@@ -96,7 +110,7 @@ export const useGetUserFromDb = (db: Database, canFetchAccount = false) => {
     return () => {
       controller.abort();
     };
-  }, [canFetchAccount, db.authServer]);
+  }, [canFetchAccount, db]);
 
   const PublicProfile = useMemo(
     () =>
@@ -167,6 +181,7 @@ export const useGetUserFromDb = (db: Database, canFetchAccount = false) => {
     const nextUser: UserState = {
       firstName: accountUser?.firstName ?? '',
       lastName: accountUser?.lastName ?? '',
+      email: accountUser?.email ?? '',
       avatar: accountUser?.avatar ?? '',
     };
 
@@ -188,6 +203,7 @@ export const useGetUserFromDb = (db: Database, canFetchAccount = false) => {
       if (
         currentUser.firstName === nextUser.firstName &&
         currentUser.lastName === nextUser.lastName &&
+        currentUser.email === nextUser.email &&
         currentUser.avatar === nextUser.avatar
       ) {
         return currentUser;
