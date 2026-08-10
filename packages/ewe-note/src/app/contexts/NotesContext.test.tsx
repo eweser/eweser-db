@@ -140,9 +140,9 @@ function createRoom(
   } as unknown as Room<DbNote>;
 }
 
-function createDbState(room: Room<DbNote>) {
+function createDbState(room: Room<DbNote>, userId?: string) {
   return {
-    db: {} as never,
+    db: { userId } as never,
     loginUrl: '',
     loaded: true,
     loggedIn: false,
@@ -689,5 +689,49 @@ describe('NotesContext parity behavior', () => {
         type: 'daily',
       });
     });
+  });
+
+  it('blocks every note mutation in a remote read-only room', async () => {
+    latestContext = undefined;
+    const [source] = await loadFixtureNotes(['01 Markdown Syntax.md']);
+    const docs = new FakeDocuments([source]);
+    const room = {
+      ...createRoom('agent-memory', 'Agent Memory', docs),
+      syncUrl: 'wss://sync.example.test',
+      readAccess: ['reader'],
+      writeAccess: ['publisher'],
+      adminAccess: ['publisher'],
+    } as Room<DbNote>;
+
+    dbState = createDbState(room, 'reader');
+    mockUseDb.mockImplementation(() => dbState);
+    mockUseFolders.mockReturnValue({
+      folders: [],
+      createFolder: vi.fn(),
+      renameFolder: vi.fn(),
+      deleteFolder: vi.fn(),
+    });
+
+    render(
+      <NotesProvider>
+        <Probe />
+      </NotesProvider>
+    );
+
+    await waitFor(() => expect(latestContext?.notes).toHaveLength(1));
+    const original = docs.get(source._id);
+
+    latestContext?.updateNote(source._id, { title: 'Changed' });
+    latestContext?.moveNote(source._id, 'some-folder');
+    latestContext?.deleteNote(source._id);
+
+    expect(docs.get(source._id)).toEqual(original);
+    expect(() =>
+      latestContext?.addNote({
+        title: 'New memory',
+        folder: 'room:agent-memory',
+      })
+    ).toThrow('This room is read only');
+    expect(docs.getUndeleted()).toHaveLength(1);
   });
 });

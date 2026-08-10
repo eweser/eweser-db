@@ -20,8 +20,8 @@ const mocks = vi.hoisted(() => ({
     title: 'Overview',
     content: '# Overview\n\nImported source metadata should stay visible.',
     folder: '',
-    tags: [],
-    properties: {},
+    tags: ['journal'],
+    properties: { status: 'reviewed' },
     aliases: [],
     createdAt: '2026-05-04T00:00:00.000Z',
     updatedAt: '2026-05-05T00:00:00.000Z',
@@ -84,5 +84,21 @@ describe('RightPanel source metadata', () => {
     expect(
       within(metadata as HTMLElement).getByText('feature-vault')
     ).not.toBeNull();
+  });
+
+  it('shows metadata but no mutation controls when the room is read only', () => {
+    render(<RightPanel noteId="note-source" readOnly />);
+
+    fireEvent.mouseDown(screen.getByRole('tab', { name: /meta/i }), {
+      button: 0,
+      ctrlKey: false,
+    });
+
+    expect(screen.getByText('journal')).not.toBeNull();
+    expect(screen.getByText('reviewed')).not.toBeNull();
+    expect(screen.queryByLabelText('Remove tag journal')).toBeNull();
+    expect(screen.queryByLabelText('Remove property status')).toBeNull();
+    expect(screen.queryByPlaceholderText('Add tag...')).toBeNull();
+    expect(screen.queryByPlaceholderText('Property name...')).toBeNull();
   });
 });

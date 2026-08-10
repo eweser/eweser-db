@@ -75,6 +75,17 @@ describe('syncRegistry', () => {
     expect(db.userId).toBe('user-1');
     expect(db.accessGrantToken).toBe('next-token');
     expect(db.registry).toEqual(rooms);
+    expect(db.info).toHaveBeenCalledWith('syncResult', {
+      roomCount: 1,
+      hasToken: true,
+      hasUserId: true,
+    });
+    expect(db.debug).toHaveBeenCalledWith('setting new token', '[redacted]');
+    expect(db.info).not.toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ token: 'next-token' })
+    );
+    expect(db.debug).not.toHaveBeenCalledWith(expect.anything(), 'next-token');
   });
 
   it('accepts an empty authoritative registry after the final room is deleted', async () => {

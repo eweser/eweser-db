@@ -5,6 +5,7 @@ import { useDb } from '@/db';
 import { useFolders } from '@/notes-room';
 import { collectFolderTreeIds } from './folder-tree';
 import { writeBrowserLocalVaultNotes } from '../lib/browser-local-vault';
+import { canWriteRoom } from '../lib/room-write-access';
 import {
   buildDefaultUntitledNoteTitle,
   getFirstHeading,
@@ -361,6 +362,7 @@ function extractUnlinkedMentionsForNote(
 
 export function NotesProvider({ children }: { children: React.ReactNode }) {
   const {
+    db,
     allRooms,
     selectedRoom,
     selectedNoteId,
@@ -566,6 +568,8 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     return null;
   };
 
+  const roomIsWritable = (room: Room<DbNote>) => canWriteRoom(room, db.userId);
+
   const adaptNote = (room: Room<DbNote>, source: DbNote): Note => {
     const note = notes.find((item) => item.id === source._id);
     if (note) return note;
@@ -615,6 +619,9 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     if (!targetRoom) {
       throw new Error('No available room to create a note');
     }
+    if (!roomIsWritable(targetRoom as Room<DbNote>)) {
+      throw new Error('This room is read only');
+    }
 
     const requestedTitle = note.title?.trim();
     const resolvedTitle =
@@ -649,6 +656,7 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
   const updateNote = (id: string, updates: Partial<Note>) => {
     const found = getRoomAndSource(id);
     if (!found) return;
+    if (!roomIsWritable(found.room)) return;
 
     const next: DbNote = { ...found.source };
     let nextFrontmatter = { ...(found.source.frontmatter ?? {}) };
@@ -711,6 +719,7 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
   const deleteNote = (id: string) => {
     const found = getRoomAndSource(id);
     if (!found) return;
+    if (!roomIsWritable(found.room)) return;
     found.docs.delete(id);
   };
 
@@ -726,6 +735,7 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
   const moveNote = (noteId: string, targetFolder: string) => {
     const found = getRoomAndSource(noteId);
     if (!found) return;
+    if (!roomIsWritable(found.room)) return;
 
     if (targetFolder.startsWith('room:')) {
       return;

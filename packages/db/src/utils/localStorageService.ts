@@ -13,16 +13,24 @@ export type LocalStorageService = {
   setItem: <T = unknown>(key: LocalStorageKey, value: T) => void;
   removeItem: (key: LocalStorageKey) => void;
 };
+
+export function localStorageLogValue(
+  key: LocalStorageKey,
+  value: unknown
+): unknown {
+  return key === LocalStorageKey.accessGrantToken ? '[redacted]' : value;
+}
+
 export const localStorageSet =
   (db: Database) => (key: LocalStorageKey, value: unknown) => {
-    db.debug('#### localStorageSet', key, value);
+    db.debug('#### localStorageSet', key, localStorageLogValue(key, value));
     db.localStoragePolyfill.setItem('ewe_' + key, JSON.stringify(value));
   };
 export const localStorageGet =
   (db: Database) =>
   <T>(key: LocalStorageKey): T | null => {
     const value = db.localStoragePolyfill.getItem('ewe_' + key);
-    db.debug('localStorageGet', key, value);
+    db.debug('localStorageGet', key, localStorageLogValue(key, value));
     if (!value) return null;
     return JSON.parse(value) as T;
   };

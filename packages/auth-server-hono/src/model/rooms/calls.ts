@@ -11,6 +11,14 @@ import type { CollectionKey } from '@eweser/shared';
 
 export type { Room };
 
+function readableRoomPredicate(userId: string) {
+  return or(
+    arrayOverlaps(rooms.readAccess, [userId]),
+    arrayOverlaps(rooms.writeAccess, [userId]),
+    arrayOverlaps(rooms.adminAccess, [userId])
+  );
+}
+
 export async function getRoomById(
   id: string,
   dbInstance?: DBInstance
@@ -186,7 +194,7 @@ export async function getRoomIdsFromAccessGrant(
         .where(
           and(
             or(isNull(rooms._deleted), ne(rooms._deleted, true)),
-            arrayOverlaps(rooms.writeAccess, [ownerId])
+            readableRoomPredicate(ownerId)
           )
         )
     : await (dbInstance ?? db)
@@ -195,7 +203,7 @@ export async function getRoomIdsFromAccessGrant(
         .where(
           and(
             or(isNull(rooms._deleted), ne(rooms._deleted, true)),
-            arrayOverlaps(rooms.writeAccess, [ownerId]),
+            readableRoomPredicate(ownerId),
             or(
               grantRoomIds.length > 0
                 ? inArray(rooms.id, grantRoomIds)
@@ -229,7 +237,7 @@ export async function getRoomsFromAccessGrant(
       .from(rooms)
       .where(
         and(
-          arrayOverlaps(rooms.writeAccess, [ownerId]),
+          readableRoomPredicate(ownerId),
           or(isNull(rooms._deleted), ne(rooms._deleted, true))
         )
       );
@@ -241,7 +249,7 @@ export async function getRoomsFromAccessGrant(
     .where(
       and(
         or(isNull(rooms._deleted), ne(rooms._deleted, true)),
-        arrayOverlaps(rooms.writeAccess, [ownerId]),
+        readableRoomPredicate(ownerId),
         or(
           grantRoomIds.length > 0
             ? inArray(rooms.id, grantRoomIds)
