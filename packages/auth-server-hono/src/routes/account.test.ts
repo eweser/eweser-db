@@ -9,12 +9,33 @@ const mockParseAccessGrantId = vi.fn();
 const mockRevokeAccessGrantForOwner = vi.fn();
 const mockGetRoomsFromAccessGrant = vi.fn();
 const mockGetUserCount = vi.fn();
+const mockGetUserById = vi.fn();
 const mockEnsureUserRooms = vi.fn();
 const mockGetStorageProviderProfile = vi.fn();
 
 vi.mock('../env.js', () => ({
   env: {
     AUTH_SERVER_DOMAIN: 'auth.local',
+    AUTH_TRUSTED_ORIGINS: ['https://note.local', 'https://other-trusted.local'],
+  },
+}));
+
+vi.mock('../middleware/jwt-auth.js', () => ({
+  requireJwtAuth: async (
+    c: {
+      req: { header: (name: string) => string | undefined };
+      set: (key: string, value: unknown) => void;
+      json: (body: unknown, status: number) => Response;
+    },
+    next: () => Promise<void>
+  ) => {
+    const accessGrantId = c.req.header('X-Test-Access-Grant-Id');
+    if (!accessGrantId) {
+      return c.json({ error: 'No token provided' }, 401);
+    }
+    c.set('access_grant_id', accessGrantId);
+    c.set('roomIds', []);
+    await next();
   },
 }));
 
@@ -38,6 +59,7 @@ vi.mock('../model/rooms/calls.js', () => ({
 }));
 
 vi.mock('../model/users.js', () => ({
+  getUserById: mockGetUserById,
   getUserCount: mockGetUserCount,
 }));
 
@@ -145,6 +167,99 @@ describe('accountRouter', () => {
 
     expect(response.status).toBe(200);
     expect(mockEnsureUserRooms).toHaveBeenCalledWith('user-1');
+  });
+
+  it('returns minimal identity to the trusted app that owns the grant', async () => {
+    mockGetAccessGrantById.mockResolvedValue({
+      id: 'user-1|note.local',
+      isValid: true,
+      ownerId: 'user-1',
+      requesterId: 'note.local',
+      requesterType: 'app',
+    });
+    mockGetUserById.mockResolvedValue({
+      email: 'test@example.com',
+      id: 'user-1',
+      image: 'https://images.example/avatar.png',
+      name: 'Test User',
+      passwordHash: 'must-not-leak',
+      rooms: ['room-1'],
+    });
+
+    const response = await app.fetch(
+      new Request('http://localhost/api/account/identity', {
+        headers: {
+          Origin: 'https://note.local',
+          'X-Test-Access-Grant-Id': 'user-1|note.local',
+        },
+      })
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Cache-Control')).toBe('no-store');
+    expect(body).toEqual({
+      user: {
+        email: 'test@example.com',
+        image: 'https://images.example/avatar.png',
+        name: 'Test User',
+      },
+    });
+    expect(JSON.stringify(body)).not.toContain('must-not-leak');
+    expect(JSON.stringify(body)).not.toContain('room-1');
+  });
+
+  it('rejects identity requests from untrusted or mismatched origins', async () => {
+    mockGetAccessGrantById.mockResolvedValue({
+      id: 'user-1|note.local',
+      isValid: true,
+      ownerId: 'user-1',
+      requesterId: 'note.local',
+      requesterType: 'app',
+    });
+
+    const untrusted = await app.fetch(
+      new Request('http://localhost/api/account/identity', {
+        headers: {
+          Origin: 'https://evil.example',
+          'X-Test-Access-Grant-Id': 'user-1|note.local',
+        },
+      })
+    );
+    const mismatched = await app.fetch(
+      new Request('http://localhost/api/account/identity', {
+        headers: {
+          Origin: 'https://other-trusted.local',
+          'X-Test-Access-Grant-Id': 'user-1|note.local',
+        },
+      })
+    );
+
+    expect(untrusted.status).toBe(403);
+    expect(mismatched.status).toBe(403);
+    expect(mockGetUserById).not.toHaveBeenCalled();
+  });
+
+  it('rejects a revoked access grant for account identity', async () => {
+    mockGetAccessGrantById.mockResolvedValue({
+      id: 'user-1|note.local',
+      isValid: false,
+      ownerId: 'user-1',
+      requesterId: 'note.local',
+      requesterType: 'app',
+    });
+
+    const response = await app.fetch(
+      new Request('http://localhost/api/account/identity', {
+        headers: {
+          Origin: 'https://note.local',
+          'X-Test-Access-Grant-Id': 'user-1|note.local',
+        },
+      })
+    );
+
+    expect(response.status).toBe(401);
+    expect(mockGetUserById).not.toHaveBeenCalled();
   });
 
   it('lists connected app grants without exposing the auth-server self grant', async () => {

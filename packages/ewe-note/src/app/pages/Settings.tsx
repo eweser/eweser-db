@@ -300,7 +300,7 @@ export function Settings() {
                             'Signed In'}
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          {user.avatar ?? ''}
+                          {user.email || 'Email unavailable'}
                         </div>
                       </>
                     ) : (

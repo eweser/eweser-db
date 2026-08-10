@@ -17,6 +17,8 @@ Drizzle models, and service helpers for the auth API.
 - [`auth.ts`](./auth.ts): better-auth configuration.
 - [`routes/access-grant.ts`](./routes/access-grant.ts): Room registry sync,
   invite, update, and sync-token routes.
+- [`routes/account.ts`](./routes/account.ts): Session-backed account bootstrap
+  plus trusted-origin, grant-bound minimal app identity.
 - [`routes/agents.ts`](./routes/agents.ts): Agent token API.
 - [`routes/connect-ai.ts`](./routes/connect-ai.ts): Signed-in AI connector API.
 - [`routes/files.ts`](./routes/files.ts): S3-compatible attachment

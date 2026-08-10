@@ -2,6 +2,7 @@ import { Hono, type Context } from 'hono';
 import { z } from 'zod';
 import { env } from '../env.js';
 import { requireAuth } from '../middleware/auth.js';
+import { requireJwtAuth } from '../middleware/jwt-auth.js';
 import {
   createAccessGrantId,
   getAccessGrantById,
@@ -10,7 +11,7 @@ import {
   revokeAccessGrantForOwner,
 } from '../model/access_grants.js';
 import { getRoomsFromAccessGrant } from '../model/rooms/calls.js';
-import { getUserCount } from '../model/users.js';
+import { getUserById, getUserCount } from '../model/users.js';
 import { ensureUserRoomsAndAuthServerAccess } from '../services/account/create-user-rooms.js';
 import { getStorageProviderProfile } from '../lib/storage.js';
 
@@ -20,10 +21,10 @@ const revokeConnectedAppBodySchema = z.object({
   grantId: z.string().min(1),
 });
 
-function noStoreJson(c: Context, body: unknown) {
+function noStoreJson(c: Context, body: unknown, status?: 401 | 403 | 404) {
   c.header('Cache-Control', 'no-store');
   c.header('Pragma', 'no-cache');
-  return c.json(body);
+  return status ? c.json(body, status) : c.json(body);
 }
 
 accountRouter.get('/bootstrap', requireAuth, async (c) => {
@@ -54,6 +55,52 @@ accountRouter.get('/bootstrap', requireAuth, async (c) => {
     profileRooms,
     storageProviderProfile: getStorageProviderProfile(),
     userCount,
+  });
+});
+
+/**
+ * Return the minimum account identity needed by a trusted first-party app.
+ *
+ * Access-grant tokens are domain-bound. Requiring both an explicitly trusted
+ * browser Origin and an exact requester-domain match prevents an unrelated app
+ * with a valid room grant from learning the account email.
+ */
+accountRouter.get('/identity', requireJwtAuth, async (c) => {
+  const origin = c.req.header('Origin');
+  if (!origin || !env.AUTH_TRUSTED_ORIGINS.includes(origin)) {
+    return noStoreJson(c, { error: 'Origin is not trusted' }, 403);
+  }
+
+  const accessGrant = await getAccessGrantById(c.get('access_grant_id'));
+  if (!accessGrant || !accessGrant.isValid) {
+    return noStoreJson(c, { error: 'Invalid access grant' }, 401);
+  }
+
+  let requesterDomain: string;
+  try {
+    requesterDomain = new URL(origin).host;
+  } catch {
+    return noStoreJson(c, { error: 'Origin is not trusted' }, 403);
+  }
+
+  if (
+    accessGrant.requesterType !== 'app' ||
+    accessGrant.requesterId !== requesterDomain
+  ) {
+    return noStoreJson(c, { error: 'Access grant domain mismatch' }, 403);
+  }
+
+  const user = await getUserById(accessGrant.ownerId);
+  if (!user) {
+    return noStoreJson(c, { error: 'Account not found' }, 404);
+  }
+
+  return noStoreJson(c, {
+    user: {
+      email: user.email,
+      image: user.image ?? null,
+      name: user.name ?? null,
+    },
   });
 });
 

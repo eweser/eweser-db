@@ -24,9 +24,9 @@ vi.mock('../../db', () => ({
     allRooms: [],
     allRoomIds: [],
     db: {},
-    hasToken: false,
+    hasToken: true,
     loaded: true,
-    loggedIn: false,
+    loggedIn: true,
     loginUrl: 'http://localhost:38101/login',
     selectedRoom: null,
     setSelectedRoom: mockSetSelectedRoom,
@@ -34,7 +34,12 @@ vi.mock('../../db', () => ({
     syncStatus: 'signed-out',
     syncStatusDescription: 'Signed out',
     syncStatusLabel: 'Signed out',
-    user: {},
+    user: {
+      firstName: 'Test',
+      lastName: 'User',
+      email: 'test@example.com',
+      avatar: '',
+    },
   }),
 }));
 
@@ -109,6 +114,14 @@ describe('Settings', () => {
     ).toBe('false');
   });
 
+  it('shows the signed-in account name and email', () => {
+    render(<Settings />);
+
+    expect(screen.getByText('Test User')).toBeTruthy();
+    expect(screen.getByText('test@example.com')).toBeTruthy();
+    expect(screen.queryByText('Signed In')).toBeNull();
+  });
+
   it('shows the full theme preset controls in settings', () => {
     render(<Settings />);
 
@@ -142,7 +155,7 @@ describe('Settings', () => {
     ).toBeTruthy();
     expect(
       screen.getByText(
-        'Open a local Markdown folder and edit its files in EweNote. Sign in first if you also want the room synced across devices.'
+        'Markdown files become normal synced EweNote notes while this desktop keeps writable links to the originals.'
       )
     ).toBeTruthy();
   });
