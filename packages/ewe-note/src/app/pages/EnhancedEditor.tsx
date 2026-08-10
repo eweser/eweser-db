@@ -39,6 +39,20 @@ import type { Note } from '../contexts/NotesContext';
 import { useIsMobile } from '../components/ui/use-mobile';
 import { canWriteRoom } from '../lib/room-write-access';
 
+export const REMOTE_NOTE_HYDRATION_GRACE_MS = 10_000;
+
+export function shouldWaitForRemoteNote({
+  hasToken,
+  noteFound,
+  waitExpired,
+}: {
+  hasToken: boolean;
+  noteFound: boolean;
+  waitExpired: boolean;
+}) {
+  return hasToken && !noteFound && !waitExpired;
+}
+
 export function buildEditorWikiLinkPath(
   noteId: string,
   parsed: WikiLinkResolution
@@ -60,6 +74,7 @@ export function EnhancedEditor() {
     'idle' | 'copied' | 'failed'
   >('idle');
   const [sourceMode, setSourceMode] = useState(false);
+  const [missingNoteWaitExpired, setMissingNoteWaitExpired] = useState(false);
   const navigate = useNavigate();
   const { noteId } = useParams();
   const {
@@ -125,14 +140,30 @@ export function EnhancedEditor() {
     });
     navigate(buildEditorWikiLinkPath(created.id, parsed));
   };
-  const { allRooms, db, selectedRoom, setSelectedRoom, setSelectedNoteId } =
-    useDb();
+  const {
+    allRooms,
+    db,
+    hasToken,
+    selectedRoom,
+    setSelectedRoom,
+    setSelectedNoteId,
+  } = useDb();
 
   const note = notes.find((n) => n.id === noteId);
   const noteRoom = useMemo(
     () => allRooms.find((room) => room.id === note?.roomId) ?? null,
     [allRooms, note?.roomId]
   );
+
+  useEffect(() => {
+    setMissingNoteWaitExpired(false);
+    if (note || !hasToken) return;
+    const timeout = window.setTimeout(
+      () => setMissingNoteWaitExpired(true),
+      REMOTE_NOTE_HYDRATION_GRACE_MS
+    );
+    return () => window.clearTimeout(timeout);
+  }, [hasToken, note, noteId]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -163,6 +194,25 @@ export function EnhancedEditor() {
     }
     setSelectedNoteId(note.id);
   }, [note, noteRoom, selectedRoom?.id, setSelectedNoteId, setSelectedRoom]);
+
+  if (
+    shouldWaitForRemoteNote({
+      hasToken,
+      noteFound: Boolean(note),
+      waitExpired: missingNoteWaitExpired,
+    })
+  ) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background text-foreground">
+        <div className="text-center" role="status">
+          <h2 className="text-2xl font-medium mb-2">Opening note…</h2>
+          <p className="text-muted-foreground">
+            Waiting for the synced vault to finish loading.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (!note) {
     return (

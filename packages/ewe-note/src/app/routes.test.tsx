@@ -11,6 +11,7 @@ const addNote = vi.hoisted(() => vi.fn(() => ({ id: 'created-note' })));
 vi.mock('./contexts/NotesContext', () => ({
   useNotes: () => ({
     addNote,
+    canCreateNote: true,
   }),
 }));
 

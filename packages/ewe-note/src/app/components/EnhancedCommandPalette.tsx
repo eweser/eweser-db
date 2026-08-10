@@ -34,7 +34,8 @@ export function EnhancedCommandPalette({
     commandContext?: EditorCommandContext;
   } | null>(null);
   const navigate = useNavigate();
-  const { folders, addNote, searchNotes, getRecentNotes } = useNotes();
+  const { folders, addNote, canCreateNote, searchNotes, getRecentNotes } =
+    useNotes();
 
   const handleNewNote = useCallback(
     (customTitle?: string) => {
@@ -57,7 +58,7 @@ export function EnhancedCommandPalette({
         e.preventDefault();
         onOpenChange(!open);
       }
-      if (e.key === 'n' && (e.metaKey || e.ctrlKey) && !open) {
+      if (canCreateNote && e.key === 'n' && (e.metaKey || e.ctrlKey) && !open) {
         e.preventDefault();
         handleNewNote();
       }
@@ -65,7 +66,7 @@ export function EnhancedCommandPalette({
 
     document.addEventListener('keydown', down);
     return () => document.removeEventListener('keydown', down);
-  }, [open, onOpenChange, handleNewNote]);
+  }, [canCreateNote, open, onOpenChange, handleNewNote]);
 
   useEffect(() => {
     if (open) {
@@ -259,7 +260,7 @@ export function EnhancedCommandPalette({
                   )}
 
                 {/* Create new note - show after matches so search retrieval wins by default */}
-                {search && (
+                {search && canCreateNote && (
                   <Command.Group className="mt-3">
                     <Command.Item
                       value={`create-note:${normalizedSearch}`}
@@ -289,21 +290,23 @@ export function EnhancedCommandPalette({
                       heading="Quick Actions"
                       className="mb-4 [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider"
                     >
-                      <Command.Item
-                        value="action:new-note"
-                        onSelect={handleNewNote}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer hover:bg-accent/70 data-[selected=true]:bg-accent transition-colors"
-                      >
-                        <Plus className="w-4 h-4 text-primary" />
-                        <div className="flex-1">
-                          <div className="text-[15px] font-medium">
-                            New Note
+                      {canCreateNote ? (
+                        <Command.Item
+                          value="action:new-note"
+                          onSelect={handleNewNote}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer hover:bg-accent/70 data-[selected=true]:bg-accent transition-colors"
+                        >
+                          <Plus className="w-4 h-4 text-primary" />
+                          <div className="flex-1">
+                            <div className="text-[15px] font-medium">
+                              New Note
+                            </div>
                           </div>
-                        </div>
-                        <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-                          ⌘N
-                        </kbd>
-                      </Command.Item>
+                          <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                            ⌘N
+                          </kbd>
+                        </Command.Item>
+                      ) : null}
                       <Command.Item
                         data-cy="ewe-note-browse-templates"
                         value="action:browse-templates"

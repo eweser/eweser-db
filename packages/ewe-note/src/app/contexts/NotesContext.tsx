@@ -7,6 +7,10 @@ import { collectFolderTreeIds } from './folder-tree';
 import { writeBrowserLocalVaultNotes } from '../lib/browser-local-vault';
 import { canWriteRoom } from '../lib/room-write-access';
 import {
+  isAgentWorkspaceRoom,
+  useAgentWorkspacePreferences,
+} from '../components/agent-workspace-settings';
+import {
   buildDefaultUntitledNoteTitle,
   getFirstHeading,
   getSyncedTitle,
@@ -99,6 +103,8 @@ interface NotesContextType {
   getRecentNotes: (limit?: number) => Note[];
   getPinnedNotes: () => Note[];
   resolveWikiLink: (target: string) => string | null;
+  agentWorkspaceEnabled: boolean;
+  canCreateNote: boolean;
   convertUnlinkedMentionToLink: (
     noteId: string,
     targetNoteId: string,
@@ -369,8 +375,21 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     setSelectedNoteId,
     setSelectedRoom,
   } = useDb();
+  const { preferences: agentWorkspacePreferences } =
+    useAgentWorkspacePreferences();
+  const agentWorkspaceEnabled = agentWorkspacePreferences.enabled;
   const canonicalRoom =
     allRooms.find((room) => room.name === 'Notes') ?? allRooms[0] ?? null;
+  const agentControlRoom =
+    allRooms.find((room) => room.name === 'Agent Control') ?? null;
+  const visibleRooms = useMemo(
+    () =>
+      agentWorkspaceEnabled ? allRooms.filter(isAgentWorkspaceRoom) : allRooms,
+    [agentWorkspaceEnabled, allRooms]
+  );
+  const canCreateNote = agentWorkspaceEnabled
+    ? Boolean(agentControlRoom && canWriteRoom(agentControlRoom, db.userId))
+    : Boolean(canonicalRoom && canWriteRoom(canonicalRoom, db.userId));
   const {
     folders: roomFolders,
     createFolder,
@@ -441,17 +460,23 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
   }, [allRooms]);
 
   const folders = useMemo<Folder[]>(() => {
-    const baseFolders = roomFolders.map((folder) => ({
-      id: folder.id,
-      name: folder.name,
-      parentId: folder.parentFolderId ?? null,
-      expanded: true,
-      kind: 'folder' as const,
-      roomId: canonicalRoom?.id,
-    }));
+    const baseFolders = agentWorkspaceEnabled
+      ? []
+      : roomFolders.map((folder) => ({
+          id: folder.id,
+          name: folder.name,
+          parentId: folder.parentFolderId ?? null,
+          expanded: true,
+          kind: 'folder' as const,
+          roomId: canonicalRoom?.id,
+        }));
 
-    const sharedRoomFolders = allRooms
-      .filter((room) => canonicalRoom && room.id !== canonicalRoom.id)
+    const sharedRoomFolders = visibleRooms
+      .filter(
+        (room) =>
+          agentWorkspaceEnabled ||
+          (canonicalRoom && room.id !== canonicalRoom.id)
+      )
       .map((room) => ({
         id: `room:${room.id}`,
         name: room.name,
@@ -462,14 +487,14 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
       }));
 
     return [...baseFolders, ...sharedRoomFolders];
-  }, [allRooms, canonicalRoom, roomFolders]);
+  }, [agentWorkspaceEnabled, canonicalRoom, roomFolders, visibleRooms]);
 
   const notes = useMemo<Note[]>(() => {
     const internal: InternalNote[] = [];
 
     const noteById = new Map<string, InternalNote>();
 
-    for (const room of allRooms) {
+    for (const room of visibleRooms) {
       const docs = notesByRoomId[room.id] ?? [];
       for (const source of docs) {
         const title = deriveTitle(source);
@@ -546,7 +571,7 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
         (a, b) =>
           new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
       );
-  }, [allRooms, canonicalRoom, notesByRoomId, pinnedIds]);
+  }, [canonicalRoom, notesByRoomId, pinnedIds, visibleRooms]);
 
   const tasks = useMemo(() => {
     const extracted = notes.flatMap((note) =>
@@ -611,7 +636,9 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     const targetRoom =
       (note.folder?.startsWith('room:')
         ? allRooms.find((room) => room.id === note.folder?.replace('room:', ''))
-        : canonicalRoom) ??
+        : agentWorkspaceEnabled
+          ? agentControlRoom
+          : canonicalRoom) ??
       selectedRoom ??
       canonicalRoom ??
       allRooms[0];
@@ -941,6 +968,8 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     getRecentNotes,
     getPinnedNotes,
     resolveWikiLink,
+    agentWorkspaceEnabled,
+    canCreateNote,
     convertUnlinkedMentionToLink,
   };
 

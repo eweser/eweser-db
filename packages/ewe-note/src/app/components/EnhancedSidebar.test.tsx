@@ -98,6 +98,8 @@ vi.mock('react-router', () => ({
 vi.mock('../contexts/NotesContext', () => ({
   useNotes: () => ({
     currentNoteId: null,
+    agentWorkspaceEnabled: false,
+    canCreateNote: true,
     folders: [
       {
         id: 'root-folder',
