@@ -56,6 +56,7 @@ describe('EnhancedCommandPalette', () => {
     mockUseNotes.mockReturnValue({
       folders: [],
       addNote: vi.fn(() => ({ id: 'note-created' })),
+      canCreateNote: true,
       searchNotes: vi.fn(() => []),
       getRecentNotes: vi.fn(() => [
         {
@@ -110,6 +111,7 @@ describe('EnhancedCommandPalette', () => {
     mockUseNotes.mockReturnValue({
       folders: [],
       addNote: vi.fn(() => ({ id: 'note-created' })),
+      canCreateNote: true,
       searchNotes: vi.fn(() => [importedNote]),
       getRecentNotes: vi.fn(() => []),
     });

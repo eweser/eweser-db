@@ -8,6 +8,7 @@ import {
   readFeatureVaultFixture,
 } from '../../editor/obsidian-feature-fixtures';
 import { NotesProvider, useNotes, type Template } from './NotesContext';
+import { AGENT_WORKSPACE_ENABLED_STORAGE_KEY } from '../components/agent-workspace-settings';
 
 type DocumentsLike = {
   toArray: (notes: DbNote[]) => DbNote[];
@@ -311,6 +312,58 @@ describe('NotesContext parity behavior', () => {
         },
       ])
     );
+  });
+
+  it('limits the enabled Agent Workspace mod to agent rooms', async () => {
+    const [fixture] = await loadFixtureNotes(['01 Markdown Syntax.md']);
+    const regularRoom = createRoom(
+      'room-notes',
+      'Notes',
+      new FakeDocuments([
+        { ...fixture, _id: 'regular-note' } as unknown as DbNote,
+      ])
+    );
+    const memoryRoom = createRoom(
+      'room-memory',
+      'Agent Memory',
+      new FakeDocuments([
+        {
+          ...fixture,
+          _id: 'journal-note',
+          text: '# Agent journal\n\nSummary',
+          frontmatter: { title: 'Agent journal' },
+        } as unknown as DbNote,
+      ])
+    );
+
+    dbState = createDbState(regularRoom);
+    dbState.allRooms = [regularRoom, memoryRoom];
+    dbState.allRoomIds = ['room-notes', 'room-memory'];
+    mockUseDb.mockImplementation(() => dbState);
+    mockUseFolders.mockReturnValue({
+      folders: folderFixtures,
+      createFolder: vi.fn(),
+      renameFolder: vi.fn(),
+      deleteFolder: vi.fn(),
+    });
+    window.localStorage.setItem(AGENT_WORKSPACE_ENABLED_STORAGE_KEY, 'true');
+
+    render(
+      <NotesProvider>
+        <Probe />
+      </NotesProvider>
+    );
+
+    await waitFor(() => {
+      expect(latestContext?.notes.map((note) => note.id)).toEqual([
+        'journal-note',
+      ]);
+    });
+    expect(latestContext?.folders.map((folder) => folder.name)).toEqual([
+      'Agent Memory',
+    ]);
+    expect(latestContext?.agentWorkspaceEnabled).toBe(true);
+    expect(latestContext?.canCreateNote).toBe(false);
   });
 
   it('synchronizes an automatic title with first-heading edits', async () => {

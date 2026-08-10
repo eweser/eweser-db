@@ -105,6 +105,8 @@ function SidebarContent({
     folders,
     tasks,
     currentNoteId,
+    agentWorkspaceEnabled,
+    canCreateNote,
     addNote,
     addFolder,
     updateFolder,
@@ -289,7 +291,11 @@ function SidebarContent({
       className="relative flex h-full w-full shrink-0 flex-col border-r border-sidebar-border bg-sidebar-background text-sidebar-foreground md:h-screen"
       style={desktopWidth ? { width: `${desktopWidth}px` } : undefined}
     >
-      <div className="hidden grid-cols-7 gap-1 border-b border-sidebar-border px-2 py-2 md:grid">
+      <div
+        className={`hidden gap-1 border-b border-sidebar-border px-2 py-2 md:grid ${
+          agentWorkspaceEnabled ? 'grid-cols-5' : 'grid-cols-7'
+        }`}
+      >
         <IconRailButton
           icon={Search}
           label="Search notes"
@@ -326,28 +332,34 @@ function SidebarContent({
           badge={incompleteTasks.length}
           onClick={() => onViewChange?.('tasks')}
         />
-        <IconRailButton
-          icon={Plus}
-          label="New note"
-          onClick={() => handleNewNoteInFolder('')}
-        />
-        <IconRailButton
-          dataCy="ewe-note-new-folder-trigger"
-          icon={FolderOpen}
-          label={activeFolderId ? 'New subfolder' : 'New folder'}
-          onClick={() =>
-            setFolderDialog({
-              mode: 'create',
-              initialName: '',
-              parentId: activeFolderId,
-            })
-          }
-        />
+        {canCreateNote ? (
+          <IconRailButton
+            icon={Plus}
+            label="New note"
+            onClick={() => handleNewNoteInFolder('')}
+          />
+        ) : null}
+        {!agentWorkspaceEnabled ? (
+          <IconRailButton
+            dataCy="ewe-note-new-folder-trigger"
+            icon={FolderOpen}
+            label={activeFolderId ? 'New subfolder' : 'New folder'}
+            onClick={() =>
+              setFolderDialog({
+                mode: 'create',
+                initialName: '',
+                parentId: activeFolderId,
+              })
+            }
+          />
+        ) : null}
       </div>
 
       <div
         data-cy="ewe-note-sidebar-mobile-toolbar"
-        className="grid grid-cols-4 gap-1 border-b border-sidebar-border px-2 py-2 md:hidden"
+        className={`grid gap-1 border-b border-sidebar-border px-2 py-2 md:hidden ${
+          agentWorkspaceEnabled ? 'grid-cols-2' : 'grid-cols-4'
+        }`}
       >
         <IconRailButton
           dataCy="ewe-note-pinned-link-mobile"
@@ -364,23 +376,27 @@ function SidebarContent({
           badge={incompleteTasks.length}
           onClick={() => onViewChange?.('tasks')}
         />
-        <IconRailButton
-          icon={Plus}
-          label="New note"
-          onClick={() => handleNewNoteInFolder('')}
-        />
-        <IconRailButton
-          dataCy="ewe-note-new-folder-trigger-mobile"
-          icon={FolderOpen}
-          label={activeFolderId ? 'New subfolder' : 'New folder'}
-          onClick={() =>
-            setFolderDialog({
-              mode: 'create',
-              initialName: '',
-              parentId: activeFolderId,
-            })
-          }
-        />
+        {canCreateNote ? (
+          <IconRailButton
+            icon={Plus}
+            label="New note"
+            onClick={() => handleNewNoteInFolder('')}
+          />
+        ) : null}
+        {!agentWorkspaceEnabled ? (
+          <IconRailButton
+            dataCy="ewe-note-new-folder-trigger-mobile"
+            icon={FolderOpen}
+            label={activeFolderId ? 'New subfolder' : 'New folder'}
+            onClick={() =>
+              setFolderDialog({
+                mode: 'create',
+                initialName: '',
+                parentId: activeFolderId,
+              })
+            }
+          />
+        ) : null}
       </div>
 
       <nav

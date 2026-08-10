@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { FileText, Hash, Plus, Star, CheckSquare, X } from 'lucide-react';
 import { useNotes } from '../contexts/NotesContext';
@@ -22,11 +23,21 @@ export function NotesListPane({
     notes,
     folders,
     tasks,
+    agentWorkspaceEnabled,
+    canCreateNote,
     addNote,
     getPinnedNotes,
     getRecentNotes,
     getNotesInFolder,
   } = useNotes();
+
+  useEffect(() => {
+    if (!agentWorkspaceEnabled || !activeView.startsWith('folder:')) return;
+    const folderId = activeView.replace('folder:', '');
+    if (!folders.some((folder) => folder.id === folderId)) {
+      onViewChange('recent');
+    }
+  }, [activeView, agentWorkspaceEnabled, folders, onViewChange]);
 
   const handleNewNote = () => {
     const created = addNote({ title: 'Untitled', content: '' });
@@ -76,18 +87,20 @@ export function NotesListPane({
         </div>
       ) : null}
 
-      <div className="flex items-center justify-end px-3 py-3">
-        <button
-          type="button"
-          data-cy="ewe-note-new-note"
-          onClick={handleNewNote}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-          title="New note"
-          aria-label="New note"
-        >
-          <Plus className="h-4 w-4" />
-        </button>
-      </div>
+      {canCreateNote ? (
+        <div className="flex items-center justify-end px-3 py-3">
+          <button
+            type="button"
+            data-cy="ewe-note-new-note"
+            onClick={handleNewNote}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            title="New note"
+            aria-label="New note"
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+        </div>
+      ) : null}
 
       <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
         {activeView === 'tasks' && incompleteTasks.length === 0 ? (
