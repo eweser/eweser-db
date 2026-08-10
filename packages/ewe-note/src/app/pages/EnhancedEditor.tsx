@@ -268,7 +268,7 @@ function EditorMetadataPanel({
   );
 }
 
-function EditorWorkspace({
+export function EditorWorkspace({
   note,
   onUpdateTitle,
   onCopyLink,
@@ -334,7 +334,7 @@ function EditorWorkspace({
               : ''
           }`}
         >
-          {isMobile ? (
+          {isMobile && !readOnly ? (
             <button
               type="button"
               aria-label={note.pinned ? 'Unpin note' : 'Pin note'}
@@ -378,7 +378,7 @@ function EditorWorkspace({
               <Maximize2 className="w-4 h-4" />
             </button>
           ) : null}
-          {!isMobile ? (
+          {!isMobile && !readOnly ? (
             <button
               type="button"
               aria-label={note.pinned ? 'Unpin note' : 'Pin note'}
@@ -393,16 +393,18 @@ function EditorWorkspace({
               />
             </button>
           ) : null}
-          <button
-            type="button"
-            aria-label="Delete note"
-            data-cy="ewe-note-delete-note-button"
-            onClick={onDelete}
-            className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            title="Delete note"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+          {!readOnly ? (
+            <button
+              type="button"
+              aria-label="Delete note"
+              data-cy="ewe-note-delete-note-button"
+              onClick={onDelete}
+              className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              title="Delete note"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          ) : null}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button

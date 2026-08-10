@@ -19,6 +19,12 @@ const deleteFolder = vi.fn();
 const addNote = vi.fn(() => ({ id: 'note-created' }));
 const moveNote = vi.fn();
 const deleteVault = vi.fn().mockResolvedValue(undefined);
+const readerRoom = {
+  id: 'secure-room',
+  syncUrl: 'wss://sync.example.test',
+  writeAccess: ['writer-user'],
+  adminAccess: [],
+};
 let vaultDeletionEligibility:
   | { canDelete: true; noteCount: 0 }
   | {
@@ -144,7 +150,8 @@ vi.mock('../../db', () => ({
     syncStatusDescription: 'Stored on this device',
     user: { firstName: 'Guest' },
     selectedRoom: null,
-    allRooms: [],
+    allRooms: [readerRoom],
+    db: { userId: 'reader-user' },
     createSecureRoom: vi.fn(),
     lockCurrentRoom: vi.fn(),
     unlockCurrentRoom: vi.fn(),
@@ -380,6 +387,18 @@ describe('EnhancedSidebar', () => {
     });
     expect(item.getAttribute('data-disabled')).not.toBeNull();
     expect(deleteVault).not.toHaveBeenCalled();
+  });
+
+  it('hides note creation for a reader-only vault', () => {
+    render(<EnhancedSidebar onSearchClick={vi.fn()} activeView="recent" />);
+
+    fireEvent.pointerDown(
+      screen.getByRole('button', {
+        name: 'Vault actions for 🔒 Secure Notes',
+      })
+    );
+
+    expect(screen.queryByRole('menuitem', { name: 'New note' })).toBeNull();
   });
 
   it('exposes a pinned notes filter in the rail', () => {
