@@ -19,9 +19,14 @@ import { Input } from './ui/input';
 interface RightPanelProps {
   noteId: string;
   onClose?: () => void;
+  readOnly?: boolean;
 }
 
-export function RightPanel({ noteId, onClose }: RightPanelProps) {
+export function RightPanel({
+  noteId,
+  onClose,
+  readOnly = false,
+}: RightPanelProps) {
   const navigate = useNavigate();
   const { notes, updateNote, convertUnlinkedMentionToLink } = useNotes();
   const [newTag, setNewTag] = useState('');
@@ -321,19 +326,21 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
                           {mention.mention}
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        className="text-xs px-2 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20"
-                        onClick={() =>
-                          convertUnlinkedMentionToLink(
-                            note.id,
-                            mention.noteId,
-                            mention.mention
-                          )
-                        }
-                      >
-                        Convert
-                      </button>
+                      {!readOnly ? (
+                        <button
+                          type="button"
+                          className="text-xs px-2 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20"
+                          onClick={() =>
+                            convertUnlinkedMentionToLink(
+                              note.id,
+                              mention.noteId,
+                              mention.mention
+                            )
+                          }
+                        >
+                          Convert
+                        </button>
+                      ) : null}
                     </div>
                   ))}
                 </div>
@@ -362,40 +369,44 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
                   >
                     <Hash className="w-3 h-3 mr-0.5" />
                     {tag}
-                    <button
-                      type="button"
-                      aria-label={`Remove tag ${tag}`}
-                      onClick={() => handleRemoveTag(tag)}
-                      className="ml-1 p-0.5 rounded hover:bg-background opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X className="w-2.5 h-2.5" />
-                    </button>
+                    {!readOnly ? (
+                      <button
+                        type="button"
+                        aria-label={`Remove tag ${tag}`}
+                        onClick={() => handleRemoveTag(tag)}
+                        className="ml-1 p-0.5 rounded hover:bg-background opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="w-2.5 h-2.5" />
+                      </button>
+                    ) : null}
                   </Badge>
                 ))}
               </div>
-              <div className="flex gap-2">
-                <Input
-                  data-cy="ewe-note-add-tag-input"
-                  value={newTag}
-                  onChange={(e) => setNewTag(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleAddTag();
-                    }
-                  }}
-                  placeholder="Add tag..."
-                  className="h-8 text-sm"
-                />
-                <button
-                  type="button"
-                  aria-label="Add tag"
-                  data-cy="ewe-note-add-tag-btn"
-                  onClick={handleAddTag}
-                  className="px-3 h-8 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity flex items-center gap-1 text-sm"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                </button>
-              </div>
+              {!readOnly ? (
+                <div className="flex gap-2">
+                  <Input
+                    data-cy="ewe-note-add-tag-input"
+                    value={newTag}
+                    onChange={(e) => setNewTag(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleAddTag();
+                      }
+                    }}
+                    placeholder="Add tag..."
+                    className="h-8 text-sm"
+                  />
+                  <button
+                    type="button"
+                    aria-label="Add tag"
+                    data-cy="ewe-note-add-tag-btn"
+                    onClick={handleAddTag}
+                    className="px-3 h-8 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity flex items-center gap-1 text-sm"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : null}
             </div>
 
             {/* Properties */}
@@ -415,49 +426,53 @@ export function RightPanel({ noteId, onClose }: RightPanelProps) {
                         {value}
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      aria-label={`Remove property ${key}`}
-                      onClick={() => handleRemoveProperty(key)}
-                      className="p-1 rounded hover:bg-background opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
+                    {!readOnly ? (
+                      <button
+                        type="button"
+                        aria-label={`Remove property ${key}`}
+                        onClick={() => handleRemoveProperty(key)}
+                        className="p-1 rounded hover:bg-background opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    ) : null}
                   </div>
                 ))}
               </div>
-              <div className="space-y-2">
-                <Input
-                  data-cy="ewe-note-add-property-key"
-                  value={newPropertyKey}
-                  onChange={(e) => setNewPropertyKey(e.target.value)}
-                  placeholder="Property name..."
-                  className="h-8 text-sm"
-                />
-                <div className="flex gap-2">
+              {!readOnly ? (
+                <div className="space-y-2">
                   <Input
-                    data-cy="ewe-note-add-property-value"
-                    value={newPropertyValue}
-                    onChange={(e) => setNewPropertyValue(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        handleAddProperty();
-                      }
-                    }}
-                    placeholder="Property value..."
+                    data-cy="ewe-note-add-property-key"
+                    value={newPropertyKey}
+                    onChange={(e) => setNewPropertyKey(e.target.value)}
+                    placeholder="Property name..."
                     className="h-8 text-sm"
                   />
-                  <button
-                    type="button"
-                    aria-label="Add property"
-                    data-cy="ewe-note-add-property-btn"
-                    onClick={handleAddProperty}
-                    className="px-3 h-8 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity flex items-center gap-1 text-sm"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex gap-2">
+                    <Input
+                      data-cy="ewe-note-add-property-value"
+                      value={newPropertyValue}
+                      onChange={(e) => setNewPropertyValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleAddProperty();
+                        }
+                      }}
+                      placeholder="Property value..."
+                      className="h-8 text-sm"
+                    />
+                    <button
+                      type="button"
+                      aria-label="Add property"
+                      data-cy="ewe-note-add-property-btn"
+                      onClick={handleAddProperty}
+                      className="px-3 h-8 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity flex items-center gap-1 text-sm"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
-              </div>
+              ) : null}
             </div>
 
             {/* Metadata */}

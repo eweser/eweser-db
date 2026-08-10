@@ -11,6 +11,7 @@ import type { Note } from '@eweser/db';
 interface FrontmatterEditorProps {
   note: Note;
   onUpdate: (frontmatter: Record<string, unknown>) => void;
+  readOnly?: boolean;
 }
 
 type FieldType = 'text' | 'number' | 'boolean' | 'date' | 'list';
@@ -49,6 +50,7 @@ function parseInputValue(raw: string, type: FieldType): unknown {
 export default function FrontmatterEditor({
   note,
   onUpdate,
+  readOnly = false,
 }: FrontmatterEditorProps) {
   const frontmatter = note.frontmatter ?? {};
   const [expanded, setExpanded] = useState(false);
@@ -101,7 +103,11 @@ export default function FrontmatterEditor({
                 <span className="text-xs font-mono text-muted-foreground w-32 shrink-0 truncate">
                   {key}
                 </span>
-                {type === 'boolean' ? (
+                {readOnly ? (
+                  <span className="flex-1 text-sm text-foreground">
+                    {renderValue(value)}
+                  </span>
+                ) : type === 'boolean' ? (
                   <input
                     type="checkbox"
                     checked={Boolean(value)}
@@ -125,51 +131,57 @@ export default function FrontmatterEditor({
                     className="flex-1 text-sm border border-input rounded px-2 py-1 bg-background"
                   />
                 )}
-                <button
-                  onClick={() => handleDelete(key)}
-                  className="text-muted-foreground hover:text-destructive text-xs shrink-0"
-                  title={`Delete ${key}`}
-                >
-                  ✕
-                </button>
+                {!readOnly ? (
+                  <button
+                    onClick={() => handleDelete(key)}
+                    className="text-muted-foreground hover:text-destructive text-xs shrink-0"
+                    title={`Delete ${key}`}
+                  >
+                    ✕
+                  </button>
+                ) : null}
               </div>
             );
           })}
-          <div className="grid gap-2 rounded-lg border border-border/70 bg-background/60 p-3 md:grid-cols-[minmax(0,1fr)_8rem_minmax(0,1fr)_auto]">
-            <input
-              aria-label="New property name"
-              value={newKey}
-              onChange={(event) => setNewKey(event.target.value)}
-              placeholder="Property"
-              className="min-w-0 rounded border border-input bg-background px-2 py-1 text-sm"
-            />
-            <select
-              aria-label="New property type"
-              value={newType}
-              onChange={(event) => setNewType(event.target.value as FieldType)}
-              className="rounded border border-input bg-background px-2 py-1 text-sm"
-            >
-              <option value="text">Text</option>
-              <option value="number">Number</option>
-              <option value="boolean">Boolean</option>
-              <option value="date">Date</option>
-              <option value="list">List</option>
-            </select>
-            <input
-              aria-label="New property value"
-              value={newValue}
-              onChange={(event) => setNewValue(event.target.value)}
-              placeholder={newType === 'list' ? 'item1, item2' : 'Value'}
-              className="min-w-0 rounded border border-input bg-background px-2 py-1 text-sm"
-            />
-            <button
-              type="button"
-              onClick={handleAddField}
-              className="rounded border border-border px-3 py-1 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            >
-              Add
-            </button>
-          </div>
+          {!readOnly ? (
+            <div className="grid gap-2 rounded-lg border border-border/70 bg-background/60 p-3 md:grid-cols-[minmax(0,1fr)_8rem_minmax(0,1fr)_auto]">
+              <input
+                aria-label="New property name"
+                value={newKey}
+                onChange={(event) => setNewKey(event.target.value)}
+                placeholder="Property"
+                className="min-w-0 rounded border border-input bg-background px-2 py-1 text-sm"
+              />
+              <select
+                aria-label="New property type"
+                value={newType}
+                onChange={(event) =>
+                  setNewType(event.target.value as FieldType)
+                }
+                className="rounded border border-input bg-background px-2 py-1 text-sm"
+              >
+                <option value="text">Text</option>
+                <option value="number">Number</option>
+                <option value="boolean">Boolean</option>
+                <option value="date">Date</option>
+                <option value="list">List</option>
+              </select>
+              <input
+                aria-label="New property value"
+                value={newValue}
+                onChange={(event) => setNewValue(event.target.value)}
+                placeholder={newType === 'list' ? 'item1, item2' : 'Value'}
+                className="min-w-0 rounded border border-input bg-background px-2 py-1 text-sm"
+              />
+              <button
+                type="button"
+                onClick={handleAddField}
+                className="rounded border border-border px-3 py-1 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                Add
+              </button>
+            </div>
+          ) : null}
         </div>
       )}
     </div>

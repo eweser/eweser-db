@@ -7,10 +7,10 @@
 import { Server } from '@hocuspocus/server';
 import type { Extension } from '@hocuspocus/server';
 import { SQLite } from '@hocuspocus/extension-sqlite';
-import jwt from 'jsonwebtoken';
 import { createLogger, initTelemetry } from '@eweser/logger';
 import { createAggregatorWebhookExtension } from './aggregator-webhook.js';
 import { getCapabilitiesResponse } from './capabilities.js';
+import { authenticateSyncConnection } from './sync-auth.js';
 
 await initTelemetry('sync-server');
 
@@ -60,31 +60,8 @@ const server = Server.configure({
       return;
     }
   },
-  async onAuthenticate({ token }) {
-    if (!token) {
-      throw new Error('Authentication required');
-    }
-
-    try {
-      const decoded = jwt.verify(token, secret) as {
-        roomId: string;
-        userId?: string;
-        collectionKey?: string;
-        publicAccess?: 'private' | 'read' | 'write';
-      };
-      return {
-        user: {
-          id: decoded.userId || 'anonymous',
-          name: decoded.userId || 'anonymous',
-        },
-        roomId: decoded.roomId,
-        userId: decoded.userId,
-        collectionKey: decoded.collectionKey,
-        publicAccess: decoded.publicAccess ?? 'private',
-      };
-    } catch {
-      throw new Error('Invalid token');
-    }
+  async onAuthenticate({ connection, token }) {
+    return authenticateSyncConnection({ connection, secret, token });
   },
 });
 

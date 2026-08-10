@@ -59,15 +59,18 @@ export const syncRegistry = (db: Database) => {
       db.emit('registrySync', 'error', error);
       return false;
     }
-    db.info('syncResult', syncResult);
-
     const { rooms, token, userId } = syncResult ?? {};
+    db.info('syncResult', {
+      roomCount: Array.isArray(rooms) ? rooms.length : 0,
+      hasToken: typeof token === 'string' && token.length > 0,
+      hasUserId: typeof userId === 'string' && userId.length > 0,
+    });
     if (userId && typeof userId === 'string') {
       db.debug('setting new userId', userId);
       db.userId = userId;
     }
     if (token && typeof token === 'string') {
-      db.debug('setting new token', token);
+      db.debug('setting new token', '[redacted]');
       setLocalAccessGrantToken(db)(token);
       db.accessGrantToken = token;
     } else {

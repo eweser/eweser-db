@@ -74,6 +74,7 @@ interface TiptapEditorProps {
   onNavigateWikiLink?: (href: string) => void;
   onEditorReady?: (editor: Editor | null) => void;
   onEditorFocusChange?: (focused: boolean) => void;
+  readOnly?: boolean;
   sourceMode?: boolean;
   onSourceModeChange?: (sourceMode: boolean) => void;
   attachmentContext?: AttachmentResolverContext;
@@ -275,6 +276,7 @@ export function TiptapEditor({
   onNavigateWikiLink,
   onEditorReady,
   onEditorFocusChange,
+  readOnly = false,
   sourceMode = false,
   onSourceModeChange,
   attachmentContext,
@@ -325,6 +327,7 @@ export function TiptapEditor({
   const editor = useEditor(
     {
       extensions,
+      editable: !readOnly,
       content: provider ? undefined : initialHtml,
       editorProps: {
         attributes: {
@@ -360,7 +363,7 @@ export function TiptapEditor({
         onEditorReady?.(editor);
       },
       onUpdate({ editor }) {
-        if (suppressEditorSaveRef.current || sourceMode) {
+        if (readOnly || suppressEditorSaveRef.current || sourceMode) {
           return;
         }
 
@@ -388,8 +391,15 @@ export function TiptapEditor({
         onEditorFocusChange?.(false);
       },
     },
-    [selectedNoteId, doc, provider?.awareness]
+    [selectedNoteId, doc, provider?.awareness, readOnly]
   );
+
+  useEffect(() => {
+    editor?.setEditable(!readOnly);
+    if (readOnly && sourceMode) {
+      onSourceModeChange?.(false);
+    }
+  }, [editor, onSourceModeChange, readOnly, sourceMode]);
 
   useEffect(() => {
     const activeEditor = editor;
@@ -416,7 +426,7 @@ export function TiptapEditor({
 
   const closeSlashMenu = useCallback(() => setSlashMenuState(null), []);
   const toggleSourceMode = useCallback(() => {
-    if (!onSourceModeChange) return;
+    if (readOnly || !onSourceModeChange) return;
 
     if (!sourceMode && editor) {
       const markdown = editorJsonToMarkdown(editor.getJSON() as JSONContent);
@@ -428,7 +438,7 @@ export function TiptapEditor({
     }
 
     onSourceModeChange(false);
-  }, [editor, onSaveMarkdown, onSourceModeChange, sourceMode]);
+  }, [editor, onSaveMarkdown, onSourceModeChange, readOnly, sourceMode]);
 
   const requestLink = useCallback(
     ({ kind, href }: { kind: 'link' | 'external-link'; href?: string }) => {
@@ -489,10 +499,14 @@ export function TiptapEditor({
     [editor, closeSlashMenu, commandContext, slashMenuState]
   );
 
-  const saveSourceMarkdown = useCallback((nextValue: string) => {
-    setSourceValue(nextValue);
-    debouncedSaveRef.current?.(nextValue, noteRef.current);
-  }, []);
+  const saveSourceMarkdown = useCallback(
+    (nextValue: string) => {
+      if (readOnly) return;
+      setSourceValue(nextValue);
+      debouncedSaveRef.current?.(nextValue, noteRef.current);
+    },
+    [readOnly]
+  );
 
   const exitSourceMode = useCallback(() => {
     debouncedSaveRef.current?.flush();
@@ -556,18 +570,30 @@ export function TiptapEditor({
 
   return (
     <div className="tiptap-editor">
-      <EditorToolbar
-        editor={editor}
-        onSave={() => saveEditor(editor, noteRef.current, onSaveMarkdown)}
-        focused={focused}
-        commandContext={commandContext}
-      />
-      {sourceMode ? (
+      {readOnly ? (
+        <div
+          className="mb-4 inline-flex rounded-full border border-border bg-muted/60 px-3 py-1 text-xs font-medium text-muted-foreground"
+          data-cy="ewe-note-read-only-badge"
+          role="status"
+        >
+          Read only
+        </div>
+      ) : (
+        <EditorToolbar
+          editor={editor}
+          onSave={() => saveEditor(editor, noteRef.current, onSaveMarkdown)}
+          focused={focused}
+          commandContext={commandContext}
+        />
+      )}
+      {!readOnly && sourceMode ? (
         <SourceModeEditor
           value={sourceValue}
           onChange={saveSourceMarkdown}
           onExit={exitSourceMode}
         />
+      ) : readOnly ? (
+        <EditorContent editor={editor} className="editor-view" />
       ) : (
         <EditorBubbleMenu editor={editor} commandContext={commandContext}>
           <EditorContextMenu editor={editor} commandContext={commandContext}>
@@ -575,12 +601,17 @@ export function TiptapEditor({
           </EditorContextMenu>
         </EditorBubbleMenu>
       )}
-      <EditorSlashMenu
-        commandsOpenState={slashMenuState}
-        onSelect={executeSlashCommand}
-        onClose={closeSlashMenu}
-      />
-      <Dialog open={linkDialog.open} onOpenChange={closeLinkDialog}>
+      {!readOnly ? (
+        <EditorSlashMenu
+          commandsOpenState={slashMenuState}
+          onSelect={executeSlashCommand}
+          onClose={closeSlashMenu}
+        />
+      ) : null}
+      <Dialog
+        open={!readOnly && linkDialog.open}
+        onOpenChange={closeLinkDialog}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
