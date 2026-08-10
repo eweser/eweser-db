@@ -36,6 +36,9 @@ including page routes, note context, and product-specific app components.
   existing room hooks.
 - User-visible workflow changes should keep Cypress selectors stable or update
   E2E coverage in the same change.
+- `components/agent-workspace-settings.ts` owns the browser-local, off-by-default
+  Agent Workspace mod preference. It must not contain bridge credentials,
+  personal paths, or automatic network behavior.
 
 ## Update Triggers
 

@@ -1,5 +1,6 @@
 import {
   ArrowLeft,
+  Bot,
   ChevronRight,
   Download,
   HardDrive,
@@ -24,6 +25,7 @@ import { AUTH_PAGES_SERVER, AUTH_SERVER, env, routerBase } from '../../config';
 import { useTheme } from '../components/ThemeProvider';
 import { Switch } from '../components/ui/switch';
 import { useWorkspaceInteractionPreferences } from '../components/workspace-interaction-settings';
+import { useAgentWorkspacePreferences } from '../components/agent-workspace-settings';
 import {
   importVaultFromFiles,
   type BrowserVaultImportProgress,
@@ -41,6 +43,7 @@ const SETTINGS_SECTIONS = [
   { id: 'appearance', label: 'Appearance' },
   { id: 'interaction', label: 'Interaction' },
   { id: 'sync', label: 'Sync' },
+  { id: 'mods', label: 'Mods' },
   { id: 'developer', label: 'Developer' },
 ] as const;
 
@@ -61,6 +64,10 @@ export function Settings() {
   const { mode, theme, setMode } = useTheme();
   const { preferences, updatePreference } =
     useWorkspaceInteractionPreferences();
+  const {
+    preferences: agentWorkspacePreferences,
+    setEnabled: setAgentWorkspaceEnabled,
+  } = useAgentWorkspacePreferences();
   const {
     allRooms,
     allRoomIds,
@@ -604,6 +611,64 @@ export function Settings() {
                       </div>
                     ) : null}
                   </div>
+                </div>
+              </SettingsPanel>
+            </section>
+
+            <section id="mods" className="mb-8 scroll-mt-6">
+              <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-muted-foreground">
+                Mods
+              </h2>
+              <SettingsPanel icon={Bot} title="Agent Workspace">
+                <div className="space-y-4">
+                  <SettingsToggleRow
+                    id="ewe-note-settings-agent-workspace"
+                    title="Enable Agent Workspace"
+                    description="Connect editable agent controls and read-only agent memory through a separately installed local bridge. Off by default and enabled only in this browser."
+                    checked={agentWorkspacePreferences.enabled}
+                    onCheckedChange={setAgentWorkspaceEnabled}
+                  />
+
+                  {agentWorkspacePreferences.enabled ? (
+                    <div
+                      data-cy="ewe-note-settings-agent-workspace-setup"
+                      className="space-y-4 rounded-lg border border-border/70 bg-background/60 px-4 py-4"
+                    >
+                      <div>
+                        <div className="text-sm font-medium text-foreground">
+                          Ready to pair
+                        </div>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          Install and pair an Agent Bridge to connect vaults.
+                          Ewe Note does not receive local paths, Git commands,
+                          runtime commands, or bridge credentials.
+                        </p>
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <InfoBlock
+                          icon={Bot}
+                          title="Agent Control"
+                          description="Editable, allowlisted Markdown controls. The bridge validates and versions changes before applying them."
+                        />
+                        <InfoBlock
+                          icon={HardDrive}
+                          title="Agent Memory"
+                          description="Read-only memory and session-journal snapshots for browsing and search."
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Not connected. Turning on this mod does not create a
+                        vault, contact a bridge, or affect another user.
+                      </p>
+                    </div>
+                  ) : (
+                    <p
+                      data-cy="ewe-note-settings-agent-workspace-off"
+                      className="text-xs text-muted-foreground"
+                    >
+                      Off. No agent workspace tasks or connections are active.
+                    </p>
+                  )}
                 </div>
               </SettingsPanel>
             </section>
