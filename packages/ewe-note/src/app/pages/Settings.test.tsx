@@ -163,7 +163,7 @@ describe('Settings', () => {
     expect(screen.queryByText('Ready to pair')).toBeNull();
   });
 
-  it('enables the Agent Workspace mod for this browser only', () => {
+  it('enables the Agent Workspace mod and caches the choice locally', () => {
     render(<Settings />);
 
     fireEvent.click(
