@@ -65,10 +65,6 @@ export function Settings() {
   const { preferences, updatePreference } =
     useWorkspaceInteractionPreferences();
   const {
-    preferences: agentWorkspacePreferences,
-    setEnabled: setAgentWorkspaceEnabled,
-  } = useAgentWorkspacePreferences();
-  const {
     allRooms,
     allRoomIds,
     db,
@@ -84,6 +80,11 @@ export function Settings() {
     syncStatusLabel,
     user,
   } = useDb();
+  const {
+    preferences: agentWorkspacePreferences,
+    accountBacked: agentWorkspaceAccountBacked,
+    setEnabled: setAgentWorkspaceEnabled,
+  } = useAgentWorkspacePreferences(db);
 
   const importingVault = vaultImportProgress !== null;
   const canSyncRemotely = loggedIn || hasToken;
@@ -624,7 +625,7 @@ export function Settings() {
                   <SettingsToggleRow
                     id="ewe-note-settings-agent-workspace"
                     title="Enable Agent Workspace"
-                    description="Connect editable agent controls and read-only agent memory through a separately installed local bridge. Off by default and enabled only in this browser."
+                    description="Focus Ewe Note on editable agent controls and read-only agent memory. Off by default; signed-in choices sync privately across browsers."
                     checked={agentWorkspacePreferences.enabled}
                     onCheckedChange={setAgentWorkspaceEnabled}
                   />
@@ -657,8 +658,9 @@ export function Settings() {
                         />
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        Not connected. Turning on this mod does not create a
-                        vault, contact a bridge, or affect another user.
+                        {agentWorkspaceAccountBacked
+                          ? 'Enabled for this signed-in account. Turning on this mod does not affect another user.'
+                          : 'Stored in this browser until the signed-in private profile is available. Turning on this mod does not affect another user.'}
                       </p>
                     </div>
                   ) : (

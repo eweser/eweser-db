@@ -5,8 +5,8 @@ export type BackgroundSyncErrorHandler = (error: unknown) => void;
 /**
  * Authenticate without blocking the notes UI behind every room in the account.
  *
- * EweNote needs all note rooms immediately, while profile and other collection
- * rooms can continue loading in the background.
+ * EweNote needs all note rooms and private account preferences immediately,
+ * while other collection rooms can continue loading in the background.
  */
 export async function loginWithPrioritizedNoteSync(
   database: Database,
@@ -17,11 +17,12 @@ export async function loginWithPrioritizedNoteSync(
     return false;
   }
 
-  const noteRooms = database.registry.filter(
-    (room) => room.collectionKey === 'notes'
+  const priorityRooms = database.registry.filter(
+    (room) =>
+      room.collectionKey === 'notes' || room.collectionKey === 'profiles'
   );
   await Promise.allSettled(
-    noteRooms.map((room) =>
+    priorityRooms.map((room) =>
       database.loadRoom(room, {
         loadRemote: true,
         // Start every notes connection now instead of serially waiting for each

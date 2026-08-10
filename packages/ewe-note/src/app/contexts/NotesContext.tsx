@@ -376,7 +376,7 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     setSelectedRoom,
   } = useDb();
   const { preferences: agentWorkspacePreferences } =
-    useAgentWorkspacePreferences();
+    useAgentWorkspacePreferences(db);
   const agentWorkspaceEnabled = agentWorkspacePreferences.enabled;
   const canonicalRoom =
     allRooms.find((room) => room.name === 'Notes') ?? allRooms[0] ?? null;

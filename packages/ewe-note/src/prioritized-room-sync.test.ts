@@ -29,7 +29,7 @@ function makeDatabase({
 }
 
 describe('loginWithPrioritizedNoteSync', () => {
-  it('starts every note room before loading the full registry', async () => {
+  it('starts note and profile rooms before loading the full registry', async () => {
     const events: string[] = [];
     const firstRoom = makeRegistryRoom('first-note');
     const secondRoom = makeRegistryRoom('second-note');
@@ -51,16 +51,25 @@ describe('loginWithPrioritizedNoteSync', () => {
     );
 
     expect(database.login).toHaveBeenCalledWith({ loadAllRooms: false });
-    expect(loadRoom).toHaveBeenCalledTimes(2);
-    expect(loadRoom).toHaveBeenNthCalledWith(1, firstRoom, {
+    expect(loadRoom).toHaveBeenCalledTimes(3);
+    expect(loadRoom).toHaveBeenNthCalledWith(1, profileRoom, {
       loadRemote: true,
       awaitLoadRemote: false,
     });
-    expect(loadRoom).toHaveBeenNthCalledWith(2, secondRoom, {
+    expect(loadRoom).toHaveBeenNthCalledWith(2, firstRoom, {
       loadRemote: true,
       awaitLoadRemote: false,
     });
-    expect(events).toEqual(['first-note', 'second-note', 'registry']);
+    expect(loadRoom).toHaveBeenNthCalledWith(3, secondRoom, {
+      loadRemote: true,
+      awaitLoadRemote: false,
+    });
+    expect(events).toEqual([
+      'profile',
+      'first-note',
+      'second-note',
+      'registry',
+    ]);
     expect(loadRooms).toHaveBeenCalledWith(database.registry, true);
   });
 
