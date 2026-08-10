@@ -47,6 +47,7 @@ import {
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { getSyncStatusDotClass } from './sync-status-visual';
+import { canWriteRoom } from '../lib/room-write-access';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import {
@@ -748,7 +749,13 @@ function FolderItem({
   onDelete,
   onDeleteVault,
 }: FolderItemProps) {
-  const { getVaultDeletionEligibility } = useDb();
+  const { allRooms, db, getVaultDeletionEligibility } = useDb();
+  const room = folder.roomId
+    ? allRooms.find((candidate) => candidate.id === folder.roomId)
+    : null;
+  const canCreateNote =
+    folder.kind !== 'shared-room' ||
+    (room ? canWriteRoom(room, db.userId) : false);
   const vaultDeletion = folder.roomId
     ? getVaultDeletionEligibility(folder.roomId)
     : undefined;
@@ -835,10 +842,12 @@ function FolderItem({
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={onNewNote}>
-            <Plus className="mr-2 h-4 w-4" />
-            New note
-          </DropdownMenuItem>
+          {canCreateNote ? (
+            <DropdownMenuItem onClick={onNewNote}>
+              <Plus className="mr-2 h-4 w-4" />
+              New note
+            </DropdownMenuItem>
+          ) : null}
           {folder.kind === 'folder' ? (
             <DropdownMenuItem onClick={onNewSubfolder}>
               <FolderOpen className="mr-2 h-4 w-4" />
