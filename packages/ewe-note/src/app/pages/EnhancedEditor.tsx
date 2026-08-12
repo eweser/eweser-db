@@ -44,13 +44,15 @@ export const REMOTE_NOTE_HYDRATION_GRACE_MS = 10_000;
 export function shouldWaitForRemoteNote({
   hasToken,
   noteFound,
+  syncInProgress,
   waitExpired,
 }: {
   hasToken: boolean;
   noteFound: boolean;
+  syncInProgress: boolean;
   waitExpired: boolean;
 }) {
-  return hasToken && !noteFound && !waitExpired;
+  return hasToken && !noteFound && (syncInProgress || !waitExpired);
 }
 
 export function buildEditorWikiLinkPath(
@@ -144,6 +146,7 @@ export function EnhancedEditor() {
     allRooms,
     db,
     hasToken,
+    syncStatus,
     selectedRoom,
     setSelectedRoom,
     setSelectedNoteId,
@@ -157,13 +160,13 @@ export function EnhancedEditor() {
 
   useEffect(() => {
     setMissingNoteWaitExpired(false);
-    if (note || !hasToken) return;
+    if (note || !hasToken || syncStatus === 'connecting') return;
     const timeout = window.setTimeout(
       () => setMissingNoteWaitExpired(true),
       REMOTE_NOTE_HYDRATION_GRACE_MS
     );
     return () => window.clearTimeout(timeout);
-  }, [hasToken, note, noteId]);
+  }, [hasToken, note, noteId, syncStatus]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -199,6 +202,7 @@ export function EnhancedEditor() {
     shouldWaitForRemoteNote({
       hasToken,
       noteFound: Boolean(note),
+      syncInProgress: syncStatus === 'connecting',
       waitExpired: missingNoteWaitExpired,
     })
   ) {

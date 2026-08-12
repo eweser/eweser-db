@@ -35,6 +35,7 @@ describe('EnhancedEditor wiki navigation helpers', () => {
       shouldWaitForRemoteNote({
         hasToken: true,
         noteFound: false,
+        syncInProgress: false,
         waitExpired: false,
       })
     ).toBe(true);
@@ -42,9 +43,21 @@ describe('EnhancedEditor wiki navigation helpers', () => {
       shouldWaitForRemoteNote({
         hasToken: true,
         noteFound: false,
+        syncInProgress: false,
         waitExpired: true,
       })
     ).toBe(false);
+  });
+
+  it('keeps waiting while synced rooms are still connecting', () => {
+    expect(
+      shouldWaitForRemoteNote({
+        hasToken: true,
+        noteFound: false,
+        syncInProgress: true,
+        waitExpired: true,
+      })
+    ).toBe(true);
   });
   it('preserves heading targets as editor URL hashes', () => {
     expect(
