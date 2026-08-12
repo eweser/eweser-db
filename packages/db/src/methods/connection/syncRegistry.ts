@@ -8,6 +8,12 @@ import {
 } from '../../utils/localStorageService.js';
 import type { Database } from '../../index.js';
 
+function uniqueRoomsById(rooms: Database['registry']) {
+  return Array.from(
+    new Map(rooms.map((room) => [room.id, room] as const)).values()
+  );
+}
+
 function unloadRoomsMissingFromRegistry(
   db: Database,
   previousRooms: Database['registry'],
@@ -85,11 +91,14 @@ export const syncRegistry = (db: Database) => {
           (previousRoom) => previousRoom.id === room.id && previousRoom._deleted
         )
       );
-      const roomsCreatedDuringSync = db.registry.filter(
-        (room) =>
-          db._pendingRegistryRoomIds.has(room.id) && !serverRoomIds.has(room.id)
+      const roomsCreatedDuringSync = uniqueRoomsById(
+        db.registry.filter(
+          (room) =>
+            db._pendingRegistryRoomIds.has(room.id) &&
+            !serverRoomIds.has(room.id)
+        )
       );
-      const nextRooms = [...rooms, ...roomsCreatedDuringSync];
+      const nextRooms = uniqueRoomsById([...rooms, ...roomsCreatedDuringSync]);
 
       unloadRoomsMissingFromRegistry(db, previousRooms, nextRooms);
       setLocalRegistry(db)(nextRooms);
@@ -98,6 +107,18 @@ export const syncRegistry = (db: Database) => {
         if (serverRoomIds.has(roomId)) {
           db._pendingRegistryRoomIds.delete(roomId);
         }
+      }
+
+      const rejectedInitialRoomIds = newRoomIds.filter(
+        (roomId) => db._initialRoomIds.has(roomId) && !serverRoomIds.has(roomId)
+      );
+      for (const roomId of rejectedInitialRoomIds) {
+        db._pendingRegistryRoomIds.delete(roomId);
+      }
+      if (rejectedInitialRoomIds.length > 0) {
+        db.warn('Keeping rejected initial rooms local-only', {
+          roomCount: rejectedInitialRoomIds.length,
+        });
       }
 
       if (rejectedTombstoneRooms.length > 0) {

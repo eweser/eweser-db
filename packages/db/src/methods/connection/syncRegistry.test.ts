@@ -231,6 +231,7 @@ describe('syncRegistry', () => {
     };
     const db = {
       registry: [newRoom],
+      _initialRoomIds: new Set(),
       _pendingRegistryRoomIds: new Set([newRoom.id]),
       userId: '',
       accessGrantToken: '',
@@ -377,5 +378,48 @@ describe('syncRegistry', () => {
     expect(serverFetch).toHaveBeenCalledOnce();
     expect(db.registry).toEqual([canonicalRoom, pendingRoom]);
     expect(db._pendingRegistryRoomIds).toEqual(new Set([pendingRoom.id]));
+  });
+
+  it('keeps a rejected initial room local-only without blocking login', async () => {
+    const localRoom = {
+      id: 'local-room',
+      name: 'Local notes',
+      collectionKey: 'notes',
+    };
+    const canonicalRoom = {
+      id: 'canonical-room',
+      name: 'Notes',
+      collectionKey: 'notes',
+    };
+    const db = {
+      registry: [localRoom, localRoom, localRoom],
+      collections: { notes: {} },
+      _initialRoomIds: new Set([localRoom.id]),
+      _pendingRegistryRoomIds: new Set([localRoom.id]),
+      userId: '',
+      accessGrantToken: '',
+      getToken: () => 'token',
+      emit: vi.fn(),
+      info: vi.fn(),
+      debug: vi.fn(),
+      warn: vi.fn(),
+      serverFetch: vi.fn().mockResolvedValue({
+        data: {
+          rooms: [canonicalRoom],
+          token: 'next-token',
+          userId: 'user-1',
+        },
+        error: null,
+      }),
+    } as unknown as Database;
+
+    await expect(syncRegistry(db)()).resolves.toBe(true);
+
+    expect(db.registry).toEqual([canonicalRoom, localRoom]);
+    expect(db._pendingRegistryRoomIds).toEqual(new Set());
+    expect(db.warn).toHaveBeenCalledWith(
+      'Keeping rejected initial rooms local-only',
+      { roomCount: 1 }
+    );
   });
 });

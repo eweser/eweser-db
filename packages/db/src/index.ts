@@ -42,6 +42,7 @@ import {
   localStorageGet,
   localStorageRemove,
   localStorageSet,
+  setLocalRegistry,
 } from './utils/localStorageService.js';
 import { generateShareRoomLink } from './methods/connection/generateShareRoomLink.js';
 import { pingServer } from './utils/connection/pingServer.js';
@@ -90,6 +91,12 @@ export interface DatabaseOptions {
    * that need pre-populated data before sync is available.
    */
   initialDocuments?: SeedDocuments<EweDocument>;
+}
+
+function deduplicateRegistry(registry: Registry): Registry {
+  return Array.from(
+    new Map(registry.map((room) => [room.id, room] as const)).values()
+  );
 }
 
 export class Database extends TypedEventEmitter<DatabaseEvents> {
@@ -290,17 +297,17 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     setupLogger(this);
     this.debug('Database created with options', options);
 
-    this.registry = this.getRegistry() || [];
+    const storedRegistry = this.getRegistry() || [];
+    this.registry = deduplicateRegistry(storedRegistry);
+    if (this.registry.length !== storedRegistry.length) {
+      setLocalRegistry(this)(this.registry);
+    }
     const initializedRooms: Registry = [];
     if (options.initialRooms) {
-      const registryRoomIds = this.registry.map((r) => r.id);
       for (const room of options.initialRooms) {
         const initializedRoom = this.newRoom<EweDocument>(room);
         this._initialRoomIds.add(initializedRoom.id);
         const registryRoom = roomToServerRoom(initializedRoom);
-        if (room.id && !registryRoomIds.includes(room.id)) {
-          this.registry.push(registryRoom);
-        }
         initializedRooms.push(registryRoom);
       }
       /** try to load remotes for initial rooms */
