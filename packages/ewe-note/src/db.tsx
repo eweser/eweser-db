@@ -20,6 +20,11 @@ import { logger } from './utils';
 import { useGetUserFromDb } from './user';
 import { getDefaultNoteText } from './default-tutorial';
 import { loginWithPrioritizedNoteSync } from './prioritized-room-sync';
+import {
+  deriveSyncStatus,
+  type DbStatusSnapshot,
+  type EweNoteSyncStatus,
+} from './sync-status';
 
 /** to make sure that we only have one default room created, make a new uuid v4 for the default room, but if there is already one in localStorage use that*/
 const randomRoomId = crypto.randomUUID();
@@ -147,22 +152,6 @@ export type DbContextType = {
   secureRoomMessage: string | null;
 };
 
-export type EweNoteSyncStatus =
-  | 'local-only'
-  | 'signed-out'
-  | 'connecting'
-  | 'synced'
-  | 'offline'
-  | 'auth-unreachable'
-  | 'sync-error';
-
-type DbStatusSnapshot = {
-  online: boolean;
-  hasToken: boolean;
-  connectedRoomsCount: number;
-  connectingRoomsCount: number;
-};
-
 export const DbContext = createContext<DbContextType | null>(null);
 
 export function useDb() {
@@ -182,28 +171,6 @@ const signOut = () => {
 };
 // for detailed debugging
 // db.on('status', (status) => console.log(status));
-
-function deriveSyncStatus({
-  loaded,
-  loggedIn,
-  hasToken,
-  browserOnline,
-  dbStatus,
-}: {
-  loaded: boolean;
-  loggedIn: boolean;
-  hasToken: boolean;
-  browserOnline: boolean;
-  dbStatus: DbStatusSnapshot | null;
-}): EweNoteSyncStatus {
-  if (!browserOnline) return 'offline';
-  if (!hasToken && !loggedIn) return loaded ? 'signed-out' : 'local-only';
-  if (dbStatus?.online === false) return 'auth-unreachable';
-  if (dbStatus?.connectingRoomsCount) return 'connecting';
-  if (dbStatus?.connectedRoomsCount) return 'synced';
-  if (hasToken && !loggedIn) return 'auth-unreachable';
-  return 'local-only';
-}
 
 function getSyncStatusText(status: EweNoteSyncStatus) {
   switch (status) {
