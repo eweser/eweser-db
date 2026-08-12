@@ -1,6 +1,8 @@
+// @vitest-environment jsdom
+
 import type { DatabaseOptions } from '.';
 import { Database } from '.';
-import { it, expect } from 'vitest';
+import { beforeEach, it, expect } from 'vitest';
 
 const collectionKeys = [
   'notes',
@@ -15,6 +17,10 @@ const collectionKeys = [
   'projectWikiDrafts',
 ];
 const defaultAuthServer = 'https://www.eweser.com';
+
+beforeEach(() => {
+  localStorage.clear();
+});
 
 it('Database initializes with defaults', () => {
   const DB = new Database();
@@ -34,6 +40,21 @@ it('Database initializes with options', () => {
   expect(DB).toBeDefined();
   expect(DB.authServer).toBe(options.authServer);
   expect(DB.logLevel).toBe(options.logLevel);
+});
+it('Database removes duplicate rooms from a persisted local registry', () => {
+  const room = {
+    id: 'local-room',
+    name: 'Local notes',
+    collectionKey: 'notes',
+  };
+  localStorage.setItem('ewe_room_registry', JSON.stringify([room, room, room]));
+
+  const DB = new Database({ providers: ['IndexedDB'] });
+
+  expect(DB.registry).toEqual([room]);
+  expect(JSON.parse(localStorage.getItem('ewe_room_registry') ?? '[]')).toEqual(
+    [room]
+  );
 });
 it.todo(
   'Can use local server',

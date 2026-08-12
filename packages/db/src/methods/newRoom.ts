@@ -22,7 +22,9 @@ export const newRoom =
       room as unknown as Room<EweDocument>;
 
     const registryRoom = roomToServerRoom(room);
-    db.registry.push(registryRoom);
+    if (!db.registry.some((entry) => entry.id === room.id)) {
+      db.registry.push(registryRoom);
+    }
     db._pendingRegistryRoomIds.add(room.id);
     setLocalRegistry(db)(db.registry);
 
