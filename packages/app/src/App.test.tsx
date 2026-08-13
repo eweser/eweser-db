@@ -1,4 +1,10 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, useNavigate } from 'react-router-dom';
@@ -219,6 +225,7 @@ describe('auth-pages app', () => {
         id: 'user-1',
         image: null,
         name: 'Test User',
+        twoFactorEnabled: false,
       },
       userCount: 1,
     });
@@ -292,7 +299,7 @@ describe('auth-pages app', () => {
     expect(screen.getAllByText(/ai grants/i).length).toBeGreaterThan(0);
   });
 
-  it('keeps sign out available in the mobile header for signed-in users', async () => {
+  it('keeps sign out in the mobile account menu for signed-in users', async () => {
     sessionState = {
       data: {
         session: { id: 'session-1' },
@@ -310,12 +317,22 @@ describe('auth-pages app', () => {
       name: /everything your apps can touch/i,
     });
 
-    const mobileSignOut = document.querySelector(
-      '[data-cy="mobile-sign-out-link"]'
+    await userEvent.click(
+      screen.getByRole('button', { name: /open account menu/i })
     );
-    expect(mobileSignOut).not.toBeNull();
+
+    const mobileSignOut = screen.getByRole('link', {
+      name: /sign out of this device/i,
+    });
     expect(mobileSignOut).toHaveAttribute('href', '/sign-out');
-    expect(mobileSignOut?.parentElement).toHaveClass('md:hidden');
+    expect(
+      screen.getByRole('navigation', { name: /account navigation/i })
+    ).toBeInTheDocument();
+    expect(
+      within(
+        screen.getByRole('complementary', { name: /account menu/i })
+      ).getByRole('button', { name: /use light theme/i })
+    ).toBeInTheDocument();
   });
 
   it('uses local redirect query params after normal sign-in', async () => {
@@ -383,6 +400,7 @@ describe('auth-pages app', () => {
         id: 'user-1',
         image: null,
         name: 'Test User',
+        twoFactorEnabled: false,
       },
       userCount: 1,
     });
@@ -1050,6 +1068,7 @@ describe('auth-pages app', () => {
         id: 'user-1',
         image: null,
         name: 'Test User',
+        twoFactorEnabled: false,
       },
       userCount: 1,
     });
@@ -1169,6 +1188,7 @@ describe('auth-pages app', () => {
         id: 'user-1',
         image: null,
         name: 'Test User',
+        twoFactorEnabled: false,
       },
       userCount: 1,
     });
@@ -1176,7 +1196,63 @@ describe('auth-pages app', () => {
     renderApp('/account/security');
 
     expect(
-      await screen.findByRole('heading', { name: /keep your account tight/i })
+      await screen.findByRole('heading', { name: /^security$/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: /set up two-factor authentication/i,
+      })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /turn off 2fa/i })
+    ).not.toBeInTheDocument();
+  });
+
+  it('requires confirmation before replacing backup codes', async () => {
+    sessionState = {
+      data: {
+        session: { id: 'session-1' },
+        user: { email: 'test@example.com', id: 'user-1' },
+      },
+      error: null,
+      isPending: false,
+      isRefetching: false,
+      refetch: vi.fn().mockResolvedValue(undefined),
+    };
+    apiMocks.getAccountBootstrap.mockResolvedValue({
+      profileRooms: [],
+      rooms: [],
+      user: {
+        email: 'test@example.com',
+        emailVerified: true,
+        id: 'user-1',
+        image: null,
+        name: 'Test User',
+        twoFactorEnabled: true,
+      },
+      userCount: 1,
+    });
+
+    renderApp('/security');
+
+    await userEvent.click(
+      await screen.findByRole('button', {
+        name: /manage two-factor authentication/i,
+      })
+    );
+    await userEvent.type(
+      screen.getByLabelText(/current password/i),
+      'password'
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: /replace backup codes/i })
+    );
+
+    expect(
+      screen.getByText(/replace your backup codes\?/i)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /replace backup codes/i })
     ).toBeInTheDocument();
   });
 });

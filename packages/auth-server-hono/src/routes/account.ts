@@ -32,6 +32,10 @@ accountRouter.get('/bootstrap', requireAuth, async (c) => {
   const grantId = createAccessGrantId(user.id, env.AUTH_SERVER_DOMAIN);
 
   await ensureUserRoomsAndAuthServerAccess(user.id);
+  const accountUser = await getUserById(user.id);
+  if (!accountUser) {
+    return c.json({ error: 'Account not found' }, 404);
+  }
 
   const accessGrant = await getAccessGrantById(grantId);
   if (!accessGrant) {
@@ -50,6 +54,7 @@ accountRouter.get('/bootstrap', requireAuth, async (c) => {
       emailVerified: Boolean(user.emailVerified),
       image: user.image ?? null,
       name: user.name ?? null,
+      twoFactorEnabled: accountUser.twoFactorEnabled,
     },
     rooms,
     profileRooms,
