@@ -28,6 +28,15 @@ import { SecureRoomControls } from './SecureRoomControls';
 import { FederatedSearchPanel } from './FederatedSearchPanel';
 import { useDb } from '../../db';
 import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from './ui/alert-dialog';
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -38,7 +47,8 @@ import {
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { getSyncStatusDotClass } from './sync-status-visual';
-import { DndProvider, useDrop } from 'react-dnd';
+import { canWriteRoom } from '../lib/room-write-access';
+import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import {
   DropdownMenu,
@@ -95,6 +105,8 @@ function SidebarContent({
     folders,
     tasks,
     currentNoteId,
+    agentWorkspaceEnabled,
+    canCreateNote,
     addNote,
     addFolder,
     updateFolder,
@@ -103,8 +115,15 @@ function SidebarContent({
     getNotesInFolder,
     moveNote,
   } = useNotes();
-  const { loggedIn, syncStatus, syncStatusLabel, syncStatusDescription, user } =
-    useDb();
+  const {
+    deleteVault,
+    getVaultDeletionEligibility,
+    loggedIn,
+    syncStatus,
+    syncStatusLabel,
+    syncStatusDescription,
+    user,
+  } = useDb();
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
     new Set(['work', 'personal', 'development', 'daily'])
   );
@@ -120,6 +139,10 @@ function SidebarContent({
     parentId?: string | null;
     initialName: string;
   } | null>(null);
+  const [vaultPendingDelete, setVaultPendingDelete] =
+    useState<NotesFolder | null>(null);
+  const [deletingVault, setDeletingVault] = useState(false);
+  const [vaultDeleteError, setVaultDeleteError] = useState<string | null>(null);
   const knownFolderIdsRef = useRef<Set<string>>(new Set());
 
   const childFoldersByParent = useMemo(() => {
@@ -214,6 +237,37 @@ function SidebarContent({
     deleteFolder(folder.id);
   };
 
+  const requestVaultDeletion = (folder: NotesFolder) => {
+    if (
+      !folder.roomId ||
+      getVaultDeletionEligibility(folder.roomId).canDelete !== true
+    ) {
+      return;
+    }
+    setVaultDeleteError(null);
+    setVaultPendingDelete(folder);
+  };
+
+  const confirmVaultDeletion = async () => {
+    if (!vaultPendingDelete?.roomId) return;
+    setDeletingVault(true);
+    setVaultDeleteError(null);
+    try {
+      await deleteVault(vaultPendingDelete.roomId);
+      setVaultPendingDelete(null);
+      onViewChange?.('recent');
+      navigate('/');
+    } catch (error) {
+      setVaultDeleteError(
+        error instanceof Error
+          ? error.message
+          : 'EweNote could not delete this vault.'
+      );
+    } finally {
+      setDeletingVault(false);
+    }
+  };
+
   const incompleteTasks = tasks.filter((t) => !t.completed);
 
   if (collapsed) {
@@ -237,7 +291,11 @@ function SidebarContent({
       className="relative flex h-full w-full shrink-0 flex-col border-r border-sidebar-border bg-sidebar-background text-sidebar-foreground md:h-screen"
       style={desktopWidth ? { width: `${desktopWidth}px` } : undefined}
     >
-      <div className="hidden grid-cols-7 gap-1 border-b border-sidebar-border px-2 py-2 md:grid">
+      <div
+        className={`hidden gap-1 border-b border-sidebar-border px-2 py-2 md:grid ${
+          agentWorkspaceEnabled ? 'grid-cols-5' : 'grid-cols-7'
+        }`}
+      >
         <IconRailButton
           icon={Search}
           label="Search notes"
@@ -274,28 +332,34 @@ function SidebarContent({
           badge={incompleteTasks.length}
           onClick={() => onViewChange?.('tasks')}
         />
-        <IconRailButton
-          icon={Plus}
-          label="New note"
-          onClick={() => handleNewNoteInFolder('')}
-        />
-        <IconRailButton
-          dataCy="ewe-note-new-folder-trigger"
-          icon={FolderOpen}
-          label={activeFolderId ? 'New subfolder' : 'New folder'}
-          onClick={() =>
-            setFolderDialog({
-              mode: 'create',
-              initialName: '',
-              parentId: activeFolderId,
-            })
-          }
-        />
+        {canCreateNote ? (
+          <IconRailButton
+            icon={Plus}
+            label="New note"
+            onClick={() => handleNewNoteInFolder('')}
+          />
+        ) : null}
+        {!agentWorkspaceEnabled ? (
+          <IconRailButton
+            dataCy="ewe-note-new-folder-trigger"
+            icon={FolderOpen}
+            label={activeFolderId ? 'New subfolder' : 'New folder'}
+            onClick={() =>
+              setFolderDialog({
+                mode: 'create',
+                initialName: '',
+                parentId: activeFolderId,
+              })
+            }
+          />
+        ) : null}
       </div>
 
       <div
         data-cy="ewe-note-sidebar-mobile-toolbar"
-        className="grid grid-cols-4 gap-1 border-b border-sidebar-border px-2 py-2 md:hidden"
+        className={`grid gap-1 border-b border-sidebar-border px-2 py-2 md:hidden ${
+          agentWorkspaceEnabled ? 'grid-cols-2' : 'grid-cols-4'
+        }`}
       >
         <IconRailButton
           dataCy="ewe-note-pinned-link-mobile"
@@ -312,23 +376,27 @@ function SidebarContent({
           badge={incompleteTasks.length}
           onClick={() => onViewChange?.('tasks')}
         />
-        <IconRailButton
-          icon={Plus}
-          label="New note"
-          onClick={() => handleNewNoteInFolder('')}
-        />
-        <IconRailButton
-          dataCy="ewe-note-new-folder-trigger-mobile"
-          icon={FolderOpen}
-          label={activeFolderId ? 'New subfolder' : 'New folder'}
-          onClick={() =>
-            setFolderDialog({
-              mode: 'create',
-              initialName: '',
-              parentId: activeFolderId,
-            })
-          }
-        />
+        {canCreateNote ? (
+          <IconRailButton
+            icon={Plus}
+            label="New note"
+            onClick={() => handleNewNoteInFolder('')}
+          />
+        ) : null}
+        {!agentWorkspaceEnabled ? (
+          <IconRailButton
+            dataCy="ewe-note-new-folder-trigger-mobile"
+            icon={FolderOpen}
+            label={activeFolderId ? 'New subfolder' : 'New folder'}
+            onClick={() =>
+              setFolderDialog({
+                mode: 'create',
+                initialName: '',
+                parentId: activeFolderId,
+              })
+            }
+          />
+        ) : null}
       </div>
 
       <nav
@@ -378,6 +446,7 @@ function SidebarContent({
                   })
                 }
                 onDelete={handleDeleteFolder}
+                onDeleteVault={requestVaultDeletion}
               />
             ))}
             {folders.length === 0 ? (
@@ -475,6 +544,55 @@ function SidebarContent({
         dataCySubmit="ewe-note-folder-submit"
         onSubmit={handleFolderSubmit}
       />
+      <AlertDialog
+        open={Boolean(vaultPendingDelete)}
+        onOpenChange={(open) => {
+          if (!open && !deletingVault) {
+            setVaultPendingDelete(null);
+            setVaultDeleteError(null);
+          }
+        }}
+      >
+        <AlertDialogContent data-cy="ewe-note-delete-vault-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Delete “{vaultPendingDelete?.name}”?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block">
+                This removes this empty vault from EweNote. If it is synced, it
+                will disappear from your synced devices too. This cannot be
+                undone in EweNote.
+              </span>
+              <span className="block">
+                Files in a mounted filesystem vault are not deleted.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {vaultDeleteError ? (
+            <p
+              role="alert"
+              className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+            >
+              {vaultDeleteError}
+            </p>
+          ) : null}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingVault}>
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={deletingVault}
+              onClick={() => void confirmVaultDeletion()}
+              data-cy="ewe-note-confirm-delete-vault"
+            >
+              {deletingVault ? 'Deleting…' : 'Delete vault'}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </aside>
   );
 }
@@ -495,6 +613,7 @@ interface FolderBranchProps {
   onShareFolder: (folderId: string, folderName: string) => void;
   onRename: (folder: NotesFolder) => void;
   onDelete: (folder: NotesFolder) => void;
+  onDeleteVault: (folder: NotesFolder) => void;
 }
 
 function FolderBranch({
@@ -513,6 +632,7 @@ function FolderBranch({
   onShareFolder,
   onRename,
   onDelete,
+  onDeleteVault,
 }: FolderBranchProps) {
   const navigate = useNavigate();
   const folderNotes = getDirectNotesInFolder(folder.id);
@@ -534,6 +654,7 @@ function FolderBranch({
         onShareFolder={() => onShareFolder(folder.id, folder.name)}
         onRename={() => onRename(folder)}
         onDelete={() => onDelete(folder)}
+        onDeleteVault={() => onDeleteVault(folder)}
       />
 
       {isExpanded && (childFolders.length > 0 || folderNotes.length > 0) ? (
@@ -556,30 +677,60 @@ function FolderBranch({
               onShareFolder={onShareFolder}
               onRename={onRename}
               onDelete={onDelete}
+              onDeleteVault={onDeleteVault}
             />
           ))}
           {folderNotes.map((note) => (
-            <button
+            <DraggableNoteItem
               key={note.id}
-              type="button"
-              onClick={() => navigate(`/editor/${note.id}`)}
-              className={`flex w-full min-w-0 items-start gap-2 rounded-2xl px-3 py-2 text-left text-sm transition-colors ${
-                currentNoteId === note.id
-                  ? 'bg-sidebar-accent text-sidebar-foreground'
-                  : 'hover:bg-sidebar-accent/70'
-              }`}
-              title={formatTreeNoteTitle(note.title)}
-              aria-label={`Open note ${formatTreeNoteTitle(note.title)}`}
-            >
-              <FileText className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-              <span className="min-w-0 flex-1 truncate leading-5">
-                {formatTreeNoteTitle(note.title)}
-              </span>
-            </button>
+              note={note}
+              isActive={currentNoteId === note.id}
+              onOpen={() => navigate(`/editor/${note.id}`)}
+            />
           ))}
         </div>
       ) : null}
     </div>
+  );
+}
+
+function DraggableNoteItem({
+  note,
+  isActive,
+  onOpen,
+}: {
+  note: NotesNote;
+  isActive: boolean;
+  onOpen: () => void;
+}) {
+  const [{ isDragging }, drag] = useDrag<
+    DraggedNoteItem,
+    unknown,
+    { isDragging: boolean }
+  >({
+    type: ItemTypes.NOTE,
+    item: { noteId: note.id, folderId: note.folder },
+    collect: (monitor) => ({ isDragging: monitor.isDragging() }),
+  });
+  const title = formatTreeNoteTitle(note.title);
+
+  return (
+    <button
+      ref={drag}
+      type="button"
+      onClick={onOpen}
+      data-cy={`ewe-note-note-drag-source-${note.id}`}
+      className={`flex w-full min-w-0 items-start gap-2 rounded-md py-1.5 pl-10 pr-3 text-left text-sm transition-colors ${
+        isActive
+          ? 'bg-sidebar-accent text-sidebar-foreground'
+          : 'hover:bg-sidebar-accent/70'
+      } ${isDragging ? 'cursor-grabbing opacity-50' : 'cursor-grab'}`}
+      title={`Drag to move • ${title}`}
+      aria-label={`Open note ${title}`}
+    >
+      <FileText className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+      <span className="min-w-0 flex-1 truncate leading-5">{title}</span>
+    </button>
   );
 }
 
@@ -596,6 +747,7 @@ interface FolderItemProps {
   onShareFolder: () => void;
   onRename: () => void;
   onDelete: () => void;
+  onDeleteVault: () => void;
 }
 
 function FolderItem({
@@ -611,7 +763,24 @@ function FolderItem({
   onShareFolder,
   onRename,
   onDelete,
+  onDeleteVault,
 }: FolderItemProps) {
+  const { allRooms, db, getVaultDeletionEligibility } = useDb();
+  const room = folder.roomId
+    ? allRooms.find((candidate) => candidate.id === folder.roomId)
+    : null;
+  const canCreateNote =
+    folder.kind !== 'shared-room' ||
+    (room ? canWriteRoom(room, db.userId) : false);
+  const vaultDeletion = folder.roomId
+    ? getVaultDeletionEligibility(folder.roomId)
+    : undefined;
+  const canDeleteVault =
+    folder.kind === 'shared-room' && vaultDeletion?.canDelete === true;
+  const showDirectDelete = folder.kind === 'folder' || canDeleteVault;
+  const deleteLabel =
+    folder.kind === 'shared-room' ? 'Delete vault' : 'Delete folder';
+  const handleDelete = folder.kind === 'shared-room' ? onDeleteVault : onDelete;
   const [{ isOver }, drop] = useDrop<
     DraggedNoteItem,
     unknown,
@@ -631,8 +800,8 @@ function FolderItem({
   return (
     <div
       ref={drop}
-      className={`flex w-full min-w-0 items-center gap-1 rounded-2xl transition-colors ${
-        isOver ? 'border border-primary/30 bg-primary/10' : ''
+      className={`flex w-full min-w-0 items-center gap-1 rounded-md transition-colors ${
+        isOver ? 'bg-primary/15 ring-1 ring-primary/40' : ''
       }`}
     >
       <button
@@ -648,27 +817,40 @@ function FolderItem({
         )}
       </button>
       <button
-        className={`flex min-w-0 flex-1 items-center gap-2 rounded-2xl px-3 py-2 text-left transition-colors ${
+        className={`flex min-w-0 flex-1 items-center gap-2 rounded-md px-3 py-1.5 text-left transition-colors ${
           active
             ? 'bg-sidebar-accent text-sidebar-foreground'
             : 'hover:bg-sidebar-accent/70'
         }`}
         onClick={onClick}
-        title={folder.name}
+        title={`${folder.name} (${folderNotes.length} direct)`}
       >
         <FolderOpen className="h-4 w-4 shrink-0 self-start text-muted-foreground" />
-        <span className="min-w-0 flex-1 text-sm leading-5 [overflow-wrap:anywhere]">
+        <span className="min-w-0 flex-1 truncate whitespace-nowrap text-sm leading-5">
           {folder.name}
         </span>
-        <span className="shrink-0 self-center text-[11px] text-muted-foreground">
-          {folderNotes.length} direct
-        </span>
       </button>
+      {showDirectDelete ? (
+        <button
+          type="button"
+          aria-label={`${deleteLabel} ${folder.name}`}
+          title={`${deleteLabel} ${folder.name}`}
+          onClick={handleDelete}
+          className="shrink-0 self-center rounded-full p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          data-cy={
+            folder.kind === 'shared-room'
+              ? `ewe-note-delete-vault-${folder.roomId}`
+              : `ewe-note-delete-folder-${folder.id}`
+          }
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      ) : null}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            aria-label={`Folder actions for ${folder.name}`}
+            aria-label={`${folder.kind === 'shared-room' ? 'Vault' : 'Folder'} actions for ${folder.name}`}
             className="shrink-0 self-center rounded-full p-1 text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
             data-cy={`ewe-note-folder-actions-${folder.id}`}
           >
@@ -676,10 +858,12 @@ function FolderItem({
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={onNewNote}>
-            <Plus className="mr-2 h-4 w-4" />
-            New note
-          </DropdownMenuItem>
+          {canCreateNote ? (
+            <DropdownMenuItem onClick={onNewNote}>
+              <Plus className="mr-2 h-4 w-4" />
+              New note
+            </DropdownMenuItem>
+          ) : null}
           {folder.kind === 'folder' ? (
             <DropdownMenuItem onClick={onNewSubfolder}>
               <FolderOpen className="mr-2 h-4 w-4" />
@@ -691,7 +875,7 @@ function FolderItem({
             disabled={folder.kind === 'shared-room'}
           >
             <Share className="mr-2 h-4 w-4" />
-            Share folder
+            {folder.kind === 'shared-room' ? 'Share vault' : 'Share folder'}
           </DropdownMenuItem>
           {folder.kind === 'folder' ? (
             <DropdownMenuItem onClick={onRename}>
@@ -700,9 +884,33 @@ function FolderItem({
             </DropdownMenuItem>
           ) : null}
           {folder.kind === 'folder' ? (
-            <DropdownMenuItem onClick={onDelete}>
+            <DropdownMenuItem onClick={onDelete} variant="destructive">
               <Trash2 className="mr-2 h-4 w-4" />
               Delete folder
+            </DropdownMenuItem>
+          ) : null}
+          {folder.kind === 'shared-room' ? (
+            <DropdownMenuItem
+              onClick={onDeleteVault}
+              disabled={!canDeleteVault}
+              aria-label={
+                vaultDeletion && !vaultDeletion.canDelete
+                  ? `Delete vault. ${vaultDeletion.reason}`
+                  : 'Delete vault'
+              }
+              variant="destructive"
+              className="items-start data-[disabled]:opacity-80"
+              data-cy={`ewe-note-delete-vault-menu-${folder.roomId}`}
+            >
+              <Trash2 className="mr-2 mt-0.5 h-4 w-4 shrink-0" />
+              <span className="flex min-w-0 flex-col">
+                <span>Delete vault</span>
+                {vaultDeletion && !vaultDeletion.canDelete ? (
+                  <span className="max-w-56 whitespace-normal text-xs leading-4 text-muted-foreground">
+                    {vaultDeletion.reason}
+                  </span>
+                ) : null}
+              </span>
             </DropdownMenuItem>
           ) : null}
         </DropdownMenuContent>

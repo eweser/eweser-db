@@ -9,3 +9,26 @@ export function buildDefaultUntitledNoteTitle(date = new Date()) {
 
   return `${year}-${month}-${day} ${hours}:${minutes} ${UNTITLED_TITLE}`;
 }
+
+export function isDefaultUntitledNoteTitle(title: string) {
+  return /^\d{4}-\d{2}-\d{2} \d{2}:\d{2} Untitled$/.test(title);
+}
+
+export function getFirstHeading(text: string) {
+  const headingMatch = text.match(/^#\s+(.+)$/m);
+  return headingMatch?.[1]?.trim() || null;
+}
+
+export function getSyncedTitle(
+  currentTitle: string,
+  previousText: string,
+  nextText: string
+) {
+  const nextHeading = getFirstHeading(nextText);
+  if (!nextHeading) return null;
+
+  return isDefaultUntitledNoteTitle(currentTitle) ||
+    currentTitle === getFirstHeading(previousText)
+    ? nextHeading
+    : null;
+}

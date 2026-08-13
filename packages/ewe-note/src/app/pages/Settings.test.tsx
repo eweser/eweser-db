@@ -9,6 +9,7 @@ import {
   WORKSPACE_MOBILE_PULLDOWN_SEARCH_STORAGE_KEY,
   WORKSPACE_MOBILE_SWIPE_EFFECTS_STORAGE_KEY,
 } from '../components/workspace-interaction-settings';
+import { AGENT_WORKSPACE_ENABLED_STORAGE_KEY } from '../components/agent-workspace-settings';
 
 const mockNavigate = vi.fn();
 const mockSetSelectedRoom = vi.fn();
@@ -23,9 +24,9 @@ vi.mock('../../db', () => ({
     allRooms: [],
     allRoomIds: [],
     db: {},
-    hasToken: false,
+    hasToken: true,
     loaded: true,
-    loggedIn: false,
+    loggedIn: true,
     loginUrl: 'http://localhost:38101/login',
     selectedRoom: null,
     setSelectedRoom: mockSetSelectedRoom,
@@ -33,7 +34,12 @@ vi.mock('../../db', () => ({
     syncStatus: 'signed-out',
     syncStatusDescription: 'Signed out',
     syncStatusLabel: 'Signed out',
-    user: {},
+    user: {
+      firstName: 'Test',
+      lastName: 'User',
+      email: 'test@example.com',
+      avatar: '',
+    },
   }),
 }));
 
@@ -108,6 +114,14 @@ describe('Settings', () => {
     ).toBe('false');
   });
 
+  it('shows the signed-in account name and email', () => {
+    render(<Settings />);
+
+    expect(screen.getByText('Test User')).toBeTruthy();
+    expect(screen.getByText('test@example.com')).toBeTruthy();
+    expect(screen.queryByText('Signed In')).toBeNull();
+  });
+
   it('shows the full theme preset controls in settings', () => {
     render(<Settings />);
 
@@ -141,8 +155,39 @@ describe('Settings', () => {
     ).toBeTruthy();
     expect(
       screen.getByText(
-        'Open a local Markdown folder and edit its files in EweNote. Sign in first if you also want the room synced across devices.'
+        'Markdown files become normal synced EweNote notes while this desktop keeps writable links to the originals.'
       )
     ).toBeTruthy();
+  });
+
+  it('keeps the Agent Workspace mod off by default', () => {
+    render(<Settings />);
+
+    const toggle = screen.getByRole('switch', {
+      name: 'Enable Agent Workspace',
+    });
+
+    expect(toggle.getAttribute('data-state')).toBe('unchecked');
+    expect(
+      screen.getByText(
+        'Off. No agent workspace tasks or connections are active.'
+      )
+    ).toBeTruthy();
+    expect(screen.queryByText('Ready to pair')).toBeNull();
+  });
+
+  it('enables the Agent Workspace mod and caches the choice locally', () => {
+    render(<Settings />);
+
+    fireEvent.click(
+      screen.getByRole('switch', { name: 'Enable Agent Workspace' })
+    );
+
+    expect(
+      window.localStorage.getItem(AGENT_WORKSPACE_ENABLED_STORAGE_KEY)
+    ).toBe('true');
+    expect(screen.getByText('Ready to pair')).toBeTruthy();
+    expect(screen.getByText('Agent Control')).toBeTruthy();
+    expect(screen.getByText('Agent Memory')).toBeTruthy();
   });
 });

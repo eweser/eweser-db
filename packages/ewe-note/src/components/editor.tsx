@@ -46,6 +46,7 @@ export default function Editor({
   onEditorReady,
   onEditorFocusChange,
   onNavigateWikiLink,
+  readOnly = false,
   sourceMode,
   onSourceModeChange,
 }: {
@@ -55,6 +56,7 @@ export default function Editor({
   onEditorReady?: (editor: TiptapEditorInstance | null) => void;
   onEditorFocusChange?: (focused: boolean) => void;
   onNavigateWikiLink?: (href: string) => void;
+  readOnly?: boolean;
   sourceMode?: boolean;
   onSourceModeChange?: (sourceMode: boolean) => void;
 }) {
@@ -89,6 +91,7 @@ export default function Editor({
       onEditorReady={onEditorReady}
       onEditorFocusChange={onEditorFocusChange}
       onNavigateWikiLink={onNavigateWikiLink}
+      readOnly={readOnly}
       sourceMode={sourceMode}
       onSourceModeChange={onSourceModeChange}
     />
@@ -107,6 +110,7 @@ function EditorInternal({
   onEditorReady,
   onEditorFocusChange,
   onNavigateWikiLink,
+  readOnly,
   sourceMode,
   onSourceModeChange,
 }: {
@@ -124,6 +128,7 @@ function EditorInternal({
   onEditorReady?: (editor: TiptapEditorInstance | null) => void;
   onEditorFocusChange?: (focused: boolean) => void;
   onNavigateWikiLink?: (href: string) => void;
+  readOnly: boolean;
   sourceMode?: boolean;
   onSourceModeChange?: (sourceMode: boolean) => void;
 }) {
@@ -147,6 +152,7 @@ function EditorInternal({
           <FrontmatterEditor
             note={note}
             onUpdate={(fm) => updateNoteFrontmatter(fm, note)}
+            readOnly={readOnly}
           />
         )}
         <TiptapEditor
@@ -160,6 +166,7 @@ function EditorInternal({
           onEditorReady={onEditorReady}
           onEditorFocusChange={onEditorFocusChange}
           onNavigateWikiLink={onNavigateWikiLink}
+          readOnly={readOnly}
           sourceMode={sourceMode}
           onSourceModeChange={onSourceModeChange}
           attachmentContext={attachmentContext}

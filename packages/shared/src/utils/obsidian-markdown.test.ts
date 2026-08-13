@@ -92,6 +92,121 @@ describe('frontmatter round-trip', () => {
     expect(fm2).toEqual(frontmatter);
     expect(c2).toBe(content);
   });
+
+  it('round-trips nested objects', () => {
+    const original =
+      '---\ntitle: Nested\nmetadata:\n  author: Jane\n  published: true\n  count: 7\n---\nBody';
+    const { frontmatter, content } = parseFrontmatter(original);
+    const reserialized = serializeFrontmatter(frontmatter, content);
+    const { frontmatter: fm2, content: c2 } = parseFrontmatter(reserialized);
+    expect(fm2).toEqual({
+      title: 'Nested',
+      metadata: { author: 'Jane', published: true, count: 7 },
+    });
+    expect(c2).toBe('Body');
+  });
+
+  it('round-trips nested arrays of scalars', () => {
+    const original =
+      '---\ntitle: Lists\nmetadata:\n  tags:\n    - a\n    - b\n    - c\n---\nBody';
+    const { frontmatter } = parseFrontmatter(original);
+    expect(frontmatter).toEqual({
+      title: 'Lists',
+      metadata: { tags: ['a', 'b', 'c'] },
+    });
+    const reserialized = serializeFrontmatter(
+      frontmatter as Record<string, unknown>,
+      'Body'
+    );
+    const { frontmatter: fm2 } = parseFrontmatter(reserialized);
+    expect(fm2).toEqual({
+      title: 'Lists',
+      metadata: { tags: ['a', 'b', 'c'] },
+    });
+  });
+
+  it('round-trips arrays containing objects and nested arrays', () => {
+    const frontmatter = {
+      projects: [
+        {
+          name: 'Alpha',
+          owners: ['Jane', 'Ravi'],
+          stages: [['draft', 'review'], ['approved']],
+        },
+        {
+          name: 'Beta',
+          owners: [],
+        },
+      ],
+    };
+
+    const reserialized = serializeFrontmatter(frontmatter, 'Body');
+    const { frontmatter: reparsed } = parseFrontmatter(reserialized);
+
+    expect(reparsed).toEqual(frontmatter);
+  });
+
+  it('parses dash-only markers for nested list items', () => {
+    const markdown = [
+      '---',
+      'projects:',
+      '  -',
+      '    name: Alpha',
+      '    tags:',
+      '      - one',
+      '      - two',
+      '  -',
+      '    name: Beta',
+      '---',
+      'Body',
+    ].join('\n');
+
+    expect(parseFrontmatter(markdown).frontmatter).toEqual({
+      projects: [{ name: 'Alpha', tags: ['one', 'two'] }, { name: 'Beta' }],
+    });
+  });
+
+  it('round-trips mixed flat and nested', () => {
+    const original =
+      '---\ntitle: Mixed\ncount: 42\nmetadata:\n  author: Jane\n  tags:\n    - one\n    - two\n---\nBody';
+    const { frontmatter } = parseFrontmatter(original);
+    expect(frontmatter).toEqual({
+      title: 'Mixed',
+      count: 42,
+      metadata: { author: 'Jane', tags: ['one', 'two'] },
+    });
+    const reserialized = serializeFrontmatter(
+      frontmatter as Record<string, unknown>,
+      'Body'
+    );
+    const { frontmatter: fm2 } = parseFrontmatter(reserialized);
+    expect(fm2).toEqual({
+      title: 'Mixed',
+      count: 42,
+      metadata: { author: 'Jane', tags: ['one', 'two'] },
+    });
+  });
+
+  it('round-trips empty frontmatter object', () => {
+    const result = serializeFrontmatter({}, 'Body');
+    expect(result).toBe('Body');
+  });
+
+  it('preserves unknown keys across round-trip', () => {
+    const original =
+      '---\ncustom_field: some value\nanother: 123\ntitle: Test\n---\nBody';
+    const { frontmatter } = parseFrontmatter(original);
+    expect(frontmatter.custom_field).toBe('some value');
+    expect(frontmatter.another).toBe(123);
+    const reserialized = serializeFrontmatter(
+      frontmatter as Record<string, unknown>,
+      'Body'
+    );
+    const { frontmatter: fm2 } = parseFrontmatter(reserialized);
+    expect(fm2.custom_field).toBe('some value');
+    expect(fm2.another).toBe(123);
+    expect(fm2.title).toBe('Test');
+  });
 });
 
 // ---------------------------------------------------------------------------

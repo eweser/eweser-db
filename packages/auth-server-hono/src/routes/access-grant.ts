@@ -15,6 +15,7 @@ import {
   updateRoomPublicAccess,
   updateRoom,
 } from '../model/rooms/calls.js';
+import { roomAllowsRead, roomAllowsWrite } from '../model/rooms/room-access.js';
 import { createRoomInviteLink } from '../services/access-grant/create-room-invite-link.js';
 import { verifyRoomInviteToken } from '../services/access-grant/create-room-invite-link.js';
 import { generateSyncToken } from '../services/sync-token.js';
@@ -57,7 +58,10 @@ accessGrantRouter.post('/sync-registry', async (c) => {
   if (!token) return c.json({ error: 'No token provided' }, 401);
 
   const body = (await c.req.json()) as RegistrySyncRequestBody;
-  const result = await syncRoomsWithClient(token, body.rooms);
+  const newRoomIds = Array.isArray(body.newRoomIds)
+    ? body.newRoomIds.filter((id): id is string => typeof id === 'string')
+    : [];
+  const result = await syncRoomsWithClient(token, body.rooms, newRoomIds);
   return c.json(result);
 });
 
@@ -340,6 +344,12 @@ accessGrantRouter.post('/update-room/:roomId', requireJwtAuth, async (c) => {
     return c.json({ error: 'Invalid room' }, 403);
   }
 
+  const [room] = await getRoomsByIds([roomId]);
+  const { ownerId } = parseAccessGrantId(c.get('access_grant_id'));
+  if (!room || !roomAllowsWrite(room, ownerId)) {
+    return c.json({ error: 'Room is read only' }, 403);
+  }
+
   const updated = await updateRoom({ id: roomId, name: newName });
   return c.json(updated);
 });
@@ -412,12 +422,17 @@ accessGrantRouter.get(
     if (!room) {
       return c.json({ error: 'Room not found' }, 404);
     }
+    const { ownerId } = parseAccessGrantId(c.get('access_grant_id'));
+    if (!roomAllowsRead(room, ownerId)) {
+      return c.json({ error: 'Invalid room' }, 403);
+    }
 
     const { token, expiry } = generateSyncToken(
       roomId,
       room.collectionKey,
-      undefined,
-      room.publicAccess
+      ownerId,
+      room.publicAccess,
+      !roomAllowsWrite(room, ownerId)
     );
 
     const response: RefreshSyncTokenRouteResponse = {

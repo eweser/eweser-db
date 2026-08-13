@@ -8,6 +8,7 @@ import {
   readFeatureVaultFixture,
 } from '../../editor/obsidian-feature-fixtures';
 import { NotesProvider, useNotes, type Template } from './NotesContext';
+import { AGENT_WORKSPACE_ENABLED_STORAGE_KEY } from '../components/agent-workspace-settings';
 
 type DocumentsLike = {
   toArray: (notes: DbNote[]) => DbNote[];
@@ -140,9 +141,9 @@ function createRoom(
   } as unknown as Room<DbNote>;
 }
 
-function createDbState(room: Room<DbNote>) {
+function createDbState(room: Room<DbNote>, userId?: string) {
   return {
-    db: {} as never,
+    db: { userId } as never,
     loginUrl: '',
     loaded: true,
     loggedIn: false,
@@ -311,6 +312,101 @@ describe('NotesContext parity behavior', () => {
         },
       ])
     );
+  });
+
+  it('limits the enabled Agent Workspace mod to agent rooms', async () => {
+    const [fixture] = await loadFixtureNotes(['01 Markdown Syntax.md']);
+    const regularRoom = createRoom(
+      'room-notes',
+      'Notes',
+      new FakeDocuments([
+        { ...fixture, _id: 'regular-note' } as unknown as DbNote,
+      ])
+    );
+    const memoryRoom = createRoom(
+      'room-memory',
+      'Agent Memory',
+      new FakeDocuments([
+        {
+          ...fixture,
+          _id: 'journal-note',
+          text: '# Agent journal\n\nSummary',
+          frontmatter: { title: 'Agent journal' },
+        } as unknown as DbNote,
+      ])
+    );
+
+    dbState = createDbState(regularRoom);
+    dbState.allRooms = [regularRoom, memoryRoom];
+    dbState.allRoomIds = ['room-notes', 'room-memory'];
+    mockUseDb.mockImplementation(() => dbState);
+    mockUseFolders.mockReturnValue({
+      folders: folderFixtures,
+      createFolder: vi.fn(),
+      renameFolder: vi.fn(),
+      deleteFolder: vi.fn(),
+    });
+    window.localStorage.setItem(AGENT_WORKSPACE_ENABLED_STORAGE_KEY, 'true');
+
+    render(
+      <NotesProvider>
+        <Probe />
+      </NotesProvider>
+    );
+
+    await waitFor(() => {
+      expect(latestContext?.notes.map((note) => note.id)).toEqual([
+        'journal-note',
+      ]);
+    });
+    expect(latestContext?.folders.map((folder) => folder.name)).toEqual([
+      'Agent Memory',
+    ]);
+    expect(latestContext?.agentWorkspaceEnabled).toBe(true);
+    expect(latestContext?.canCreateNote).toBe(false);
+  });
+
+  it('synchronizes an automatic title with first-heading edits', async () => {
+    await renderProviderWithFixtures(['01 Markdown Syntax.md']);
+
+    const note = latestContext?.addNote({
+      title: '2026-08-04 09:40 Untitled',
+      content: '# 2026-08-04 09:40 Untitled\n\nDraft',
+    });
+
+    latestContext?.updateNote(note?.id ?? '', {
+      content: '# Unsynced TODO\n\nDraft',
+    });
+
+    await waitFor(() => {
+      expect(
+        latestContext?.notes.find((candidate) => candidate.id === note?.id)
+          ?.title
+      ).toBe('Unsynced TODO');
+    });
+
+    latestContext?.updateNote(note?.id ?? '', {
+      content: '# Unsynced priorities\n\nDraft',
+    });
+
+    await waitFor(() => {
+      expect(
+        latestContext?.notes.find((candidate) => candidate.id === note?.id)
+          ?.title
+      ).toBe('Unsynced priorities');
+    });
+
+    latestContext?.updateNote(note?.id ?? '', { title: 'Pinned title' });
+    latestContext?.updateNote(note?.id ?? '', {
+      content: '# A different heading\n\nDraft',
+    });
+
+    await waitFor(() => {
+      expect(
+        latestContext?.notes.find((candidate) => candidate.id === note?.id)
+          ?.title
+      ).toBe('Pinned title');
+    });
   });
 
   it('resolves fixture links, backlinks, title derivation, and unlinked mention conversion', async () => {
@@ -646,5 +742,49 @@ describe('NotesContext parity behavior', () => {
         type: 'daily',
       });
     });
+  });
+
+  it('blocks every note mutation in a remote read-only room', async () => {
+    latestContext = undefined;
+    const [source] = await loadFixtureNotes(['01 Markdown Syntax.md']);
+    const docs = new FakeDocuments([source]);
+    const room = {
+      ...createRoom('agent-memory', 'Agent Memory', docs),
+      syncUrl: 'wss://sync.example.test',
+      readAccess: ['reader'],
+      writeAccess: ['publisher'],
+      adminAccess: ['publisher'],
+    } as Room<DbNote>;
+
+    dbState = createDbState(room, 'reader');
+    mockUseDb.mockImplementation(() => dbState);
+    mockUseFolders.mockReturnValue({
+      folders: [],
+      createFolder: vi.fn(),
+      renameFolder: vi.fn(),
+      deleteFolder: vi.fn(),
+    });
+
+    render(
+      <NotesProvider>
+        <Probe />
+      </NotesProvider>
+    );
+
+    await waitFor(() => expect(latestContext?.notes).toHaveLength(1));
+    const original = docs.get(source._id);
+
+    latestContext?.updateNote(source._id, { title: 'Changed' });
+    latestContext?.moveNote(source._id, 'some-folder');
+    latestContext?.deleteNote(source._id);
+
+    expect(docs.get(source._id)).toEqual(original);
+    expect(() =>
+      latestContext?.addNote({
+        title: 'New memory',
+        folder: 'room:agent-memory',
+      })
+    ).toThrow('This room is read only');
+    expect(docs.getUndeleted()).toHaveLength(1);
   });
 });

@@ -17,6 +17,7 @@ describe('newRoom', () => {
     const db = {
       collections: { notes: {}, flashcards: {}, profiles: {} },
       registry: [],
+      _pendingRegistryRoomIds: new Set<string>(),
       online: false,
       debug: vi.fn(),
       loadRoom: vi.fn(),
@@ -33,6 +34,7 @@ describe('newRoom', () => {
     expect(db.collections.notes['room-1']).toBeDefined();
     expect(db.registry).toHaveLength(1);
     expect(db.registry[0]?.id).toBe('room-1');
+    expect(db._pendingRegistryRoomIds).toEqual(new Set(['room-1']));
     expect(setLocalRegistryMock).toHaveBeenCalledWith(db.registry);
     expect(db.loadRoom).toHaveBeenCalledWith(created);
     expect(db.syncRegistry).not.toHaveBeenCalled();
@@ -42,6 +44,7 @@ describe('newRoom', () => {
     const db = {
       collections: { notes: {}, flashcards: {}, profiles: {} },
       registry: [],
+      _pendingRegistryRoomIds: new Set<string>(),
       online: true,
       debug: vi.fn(),
       loadRoom: vi.fn(),
@@ -55,5 +58,28 @@ describe('newRoom', () => {
     });
 
     expect(db.syncRegistry).toHaveBeenCalled();
+  });
+
+  it('does not duplicate an existing room when an app initializes it again', () => {
+    const existingRoom = {
+      id: 'room-existing',
+      collectionKey: 'notes' as const,
+      name: 'Local notes',
+    };
+    const db = {
+      collections: { notes: {}, flashcards: {}, profiles: {} },
+      registry: [existingRoom],
+      _pendingRegistryRoomIds: new Set<string>(),
+      online: false,
+      debug: vi.fn(),
+      loadRoom: vi.fn(),
+      syncRegistry: vi.fn(),
+    } as unknown as Database;
+
+    newRoom(db)(existingRoom);
+
+    expect(db.registry).toEqual([existingRoom]);
+    expect(db._pendingRegistryRoomIds).toEqual(new Set([existingRoom.id]));
+    expect(setLocalRegistryMock).toHaveBeenCalledWith([existingRoom]);
   });
 });

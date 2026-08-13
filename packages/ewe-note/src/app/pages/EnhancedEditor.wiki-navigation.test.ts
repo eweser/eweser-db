@@ -24,9 +24,41 @@ vi.mock('@/db', () => ({
   }),
 }));
 
-import { buildEditorWikiLinkPath } from './EnhancedEditor';
+import {
+  buildEditorWikiLinkPath,
+  shouldWaitForRemoteNote,
+} from './EnhancedEditor';
 
 describe('EnhancedEditor wiki navigation helpers', () => {
+  it('keeps a missing synced note in hydration state during the grace period', () => {
+    expect(
+      shouldWaitForRemoteNote({
+        hasToken: true,
+        noteFound: false,
+        syncInProgress: false,
+        waitExpired: false,
+      })
+    ).toBe(true);
+    expect(
+      shouldWaitForRemoteNote({
+        hasToken: true,
+        noteFound: false,
+        syncInProgress: false,
+        waitExpired: true,
+      })
+    ).toBe(false);
+  });
+
+  it('keeps waiting while synced rooms are still connecting', () => {
+    expect(
+      shouldWaitForRemoteNote({
+        hasToken: true,
+        noteFound: false,
+        syncInProgress: true,
+        waitExpired: true,
+      })
+    ).toBe(true);
+  });
   it('preserves heading targets as editor URL hashes', () => {
     expect(
       buildEditorWikiLinkPath('note-target', {

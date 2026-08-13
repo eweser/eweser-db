@@ -19,6 +19,10 @@ helpers.
 - [`default-tutorial.ts`](./default-tutorial.ts): Starter tutorial note content
   and dismissal helpers.
 - [`notes-room.tsx`](./notes-room.tsx): React hook for note room state and CRUD.
+- [`prioritized-room-sync.ts`](./prioritized-room-sync.ts): Authenticates and
+  starts note-room sync before loading other account rooms in the background.
+- [`user.tsx`](./user.tsx): Resolves signed-in name, email, and avatar from the
+  trusted app identity endpoint plus synced profile overrides.
 - [`components/INDEX.md`](./components/): Editor, layout, sidebar, and UI
   component map.
 - [`cli/INDEX.md`](./cli/): Vault import, export, and sync CLI map.

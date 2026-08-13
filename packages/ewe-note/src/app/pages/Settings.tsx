@@ -1,5 +1,6 @@
 import {
   ArrowLeft,
+  Bot,
   ChevronRight,
   Download,
   HardDrive,
@@ -24,13 +25,16 @@ import { AUTH_PAGES_SERVER, AUTH_SERVER, env, routerBase } from '../../config';
 import { useTheme } from '../components/ThemeProvider';
 import { Switch } from '../components/ui/switch';
 import { useWorkspaceInteractionPreferences } from '../components/workspace-interaction-settings';
+import { useAgentWorkspacePreferences } from '../components/agent-workspace-settings';
 import {
   importVaultFromFiles,
   type BrowserVaultImportProgress,
   type BrowserVaultImportResult,
 } from '../lib/browser-vault-import';
 import {
+  getBrowserLocalVaultRoomId,
   pickBrowserLocalVault,
+  setBrowserLocalVaultRoomId,
   supportsBrowserLocalVaults,
 } from '../lib/browser-local-vault';
 
@@ -39,6 +43,7 @@ const SETTINGS_SECTIONS = [
   { id: 'appearance', label: 'Appearance' },
   { id: 'interaction', label: 'Interaction' },
   { id: 'sync', label: 'Sync' },
+  { id: 'mods', label: 'Mods' },
   { id: 'developer', label: 'Developer' },
 ] as const;
 
@@ -75,6 +80,11 @@ export function Settings() {
     syncStatusLabel,
     user,
   } = useDb();
+  const {
+    preferences: agentWorkspacePreferences,
+    accountBacked: agentWorkspaceAccountBacked,
+    setEnabled: setAgentWorkspaceEnabled,
+  } = useAgentWorkspacePreferences(db);
 
   const importingVault = vaultImportProgress !== null;
   const canSyncRemotely = loggedIn || hasToken;
@@ -163,9 +173,12 @@ export function Settings() {
         total: 1,
       });
       const mounted = await pickBrowserLocalVault();
-      const existingRoom = allRooms.find(
-        (room) => room.name === mounted.vaultName
+      const existingRoomId = await getBrowserLocalVaultRoomId(
+        mounted.directoryHandle
       );
+      const existingRoom = existingRoomId
+        ? allRooms.find((room) => room.id === existingRoomId)
+        : undefined;
       const result = await importVaultFromFiles({
         db,
         files: mounted.files,
@@ -175,6 +188,10 @@ export function Settings() {
         setSelectedRoom,
         targetNoteRoomId: existingRoom?.id,
       });
+      await setBrowserLocalVaultRoomId(
+        mounted.directoryHandle,
+        result.noteRoomId
+      );
       setVaultImportResult(result);
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return;
@@ -283,7 +300,7 @@ export function Settings() {
                             'Signed In'}
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          {user.avatar ?? ''}
+                          {user.email || 'Email unavailable'}
                         </div>
                       </>
                     ) : (
@@ -595,6 +612,65 @@ export function Settings() {
                       </div>
                     ) : null}
                   </div>
+                </div>
+              </SettingsPanel>
+            </section>
+
+            <section id="mods" className="mb-8 scroll-mt-6">
+              <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-muted-foreground">
+                Mods
+              </h2>
+              <SettingsPanel icon={Bot} title="Agent Workspace">
+                <div className="space-y-4">
+                  <SettingsToggleRow
+                    id="ewe-note-settings-agent-workspace"
+                    title="Enable Agent Workspace"
+                    description="Focus Ewe Note on editable agent controls and read-only agent memory. Off by default; signed-in choices sync privately across browsers."
+                    checked={agentWorkspacePreferences.enabled}
+                    onCheckedChange={setAgentWorkspaceEnabled}
+                  />
+
+                  {agentWorkspacePreferences.enabled ? (
+                    <div
+                      data-cy="ewe-note-settings-agent-workspace-setup"
+                      className="space-y-4 rounded-lg border border-border/70 bg-background/60 px-4 py-4"
+                    >
+                      <div>
+                        <div className="text-sm font-medium text-foreground">
+                          Ready to pair
+                        </div>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          Install and pair an Agent Bridge to connect vaults.
+                          Ewe Note does not receive local paths, Git commands,
+                          runtime commands, or bridge credentials.
+                        </p>
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <InfoBlock
+                          icon={Bot}
+                          title="Agent Control"
+                          description="Editable, allowlisted Markdown controls. The bridge validates and versions changes before applying them."
+                        />
+                        <InfoBlock
+                          icon={HardDrive}
+                          title="Agent Memory"
+                          description="Read-only memory and session-journal snapshots for browsing and search."
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {agentWorkspaceAccountBacked
+                          ? 'Enabled for this signed-in account. Turning on this mod does not affect another user.'
+                          : 'Stored in this browser until the signed-in private profile is available. Turning on this mod does not affect another user.'}
+                      </p>
+                    </div>
+                  ) : (
+                    <p
+                      data-cy="ewe-note-settings-agent-workspace-off"
+                      className="text-xs text-muted-foreground"
+                    >
+                      Off. No agent workspace tasks or connections are active.
+                    </p>
+                  )}
                 </div>
               </SettingsPanel>
             </section>

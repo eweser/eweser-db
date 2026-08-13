@@ -15,6 +15,7 @@ import {
   FolderInput,
   FileCode,
   Eye,
+  Trash2,
 } from 'lucide-react';
 import { RightPanel } from '../components/RightPanel';
 import { useNotes } from '../contexts/NotesContext';
@@ -36,6 +37,23 @@ import {
 } from '../components/WorkspaceShell';
 import type { Note } from '../contexts/NotesContext';
 import { useIsMobile } from '../components/ui/use-mobile';
+import { canWriteRoom } from '../lib/room-write-access';
+
+export const REMOTE_NOTE_HYDRATION_GRACE_MS = 10_000;
+
+export function shouldWaitForRemoteNote({
+  hasToken,
+  noteFound,
+  syncInProgress,
+  waitExpired,
+}: {
+  hasToken: boolean;
+  noteFound: boolean;
+  syncInProgress: boolean;
+  waitExpired: boolean;
+}) {
+  return hasToken && !noteFound && (syncInProgress || !waitExpired);
+}
 
 export function buildEditorWikiLinkPath(
   noteId: string,
@@ -58,6 +76,7 @@ export function EnhancedEditor() {
     'idle' | 'copied' | 'failed'
   >('idle');
   const [sourceMode, setSourceMode] = useState(false);
+  const [missingNoteWaitExpired, setMissingNoteWaitExpired] = useState(false);
   const navigate = useNavigate();
   const { noteId } = useParams();
   const {
@@ -114,6 +133,8 @@ export function EnhancedEditor() {
       return;
     }
 
+    if (noteRoom && !canWriteRoom(noteRoom, db.userId)) return;
+
     const created = addNote({
       title: parsed.noteName,
       folder: note?.folder,
@@ -121,14 +142,31 @@ export function EnhancedEditor() {
     });
     navigate(buildEditorWikiLinkPath(created.id, parsed));
   };
-  const { allRooms, selectedRoom, setSelectedRoom, setSelectedNoteId } =
-    useDb();
+  const {
+    allRooms,
+    db,
+    hasToken,
+    syncStatus,
+    selectedRoom,
+    setSelectedRoom,
+    setSelectedNoteId,
+  } = useDb();
 
   const note = notes.find((n) => n.id === noteId);
   const noteRoom = useMemo(
     () => allRooms.find((room) => room.id === note?.roomId) ?? null,
     [allRooms, note?.roomId]
   );
+
+  useEffect(() => {
+    setMissingNoteWaitExpired(false);
+    if (note || !hasToken || syncStatus === 'connecting') return;
+    const timeout = window.setTimeout(
+      () => setMissingNoteWaitExpired(true),
+      REMOTE_NOTE_HYDRATION_GRACE_MS
+    );
+    return () => window.clearTimeout(timeout);
+  }, [hasToken, note, noteId, syncStatus]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -160,6 +198,26 @@ export function EnhancedEditor() {
     setSelectedNoteId(note.id);
   }, [note, noteRoom, selectedRoom?.id, setSelectedNoteId, setSelectedRoom]);
 
+  if (
+    shouldWaitForRemoteNote({
+      hasToken,
+      noteFound: Boolean(note),
+      syncInProgress: syncStatus === 'connecting',
+      waitExpired: missingNoteWaitExpired,
+    })
+  ) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background text-foreground">
+        <div className="text-center" role="status">
+          <h2 className="text-2xl font-medium mb-2">Opening note…</h2>
+          <p className="text-muted-foreground">
+            Waiting for the synced vault to finish loading.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (!note) {
     return (
       <div className="flex h-screen items-center justify-center bg-background text-foreground">
@@ -177,6 +235,7 @@ export function EnhancedEditor() {
   }
 
   const editorRoom = noteRoom ?? selectedRoom;
+  const readOnly = editorRoom ? !canWriteRoom(editorRoom, db.userId) : false;
   if (focusMode) {
     return (
       <div className="flex h-screen flex-col bg-background">
@@ -200,6 +259,7 @@ export function EnhancedEditor() {
               <Editor
                 selectedRoom={editorRoom}
                 selectedNoteId={note.id}
+                readOnly={readOnly}
                 showFrontmatterEditor={false}
                 sourceMode={sourceMode}
                 onSourceModeChange={setSourceMode}
@@ -214,7 +274,9 @@ export function EnhancedEditor() {
   return (
     <WorkspaceShell
       selectedNoteId={note.id}
-      metadataSlot={<EditorMetadataPanel noteId={note.id} />}
+      metadataSlot={
+        <EditorMetadataPanel noteId={note.id} readOnly={readOnly} />
+      }
     >
       <EditorWorkspace
         note={note}
@@ -237,19 +299,30 @@ export function EnhancedEditor() {
         onNavigateWikiLink={handleNavigateWikiLink}
         sourceMode={sourceMode}
         onSourceModeChange={setSourceMode}
+        readOnly={readOnly}
       />
     </WorkspaceShell>
   );
 }
 
-function EditorMetadataPanel({ noteId }: { noteId: string }) {
+function EditorMetadataPanel({
+  noteId,
+  readOnly,
+}: {
+  noteId: string;
+  readOnly: boolean;
+}) {
   const { setMetadataVisible } = useWorkspaceShell();
   return (
-    <RightPanel noteId={noteId} onClose={() => setMetadataVisible(false)} />
+    <RightPanel
+      noteId={noteId}
+      onClose={() => setMetadataVisible(false)}
+      readOnly={readOnly}
+    />
   );
 }
 
-function EditorWorkspace({
+export function EditorWorkspace({
   note,
   onUpdateTitle,
   onCopyLink,
@@ -265,6 +338,7 @@ function EditorWorkspace({
   onNavigateWikiLink,
   sourceMode,
   onSourceModeChange,
+  readOnly,
 }: {
   note: Note;
   onUpdateTitle: (title: string) => void;
@@ -281,6 +355,7 @@ function EditorWorkspace({
   onNavigateWikiLink: (href: string) => void;
   sourceMode: boolean;
   onSourceModeChange: (sourceMode: boolean) => void;
+  readOnly: boolean;
 }) {
   const { metadataVisible, setMetadataVisible } = useWorkspaceShell();
   const isMobile = useIsMobile();
@@ -302,6 +377,7 @@ function EditorWorkspace({
           aria-label="Note title"
           value={note.title}
           onChange={(e) => onUpdateTitle(e.target.value)}
+          readOnly={readOnly}
           className="sr-only"
           tabIndex={-1}
         />
@@ -312,7 +388,7 @@ function EditorWorkspace({
               : ''
           }`}
         >
-          {isMobile ? (
+          {isMobile && !readOnly ? (
             <button
               type="button"
               aria-label={note.pinned ? 'Unpin note' : 'Pin note'}
@@ -344,17 +420,19 @@ function EditorWorkspace({
               )}
             </button>
           )}
-          <button
-            type="button"
-            aria-label="Enter focus mode"
-            data-cy="ewe-note-focus-mode"
-            onClick={onFocusMode}
-            className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            title="Focus Mode"
-          >
-            <Maximize2 className="w-4 h-4" />
-          </button>
-          {!isMobile ? (
+          {!readOnly ? (
+            <button
+              type="button"
+              aria-label="Enter focus mode"
+              data-cy="ewe-note-focus-mode"
+              onClick={onFocusMode}
+              className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              title="Focus Mode"
+            >
+              <Maximize2 className="w-4 h-4" />
+            </button>
+          ) : null}
+          {!isMobile && !readOnly ? (
             <button
               type="button"
               aria-label={note.pinned ? 'Unpin note' : 'Pin note'}
@@ -369,6 +447,18 @@ function EditorWorkspace({
               />
             </button>
           ) : null}
+          {!readOnly ? (
+            <button
+              type="button"
+              aria-label="Delete note"
+              data-cy="ewe-note-delete-note-button"
+              onClick={onDelete}
+              className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              title="Delete note"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          ) : null}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
@@ -381,14 +471,18 @@ function EditorWorkspace({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onSourceModeChange(!sourceMode)}>
-                {sourceMode ? (
-                  <Eye className="mr-2 h-4 w-4" />
-                ) : (
-                  <FileCode className="mr-2 h-4 w-4" />
-                )}
-                {sourceMode ? 'Return to rich editor' : 'Edit raw Markdown'}
-              </DropdownMenuItem>
+              {!readOnly ? (
+                <DropdownMenuItem
+                  onClick={() => onSourceModeChange(!sourceMode)}
+                >
+                  {sourceMode ? (
+                    <Eye className="mr-2 h-4 w-4" />
+                  ) : (
+                    <FileCode className="mr-2 h-4 w-4" />
+                  )}
+                  {sourceMode ? 'Return to rich editor' : 'Edit raw Markdown'}
+                </DropdownMenuItem>
+              ) : null}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 data-cy="ewe-note-copy-link"
@@ -407,45 +501,51 @@ function EditorWorkspace({
                     ? 'Copy failed'
                     : 'Copy Link'}
               </DropdownMenuItem>
-              <DropdownMenuItem
-                data-cy="ewe-note-duplicate"
-                onClick={onDuplicate}
-              >
-                <Copy className="mr-2 h-4 w-4" />
-                Duplicate
-              </DropdownMenuItem>
+              {!readOnly ? (
+                <DropdownMenuItem
+                  data-cy="ewe-note-duplicate"
+                  onClick={onDuplicate}
+                >
+                  <Copy className="mr-2 h-4 w-4" />
+                  Duplicate
+                </DropdownMenuItem>
+              ) : null}
               <DropdownMenuItem data-cy="ewe-note-export" onClick={onExport}>
                 <Download className="mr-2 h-4 w-4" />
                 Export as Markdown
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel>Move to folder</DropdownMenuLabel>
-              <DropdownMenuItem
-                data-cy="ewe-note-move-note-all"
-                disabled={!note.folder}
-                onClick={() => onMoveNote('')}
-              >
-                <FolderInput className="mr-2 h-4 w-4" />
-                All Notes
-              </DropdownMenuItem>
-              {moveTargets.slice(0, 8).map((folder) => (
-                <DropdownMenuItem
-                  key={folder.id}
-                  data-cy={`ewe-note-move-note-${folder.id}`}
-                  onClick={() => onMoveNote(folder.id)}
-                >
-                  <FolderOpen className="mr-2 h-4 w-4" />
-                  {folder.name}
-                </DropdownMenuItem>
-              ))}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                data-cy="ewe-note-delete-note"
-                className="text-destructive"
-                onClick={onDelete}
-              >
-                Delete Note
-              </DropdownMenuItem>
+              {!readOnly ? (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel>Move to folder</DropdownMenuLabel>
+                  <DropdownMenuItem
+                    data-cy="ewe-note-move-note-all"
+                    disabled={!note.folder}
+                    onClick={() => onMoveNote('')}
+                  >
+                    <FolderInput className="mr-2 h-4 w-4" />
+                    All Notes
+                  </DropdownMenuItem>
+                  {moveTargets.slice(0, 8).map((folder) => (
+                    <DropdownMenuItem
+                      key={folder.id}
+                      data-cy={`ewe-note-move-note-${folder.id}`}
+                      onClick={() => onMoveNote(folder.id)}
+                    >
+                      <FolderOpen className="mr-2 h-4 w-4" />
+                      {folder.name}
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    data-cy="ewe-note-delete-note"
+                    className="text-destructive"
+                    onClick={onDelete}
+                  >
+                    Delete Note
+                  </DropdownMenuItem>
+                </>
+              ) : null}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -457,6 +557,7 @@ function EditorWorkspace({
             <Editor
               selectedRoom={editorRoom}
               selectedNoteId={note.id}
+              readOnly={readOnly}
               showFrontmatterEditor={false}
               onNavigateWikiLink={onNavigateWikiLink}
               sourceMode={sourceMode}

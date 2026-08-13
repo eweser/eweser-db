@@ -5,7 +5,17 @@ import { useDb } from '@/db';
 import { useFolders } from '@/notes-room';
 import { collectFolderTreeIds } from './folder-tree';
 import { writeBrowserLocalVaultNotes } from '../lib/browser-local-vault';
-import { buildDefaultUntitledNoteTitle, UNTITLED_TITLE } from './note-titles';
+import { canWriteRoom } from '../lib/room-write-access';
+import {
+  isAgentWorkspaceRoom,
+  useAgentWorkspacePreferences,
+} from '../components/agent-workspace-settings';
+import {
+  buildDefaultUntitledNoteTitle,
+  getFirstHeading,
+  getSyncedTitle,
+  UNTITLED_TITLE,
+} from './note-titles';
 import {
   extractWikiLinkTargets,
   extractUnlinkedMentions,
@@ -93,6 +103,8 @@ interface NotesContextType {
   getRecentNotes: (limit?: number) => Note[];
   getPinnedNotes: () => Note[];
   resolveWikiLink: (target: string) => string | null;
+  agentWorkspaceEnabled: boolean;
+  canCreateNote: boolean;
   convertUnlinkedMentionToLink: (
     noteId: string,
     targetNoteId: string,
@@ -156,9 +168,9 @@ function deriveTitle(note: DbNote) {
     return fmTitle.trim();
   }
 
-  const headingMatch = note.text.match(/^#\s+(.+)$/m);
-  if (headingMatch?.[1]) {
-    return headingMatch[1].trim();
+  const heading = getFirstHeading(note.text);
+  if (heading) {
+    return heading;
   }
 
   const plain = removeMarkdown(note.text).trim();
@@ -356,14 +368,28 @@ function extractUnlinkedMentionsForNote(
 
 export function NotesProvider({ children }: { children: React.ReactNode }) {
   const {
+    db,
     allRooms,
     selectedRoom,
     selectedNoteId,
     setSelectedNoteId,
     setSelectedRoom,
   } = useDb();
+  const { preferences: agentWorkspacePreferences } =
+    useAgentWorkspacePreferences(db);
+  const agentWorkspaceEnabled = agentWorkspacePreferences.enabled;
   const canonicalRoom =
     allRooms.find((room) => room.name === 'Notes') ?? allRooms[0] ?? null;
+  const agentControlRoom =
+    allRooms.find((room) => room.name === 'Agent Control') ?? null;
+  const visibleRooms = useMemo(
+    () =>
+      agentWorkspaceEnabled ? allRooms.filter(isAgentWorkspaceRoom) : allRooms,
+    [agentWorkspaceEnabled, allRooms]
+  );
+  const canCreateNote = agentWorkspaceEnabled
+    ? Boolean(agentControlRoom && canWriteRoom(agentControlRoom, db.userId))
+    : Boolean(canonicalRoom && canWriteRoom(canonicalRoom, db.userId));
   const {
     folders: roomFolders,
     createFolder,
@@ -434,17 +460,23 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
   }, [allRooms]);
 
   const folders = useMemo<Folder[]>(() => {
-    const baseFolders = roomFolders.map((folder) => ({
-      id: folder.id,
-      name: folder.name,
-      parentId: folder.parentFolderId ?? null,
-      expanded: true,
-      kind: 'folder' as const,
-      roomId: canonicalRoom?.id,
-    }));
+    const baseFolders = agentWorkspaceEnabled
+      ? []
+      : roomFolders.map((folder) => ({
+          id: folder.id,
+          name: folder.name,
+          parentId: folder.parentFolderId ?? null,
+          expanded: true,
+          kind: 'folder' as const,
+          roomId: canonicalRoom?.id,
+        }));
 
-    const sharedRoomFolders = allRooms
-      .filter((room) => canonicalRoom && room.id !== canonicalRoom.id)
+    const sharedRoomFolders = visibleRooms
+      .filter(
+        (room) =>
+          agentWorkspaceEnabled ||
+          (canonicalRoom && room.id !== canonicalRoom.id)
+      )
       .map((room) => ({
         id: `room:${room.id}`,
         name: room.name,
@@ -455,14 +487,14 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
       }));
 
     return [...baseFolders, ...sharedRoomFolders];
-  }, [allRooms, canonicalRoom, roomFolders]);
+  }, [agentWorkspaceEnabled, canonicalRoom, roomFolders, visibleRooms]);
 
   const notes = useMemo<Note[]>(() => {
     const internal: InternalNote[] = [];
 
     const noteById = new Map<string, InternalNote>();
 
-    for (const room of allRooms) {
+    for (const room of visibleRooms) {
       const docs = notesByRoomId[room.id] ?? [];
       for (const source of docs) {
         const title = deriveTitle(source);
@@ -539,7 +571,7 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
         (a, b) =>
           new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
       );
-  }, [allRooms, canonicalRoom, notesByRoomId, pinnedIds]);
+  }, [canonicalRoom, notesByRoomId, pinnedIds, visibleRooms]);
 
   const tasks = useMemo(() => {
     const extracted = notes.flatMap((note) =>
@@ -560,6 +592,8 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     }
     return null;
   };
+
+  const roomIsWritable = (room: Room<DbNote>) => canWriteRoom(room, db.userId);
 
   const adaptNote = (room: Room<DbNote>, source: DbNote): Note => {
     const note = notes.find((item) => item.id === source._id);
@@ -602,13 +636,18 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     const targetRoom =
       (note.folder?.startsWith('room:')
         ? allRooms.find((room) => room.id === note.folder?.replace('room:', ''))
-        : canonicalRoom) ??
+        : agentWorkspaceEnabled
+          ? agentControlRoom
+          : canonicalRoom) ??
       selectedRoom ??
       canonicalRoom ??
       allRooms[0];
 
     if (!targetRoom) {
       throw new Error('No available room to create a note');
+    }
+    if (!roomIsWritable(targetRoom as Room<DbNote>)) {
+      throw new Error('This room is read only');
     }
 
     const requestedTitle = note.title?.trim();
@@ -644,12 +683,23 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
   const updateNote = (id: string, updates: Partial<Note>) => {
     const found = getRoomAndSource(id);
     if (!found) return;
+    if (!roomIsWritable(found.room)) return;
 
     const next: DbNote = { ...found.source };
     let nextFrontmatter = { ...(found.source.frontmatter ?? {}) };
 
     if (updates.content !== undefined) {
       next.text = updates.content;
+      const currentTitle = deriveTitle(found.source);
+      const syncedTitle = getSyncedTitle(
+        currentTitle,
+        found.source.text,
+        updates.content
+      );
+
+      if (syncedTitle) {
+        nextFrontmatter.title = syncedTitle;
+      }
     }
 
     if (updates.title !== undefined) {
@@ -696,6 +746,7 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
   const deleteNote = (id: string) => {
     const found = getRoomAndSource(id);
     if (!found) return;
+    if (!roomIsWritable(found.room)) return;
     found.docs.delete(id);
   };
 
@@ -711,6 +762,7 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
   const moveNote = (noteId: string, targetFolder: string) => {
     const found = getRoomAndSource(noteId);
     if (!found) return;
+    if (!roomIsWritable(found.room)) return;
 
     if (targetFolder.startsWith('room:')) {
       return;
@@ -916,6 +968,8 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     getRecentNotes,
     getPinnedNotes,
     resolveWikiLink,
+    agentWorkspaceEnabled,
+    canCreateNote,
     convertUnlinkedMentionToLink,
   };
 

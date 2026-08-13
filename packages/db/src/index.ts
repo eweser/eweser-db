@@ -42,12 +42,24 @@ import {
   localStorageGet,
   localStorageRemove,
   localStorageSet,
+  setLocalRegistry,
 } from './utils/localStorageService.js';
 import { generateShareRoomLink } from './methods/connection/generateShareRoomLink.js';
 import { pingServer } from './utils/connection/pingServer.js';
 import { pollConnection } from './utils/connection/pollConnection.js';
 import { newRoom } from './methods/newRoom.js';
 import { renameRoom } from './methods/renameRoom.js';
+import {
+  deleteRoom,
+  getActiveRegistryRooms,
+  getRoomDeletionEligibility,
+} from './methods/deleteRoom.js';
+
+export {
+  RoomDeletionError,
+  type RoomDeletionBlockCode,
+  type RoomDeletionEligibility,
+} from './methods/deleteRoom.js';
 
 export * from './utils/index.js';
 export * from './utils/files.js';
@@ -81,6 +93,12 @@ export interface DatabaseOptions {
   initialDocuments?: SeedDocuments<EweDocument>;
 }
 
+function deduplicateRegistry(registry: Registry): Registry {
+  return Array.from(
+    new Map(registry.map((room) => [room.id, room] as const)).values()
+  );
+}
+
 export class Database extends TypedEventEmitter<DatabaseEvents> {
   userId = '';
   /* default to the eweser auth server https://www.eweser.com */
@@ -101,6 +119,11 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
   collectionKeys: CollectionKey[] = collectionKeys;
   collections: Collections = collections;
   registry: Registry = [];
+  /** @internal Rooms supplied by this app instance remain available locally
+   * even when the signed-in server registry does not contain them. */
+  _initialRoomIds = new Set<string>();
+  /** @internal Locally created rooms that still need server registration. */
+  _pendingRegistryRoomIds = new Set<string>();
   accessGrantToken = '';
 
   // METHODS
@@ -163,6 +186,8 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
 
   newRoom = newRoom(this);
   renameRoom = renameRoom(this);
+  deleteRoom = deleteRoom(this);
+  getRoomDeletionEligibility = getRoomDeletionEligibility(this);
 
   generateShareRoomLink = generateShareRoomLink(this);
   pingServer = pingServer(this);
@@ -272,15 +297,17 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     setupLogger(this);
     this.debug('Database created with options', options);
 
-    this.registry = this.getRegistry() || [];
+    const storedRegistry = this.getRegistry() || [];
+    this.registry = deduplicateRegistry(storedRegistry);
+    if (this.registry.length !== storedRegistry.length) {
+      setLocalRegistry(this)(this.registry);
+    }
     const initializedRooms: Registry = [];
     if (options.initialRooms) {
-      const registryRoomIds = this.registry.map((r) => r.id);
       for (const room of options.initialRooms) {
-        const registryRoom = roomToServerRoom(this.newRoom<EweDocument>(room));
-        if (room.id && !registryRoomIds.includes(room.id)) {
-          this.registry.push(registryRoom);
-        }
+        const initializedRoom = this.newRoom<EweDocument>(room);
+        this._initialRoomIds.add(initializedRoom.id);
+        const registryRoom = roomToServerRoom(initializedRoom);
         initializedRooms.push(registryRoom);
       }
       /** try to load remotes for initial rooms */
@@ -288,8 +315,9 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     }
     /** load all rooms in the registry locally, skipping any already handled above */
     const initializedRoomIds = new Set(initializedRooms.map((r) => r.id));
-    const remainingRegistryRooms = this.registry.filter(
-      (r) => !initializedRoomIds.has(r.id)
+    const remainingRegistryRooms = getActiveRegistryRooms(
+      this.registry,
+      initializedRoomIds
     );
     this.loadRooms(remainingRegistryRooms);
     this.pollForRegistrySync();

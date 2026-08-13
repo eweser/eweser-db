@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import { collectFolderTreeIds } from './folder-tree';
-import { buildDefaultUntitledNoteTitle } from './note-titles';
+import {
+  buildDefaultUntitledNoteTitle,
+  getFirstHeading,
+  getSyncedTitle,
+  isDefaultUntitledNoteTitle,
+} from './note-titles';
 
 describe('collectFolderTreeIds', () => {
   it('includes the selected folder and all descendants', () => {
@@ -32,5 +37,24 @@ describe('collectFolderTreeIds', () => {
     expect(buildDefaultUntitledNoteTitle(new Date('2026-05-04T09:07:00'))).toBe(
       '2026-05-04 09:07 Untitled'
     );
+  });
+
+  it('recognizes timestamped untitled note titles', () => {
+    expect(isDefaultUntitledNoteTitle('2026-05-04 09:07 Untitled')).toBe(true);
+    expect(isDefaultUntitledNoteTitle('Project brief')).toBe(false);
+  });
+
+  it('syncs generated and heading-backed titles without replacing explicit titles', () => {
+    expect(getFirstHeading('# Unsynced TODO\n\nDraft')).toBe('Unsynced TODO');
+    expect(
+      getSyncedTitle(
+        '2026-08-04 09:40 Untitled',
+        '# 2026-08-04 09:40 Untitled',
+        '# Unsynced TODO'
+      )
+    ).toBe('Unsynced TODO');
+    expect(
+      getSyncedTitle('Pinned title', '# Unsynced TODO', '# A different heading')
+    ).toBeNull();
   });
 });

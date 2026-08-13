@@ -5,6 +5,8 @@ import type { Context, Next } from 'hono';
 const syncRoomsWithClientMock = vi.fn();
 const getRoomsByIdsMock = vi.fn();
 const getWritableRoomsByUserIdMock = vi.fn();
+const roomAllowsReadMock = vi.fn();
+const roomAllowsWriteMock = vi.fn();
 const updateRoomPublicAccessMock = vi.fn();
 const updateRoomMock = vi.fn();
 const createRoomInviteLinkMock = vi.fn();
@@ -44,6 +46,11 @@ vi.mock('../model/rooms/calls.js', () => ({
   getWritableRoomsByUserId: getWritableRoomsByUserIdMock,
   updateRoomPublicAccess: updateRoomPublicAccessMock,
   updateRoom: updateRoomMock,
+}));
+
+vi.mock('../model/rooms/room-access.js', () => ({
+  roomAllowsRead: roomAllowsReadMock,
+  roomAllowsWrite: roomAllowsWriteMock,
 }));
 
 vi.mock('../services/access-grant/create-room-invite-link.js', () => ({
@@ -93,6 +100,8 @@ describe('accessGrantRouter', () => {
       { id: 'room-1', collectionKey: 'notes' },
     ]);
     resolveExistingGrantMock.mockResolvedValue({ satisfied: false });
+    roomAllowsReadMock.mockReturnValue(true);
+    roomAllowsWriteMock.mockReturnValue(true);
   });
 
   it('returns 401 on sync-registry when auth header is missing', async () => {
@@ -122,13 +131,18 @@ describe('accessGrantRouter', () => {
           authorization: 'Bearer access-token',
           'content-type': 'application/json',
         },
-        body: JSON.stringify({ rooms: [{ id: 'room-1' }] }),
+        body: JSON.stringify({
+          rooms: [{ id: 'room-1' }],
+          newRoomIds: ['room-1'],
+        }),
       })
     );
 
-    expect(syncRoomsWithClientMock).toHaveBeenCalledWith('access-token', [
-      { id: 'room-1' },
-    ]);
+    expect(syncRoomsWithClientMock).toHaveBeenCalledWith(
+      'access-token',
+      [{ id: 'room-1' }],
+      ['room-1']
+    );
     expect(res.status).toBe(200);
   });
 
@@ -453,6 +467,23 @@ describe('accessGrantRouter', () => {
     expect(updateRoomPublicAccessMock).not.toHaveBeenCalled();
   });
 
+  it('rejects room renames from a read-only grantee', async () => {
+    getRoomsByIdsMock.mockResolvedValueOnce([{ id: 'room-1' }]);
+    roomAllowsWriteMock.mockReturnValueOnce(false);
+
+    const res = await app.fetch(
+      new Request('http://localhost/api/access-grant/update-room/room-1', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ newName: 'Renamed' }),
+      })
+    );
+
+    expect(res.status).toBe(403);
+    await expect(res.json()).resolves.toEqual({ error: 'Room is read only' });
+    expect(updateRoomMock).not.toHaveBeenCalled();
+  });
+
   it('returns 403 when publication update is not admin-authorized', async () => {
     updateRoomPublicAccessMock.mockRejectedValueOnce(
       new Error('Room publication requires admin access')
@@ -491,8 +522,9 @@ describe('accessGrantRouter', () => {
     expect(generateSyncTokenMock).toHaveBeenCalledWith(
       'room-1',
       'notes',
-      undefined,
-      'read'
+      'grant-1',
+      'read',
+      false
     );
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({
@@ -500,5 +532,43 @@ describe('accessGrantRouter', () => {
       syncToken: 'sync-token',
       tokenExpiry: '2026-04-03T00:00:00.000Z',
     });
+  });
+
+  it('issues a read-only sync token for a read grantee', async () => {
+    getRoomsByIdsMock.mockResolvedValueOnce([
+      { id: 'room-1', collectionKey: 'notes', publicAccess: 'private' },
+    ]);
+    roomAllowsWriteMock.mockReturnValueOnce(false);
+    generateSyncTokenMock.mockReturnValueOnce({
+      token: 'read-only-sync-token',
+      expiry: new Date('2026-04-03T00:00:00.000Z'),
+    });
+
+    const res = await app.fetch(
+      new Request('http://localhost/api/access-grant/refresh-sync-token/room-1')
+    );
+
+    expect(generateSyncTokenMock).toHaveBeenCalledWith(
+      'room-1',
+      'notes',
+      'grant-1',
+      'private',
+      true
+    );
+    expect(res.status).toBe(200);
+  });
+
+  it('rejects a room absent from the grant owner ACL', async () => {
+    getRoomsByIdsMock.mockResolvedValueOnce([
+      { id: 'room-1', collectionKey: 'notes', publicAccess: 'private' },
+    ]);
+    roomAllowsReadMock.mockReturnValueOnce(false);
+
+    const res = await app.fetch(
+      new Request('http://localhost/api/access-grant/refresh-sync-token/room-1')
+    );
+
+    expect(res.status).toBe(403);
+    expect(generateSyncTokenMock).not.toHaveBeenCalled();
   });
 });

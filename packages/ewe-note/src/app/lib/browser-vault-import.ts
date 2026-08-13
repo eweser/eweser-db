@@ -537,7 +537,7 @@ export async function importVaultFromFiles(params: {
   });
 
   const noteRoomId = params.targetNoteRoomId ?? crypto.randomUUID();
-  const attachmentsRoomId = `${noteRoomId}-attachments`;
+  const attachmentsRoomId = crypto.randomUUID();
 
   if (!params.db.getRoom<Note>('notes', noteRoomId)) {
     params.db.newRoom<Note>({
