@@ -13,6 +13,8 @@ import {
 } from '../../model/access_grants.js';
 import { createTokenFromAccessGrant } from './create-token-from-grant.js';
 
+const DAY_IN_MS = 86_400_000;
+
 export interface ResolveGrantRequest {
   domain: string;
   redirect: string;
@@ -21,6 +23,11 @@ export interface ResolveGrantRequest {
 }
 
 export interface ResolveGrantResult {
+  grant?: {
+    collections: string[];
+    keepAliveDays: number;
+    roomIds: string[];
+  };
   satisfied: boolean;
   token?: string;
 }
@@ -44,12 +51,27 @@ export async function resolveExistingGrant(
     return { satisfied: false };
   }
 
+  const grant = {
+    collections: existing.collections,
+    keepAliveDays: existing.keepAliveDays,
+    roomIds: existing.roomIds,
+  };
+
   if (!satisfies(existing, request)) {
-    return { satisfied: false };
+    return { grant, satisfied: false };
   }
 
-  const token = await createTokenFromAccessGrant(existing, request.domain);
-  return { satisfied: true, token };
+  const lastUpdated = existing.updatedAt ?? existing.createdAt;
+  const expiresAt = lastUpdated.getTime() + existing.keepAliveDays * DAY_IN_MS;
+  const expiresInSeconds = Math.floor((expiresAt - Date.now()) / 1_000);
+  if (expiresInSeconds <= 0) {
+    return { grant, satisfied: false };
+  }
+
+  const token = await createTokenFromAccessGrant(existing, request.domain, {
+    expiresInSeconds,
+  });
+  return { grant, satisfied: true, token };
 }
 
 /**
@@ -81,13 +103,18 @@ export function satisfies(
 
   // 4. Grant not expired (based on keepAliveDays from the most recent timestamp)
   const lastUpdated = grant.updatedAt ?? grant.createdAt;
-  const expiryMs = lastUpdated.getTime() + grant.keepAliveDays * 86400000;
+  const expiryMs = lastUpdated.getTime() + grant.keepAliveDays * DAY_IN_MS;
   if (Date.now() > expiryMs) return false;
 
   // 5. Redirect URL validates against the domain
   try {
     const redirectUrl = new URL(request.redirect);
-    if (redirectUrl.host !== request.domain) return false;
+    if (
+      (redirectUrl.protocol !== 'https:' && redirectUrl.protocol !== 'http:') ||
+      redirectUrl.host !== request.domain
+    ) {
+      return false;
+    }
   } catch {
     return false;
   }

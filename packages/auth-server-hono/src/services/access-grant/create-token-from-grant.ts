@@ -10,7 +10,8 @@ export interface AccessGrantJWT {
 
 export async function createTokenFromAccessGrant(
   accessGrant: AccessGrant,
-  domain: string
+  domain: string,
+  options?: { expiresInSeconds?: number }
 ): Promise<string> {
   const { keepAliveDays, isValid, requesterId, requesterType } = accessGrant;
 
@@ -37,6 +38,6 @@ export async function createTokenFromAccessGrant(
   };
 
   return jwt.sign(payload, env.SERVER_SECRET, {
-    expiresIn: `${keepAliveDays * 24}h`,
+    expiresIn: options?.expiresInSeconds ?? `${keepAliveDays * 24}h`,
   });
 }

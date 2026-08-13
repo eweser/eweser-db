@@ -13,6 +13,7 @@ const createRoomInviteLinkMock = vi.fn();
 const verifyRoomInviteTokenMock = vi.fn();
 const acceptRoomInviteMock = vi.fn();
 const createOrUpdateThirdPartyAppPermissionsMock = vi.fn();
+const resolveExistingGrantMock = vi.fn();
 const generateSyncTokenMock = vi.fn();
 
 vi.mock('../middleware/jwt-auth.js', () => ({
@@ -71,6 +72,10 @@ vi.mock(
   })
 );
 
+vi.mock('../services/access-grant/resolve-existing-grant.js', () => ({
+  resolveExistingGrant: resolveExistingGrantMock,
+}));
+
 vi.mock('../services/sync-token.js', () => ({
   generateSyncToken: generateSyncTokenMock,
 }));
@@ -94,6 +99,7 @@ describe('accessGrantRouter', () => {
     getWritableRoomsByUserIdMock.mockResolvedValue([
       { id: 'room-1', collectionKey: 'notes' },
     ]);
+    resolveExistingGrantMock.mockResolvedValue({ satisfied: false });
     roomAllowsReadMock.mockReturnValue(true);
     roomAllowsWriteMock.mockReturnValue(true);
   });
@@ -221,6 +227,66 @@ describe('accessGrantRouter', () => {
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({
       redirectUrl: 'https://example.com/callback?token=grant-token',
+    });
+  });
+
+  it('returns a fresh same-domain redirect when an existing grant satisfies the request', async () => {
+    resolveExistingGrantMock.mockResolvedValueOnce({
+      grant: { collections: ['all'], keepAliveDays: 7, roomIds: [] },
+      satisfied: true,
+      token: 'fresh-token',
+    });
+
+    const res = await app.fetch(
+      new Request('http://localhost/api/access-grant/permissions/resolve', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          collections: ['all'],
+          domain: 'note.eweser.com',
+          redirect: 'https://note.eweser.com/?from=login',
+          roomIds: [],
+        }),
+      })
+    );
+
+    expect(resolveExistingGrantMock).toHaveBeenCalledWith('user-1', {
+      collections: ['all'],
+      domain: 'note.eweser.com',
+      redirect: 'https://note.eweser.com/?from=login',
+      roomIds: [],
+    });
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toEqual({
+      grant: { collections: ['all'], keepAliveDays: 7, roomIds: [] },
+      redirectUrl: 'https://note.eweser.com/?from=login&token=fresh-token',
+      satisfied: true,
+    });
+  });
+
+  it('returns prior grant settings when the request needs review', async () => {
+    resolveExistingGrantMock.mockResolvedValueOnce({
+      grant: { collections: ['notes'], keepAliveDays: 14, roomIds: [] },
+      satisfied: false,
+    });
+
+    const res = await app.fetch(
+      new Request('http://localhost/api/access-grant/permissions/resolve', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          collections: ['all'],
+          domain: 'note.eweser.com',
+          redirect: 'https://note.eweser.com/',
+          roomIds: [],
+        }),
+      })
+    );
+
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toEqual({
+      grant: { collections: ['notes'], keepAliveDays: 14, roomIds: [] },
+      satisfied: false,
     });
   });
 
