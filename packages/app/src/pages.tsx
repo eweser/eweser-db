@@ -2933,11 +2933,22 @@ function SecurityPage() {
               });
             }}
           >
+            <input
+              aria-hidden="true"
+              autoComplete="username"
+              className="sr-only"
+              name="username"
+              readOnly
+              tabIndex={-1}
+              type="email"
+              value={bootstrap?.user.email ?? ''}
+            />
             <div className="space-y-2">
               <Label htmlFor="security-password">Current password</Label>
               <Input
                 autoComplete="current-password"
                 id="security-password"
+                name="current-password"
                 onChange={(event) => setPassword(event.target.value)}
                 type="password"
                 value={password}
