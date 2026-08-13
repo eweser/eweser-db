@@ -1,7 +1,7 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useNavigate } from 'react-router-dom';
 import App from './App';
 
 const authMocks = vi.hoisted(() => ({
@@ -105,6 +105,15 @@ function renderApp(initialEntry: string) {
     <MemoryRouter initialEntries={[initialEntry]}>
       <App />
     </MemoryRouter>
+  );
+}
+
+function PermissionRequestSwitcher({ to }: { to: string }) {
+  const navigate = useNavigate();
+  return (
+    <button onClick={() => navigate(to)} type="button">
+      Switch permission request
+    </button>
   );
 }
 
@@ -441,6 +450,70 @@ describe('auth-pages app', () => {
       })
     ).toBeInTheDocument();
     expect(screen.getByLabelText(/cancel if inactive for/i)).toHaveValue(14);
+  });
+
+  it('does not reuse a previous resolution while a new permission request loads', async () => {
+    sessionState = {
+      data: {
+        session: { id: 'session-1' },
+        user: { email: 'test@example.com', id: 'user-1' },
+      },
+      error: null,
+      isPending: false,
+      isRefetching: false,
+      refetch: vi.fn().mockResolvedValue(undefined),
+    };
+    let resolveSecondRequest:
+      | ((value: { satisfied: false }) => void)
+      | undefined;
+    const secondRequest = new Promise<{ satisfied: false }>((resolve) => {
+      resolveSecondRequest = resolve;
+    });
+    apiMocks.resolvePermissions
+      .mockResolvedValueOnce({
+        grant: { collections: ['all'], keepAliveDays: 7, roomIds: [] },
+        redirectUrl: 'https://note.eweser.com/?token=first-token',
+        satisfied: true,
+      })
+      .mockReturnValueOnce(secondRequest);
+
+    const secondPath =
+      '/access-grant/permission?collections=all&domain=tasks.eweser.com&name=Ewe+Tasks&redirect=https%3A%2F%2Ftasks.eweser.com%2F';
+    render(
+      <MemoryRouter
+        initialEntries={[
+          '/access-grant/permission?collections=all&domain=note.eweser.com&name=Ewe+Note&redirect=https%3A%2F%2Fnote.eweser.com%2F',
+        ]}
+      >
+        <PermissionRequestSwitcher to={secondPath} />
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(
+      await screen.findByRole('heading', { name: /returning to ewe note/i })
+    ).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole('button', { name: /switch permission request/i })
+    );
+
+    await waitFor(() => {
+      expect(apiMocks.resolvePermissions).toHaveBeenCalledTimes(2);
+    });
+    expect(
+      screen.queryByRole('heading', { name: /returning to ewe note/i })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /grant permissions/i })
+    ).toBeInTheDocument();
+
+    resolveSecondRequest?.({ satisfied: false });
+    expect(
+      await screen.findByRole('heading', {
+        name: /grant access to your data layer/i,
+      })
+    ).toBeInTheDocument();
   });
 
   it('requires captcha before submitting signup when captcha is enabled', async () => {

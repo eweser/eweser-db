@@ -13,6 +13,8 @@ import {
 } from '../../model/access_grants.js';
 import { createTokenFromAccessGrant } from './create-token-from-grant.js';
 
+const DAY_IN_MS = 86_400_000;
+
 export interface ResolveGrantRequest {
   domain: string;
   redirect: string;
@@ -60,7 +62,7 @@ export async function resolveExistingGrant(
   }
 
   const lastUpdated = existing.updatedAt ?? existing.createdAt;
-  const expiresAt = lastUpdated.getTime() + existing.keepAliveDays * 86_400_000;
+  const expiresAt = lastUpdated.getTime() + existing.keepAliveDays * DAY_IN_MS;
   const expiresInSeconds = Math.floor((expiresAt - Date.now()) / 1_000);
   if (expiresInSeconds <= 0) {
     return { grant, satisfied: false };
@@ -101,7 +103,7 @@ export function satisfies(
 
   // 4. Grant not expired (based on keepAliveDays from the most recent timestamp)
   const lastUpdated = grant.updatedAt ?? grant.createdAt;
-  const expiryMs = lastUpdated.getTime() + grant.keepAliveDays * 86400000;
+  const expiryMs = lastUpdated.getTime() + grant.keepAliveDays * DAY_IN_MS;
   if (Date.now() > expiryMs) return false;
 
   // 5. Redirect URL validates against the domain

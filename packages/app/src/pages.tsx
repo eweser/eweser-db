@@ -1865,6 +1865,13 @@ function PermissionPage() {
     if (redirect) loginQueryParams.redirect = redirect;
     return validateLoginQueryOptions(loginQueryParams);
   }, [collections, domain, name, redirect]);
+  const loginQueryKey = loginQuery
+    ? JSON.stringify({
+        collections: loginQuery.collections,
+        domain: loginQuery.domain,
+        redirect: loginQuery.redirect,
+      })
+    : null;
   const [bootstrap, setBootstrap] = useState<AccountBootstrapResponse | null>(
     null
   );
@@ -1876,8 +1883,10 @@ function PermissionPage() {
   );
   const [selectedRoomIds, setSelectedRoomIds] = useState<string[]>([]);
   const [keepAliveDays, setKeepAliveDays] = useState(3);
-  const [grantResolution, setGrantResolution] =
-    useState<ResolvePermissionsResponse | null>(null);
+  const [grantResolution, setGrantResolution] = useState<{
+    requestKey: string;
+    result: ResolvePermissionsResponse;
+  } | null>(null);
   const [reviewExistingGrant, setReviewExistingGrant] = useState(false);
   const [redirectCountdown, setRedirectCountdown] = useState(3);
   const [error, setError] = useState<string | null>(null);
@@ -1888,7 +1897,12 @@ function PermissionPage() {
   useEffect(() => {
     let active = true;
 
-    if (!loginQuery) {
+    setGrantResolution(null);
+    setReviewExistingGrant(false);
+    setRedirectCountdown(3);
+    setResolving(true);
+
+    if (!loginQuery || !loginQueryKey) {
       setLoading(false);
       setResolving(false);
       return () => {
@@ -1905,7 +1919,7 @@ function PermissionPage() {
       .then((result) => {
         if (!active) return;
 
-        setGrantResolution(result);
+        setGrantResolution({ requestKey: loginQueryKey, result });
         if (result.grant) {
           setKeepAliveDays(result.grant.keepAliveDays);
         }
@@ -1944,11 +1958,16 @@ function PermissionPage() {
     return () => {
       active = false;
     };
-  }, [loginQuery]);
+  }, [loginQuery, loginQueryKey]);
+
+  const currentGrantResolution =
+    grantResolution?.requestKey === loginQueryKey
+      ? grantResolution.result
+      : null;
 
   useEffect(() => {
     if (
-      !grantResolution?.satisfied ||
+      !currentGrantResolution?.satisfied ||
       reviewExistingGrant ||
       redirectCountdown <= 0
     ) {
@@ -1959,14 +1978,14 @@ function PermissionPage() {
       const nextCountdown = redirectCountdown - 1;
       if (nextCountdown === 0) {
         clearStoredLoginQuery();
-        window.location.assign(grantResolution.redirectUrl);
+        window.location.assign(currentGrantResolution.redirectUrl);
         return;
       }
       setRedirectCountdown(nextCountdown);
     }, 1_000);
 
     return () => window.clearTimeout(timeout);
-  }, [grantResolution, redirectCountdown, reviewExistingGrant]);
+  }, [currentGrantResolution, redirectCountdown, reviewExistingGrant]);
 
   if (!loginQuery) {
     return (
@@ -1985,8 +2004,8 @@ function PermissionPage() {
     );
   }
 
-  if (grantResolution?.satisfied && !reviewExistingGrant) {
-    const grant = grantResolution.grant;
+  if (currentGrantResolution?.satisfied && !reviewExistingGrant) {
+    const grant = currentGrantResolution.grant;
     const accessLabel = grant.collections.includes('all')
       ? 'All accessible data'
       : grant.collections.map(formatCollectionKey).join(', ');
@@ -2048,7 +2067,7 @@ function PermissionPage() {
                 type="button"
                 onClick={() => {
                   clearStoredLoginQuery();
-                  window.location.assign(grantResolution.redirectUrl);
+                  window.location.assign(currentGrantResolution.redirectUrl);
                 }}
               >
                 Continue now
