@@ -71,6 +71,23 @@ export interface PermissionsRequestBody {
   keepAliveDays: number;
 }
 
+export interface ExistingAppGrantSummary {
+  collections: string[];
+  keepAliveDays: number;
+  roomIds: string[];
+}
+
+export type ResolvePermissionsResponse =
+  | {
+      grant?: ExistingAppGrantSummary;
+      satisfied: false;
+    }
+  | {
+      grant: ExistingAppGrantSummary;
+      redirectUrl: string;
+      satisfied: true;
+    };
+
 export type ConnectAiClientId =
   | 'claude-desktop'
   | 'claude-web'
@@ -227,6 +244,18 @@ export function submitPermissions(body: PermissionsRequestBody) {
     body: JSON.stringify(body),
     method: 'POST',
   });
+}
+
+export function resolvePermissions(
+  body: Omit<PermissionsRequestBody, 'keepAliveDays'>
+) {
+  return request<ResolvePermissionsResponse>(
+    '/api/access-grant/permissions/resolve',
+    {
+      body: JSON.stringify(body),
+      method: 'POST',
+    }
+  );
 }
 
 export function acceptInvite(token: string) {

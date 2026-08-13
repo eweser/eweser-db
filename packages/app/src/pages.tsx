@@ -17,7 +17,7 @@ import {
   UserRound,
 } from 'lucide-react';
 import { ThemeProvider, useTheme } from 'next-themes';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import EweserLogo from './assets/eweser-logo.svg';
 import heroPastureImage from './assets/hero-orbit-house.png';
 import loginDarkImage from './assets/login-dark.png';
@@ -51,11 +51,13 @@ import {
   getBackupSnapshots,
   getConnectAiOverview,
   getConnectedApps,
+  resolvePermissions,
   submitPermissions,
   type AccountBootstrapResponse,
   type ConnectedAppGrant,
   type ConnectAiOverviewResponse,
   type RemoteSnapshotRecord,
+  type ResolvePermissionsResponse,
   revokeConnectedApp,
 } from './lib/api';
 import { authClient } from './lib/auth-client';
@@ -1850,18 +1852,19 @@ function StorageProviderStatus({
 
 function PermissionPage() {
   const [searchParams] = useSearchParams();
-  const loginQueryParams: Partial<LoginQueryParams> = {};
   const collections = searchParams.get('collections');
   const domain = searchParams.get('domain');
   const name = searchParams.get('name');
   const redirect = searchParams.get('redirect');
 
-  if (collections) loginQueryParams.collections = collections;
-  if (domain) loginQueryParams.domain = domain;
-  if (name) loginQueryParams.name = name;
-  if (redirect) loginQueryParams.redirect = redirect;
-
-  const loginQuery = validateLoginQueryOptions(loginQueryParams);
+  const loginQuery = useMemo(() => {
+    const loginQueryParams: Partial<LoginQueryParams> = {};
+    if (collections) loginQueryParams.collections = collections;
+    if (domain) loginQueryParams.domain = domain;
+    if (name) loginQueryParams.name = name;
+    if (redirect) loginQueryParams.redirect = redirect;
+    return validateLoginQueryOptions(loginQueryParams);
+  }, [collections, domain, name, redirect]);
   const [bootstrap, setBootstrap] = useState<AccountBootstrapResponse | null>(
     null
   );
@@ -1873,12 +1876,53 @@ function PermissionPage() {
   );
   const [selectedRoomIds, setSelectedRoomIds] = useState<string[]>([]);
   const [keepAliveDays, setKeepAliveDays] = useState(3);
+  const [grantResolution, setGrantResolution] =
+    useState<ResolvePermissionsResponse | null>(null);
+  const [reviewExistingGrant, setReviewExistingGrant] = useState(false);
+  const [redirectCountdown, setRedirectCountdown] = useState(3);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [resolving, setResolving] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     let active = true;
+
+    if (!loginQuery) {
+      setLoading(false);
+      setResolving(false);
+      return () => {
+        active = false;
+      };
+    }
+
+    void resolvePermissions({
+      collections: [...loginQuery.collections],
+      domain: loginQuery.domain,
+      redirect: loginQuery.redirect,
+      roomIds: [],
+    })
+      .then((result) => {
+        if (!active) return;
+
+        setGrantResolution(result);
+        if (result.grant) {
+          setKeepAliveDays(result.grant.keepAliveDays);
+        }
+        if (result.satisfied) {
+          setAllowAll(result.grant.collections.includes('all'));
+          setSelectedCollections([...result.grant.collections]);
+          setSelectedRoomIds([...result.grant.roomIds]);
+        }
+      })
+      .catch(() => {
+        // Reuse is an optimization. On failure, require the normal review flow.
+      })
+      .finally(() => {
+        if (active) {
+          setResolving(false);
+        }
+      });
 
     void getAccountBootstrap()
       .then((result) => {
@@ -1900,7 +1944,29 @@ function PermissionPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [loginQuery]);
+
+  useEffect(() => {
+    if (
+      !grantResolution?.satisfied ||
+      reviewExistingGrant ||
+      redirectCountdown <= 0
+    ) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      const nextCountdown = redirectCountdown - 1;
+      if (nextCountdown === 0) {
+        clearStoredLoginQuery();
+        window.location.assign(grantResolution.redirectUrl);
+        return;
+      }
+      setRedirectCountdown(nextCountdown);
+    }, 1_000);
+
+    return () => window.clearTimeout(timeout);
+  }, [grantResolution, redirectCountdown, reviewExistingGrant]);
 
   if (!loginQuery) {
     return (
@@ -1919,7 +1985,82 @@ function PermissionPage() {
     );
   }
 
-  if (loading) {
+  if (grantResolution?.satisfied && !reviewExistingGrant) {
+    const grant = grantResolution.grant;
+    const accessLabel = grant.collections.includes('all')
+      ? 'All accessible data'
+      : grant.collections.map(formatCollectionKey).join(', ');
+
+    return (
+      <AppConsoleLayout
+        active="apps"
+        note={{
+          body: 'No new access was added and your existing settings were not changed.',
+          title: 'Existing grant reused',
+        }}
+      >
+        <AppPageHero
+          body="This app already has the access it requested. We are using your current grant."
+          eyebrow="Access already granted"
+          title={`Returning to ${loginQuery.name}.`}
+        />
+
+        <section className="app-panel permission-panel">
+          <div className="permission-summary">
+            <div>
+              <span className="mcp-chip">App</span>
+              <strong>{loginQuery.name}</strong>
+              <p>{loginQuery.domain}</p>
+            </div>
+            <div>
+              <span className="mcp-chip">Current access</span>
+              <strong>{accessLabel}</strong>
+              <p>
+                {grant.collections.includes('all')
+                  ? 'All collections and rooms this account can grant.'
+                  : `${grant.collections.length} collections and ${grant.roomIds.length} specific rooms.`}
+              </p>
+            </div>
+            <div>
+              <span className="mcp-chip">Inactivity window</span>
+              <strong>
+                {grant.keepAliveDays} day
+                {grant.keepAliveDays === 1 ? '' : 's'}
+              </strong>
+              <p>Access ends after this many days without activity.</p>
+            </div>
+          </div>
+
+          <div className="permission-footer">
+            <p className="text-sm text-muted-foreground" aria-live="polite">
+              Redirecting in {redirectCountdown} second
+              {redirectCountdown === 1 ? '' : 's'}…
+            </p>
+            <div className="flex flex-wrap justify-end gap-3">
+              <Button
+                tone="ghost"
+                type="button"
+                onClick={() => setReviewExistingGrant(true)}
+              >
+                Review access
+              </Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  clearStoredLoginQuery();
+                  window.location.assign(grantResolution.redirectUrl);
+                }}
+              >
+                Continue now
+              </Button>
+            </div>
+          </div>
+        </section>
+      </AppConsoleLayout>
+    );
+  }
+
+  if (loading || resolving) {
     return (
       <LoadingPanel message="Loading your rooms..." title="Grant permissions" />
     );

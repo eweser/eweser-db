@@ -21,6 +21,7 @@ const apiMocks = vi.hoisted(() => ({
   getConnectedApps: vi.fn(),
   getConnectAiOverview: vi.fn(),
   revokeConnectedApp: vi.fn(),
+  resolvePermissions: vi.fn(),
   revokeConnectAi: vi.fn(),
   rotateConnectAiToken: vi.fn(),
   setupConnectAiToken: vi.fn(),
@@ -66,6 +67,7 @@ vi.mock('./lib/api', () => ({
   getConnectedApps: apiMocks.getConnectedApps,
   getConnectAiOverview: apiMocks.getConnectAiOverview,
   revokeConnectedApp: apiMocks.revokeConnectedApp,
+  resolvePermissions: apiMocks.resolvePermissions,
   revokeConnectAi: apiMocks.revokeConnectAi,
   rotateConnectAiToken: apiMocks.rotateConnectAiToken,
   setupConnectAiToken: apiMocks.setupConnectAiToken,
@@ -218,6 +220,7 @@ describe('auth-pages app', () => {
       grantId: 'grant-1',
       status: 'revoked',
     });
+    apiMocks.resolvePermissions.mockResolvedValue({ satisfied: false });
     apiMocks.getConnectAiOverview.mockResolvedValue({
       clients: [],
       defaults: {
@@ -370,6 +373,74 @@ describe('auth-pages app', () => {
       email: 'test@example.com',
       password: 'password123',
     });
+  });
+
+  it('reuses an existing app grant and shows its settings before redirecting', async () => {
+    sessionState = {
+      data: {
+        session: { id: 'session-1' },
+        user: { email: 'test@example.com', id: 'user-1' },
+      },
+      error: null,
+      isPending: false,
+      isRefetching: false,
+      refetch: vi.fn().mockResolvedValue(undefined),
+    };
+    apiMocks.resolvePermissions.mockResolvedValueOnce({
+      grant: { collections: ['all'], keepAliveDays: 7, roomIds: [] },
+      redirectUrl: 'https://note.eweser.com/?token=fresh-token',
+      satisfied: true,
+    });
+
+    renderApp(
+      '/access-grant/permission?collections=all&domain=note.eweser.com&name=Ewe+Note&redirect=https%3A%2F%2Fnote.eweser.com%2F'
+    );
+
+    expect(
+      await screen.findByRole('heading', { name: /returning to ewe note/i })
+    ).toBeInTheDocument();
+    expect(screen.getByText('All accessible data')).toBeInTheDocument();
+    expect(screen.getByText('7 days')).toBeInTheDocument();
+    expect(screen.getByText(/redirecting in 3 seconds/i)).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole('button', { name: /review access/i })
+    );
+
+    expect(
+      await screen.findByRole('heading', {
+        name: /grant access to your data layer/i,
+      })
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText(/cancel if inactive for/i)).toHaveValue(7);
+  });
+
+  it('prefills the prior inactivity window when the grant needs review', async () => {
+    sessionState = {
+      data: {
+        session: { id: 'session-1' },
+        user: { email: 'test@example.com', id: 'user-1' },
+      },
+      error: null,
+      isPending: false,
+      isRefetching: false,
+      refetch: vi.fn().mockResolvedValue(undefined),
+    };
+    apiMocks.resolvePermissions.mockResolvedValueOnce({
+      grant: { collections: ['all'], keepAliveDays: 14, roomIds: [] },
+      satisfied: false,
+    });
+
+    renderApp(
+      '/access-grant/permission?collections=all&domain=note.eweser.com&name=Ewe+Note&redirect=https%3A%2F%2Fnote.eweser.com%2F'
+    );
+
+    expect(
+      await screen.findByRole('heading', {
+        name: /grant access to your data layer/i,
+      })
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText(/cancel if inactive for/i)).toHaveValue(14);
   });
 
   it('requires captcha before submitting signup when captcha is enabled', async () => {

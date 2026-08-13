@@ -28,6 +28,7 @@ import {
   createOrUpdateThirdPartyAppPermissions,
   type ThirdPartyAppPermissions,
 } from '../services/access-grant/create-third-party-app-permissions.js';
+import { resolveExistingGrant } from '../services/access-grant/resolve-existing-grant.js';
 import { collectionKeys } from '@eweser/shared';
 import { parseAccessGrantId } from '../model/access_grants.js';
 import type {
@@ -38,6 +39,13 @@ import type {
 } from '@eweser/shared';
 
 export const accessGrantRouter = new Hono();
+
+type ResolvePermissionsBody = Pick<
+  ThirdPartyAppPermissions,
+  'collections' | 'domain' | 'roomIds'
+> & {
+  redirect?: string;
+};
 
 /**
  * POST /api/access-grant/sync-registry
@@ -78,6 +86,57 @@ accessGrantRouter.post('/create-room-invite', requireJwtAuth, async (c) => {
   const link = createRoomInviteLink(body);
   return c.json({ link });
 });
+
+/**
+ * POST /api/access-grant/permissions/resolve
+ * Reuses an existing app grant when it still covers the requested scope.
+ */
+accessGrantRouter.post(
+  '/permissions/resolve',
+  requireAuth,
+  requireVerifiedEmail,
+  async (c) => {
+    const user = c.get('user');
+    const body = (await c.req.json()) as ResolvePermissionsBody;
+
+    if (
+      !body.domain ||
+      !body.redirect ||
+      !Array.isArray(body.roomIds) ||
+      !Array.isArray(body.collections) ||
+      body.collections.length === 0 ||
+      !body.roomIds.every((roomId) => typeof roomId === 'string') ||
+      !body.collections.every(
+        (collection) =>
+          collection === 'all' ||
+          collectionKeys.includes(collection as (typeof collectionKeys)[number])
+      ) ||
+      (body.collections.includes('all') && body.collections.length > 1)
+    ) {
+      return c.json({ error: 'Invalid request' }, 400);
+    }
+
+    const result = await resolveExistingGrant(user.id, {
+      collections: body.collections,
+      domain: body.domain,
+      redirect: body.redirect,
+      roomIds: body.roomIds,
+    });
+
+    if (!result.satisfied || !result.token) {
+      return c.json({ grant: result.grant, satisfied: false });
+    }
+
+    const redirectUrl = new URL(body.redirect);
+    redirectUrl.searchParams.set('token', result.token);
+
+    return c.json({
+      grant: result.grant,
+      redirectUrl: redirectUrl.toString(),
+      satisfied: true,
+    });
+  }
+);
 
 /**
  * POST /api/access-grant/permissions
