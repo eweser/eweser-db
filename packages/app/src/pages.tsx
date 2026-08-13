@@ -10,15 +10,19 @@ import {
   Github,
   LockKeyhole,
   LogOut,
+  Menu,
   Moon,
   PlugZap,
   RefreshCw,
   ShieldCheck,
   Sun,
   UserRound,
+  X,
 } from 'lucide-react';
 import { ThemeProvider, useTheme } from 'next-themes';
+import { QRCodeSVG } from 'qrcode.react';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 import EweserLogo from './assets/eweser-logo.svg';
 import heroPastureImage from './assets/hero-orbit-house.png';
 import loginDarkImage from './assets/login-dark.png';
@@ -314,19 +318,135 @@ function getConnectedClientCount(overview: ConnectAiOverviewResponse | null) {
   );
 }
 
-function ThemeToggle() {
+function ThemeToggle({ fullWidth = false }: { fullWidth?: boolean }) {
   const { resolvedTheme, setTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
+  const label = isDark ? 'Use light theme' : 'Use dark theme';
 
   return (
     <Button
-      aria-label="Toggle theme"
+      aria-label={label}
+      className={
+        fullWidth
+          ? '!h-11 w-full justify-start gap-3 rounded-xl px-3 text-left'
+          : undefined
+      }
       tone="ghost"
       type="button"
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
     >
       {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+      {fullWidth ? <span>{isDark ? 'Light theme' : 'Dark theme'}</span> : null}
     </Button>
+  );
+}
+
+function MobileAccountMenu() {
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+      }
+    }
+
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [isOpen]);
+
+  const close = () => setIsOpen(false);
+  const accountSheet = isOpen ? (
+    <>
+      <button
+        aria-label="Close account menu"
+        className="mobile-account-menu-backdrop"
+        type="button"
+        onClick={close}
+      />
+      <aside
+        aria-label="Account menu"
+        className="mobile-account-menu-sheet"
+        id="mobile-account-menu-sheet"
+      >
+        <div className="mobile-account-menu-heading">
+          <div>
+            <p className="mcp-eyebrow">EweserDB</p>
+            <h2>Account</h2>
+          </div>
+          <Button
+            aria-label="Close account menu"
+            className="!h-11 !w-11 !rounded-xl !px-0"
+            tone="ghost"
+            type="button"
+            onClick={close}
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+
+        <nav
+          className="mobile-account-menu-links"
+          aria-label="Account navigation"
+        >
+          <Link to="/" onClick={close}>
+            <Database className="h-4 w-4" />
+            Data Home
+          </Link>
+          <Link to="/apps" onClick={close}>
+            <PlugZap className="h-4 w-4" />
+            Apps
+          </Link>
+          <Link to="/ai" onClick={close}>
+            <Bot className="h-4 w-4" />
+            MCP clients
+          </Link>
+          <Link to="/home" onClick={close}>
+            <UserRound className="h-4 w-4" />
+            Account
+          </Link>
+          <Link to="/security" onClick={close}>
+            <ShieldCheck className="h-4 w-4" />
+            Security
+          </Link>
+        </nav>
+
+        <div className="mobile-account-menu-preferences">
+          <ThemeToggle fullWidth />
+        </div>
+
+        <Link
+          className="mobile-account-menu-sign-out"
+          data-cy="mobile-sign-out-link"
+          to="/sign-out"
+          onClick={close}
+        >
+          <LogOut className="h-4 w-4" />
+          Sign out of this device
+        </Link>
+      </aside>
+    </>
+  ) : null;
+
+  return (
+    <div className="mobile-account-menu md:hidden">
+      <Button
+        aria-controls="mobile-account-menu-sheet"
+        aria-expanded={isOpen}
+        aria-label="Open account menu"
+        className="!h-11 !w-11 !rounded-xl !px-0"
+        tone="ghost"
+        type="button"
+        onClick={() => setIsOpen((open) => !open)}
+      >
+        <Menu className="h-5 w-5" />
+      </Button>
+      {accountSheet ? createPortal(accountSheet, document.body) : null}
+    </div>
   );
 }
 
@@ -335,7 +455,7 @@ function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/70 bg-background/80 backdrop-blur-xl">
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
+      <div className="app-site-header-content mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
         <Link className="flex items-center gap-3 no-underline" to="/">
           <img
             alt="EweserDB"
@@ -348,21 +468,7 @@ function SiteHeader() {
           </span>
         </Link>
 
-        {session.data?.user ? (
-          <nav
-            className="flex items-center md:hidden"
-            aria-label="Account actions"
-          >
-            <Link
-              className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-input bg-background/55 px-3 text-sm font-medium text-foreground no-underline transition-colors hover:bg-accent"
-              data-cy="mobile-sign-out-link"
-              to="/sign-out"
-            >
-              <LogOut className="h-4 w-4" />
-              Sign out
-            </Link>
-          </nav>
-        ) : null}
+        {session.data?.user ? <MobileAccountMenu /> : null}
 
         <nav className="hidden items-center gap-6 md:flex">
           {session.data?.user ? (
@@ -387,15 +493,15 @@ function SiteHeader() {
               </Link>
               <Link
                 className="text-sm text-muted-foreground no-underline transition-colors hover:text-foreground"
-                to="/sign-out"
-              >
-                Sign out
-              </Link>
-              <Link
-                className="text-sm text-muted-foreground no-underline transition-colors hover:text-foreground"
                 to="/security"
               >
                 Security
+              </Link>
+              <Link
+                className="text-sm text-muted-foreground no-underline transition-colors hover:text-foreground"
+                to="/sign-out"
+              >
+                Sign out
               </Link>
             </>
           ) : (
@@ -517,15 +623,19 @@ function AppPageHero({
   actions,
   body,
   eyebrow,
+  surface = 'card',
   title,
 }: {
   actions?: React.ReactNode;
   body: string;
   eyebrow: string;
+  surface?: 'card' | 'plain';
   title: string;
 }) {
   return (
-    <section className="app-page-hero">
+    <section
+      className={surface === 'plain' ? 'app-page-hero-plain' : 'app-page-hero'}
+    >
       <div>
         <p className="mcp-eyebrow">{eyebrow}</p>
         <h1 className="app-page-title">{title}</h1>
@@ -2823,10 +2933,15 @@ function SecurityPage() {
     null
   );
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [password, setPassword] = useState('');
   const [totpUri, setTotpUri] = useState<string | null>(null);
   const [totpCode, setTotpCode] = useState('');
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
+  const [showManagement, setShowManagement] = useState(false);
+  const [pendingAction, setPendingAction] = useState<
+    'disable' | 'regenerate' | null
+  >(null);
   const [working, setWorking] = useState(false);
 
   useEffect(() => {
@@ -2837,6 +2952,7 @@ function SecurityPage() {
 
   async function runAction(action: () => Promise<void>) {
     setError(null);
+    setNotice(null);
     setWorking(true);
     try {
       await action();
@@ -2851,6 +2967,16 @@ function SecurityPage() {
     }
   }
 
+  async function refreshBootstrap() {
+    const result = await getAccountBootstrap();
+    setBootstrap(result);
+    return result;
+  }
+
+  const twoFactorEnabled = bootstrap?.user.twoFactorEnabled;
+  const isEnrolling = totpUri !== null;
+  const isManaging = twoFactorEnabled === true && showManagement;
+
   return (
     <AppConsoleLayout
       active="security"
@@ -2860,23 +2986,28 @@ function SecurityPage() {
       }}
     >
       <AppPageHero
-        body="Email verification, password, two-factor controls, and active session management live here."
+        body="Manage sign-in verification and recovery for this device."
         eyebrow="Security"
-        title="Keep your account tight."
+        surface="plain"
+        title="Security"
       />
 
-      <div className="app-two-column">
-        <section className="app-panel">
-          <div className="app-panel-header">
-            <div>
-              <h2>Email verification</h2>
-              <p>Verification is required for sensitive account actions.</p>
-            </div>
-            <span className="app-status-pill">
-              {bootstrap?.user.emailVerified ? 'Verified' : 'Unverified'}
-            </span>
+      <section className="app-settings-group" aria-label="Security status">
+        <div className="app-settings-row">
+          <span className="app-settings-icon" aria-hidden="true">
+            <CheckCircle2 className="h-5 w-5" />
+          </span>
+          <div>
+            <h2>Email verification</h2>
+            <p>
+              {bootstrap?.user.emailVerified
+                ? 'Your email can be used for account recovery and alerts.'
+                : 'Verify your email before making sensitive account changes.'}
+            </p>
           </div>
-          {!bootstrap?.user.emailVerified ? (
+          {bootstrap?.user.emailVerified ? (
+            <span className="app-status-pill">Verified</span>
+          ) : (
             <Button
               disabled={working}
               tone="outline"
@@ -2886,117 +3017,226 @@ function SecurityPage() {
                   await postAuthJson('/send-verification-email', {
                     callbackURL: appAbsoluteUrl('/verify-email'),
                   });
+                  setNotice('A verification email has been sent.');
                 })
               }
             >
-              {working ? <InlineSpinner /> : 'Resend verification email'}
+              {working ? <InlineSpinner /> : 'Send email'}
             </Button>
-          ) : (
-            <div className="app-request-preview">
-              <span className="app-empty-icon" aria-hidden="true">
-                <CheckCircle2 className="h-5 w-5" />
-              </span>
-              <div>
-                <strong>Email verified</strong>
-                <p>Your email can be used for account recovery and alerts.</p>
-              </div>
-            </div>
           )}
-        </section>
+        </div>
 
-        <section className="app-panel">
-          <div className="app-panel-header">
-            <div>
-              <h2>Passkeys</h2>
-              <p>
-                WebAuthn is deferred until this better-auth version exposes a
-                stable passkey plugin.
-              </p>
-            </div>
-            <span className="mcp-chip">Planned</span>
+        <div className="app-settings-row">
+          <span
+            className="app-settings-icon app-settings-icon-muted"
+            aria-hidden="true"
+          >
+            <LockKeyhole className="h-5 w-5" />
+          </span>
+          <div>
+            <h2>Passkeys</h2>
+            <p>Passkeys are not available yet.</p>
           </div>
-        </section>
-      </div>
+          <span className="app-status-pill app-status-muted">Unavailable</span>
+        </div>
+      </section>
 
-      <section className="app-panel">
+      <section className="app-panel app-security-panel">
         <div className="app-panel-header">
           <div>
             <h2>Two-factor authentication</h2>
             <p>
-              Use your current password to enable, disable, or refresh TOTP.
+              {twoFactorEnabled === undefined
+                ? 'Checking your two-factor status.'
+                : twoFactorEnabled
+                  ? 'Two-factor authentication is on for your account.'
+                  : 'Add an authenticator app to protect your account.'}
             </p>
           </div>
-          <span className="mcp-chip">TOTP</span>
+          {twoFactorEnabled !== undefined ? (
+            <span className="mcp-chip">{twoFactorEnabled ? 'On' : 'Off'}</span>
+          ) : null}
         </div>
 
-        <div className="app-form-grid">
-          <div className="space-y-2">
-            <Label htmlFor="security-password">Current password</Label>
-            <Input
-              id="security-password"
-              onChange={(event) => setPassword(event.target.value)}
-              type="password"
-              value={password}
+        {twoFactorEnabled === false && !isEnrolling ? (
+          <form
+            className="app-form-grid"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void runAction(async () => {
+                const result = await postAuthJson<{
+                  backupCodes: string[];
+                  totpURI: string;
+                }>('/two-factor/enable', {
+                  password,
+                });
+                setTotpUri(result.totpURI);
+                setBackupCodes(result.backupCodes);
+                setNotice(
+                  'Add this account to your authenticator, then enter its six-digit code.'
+                );
+              });
+            }}
+          >
+            <input
+              aria-hidden="true"
+              autoComplete="username"
+              className="sr-only"
+              name="username"
+              readOnly
+              tabIndex={-1}
+              type="email"
+              value={bootstrap?.user.email ?? ''}
             />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="security-password">Current password</Label>
+              <Input
+                autoComplete="current-password"
+                id="security-password"
+                name="current-password"
+                onChange={(event) => setPassword(event.target.value)}
+                type="password"
+                value={password}
+              />
+            </div>
+            <Button disabled={working || password.length < 1} type="submit">
+              {working ? <InlineSpinner /> : 'Set up two-factor authentication'}
+            </Button>
+          </form>
+        ) : null}
 
-          <div className="app-button-cluster">
-            <Button
-              disabled={working || password.length < 1}
-              type="button"
-              onClick={() =>
-                void runAction(async () => {
-                  const result = await postAuthJson<{
-                    backupCodes: string[];
-                    totpURI: string;
-                  }>('/two-factor/enable', {
-                    password,
-                  });
-                  setTotpUri(result.totpURI);
-                  setBackupCodes(result.backupCodes);
-                })
-              }
-            >
-              Enable 2FA
-            </Button>
-            <Button
-              disabled={working || password.length < 1}
-              tone="outline"
-              type="button"
-              onClick={() =>
-                void runAction(async () => {
-                  await postAuthJson('/two-factor/disable', { password });
-                  setTotpUri(null);
-                })
-              }
-            >
-              Disable 2FA
-            </Button>
-            <Button
-              disabled={working || password.length < 1}
-              tone="outline"
-              type="button"
-              onClick={() =>
-                void runAction(async () => {
-                  const result = await postAuthJson<{ backupCodes: string[] }>(
-                    '/two-factor/generate-backup-codes',
-                    { password }
-                  );
-                  setBackupCodes(result.backupCodes);
-                })
-              }
-            >
-              Regenerate backup codes
-            </Button>
+        {twoFactorEnabled === true && !isManaging ? (
+          <Button type="button" onClick={() => setShowManagement(true)}>
+            Manage two-factor authentication
+          </Button>
+        ) : null}
+
+        {isManaging ? (
+          <div className="app-security-management">
+            <div className="space-y-2">
+              <Label htmlFor="security-password">Current password</Label>
+              <Input
+                autoComplete="current-password"
+                id="security-password"
+                onChange={(event) => setPassword(event.target.value)}
+                type="password"
+                value={password}
+              />
+            </div>
+
+            {pendingAction ? (
+              <div className="app-confirmation-panel">
+                <p className="font-medium text-foreground">
+                  {pendingAction === 'disable'
+                    ? 'Turn off two-factor authentication?'
+                    : 'Replace your backup codes?'}
+                </p>
+                <p>
+                  {pendingAction === 'disable'
+                    ? 'You will no longer need an authenticator app to sign in.'
+                    : 'Your previous backup codes will stop working.'}
+                </p>
+                <div className="app-button-cluster">
+                  <Button
+                    disabled={working || password.length < 1}
+                    tone="danger"
+                    type="button"
+                    onClick={() =>
+                      void runAction(async () => {
+                        if (pendingAction === 'disable') {
+                          await postAuthJson('/two-factor/disable', {
+                            password,
+                          });
+                          setBootstrap((current) =>
+                            current
+                              ? {
+                                  ...current,
+                                  user: {
+                                    ...current.user,
+                                    twoFactorEnabled: false,
+                                  },
+                                }
+                              : current
+                          );
+                          setShowManagement(false);
+                          setNotice('Two-factor authentication is off.');
+                        } else {
+                          const result = await postAuthJson<{
+                            backupCodes: string[];
+                          }>('/two-factor/generate-backup-codes', { password });
+                          setBackupCodes(result.backupCodes);
+                          setNotice(
+                            'New backup codes are ready. Store them somewhere safe.'
+                          );
+                        }
+                        setPendingAction(null);
+                      })
+                    }
+                  >
+                    {working ? (
+                      <InlineSpinner />
+                    ) : pendingAction === 'disable' ? (
+                      'Turn off 2FA'
+                    ) : (
+                      'Replace backup codes'
+                    )}
+                  </Button>
+                  <Button
+                    disabled={working}
+                    tone="ghost"
+                    type="button"
+                    onClick={() => setPendingAction(null)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="app-button-cluster">
+                <Button
+                  disabled={working || password.length < 1}
+                  tone="outline"
+                  type="button"
+                  onClick={() => setPendingAction('regenerate')}
+                >
+                  Replace backup codes
+                </Button>
+                <Button
+                  disabled={working || password.length < 1}
+                  tone="danger"
+                  type="button"
+                  onClick={() => setPendingAction('disable')}
+                >
+                  Turn off 2FA
+                </Button>
+              </div>
+            )}
           </div>
-        </div>
+        ) : null}
 
         {totpUri ? (
-          <div className="app-code-panel">
-            <p className="text-sm font-medium">TOTP URI</p>
-            <p className="break-all text-xs text-muted-foreground">{totpUri}</p>
+          <div className="app-code-panel app-totp-setup-panel">
+            <p className="text-sm font-medium">Set up your authenticator</p>
+            <p className="text-sm text-muted-foreground">
+              Scan the code with your authenticator app, then enter its code
+              below.
+            </p>
+            <div
+              className="app-totp-qr"
+              aria-label="Authenticator setup QR code"
+            >
+              <QRCodeSVG
+                bgColor="transparent"
+                fgColor="currentColor"
+                includeMargin
+                level="M"
+                size={168}
+                value={totpUri}
+              />
+            </div>
             <div className="mt-3 flex gap-2">
               <Input
+                aria-label="Authenticator code"
                 placeholder="Enter TOTP code"
                 onChange={(event) => setTotpCode(event.target.value)}
                 value={totpCode}
@@ -3010,6 +3250,10 @@ function SecurityPage() {
                       code: totpCode,
                       trustDevice: true,
                     });
+                    await refreshBootstrap();
+                    setTotpUri(null);
+                    setShowManagement(false);
+                    setNotice('Two-factor authentication is now on.');
                   })
                 }
               >
@@ -3022,6 +3266,9 @@ function SecurityPage() {
         {backupCodes.length > 0 ? (
           <div className="app-code-panel">
             <p className="text-sm font-medium">Backup codes</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Store these somewhere safe. Each code can be used once.
+            </p>
             <ul className="mt-3 grid grid-cols-2 gap-2 text-xs">
               {backupCodes.map((code) => (
                 <li key={code} className="rounded bg-muted px-2 py-1 font-mono">
@@ -3032,8 +3279,15 @@ function SecurityPage() {
           </div>
         ) : null}
 
+        {notice ? (
+          <p className="app-action-notice" role="status">
+            {notice}
+          </p>
+        ) : null}
         {error ? (
-          <p className="mt-4 text-sm text-destructive">{error}</p>
+          <p className="app-action-error" role="alert">
+            {error}
+          </p>
         ) : null}
       </section>
     </AppConsoleLayout>

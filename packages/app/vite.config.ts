@@ -3,7 +3,9 @@ import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
 const authServerTarget =
-  process.env.VITE_AUTH_SERVER_URL ?? 'http://127.0.0.1:38101';
+  process.env.AUTH_SERVER_TARGET ??
+  process.env.VITE_AUTH_SERVER_URL ??
+  'http://127.0.0.1:38101';
 const authPagesPort = Number(
   process.env.AUTH_PAGES_PORT ?? process.env.VITE_AUTH_PAGES_PORT ?? '3001'
 );

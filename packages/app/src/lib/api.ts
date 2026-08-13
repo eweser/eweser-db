@@ -12,6 +12,7 @@ export interface AuthPagesUser {
   emailVerified: boolean;
   image: string | null;
   name: string | null;
+  twoFactorEnabled: boolean;
 }
 
 export interface AccountBootstrapResponse {

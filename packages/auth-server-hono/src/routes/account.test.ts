@@ -82,6 +82,9 @@ describe('accountRouter', () => {
     vi.clearAllMocks();
     mockCreateAccessGrantId.mockReturnValue('user-1|auth.local');
     mockEnsureUserRooms.mockResolvedValue({ grantId: 'user-1|auth.local' });
+    mockGetUserById.mockResolvedValue({
+      twoFactorEnabled: false,
+    });
     mockGetStorageProviderProfile.mockReturnValue({
       configured: true,
       id: 'railway-buckets',
@@ -122,6 +125,7 @@ describe('accountRouter', () => {
         name: 'Test User',
       },
     });
+    mockGetUserById.mockResolvedValueOnce({ twoFactorEnabled: true });
     mockGetAccessGrantById.mockResolvedValue(accessGrant);
     mockGetRoomsFromAccessGrant.mockResolvedValue(rooms);
     mockGetUserCount.mockResolvedValue(7);
@@ -133,6 +137,7 @@ describe('accountRouter', () => {
 
     expect(response.status).toBe(200);
     expect(body.user.id).toBe('user-1');
+    expect(body.user.twoFactorEnabled).toBe(true);
     expect(body.profileRooms).toHaveLength(2);
     expect(body.rooms).toHaveLength(3);
     expect(body.storageProviderProfile).toEqual(
