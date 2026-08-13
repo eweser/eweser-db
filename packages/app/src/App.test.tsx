@@ -292,6 +292,32 @@ describe('auth-pages app', () => {
     expect(screen.getAllByText(/ai grants/i).length).toBeGreaterThan(0);
   });
 
+  it('keeps sign out available in the mobile header for signed-in users', async () => {
+    sessionState = {
+      data: {
+        session: { id: 'session-1' },
+        user: { email: 'test@example.com', id: 'user-1' },
+      },
+      error: null,
+      isPending: false,
+      isRefetching: false,
+      refetch: vi.fn().mockResolvedValue(undefined),
+    };
+
+    renderApp('/');
+
+    await screen.findByRole('heading', {
+      name: /everything your apps can touch/i,
+    });
+
+    const mobileSignOut = document.querySelector(
+      '[data-cy="mobile-sign-out-link"]'
+    );
+    expect(mobileSignOut).not.toBeNull();
+    expect(mobileSignOut).toHaveAttribute('href', '/sign-out');
+    expect(mobileSignOut?.parentElement).toHaveClass('md:hidden');
+  });
+
   it('uses local redirect query params after normal sign-in', async () => {
     authMocks.signInEmail.mockResolvedValue({
       data: {

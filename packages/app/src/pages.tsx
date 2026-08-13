@@ -9,6 +9,7 @@ import {
   FileText,
   Github,
   LockKeyhole,
+  LogOut,
   Moon,
   PlugZap,
   RefreshCw,
@@ -262,6 +263,22 @@ function SiteHeader() {
             EweserDB
           </span>
         </Link>
+
+        {session.data?.user ? (
+          <nav
+            className="flex items-center md:hidden"
+            aria-label="Account actions"
+          >
+            <Link
+              className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-input bg-background/55 px-3 text-sm font-medium text-foreground no-underline transition-colors hover:bg-accent"
+              data-cy="mobile-sign-out-link"
+              to="/sign-out"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign out
+            </Link>
+          </nav>
+        ) : null}
 
         <nav className="hidden items-center gap-6 md:flex">
           {session.data?.user ? (
