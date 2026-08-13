@@ -1,4 +1,10 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, useNavigate } from 'react-router-dom';
@@ -1101,6 +1107,111 @@ describe('auth-pages app', () => {
     });
 
     expect(await screen.findByText(/revoked access/i)).toBeInTheDocument();
+  });
+
+  it('groups Ewe Note grant aliases and links to the available app', async () => {
+    sessionState = {
+      data: {
+        session: { id: 'session-1' },
+        user: { email: 'test@example.com', id: 'user-1' },
+      },
+      error: null,
+      isPending: false,
+      isRefetching: false,
+      refetch: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const rooms = Array.from({ length: 18 }, (_, index) => ({
+      collectionKey: 'notes',
+      id: `room-${index + 1}`,
+      name: `Notes room ${index + 1}`,
+      syncBaseUrl: null,
+      syncUrl: null,
+    }));
+    apiMocks.getAccountBootstrap.mockResolvedValue({
+      profileRooms: [],
+      rooms,
+      user: {
+        email: 'test@example.com',
+        emailVerified: true,
+        id: 'user-1',
+        image: null,
+        name: 'Test User',
+      },
+      userCount: 1,
+    });
+    apiMocks.getConnectedApps.mockResolvedValue({
+      connectedApps: [
+        {
+          collections: ['notes'],
+          createdAt: '2026-05-01T00:00:00.000Z',
+          domain: 'note.eweser.com',
+          id: 'user-1|note.eweser.com',
+          keepAliveDays: 7,
+          requesterType: 'app',
+          roomIds: rooms.map((room) => room.id),
+          status: 'active',
+          updatedAt: null,
+        },
+        {
+          collections: ['notes'],
+          createdAt: '2026-05-02T00:00:00.000Z',
+          domain: 'ewenote.eweser.com',
+          id: 'user-1|ewenote.eweser.com',
+          keepAliveDays: 7,
+          requesterType: 'app',
+          roomIds: ['room-1'],
+          status: 'active',
+          updatedAt: null,
+        },
+        {
+          collections: ['profiles'],
+          createdAt: '2026-05-03T00:00:00.000Z',
+          domain: 'example.com',
+          id: 'user-1|example.com',
+          keepAliveDays: 7,
+          requesterType: 'app',
+          roomIds: [],
+          status: 'active',
+          updatedAt: null,
+        },
+      ],
+    });
+
+    renderApp('/apps');
+
+    const appLink = await screen.findByRole('link', {
+      name: /ewe note.*open app/i,
+    });
+    expect(appLink).toHaveAttribute('href', 'https://note.eweser.com/');
+
+    const grantsTable = screen.getByRole('table');
+    expect(within(grantsTable).getAllByRole('row')).toHaveLength(3);
+    expect(within(grantsTable).getAllByText('Ewe Note')).toHaveLength(1);
+    expect(within(grantsTable).getByText(/2 grants/i)).toBeInTheDocument();
+    expect(grantsTable.querySelector('.app-room-list')).toBeInTheDocument();
+
+    const eweNoteRow = within(grantsTable)
+      .getByText('Ewe Note')
+      .closest('[role="row"]');
+    if (!(eweNoteRow instanceof HTMLElement)) {
+      throw new Error('Expected the Ewe Note grant row to exist');
+    }
+    expect(within(eweNoteRow).getAllByRole('button')).toHaveLength(1);
+
+    await userEvent.click(
+      within(eweNoteRow).getByRole('button', { name: /revoke ewe note/i })
+    );
+    await waitFor(() => {
+      expect(apiMocks.revokeConnectedApp).toHaveBeenNthCalledWith(
+        1,
+        'user-1|note.eweser.com'
+      );
+      expect(apiMocks.revokeConnectedApp).toHaveBeenNthCalledWith(
+        2,
+        'user-1|ewenote.eweser.com'
+      );
+    });
   });
 
   it('requests password reset from forgot-password page', async () => {

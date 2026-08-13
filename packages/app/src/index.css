@@ -686,6 +686,67 @@ body,
     gap: 0.65rem;
   }
 
+  .app-directory-list {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .app-directory-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.85rem;
+    align-items: center;
+    border: 1px solid var(--surface-line);
+    border-radius: 1rem;
+    background: oklch(from var(--surface-soft) l c h / 0.5);
+    padding: 0.9rem;
+    color: var(--foreground);
+    text-decoration: none;
+    transition:
+      background-color 180ms ease-out,
+      border-color 180ms ease-out;
+  }
+
+  .app-directory-row:hover {
+    border-color: oklch(from var(--primary) l c h / 0.42);
+    background: var(--surface-soft);
+  }
+
+  .app-directory-row:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+
+  .app-directory-copy {
+    min-width: 0;
+  }
+
+  .app-directory-copy strong,
+  .app-directory-copy small {
+    display: block;
+  }
+
+  .app-directory-copy strong {
+    font-size: 0.9rem;
+    font-weight: 760;
+  }
+
+  .app-directory-copy small {
+    margin-top: 0.25rem;
+    color: var(--muted-foreground);
+    font-size: 0.78rem;
+    line-height: 1.45;
+  }
+
+  .app-directory-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--foreground);
+    font-size: 0.78rem;
+    font-weight: 760;
+  }
+
   .app-list-row {
     display: flex;
     align-items: center;
@@ -755,6 +816,26 @@ body,
       minmax(11rem, 1fr) minmax(12rem, 1fr) minmax(12rem, 1fr)
       minmax(8rem, 0.75fr) minmax(7rem, 0.5fr);
     min-width: 62rem;
+  }
+
+  .app-connected-table .app-table-row:not(.app-table-head) {
+    align-items: start;
+  }
+
+  .app-room-list {
+    display: block;
+    max-height: 8rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 0.35rem;
+    line-height: 1.5;
+    scrollbar-gutter: stable;
+  }
+
+  .app-grant-actions {
+    display: grid;
+    gap: 0.45rem;
+    justify-items: start;
   }
 
   .app-table-head {
@@ -1351,6 +1432,32 @@ body,
     .mcp-client-grid {
       grid-template-columns: 1fr;
     }
+
+    .app-connected-table {
+      overflow-x: visible;
+    }
+
+    .app-connected-table .app-table-head {
+      display: none;
+    }
+
+    .app-connected-table .app-table-row:not(.app-table-head) {
+      grid-template-columns: 1fr;
+      gap: 0.85rem;
+      min-width: 0;
+      padding: 1rem;
+    }
+
+    .app-connected-table [role='cell']::before {
+      display: block;
+      margin-bottom: 0.3rem;
+      color: var(--muted-foreground);
+      content: attr(data-label);
+      font-size: 0.66rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
   }
 
   @media (max-width: 620px) {
@@ -1373,6 +1480,15 @@ body,
 
     .app-nav {
       grid-template-columns: 1fr;
+    }
+
+    .app-directory-row {
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: start;
+    }
+
+    .app-directory-action {
+      grid-column: 2;
     }
   }
 }

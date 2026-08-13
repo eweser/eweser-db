@@ -85,6 +85,15 @@ const signUpBullets = [
   'Start with one identity, then reuse it across apps.',
 ];
 
+const availableApps = [
+  {
+    description: 'Write and organize local-first notes in rooms you own.',
+    href: 'https://note.eweser.com/',
+    id: 'ewe-note',
+    name: 'Ewe Note',
+  },
+] as const;
+
 const passwordResetRequestedMessage =
   'If an account exists, password reset instructions were sent.';
 const authRequestTimeoutMs = 15_000;
@@ -212,6 +221,81 @@ function getGrantCollectionsLabel(grant: ConnectedAppGrant) {
     return 'Specific rooms only';
   }
   return grant.collections.map(formatCollectionKey).join(', ');
+}
+
+function normalizeAppHostname(domain: string) {
+  try {
+    const url = new URL(domain.includes('://') ? domain : `https://${domain}`);
+    return url.hostname
+      .toLowerCase()
+      .replace(/^www\./, '')
+      .replace(/\.$/, '');
+  } catch {
+    return domain
+      .toLowerCase()
+      .replace(/^www\./, '')
+      .replace(/\.$/, '');
+  }
+}
+
+function getAvailableApp(domain: string) {
+  const hostname = normalizeAppHostname(domain);
+  const firstLabel = hostname.split('.')[0];
+
+  if (
+    hostname.endsWith('.eweser.com') &&
+    (firstLabel === 'note' ||
+      firstLabel === 'ewe-note' ||
+      firstLabel === 'ewenote')
+  ) {
+    return availableApps[0];
+  }
+
+  return null;
+}
+
+interface ConnectedAppGroup {
+  app: (typeof availableApps)[number] | null;
+  grants: ConnectedAppGrant[];
+  key: string;
+}
+
+function groupConnectedAppGrants(grants: ConnectedAppGrant[]) {
+  const groups = new Map<string, ConnectedAppGroup>();
+
+  grants.forEach((grant) => {
+    const app = getAvailableApp(grant.domain);
+    const key = app?.id ?? normalizeAppHostname(grant.domain);
+    const existing = groups.get(key);
+    if (existing) {
+      existing.grants.push(grant);
+      return;
+    }
+    groups.set(key, { app, grants: [grant], key });
+  });
+
+  return Array.from(groups.values());
+}
+
+function getGrantGroupCollectionsLabel(group: ConnectedAppGroup) {
+  const collections = Array.from(
+    new Set(group.grants.flatMap((grant) => grant.collections))
+  );
+  if (collections.includes('all')) {
+    return 'All requested collections';
+  }
+  if (collections.length === 0) {
+    return 'Specific rooms only';
+  }
+  return collections.map(formatCollectionKey).join(', ');
+}
+
+function getGrantGroupLastActivity(group: ConnectedAppGroup) {
+  return group.grants
+    .map(getGrantLastActivity)
+    .filter((value): value is string => Boolean(value))
+    .sort()
+    .at(-1);
 }
 
 function getRoomCollectionCounts(bootstrap: AccountBootstrapResponse) {
@@ -1365,7 +1449,7 @@ function ConnectedAppsPage() {
   const [connectedApps, setConnectedApps] = useState<ConnectedAppGrant[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [revokingGrantId, setRevokingGrantId] = useState<string | null>(null);
+  const [revokingAppKey, setRevokingAppKey] = useState<string | null>(null);
 
   async function refreshConnectedApps() {
     const [bootstrapResult, connectedAppsResult] = await Promise.all([
@@ -1396,20 +1480,23 @@ function ConnectedAppsPage() {
     };
   }, []);
 
-  async function handleRevoke(grantId: string) {
-    setRevokingGrantId(grantId);
+  async function handleRevokeApp(group: ConnectedAppGroup) {
+    setRevokingAppKey(group.key);
     setError(null);
     try {
-      await revokeConnectedApp(grantId);
+      for (const grant of group.grants) {
+        await revokeConnectedApp(grant.id);
+      }
       await refreshConnectedApps();
     } catch (requestError) {
+      await refreshConnectedApps().catch(() => undefined);
       setError(
         requestError instanceof Error
           ? requestError.message
           : 'Unable to revoke app access.'
       );
     } finally {
-      setRevokingGrantId(null);
+      setRevokingAppKey(null);
     }
   }
 
@@ -1429,6 +1516,8 @@ function ConnectedAppsPage() {
   const revokedGrants = connectedApps.filter(
     (grant) => grant.status === 'revoked'
   );
+  const activeAppGroups = groupConnectedAppGrants(activeGrants);
+  const revokedAppGroups = groupConnectedAppGrants(revokedGrants);
 
   return (
     <AppConsoleLayout
@@ -1446,6 +1535,31 @@ function ConnectedAppsPage() {
 
       {error ? <p className="app-error">{error}</p> : null}
 
+      <section className="app-panel">
+        <div className="app-panel-header">
+          <div>
+            <h2>Available apps</h2>
+            <p>Open an app that works with your EweserDB rooms.</p>
+          </div>
+        </div>
+        <div className="app-directory-list">
+          {availableApps.map((app) => (
+            <a className="app-directory-row" href={app.href} key={app.id}>
+              <span className="app-empty-icon" aria-hidden="true">
+                <FileText className="h-5 w-5" />
+              </span>
+              <span className="app-directory-copy">
+                <strong>{app.name}</strong>
+                <small>{app.description}</small>
+              </span>
+              <span className="app-directory-action">
+                Open app <ArrowRight className="h-4 w-4" />
+              </span>
+            </a>
+          ))}
+        </div>
+      </section>
+
       {activeGrants.length > 0 ? (
         <section className="app-panel">
           <div className="app-panel-header">
@@ -1456,7 +1570,10 @@ function ConnectedAppsPage() {
                 you revoke them.
               </p>
             </div>
-            <span className="mcp-chip">{activeGrants.length} active</span>
+            <span className="mcp-chip">
+              {activeAppGroups.length}{' '}
+              {activeAppGroups.length === 1 ? 'app' : 'apps'}
+            </span>
           </div>
 
           <div className="app-table app-connected-table" role="table">
@@ -1467,39 +1584,67 @@ function ConnectedAppsPage() {
               <span role="columnheader">Last access</span>
               <span role="columnheader">Actions</span>
             </div>
-            {activeGrants.map((grant) => (
-              <div key={grant.id} className="app-table-row" role="row">
-                <span role="cell">
-                  <strong>{grant.domain}</strong>
-                  <small>{grant.requesterType}</small>
-                </span>
-                <span role="cell">{getGrantCollectionsLabel(grant)}</span>
-                <span role="cell">
-                  {grant.roomIds.length > 0
-                    ? grant.roomIds
-                        .map((roomId) => roomsById.get(roomId)?.name ?? roomId)
-                        .join(', ')
-                    : 'Collection-level'}
-                </span>
-                <span role="cell">
-                  {formatDate(getGrantLastActivity(grant))}
-                </span>
-                <span role="cell">
-                  <Button
-                    disabled={revokingGrantId === grant.id}
-                    tone="outline"
-                    type="button"
-                    onClick={() => void handleRevoke(grant.id)}
+            {activeAppGroups.map((group) => {
+              const roomIds = Array.from(
+                new Set(group.grants.flatMap((grant) => grant.roomIds))
+              );
+              const domains = Array.from(
+                new Set(group.grants.map((grant) => grant.domain))
+              );
+              const appName = group.app?.name ?? domains[0] ?? group.key;
+
+              return (
+                <div key={group.key} className="app-table-row" role="row">
+                  <span data-label="App" role="cell">
+                    <strong>{appName}</strong>
+                    <small>
+                      {domains.join(', ')}
+                      {group.grants.length > 1
+                        ? ` · ${group.grants.length} grants`
+                        : ''}
+                    </small>
+                  </span>
+                  <span data-label="Collections" role="cell">
+                    {getGrantGroupCollectionsLabel(group)}
+                  </span>
+                  <span
+                    className="app-room-list"
+                    data-label="Rooms"
+                    role="cell"
                   >
-                    {revokingGrantId === grant.id ? (
-                      <InlineSpinner />
-                    ) : (
-                      'Revoke'
-                    )}
-                  </Button>
-                </span>
-              </div>
-            ))}
+                    {roomIds.length > 0
+                      ? roomIds
+                          .map(
+                            (roomId) => roomsById.get(roomId)?.name ?? roomId
+                          )
+                          .join(', ')
+                      : 'Collection-level'}
+                  </span>
+                  <span data-label="Last access" role="cell">
+                    {formatDate(getGrantGroupLastActivity(group))}
+                  </span>
+                  <span
+                    className="app-grant-actions"
+                    data-label="Actions"
+                    role="cell"
+                  >
+                    <Button
+                      aria-label={`Revoke ${appName}`}
+                      disabled={revokingAppKey === group.key}
+                      tone="outline"
+                      type="button"
+                      onClick={() => void handleRevokeApp(group)}
+                    >
+                      {revokingAppKey === group.key ? (
+                        <InlineSpinner />
+                      ) : (
+                        'Revoke'
+                      )}
+                    </Button>
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </section>
       ) : (
@@ -1540,21 +1685,21 @@ function ConnectedAppsPage() {
         </div>
       </section>
 
-      {revokedGrants.length > 0 ? (
+      {revokedAppGroups.length > 0 ? (
         <section className="app-panel">
           <div className="app-panel-header">
             <div>
               <h2>Revoked access</h2>
               <p>These apps must request a new grant before they can sync.</p>
             </div>
-            <span className="mcp-chip">{revokedGrants.length} revoked</span>
+            <span className="mcp-chip">{revokedAppGroups.length} revoked</span>
           </div>
           <div className="app-list">
-            {revokedGrants.map((grant) => (
-              <div key={grant.id} className="app-list-row">
+            {revokedAppGroups.map((group) => (
+              <div key={group.key} className="app-list-row">
                 <div>
-                  <strong>{grant.domain}</strong>
-                  <p>{getGrantCollectionsLabel(grant)}</p>
+                  <strong>{group.app?.name ?? group.grants[0]?.domain}</strong>
+                  <p>{getGrantGroupCollectionsLabel(group)}</p>
                 </div>
                 <span className="app-status-pill app-status-muted">
                   Revoked
