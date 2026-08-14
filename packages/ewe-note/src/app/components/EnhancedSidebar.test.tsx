@@ -18,6 +18,7 @@ const updateFolder = vi.fn();
 const deleteFolder = vi.fn();
 const addNote = vi.fn(() => ({ id: 'note-created' }));
 const moveNote = vi.fn();
+const deleteNote = vi.fn();
 const deleteVault = vi.fn().mockResolvedValue(undefined);
 const readerRoom = {
   id: 'secure-room',
@@ -25,6 +26,19 @@ const readerRoom = {
   writeAccess: ['writer-user'],
   adminAccess: [],
 };
+const writableRoom = {
+  id: 'room-1',
+  syncUrl: 'wss://sync.example.test',
+  writeAccess: ['reader-user'],
+  adminAccess: [],
+};
+const readOnlyNoteRoom = {
+  id: 'room-1',
+  syncUrl: 'wss://sync.example.test',
+  writeAccess: [],
+  adminAccess: [],
+};
+let noteRoomWritable = true;
 let vaultDeletionEligibility:
   | { canDelete: true; noteCount: 0 }
   | {
@@ -132,6 +146,7 @@ vi.mock('../contexts/NotesContext', () => ({
     getDirectNotesInFolder,
     getNotesInFolder,
     moveNote,
+    deleteNote,
   }),
 }));
 
@@ -152,7 +167,7 @@ vi.mock('../../db', () => ({
     syncStatusDescription: 'Stored on this device',
     user: { firstName: 'Guest' },
     selectedRoom: null,
-    allRooms: [readerRoom],
+    allRooms: [readerRoom, noteRoomWritable ? writableRoom : readOnlyNoteRoom],
     db: { userId: 'reader-user' },
     createSecureRoom: vi.fn(),
     lockCurrentRoom: vi.fn(),
@@ -203,9 +218,11 @@ describe('EnhancedSidebar', () => {
     deleteFolder.mockClear();
     addNote.mockClear();
     moveNote.mockClear();
+    deleteNote.mockClear();
     deleteVault.mockReset();
     deleteVault.mockResolvedValue(undefined);
     vaultDeletionEligibility = { canDelete: true, noteCount: 0 };
+    noteRoomWritable = true;
     useDrag.mockClear();
     useDrop.mockClear();
     mockNavigate.mockClear();
@@ -265,6 +282,50 @@ describe('EnhancedSidebar', () => {
     fireEvent.click(noteButton);
 
     expect(mockNavigate).toHaveBeenCalledWith('/editor/note-1');
+  });
+
+  it('deletes a writable note from its file actions menu', () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    render(<EnhancedSidebar onSearchClick={vi.fn()} activeView="recent" />);
+
+    fireEvent.pointerDown(
+      screen.getByRole('button', { name: 'Note actions for Project Plan' })
+    );
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Delete note' }));
+
+    expect(confirmSpy).toHaveBeenCalledWith('Delete "Project Plan"?');
+    expect(deleteNote).toHaveBeenCalledWith('note-1');
+  });
+
+  it('keeps a read-only note action visible but disables deletion', () => {
+    noteRoomWritable = false;
+    render(<EnhancedSidebar onSearchClick={vi.fn()} activeView="recent" />);
+
+    fireEvent.pointerDown(
+      screen.getByRole('button', { name: 'Note actions for Project Plan' })
+    );
+
+    const item = screen.getByRole('menuitem', {
+      name: 'Delete note. This note is read-only.',
+    });
+    expect(item.getAttribute('data-disabled')).not.toBeNull();
+    expect(deleteNote).not.toHaveBeenCalled();
+  });
+
+  it('keeps note and eligible-folder actions mobile-visible and desktop-hover-revealed', () => {
+    render(<EnhancedSidebar onSearchClick={vi.fn()} activeView="recent" />);
+
+    expect(
+      screen.getByRole('button', { name: 'Note actions for Project Plan' })
+        .className
+    ).toContain('md:opacity-0');
+    expect(
+      screen.getByRole('button', { name: 'Delete folder Projects' }).className
+    ).toContain('md:opacity-0');
+    expect(
+      screen.getByRole('button', { name: 'Folder actions for Projects' })
+        .className
+    ).toContain('md:opacity-0');
   });
 
   it('makes each direct note a drag source with its current folder', () => {

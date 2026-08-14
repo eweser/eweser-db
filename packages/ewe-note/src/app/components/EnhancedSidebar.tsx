@@ -68,6 +68,9 @@ const ItemTypes = {
   NOTE: 'note',
 };
 
+const treeActionVisibility =
+  'opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 focus-visible:opacity-100';
+
 interface DraggedNoteItem {
   noteId: string;
   folderId: string;
@@ -703,6 +706,9 @@ function DraggableNoteItem({
   isActive: boolean;
   onOpen: () => void;
 }) {
+  const navigate = useNavigate();
+  const { deleteNote } = useNotes();
+  const { allRooms, db } = useDb();
   const [{ isDragging }, drag] = useDrag<
     DraggedNoteItem,
     unknown,
@@ -713,24 +719,61 @@ function DraggableNoteItem({
     collect: (monitor) => ({ isDragging: monitor.isDragging() }),
   });
   const title = formatTreeNoteTitle(note.title);
+  const noteRoom = allRooms.find((room) => room.id === note.roomId);
+  const canDeleteNote = Boolean(noteRoom && canWriteRoom(noteRoom, db.userId));
+
+  const handleDelete = () => {
+    if (!canDeleteNote || !window.confirm(`Delete "${title}"?`)) return;
+    deleteNote(note.id);
+    if (isActive) navigate('/');
+  };
 
   return (
-    <button
-      ref={drag}
-      type="button"
-      onClick={onOpen}
-      data-cy={`ewe-note-note-drag-source-${note.id}`}
-      className={`flex w-full min-w-0 items-start gap-2 rounded-md py-1.5 pl-10 pr-3 text-left text-sm transition-colors ${
-        isActive
-          ? 'bg-sidebar-accent text-sidebar-foreground'
-          : 'hover:bg-sidebar-accent/70'
-      } ${isDragging ? 'cursor-grabbing opacity-50' : 'cursor-grab'}`}
-      title={`Drag to move • ${title}`}
-      aria-label={`Open note ${title}`}
-    >
-      <FileText className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-      <span className="min-w-0 flex-1 truncate leading-5">{title}</span>
-    </button>
+    <div className="group flex w-full min-w-0 items-start gap-1 rounded-md">
+      <button
+        ref={drag}
+        type="button"
+        onClick={onOpen}
+        data-cy={`ewe-note-note-drag-source-${note.id}`}
+        className={`flex min-w-0 flex-1 items-start gap-2 rounded-md py-1.5 pl-10 pr-2 text-left text-sm transition-colors ${
+          isActive
+            ? 'bg-sidebar-accent text-sidebar-foreground'
+            : 'hover:bg-sidebar-accent/70'
+        } ${isDragging ? 'cursor-grabbing opacity-50' : 'cursor-grab'}`}
+        title={`Drag to move • ${title}`}
+        aria-label={`Open note ${title}`}
+      >
+        <FileText className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+        <span className="min-w-0 flex-1 truncate leading-5">{title}</span>
+      </button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            aria-label={`Note actions for ${title}`}
+            className={`mt-1 shrink-0 rounded-full p-1 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${treeActionVisibility}`}
+            data-cy={`ewe-note-note-actions-${note.id}`}
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem
+            onClick={handleDelete}
+            disabled={!canDeleteNote}
+            aria-label={
+              canDeleteNote
+                ? 'Delete note'
+                : 'Delete note. This note is read-only.'
+            }
+            variant="destructive"
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete note
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
 }
 
@@ -800,7 +843,7 @@ function FolderItem({
   return (
     <div
       ref={drop}
-      className={`flex w-full min-w-0 items-center gap-1 rounded-md transition-colors ${
+      className={`group flex w-full min-w-0 items-center gap-1 rounded-md transition-colors ${
         isOver ? 'bg-primary/15 ring-1 ring-primary/40' : ''
       }`}
     >
@@ -836,7 +879,7 @@ function FolderItem({
           aria-label={`${deleteLabel} ${folder.name}`}
           title={`${deleteLabel} ${folder.name}`}
           onClick={handleDelete}
-          className="shrink-0 self-center rounded-full p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className={`shrink-0 self-center rounded-full p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${treeActionVisibility}`}
           data-cy={
             folder.kind === 'shared-room'
               ? `ewe-note-delete-vault-${folder.roomId}`
@@ -851,7 +894,7 @@ function FolderItem({
           <button
             type="button"
             aria-label={`${folder.kind === 'shared-room' ? 'Vault' : 'Folder'} actions for ${folder.name}`}
-            className="shrink-0 self-center rounded-full p-1 text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            className={`shrink-0 self-center rounded-full p-1 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${treeActionVisibility}`}
             data-cy={`ewe-note-folder-actions-${folder.id}`}
           >
             <MoreHorizontal className="h-4 w-4" />
