@@ -26,11 +26,11 @@ export const logoutAndClear =
   /**
    * Logs out and also clears all local data from indexedDB and localStorage.
    */
-  () => {
+  async () => {
     db.logout();
     for (const collectionKey of db.collectionKeys) {
       for (const room of db.getRooms(collectionKey)) {
-        room.indexedDbProvider?.clearData();
+        await room.indexedDbProvider?.clearData();
         room.indexedDbProvider?.destroy();
       }
     }
