@@ -28,6 +28,7 @@ Tailwind, TipTap, and `@eweser/db`.
 ## Key Contracts
 
 - Note data lives in `@eweser/db` rooms and remains useful offline.
+- Sign-out waits for the requested local-data clear before reloading.
 - TipTap/Obsidian import-export behavior must preserve user content.
 - Shared example UI changes may require changesets when they affect published
   package APIs.

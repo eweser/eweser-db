@@ -130,7 +130,7 @@ export type DbContextType = {
     email: string;
     avatar: string;
   };
-  signOut: () => void;
+  signOut: () => Promise<void>;
   // Secure room properties
   createSecureRoom: () => Promise<void>;
   lockCurrentRoom: () => void;
@@ -163,8 +163,8 @@ export function useDb() {
   return context;
 }
 
-const signOut = () => {
-  db.logoutAndClear();
+const signOut = async () => {
+  await db.logoutAndClear();
   localStorage.removeItem('roomId');
   localStorage.removeItem('noteId');
   window.document.location.reload();

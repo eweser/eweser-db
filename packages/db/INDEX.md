@@ -10,6 +10,7 @@ IndexedDB persistence, and optional Hocuspocus sync.
 - The public `Database` and `Room` client APIs.
 - Yjs document helpers and room lifecycle behavior.
 - Local persistence and auth/sync connection helpers.
+- Logout clearing waits for IndexedDB before callers reload the app.
 
 ## Start Here
 
