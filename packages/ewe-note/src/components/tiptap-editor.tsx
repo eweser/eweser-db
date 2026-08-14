@@ -261,7 +261,8 @@ export function shouldRefreshLocalEditorContent({
   pendingEditorMarkdown,
   sourceMode,
 }: ShouldRefreshLocalEditorContentOptions): boolean {
-  if (!hasEditor || collaborationReady || sourceMode || focused) return false;
+  if (!hasEditor || sourceMode || focused) return false;
+  if (collaborationReady) return pendingEditorMarkdown === null;
   return pendingEditorMarkdown === null || pendingEditorMarkdown === noteText;
 }
 
