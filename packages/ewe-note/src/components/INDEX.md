@@ -13,7 +13,7 @@ bridge, layout chrome, sidebar, dialogs, theme controls, and local UI primitives
 
 ## Start Here
 
-- [`editor.tsx`](./editor.tsx): TipTap, Yjs collaboration, and save bridge.
+- [`editor.tsx`](./editor.tsx): TipTap, Yjs collaboration, remote refresh, and save bridge.
 - [`layout.tsx`](./layout.tsx): App chrome, topbar, sidebar, and focus layout.
 - [`app-sidebar.tsx`](./app-sidebar.tsx): Main navigation and room/note sidebar.
 - [`layout-shortcuts.ts`](./layout-shortcuts.ts): Keyboard layout state rules.

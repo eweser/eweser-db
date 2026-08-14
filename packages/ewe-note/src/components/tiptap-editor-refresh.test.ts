@@ -41,7 +41,33 @@ describe('shouldRefreshLocalEditorContent', () => {
     ).toBe(true);
   });
 
-  it('blocks refreshes while focused, source mode, collaboration, or missing editor already own content', () => {
+  it('refreshes collaborative content when no local edit is pending', () => {
+    expect(
+      shouldRefreshLocalEditorContent({
+        collaborationReady: true,
+        focused: false,
+        hasEditor: true,
+        noteText: 'remote markdown',
+        pendingEditorMarkdown: null,
+        sourceMode: false,
+      })
+    ).toBe(true);
+  });
+
+  it('protects pending collaborative edits from remote refreshes', () => {
+    expect(
+      shouldRefreshLocalEditorContent({
+        collaborationReady: true,
+        focused: false,
+        hasEditor: true,
+        noteText: 'remote markdown',
+        pendingEditorMarkdown: 'local markdown',
+        sourceMode: false,
+      })
+    ).toBe(false);
+  });
+
+  it('blocks refreshes while focused, in source mode, or missing the editor', () => {
     const readyToRefresh = {
       collaborationReady: false,
       focused: false,
@@ -56,12 +82,6 @@ describe('shouldRefreshLocalEditorContent', () => {
     ).toBe(false);
     expect(
       shouldRefreshLocalEditorContent({ ...readyToRefresh, sourceMode: true })
-    ).toBe(false);
-    expect(
-      shouldRefreshLocalEditorContent({
-        ...readyToRefresh,
-        collaborationReady: true,
-      })
     ).toBe(false);
     expect(
       shouldRefreshLocalEditorContent({ ...readyToRefresh, hasEditor: false })
