@@ -69,7 +69,7 @@ const ItemTypes = {
 };
 
 const treeActionVisibility =
-  'opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 focus-visible:opacity-100';
+  'opacity-100 transition-all md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 focus-visible:opacity-100';
 
 interface DraggedNoteItem {
   noteId: string;
