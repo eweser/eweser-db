@@ -7,6 +7,7 @@ describe('shouldRefreshLocalEditorContent', () => {
       shouldRefreshLocalEditorContent({
         collaborationReady: false,
         focused: false,
+        hasPendingEditorChanges: true,
         hasEditor: true,
         noteText: 'saved markdown',
         pendingEditorMarkdown: 'unsaved local markdown',
@@ -20,6 +21,7 @@ describe('shouldRefreshLocalEditorContent', () => {
       shouldRefreshLocalEditorContent({
         collaborationReady: false,
         focused: false,
+        hasPendingEditorChanges: false,
         hasEditor: true,
         noteText: 'saved markdown',
         pendingEditorMarkdown: 'saved markdown',
@@ -33,6 +35,7 @@ describe('shouldRefreshLocalEditorContent', () => {
       shouldRefreshLocalEditorContent({
         collaborationReady: false,
         focused: false,
+        hasPendingEditorChanges: false,
         hasEditor: true,
         noteText: 'saved markdown',
         pendingEditorMarkdown: null,
@@ -46,6 +49,7 @@ describe('shouldRefreshLocalEditorContent', () => {
       shouldRefreshLocalEditorContent({
         collaborationReady: true,
         focused: false,
+        hasPendingEditorChanges: false,
         hasEditor: true,
         noteText: 'remote markdown',
         pendingEditorMarkdown: null,
@@ -59,6 +63,7 @@ describe('shouldRefreshLocalEditorContent', () => {
       shouldRefreshLocalEditorContent({
         collaborationReady: true,
         focused: false,
+        hasPendingEditorChanges: true,
         hasEditor: true,
         noteText: 'remote markdown',
         pendingEditorMarkdown: 'local markdown',
@@ -71,6 +76,7 @@ describe('shouldRefreshLocalEditorContent', () => {
     const readyToRefresh = {
       collaborationReady: false,
       focused: false,
+      hasPendingEditorChanges: false,
       hasEditor: true,
       noteText: 'saved markdown',
       pendingEditorMarkdown: null,

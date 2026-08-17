@@ -49,6 +49,10 @@ vi.mock('../contexts/NotesContext', () => ({
   }),
 }));
 
+vi.mock('@/hooks/use-unlinked-mentions', () => ({
+  useUnlinkedMentions: () => [],
+}));
+
 describe('RightPanel source metadata', () => {
   beforeEach(() => {
     mocks.navigate.mockClear();

@@ -81,12 +81,13 @@ plan. Standalone QA is reserved for independent re-QA or audit work.
 
 ### Ewe Note UX
 
-| Plan                                                                                           | Status        | Notes                                                                                                      |
-| ---------------------------------------------------------------------------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------- |
-| [2026-04-06-tiptap-migration.md](./2026-04-06-tiptap-migration.md)                             | Follow-up     | Not a dogfood or launch blocker unless current editor fails the required import/edit proof.                |
-| [2026-05-01-ewe-note-ux-feature-completion.md](./2026-05-01-ewe-note-ux-feature-completion.md) | Dogfood-ready | Dogfood findings first; Tasks v1 is found-in-notes, templates are low priority/local-only.                 |
-| [2026-05-01-obsidian-full-sync-base-files.md](./2026-05-01-obsidian-full-sync-base-files.md)   | Dogfood-ready | Includes production `docs/personal` move into Ewe Note base `Eweser Strategy` before repo pointer cleanup. |
-| [2026-04-11-ewe-note-feature-tests.md](./2026-04-11-ewe-note-feature-tests.md)                 | Later QA      | Useful after the UX pass; current Cypress coverage is partial.                                             |
+| Plan                                                                                                     | Status            | Notes                                                                                                            |
+| -------------------------------------------------------------------------------------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------- |
+| [2026-08-17-ewe-note-editor-performance-workers.md](./2026-08-17-ewe-note-editor-performance-workers.md) | Awaiting approval | Attribute Ewe Note-owned main-thread work, add stress E2E coverage, and workerize only measured pure transforms. |
+| [2026-04-06-tiptap-migration.md](./2026-04-06-tiptap-migration.md)                                       | Follow-up         | Not a dogfood or launch blocker unless current editor fails the required import/edit proof.                      |
+| [2026-05-01-ewe-note-ux-feature-completion.md](./2026-05-01-ewe-note-ux-feature-completion.md)           | Dogfood-ready     | Dogfood findings first; Tasks v1 is found-in-notes, templates are low priority/local-only.                       |
+| [2026-05-01-obsidian-full-sync-base-files.md](./2026-05-01-obsidian-full-sync-base-files.md)             | Dogfood-ready     | Includes production `docs/personal` move into Ewe Note base `Eweser Strategy` before repo pointer cleanup.       |
+| [2026-04-11-ewe-note-feature-tests.md](./2026-04-11-ewe-note-feature-tests.md)                           | Later QA          | Useful after the UX pass; current Cypress coverage is partial.                                                   |
 
 ### Deferred Backlog
 

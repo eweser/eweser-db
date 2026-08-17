@@ -52,6 +52,10 @@ vi.mock('../contexts/NotesContext', () => ({
   }),
 }));
 
+vi.mock('@/hooks/use-unlinked-mentions', () => ({
+  useUnlinkedMentions: () => [],
+}));
+
 describe('RightPanel wiki links', () => {
   beforeEach(() => {
     mocks.navigate.mockClear();

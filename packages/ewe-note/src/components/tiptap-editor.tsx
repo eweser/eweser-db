@@ -39,6 +39,10 @@ import { EditorBubbleMenu } from '@/components/editor-bubble-menu';
 import { EditorSlashMenu } from '@/components/editor-slash-menu';
 import { SourceModeEditor } from '@/components/source-mode-editor';
 import {
+  EWE_NOTE_PERFORMANCE_SPANS,
+  measureEweNotePerformance,
+} from '@/performance/ewe-note-performance';
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -89,17 +93,21 @@ interface LinkDialogState {
 interface ShouldRefreshLocalEditorContentOptions {
   collaborationReady: boolean;
   focused: boolean;
+  hasPendingEditorChanges: boolean;
   hasEditor: boolean;
   noteText: string;
   pendingEditorMarkdown: string | null;
   sourceMode: boolean;
 }
 
-function debounce(func: (markdown: string, note: Note) => void, wait: number) {
+function debounce<TArgs extends unknown[]>(
+  func: (...args: TArgs) => void,
+  wait: number
+) {
   let timeout: ReturnType<typeof setTimeout> | null = null;
-  let lastArgs: [string, Note] | null = null;
+  let lastArgs: TArgs | null = null;
 
-  const debounced = (...args: [string, Note]) => {
+  const debounced = (...args: TArgs) => {
     lastArgs = args;
     if (timeout) clearTimeout(timeout);
     timeout = setTimeout(() => {
@@ -250,18 +258,45 @@ function saveEditor(
   note: Note,
   save: (text: string, note: Note) => void
 ) {
-  save(editorJsonToMarkdown(editor.getJSON() as JSONContent), note);
+  save(serializeEditorMarkdown(editor), note);
+}
+
+function serializeEditorMarkdown(editor: Editor): string {
+  const editorJson = measureEweNotePerformance(
+    EWE_NOTE_PERFORMANCE_SPANS.editorSnapshot,
+    () => editor.getJSON() as JSONContent,
+    { itemCount: editor.state.doc.childCount }
+  );
+  return measureEweNotePerformance(
+    EWE_NOTE_PERFORMANCE_SPANS.editorSerializeMarkdown,
+    () => editorJsonToMarkdown(editorJson),
+    { itemCount: editorJson.content?.length ?? 0 }
+  );
+}
+
+function parseEditorMarkdown(
+  markdown: string,
+  attachmentContext?: AttachmentResolverContext
+): string {
+  return measureEweNotePerformance(
+    EWE_NOTE_PERFORMANCE_SPANS.editorParseMarkdown,
+    () => markdownToEditorHtml(markdown, attachmentContext),
+    { inputSize: markdown.length }
+  );
 }
 
 export function shouldRefreshLocalEditorContent({
   collaborationReady,
   focused,
+  hasPendingEditorChanges,
   hasEditor,
   noteText,
   pendingEditorMarkdown,
   sourceMode,
 }: ShouldRefreshLocalEditorContentOptions): boolean {
-  if (!hasEditor || sourceMode || focused) return false;
+  if (!hasEditor || sourceMode || focused || hasPendingEditorChanges) {
+    return false;
+  }
   if (collaborationReady) return pendingEditorMarkdown === null;
   return pendingEditorMarkdown === null || pendingEditorMarkdown === noteText;
 }
@@ -288,11 +323,18 @@ export function TiptapEditor({
     [doc, selectedNoteId]
   );
   const collaborationReady = isCollaborationReady(fragment, provider);
-  const initialHtml = useMemo(
-    () => markdownToEditorHtml(note.text, attachmentContext),
-    [attachmentContext, note.text]
-  );
-  const debouncedSaveRef = useRef<ReturnType<typeof debounce> | null>(null);
+  const initialHtmlRef = useRef<string | null>(null);
+  if (initialHtmlRef.current === null) {
+    initialHtmlRef.current = parseEditorMarkdown(note.text, attachmentContext);
+  }
+  const initialHtml = initialHtmlRef.current;
+  const debouncedEditorSaveRef = useRef<ReturnType<
+    typeof debounce<[Editor, Note]>
+  > | null>(null);
+  const debouncedSourceSaveRef = useRef<ReturnType<
+    typeof debounce<[string, Note]>
+  > | null>(null);
+  const hasPendingEditorChangesRef = useRef(false);
   const pendingEditorMarkdownRef = useRef<string | null>(null);
   const suppressEditorSaveRef = useRef(false);
   const [slashMenuState, setSlashMenuState] = useState<SlashMenuState | null>(
@@ -306,14 +348,25 @@ export function TiptapEditor({
     href: '',
   });
 
-  if (!debouncedSaveRef.current) {
-    debouncedSaveRef.current = debounce(onSaveMarkdown, 750);
+  if (!debouncedEditorSaveRef.current) {
+    debouncedEditorSaveRef.current = debounce((editor, currentNote) => {
+      const markdown = serializeEditorMarkdown(editor);
+      pendingEditorMarkdownRef.current = markdown;
+      onSaveMarkdown(markdown, currentNote);
+    }, 750);
+  }
+  if (!debouncedSourceSaveRef.current) {
+    debouncedSourceSaveRef.current = debounce((markdown, currentNote) => {
+      pendingEditorMarkdownRef.current = markdown;
+      onSaveMarkdown(markdown, currentNote);
+    }, 750);
   }
 
   useEffect(() => {
     noteRef.current = note;
     if (pendingEditorMarkdownRef.current === note.text) {
       pendingEditorMarkdownRef.current = null;
+      hasPendingEditorChangesRef.current = false;
     }
     if (!sourceMode) {
       setSourceValue(note.text);
@@ -368,16 +421,25 @@ export function TiptapEditor({
           return;
         }
 
-        const didApplyRule = applyMarkdownInputRules(editor);
+        const didApplyRule = measureEweNotePerformance(
+          EWE_NOTE_PERFORMANCE_SPANS.editorInputRules,
+          () => applyMarkdownInputRules(editor),
+          { itemCount: editor.state.doc.childCount }
+        );
         if (!didApplyRule) {
-          setSlashMenuState(resolveSlashMenuState(editor));
+          setSlashMenuState(
+            measureEweNotePerformance(
+              EWE_NOTE_PERFORMANCE_SPANS.editorSlashMenu,
+              () => resolveSlashMenuState(editor),
+              { itemCount: editor.state.doc.childCount }
+            )
+          );
         } else {
           setSlashMenuState(null);
         }
 
-        const markdown = editorJsonToMarkdown(editor.getJSON() as JSONContent);
-        pendingEditorMarkdownRef.current = markdown;
-        debouncedSaveRef.current?.(markdown, noteRef.current);
+        hasPendingEditorChangesRef.current = true;
+        debouncedEditorSaveRef.current?.(editor, noteRef.current);
       },
       onDestroy() {
         onEditorReady?.(null);
@@ -409,6 +471,7 @@ export function TiptapEditor({
       !shouldRefreshLocalEditorContent({
         collaborationReady,
         focused,
+        hasPendingEditorChanges: hasPendingEditorChangesRef.current,
         hasEditor: true,
         noteText: note.text,
         pendingEditorMarkdown: pendingEditorMarkdownRef.current,
@@ -419,20 +482,30 @@ export function TiptapEditor({
     }
 
     suppressEditorSaveRef.current = true;
-    activeEditor.commands.setContent(initialHtml, false);
+    activeEditor.commands.setContent(
+      parseEditorMarkdown(note.text, attachmentContext),
+      false
+    );
     window.setTimeout(() => {
       suppressEditorSaveRef.current = false;
     }, 500);
-  }, [collaborationReady, editor, focused, initialHtml, note.text, sourceMode]);
+  }, [
+    attachmentContext,
+    collaborationReady,
+    editor,
+    focused,
+    note.text,
+    sourceMode,
+  ]);
 
   const closeSlashMenu = useCallback(() => setSlashMenuState(null), []);
   const toggleSourceMode = useCallback(() => {
     if (readOnly || !onSourceModeChange) return;
 
     if (!sourceMode && editor) {
-      const markdown = editorJsonToMarkdown(editor.getJSON() as JSONContent);
+      const markdown = serializeEditorMarkdown(editor);
       setSourceValue(markdown);
-      debouncedSaveRef.current?.flush();
+      debouncedEditorSaveRef.current?.flush();
       onSaveMarkdown(markdown, noteRef.current);
       onSourceModeChange(true);
       return;
@@ -504,17 +577,18 @@ export function TiptapEditor({
     (nextValue: string) => {
       if (readOnly) return;
       setSourceValue(nextValue);
-      debouncedSaveRef.current?.(nextValue, noteRef.current);
+      hasPendingEditorChangesRef.current = true;
+      debouncedSourceSaveRef.current?.(nextValue, noteRef.current);
     },
     [readOnly]
   );
 
   const exitSourceMode = useCallback(() => {
-    debouncedSaveRef.current?.flush();
+    debouncedSourceSaveRef.current?.flush();
     onSaveMarkdown(sourceValue, noteRef.current);
     suppressEditorSaveRef.current = true;
     editor?.commands.setContent(
-      markdownToEditorHtml(sourceValue, attachmentContext),
+      parseEditorMarkdown(sourceValue, attachmentContext),
       false
     );
     window.setTimeout(() => {
@@ -564,7 +638,10 @@ export function TiptapEditor({
   }, [commandContext, editor, focused]);
 
   useEffect(() => {
-    return () => debouncedSaveRef.current?.flush();
+    return () => {
+      debouncedEditorSaveRef.current?.flush();
+      debouncedSourceSaveRef.current?.flush();
+    };
   }, []);
 
   if (!editor) return null;
