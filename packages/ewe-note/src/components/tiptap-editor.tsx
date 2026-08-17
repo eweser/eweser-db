@@ -100,6 +100,11 @@ interface ShouldRefreshLocalEditorContentOptions {
   sourceMode: boolean;
 }
 
+interface InitialEditorHtmlState {
+  html: string;
+  selectedNoteId: string;
+}
+
 function debounce<TArgs extends unknown[]>(
   func: (...args: TArgs) => void,
   wait: number
@@ -285,6 +290,19 @@ function parseEditorMarkdown(
   );
 }
 
+export function resolveInitialEditorHtml(
+  current: InitialEditorHtmlState | null,
+  selectedNoteId: string,
+  markdown: string,
+  attachmentContext?: AttachmentResolverContext
+): InitialEditorHtmlState {
+  if (current?.selectedNoteId === selectedNoteId) return current;
+  return {
+    selectedNoteId,
+    html: parseEditorMarkdown(markdown, attachmentContext),
+  };
+}
+
 export function shouldRefreshLocalEditorContent({
   collaborationReady,
   focused,
@@ -323,11 +341,14 @@ export function TiptapEditor({
     [doc, selectedNoteId]
   );
   const collaborationReady = isCollaborationReady(fragment, provider);
-  const initialHtmlRef = useRef<string | null>(null);
-  if (initialHtmlRef.current === null) {
-    initialHtmlRef.current = parseEditorMarkdown(note.text, attachmentContext);
-  }
-  const initialHtml = initialHtmlRef.current;
+  const initialHtmlRef = useRef<InitialEditorHtmlState | null>(null);
+  initialHtmlRef.current = resolveInitialEditorHtml(
+    initialHtmlRef.current,
+    selectedNoteId,
+    note.text,
+    attachmentContext
+  );
+  const initialHtml = initialHtmlRef.current.html;
   const debouncedEditorSaveRef = useRef<ReturnType<
     typeof debounce<[Editor, Note]>
   > | null>(null);

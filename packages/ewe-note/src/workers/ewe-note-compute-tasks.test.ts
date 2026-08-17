@@ -41,4 +41,12 @@ describe('executeEweNoteComputeTask', () => {
       'Worker task failed'
     );
   });
+
+  it('fails closed for an unsupported runtime task kind', () => {
+    expect(() =>
+      executeEweNoteComputeTask({
+        kind: 'unsupported-task',
+      } as unknown as Parameters<typeof executeEweNoteComputeTask>[0])
+    ).toThrow('Unsupported Ewe Note compute task');
+  });
 });
