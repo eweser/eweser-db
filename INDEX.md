@@ -29,6 +29,8 @@ shared schemas, auth grants, sync, and interoperable apps.
 
 ## Children
 
+- [`.agents/skills/eweser-runtime-orientation/`](./.agents/skills/eweser-runtime-orientation/):
+  shared Claude Code and Codex runtime discovery skill.
 - [`packages/`](./packages/): SDK packages, services, apps, logger, and MCP
   server.
 - [`examples/`](./examples/): Teaching apps and interop demos.
