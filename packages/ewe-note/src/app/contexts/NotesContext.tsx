@@ -17,9 +17,6 @@ import {
   UNTITLED_TITLE,
 } from './note-titles';
 import {
-  extractWikiLinkTargets,
-  extractUnlinkedMentions,
-  getNormalizedWikiTargetEntries,
   getNormalizedWikiTargetKeys,
   getSourcePathTargets,
   linkUnlinkedMentionInMarkdown,
@@ -28,6 +25,18 @@ import {
   type OutgoingWikiLink,
   type UnlinkedMention,
 } from './note-links';
+import {
+  buildOutboundLinks,
+  buildResolvableTargets,
+  normalizeResolvableTargets,
+} from './note-analysis';
+export { deriveUnlinkedMentions } from './note-analysis';
+import {
+  EWE_NOTE_PERFORMANCE_SPANS,
+  isEweNotePerformanceEnabled,
+  measureEweNotePerformance,
+  measureEweNotePerformanceAsync,
+} from '@/performance/ewe-note-performance';
 
 export interface Note {
   id: string;
@@ -140,8 +149,6 @@ type InternalNote = Note & {
   source: DbNote;
 };
 
-type ResolvableTargetValue = string | { noteId: string; mention: string };
-
 function normalize(text: string) {
   return normalizeWikiTarget(text);
 }
@@ -229,143 +236,6 @@ function extractTasksFromMarkdown(noteId: string, markdown: string) {
   return tasks;
 }
 
-type ResolvableTargets = {
-  candidates: Map<string, ResolvableTargetValue>;
-  mentionsByNoteId: Map<string, Set<string>>;
-};
-
-function buildResolvableTargets(notes: InternalNote[]): ResolvableTargets {
-  const targets = new Map<string, { noteId: string; mention: string }>();
-  const mentionsByNoteId = new Map<string, Set<string>>();
-
-  for (const note of notes) {
-    const noteMentions = mentionsByNoteId.get(note.id) ?? new Set<string>();
-    const addTarget = (target: string, mention = target) => {
-      for (const entry of getNormalizedWikiTargetEntries(target)) {
-        const normalizedTarget = entry.key;
-        noteMentions.add(normalizedTarget);
-        if (!targets.has(normalizedTarget)) {
-          targets.set(normalizedTarget, {
-            noteId: note.id,
-            mention: mention === target ? entry.mention : mention,
-          });
-        }
-      }
-    };
-
-    addTarget(note.title, note.title);
-
-    for (const sourcePathTarget of getSourcePathTargets(
-      note.source.sourcePath
-    )) {
-      addTarget(sourcePathTarget, sourcePathTarget);
-    }
-
-    for (const alias of note.aliases) {
-      addTarget(alias, alias);
-    }
-
-    mentionsByNoteId.set(note.id, noteMentions);
-  }
-
-  return { candidates: targets, mentionsByNoteId };
-}
-
-function normalizeResolvableTargets(
-  resolvableTargets:
-    | ResolvableTargets['candidates']
-    | Record<string, ResolvableTargetValue>
-    | null
-    | undefined
-): Map<string, ResolvableTargetValue> {
-  if (resolvableTargets instanceof Map) return resolvableTargets;
-
-  if (
-    !resolvableTargets ||
-    typeof resolvableTargets !== 'object' ||
-    Array.isArray(resolvableTargets)
-  ) {
-    return new Map();
-  }
-
-  return new Map<string, ResolvableTargetValue>(
-    Object.entries(resolvableTargets as Record<string, ResolvableTargetValue>)
-  );
-}
-
-function resolveTargetId(
-  resolvableTargets: Map<string, ResolvableTargetValue>,
-  target: string
-) {
-  for (const targetKey of getNormalizedWikiTargetKeys(target)) {
-    const candidate = resolvableTargets.get(targetKey);
-    if (typeof candidate === 'string') return candidate;
-    if (candidate?.noteId) return candidate.noteId;
-  }
-
-  return null;
-}
-
-function buildOutboundLinks(
-  note: InternalNote,
-  resolvableTargets: Map<string, ResolvableTargetValue>
-) {
-  const raw = extractWikiLinkTargets(note.content);
-  const seen = new Set<string>();
-
-  const outgoingLinks = raw.map((entry) => {
-    return {
-      ...entry,
-      noteId: entry.noteId ?? resolveTargetId(resolvableTargets, entry.target),
-      raw: entry.raw,
-    };
-  });
-
-  const deduped = outgoingLinks.filter((link) => {
-    const key = `${link.target}|${link.heading ?? ''}|${link.blockRef ?? ''}|${
-      link.alias ?? ''
-    }`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-
-  const linkedIds = deduped
-    .map((link) => link.noteId)
-    .filter(Boolean) as string[];
-
-  return {
-    outgoingLinks: deduped,
-    linkedIds: Array.from(new Set(linkedIds)),
-  };
-}
-
-function extractUnlinkedMentionsForNote(
-  note: InternalNote,
-  resolvableTargets: Map<string, ResolvableTargetValue>,
-  outgoingTargets: Set<string>
-) {
-  const normalizedTargets = normalizeResolvableTargets(resolvableTargets);
-  const excluded = new Set([
-    normalize(note.title),
-    ...note.aliases.map(normalize),
-    ...outgoingTargets,
-  ]);
-
-  const candidateEntries = Array.from(normalizedTargets.entries()).filter(
-    ([, entry]) => {
-      const targetNoteId =
-        typeof entry === 'string' ? entry : (entry?.noteId ?? null);
-      return targetNoteId !== note.id;
-    }
-  );
-  return extractUnlinkedMentions(
-    note.content,
-    Object.fromEntries(candidateEntries),
-    excluded
-  );
-}
-
 export function NotesProvider({ children }: { children: React.ReactNode }) {
   const {
     db,
@@ -418,7 +288,10 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     const getNotes = (room: Room<DbNote>) => {
       try {
         const docs = room.getDocuments();
-        return docs.toArray(docs.sortByRecent(docs.getUndeleted()));
+        return measureEweNotePerformance(
+          EWE_NOTE_PERFORMANCE_SPANS.notesRoomRead,
+          () => docs.toArray(docs.sortByRecent(docs.getUndeleted()))
+        );
       } catch {
         return [];
       }
@@ -436,9 +309,11 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
             ...prev,
             [typedRoom.id]: roomNotes,
           }));
-          void writeBrowserLocalVaultNotes(typedRoom.id, roomNotes).catch(
-            () => undefined
-          );
+          void measureEweNotePerformanceAsync(
+            EWE_NOTE_PERFORMANCE_SPANS.notesVaultWriteback,
+            () => writeBrowserLocalVaultNotes(typedRoom.id, roomNotes),
+            { itemCount: roomNotes.length }
+          ).catch(() => undefined);
         };
         docs.onChange(handler);
         handlers.push({ room: typedRoom, handler });
@@ -490,77 +365,81 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
   }, [agentWorkspaceEnabled, canonicalRoom, roomFolders, visibleRooms]);
 
   const notes = useMemo<Note[]>(() => {
-    const internal: InternalNote[] = [];
+    const inputNoteCount = visibleRooms.reduce(
+      (total, room) => total + (notesByRoomId[room.id]?.length ?? 0),
+      0
+    );
+    const internal = measureEweNotePerformance(
+      EWE_NOTE_PERFORMANCE_SPANS.notesProject,
+      () => {
+        const projected: InternalNote[] = [];
 
-    const noteById = new Map<string, InternalNote>();
+        for (const room of visibleRooms) {
+          const docs = notesByRoomId[room.id] ?? [];
+          for (const source of docs) {
+            const title = deriveTitle(source);
+            const aliases = source.aliases ?? [];
+            const folderId =
+              canonicalRoom && room.id !== canonicalRoom.id
+                ? `room:${room.id}`
+                : (source.folderIds?.[0] ?? '');
 
-    for (const room of visibleRooms) {
-      const docs = notesByRoomId[room.id] ?? [];
-      for (const source of docs) {
-        const title = deriveTitle(source);
-        const aliases = source.aliases ?? [];
-        const folderId =
-          canonicalRoom && room.id !== canonicalRoom.id
-            ? `room:${room.id}`
-            : (source.folderIds?.[0] ?? '');
+            projected.push({
+              id: source._id,
+              roomId: room.id,
+              title,
+              content: source.text,
+              folder: folderId,
+              ...buildSourceMetadata(source),
+              tags: source.tags ?? [],
+              properties: stringifyProperties(source.frontmatter),
+              createdAt: new Date(source._created).toISOString(),
+              updatedAt: new Date(source._updated).toISOString(),
+              pinned: pinnedIds.has(source._id),
+              links: [],
+              outgoingLinks: [],
+              backlinks: [],
+              unlinkedMentions: [],
+              aliases,
+              source,
+            });
+          }
+        }
 
-        const note: InternalNote = {
-          id: source._id,
-          roomId: room.id,
-          title,
-          content: source.text,
-          folder: folderId,
-          ...buildSourceMetadata(source),
-          tags: source.tags ?? [],
-          properties: stringifyProperties(source.frontmatter),
-          createdAt: new Date(source._created).toISOString(),
-          updatedAt: new Date(source._updated).toISOString(),
-          pinned: pinnedIds.has(source._id),
-          links: [],
-          outgoingLinks: [],
-          backlinks: [],
-          unlinkedMentions: [],
-          aliases,
-          source,
-        };
-
-        internal.push(note);
-        noteById.set(source._id, note);
-      }
-    }
+        return projected;
+      },
+      { itemCount: inputNoteCount }
+    );
 
     const resolvableTargets = buildResolvableTargets(internal);
     const normalizedCandidates = normalizeResolvableTargets(
       resolvableTargets.candidates
     );
 
-    const backlinksById = new Map<string, string[]>();
+    const backlinksById = measureEweNotePerformance(
+      EWE_NOTE_PERFORMANCE_SPANS.notesLinks,
+      () => {
+        const backlinks = new Map<string, string[]>();
 
-    for (const note of internal) {
-      const { outgoingLinks, linkedIds } = buildOutboundLinks(
-        note,
-        normalizedCandidates
-      );
-      const outgoingTargetSet = new Set<string>(
-        linkedIds.flatMap((id) =>
-          Array.from(resolvableTargets.mentionsByNoteId.get(id) ?? [])
-        )
-      );
+        for (const note of internal) {
+          const { outgoingLinks, linkedIds } = buildOutboundLinks(
+            note,
+            normalizedCandidates
+          );
+          note.outgoingLinks = outgoingLinks;
+          note.links = linkedIds;
 
-      note.outgoingLinks = outgoingLinks;
-      note.links = linkedIds;
-      note.unlinkedMentions = extractUnlinkedMentionsForNote(
-        note,
-        normalizedCandidates,
-        outgoingTargetSet
-      );
+          note.links.forEach((linkedId) => {
+            const current = backlinks.get(linkedId) ?? [];
+            current.push(note.id);
+            backlinks.set(linkedId, current);
+          });
+        }
 
-      note.links.forEach((linkedId) => {
-        const current = backlinksById.get(linkedId) ?? [];
-        current.push(note.id);
-        backlinksById.set(linkedId, current);
-      });
-    }
+        return backlinks;
+      },
+      { itemCount: internal.length }
+    );
 
     return internal
       .map(({ source: _source, ...note }) => ({
@@ -574,8 +453,13 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
   }, [canonicalRoom, notesByRoomId, pinnedIds, visibleRooms]);
 
   const tasks = useMemo(() => {
-    const extracted = notes.flatMap((note) =>
-      extractTasksFromMarkdown(note.id, note.content)
+    const extracted = measureEweNotePerformance(
+      EWE_NOTE_PERFORMANCE_SPANS.notesTasks,
+      () =>
+        notes.flatMap((note) =>
+          extractTasksFromMarkdown(note.id, note.content)
+        ),
+      { itemCount: notes.length }
     );
     return extracted.concat(manualTasks);
   }, [manualTasks, notes]);
@@ -679,6 +563,84 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     setSelectedNoteId(created._id);
     return adaptNote(targetRoom as Room<DbNote>, created);
   };
+
+  useEffect(() => {
+    if (!isEweNotePerformanceEnabled()) return;
+    const targetRoom = selectedRoom ?? canonicalRoom ?? allRooms[0];
+    if (!targetRoom) return;
+
+    const driver = {
+      seedSyntheticCorpus({
+        targetCount: requestedTargetCount,
+        bodyParagraphs: requestedBodyParagraphs,
+      }: {
+        targetCount: number;
+        bodyParagraphs: number;
+      }) {
+        const targetCount = Math.min(
+          1000,
+          Math.max(1, Math.floor(requestedTargetCount))
+        );
+        const bodyParagraphs = Math.min(
+          10000,
+          Math.max(1, Math.floor(requestedBodyParagraphs))
+        );
+        const targetNames = Array.from(
+          { length: targetCount },
+          (_value, index) =>
+            `Synthetic Target ${String(index + 1).padStart(4, '0')}`
+        );
+        const docs = targetRoom.getDocuments();
+        let analysisNoteId = '';
+        const seed = () => {
+          targetNames.forEach((title) => {
+            docs.new({
+              text: `# ${title}\n\nSynthetic worker stress target.`,
+              frontmatter: { title },
+            });
+          });
+          const body = [
+            '# Synthetic Analysis Note',
+            '',
+            `One real mention: ${targetNames[0]}.`,
+            '',
+            ...Array.from(
+              { length: bodyParagraphs },
+              (_value, index) =>
+                `Synthetic analysis paragraph ${index + 1} keeps this fixture large without using private data.`
+            ),
+          ].join('\n');
+          const analysis = docs.new({
+            text: body,
+            frontmatter: { title: 'Synthetic Analysis Note' },
+          });
+          analysisNoteId = analysis._id;
+        };
+
+        if (targetRoom.ydoc) {
+          targetRoom.ydoc.transact(seed);
+        } else {
+          seed();
+        }
+        setSelectedRoom(targetRoom);
+        setSelectedNoteId(analysisNoteId);
+        return { analysisNoteId, targetCount, bodyParagraphs };
+      },
+    };
+
+    window.__EWE_NOTE_PERFORMANCE_DRIVER__ = driver;
+    return () => {
+      if (window.__EWE_NOTE_PERFORMANCE_DRIVER__ === driver) {
+        delete window.__EWE_NOTE_PERFORMANCE_DRIVER__;
+      }
+    };
+  }, [
+    allRooms,
+    canonicalRoom,
+    selectedRoom,
+    setSelectedNoteId,
+    setSelectedRoom,
+  ]);
 
   const updateNote = (id: string, updates: Partial<Note>) => {
     const found = getRoomAndSource(id);

@@ -15,6 +15,11 @@ import { extractMarkdownOutline } from './right-panel-outline';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
+import { useUnlinkedMentions } from '@/hooks/use-unlinked-mentions';
+import {
+  EWE_NOTE_PERFORMANCE_SPANS,
+  measureEweNotePerformance,
+} from '@/performance/ewe-note-performance';
 
 interface RightPanelProps {
   noteId: string;
@@ -32,8 +37,14 @@ export function RightPanel({
   const [newTag, setNewTag] = useState('');
   const [newPropertyKey, setNewPropertyKey] = useState('');
   const [newPropertyValue, setNewPropertyValue] = useState('');
+  const [activeTab, setActiveTab] = useState('outline');
 
   const note = notes.find((n) => n.id === noteId);
+  const derivedUnlinkedMentions = useUnlinkedMentions(
+    notes,
+    noteId,
+    activeTab === 'backlinks'
+  );
   if (!note) return null;
 
   const backlinks = notes.filter((n) => n.links.includes(noteId));
@@ -51,7 +62,7 @@ export function RightPanel({
         }));
   const unresolvedOutgoingLinks = outgoingLinks.filter((link) => !link.noteId);
   const resolvedOutgoingLinks = outgoingLinks.filter((link) => !!link.noteId);
-  const unlinkedMentions = note.unlinkedMentions.map((mention) => {
+  const unlinkedMentions = derivedUnlinkedMentions.map((mention) => {
     const targetNote = notes.find((n) => n.id === mention.noteId);
     return {
       ...mention,
@@ -59,7 +70,11 @@ export function RightPanel({
     };
   });
 
-  const headings = extractMarkdownOutline(note.content);
+  const headings = measureEweNotePerformance(
+    EWE_NOTE_PERFORMANCE_SPANS.notesOutline,
+    () => extractMarkdownOutline(note.content),
+    { inputSize: note.content.length }
+  );
 
   const handleAddTag = () => {
     if (newTag && !note.tags.includes(newTag)) {
@@ -117,6 +132,7 @@ export function RightPanel({
       {/* Tabs */}
       <Tabs
         defaultValue="outline"
+        onValueChange={setActiveTab}
         className="flex-1 flex flex-col overflow-hidden"
       >
         <TabsList className="mx-4 mt-3 grid w-auto grid-cols-3 bg-muted/60">

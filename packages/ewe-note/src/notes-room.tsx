@@ -16,6 +16,10 @@ import {
   markDefaultTutorialDismissed,
 } from './default-tutorial';
 import { getFirstHeading, getSyncedTitle } from './app/contexts/note-titles';
+import {
+  EWE_NOTE_PERFORMANCE_SPANS,
+  measureEweNotePerformance,
+} from './performance/ewe-note-performance';
 
 export type NotesRoomType = {
   room: Room<Note> | null;
@@ -66,7 +70,12 @@ export const useNotesRoom = (
   // listen for changes to the ydoc and update the state
   useEffect(() => {
     const handleNotesChange = () => {
-      setNotes(Notes.sortByRecent(Notes.getUndeleted()));
+      setNotes(
+        measureEweNotePerformance(
+          EWE_NOTE_PERFORMANCE_SPANS.notesRoomRead,
+          () => Notes.sortByRecent(Notes.getUndeleted())
+        )
+      );
     };
     Notes.onChange(handleNotesChange);
     handleNotesChange();
@@ -125,11 +134,18 @@ export const useNotesRoom = (
       ? getSyncedTitle(currentTitle, note.text, text)
       : null;
 
-    note.text = text;
-    if (syncedTitle) {
-      note.frontmatter = { ...note.frontmatter, title: syncedTitle };
-    }
-    Notes.set(note);
+    const nextNote = {
+      ...note,
+      text,
+      ...(syncedTitle
+        ? { frontmatter: { ...note.frontmatter, title: syncedTitle } }
+        : {}),
+    };
+    measureEweNotePerformance(
+      EWE_NOTE_PERFORMANCE_SPANS.notesPersist,
+      () => Notes.set(nextNote),
+      { inputSize: text.length }
+    );
   };
 
   const updateNoteFrontmatter = (

@@ -7,7 +7,12 @@ import {
   getFeatureVaultFixturePath,
   readFeatureVaultFixture,
 } from '../../editor/obsidian-feature-fixtures';
-import { NotesProvider, useNotes, type Template } from './NotesContext';
+import {
+  deriveUnlinkedMentions,
+  NotesProvider,
+  useNotes,
+  type Template,
+} from './NotesContext';
 import { AGENT_WORKSPACE_ENABLED_STORAGE_KEY } from '../components/agent-workspace-settings';
 
 type DocumentsLike = {
@@ -509,7 +514,9 @@ describe('NotesContext parity behavior', () => {
     const mentionNote = latestContext?.notes.find(
       (note) => note.content === 'Alex should become linked here.'
     );
-    expect(mentionNote?.unlinkedMentions).toEqual([
+    expect(
+      deriveUnlinkedMentions(latestContext?.notes ?? [], mentionNote?.id ?? '')
+    ).toEqual([
       expect.objectContaining({
         noteId: alexNote?.id,
         mention: 'Alex',
