@@ -63,9 +63,10 @@ export const useNotesRoom = (
     };
   }, [room, setConnectionStatus]);
 
-  const [notes, setNotes] = useState<Documents<Note>>(
-    Notes.sortByRecent(Notes.getUndeleted())
-  );
+  // Consumers look documents up by id, so the room map is not sorted here.
+  // `sortByRecent` rebuilds a keyed object for every document in the room on
+  // every change, which is the wrong price to pay for a single lookup.
+  const [notes, setNotes] = useState<Documents<Note>>(Notes.getUndeleted);
 
   // listen for changes to the ydoc and update the state
   useEffect(() => {
@@ -73,7 +74,7 @@ export const useNotesRoom = (
       setNotes(
         measureEweNotePerformance(
           EWE_NOTE_PERFORMANCE_SPANS.notesRoomRead,
-          () => Notes.sortByRecent(Notes.getUndeleted())
+          () => Notes.getUndeleted()
         )
       );
     };

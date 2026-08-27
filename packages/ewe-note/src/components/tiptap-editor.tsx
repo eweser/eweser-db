@@ -707,65 +707,67 @@ export function TiptapEditor({
           onClose={closeSlashMenu}
         />
       ) : null}
-      <Dialog
-        open={!readOnly && linkDialog.open}
-        onOpenChange={closeLinkDialog}
-      >
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {linkDialog.kind === 'external-link'
-                ? 'Insert external link'
-                : 'Insert link'}
-            </DialogTitle>
-            <DialogDescription>
-              {linkDialog.kind === 'external-link'
-                ? 'Enter a full URL to apply to the selected text.'
-                : 'Use a URL or a wiki target such as wiki://Note Name.'}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="ewe-note-link-href">Link target</Label>
-            <Input
-              id="ewe-note-link-href"
-              data-cy="ewe-note-link-input"
-              autoFocus
-              placeholder={
-                linkDialog.kind === 'external-link'
-                  ? 'https://example.com'
-                  : 'wiki://Note Name'
-              }
-              value={linkDialog.href}
-              onChange={(event) =>
-                setLinkDialog((prev) => ({ ...prev, href: event.target.value }))
-              }
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  event.preventDefault();
-                  submitLinkDialog();
+      {!readOnly && linkDialog.open ? (
+        <Dialog open onOpenChange={closeLinkDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>
+                {linkDialog.kind === 'external-link'
+                  ? 'Insert external link'
+                  : 'Insert link'}
+              </DialogTitle>
+              <DialogDescription>
+                {linkDialog.kind === 'external-link'
+                  ? 'Enter a full URL to apply to the selected text.'
+                  : 'Use a URL or a wiki target such as wiki://Note Name.'}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2">
+              <Label htmlFor="ewe-note-link-href">Link target</Label>
+              <Input
+                id="ewe-note-link-href"
+                data-cy="ewe-note-link-input"
+                autoFocus
+                placeholder={
+                  linkDialog.kind === 'external-link'
+                    ? 'https://example.com'
+                    : 'wiki://Note Name'
                 }
-              }}
-            />
-          </div>
-          <DialogFooter>
-            {editor.isActive('link') ? (
-              <Button type="button" variant="outline" onClick={unsetLink}>
-                Remove link
+                value={linkDialog.href}
+                onChange={(event) =>
+                  setLinkDialog((prev) => ({
+                    ...prev,
+                    href: event.target.value,
+                  }))
+                }
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    submitLinkDialog();
+                  }
+                }}
+              />
+            </div>
+            <DialogFooter>
+              {editor.isActive('link') ? (
+                <Button type="button" variant="outline" onClick={unsetLink}>
+                  Remove link
+                </Button>
+              ) : null}
+              <Button type="button" variant="outline" onClick={closeLinkDialog}>
+                Cancel
               </Button>
-            ) : null}
-            <Button type="button" variant="outline" onClick={closeLinkDialog}>
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              onClick={submitLinkDialog}
-              disabled={!linkDialog.href.trim()}
-            >
-              Apply link
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              <Button
+                type="button"
+                onClick={submitLinkDialog}
+                disabled={!linkDialog.href.trim()}
+              >
+                Apply link
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      ) : null}
     </div>
   );
 }

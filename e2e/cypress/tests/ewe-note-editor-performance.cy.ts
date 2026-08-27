@@ -2,6 +2,7 @@
 
 import type { Editor } from '@tiptap/react';
 import {
+  EWE_NOTE_PERFORMANCE_SPANS,
   summarizeEweNotePerformance,
   type EweNotePerformanceRecord,
 } from '../../../packages/ewe-note/src/performance/ewe-note-performance';
@@ -130,6 +131,45 @@ function buildPerformanceReport(
       ),
     },
   };
+}
+
+/**
+ * Timing budgets depend on the host machine. This one does not: it asserts that
+ * a save recomputes only the notes that actually changed, so the work stays
+ * flat as the vault grows.
+ */
+function assertRecomputeBudget(
+  records: readonly EweNotePerformanceRecord[],
+  name: string,
+  maxRecomputed: number
+) {
+  const spans = records.filter((record) => record.name === name);
+  expect(spans.length, `${name} spans recorded`).to.be.greaterThan(0);
+
+  const worst = Math.max(
+    0,
+    ...spans.map((record) => record.recomputedCount ?? Number.NaN)
+  );
+  expect(Number.isNaN(worst), `${name} reported a recompute count`).to.equal(
+    false
+  );
+  expect(worst, `notes recomputed by a ${name} span`).to.be.at.most(
+    maxRecomputed
+  );
+}
+
+function assertSpanBudget(
+  records: readonly EweNotePerformanceRecord[],
+  name: string,
+  budgetMs: number
+) {
+  const worst = Math.max(
+    0,
+    ...records
+      .filter((record) => record.name === name && record.blocking)
+      .map((record) => record.duration)
+  );
+  expect(rounded(worst), `blocking ${name} span`).to.be.at.most(budgetMs);
 }
 
 function assertPerformanceBudgets(
@@ -329,5 +369,126 @@ describe('ewe-note editor performance', () => {
       cy.log(JSON.stringify(report.spans));
     });
     cy.screenshot('ewe-note-editor-performance-links');
+  });
+
+  it('keeps typing and note switching responsive in a large multi-note vault', () => {
+    const extended = Boolean(Cypress.env('eweNoteExtendedPerformance'));
+    const targetCount = extended ? 1000 : 300;
+    const targetParagraphs = extended ? 40 : 20;
+    const bodyParagraphs = extended ? 400 : 200;
+    const typedText = 'responsive-vault-input';
+
+    cy.visit(eweNoteUrl(), {
+      onBeforeLoad(win) {
+        win.localStorage.clear();
+        installPerformanceProbe(win);
+      },
+    });
+
+    cy.getBySel('ewe-note-sidebar', { timeout: 20000 }).should('exist');
+    cy.window()
+      .its('__EWE_NOTE_PERFORMANCE_DRIVER__', { timeout: 20000 })
+      .should('exist');
+
+    cy.window().then((win) => {
+      const result = win.__EWE_NOTE_PERFORMANCE_DRIVER__?.seedSyntheticCorpus({
+        targetCount,
+        bodyParagraphs,
+        targetParagraphs,
+      });
+      expect(result, 'synthetic corpus result').not.to.equal(undefined);
+      cy.wrap(result?.analysisNoteId ?? '').as('analysisNoteId');
+    });
+
+    cy.get('@analysisNoteId').then((analysisNoteId) => {
+      cy.visit(new URL(`/editor/${analysisNoteId}`, eweNoteUrl()).href, {
+        onBeforeLoad(win) {
+          installPerformanceProbe(win);
+        },
+      });
+    });
+
+    cy.getBySel('ewe-note-tiptap-editor', { timeout: 60000 }).should(
+      'contain',
+      `Synthetic analysis paragraph ${bodyParagraphs}`
+    );
+    cy.wait(1500);
+    cy.window().then(resetPerformanceProbe);
+
+    cy.getBySel('ewe-note-tiptap-editor')
+      .click({ force: true })
+      .type(typedText, { force: true });
+    // Long enough for the 750 ms editor save debounce plus the note-corpus
+    // projection, link analysis, and task extraction it triggers.
+    cy.wait(2000);
+
+    cy.window().then((win) => {
+      const records = win.__EWE_NOTE_PERFORMANCE__?.records ?? [];
+      const report = buildPerformanceReport(win, {
+        targetNotes: targetCount,
+        targetParagraphs,
+        paragraphs: bodyParagraphs,
+        typedCharacters: typedText.length,
+      });
+
+      // Typing in one note must re-derive one note, not the whole vault.
+      assertRecomputeBudget(
+        records,
+        EWE_NOTE_PERFORMANCE_SPANS.notesProject,
+        2
+      );
+      assertRecomputeBudget(records, EWE_NOTE_PERFORMANCE_SPANS.notesTasks, 2);
+      assertSpanBudget(records, EWE_NOTE_PERFORMANCE_SPANS.notesTasks, 25);
+      assertSpanBudget(records, EWE_NOTE_PERFORMANCE_SPANS.notesProject, 25);
+      assertSpanBudget(records, EWE_NOTE_PERFORMANCE_SPANS.notesLinks, 50);
+      assertPerformanceBudgets(report, records);
+
+      cy.writeFile(
+        'e2e/cypress/screenshots/ewe-note-editor-performance-large-vault.json',
+        report
+      );
+      cy.log(JSON.stringify(report.spans));
+    });
+
+    // Switching notes must not re-render or re-derive the whole corpus.
+    cy.window().then(resetPerformanceProbe);
+    cy.getBySel('ewe-note-notes-pane')
+      .find('button')
+      // The analysis note mentions a target by name, so match on the row title
+      // rather than anywhere in the row.
+      .filter((_index, element) =>
+        /^Synthetic Target \d{4}/.test(element.textContent ?? '')
+      )
+      .first()
+      .click({ force: true });
+    cy.getBySel('ewe-note-tiptap-editor', { timeout: 30000 }).should(
+      'contain',
+      'Synthetic target paragraph 1'
+    );
+
+    cy.window().then((win) => {
+      const records = win.__EWE_NOTE_PERFORMANCE__?.records ?? [];
+      const report = buildPerformanceReport(win, {
+        targetNotes: targetCount,
+        scenario: 'note-selection',
+      });
+      // Opening another note must not re-derive the corpus either. The one
+      // allowed recompute is the outgoing note's flushed pending save.
+      assertRecomputeBudget(
+        records,
+        EWE_NOTE_PERFORMANCE_SPANS.notesProject,
+        1
+      );
+      assertRecomputeBudget(records, EWE_NOTE_PERFORMANCE_SPANS.notesTasks, 1);
+      assertSpanBudget(records, EWE_NOTE_PERFORMANCE_SPANS.notesTasks, 25);
+      assertSpanBudget(records, EWE_NOTE_PERFORMANCE_SPANS.notesProject, 25);
+      assertPerformanceBudgets(report, records);
+      cy.writeFile(
+        'e2e/cypress/screenshots/ewe-note-editor-performance-note-selection.json',
+        report
+      );
+    });
+
+    cy.screenshot('ewe-note-editor-performance-large-vault');
   });
 });

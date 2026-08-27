@@ -1,5 +1,12 @@
 import type { Note as DbNote, Room } from '@eweser/db';
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import removeMarkdown from 'markdown-to-text';
 import { useDb } from '@/db';
 import { useFolders } from '@/notes-room';
@@ -145,9 +152,43 @@ const defaultTemplates: Template[] = [
   },
 ];
 
-type InternalNote = Note & {
+type BaseNoteProjection = Omit<
+  Note,
+  'links' | 'outgoingLinks' | 'backlinks' | 'unlinkedMentions'
+>;
+
+type ProjectionCacheEntry = {
   source: DbNote;
+  base: BaseNoteProjection;
+  note: Note;
 };
+
+function sameStringList(left: readonly string[], right: readonly string[]) {
+  if (left === right) return true;
+  if (left.length !== right.length) return false;
+  return left.every((value, index) => value === right[index]);
+}
+
+function sameOutgoingLinks(
+  left: readonly OutgoingWikiLink[],
+  right: readonly OutgoingWikiLink[]
+) {
+  if (left === right) return true;
+  if (left.length !== right.length) return false;
+  return left.every((value, index) => {
+    const other = right[index];
+    return (
+      other !== undefined &&
+      value.target === other.target &&
+      value.display === other.display &&
+      value.alias === other.alias &&
+      value.heading === other.heading &&
+      value.blockRef === other.blockRef &&
+      value.noteId === other.noteId &&
+      value.raw === other.raw
+    );
+  });
+}
 
 function normalize(text: string) {
   return normalizeWikiTarget(text);
@@ -236,6 +277,21 @@ function extractTasksFromMarkdown(noteId: string, markdown: string) {
   return tasks;
 }
 
+/**
+ * Task extraction scans the full note body, so it is keyed on the projected
+ * note object. Projections are referentially stable while a note is unchanged,
+ * which keeps this to the notes that actually moved.
+ */
+const noteTasksCache = new WeakMap<Note, Task[]>();
+
+function getNoteTasks(note: Note) {
+  const cached = noteTasksCache.get(note);
+  if (cached) return cached;
+  const tasks = extractTasksFromMarkdown(note.id, note.content);
+  noteTasksCache.set(note, tasks);
+  return tasks;
+}
+
 export function NotesProvider({ children }: { children: React.ReactNode }) {
   const {
     db,
@@ -269,6 +325,9 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
   const [notesByRoomId, setNotesByRoomId] = useState<Record<string, DbNote[]>>(
     {}
   );
+  const projectionCacheRef = useRef<Map<string, ProjectionCacheEntry>>(
+    new Map()
+  );
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(loadPinnedIds);
   const [templates, setTemplates] = useState<Template[]>(loadTemplates);
   const [manualTasks, setManualTasks] = useState<Task[]>([]);
@@ -288,9 +347,11 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     const getNotes = (room: Room<DbNote>) => {
       try {
         const docs = room.getDocuments();
+        // `sortByRecent` rebuilds a keyed object for the whole room, and the
+        // projection below sorts the merged corpus anyway.
         return measureEweNotePerformance(
           EWE_NOTE_PERFORMANCE_SPANS.notesRoomRead,
-          () => docs.toArray(docs.sortByRecent(docs.getUndeleted()))
+          () => docs.getUndeletedToArray()
         );
       } catch {
         return [];
@@ -369,97 +430,153 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
       (total, room) => total + (notesByRoomId[room.id]?.length ?? 0),
       0
     );
-    const internal = measureEweNotePerformance(
+    const previousCache = projectionCacheRef.current;
+    const nextCache = new Map<string, ProjectionCacheEntry>();
+
+    // Span metadata is read after the operation returns, so the counter can be
+    // filled in while the projection runs.
+    const projectionMetrics = {
+      itemCount: inputNoteCount,
+      recomputedCount: 0,
+    };
+    // Yjs hands back the same stored object until the document is written
+    // again, so source identity is a reliable cache key. Reusing the derived
+    // projection keeps note objects referentially stable across unrelated
+    // saves, which is what lets memoized list rows skip re-rendering.
+    const projected = measureEweNotePerformance(
       EWE_NOTE_PERFORMANCE_SPANS.notesProject,
       () => {
-        const projected: InternalNote[] = [];
+        const bases: Array<{ source: DbNote; base: BaseNoteProjection }> = [];
 
         for (const room of visibleRooms) {
           const docs = notesByRoomId[room.id] ?? [];
           for (const source of docs) {
-            const title = deriveTitle(source);
-            const aliases = source.aliases ?? [];
             const folderId =
               canonicalRoom && room.id !== canonicalRoom.id
                 ? `room:${room.id}`
                 : (source.folderIds?.[0] ?? '');
+            const pinned = pinnedIds.has(source._id);
+            const cached = previousCache.get(source._id);
 
-            projected.push({
-              id: source._id,
-              roomId: room.id,
-              title,
-              content: source.text,
-              folder: folderId,
-              ...buildSourceMetadata(source),
-              tags: source.tags ?? [],
-              properties: stringifyProperties(source.frontmatter),
-              createdAt: new Date(source._created).toISOString(),
-              updatedAt: new Date(source._updated).toISOString(),
-              pinned: pinnedIds.has(source._id),
-              links: [],
-              outgoingLinks: [],
-              backlinks: [],
-              unlinkedMentions: [],
-              aliases,
+            if (
+              cached &&
+              cached.source === source &&
+              cached.base.roomId === room.id &&
+              cached.base.folder === folderId &&
+              cached.base.pinned === pinned
+            ) {
+              bases.push({ source, base: cached.base });
+              continue;
+            }
+
+            projectionMetrics.recomputedCount += 1;
+            bases.push({
               source,
+              base: {
+                id: source._id,
+                roomId: room.id,
+                title: deriveTitle(source),
+                content: source.text,
+                folder: folderId,
+                ...buildSourceMetadata(source),
+                tags: source.tags ?? [],
+                properties: stringifyProperties(source.frontmatter),
+                createdAt: new Date(source._created).toISOString(),
+                updatedAt: new Date(source._updated).toISOString(),
+                pinned,
+                aliases: source.aliases ?? [],
+              },
             });
           }
         }
 
-        return projected;
+        return bases;
       },
-      { itemCount: inputNoteCount }
+      projectionMetrics
     );
 
-    const resolvableTargets = buildResolvableTargets(internal);
+    const resolvableTargets = buildResolvableTargets(
+      projected.map((entry) => entry.base)
+    );
     const normalizedCandidates = normalizeResolvableTargets(
       resolvableTargets.candidates
     );
 
-    const backlinksById = measureEweNotePerformance(
+    const linksById = measureEweNotePerformance(
       EWE_NOTE_PERFORMANCE_SPANS.notesLinks,
       () => {
+        const outbound = new Map<
+          string,
+          ReturnType<typeof buildOutboundLinks>
+        >();
         const backlinks = new Map<string, string[]>();
 
-        for (const note of internal) {
-          const { outgoingLinks, linkedIds } = buildOutboundLinks(
-            note,
-            normalizedCandidates
-          );
-          note.outgoingLinks = outgoingLinks;
-          note.links = linkedIds;
+        for (const { base } of projected) {
+          const links = buildOutboundLinks(base, normalizedCandidates);
+          outbound.set(base.id, links);
 
-          note.links.forEach((linkedId) => {
+          links.linkedIds.forEach((linkedId) => {
             const current = backlinks.get(linkedId) ?? [];
-            current.push(note.id);
+            current.push(base.id);
             backlinks.set(linkedId, current);
           });
         }
 
-        return backlinks;
+        return { outbound, backlinks };
       },
-      { itemCount: internal.length }
+      { itemCount: projected.length }
     );
 
-    return internal
-      .map(({ source: _source, ...note }) => ({
-        ...note,
-        backlinks: Array.from(new Set(backlinksById.get(note.id) ?? [])),
-      }))
-      .sort(
-        (a, b) =>
-          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    const nextNotes = projected.map(({ source, base }) => {
+      const outbound = linksById.outbound.get(base.id);
+      const links = outbound?.linkedIds ?? [];
+      const outgoingLinks = outbound?.outgoingLinks ?? [];
+      const backlinks = Array.from(
+        new Set(linksById.backlinks.get(base.id) ?? [])
       );
+
+      const cached = previousCache.get(base.id);
+      const reusable =
+        cached &&
+        cached.base === base &&
+        sameStringList(cached.note.links, links) &&
+        sameStringList(cached.note.backlinks, backlinks) &&
+        sameOutgoingLinks(cached.note.outgoingLinks, outgoingLinks);
+
+      const note: Note = reusable
+        ? cached.note
+        : {
+            ...base,
+            links,
+            outgoingLinks,
+            backlinks,
+            unlinkedMentions: [],
+          };
+
+      nextCache.set(base.id, { source, base, note });
+      return note;
+    });
+
+    projectionCacheRef.current = nextCache;
+
+    return nextNotes.sort(
+      (a, b) =>
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    );
   }, [canonicalRoom, notesByRoomId, pinnedIds, visibleRooms]);
 
   const tasks = useMemo(() => {
+    const taskMetrics = { itemCount: notes.length, recomputedCount: 0 };
     const extracted = measureEweNotePerformance(
       EWE_NOTE_PERFORMANCE_SPANS.notesTasks,
       () =>
-        notes.flatMap((note) =>
-          extractTasksFromMarkdown(note.id, note.content)
-        ),
-      { itemCount: notes.length }
+        notes.flatMap((note) => {
+          const cached = noteTasksCache.get(note);
+          if (cached) return cached;
+          taskMetrics.recomputedCount += 1;
+          return getNoteTasks(note);
+        }),
+      taskMetrics
     );
     return extracted.concat(manualTasks);
   }, [manualTasks, notes]);
@@ -573,9 +690,11 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
       seedSyntheticCorpus({
         targetCount: requestedTargetCount,
         bodyParagraphs: requestedBodyParagraphs,
+        targetParagraphs: requestedTargetParagraphs = 1,
       }: {
         targetCount: number;
         bodyParagraphs: number;
+        targetParagraphs?: number;
       }) {
         const targetCount = Math.min(
           1000,
@@ -584,6 +703,10 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
         const bodyParagraphs = Math.min(
           10000,
           Math.max(1, Math.floor(requestedBodyParagraphs))
+        );
+        const targetParagraphs = Math.min(
+          1000,
+          Math.max(1, Math.floor(requestedTargetParagraphs))
         );
         const targetNames = Array.from(
           { length: targetCount },
@@ -595,7 +718,16 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
         const seed = () => {
           targetNames.forEach((title) => {
             docs.new({
-              text: `# ${title}\n\nSynthetic worker stress target.`,
+              text: [
+                `# ${title}`,
+                '',
+                'Synthetic worker stress target.',
+                ...Array.from(
+                  { length: targetParagraphs },
+                  (_value, index) =>
+                    `- [ ] Synthetic target paragraph ${index + 1} keeps every seeded note a realistic size without using private data.`
+                ),
+              ].join('\n'),
               frontmatter: { title },
             });
           });
@@ -624,7 +756,12 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
         }
         setSelectedRoom(targetRoom);
         setSelectedNoteId(analysisNoteId);
-        return { analysisNoteId, targetCount, bodyParagraphs };
+        return {
+          analysisNoteId,
+          targetCount,
+          bodyParagraphs,
+          targetParagraphs,
+        };
       },
     };
 
@@ -769,13 +906,9 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     return notes.filter((note) => visibleFolderIds.has(note.folder));
   };
 
-  const getRecentNotes = (limit = 10) =>
-    [...notes]
-      .sort(
-        (a, b) =>
-          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-      )
-      .slice(0, limit);
+  // `notes` is already ordered by `updatedAt` descending, so re-sorting the
+  // whole corpus on every render only burns main-thread time.
+  const getRecentNotes = (limit = 10) => notes.slice(0, limit);
 
   const getPinnedNotes = () => notes.filter((note) => note.pinned);
 

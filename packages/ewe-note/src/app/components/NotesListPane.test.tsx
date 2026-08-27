@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { NotesListPane } from './NotesListPane';
+import { NotesListPane, noteListPreview } from './NotesListPane';
 
 const mockNavigate = vi.fn();
 
@@ -103,5 +103,34 @@ describe('NotesListPane', () => {
     );
 
     expect(screen.getByText('Projects/Folder note.md')).not.toBeNull();
+  });
+
+  describe('noteListPreview', () => {
+    it('strips Markdown syntax from the preview text', () => {
+      const preview = noteListPreview(
+        '# Heading\n\n- [ ] Task one\n> [!note] Callout\n\nSee [[Other Note|the other]] and **bold**.'
+      );
+
+      expect(preview).toContain('Heading');
+      expect(preview).toContain('○ Task one');
+      expect(preview).toContain('the other');
+      expect(preview).not.toContain('[[');
+      expect(preview).not.toContain('**');
+      expect(preview).not.toContain('#');
+    });
+
+    it('only reads the head of a long note', () => {
+      // The row clamps to two lines, so preview cost must not grow with note
+      // size. A marker past the limit proves the tail is never scanned.
+      const body = `${'lorem ipsum dolor sit amet '.repeat(400)}TAIL_MARKER`;
+
+      expect(body.length).toBeGreaterThan(10_000);
+      expect(noteListPreview(body)).not.toContain('TAIL_MARKER');
+      expect(noteListPreview(body).length).toBeLessThanOrEqual(600);
+    });
+
+    it('keeps short notes intact', () => {
+      expect(noteListPreview('A short note body.')).toBe('A short note body.');
+    });
   });
 });

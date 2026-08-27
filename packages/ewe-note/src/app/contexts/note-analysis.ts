@@ -107,11 +107,30 @@ function resolveTargetId(
   return null;
 }
 
+/**
+ * Wiki-link extraction scans the whole note body, and link analysis re-runs for
+ * the entire corpus whenever any note changes. Keyed on the note object plus
+ * its exact content, so a changed body always re-extracts.
+ */
+const wikiLinkTargetCache = new WeakMap<
+  object,
+  { content: string; links: ReturnType<typeof extractWikiLinkTargets> }
+>();
+
+function extractWikiLinkTargetsCached(note: Pick<LinkAnalysisNote, 'content'>) {
+  const cached = wikiLinkTargetCache.get(note);
+  if (cached && cached.content === note.content) return cached.links;
+
+  const links = extractWikiLinkTargets(note.content);
+  wikiLinkTargetCache.set(note, { content: note.content, links });
+  return links;
+}
+
 export function buildOutboundLinks(
   note: Pick<LinkAnalysisNote, 'content'>,
   resolvableTargets: Map<string, ResolvableTargetValue>
 ) {
-  const raw = extractWikiLinkTargets(note.content);
+  const raw = extractWikiLinkTargetsCached(note);
   const seen = new Set<string>();
 
   const outgoingLinks = raw.map((entry) => ({
