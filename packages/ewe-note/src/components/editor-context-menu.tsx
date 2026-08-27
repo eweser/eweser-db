@@ -1,4 +1,4 @@
-import { memo, useState, type ReactNode } from 'react';
+import { memo, type ReactNode } from 'react';
 import type { Editor } from '@tiptap/react';
 import {
   ContextMenu,
@@ -25,19 +25,22 @@ export function EditorContextMenu({
   commandContext,
 }: EditorContextMenuProps) {
   // The editor re-renders on every ProseMirror transaction, so keep the menu
-  // body out of the typing path. Items are built when the menu opens, which is
-  // also the only moment their `isEnabled` state can be seen.
-  const [open, setOpen] = useState(false);
-
+  // body out of the typing path. Radix only renders the content's children
+  // while the menu is open, so putting the items in their own component means
+  // their `isEnabled` checks and elements are built on open rather than on
+  // every keystroke.
+  //
+  // The content itself must stay mounted: conditionally mounting it makes the
+  // menu miss the gesture that opened it and never appear.
   return (
-    <ContextMenu onOpenChange={setOpen}>
+    <ContextMenu>
       <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
-      {open ? (
+      <ContextMenuContent className="w-72">
         <EditorContextMenuItems
           editor={editor}
           commandContext={commandContext}
         />
-      ) : null}
+      </ContextMenuContent>
     </ContextMenu>
   );
 }
@@ -50,7 +53,7 @@ const EditorContextMenuItems = memo(function EditorContextMenuItems({
   commandContext?: EditorCommandContext;
 }) {
   return (
-    <ContextMenuContent className="w-56">
+    <>
       <ContextMenuLabel>Format</ContextMenuLabel>
       {getCommandsByGroup('format').map((command) => (
         <ContextMenuItem
@@ -58,9 +61,9 @@ const EditorContextMenuItems = memo(function EditorContextMenuItems({
           onSelect={() => command.execute(editor, commandContext)}
           disabled={!command.isEnabled(editor)}
         >
-          <command.icon className="mr-2 h-4 w-4" />
-          <span>{command.label}</span>
-          <span className="ml-auto text-xs text-muted-foreground">
+          <command.icon className="mr-2 h-4 w-4 shrink-0" />
+          <span className="min-w-0 truncate">{command.label}</span>
+          <span className="ml-auto shrink-0 whitespace-nowrap text-xs text-muted-foreground">
             {command.shortcut ?? ''}
           </span>
         </ContextMenuItem>
@@ -73,8 +76,8 @@ const EditorContextMenuItems = memo(function EditorContextMenuItems({
           onSelect={() => command.execute(editor, commandContext)}
           disabled={!command.isEnabled(editor)}
         >
-          <command.icon className="mr-2 h-4 w-4" />
-          <span>{command.label}</span>
+          <command.icon className="mr-2 h-4 w-4 shrink-0" />
+          <span className="min-w-0 truncate">{command.label}</span>
         </ContextMenuItem>
       ))}
       <ContextMenuSeparator />
@@ -85,8 +88,8 @@ const EditorContextMenuItems = memo(function EditorContextMenuItems({
           onSelect={() => command.execute(editor, commandContext)}
           disabled={!command.isEnabled(editor)}
         >
-          <command.icon className="mr-2 h-4 w-4" />
-          <span>{command.label}</span>
+          <command.icon className="mr-2 h-4 w-4 shrink-0" />
+          <span className="min-w-0 truncate">{command.label}</span>
         </ContextMenuItem>
       ))}
       <ContextMenuSeparator />
@@ -97,8 +100,8 @@ const EditorContextMenuItems = memo(function EditorContextMenuItems({
           onSelect={() => command.execute(editor, commandContext)}
           disabled={!command.isEnabled(editor)}
         >
-          <command.icon className="mr-2 h-4 w-4" />
-          <span>{command.label}</span>
+          <command.icon className="mr-2 h-4 w-4 shrink-0" />
+          <span className="min-w-0 truncate">{command.label}</span>
         </ContextMenuItem>
       ))}
       <ContextMenuSeparator />
@@ -109,8 +112,8 @@ const EditorContextMenuItems = memo(function EditorContextMenuItems({
           onSelect={() => command.execute(editor, commandContext)}
           disabled={!command.isEnabled(editor)}
         >
-          <command.icon className="mr-2 h-4 w-4" />
-          <span>{command.label}</span>
+          <command.icon className="mr-2 h-4 w-4 shrink-0" />
+          <span className="min-w-0 truncate">{command.label}</span>
         </ContextMenuItem>
       ))}
       <ContextMenuSeparator />
@@ -120,6 +123,6 @@ const EditorContextMenuItems = memo(function EditorContextMenuItems({
       <ContextMenuItem onSelect={() => editor.commands.redo()}>
         Redo
       </ContextMenuItem>
-    </ContextMenuContent>
+    </>
   );
 });

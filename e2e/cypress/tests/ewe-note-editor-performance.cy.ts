@@ -450,6 +450,22 @@ describe('ewe-note editor performance', () => {
       cy.log(JSON.stringify(report.spans));
     });
 
+    // The context menu builds its items on open rather than on every editor
+    // transaction. Assert in a real browser that it still opens and populates:
+    // a jsdom unit test does not catch a menu that misses its opening gesture.
+    cy.getBySel('ewe-note-tiptap-editor')
+      .find('p')
+      .first()
+      .scrollIntoView()
+      .rightclick('left');
+    cy.get('[role="menu"]', { timeout: 10000 }).should('be.visible');
+    cy.get('[role="menu"]')
+      .find('[role="menuitem"]')
+      .should('have.length.greaterThan', 10);
+    cy.get('[role="menu"]').contains('Bold').should('be.visible');
+    cy.get('body').type('{esc}');
+    cy.get('[role="menu"]').should('not.exist');
+
     // Switching notes must not re-render or re-derive the whole corpus.
     cy.window().then(resetPerformanceProbe);
     cy.getBySel('ewe-note-notes-pane')
