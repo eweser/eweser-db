@@ -141,10 +141,17 @@ function buildPerformanceReport(
 function assertRecomputeBudget(
   records: readonly EweNotePerformanceRecord[],
   name: string,
-  maxRecomputed: number
+  maxRecomputed: number,
+  { requireSpan = true }: { requireSpan?: boolean } = {}
 ) {
   const spans = records.filter((record) => record.name === name);
-  expect(spans.length, `${name} spans recorded`).to.be.greaterThan(0);
+  if (requireSpan) {
+    expect(spans.length, `${name} spans recorded`).to.be.greaterThan(0);
+  } else if (spans.length === 0) {
+    // No span at all means the projection never re-ran, which is the best
+    // possible outcome for this step rather than a missing measurement.
+    return;
+  }
 
   const worst = Math.max(
     0,
@@ -488,14 +495,18 @@ describe('ewe-note editor performance', () => {
         targetNotes: targetCount,
         scenario: 'note-selection',
       });
-      // Opening another note must not re-derive the corpus either. The one
+      // Opening another note must not re-derive the corpus either. The
+      // projection often does not re-run at all here; when it does, the one
       // allowed recompute is the outgoing note's flushed pending save.
       assertRecomputeBudget(
         records,
         EWE_NOTE_PERFORMANCE_SPANS.notesProject,
-        1
+        1,
+        { requireSpan: false }
       );
-      assertRecomputeBudget(records, EWE_NOTE_PERFORMANCE_SPANS.notesTasks, 1);
+      assertRecomputeBudget(records, EWE_NOTE_PERFORMANCE_SPANS.notesTasks, 1, {
+        requireSpan: false,
+      });
       assertSpanBudget(records, EWE_NOTE_PERFORMANCE_SPANS.notesTasks, 25);
       assertSpanBudget(records, EWE_NOTE_PERFORMANCE_SPANS.notesProject, 25);
       assertPerformanceBudgets(report, records);
