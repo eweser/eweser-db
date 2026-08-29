@@ -25,6 +25,12 @@ export type EweNotePerformanceThread = 'main' | 'worker';
 export interface EweNotePerformanceMetadata {
   inputSize?: number;
   itemCount?: number;
+  /**
+   * How many of `itemCount` items the span actually had to recompute. A save
+   * that touches one note should recompute one note, whatever the vault size.
+   * This is the hardware-independent half of the performance budget.
+   */
+  recomputedCount?: number;
   requestId?: number;
 }
 
@@ -54,6 +60,11 @@ export interface EweNotePerformanceProbe {
 export interface EweNoteSyntheticCorpusOptions {
   targetCount: number;
   bodyParagraphs: number;
+  /**
+   * Paragraphs written into every synthetic target note. Real vaults hold many
+   * medium-sized notes, so the default of 1 only exercises single-note cost.
+   */
+  targetParagraphs?: number;
 }
 
 export interface EweNoteSyntheticCorpusResult extends EweNoteSyntheticCorpusOptions {
@@ -99,6 +110,7 @@ export function recordEweNotePerformance(
         blocking: record.blocking,
         inputSize: record.inputSize,
         itemCount: record.itemCount,
+        recomputedCount: record.recomputedCount,
         requestId: record.requestId,
       },
     });

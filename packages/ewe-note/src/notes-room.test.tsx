@@ -35,10 +35,11 @@ describe('useNotesRoom', () => {
       unobserve,
     };
     const sortByRecent = vi.fn((notes: Record<string, Note>) => notes);
+    const getUndeleted = vi.fn(() => records);
 
     const Notes = {
       documents,
-      getUndeleted: () => records,
+      getUndeleted,
       sortByRecent,
       onChange: vi.fn(() => {
         records = { ...records, [createdNote._id]: createdNote };
@@ -67,7 +68,10 @@ describe('useNotesRoom', () => {
     await waitFor(() => {
       expect(visibleNotes?.[createdNote._id]).toEqual(createdNote);
     });
-    expect(sortByRecent).toHaveBeenLastCalledWith(records);
+    // The room map is read for id lookups only, so it is not re-sorted on
+    // every document change.
+    expect(getUndeleted).toHaveBeenCalled();
+    expect(sortByRecent).not.toHaveBeenCalled();
 
     view.unmount();
     expect(unobserve).toHaveBeenCalledOnce();

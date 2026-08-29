@@ -65,6 +65,14 @@ type VaultRoomBinding = {
 };
 
 const mountedFileCache = new Map<string, MountedFileEntry>();
+/**
+ * Every note change asks for the room's mounted files. Reopening IndexedDB per
+ * change costs more than the write-back itself, and for the common case (no
+ * mounted vault) it is pure overhead. Re-read on a slow cadence instead so a
+ * vault mounted in another tab is still picked up.
+ */
+const MOUNTED_FILES_REFRESH_MS = 5_000;
+const mountedFilesReadAt = new Map<string, number>();
 const writeQueues = new Map<string, Promise<void>>();
 const permissionDeniedKeys = new Set<string>();
 const vaultRoomCache: VaultRoomBinding[] = [];
@@ -129,6 +137,7 @@ async function openMountedFilesDb(): Promise<IDBDatabase | null> {
 
 async function putMountedFile(entry: MountedFileEntry) {
   mountedFileCache.set(entry.key, entry);
+  mountedFilesReadAt.set(entry.roomId, Date.now());
   const db = await openMountedFilesDb();
   if (!db) return;
 
@@ -249,6 +258,15 @@ async function loadMountedFiles(roomId: string) {
   const cached = Array.from(mountedFileCache.values()).filter(
     (entry) => entry.roomId === roomId
   );
+
+  const lastRead = mountedFilesReadAt.get(roomId);
+  if (
+    lastRead !== undefined &&
+    Date.now() - lastRead < MOUNTED_FILES_REFRESH_MS
+  ) {
+    return cached;
+  }
+
   const db = await openMountedFilesDb();
   if (!db) return cached;
 
@@ -266,6 +284,7 @@ async function loadMountedFiles(roomId: string) {
         mountedFileCache.set(entry.key, entry);
       }
     }
+    mountedFilesReadAt.set(roomId, Date.now());
     return Array.from(mountedFileCache.values()).filter(
       (entry) => entry.roomId === roomId
     );
@@ -423,6 +442,7 @@ export async function writeBrowserLocalVaultNotes(
 
 export async function clearBrowserLocalVaultsForTests() {
   mountedFileCache.clear();
+  mountedFilesReadAt.clear();
   writeQueues.clear();
   permissionDeniedKeys.clear();
   vaultRoomCache.length = 0;

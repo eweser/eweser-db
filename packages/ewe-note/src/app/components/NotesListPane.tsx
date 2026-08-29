@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
+import { memo, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { FileText, Hash, Plus, Star, CheckSquare, X } from 'lucide-react';
-import { useNotes } from '../contexts/NotesContext';
+import { useNotes, type Note } from '../contexts/NotesContext';
 import type { WorkspaceMode } from './workspace-layout';
 
 type WorkspaceView = 'all' | 'recent' | 'pinned' | 'tasks' | `folder:${string}`;
@@ -38,6 +38,11 @@ export function NotesListPane({
       onViewChange('recent');
     }
   }, [activeView, agentWorkspaceEnabled, folders, onViewChange]);
+
+  const handleSelectNote = useCallback(
+    (noteId: string) => navigate(`/editor/${noteId}`),
+    [navigate]
+  );
 
   const handleNewNote = () => {
     const created = addNote({ title: 'Untitled', content: '' });
@@ -139,72 +144,104 @@ export function NotesListPane({
           </div>
         ) : (
           <div className="space-y-1">
-            {displayNotes.map((note) => {
-              const isActive = note.id === selectedNoteId;
-              const folderName =
-                folders.find((folder) => folder.id === note.folder)?.name ?? '';
-              const sourceLabel = note.sourcePath ?? '';
-              const tagPreview = note.tags[0] ? note.tags[0] : null;
-
-              return (
-                <button
-                  key={note.id}
-                  type="button"
-                  onClick={() => navigate(`/editor/${note.id}`)}
-                  className={`w-full rounded-xl px-3 py-3 text-left transition-colors ${
-                    isActive
-                      ? 'bg-accent text-accent-foreground'
-                      : 'hover:bg-accent/70'
-                  }`}
-                >
-                  <div className="flex items-start gap-2">
-                    {note.pinned ? (
-                      <Star className="mt-1 h-3.5 w-3.5 shrink-0 fill-current text-primary" />
-                    ) : null}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="truncate text-sm font-semibold text-foreground">
-                          {formatNoteTitle(note.title)}
-                        </div>
-                        <div className="shrink-0 text-[11px] text-muted-foreground">
-                          {formatNoteDate(note.updatedAt)}
-                        </div>
-                      </div>
-                      <div className="mt-1 line-clamp-2 text-sm leading-5 text-muted-foreground">
-                        {stripMarkdown(note.content)}
-                      </div>
-                      {sourceLabel || folderName || tagPreview ? (
-                        <div className="mt-2 flex items-center gap-2 text-[11px] text-muted-foreground">
-                          {sourceLabel ? (
-                            <span className="truncate">{sourceLabel}</span>
-                          ) : null}
-                          {sourceLabel && (folderName || tagPreview) ? (
-                            <span>•</span>
-                          ) : null}
-                          {folderName ? (
-                            <span className="truncate">{folderName}</span>
-                          ) : null}
-                          {folderName && tagPreview ? <span>•</span> : null}
-                          {tagPreview ? (
-                            <>
-                              <span className="inline-flex items-center gap-1 truncate">
-                                <Hash className="h-3 w-3" />
-                                {tagPreview}
-                              </span>
-                            </>
-                          ) : null}
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
+            {displayNotes.map((note) => (
+              <NoteListRow
+                key={note.id}
+                note={note}
+                active={note.id === selectedNoteId}
+                folderName={
+                  folders.find((folder) => folder.id === note.folder)?.name ??
+                  ''
+                }
+                onSelect={handleSelectNote}
+              />
+            ))}
           </div>
         )}
       </div>
     </aside>
   );
+}
+
+/**
+ * Note projections are referentially stable while their document is unchanged,
+ * so memoizing the row keeps an unrelated save from re-rendering the whole
+ * list. This is the difference between one row updating and every row
+ * re-stripping its Markdown.
+ */
+const NoteListRow = memo(function NoteListRow({
+  note,
+  active,
+  folderName,
+  onSelect,
+}: {
+  note: Note;
+  active: boolean;
+  folderName: string;
+  onSelect: (noteId: string) => void;
+}) {
+  const sourceLabel = note.sourcePath ?? '';
+  const tagPreview = note.tags[0] ? note.tags[0] : null;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(note.id)}
+      className={`w-full rounded-xl px-3 py-3 text-left transition-colors ${
+        active ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/70'
+      }`}
+    >
+      <div className="flex items-start gap-2">
+        {note.pinned ? (
+          <Star className="mt-1 h-3.5 w-3.5 shrink-0 fill-current text-primary" />
+        ) : null}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-3">
+            <div className="truncate text-sm font-semibold text-foreground">
+              {formatNoteTitle(note.title)}
+            </div>
+            <div className="shrink-0 text-[11px] text-muted-foreground">
+              {formatNoteDate(note.updatedAt)}
+            </div>
+          </div>
+          <div className="mt-1 line-clamp-2 text-sm leading-5 text-muted-foreground">
+            {noteListPreview(note.content)}
+          </div>
+          {sourceLabel || folderName || tagPreview ? (
+            <div className="mt-2 flex items-center gap-2 text-[11px] text-muted-foreground">
+              {sourceLabel ? (
+                <span className="truncate">{sourceLabel}</span>
+              ) : null}
+              {sourceLabel && (folderName || tagPreview) ? (
+                <span>•</span>
+              ) : null}
+              {folderName ? (
+                <span className="truncate">{folderName}</span>
+              ) : null}
+              {folderName && tagPreview ? <span>•</span> : null}
+              {tagPreview ? (
+                <span className="inline-flex items-center gap-1 truncate">
+                  <Hash className="h-3 w-3" />
+                  {tagPreview}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </button>
+  );
+});
+
+/**
+ * The preview is clamped to two lines, so only the head of the note is ever
+ * visible. Stripping the whole body once per row per render is the expensive
+ * part, and it scales with note size rather than with what is displayed.
+ */
+const PREVIEW_SOURCE_LIMIT = 600;
+
+export function noteListPreview(markdown: string) {
+  return stripMarkdown(markdown.slice(0, PREVIEW_SOURCE_LIMIT));
 }
 
 function stripMarkdown(markdown: string) {
@@ -261,13 +298,27 @@ function getFilterSubLabel(activeView: WorkspaceView) {
   return null;
 }
 
+// `toLocaleDateString` builds a new Intl formatter per call, which is the
+// single most expensive thing a note row does. Build each formatter once.
+let sameYearFormatter: Intl.DateTimeFormat | null = null;
+let otherYearFormatter: Intl.DateTimeFormat | null = null;
+
 function formatNoteDate(value: string) {
   const date = new Date(value);
-  const now = new Date();
-  const sameYear = date.getFullYear() === now.getFullYear();
-  return date.toLocaleDateString(undefined, {
+  const sameYear = date.getFullYear() === new Date().getFullYear();
+
+  if (sameYear) {
+    sameYearFormatter ??= new Intl.DateTimeFormat(undefined, {
+      month: 'short',
+      day: 'numeric',
+    });
+    return sameYearFormatter.format(date);
+  }
+
+  otherYearFormatter ??= new Intl.DateTimeFormat(undefined, {
     month: 'short',
     day: 'numeric',
-    ...(sameYear ? {} : { year: 'numeric' }),
+    year: 'numeric',
   });
+  return otherYearFormatter.format(date);
 }

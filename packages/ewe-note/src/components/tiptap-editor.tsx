@@ -737,7 +737,10 @@ export function TiptapEditor({
               }
               value={linkDialog.href}
               onChange={(event) =>
-                setLinkDialog((prev) => ({ ...prev, href: event.target.value }))
+                setLinkDialog((prev) => ({
+                  ...prev,
+                  href: event.target.value,
+                }))
               }
               onKeyDown={(event) => {
                 if (event.key === 'Enter') {

@@ -19,6 +19,7 @@ type DocumentsLike = {
   toArray: (notes: DbNote[]) => DbNote[];
   sortByRecent: (notes: DbNote[]) => DbNote[];
   getUndeleted: () => DbNote[];
+  getUndeletedToArray: () => DbNote[];
   onChange: (handler: () => void) => void;
   documents: { unobserve: (handler: () => void) => void };
   get: (id: string) => DbNote | undefined;
@@ -78,6 +79,10 @@ class FakeDocuments implements DocumentsLike {
   }
 
   getUndeleted() {
+    return Array.from(this.records.values());
+  }
+
+  getUndeletedToArray() {
     return Array.from(this.records.values());
   }
 
@@ -317,6 +322,120 @@ describe('NotesContext parity behavior', () => {
         },
       ])
     );
+  });
+
+  it('keeps unchanged note projections referentially stable across a save', async () => {
+    const { docs } = await renderProviderWithFixtures([
+      '01 Markdown Syntax.md',
+      '04 Properties and Tags.md',
+      '08 Search and Discovery.md',
+    ]);
+
+    const before = new Map(
+      (latestContext?.notes ?? []).map((note) => [note.id, note])
+    );
+    const editedId = (latestContext?.notes ?? [])[0]?.id ?? '';
+    expect(editedId).not.toBe('');
+
+    latestContext?.updateNote(editedId, {
+      content: '# Edited\n\nA local edit that only touches one note.',
+    });
+
+    await waitFor(() => {
+      expect(
+        latestContext?.notes.find((note) => note.id === editedId)?.content
+      ).toContain('A local edit that only touches one note.');
+    });
+
+    const after = latestContext?.notes ?? [];
+    const untouched = after.filter((note) => note.id !== editedId);
+    expect(untouched.length).toBeGreaterThan(0);
+
+    // Every note the save did not touch must come back as the same object, or
+    // memoized consumers such as the note list re-render the whole corpus.
+    for (const note of untouched) {
+      expect(note).toBe(before.get(note.id));
+    }
+    expect(after.find((note) => note.id === editedId)).not.toBe(
+      before.get(editedId)
+    );
+    expect(docs.get(editedId)?.text).toContain('A local edit');
+  });
+
+  it('re-derives a projection when a note is pinned or moved', async () => {
+    await renderProviderWithFixtures([
+      '01 Markdown Syntax.md',
+      '04 Properties and Tags.md',
+    ]);
+
+    const target = (latestContext?.notes ?? [])[0];
+    expect(target).toBeDefined();
+    const targetId = target?.id ?? '';
+
+    latestContext?.togglePinNote(targetId);
+    await waitFor(() => {
+      expect(
+        latestContext?.notes.find((note) => note.id === targetId)?.pinned
+      ).toBe(true);
+    });
+    expect(latestContext?.notes.find((note) => note.id === targetId)).not.toBe(
+      target
+    );
+
+    const pinned = latestContext?.notes.find((note) => note.id === targetId);
+    latestContext?.moveNote(targetId, 'projects-folder');
+    await waitFor(() => {
+      expect(
+        latestContext?.notes.find((note) => note.id === targetId)?.folder
+      ).toBe('projects-folder');
+    });
+    expect(latestContext?.notes.find((note) => note.id === targetId)).not.toBe(
+      pinned
+    );
+  });
+
+  it('refreshes backlinks on notes that only the corpus changed', async () => {
+    const { docs } = await renderProviderWithFixtures([
+      '01 Markdown Syntax.md',
+      '04 Properties and Tags.md',
+    ]);
+
+    const linkTarget = (latestContext?.notes ?? []).find(
+      (note) => note.title === 'Properties and Tags Coverage'
+    );
+    expect(linkTarget).toBeDefined();
+    const targetId = linkTarget?.id ?? '';
+    expect(
+      latestContext?.notes.find((note) => note.id === targetId)?.backlinks
+    ).toHaveLength(0);
+
+    docs.new({
+      text: `# Linker\n\nSee [[${linkTarget?.title}]] for details.`,
+      frontmatter: { title: 'Linker' },
+    });
+
+    await waitFor(() => {
+      expect(
+        latestContext?.notes.find((note) => note.id === targetId)?.backlinks
+      ).toHaveLength(1);
+    });
+  });
+
+  it('returns recent notes newest first without re-sorting the corpus', async () => {
+    await renderProviderWithFixtures([
+      '01 Markdown Syntax.md',
+      '04 Properties and Tags.md',
+      '08 Search and Discovery.md',
+    ]);
+
+    const recent = latestContext?.getRecentNotes(2) ?? [];
+    expect(recent).toHaveLength(2);
+    expect(recent).toEqual((latestContext?.notes ?? []).slice(0, 2));
+
+    const updatedTimes = (latestContext?.notes ?? []).map((note) =>
+      new Date(note.updatedAt).getTime()
+    );
+    expect(updatedTimes).toEqual([...updatedTimes].sort((a, b) => b - a));
   });
 
   it('limits the enabled Agent Workspace mod to agent rooms', async () => {
