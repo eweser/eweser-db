@@ -1,10 +1,13 @@
 # EweserDB — Claude Context
 
-This file provides context for Claude Desktop and Claude Code when working in this repository.
+@AGENTS.md
 
-## Project Overview
+`AGENTS.md` above is the repository contract and is imported, so it is already
+in context. Claude Code does not read `AGENTS.md` on its own — without that
+import, a Claude session here saw none of it, including the Hard Stops.
 
-EweserDB is a local-first, user-owned database SDK built on Yjs CRDTs. See [ARCHITECTURE.md](ARCHITECTURE.md) and [.github/copilot-instructions.md](.github/copilot-instructions.md) for the full picture.
+This file holds only what is specific to Claude and is not in `AGENTS.md`.
+Do not copy repository rules down into it; edit them in `AGENTS.md`.
 
 ## Session Memory (Manual Workflow)
 
@@ -50,23 +53,4 @@ Use `eweser_search` to recall decisions and session notes:
     }
   }
 }
-```
-
-## Key Conventions
-
-- TypeScript throughout — no `any`
-- Monorepo with npm workspaces — changes to `packages/shared` affect all consumers
-- Yjs CRDT operations — never direct mutation
-- Changesets required for published package changes (`npm run changeset`)
-- UI-visible changes require browser testing, screenshots, and qualitative
-  assessment of those screenshots. Check spacing, alignment, balance, wrapping,
-  overflow, density, responsive fit, and whether the UI looks acceptable; a
-  screenshot alone is not sufficient evidence.
-
-## Common Commands
-
-```bash
-npm install           # Install workspace deps
-npm run build         # Build all packages
-npm test              # Run all tests
 ```
