@@ -218,6 +218,26 @@ describe('ewe-note app', () => {
     cy.getBySel('ewe-note-sidebar').should('not.exist');
   });
 
+  it('leaves focus mode with the workspace mode shortcuts', () => {
+    visitHome();
+
+    createNote('# Focus mode shortcut note');
+
+    cy.getBySel('ewe-note-focus-mode').click();
+    cy.getBySel('ewe-note-focus-mode-active', { timeout: 10000 }).should(
+      'exist'
+    );
+
+    cy.get('body').trigger('keydown', {
+      ctrlKey: true,
+      code: 'Digit3',
+      key: '3',
+    });
+
+    cy.getBySel('ewe-note-focus-mode-active').should('not.exist');
+    cy.getBySel('ewe-note-sidebar', { timeout: 10000 }).should('exist');
+  });
+
   it('deletes a note from the visible editor action and returns home', () => {
     visitHome();
 

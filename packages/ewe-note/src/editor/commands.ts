@@ -102,7 +102,7 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
     isActive: (editor) => editor.isActive('paragraph'),
     isEnabled: () => true,
     execute: (editor) => editor.chain().focus().setParagraph().run(),
-    shortcut: 'Ctrl/Cmd+0',
+    shortcut: 'Ctrl/Cmd+Alt+0',
     description: 'Body paragraph',
     menuPlacement: ['toolbar', 'context', 'slash', 'palette'],
   },
@@ -116,7 +116,7 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
     isEnabled: () => true,
     execute: (editor) =>
       editor.chain().focus().toggleHeading({ level: 1 }).run(),
-    shortcut: 'Ctrl/Cmd+1',
+    shortcut: 'Ctrl/Cmd+Alt+1',
     menuPlacement: ['toolbar', 'context', 'slash', 'palette'],
   },
   {
@@ -129,7 +129,7 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
     isEnabled: () => true,
     execute: (editor) =>
       editor.chain().focus().toggleHeading({ level: 2 }).run(),
-    shortcut: 'Ctrl/Cmd+2',
+    shortcut: 'Ctrl/Cmd+Alt+2',
     menuPlacement: ['toolbar', 'context', 'slash', 'palette'],
   },
   {
@@ -142,7 +142,7 @@ export const EDITOR_COMMANDS: EditorCommand[] = [
     isEnabled: () => true,
     execute: (editor) =>
       editor.chain().focus().toggleHeading({ level: 3 }).run(),
-    shortcut: 'Ctrl/Cmd+3',
+    shortcut: 'Ctrl/Cmd+Alt+3',
     menuPlacement: ['toolbar', 'context', 'slash', 'palette'],
   },
   {

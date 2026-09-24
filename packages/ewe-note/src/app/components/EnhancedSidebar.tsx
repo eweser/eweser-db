@@ -535,10 +535,10 @@ function SidebarContent({
         }
         description={
           folderDialog?.mode === 'rename'
-            ? 'Update the folder name used in the local library.'
+            ? 'Rename this folder. The new name syncs to your other devices with the vault.'
             : folderDialog?.parentId
               ? 'Create a nested folder inside the selected parent folder.'
-              : 'Create a local folder for organizing notes on this device.'
+              : 'Folders live in your vault, so this folder and its notes sync to your other signed-in devices.'
         }
         initialName={folderDialog?.initialName ?? ''}
         submitLabel={folderDialog?.mode === 'rename' ? 'Rename' : 'Create'}

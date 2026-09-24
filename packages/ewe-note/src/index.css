@@ -48,7 +48,7 @@ body,
 .tiptap-prosemirror {
   color: var(--foreground);
   font-size: 1.06rem;
-  line-height: 1.72;
+  line-height: 1.55;
 }
 
 .tiptap-prosemirror h1,
@@ -60,7 +60,7 @@ body,
   color: var(--foreground);
   font-weight: 650;
   line-height: 1.25;
-  margin: 1.4em 0 0.45em;
+  margin: 1.1em 0 0.4em;
 }
 
 .tiptap-prosemirror h1 {
@@ -76,12 +76,12 @@ body,
 }
 
 .tiptap-prosemirror p {
-  margin: 0.75em 0;
+  margin: 0.5em 0;
 }
 
 .tiptap-prosemirror ul,
 .tiptap-prosemirror ol {
-  margin: 0.75em 0;
+  margin: 0.5em 0;
   padding-left: 1.5rem;
 }
 
@@ -97,6 +97,10 @@ body,
   padding-left: 0.25rem;
 }
 
+.tiptap-prosemirror li > p {
+  margin: 0.1em 0;
+}
+
 .tiptap-prosemirror ul[data-type='taskList'] {
   list-style: none;
   padding-left: 0;
@@ -107,7 +111,7 @@ body,
   display: flex;
   align-items: flex-start;
   gap: 0.6rem;
-  margin: 0.35rem 0;
+  margin: 0.25rem 0;
 }
 
 .tiptap-prosemirror li[data-type='taskItem'] > label,

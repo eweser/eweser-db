@@ -26,7 +26,7 @@ This note is a writable tour of the editor. Keep it as a reference, edit it, or 
 | Open command palette | Ctrl/Cmd+K |
 | Create a new note | Ctrl/Cmd+N |
 | Edit raw Markdown source | Ctrl/Cmd+Shift+S |
-| Editor-only workspace | Ctrl/Cmd+1 |
+| Editor-only workspace (press again to go back) | Ctrl/Cmd+1 |
 | Editor + recent notes | Ctrl/Cmd+2 |
 | Editor + recent notes + folders | Ctrl/Cmd+3 |
 | Show the note info panel too | Ctrl/Cmd+4 |
@@ -92,10 +92,10 @@ $$
 
 | Command | Shortcut or trigger |
 | --- | --- |
-| Paragraph | Ctrl/Cmd+0 or /paragraph |
-| Heading 1 | Ctrl/Cmd+1 or /h1 |
-| Heading 2 | Ctrl/Cmd+2 or /h2 |
-| Heading 3 | Ctrl/Cmd+3 or /h3 |
+| Paragraph | Ctrl/Cmd+Alt+0 or /paragraph |
+| Heading 1 | Ctrl/Cmd+Alt+1 or /h1 |
+| Heading 2 | Ctrl/Cmd+Alt+2 or /h2 |
+| Heading 3 | Ctrl/Cmd+Alt+3 or /h3 |
 | Heading 4 | /h4 |
 | Heading 5 | /h5 |
 | Heading 6 | /h6 |

@@ -37,6 +37,10 @@ import {
 } from '../components/WorkspaceShell';
 import type { Note } from '../contexts/NotesContext';
 import { useIsMobile } from '../components/ui/use-mobile';
+import {
+  getFocusModeHotkeyAction,
+  WORKSPACE_MODE_STORAGE_KEY,
+} from '../components/workspace-layout';
 import { canWriteRoom } from '../lib/room-write-access';
 
 export const REMOTE_NOTE_HYDRATION_GRACE_MS = 10_000;
@@ -68,6 +72,17 @@ export function buildEditorWikiLinkPath(
   return hashTarget
     ? `/editor/${noteId}#${encodeURIComponent(hashTarget)}`
     : `/editor/${noteId}`;
+}
+
+// Escape is also used to dismiss dialogs, the slash menu and the bubble menu.
+// Only leave focus mode when none of those are on screen.
+function hasOpenOverlay() {
+  if (typeof document === 'undefined') return false;
+  return Boolean(
+    document.querySelector(
+      '[role="dialog"], [role="menu"], .editor-slash-menu, .editor-bubble-menu'
+    )
+  );
 }
 
 export function EnhancedEditor() {
@@ -170,25 +185,39 @@ export function EnhancedEditor() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      const hasModifier = event.metaKey || event.ctrlKey;
-      if (!hasModifier || event.altKey || event.shiftKey) {
-        return;
-      }
-
-      if (event.code !== 'Digit1' && event.key !== '1') {
-        return;
-      }
-
       if (!noteId) return;
+
+      const action = getFocusModeHotkeyAction(event, {
+        focusMode,
+        hasOverlay: hasOpenOverlay(),
+      });
+      if (!action) return;
 
       event.preventDefault();
       event.stopPropagation();
-      setFocusMode(true);
+
+      if (action.type === 'exit-focus') {
+        setFocusMode(false);
+        return;
+      }
+
+      if (action.type === 'toggle-focus') {
+        setFocusMode((current) => !current);
+        return;
+      }
+
+      // Restore the workspace in the requested mode. The shell reads this on
+      // mount, so it comes back with the right panes open.
+      window.localStorage.setItem(
+        WORKSPACE_MODE_STORAGE_KEY,
+        String(action.mode)
+      );
+      setFocusMode(false);
     };
 
     window.addEventListener('keydown', onKeyDown, true);
     return () => window.removeEventListener('keydown', onKeyDown, true);
-  }, [noteId]);
+  }, [focusMode, noteId]);
 
   useEffect(() => {
     if (!note || !noteRoom) return;
