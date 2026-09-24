@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
   DEFAULT_WORKSPACE_MODE,
+  getFocusModeHotkeyAction,
+  type WorkspaceHotkeyEvent,
   getDefaultMobilePane,
   getMobilePaneForMode,
   getModeForMobilePane,
@@ -132,5 +134,58 @@ describe('workspace layout', () => {
     expect(shouldIgnoreWorkspaceHotkeyTarget(select)).toBe(true);
     expect(shouldIgnoreWorkspaceHotkeyTarget(ignored)).toBe(true);
     expect(shouldIgnoreWorkspaceHotkeyTarget(document.body)).toBe(false);
+  });
+});
+
+describe('getFocusModeHotkeyAction', () => {
+  const key = (
+    code: string,
+    extra: Partial<WorkspaceHotkeyEvent> = {}
+  ): WorkspaceHotkeyEvent => ({
+    altKey: false,
+    code,
+    ctrlKey: true,
+    key: code.replace('Digit', ''),
+    metaKey: false,
+    shiftKey: false,
+    ...extra,
+  });
+
+  it('toggles focus mode with Ctrl+1 in both directions', () => {
+    expect(
+      getFocusModeHotkeyAction(key('Digit1'), { focusMode: false })
+    ).toEqual({ type: 'toggle-focus' });
+    expect(
+      getFocusModeHotkeyAction(key('Digit1'), { focusMode: true })
+    ).toEqual({ type: 'toggle-focus' });
+  });
+
+  it('restores the requested workspace mode from focus mode', () => {
+    expect(
+      getFocusModeHotkeyAction(key('Digit2'), { focusMode: true })
+    ).toEqual({ type: 'restore-mode', mode: 2 });
+    expect(
+      getFocusModeHotkeyAction(key('Digit3'), { focusMode: true })
+    ).toEqual({ type: 'restore-mode', mode: 3 });
+    expect(
+      getFocusModeHotkeyAction(key('Digit4'), { focusMode: true })
+    ).toEqual({ type: 'restore-mode', mode: 4 });
+  });
+
+  it('leaves modes 2-4 to the workspace shell when focus mode is closed', () => {
+    expect(
+      getFocusModeHotkeyAction(key('Digit3'), { focusMode: false })
+    ).toBeNull();
+  });
+
+  it('exits focus mode on Escape only when no overlay is open', () => {
+    const escape = key('Escape', { ctrlKey: false, key: 'Escape' });
+    expect(getFocusModeHotkeyAction(escape, { focusMode: true })).toEqual({
+      type: 'exit-focus',
+    });
+    expect(
+      getFocusModeHotkeyAction(escape, { focusMode: true, hasOverlay: true })
+    ).toBeNull();
+    expect(getFocusModeHotkeyAction(escape, { focusMode: false })).toBeNull();
   });
 });

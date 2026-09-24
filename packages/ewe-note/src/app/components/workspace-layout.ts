@@ -203,3 +203,35 @@ export function useWorkspaceMode() {
     paneVisibility: getWorkspacePaneVisibility(workspaceMode),
   };
 }
+
+export type FocusModeHotkeyAction =
+  | { type: 'exit-focus' }
+  | { type: 'toggle-focus' }
+  | { type: 'restore-mode'; mode: WorkspaceMode }
+  | null;
+
+/**
+ * Focus mode replaces the whole workspace shell, so the shell's own mode
+ * hotkeys are unmounted while it is open. This decides what the editor page
+ * should do with a keypress so Ctrl/Cmd+2-4 still bring the panes back.
+ */
+export function getFocusModeHotkeyAction(
+  event: WorkspaceHotkeyEvent,
+  {
+    focusMode,
+    hasOverlay = false,
+  }: { focusMode: boolean; hasOverlay?: boolean }
+): FocusModeHotkeyAction {
+  if (event.key === 'Escape' || event.code === 'Escape') {
+    return focusMode && !hasOverlay ? { type: 'exit-focus' } : null;
+  }
+
+  const requestedMode = getWorkspaceModeFromHotkey(event);
+  if (!requestedMode) return null;
+
+  if (requestedMode === 1) {
+    return { type: 'toggle-focus' };
+  }
+
+  return focusMode ? { type: 'restore-mode', mode: requestedMode } : null;
+}
