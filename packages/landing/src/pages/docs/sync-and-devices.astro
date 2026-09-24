@@ -1,0 +1,90 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+---
+
+<DocsLayout
+  title="Sync and your devices — EweserDB docs"
+  description="How an EweserDB vault syncs between your devices, what happens offline, and how concurrent edits merge."
+  heading="Sync and your devices"
+  standfirst="Every signed-in device holds a full copy of the vault. Sync keeps the copies equal; it is not a remote drive you read from."
+>
+  <h2>What a device holds</h2>
+  <p>
+    Each device keeps the whole vault locally, in the browser's own storage. The
+    app reads and writes that local copy, which is why it opens instantly and
+    keeps working with no connection. Sync is the background job of making the
+    copies agree.
+  </p>
+  <p>
+    That is the opposite of a cloud drive, where the file lives on a server and
+    your device borrows it. Here the server is a relay. If it disappears, your
+    notes are still on your devices.
+  </p>
+
+  <h2>Signed out versus signed in</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>State</th>
+        <th>What happens</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Signed out</td>
+        <td>
+          Notes are saved in that browser profile on that device. Nothing leaves
+          it. Clearing site data loses them.
+        </td>
+      </tr>
+      <tr>
+        <td>Signed in</td>
+        <td>
+          Vaults sync through the sync server to every device where you are
+          signed in, including your phone.
+        </td>
+      </tr>
+      <tr>
+        <td>Signed in, offline</td>
+        <td>
+          Edits apply locally and upload when the connection returns. No action
+          needed.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Two devices editing at once</h2>
+  <p>
+    Edits merge. Vaults use CRDTs, so two people — or your laptop and your phone
+    — can change the same note while offline and both sets of changes survive.
+    There is no "last save wins" that silently drops the other side, and no
+    conflict copy to clean up afterwards.
+  </p>
+  <p>
+    The exception is files on disk. If you have a vault folder open on your
+    computer and the same note changed in both places, the app keeps the vault
+    version and writes the other one beside it as a conflict copy, so nothing is
+    lost. See <a href="/docs/local-files">working with local files</a>.
+  </p>
+
+  <h2>What sync does not do</h2>
+  <ul>
+    <li>
+      It does not share notes with other people. A vault syncs between
+      <em>your</em> devices. Access for another person or an app is a separate grant.
+    </li>
+    <li>
+      It does not copy your file paths. Notes sync as content; attachments sync
+      through object storage, not by pointing at a folder on one machine.
+    </li>
+    <li>
+      It does not read secure vaults. Those are encrypted before they leave the
+      device, so the relay moves bytes it cannot open.
+    </li>
+  </ul>
+
+  <p class="docs-next">
+    Next: <a href="/docs/local-files">Working with local files</a>.
+  </p>
+</DocsLayout>

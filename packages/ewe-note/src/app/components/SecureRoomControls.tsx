@@ -15,6 +15,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { useDb } from '../../db';
+import { DOCS_LINKS } from '../lib/docs-links';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import {
@@ -141,7 +142,16 @@ export function SecureRoomControls() {
                   <li>Public aggregation: Not supported</li>
                 </ul>
                 <p className="text-muted-foreground">
-                  Keys stay on this device only.
+                  Keys stay on this device only.{' '}
+                  <a
+                    data-cy="secure-room-learn-more"
+                    href={DOCS_LINKS.secureVaults}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline underline-offset-2"
+                  >
+                    Learn more
+                  </a>
                 </p>
               </div>
             ) : (
