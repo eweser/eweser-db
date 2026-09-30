@@ -40,6 +40,7 @@ import type {
 } from './utils/localStorageService.js';
 import {
   getLocalUserId,
+  getUserIdFromLocalAccessGrant,
   localStorageGet,
   localStorageRemove,
   localStorageSet,
@@ -271,7 +272,8 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     }
     const options = optionsPassed || {};
     this.localStoragePolyfill = options.localStoragePolyfill || localStorage;
-    this.userId = getLocalUserId(this)() ?? '';
+    this.userId =
+      getLocalUserId(this)() ?? getUserIdFromLocalAccessGrant(this)() ?? '';
     if (options.authServer) {
       this.authServer = options.authServer;
     }

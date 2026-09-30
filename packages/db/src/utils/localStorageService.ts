@@ -77,6 +77,25 @@ export const getLocalUserId = (db: Database) => () => {
   return typeof userId === 'string' ? userId : null;
 };
 
+/** Recover a pre-migration user's ID for local edits only. Server requests still verify the token. */
+export const getUserIdFromLocalAccessGrant = (db: Database) => () => {
+  const token = getLocalAccessGrantToken(db)();
+  if (typeof token !== 'string') return null;
+  try {
+    const encodedPayload = (token.split('.')[1] ?? '')
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+    const payload = JSON.parse(atob(encodedPayload)) as {
+      access_grant_id?: unknown;
+    };
+    if (typeof payload.access_grant_id !== 'string') return null;
+    const [ownerId, requesterId] = payload.access_grant_id.split('|');
+    return ownerId && requesterId ? ownerId : null;
+  } catch {
+    return null;
+  }
+};
+
 export const setLocalUserId = (db: Database) => (userId: string) => {
   db.localStorageService.setItem(LocalStorageKey.userId, userId);
 };
