@@ -220,12 +220,17 @@ export const loadRoom =
     const room = (existingRoom ??
       new Room({ db, ...serverRoom })) as unknown as Room<EweDocument>;
 
-    // A new local room is loaded before its first registry sync, so it does not
-    // have the server-assigned sync URL yet. Hydrate that connection metadata
-    // on the next load while preserving the room's existing local Y.Doc.
+    // A local room can be loaded before its first registry sync. Refresh the
+    // server's access metadata on every load while preserving its local Y.Doc.
+    // Stale grants can make an owner read-only or leave a revoked writer able
+    // to edit locally after a registry refresh.
     if (existingRoom) {
       room.syncUrl = serverRoom.syncUrl;
       room.tokenExpiry = serverRoom.tokenExpiry;
+      room.publicAccess = serverRoom.publicAccess;
+      room.readAccess = serverRoom.readAccess;
+      room.writeAccess = serverRoom.writeAccess;
+      room.adminAccess = serverRoom.adminAccess;
     }
     db.info('loading room', { room, serverRoom });
 
