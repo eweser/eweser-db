@@ -71,6 +71,10 @@ This flipping of the ownership dynamic enables some important features:
 npm install @eweser/db yjs
 ```
 
+When an app sends API requests through a browser-facing proxy, set `apiServer`
+to that proxy origin. Keep `authServer` set to the canonical auth origin used
+in document references. If `apiServer` is omitted, requests use `authServer`.
+
 This is a simplified example. For more use cases and working demos see the example apps like `examples/example-basic/src/App.tsx`
 
 ```tsx

@@ -70,6 +70,7 @@ const initialRooms = [
 
 export const db = new Database({
   authServer: config.AUTH_SERVER,
+  apiServer: config.API_SERVER,
   // set `logLevel` to 0 to see debug messages in the console
   logLevel: 0,
   initialRooms,

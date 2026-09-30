@@ -242,6 +242,8 @@ describe('loadRoom', () => {
     const registeredRoom = {
       ...localRoom,
       syncUrl: 'ws://localhost:8080',
+      writeAccess: ['owner'],
+      adminAccess: ['owner'],
     };
 
     const loadedRoom = await loadRoom(db)(registeredRoom, {
@@ -252,6 +254,8 @@ describe('loadRoom', () => {
     expect(loadedRoom).toBe(room);
     expect(loadedRoom.ydoc).toBe(localYdoc);
     expect(loadedRoom.syncUrl).toBe('ws://localhost:8080');
+    expect(loadedRoom.writeAccess).toEqual(['owner']);
+    expect(loadedRoom.adminAccess).toEqual(['owner']);
     expect(loadedRoom.syncProvider).toBe(providerInstances[0]);
     expect(providerInstances).toHaveLength(1);
     expect(initializeDocAndLocalProviderMock).toHaveBeenCalledTimes(1);
@@ -288,7 +292,7 @@ describe('loadRoom', () => {
       syncUrl: 'ws://localhost:8080',
       publicAccess: 'private',
       readAccess: [],
-      writeAccess: [],
+      writeAccess: ['former-writer'],
       adminAccess: [],
       createdAt: null,
       updatedAt: null,
@@ -302,6 +306,8 @@ describe('loadRoom', () => {
       withAwareness: true,
     });
 
+    expect(room.writeAccess).toEqual(['former-writer']);
+
     room.connectionStatus = 'connected';
     room.syncUrl = 'ws://localhost:8080';
     room.syncProvider = { status: 'connected' } as never;
@@ -310,12 +316,22 @@ describe('loadRoom', () => {
     vi.clearAllMocks();
     providerInstances.length = 0;
 
-    const loadedRoom = await loadRoom(db)(serverRoom, {
-      loadRemote: true,
-      awaitLoadRemote: true,
-    });
+    const loadedRoom = await loadRoom(db)(
+      {
+        ...serverRoom,
+        readAccess: ['former-writer'],
+        writeAccess: [],
+        adminAccess: [],
+      },
+      {
+        loadRemote: true,
+        awaitLoadRemote: true,
+      }
+    );
 
     expect(loadedRoom).toBe(room);
+    expect(loadedRoom.readAccess).toEqual(['former-writer']);
+    expect(loadedRoom.writeAccess).toEqual([]);
     expect(initializeDocAndLocalProviderMock).not.toHaveBeenCalled();
     expect(providerInstances).toHaveLength(0);
     expect(refreshSyncToken).not.toHaveBeenCalled();

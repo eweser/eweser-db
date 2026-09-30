@@ -17,6 +17,11 @@ Point `VITE_AUTH_SERVER` and `VITE_AUTH_PAGES_URL` at the local or deployed
 EweserDB auth services you want to test. Without auth/sync services, the app
 still writes local notes in the browser profile.
 
+The production container proxies `/api/` to the auth service with
+`AUTH_API_PROXY_URL`. The browser uses its own origin for API calls in
+production, so the auth service's public hostname need not be reachable from
+the browser.
+
 To run your own instance check out the /server readme at [eweser-db repo](https://github.com/eweser/eweser-db)
 
 ## Features

@@ -4,10 +4,12 @@ import type { Database } from '../..';
 
 const setLocalAccessGrantTokenMock = vi.fn();
 const setLocalRegistryMock = vi.fn();
+const setLocalUserIdMock = vi.fn();
 
 vi.mock('../../utils/localStorageService', () => ({
   setLocalAccessGrantToken: () => setLocalAccessGrantTokenMock,
   setLocalRegistry: () => setLocalRegistryMock,
+  setLocalUserId: () => setLocalUserIdMock,
 }));
 
 describe('syncRegistry', () => {
@@ -73,6 +75,7 @@ describe('syncRegistry', () => {
     expect(setLocalAccessGrantTokenMock).toHaveBeenCalledWith('next-token');
     expect(setLocalRegistryMock).toHaveBeenCalledWith(rooms);
     expect(db.userId).toBe('user-1');
+    expect(setLocalUserIdMock).toHaveBeenCalledWith('user-1');
     expect(db.accessGrantToken).toBe('next-token');
     expect(db.registry).toEqual(rooms);
     expect(db.info).toHaveBeenCalledWith('syncResult', {

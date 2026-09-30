@@ -39,6 +39,8 @@ import type {
   LocalStorageService,
 } from './utils/localStorageService.js';
 import {
+  getLocalUserId,
+  getUserIdFromLocalAccessGrant,
   localStorageGet,
   localStorageRemove,
   localStorageSet,
@@ -68,6 +70,8 @@ export * from './types.js';
 
 export interface DatabaseOptions {
   authServer?: string;
+  /** Browser-reachable API origin when it differs from the canonical authServer in document refs. */
+  apiServer?: string;
   /**
    * 0=debug 1=info, 2=warn, 3=error
    * @default 2
@@ -103,6 +107,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
   userId = '';
   /* default to the eweser auth server https://www.eweser.com */
   authServer = 'https://www.eweser.com';
+  apiServer: string | null = null;
   online = false;
   isPolling = false;
   offlineOnly = false;
@@ -267,9 +272,12 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     }
     const options = optionsPassed || {};
     this.localStoragePolyfill = options.localStoragePolyfill || localStorage;
+    this.userId =
+      getLocalUserId(this)() ?? getUserIdFromLocalAccessGrant(this)() ?? '';
     if (options.authServer) {
       this.authServer = options.authServer;
     }
+    this.apiServer = options.apiServer ?? null;
     if (options.providers) {
       if (options.providers.includes('Hocuspocus')) {
         this.useSync = true;
@@ -305,7 +313,17 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     const initializedRooms: Registry = [];
     if (options.initialRooms) {
       for (const room of options.initialRooms) {
-        const initializedRoom = this.newRoom<EweDocument>(room);
+        // The device room can already be registered with the server. Keep its
+        // cached grants when starting offline instead of replacing them with
+        // the empty defaults from initialRooms.
+        const cachedRoom = this.registry.find(
+          (entry) =>
+            entry.id === room.id && entry.collectionKey === room.collectionKey
+        );
+        const initializedRoom = this.newRoom<EweDocument>({
+          ...room,
+          ...cachedRoom,
+        });
         this._initialRoomIds.add(initializedRoom.id);
         const registryRoom = roomToServerRoom(initializedRoom);
         initializedRooms.push(registryRoom);

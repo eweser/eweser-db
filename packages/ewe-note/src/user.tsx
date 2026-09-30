@@ -71,7 +71,7 @@ export const useGetUserFromDb = (db: Database, canFetchAccount = false) => {
         const response = await fetch(
           new URL(
             token ? '/api/account/identity' : '/api/account/bootstrap',
-            db.authServer
+            db.apiServer ?? db.authServer
           ).toString(),
           token
             ? {

@@ -2,6 +2,7 @@ import type { Database } from '../../index.js';
 import {
   clearLocalAccessGrantToken,
   clearLocalRegistry,
+  clearLocalUserId,
 } from '../../utils/localStorageService.js';
 
 export const logout =
@@ -11,7 +12,9 @@ export const logout =
    */
   () => {
     clearLocalAccessGrantToken(db)();
+    clearLocalUserId(db)();
     db.accessGrantToken = '';
+    db.userId = '';
     db.useSync = false;
     db.online = false;
     for (const room of db.registry) {

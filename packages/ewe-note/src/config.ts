@@ -44,6 +44,16 @@ export function resolveAuthServerUrl(
   );
 }
 
+export function resolveApiServerUrl(
+  authServer = import.meta.env.VITE_AUTH_SERVER,
+  origin?: string,
+  production = import.meta.env.PROD
+) {
+  return production
+    ? stripTrailingSlash(resolveUrl('/', origin))
+    : resolveAuthServerUrl(authServer, origin);
+}
+
 export function buildAppPath(base: string, path = '/') {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   const normalizedBase = normalizeBase(base);
@@ -84,6 +94,7 @@ export function resolveRouterBase(
 export const routerBase = resolveRouterBase(import.meta.env.BASE_URL ?? '/');
 
 export const AUTH_SERVER = resolveAuthServerUrl();
+export const API_SERVER = resolveApiServerUrl();
 
 export const AUTH_PAGES_SERVER = stripTrailingSlash(
   import.meta.env.VITE_AUTH_PAGES_URL

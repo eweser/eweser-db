@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { authServerUrl } from './config';
+import { authApiServerUrl, authServerUrl } from './config';
 
 const DatabaseContext = createContext<Database | null>(null);
 
@@ -25,6 +25,7 @@ export function DatabaseProvider({
     () =>
       new Database({
         authServer: authServerUrl,
+        apiServer: authApiServerUrl,
         initialRooms,
         logLevel: 0,
         providers: ['IndexedDB', 'Hocuspocus'],
