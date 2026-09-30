@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { Note, Room } from '@eweser/db';
 import { canWriteRoom } from './room-write-access';
 
 describe('canWriteRoom', () => {
@@ -29,5 +30,18 @@ describe('canWriteRoom', () => {
     };
     expect(canWriteRoom(room, 'reader')).toBe(false);
     expect(canWriteRoom(room, undefined)).toBe(false);
+  });
+
+  it('keeps a device-created room writable when identity is unavailable', () => {
+    const room = {
+      id: 'device-room',
+      syncUrl: 'wss://sync.example.test',
+      writeAccess: [],
+      adminAccess: [],
+      db: { _initialRoomIds: new Set(['device-room']) },
+    } as unknown as Room<Note>;
+
+    expect(canWriteRoom(room, undefined)).toBe(true);
+    expect(canWriteRoom(room, 'reader')).toBe(false);
   });
 });
