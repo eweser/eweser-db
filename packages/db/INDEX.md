@@ -32,6 +32,8 @@ IndexedDB persistence, and optional Hocuspocus sync.
 - `@eweser/db` depends on `@eweser/shared`; public API changes require a
   changeset.
 - Tests use real Yjs docs and fake IndexedDB where relevant.
+- `authServer` stays canonical in document references. Optional `apiServer`
+  routes browser requests through a proxy.
 
 ## Update Triggers
 

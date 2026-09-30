@@ -181,7 +181,7 @@ async function fetchJson<T>(
   init: RequestInit
 ): Promise<T> {
   const token = requireToken(db);
-  const response = await fetch(`${db.authServer}${path}`, {
+  const response = await fetch(`${db.apiServer ?? db.authServer}${path}`, {
     ...init,
     headers: {
       ...(init.headers ?? {}),

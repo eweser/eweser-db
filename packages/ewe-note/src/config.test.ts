@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildAppPath,
   normalizeBase,
+  resolveApiServerUrl,
   resolveAuthServerUrl,
   resolveRouterBase,
   stripTrailingSlash,
@@ -33,5 +34,18 @@ describe('config helpers', () => {
       'http://localhost/auth'
     );
     expect(stripTrailingSlash('http://localhost/')).toBe('http://localhost');
+  });
+
+  it('uses the production API proxy even with an external auth setting', () => {
+    expect(resolveAuthServerUrl('https://auth.example.test')).toBe(
+      'https://auth.example.test'
+    );
+    expect(
+      resolveApiServerUrl(
+        'https://auth.example.test',
+        'https://notes.example.test',
+        true
+      )
+    ).toBe('https://notes.example.test');
   });
 });

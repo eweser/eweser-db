@@ -69,6 +69,8 @@ export * from './types.js';
 
 export interface DatabaseOptions {
   authServer?: string;
+  /** Browser-reachable API origin when it differs from the canonical authServer in document refs. */
+  apiServer?: string;
   /**
    * 0=debug 1=info, 2=warn, 3=error
    * @default 2
@@ -104,6 +106,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
   userId = '';
   /* default to the eweser auth server https://www.eweser.com */
   authServer = 'https://www.eweser.com';
+  apiServer: string | null = null;
   online = false;
   isPolling = false;
   offlineOnly = false;
@@ -272,6 +275,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     if (options.authServer) {
       this.authServer = options.authServer;
     }
+    this.apiServer = options.apiServer ?? null;
     if (options.providers) {
       if (options.providers.includes('Hocuspocus')) {
         this.useSync = true;

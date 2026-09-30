@@ -34,11 +34,13 @@ it('Database initializes with defaults', () => {
 it('Database initializes with options', () => {
   const options: DatabaseOptions = {
     authServer: 'https://www.something.com',
+    apiServer: 'https://browser-proxy.example.test',
     logLevel: 1,
   };
   const DB = new Database(options);
   expect(DB).toBeDefined();
   expect(DB.authServer).toBe(options.authServer);
+  expect(DB.apiServer).toBe(options.apiServer);
   expect(DB.logLevel).toBe(options.logLevel);
 });
 it('restores the last verified user for offline room access', () => {

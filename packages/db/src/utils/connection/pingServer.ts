@@ -5,7 +5,7 @@ export const pingServer = (db: Database) => async () => {
 
   try {
     const response = await fetch(
-      `${db.authServer}/ping`,
+      `${db.apiServer ?? db.authServer}/ping`,
       token
         ? {
             headers: {

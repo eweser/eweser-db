@@ -4,7 +4,7 @@ import type {
   MemoryStrategyKind,
   ServerRoom,
 } from '@eweser/shared';
-import { authServerUrl } from './config';
+import { authApiServerUrl } from './config';
 
 export interface AuthPagesUser {
   id: string;
@@ -188,14 +188,17 @@ export interface ConnectAiSetupResponse {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(new URL(path, `${authServerUrl}/`).toString(), {
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(init?.headers ?? {}),
-    },
-    ...init,
-  });
+  const response = await fetch(
+    new URL(path, `${authApiServerUrl}/`).toString(),
+    {
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(init?.headers ?? {}),
+      },
+      ...init,
+    }
+  );
 
   const data = await response.json().catch(() => null);
 

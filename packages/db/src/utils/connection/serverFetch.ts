@@ -56,7 +56,10 @@ export const serverFetch =
       if (requestBody !== undefined) {
         init.body = requestBody;
       }
-      const resultRaw = await fetch(`${_db.authServer}${path}`, init);
+      const resultRaw = await fetch(
+        `${_db.apiServer ?? _db.authServer}${path}`,
+        init
+      );
       const data = (await resultRaw.json()) as ReturnType;
       if (!data || typeof data !== 'object') {
         throw new Error('No data returned');

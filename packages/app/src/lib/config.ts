@@ -41,6 +41,9 @@ export function getAuthEndpoints({
       origin
     ).toString(),
     authServerUrl: stripTrailingSlash(
+      new URL(configuredServerUrl ?? '/', origin).toString()
+    ),
+    authApiServerUrl: stripTrailingSlash(
       new URL(
         production ? '/' : (configuredServerUrl ?? '/'),
         origin
@@ -49,13 +52,17 @@ export function getAuthEndpoints({
   };
 }
 
-export const { authApiUrl, authServerUrl } = getAuthEndpoints({
-  origin:
-    typeof window === 'undefined' ? 'http://localhost' : window.location.origin,
-  production: import.meta.env.PROD,
-  configuredApiUrl: import.meta.env.VITE_AUTH_API_URL,
-  configuredServerUrl: import.meta.env.VITE_AUTH_SERVER_URL,
-});
+export const { authApiUrl, authServerUrl, authApiServerUrl } = getAuthEndpoints(
+  {
+    origin:
+      typeof window === 'undefined'
+        ? 'http://localhost'
+        : window.location.origin,
+    production: import.meta.env.PROD,
+    configuredApiUrl: import.meta.env.VITE_AUTH_API_URL,
+    configuredServerUrl: import.meta.env.VITE_AUTH_SERVER_URL,
+  }
+);
 
 export const turnstileSiteKey =
   import.meta.env.VITE_TURNSTILE_SITE_KEY?.trim() ?? '';

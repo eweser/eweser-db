@@ -27,6 +27,8 @@ security, connected apps, access grants, and AI connector setup.
 - Auth calls go through `src/lib/api.ts` and better-auth client helpers.
 - UI must preserve auth-grant and connected-app flows.
 - Environment-driven auth URL configuration lives in `src/lib/config.ts`.
+- Production API calls use the same-origin proxy; the canonical auth origin
+  stays in EweserDB document references.
 
 ## Update Triggers
 

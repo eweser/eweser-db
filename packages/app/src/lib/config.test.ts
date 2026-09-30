@@ -12,7 +12,8 @@ describe('getAuthEndpoints', () => {
       })
     ).toEqual({
       authApiUrl: 'https://login.example.test/api/auth',
-      authServerUrl: 'https://login.example.test',
+      authServerUrl: 'https://unreachable.example.test',
+      authApiServerUrl: 'https://login.example.test',
     });
   });
 
@@ -27,6 +28,7 @@ describe('getAuthEndpoints', () => {
     ).toEqual({
       authApiUrl: 'http://localhost:38101/api/auth',
       authServerUrl: 'http://localhost:38101',
+      authApiServerUrl: 'http://localhost:38101',
     });
   });
 });
