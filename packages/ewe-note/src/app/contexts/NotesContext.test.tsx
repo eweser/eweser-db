@@ -334,7 +334,15 @@ describe('NotesContext parity behavior', () => {
     const before = new Map(
       (latestContext?.notes ?? []).map((note) => [note.id, note])
     );
-    const editedId = (latestContext?.notes ?? [])[0]?.id ?? '';
+    // Edit a note with no link relationship inside this fixture set. The list
+    // is sorted by `updatedAt`, and the fixture loader stamps `_updated` from
+    // `Date.now()`, so `notes[0]` changed between runs. Editing a note that
+    // links to another loaded note legitimately rewrites that note's
+    // backlinks, which breaks the identity assertions below.
+    const editTarget = (latestContext?.notes ?? []).find(
+      (note) => note.links.length === 0 && note.backlinks.length === 0
+    );
+    const editedId = editTarget?.id ?? '';
     expect(editedId).not.toBe('');
 
     latestContext?.updateNote(editedId, {
