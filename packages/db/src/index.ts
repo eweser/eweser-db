@@ -39,6 +39,7 @@ import type {
   LocalStorageService,
 } from './utils/localStorageService.js';
 import {
+  getLocalUserId,
   localStorageGet,
   localStorageRemove,
   localStorageSet,
@@ -267,6 +268,7 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     }
     const options = optionsPassed || {};
     this.localStoragePolyfill = options.localStoragePolyfill || localStorage;
+    this.userId = getLocalUserId(this)() ?? '';
     if (options.authServer) {
       this.authServer = options.authServer;
     }
@@ -305,7 +307,17 @@ export class Database extends TypedEventEmitter<DatabaseEvents> {
     const initializedRooms: Registry = [];
     if (options.initialRooms) {
       for (const room of options.initialRooms) {
-        const initializedRoom = this.newRoom<EweDocument>(room);
+        // The device room can already be registered with the server. Keep its
+        // cached grants when starting offline instead of replacing them with
+        // the empty defaults from initialRooms.
+        const cachedRoom = this.registry.find(
+          (entry) =>
+            entry.id === room.id && entry.collectionKey === room.collectionKey
+        );
+        const initializedRoom = this.newRoom<EweDocument>({
+          ...room,
+          ...cachedRoom,
+        });
         this._initialRoomIds.add(initializedRoom.id);
         const registryRoom = roomToServerRoom(initializedRoom);
         initializedRooms.push(registryRoom);

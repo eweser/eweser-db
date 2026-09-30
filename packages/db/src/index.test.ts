@@ -41,6 +41,43 @@ it('Database initializes with options', () => {
   expect(DB.authServer).toBe(options.authServer);
   expect(DB.logLevel).toBe(options.logLevel);
 });
+it('restores the last verified user for offline room access', () => {
+  localStorage.setItem('ewe_user_id', JSON.stringify('owner-1'));
+
+  const DB = new Database({ providers: ['IndexedDB'] });
+
+  expect(DB.userId).toBe('owner-1');
+});
+it('keeps cached grants for a device room on offline startup', () => {
+  localStorage.setItem('ewe_user_id', JSON.stringify('owner-1'));
+  localStorage.setItem(
+    'ewe_room_registry',
+    JSON.stringify([
+      {
+        id: 'device-room',
+        collectionKey: 'notes',
+        name: 'Device notes',
+        syncUrl: 'wss://sync.example.test',
+        readAccess: [],
+        writeAccess: ['owner-1'],
+        adminAccess: ['owner-1'],
+      },
+    ])
+  );
+
+  const DB = new Database({
+    providers: ['IndexedDB'],
+    initialRooms: [
+      { id: 'device-room', collectionKey: 'notes', name: 'Device notes' },
+    ],
+  });
+  const room = DB.getRoom('notes', 'device-room');
+
+  expect(DB.userId).toBe('owner-1');
+  expect(room.syncUrl).toBe('wss://sync.example.test');
+  expect(room.writeAccess).toEqual(['owner-1']);
+  expect(room.adminAccess).toEqual(['owner-1']);
+});
 it('Database removes duplicate rooms from a persisted local registry', () => {
   const room = {
     id: 'local-room',

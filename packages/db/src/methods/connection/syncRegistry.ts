@@ -5,6 +5,7 @@ import type {
 import {
   setLocalAccessGrantToken,
   setLocalRegistry,
+  setLocalUserId,
 } from '../../utils/localStorageService.js';
 import type { Database } from '../../index.js';
 
@@ -71,10 +72,6 @@ export const syncRegistry = (db: Database) => {
       hasToken: typeof token === 'string' && token.length > 0,
       hasUserId: typeof userId === 'string' && userId.length > 0,
     });
-    if (userId && typeof userId === 'string') {
-      db.debug('setting new userId', userId);
-      db.userId = userId;
-    }
     if (token && typeof token === 'string') {
       db.debug('setting new token', '[redacted]');
       setLocalAccessGrantToken(db)(token);
@@ -132,6 +129,12 @@ export const syncRegistry = (db: Database) => {
       }
     } else {
       return false;
+    }
+
+    if (userId && typeof userId === 'string') {
+      db.debug('setting new userId', userId);
+      db.userId = userId;
+      setLocalUserId(db)(userId);
     }
 
     db.emit('registrySync', 'success');

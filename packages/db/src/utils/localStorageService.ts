@@ -4,6 +4,7 @@ import type { Registry } from '../types.js';
 export enum LocalStorageKey {
   roomRegistry = 'room_registry',
   accessGrantToken = 'access_grant_token',
+  userId = 'user_id',
 }
 
 export type LocalStoragePolyfill = Storage;
@@ -69,4 +70,17 @@ export const setLocalAccessGrantToken = (db: Database) => (token: string) => {
 
 export const clearLocalAccessGrantToken = (db: Database) => () => {
   db.localStorageService.removeItem(LocalStorageKey.accessGrantToken);
+};
+
+export const getLocalUserId = (db: Database) => () => {
+  const userId = db.localStorageService.getItem<string>(LocalStorageKey.userId);
+  return typeof userId === 'string' ? userId : null;
+};
+
+export const setLocalUserId = (db: Database) => (userId: string) => {
+  db.localStorageService.setItem(LocalStorageKey.userId, userId);
+};
+
+export const clearLocalUserId = (db: Database) => () => {
+  db.localStorageService.removeItem(LocalStorageKey.userId);
 };

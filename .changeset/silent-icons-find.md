@@ -2,4 +2,4 @@
 '@eweser/db': patch
 ---
 
-Refresh room write grants when loading an existing local or synced room, so Ewe Note owners can edit and create notes after registry sync.
+Keep the last verified room identity and grants across offline restarts, and refresh room grants after registry sync. This lets Ewe Note owners edit and create local notes while the auth service is unavailable.
