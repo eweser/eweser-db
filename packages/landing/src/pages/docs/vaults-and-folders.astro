@@ -1,0 +1,96 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+---
+
+<DocsLayout
+  title="Vaults and folders — EweserDB docs"
+  description="A vault is the container your notes live in and sync with. Folders organise notes inside a vault and sync with it."
+  heading="Vaults and folders"
+  standfirst="A vault is the thing that syncs. A folder is organisation inside it. Creating a folder is not a device-local action."
+>
+  <h2>What a vault is</h2>
+  <p>
+    A vault is a container for notes, and it is the unit that syncs. When you
+    sign in, each vault you own is available on that device. Every vault has its
+    own access rules, so you can keep work and personal notes in separate vaults
+    and grant an app or an AI agent access to one without the other.
+  </p>
+  <p>
+    Ewe Note starts you with one vault, called Notes. Most people never need a
+    second one. Add another when you want a separate access boundary, not just a
+    separate heading.
+  </p>
+
+  <h2>What a folder is</h2>
+  <p>
+    A folder groups notes inside a vault. Folders are stored in the vault
+    itself, which means:
+  </p>
+  <ul>
+    <li>
+      A folder you create appears on your phone and your other computers, as
+      soon as they sync.
+    </li>
+    <li>Renaming a folder renames it everywhere.</li>
+    <li>
+      Moving a note into a folder moves it everywhere. The note does not change
+      vaults.
+    </li>
+  </ul>
+  <p>
+    Folders can nest. A folder is a label on notes, not a separate store, so an
+    empty folder costs nothing and deleting one does not delete its notes.
+  </p>
+
+  <div class="docs-callout">
+    <p>
+      <strong>Folders are not device-local.</strong> There is no "this computer only"
+      folder in Ewe Note. If you want notes that never leave one machine, stay signed
+      out on that device, or put them in a
+      <a href="/docs/secure-vaults">secure vault</a> whose key you only unlock there.
+    </p>
+  </div>
+
+  <h2>Which one should I make?</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>You want to…</th>
+        <th>Make a…</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Group notes by project, topic, or client</td>
+        <td>Folder</td>
+      </tr>
+      <tr>
+        <td>Give an app or agent access to one set of notes only</td>
+        <td>Vault</td>
+      </tr>
+      <tr>
+        <td>Keep something end-to-end encrypted</td>
+        <td>Secure vault</td>
+      </tr>
+      <tr>
+        <td>Mirror an Obsidian folder structure you already have</td>
+        <td>
+          One vault, then <a href="/docs/local-files">open the folder</a> and keep
+          its structure
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Deleting</h2>
+  <p>
+    Deleting a folder leaves its notes in the vault; they simply stop being
+    filed. A vault can only be deleted once it is empty and you are its admin,
+    and deleting it removes it from your synced devices too. The vault the app
+    set up for you cannot be deleted.
+  </p>
+
+  <p class="docs-next">
+    Next: <a href="/docs/sync-and-devices">Sync and your devices</a>.
+  </p>
+</DocsLayout>

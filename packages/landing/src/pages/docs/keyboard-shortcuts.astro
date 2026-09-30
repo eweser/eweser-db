@@ -1,0 +1,95 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+
+const workspace = [
+  ['Open command palette', 'Ctrl/Cmd+K'],
+  ['Create a new note', 'Ctrl/Cmd+N'],
+  ['Edit raw Markdown source', 'Ctrl/Cmd+Shift+S'],
+  ['Editor only, press again to go back', 'Ctrl/Cmd+1'],
+  ['Editor and recent notes', 'Ctrl/Cmd+2'],
+  ['Editor, recent notes and folders', 'Ctrl/Cmd+3'],
+  ['Show the note info panel too', 'Ctrl/Cmd+4'],
+  ['Toggle sidebar chrome', 'Ctrl/Cmd+\\'],
+  ['Toggle topbar chrome', 'Ctrl/Cmd+Shift+\\'],
+  ['Pure focus mode', 'Ctrl/Cmd+Shift+F'],
+  ['Exit focus mode or close a dialog', 'Escape'],
+];
+
+const formatting = [
+  ['Bold', 'Ctrl/Cmd+B'],
+  ['Italic', 'Ctrl/Cmd+I'],
+  ['Highlight', 'Ctrl/Cmd+Shift+H'],
+  ['Inline code', 'Ctrl/Cmd+E'],
+  ['Strikethrough or clear formatting', 'Ctrl/Cmd+Shift+X'],
+  ['Link', 'Ctrl/Cmd+K or /link'],
+  ['Paragraph', 'Ctrl/Cmd+Alt+0 or /paragraph'],
+  ['Heading 1, 2, 3', 'Ctrl/Cmd+Alt+1, 2, 3 or /h1, /h2, /h3'],
+  ['Headings 4 to 6', '/h4, /h5, /h6'],
+  ['Bulleted, numbered or task list', '/bullet, /numbered, /task'],
+  ['Quote or callout', '/quote, /callout'],
+  ['Code block', 'Type ``` on a blank line'],
+  ['Table', 'Type | on a blank line'],
+  ['Horizontal rule', 'Type --- on a blank line'],
+  ['Indent or outdent a list item', 'Tab, Shift+Tab'],
+];
+---
+
+<DocsLayout
+  title="Keyboard shortcuts — EweserDB docs"
+  description="Every keyboard shortcut in Ewe Note: workspace panes, focus mode, and editor formatting."
+  heading="Keyboard shortcuts"
+  standfirst="Ctrl on Windows and Linux, Cmd on macOS. Editor formatting uses Alt as well, so it never fights the workspace pane shortcuts."
+>
+  <h2>Workspace and panes</h2>
+  <table>
+    <thead>
+      <tr><th>Action</th><th>Shortcut</th></tr>
+    </thead>
+    <tbody>
+      {
+        workspace.map(([action, shortcut]) => (
+          <tr>
+            <td>{action}</td>
+            <td>
+              <code>{shortcut}</code>
+            </td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+  <p>
+    The pane shortcuts stack: 1 is the editor alone, 2 adds the notes list, 3
+    adds the folder sidebar, 4 adds the note info panel. From the editor-only
+    view, any of 2, 3 or 4 brings the panes back, and pressing 1 again returns
+    you to the layout you came from.
+  </p>
+
+  <h2>Editing and formatting</h2>
+  <table>
+    <thead>
+      <tr><th>Action</th><th>Shortcut or trigger</th></tr>
+    </thead>
+    <tbody>
+      {
+        formatting.map(([action, shortcut]) => (
+          <tr>
+            <td>{action}</td>
+            <td>
+              <code>{shortcut}</code>
+            </td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+
+  <div class="docs-callout">
+    <p>
+      Type <code>/</code> in a note for the inline slash menu, or press
+      <code>Ctrl/Cmd+K</code> and then <code>/</code> or <code>&gt;</code> to run
+      the same commands from the command palette. If a shortcut is taken by your browser
+      or operating system, use the toolbar, the bubble menu or the slash menu instead.
+    </p>
+  </div>
+</DocsLayout>
