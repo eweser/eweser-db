@@ -43,6 +43,8 @@ Drizzle models, and service helpers for the auth API.
 - Room access grants remain explicit and auditable.
 - Sync tokens are signed for the sync server and scoped to rooms.
 - Remote MCP accepts OAuth bearer tokens and legacy agent bearer tokens.
+- Stateless MCP requests own their room connections until their response body
+  ends or is cancelled. Cached layers stay alive while requests hold leases.
 - Attachment routes must keep provider credentials in env/secret storage and
   only expose non-secret object metadata in synced documents.
 

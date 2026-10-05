@@ -38,7 +38,8 @@ async function authFetch<T>(
   authUrl: string,
   path: string,
   token: string,
-  body?: unknown
+  body?: unknown,
+  signal?: AbortSignal
 ): Promise<T> {
   const res = await fetch(`${authUrl}${path}`, {
     method: 'POST',
@@ -47,6 +48,7 @@ async function authFetch<T>(
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(body ?? {}),
+    ...(signal ? { signal } : {}),
   });
   if (!res.ok) {
     const text = await res.text().catch(() => `HTTP ${res.status}`);
@@ -89,13 +91,15 @@ export async function fetchAgentRooms(
 export async function fetchSyncToken(
   token: string,
   authUrl: string,
-  roomId: string
+  roomId: string,
+  signal?: AbortSignal
 ): Promise<SyncTokenResult> {
   return authFetch<SyncTokenResult>(
     authUrl,
     '/api/agents/me/sync-token',
     token,
-    { roomId }
+    { roomId },
+    signal
   );
 }
 
