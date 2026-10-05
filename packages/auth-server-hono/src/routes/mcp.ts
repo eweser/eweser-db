@@ -26,6 +26,7 @@ import { getUserById } from '../model/users.js';
 import { getRoomsByIds } from '../model/rooms/calls.js';
 import { env } from '../env.js';
 import { logSecurityEvent } from '../model/security-events.js';
+import { createMcpRequestLifecycle } from '../lib/mcp-request-lifecycle.js';
 
 // ---------------------------------------------------------------------------
 // Session cache — keyed by mcp-session-id header
@@ -34,6 +35,7 @@ import { logSecurityEvent } from '../model/security-events.js';
 interface McpSession {
   dataLayer: DataLayer;
   lastAccessAt: number;
+  activeRequests: number;
 }
 
 export const mcpRouter = new Hono();
@@ -66,7 +68,10 @@ setInterval(
   () => {
     const now = Date.now();
     for (const [id, session] of sessionCache) {
-      if (now - session.lastAccessAt > SESSION_TTL_MS) {
+      if (
+        session.activeRequests === 0 &&
+        now - session.lastAccessAt > SESSION_TTL_MS
+      ) {
         session.dataLayer.disconnect().catch(() => {});
         sessionCache.delete(id);
       }
@@ -290,83 +295,145 @@ mcpRouter.all('/', async (c) => {
   if (sessionId && sessionId.length > 128) {
     return c.json({ error: 'Invalid session id' }, 400);
   }
-  let dataLayer: DataLayer;
+  let ownedDataLayer: DataLayer | undefined;
+  let leasedSession: McpSession | undefined;
+  let mcpServer: McpServer | undefined;
+  let transport: WebStandardStreamableHTTPServerTransport | undefined;
+  const signal = c.req.raw.signal;
+  const lifecycle = createMcpRequestLifecycle(signal, async () => {
+    const results = await Promise.allSettled([
+      ownedDataLayer?.disconnect(),
+      mcpServer?.close(),
+      transport?.close(),
+    ]);
+    if (leasedSession) {
+      leasedSession.activeRequests--;
+      leasedSession.lastAccessAt = Date.now();
+    }
+    for (const result of results) {
+      if (result.status === 'rejected') {
+        log.warn(
+          { error: result.reason },
+          'Failed to release MCP request resource'
+        );
+      }
+    }
+  });
 
-  if (sessionId && sessionCache.has(sessionId)) {
-    const cached = sessionCache.get(sessionId);
-    if (!cached) return c.json({ error: 'Session not found' }, 400);
-    cached.lastAccessAt = Date.now();
-    dataLayer = cached.dataLayer;
-  } else {
-    // Build agent config + rooms
-    let agentConfig: AgentConfig;
-    let agentRooms: AgentRoom[];
+  try {
+    signal.throwIfAborted();
+    let dataLayer: DataLayer;
 
-    if (auth.agentConfig) {
-      // Legacy agent token path — fetch rooms from auth server API
-      agentConfig = auth.agentConfig;
-      // In-process: look up rooms directly from DB
-      const { rooms: ar } = await buildAgentConfigForUser(
-        auth.userId,
-        auth.permissions
-      );
-      agentRooms = filterRoomsForAgentConfig(ar, agentConfig);
+    if (sessionId && sessionCache.has(sessionId)) {
+      const cached = sessionCache.get(sessionId);
+      if (!cached) throw new Error('MCP session disappeared');
+      leasedSession = cached;
+      cached.activeRequests++;
+      cached.lastAccessAt = Date.now();
+      dataLayer = cached.dataLayer;
     } else {
-      // OAuth token path
-      const built = await buildAgentConfigForUser(
-        auth.userId,
-        auth.permissions
+      // Build agent config + rooms
+      let agentConfig: AgentConfig;
+      let agentRooms: AgentRoom[];
+
+      if (auth.agentConfig) {
+        // Legacy agent token path — fetch rooms from auth server API
+        agentConfig = auth.agentConfig;
+        // In-process: look up rooms directly from DB
+        const { rooms: ar } = await buildAgentConfigForUser(
+          auth.userId,
+          auth.permissions
+        );
+        agentRooms = filterRoomsForAgentConfig(ar, agentConfig);
+      } else {
+        // OAuth token path
+        const built = await buildAgentConfigForUser(
+          auth.userId,
+          auth.permissions
+        );
+        agentConfig = built.agentConfig;
+        agentRooms = built.rooms;
+      }
+
+      signal.throwIfAborted();
+      // Create DataLayer — it makes internal requests to the sync server
+      dataLayer = new DataLayer(
+        agentConfig,
+        getInternalMcpAuthUrl(),
+        auth.agentToken ?? `oauth-placeholder-${auth.userId}`,
+        getInternalMcpSyncUrl()
       );
-      agentConfig = built.agentConfig;
-      agentRooms = built.rooms;
+      ownedDataLayer = dataLayer;
+      await dataLayer.init(agentRooms);
+      signal.throwIfAborted();
+
+      if (sessionId) {
+        // Another overlapping setup may have populated this session while we
+        // awaited init. Reuse its layer and dispose our unshared duplicate.
+        const existing = sessionCache.get(sessionId);
+        if (existing) {
+          leasedSession = existing;
+          existing.activeRequests++;
+          const duplicate = ownedDataLayer;
+          ownedDataLayer = undefined;
+          await duplicate.disconnect();
+          signal.throwIfAborted();
+          dataLayer = existing.dataLayer;
+        } else {
+          leasedSession = {
+            dataLayer,
+            lastAccessAt: Date.now(),
+            activeRequests: 1,
+          };
+          sessionCache.set(sessionId, leasedSession);
+        }
+        ownedDataLayer = undefined;
+      }
     }
 
-    // Create DataLayer — it makes internal requests to the sync server
-    dataLayer = new DataLayer(
-      agentConfig,
-      getInternalMcpAuthUrl(),
-      auth.agentToken ?? `oauth-placeholder-${auth.userId}`,
-      getInternalMcpSyncUrl()
-    );
-    await dataLayer.init(agentRooms);
+    // 3. Create MCP server + transport per request
+    mcpServer = new McpServer({
+      name: 'eweser-mcp',
+      version: '0.1.0',
+    });
 
-    if (sessionId) {
-      sessionCache.set(sessionId, { dataLayer, lastAccessAt: Date.now() });
-    }
+    const logFn = async (entry: {
+      roomId: string;
+      collectionKey: string;
+      action: 'read' | 'write';
+      documentCount?: number;
+    }) => {
+      if (auth.agentConfig) {
+        await logAgentAccess({
+          agentId: auth.agentConfig.id,
+          userId: auth.userId,
+          ...entry,
+          documentCount: entry.documentCount ?? 0,
+        });
+      }
+    };
+
+    registerTools(mcpServer, dataLayer, logFn, env.AGGREGATOR_URL);
+
+    transport = new WebStandardStreamableHTTPServerTransport();
+    // Server.close owns its transport once connected. Also close a transport
+    // whose setup failed, while guaranteeing its underlying close runs once.
+    const closeTransport = transport.close.bind(transport);
+    let transportDisposal: Promise<void> | undefined;
+    transport.close = () =>
+      (transportDisposal ??= Promise.resolve().then(closeTransport));
+    await mcpServer.connect(transport);
+    signal.throwIfAborted();
+    log.info({
+      method: c.req.method,
+      path: c.req.path,
+      scope: auth.permissions,
+      userId: auth.userId,
+    });
+
+    return await lifecycle.wrap(await transport.handleRequest(c.req.raw));
+  } catch (error) {
+    await lifecycle.dispose();
+    throw error;
   }
-
-  // 3. Create MCP server + transport per request
-  const mcpServer = new McpServer({
-    name: 'eweser-mcp',
-    version: '0.1.0',
-  });
-
-  const logFn = async (entry: {
-    roomId: string;
-    collectionKey: string;
-    action: 'read' | 'write';
-    documentCount?: number;
-  }) => {
-    if (auth.agentConfig) {
-      await logAgentAccess({
-        agentId: auth.agentConfig.id,
-        userId: auth.userId,
-        ...entry,
-        documentCount: entry.documentCount ?? 0,
-      });
-    }
-  };
-
-  registerTools(mcpServer, dataLayer, logFn, env.AGGREGATOR_URL);
-
-  const transport = new WebStandardStreamableHTTPServerTransport();
-  await mcpServer.connect(transport);
-  log.info({
-    method: c.req.method,
-    path: c.req.path,
-    scope: auth.permissions,
-    userId: auth.userId,
-  });
-
-  return transport.handleRequest(c.req.raw);
 });
