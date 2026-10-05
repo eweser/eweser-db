@@ -63,18 +63,18 @@ Local source work and validation, PR creation, and validated merge through an in
 
 ## Execution Summary
 
-Both runs implemented and internally reviewed. Initial focused route suite reproduced nine failures against the deployed route. The final suite adds thirteen request-lifecycle cases using real SDK server/transports with a mocked DataLayer, and six real-Y.Doc room lifecycle cases with mocked networking. Twenty repeated layer lifetimes return timer counts to zero and destroy each provider/document once.
+Both runs implemented and internally reviewed. Initial focused route suite reproduced nine failures against the deployed route. The final suite adds fourteen request-lifecycle cases using real SDK server/transports with a mocked DataLayer, and six real-Y.Doc room lifecycle cases with mocked networking. Twenty repeated layer lifetimes return timer counts to zero and destroy each provider/document once.
 
 Validation passed:
 
-- `npm test --workspace @eweser/auth-server-hono`: 227 tests.
+- `npm test --workspace @eweser/auth-server-hono`: 228 tests.
 - `npm test --workspace @eweser/mcp`: 70 tests.
 - Both changed workspace type checks.
-- `npm run check`: root lint, format, all workspace types and 889 passing unit tests (one existing todo).
+- `npm run check`: root lint, format, all workspace types and 889 passing unit tests (one existing todo) before the final one-test abort refinement. The final refinement passed the updated 228-test auth suite, auth type check, and focused lint/format checks.
 - MCP dependency build and auth-server build.
 - `npm run code-index:check` and `git diff --check`.
 
-The first root lint pass found non-null assertions and an unused test parameter; these were corrected before the passing gate. Logger scheduling was isolated from the focused timer count. No auth/scopes/tokens, dependency or lockfile changes. Patch changeset added for the published MCP package. The original read-only evidence and session checkpoint remain outside this PR.
+Final review added a regression for a body returned after request abort while handling was pending; the body is now cancelled even though resources were already released. The first root lint pass found non-null assertions and an unused test parameter; these were corrected before the passing gate. Logger scheduling was isolated from the focused timer count. No auth/scopes/tokens, dependency or lockfile changes. Patch changeset added for the published MCP package. The original read-only evidence and session checkpoint remain outside this PR.
 
 Cypress/local service integration was not run: runtime discovery found no local auth/sync endpoints, and these lifecycle paths are exercised directly by real SDK streamed responses with controlled network resources. PR CI provides its standard E2E smoke gate. No production load test, restart, or deploy was performed by this source task. Exact parent source review and independent cheap PR checks remain before merge. Main-linked deployment/release automation must be considered separately before merge authorization.
 

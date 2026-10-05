@@ -317,4 +317,27 @@ describe('MCP response resource ownership', () => {
     expect(closeServer).toHaveBeenCalledTimes(1);
     expect(closeTransport).toHaveBeenCalledTimes(1);
   });
+  it('cancels a response returned after request abort during handling', async () => {
+    let resolveResponse!: (response: Response) => void;
+    const pendingResponse = new Promise<Response>((resolve) => {
+      resolveResponse = resolve;
+    });
+    const handle = vi
+      .spyOn(
+        WebStandardStreamableHTTPServerTransport.prototype,
+        'handleRequest'
+      )
+      .mockReturnValueOnce(pendingResponse);
+    const abort = new AbortController();
+    const pending = request('initialize', undefined, abort.signal);
+    await vi.waitFor(() => expect(handle).toHaveBeenCalled());
+    abort.abort();
+    const cancel = vi.fn();
+    resolveResponse(new Response(new ReadableStream({ cancel })));
+    expect((await pending).status).toBe(500);
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(state.layers[0].disconnect).toHaveBeenCalledTimes(1);
+    expect(closeServer).toHaveBeenCalledTimes(1);
+    expect(closeTransport).toHaveBeenCalledTimes(1);
+  });
 });

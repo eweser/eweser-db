@@ -42,7 +42,15 @@ export function createMcpRequestLifecycle(
   return {
     dispose,
     async wrap(response) {
-      signal.throwIfAborted();
+      if (signal.aborted) {
+        // handleRequest can finish asynchronously after cancellation already
+        // released our resources. Cancel its late body as well.
+        await Promise.allSettled([
+          response.body?.cancel(signal.reason),
+          dispose(),
+        ]);
+        signal.throwIfAborted();
+      }
       if (!response.body) {
         await dispose();
         return response;
