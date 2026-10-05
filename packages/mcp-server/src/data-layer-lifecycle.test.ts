@@ -3,6 +3,7 @@ import * as Y from 'yjs';
 import type { AgentConfig, AgentRoom, SyncTokenResult } from './auth.js';
 
 const state = vi.hoisted(() => ({
+  sockets: [] as { destroy: ReturnType<typeof vi.fn> }[],
   providers: [] as {
     document: Y.Doc;
     destroy: ReturnType<typeof vi.fn>;
@@ -14,10 +15,17 @@ const state = vi.hoisted(() => ({
   failConstructor: false,
 }));
 vi.mock('@hocuspocus/provider', () => ({
+  HocuspocusProviderWebsocket: class {
+    destroy = vi.fn();
+    constructor() {
+      state.sockets.push(this);
+    }
+  },
   HocuspocusProvider: class {
     document: Y.Doc;
     isSynced: boolean;
     listeners = new Map<string, Set<(event: { state: boolean }) => void>>();
+    connect = vi.fn(async () => {});
     disconnect = vi.fn();
     destroy = vi.fn(() => {
       this.disconnect();
@@ -83,6 +91,7 @@ function deferred<T>() {
 beforeEach(() => {
   vi.useFakeTimers();
   state.providers.length = 0;
+  state.sockets.length = 0;
   state.synced = () => true;
   state.failConstructor = false;
   vi.mocked(fetchSyncToken)
@@ -107,6 +116,7 @@ describe('DataLayer resource lifecycle with real Y.Doc instances', () => {
       await layer.disconnect();
       await layer.disconnect();
       expect(provider.destroy).toHaveBeenCalledTimes(1);
+      expect(state.sockets[i].destroy).toHaveBeenCalledTimes(1);
       expect(provider.disconnect).toHaveBeenCalledTimes(1);
       expect(destroyDoc).toHaveBeenCalledTimes(1);
       expect(vi.getTimerCount()).toBe(0);
@@ -156,7 +166,9 @@ describe('DataLayer resource lifecycle with real Y.Doc instances', () => {
     const gate = deferred<SyncTokenResult>();
     vi.mocked(fetchSyncToken).mockImplementationOnce(() => gate.promise);
     await vi.advanceTimersByTimeAsync(10 * 60_000);
+    const signal = vi.mocked(fetchSyncToken).mock.calls[1][3];
     await layer.disconnect();
+    expect(signal?.aborted).toBe(true);
     gate.resolve(token());
     await vi.advanceTimersByTimeAsync(0);
     expect(state.providers[0].setConfiguration).not.toHaveBeenCalled();
@@ -171,6 +183,7 @@ describe('DataLayer resource lifecycle with real Y.Doc instances', () => {
       AggregateError
     );
     expect(destroyDoc).toHaveBeenCalledTimes(1);
+    expect(state.sockets[0].destroy).toHaveBeenCalledTimes(1);
     expect(vi.getTimerCount()).toBe(0);
   });
 
@@ -185,6 +198,26 @@ describe('DataLayer resource lifecycle with real Y.Doc instances', () => {
     expect(state.providers[1].destroy).toHaveBeenCalledTimes(1);
     await layer.disconnect();
     expect(state.providers[0].destroy).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+  it('aborts the pending initialization token fetch instead of retaining it until the server responds', async () => {
+    vi.mocked(fetchSyncToken).mockImplementationOnce(
+      (_token, _url, _id, signal) =>
+        new Promise((_resolve, reject) => {
+          signal?.addEventListener('abort', () => reject(signal.reason), {
+            once: true,
+          });
+        })
+    );
+    const layer = makeLayer();
+    const init = layer.init([room('pending')]);
+    const rejected = expect(init).rejects.toThrow(AggregateError);
+    const signal = vi.mocked(fetchSyncToken).mock.calls[0][3];
+    expect(signal).toBeInstanceOf(AbortSignal);
+    await layer.disconnect();
+    expect(signal?.aborted).toBe(true);
+    await rejected;
+    expect(state.providers).toHaveLength(0);
     expect(vi.getTimerCount()).toBe(0);
   });
 });

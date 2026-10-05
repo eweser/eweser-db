@@ -4,7 +4,10 @@
  */
 import { posix as posixPath } from 'node:path';
 import * as Y from 'yjs';
-import { HocuspocusProvider } from '@hocuspocus/provider';
+import {
+  HocuspocusProvider,
+  HocuspocusProviderWebsocket,
+} from '@hocuspocus/provider';
 import type { AgentConfig, AgentRoom, SyncTokenResult } from './auth.js';
 import { fetchSyncToken } from './auth.js';
 import { createLogger } from '@eweser/logger';
@@ -31,6 +34,7 @@ interface ConnectedRoom {
   meta: AgentRoom;
   ydoc: Y.Doc;
   provider: HocuspocusProvider;
+  websocketProvider: HocuspocusProviderWebsocket;
   syncToken: string;
   tokenExpiry: Date;
   refreshTimer?: ReturnType<typeof setTimeout>;
@@ -45,6 +49,7 @@ type DocumentWriteCandidate = Partial<EweDocument> & {
 export class DataLayer {
   private rooms: Map<string, ConnectedRoom> = new Map();
   private disconnected = false;
+  private connectionAbort = new AbortController();
   private agentConfig: AgentConfig;
   private authUrl: string;
   private agentToken: string;
@@ -109,7 +114,8 @@ export class DataLayer {
     const tokenResult = await fetchSyncToken(
       this.agentToken,
       this.authUrl,
-      room.id
+      room.id,
+      this.connectionAbort.signal
     );
 
     // A request can be cancelled while the token fetch is pending. Never
@@ -121,15 +127,29 @@ export class DataLayer {
       : tokenResult.syncUrl;
 
     let provider: HocuspocusProvider;
+    let websocketProvider: HocuspocusProviderWebsocket | undefined;
     try {
-      provider = new HocuspocusProvider({
+      // Own the socket separately: provider.destroy() only detaches from it
+      // with Hocuspocus' default preserveConnection=true. Start networking
+      // only after both resources have been registered for cleanup.
+      websocketProvider = new HocuspocusProviderWebsocket({
         url: syncUrl,
+        connect: false,
+      });
+      provider = new HocuspocusProvider({
+        websocketProvider,
         name: room.id,
         document: ydoc,
         token: tokenResult.syncToken,
       });
     } catch (error) {
-      ydoc.destroy();
+      try {
+        websocketProvider?.destroy();
+      } finally {
+        // Awareness also subscribes to document destruction, covering a
+        // provider constructor that failed after creating its awareness.
+        ydoc.destroy();
+      }
       throw error;
     }
 
@@ -137,6 +157,7 @@ export class DataLayer {
       meta: room,
       ydoc,
       provider,
+      websocketProvider,
       syncToken: tokenResult.syncToken,
       tokenExpiry: new Date(tokenResult.tokenExpiry),
       syncAbort: new AbortController(),
@@ -146,7 +167,15 @@ export class DataLayer {
 
     // Wait for initial sync
     try {
-      await this.waitForSync(provider, room.id, connected.syncAbort.signal);
+      const synced = this.waitForSync(
+        provider,
+        room.id,
+        connected.syncAbort.signal
+      );
+      void provider
+        .connect()
+        .catch((error: unknown) => connected.syncAbort.abort(error));
+      await synced;
       if (this.rooms.get(room.id) !== connected) {
         throw new Error('Room disconnected during initialization');
       }
@@ -211,7 +240,8 @@ export class DataLayer {
       const result: SyncTokenResult = await fetchSyncToken(
         this.agentToken,
         this.authUrl,
-        roomId
+        roomId,
+        connected.syncAbort.signal
       );
       if (this.rooms.get(roomId) !== connected) return;
       connected.syncToken = result.syncToken;
@@ -219,6 +249,7 @@ export class DataLayer {
       connected.provider.setConfiguration({ token: result.syncToken });
       this.scheduleTokenRefresh(roomId, connected);
     } catch (err) {
+      if (this.rooms.get(roomId) !== connected) return;
       log.error(
         { err, roomId },
         `[eweser-mcp] Failed to refresh token for room ${roomId}`
@@ -236,16 +267,22 @@ export class DataLayer {
     clearTimeout(connected.refreshTimer);
     connected.syncAbort.abort();
     try {
-      // HocuspocusProvider.destroy() also disconnects its websocket.
       connected.provider.destroy();
     } finally {
-      connected.ydoc.destroy();
+      try {
+        // This socket was created here for this room, never borrowed/shared.
+        // Destroy also stops its checker interval and pending retry attempt.
+        connected.websocketProvider.destroy();
+      } finally {
+        connected.ydoc.destroy();
+      }
     }
   }
 
   /** Disconnect all rooms. */
   async disconnect(): Promise<void> {
     this.disconnected = true;
+    this.connectionAbort.abort();
     const errors: unknown[] = [];
     for (const roomId of this.rooms.keys()) {
       try {

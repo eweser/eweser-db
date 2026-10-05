@@ -31,7 +31,8 @@ parsing, and tool registration for agent access to EweserDB.
 - MCP tools expose only rooms available to the verified agent token.
 - Secret-like text is redacted before returning tool content.
 - Stdio logging must not corrupt JSON-RPC stdout.
-- DataLayer disconnect releases providers, Yjs documents, and refresh timers;
+- DataLayer disconnect releases providers, owned websocket checkers/retries,
+  Yjs documents, pending sync-token fetches, and refresh timers;
   pending initialization and refresh cannot reopen disconnected rooms.
 
 ## Update Triggers

@@ -118,6 +118,36 @@ describe('fetchSyncToken', () => {
     expect(body.roomId).toBe('room-1');
   });
 
+  it('passes cancellation to the pending sync-token fetch without changing auth or body', async () => {
+    const abort = new AbortController();
+    mockFetch.mockImplementationOnce(
+      (_url: string, options: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          options.signal?.addEventListener(
+            'abort',
+            () => reject(options.signal?.reason),
+            { once: true }
+          );
+        })
+    );
+    const pending = fetchSyncToken(TOKEN, AUTH_URL, 'room-1', abort.signal);
+    expect(mockFetch).toHaveBeenCalledWith(
+      `${AUTH_URL}/api/agents/me/sync-token`,
+      expect.objectContaining({
+        signal: abort.signal,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${TOKEN}`,
+        },
+        body: JSON.stringify({ roomId: 'room-1' }),
+      })
+    );
+    const rejected = expect(pending).rejects.toThrow();
+    abort.abort();
+    await rejected;
+  });
+
   it('throws on auth failure', async () => {
     mockFetch.mockResolvedValueOnce(
       makeResponse({ error: 'Unauthorized' }, 401)

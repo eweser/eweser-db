@@ -31,7 +31,7 @@ Approved by the October 5 source-implementation request. Implement request lifec
 
 - Id: 2
 - Deliverable: Provider, document, sync-wait and refresh-timer cleanup; pending token fetch and refresh cannot reopen closed resources.
-- Files: MCP DataLayer, focused lifecycle tests, source index, patch changeset.
+- Files: MCP DataLayer, sync-token auth helper, focused lifecycle and real-provider tests, source index, patch changeset.
 - Steps: Mark disconnected ownership before callbacks. Cancel pending sync, detach listeners, destroy providers/documents. Dispose each room once and continue releasing other rooms if teardown errors.
 - Tests: Real Y.Doc instances with mocked network provider, twenty repeated layer lifetimes, partial init cancellation, timeout with partial success, constructor failure, in-flight refresh, teardown rejection.
 - Verification: Focused and package tests, MCP type check/build, root quality gate.
@@ -63,16 +63,20 @@ Local source work and validation, PR creation, and validated merge through an in
 
 ## Execution Summary
 
-Both runs implemented and internally reviewed. Initial focused route suite reproduced nine failures against the deployed route. The final suite adds fourteen request-lifecycle cases using real SDK server/transports with a mocked DataLayer, and six real-Y.Doc room lifecycle cases with mocked networking. Twenty repeated layer lifetimes return timer counts to zero and destroy each provider/document once.
+Both runs implemented and internally reviewed. Initial focused route suite reproduced nine failures against the deployed route. The final suite adds fourteen request-lifecycle cases using real SDK server/transports with a mocked DataLayer, and seven real-Y.Doc room lifecycle cases, a sync-token HTTP cancellation regression, and five real-Hocuspocus/fake-WebSocket ownership cases with mocked networking. Twenty repeated layer lifetimes return timer counts to zero and destroy each provider/document once.
 
 Validation passed:
 
 - `npm test --workspace @eweser/auth-server-hono`: 228 tests.
-- `npm test --workspace @eweser/mcp`: 70 tests.
+- `npm test --workspace @eweser/mcp`: 77 tests.
 - Both changed workspace type checks.
-- `npm run check`: root lint, format, all workspace types and 889 passing unit tests (one existing todo) before the final one-test abort refinement. The final refinement passed the updated 228-test auth suite, auth type check, and focused lint/format checks.
+- `npm run check`: final root lint, format, all workspace types and 897 passing unit tests (one existing todo), including the token-fetch and actual-provider review corrections.
 - MCP dependency build and auth-server build.
 - `npm run code-index:check` and `git diff --check`.
+
+The parent review caught a real dependency leak missed by the initial provider mock: HocuspocusProvider.destroy() detaches from its socket by default but leaves the socket checker/retry alive. DataLayer now explicitly creates and owns each room's HocuspocusProviderWebsocket with connect:false, registers cleanup ownership, then starts networking. It destroys only those owned sockets on success, abort, sync failure, and constructor/setup failure. The five actual-dependency tests measure real awareness/checker/refresh timers, pending connection attempts, fake sockets and Y.Doc destruction; they also preserve an unrelated shared socket/document. Those tests pass with no network calls.
+
+Startup cancellation also aborts in-flight sync-token HTTP fetches using an optional signal argument; this is required to release the cancelled layer when an auth response never arrives. Authorization headers, token values, request body, scopes and room choice remain unchanged. Constructor/connection guards remain for fetches that race or ignore cancellation.
 
 Final review added a regression for a body returned after request abort while handling was pending; the body is now cancelled even though resources were already released. The first root lint pass found non-null assertions and an unused test parameter; these were corrected before the passing gate. Logger scheduling was isolated from the focused timer count. No auth/scopes/tokens, dependency or lockfile changes. Patch changeset added for the published MCP package. The original read-only evidence and session checkpoint remain outside this PR.
 
