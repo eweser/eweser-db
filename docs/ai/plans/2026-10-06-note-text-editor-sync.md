@@ -93,17 +93,11 @@ Source run implemented. All 276 package tests, package lint, type check, code
 index validation, and production build passed. Final verification is recorded in
 the PR receipt. No live board, browser, or production changes.
 
-```mermaid
-flowchart LR
-  External[External Markdown write] --> Source[Existing note.text]
-  Source --> Seed[Seed unique XML fragment]
-  Seed --> Pointer[Atomic room pointer]
-  Pointer --> Editors[Updated clients bind selected fragment]
-  Editors --> Human[Normal Yjs human edits]
-  Human --> Guard[Check pointer and latest source]
-  Guard -->|current| Mirror[Atomic text and acknowledgement]
-  Guard -->|superseded| Draft[Retain human draft in same room]
-```
+External Markdown updates the existing note's text. The editor seeds a unique
+XML fragment and atomically publishes its room-backed pointer. Updated clients
+bind that fragment and retain normal Yjs collaboration for human edits. A save
+checks the selected fragment and latest source before pairing the Markdown mirror
+with its acknowledgement. A superseded save retains the human draft instead.
 
 ### Verification gaps and residual risk
 
@@ -131,3 +125,24 @@ exact readback and two updated clients. Do not blindly repeat live rewrites.
 A successful immediate MCP readback does not establish editor stability. Future
 external-write QA must include an already-open client, deferred save, and two
 real Yjs replicas; unchanged-document update events must not count as human edits.
+
+### Isolated browser verification attempt
+
+The parent accepted runtime source at `16fcd3f` for isolated integration QA.
+Runtime orientation found no local Eweser services. The approved browser pool
+routes `write` leases to a saved virtual-worker profile. It routes fresh
+`isolated` leases only for `read` or `interact`. Those leases prohibit keyboard
+and JavaScript execution; permitted clicks and typing are limited to filters,
+tabs, disclosures, and pagination.
+
+The saved-worker lease was released after inventory only. A fresh isolated
+inspection lease was also acquired and released. No tab was navigated, edited,
+or closed, and no local test process or fixture was started. The actual-browser,
+keyboard, visual, and real reconnect gaps remain open. Mounted tests are not live
+browser proof.
+
+The small missing capability is a pool-supported `isolated` **write** lease for
+an empty disposable profile, retaining the same ownership/scope restrictions.
+That routing change belongs to the shared browser runtime, outside this PR.
+Once available, an owned loopback fixture can use the existing Vite, Yjs,
+TipTap, and Hocuspocus packages without a new dependency or real authentication.
