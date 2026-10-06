@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import type { Editor, JSONContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -10,16 +18,21 @@ import Table from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
 import TableHeader from '@tiptap/extension-table-header';
 import TableCell from '@tiptap/extension-table-cell';
-import Collaboration from '@tiptap/extension-collaboration';
+import Collaboration, { isChangeOrigin } from '@tiptap/extension-collaboration';
 import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
-import { mergeAttributes, Node } from '@tiptap/core';
+import {
+  Editor as SeedEditor,
+  createNodeFromContent,
+  mergeAttributes,
+  Node,
+} from '@tiptap/core';
 import type { Extension } from '@tiptap/core';
 import type { EditorCommandId } from '@/editor/commands';
 import { getCommandById } from '@/editor/commands';
 import { applyMarkdownInputRules } from '@/editor/input-rules';
 import type { SlashMenuState } from '@/editor/slash-commands';
 import { resolveSlashMenuState } from '@/editor/slash-commands';
-import type { XmlFragment } from 'yjs';
+import type { Doc, XmlFragment } from 'yjs';
 import type { Note, Room } from '@eweser/db';
 import type { AttachmentResolverContext } from '@/utils/attachment-resolver';
 import {
@@ -33,7 +46,17 @@ import {
   liftEmptyTaskItem,
   TaskItemWithExit,
 } from '@/editor/task-item';
-import { getTiptapFragment, isEmptyFragment } from '@/editor/yjs';
+import { getTiptapFragment } from '@/editor/yjs';
+import {
+  currentNoteText,
+  preserveEditorDraft,
+  readPreservedEditorDraft,
+  editorTextStates,
+  persistEditorText,
+  parseEditorTextState,
+  readEditorTextState,
+  replaceEditorText,
+} from '@/editor/text-sync';
 import { EditorContextMenu } from '@/components/editor-context-menu';
 import { EditorBubbleMenu } from '@/components/editor-bubble-menu';
 import { EditorSlashMenu } from '@/components/editor-slash-menu';
@@ -121,6 +144,12 @@ function debounce<TArgs extends unknown[]>(
       lastArgs = null;
       if (nextArgs) func(...nextArgs);
     }, wait);
+  };
+
+  debounced.cancel = () => {
+    if (timeout) clearTimeout(timeout);
+    timeout = null;
+    lastArgs = null;
   };
 
   debounced.flush = () => {
@@ -258,14 +287,6 @@ export function isCollaborationReady(
   );
 }
 
-function saveEditor(
-  editor: Editor,
-  note: Note,
-  save: (text: string, note: Note) => void
-) {
-  save(serializeEditorMarkdown(editor), note);
-}
-
 function serializeEditorMarkdown(editor: Editor): string {
   const editorJson = measureEweNotePerformance(
     EWE_NOTE_PERFORMANCE_SPANS.editorSnapshot,
@@ -315,7 +336,8 @@ export function shouldRefreshLocalEditorContent({
   if (!hasEditor || sourceMode || focused || hasPendingEditorChanges) {
     return false;
   }
-  if (collaborationReady) return pendingEditorMarkdown === null;
+  // Shared fragments are replaced through an atomic pointer, never setContent.
+  if (collaborationReady) return false;
   return pendingEditorMarkdown === null || pendingEditorMarkdown === noteText;
 }
 
@@ -336,11 +358,39 @@ export function TiptapEditor({
   attachmentContext,
 }: TiptapEditorProps) {
   const noteRef = useRef(note);
-  const fragment = useMemo(
-    () => getTiptapFragment(doc, selectedNoteId),
-    [doc, selectedNoteId]
+  noteRef.current = note;
+  const ydoc = doc as unknown as Doc;
+  const textStates = useMemo(() => editorTextStates(ydoc), [ydoc]);
+  const subscribeTextState = useCallback(
+    (notify: () => void) => {
+      textStates.observe(notify);
+      return () => textStates.unobserve(notify);
+    },
+    [textStates]
   );
-  const collaborationReady = isCollaborationReady(fragment, provider);
+  const getTextState = useCallback(
+    () => textStates.get(selectedNoteId),
+    [selectedNoteId, textStates]
+  );
+  const textStateValue = useSyncExternalStore(
+    subscribeTextState,
+    getTextState,
+    getTextState
+  );
+  const textState = useMemo(
+    () => parseEditorTextState(textStateValue),
+    [textStateValue]
+  );
+  const fragmentName = textState?.fragmentName;
+  const fragment = useMemo(
+    () =>
+      fragmentName
+        ? ydoc.getXmlFragment(fragmentName)
+        : getTiptapFragment(doc, selectedNoteId),
+    [doc, ydoc, selectedNoteId, fragmentName]
+  );
+  const collaborationReady =
+    !readOnly && isCollaborationReady(fragment, provider);
   const initialHtmlRef = useRef<InitialEditorHtmlState | null>(null);
   initialHtmlRef.current = resolveInitialEditorHtml(
     initialHtmlRef.current,
@@ -362,6 +412,9 @@ export function TiptapEditor({
     null
   );
   const [focused, setFocused] = useState(false);
+  const [preservedDraft, setPreservedDraft] = useState<string | null>(() =>
+    readPreservedEditorDraft(ydoc, selectedNoteId)
+  );
   const [sourceValue, setSourceValue] = useState(note.text);
   const [linkDialog, setLinkDialog] = useState<LinkDialogState>({
     open: false,
@@ -369,17 +422,88 @@ export function TiptapEditor({
     href: '',
   });
 
+  const saveCallbacksRef = useRef({
+    onSaveMarkdown,
+    collaborationReady,
+  });
+  saveCallbacksRef.current = { onSaveMarkdown, collaborationReady };
+  const populateFragment = useCallback(
+    (target: XmlFragment, markdown: string) => {
+      const seed = new SeedEditor({
+        extensions: [
+          ...buildExtensions({ fragment: target, userName, userColor }),
+          Collaboration.configure({ fragment: target }),
+        ],
+      });
+      try {
+        seed.commands.setContent(
+          parseEditorMarkdown(markdown, attachmentContext),
+          false
+        );
+      } finally {
+        seed.destroy();
+      }
+    },
+    [attachmentContext, userName, userColor]
+  );
+  const persistMarkdown = useCallback(
+    (activeEditor: Editor, expectedNote: Note) => {
+      const markdown = serializeEditorMarkdown(activeEditor);
+      const boundFragment = activeEditor.extensionManager.extensions.find(
+        (extension) => extension.name === 'collaboration'
+      )?.options.fragment as XmlFragment | undefined;
+      const save = () =>
+        saveCallbacksRef.current.onSaveMarkdown(
+          markdown,
+          boundFragment ? noteRef.current : expectedNote
+        );
+      const saved = boundFragment
+        ? persistEditorText(ydoc, selectedNoteId, boundFragment, markdown, save)
+        : currentNoteText(ydoc, selectedNoteId) === expectedNote.text &&
+          (save(), currentNoteText(ydoc, selectedNoteId) === markdown);
+      if (saved) pendingEditorMarkdownRef.current = markdown;
+      else if (markdown !== currentNoteText(ydoc, selectedNoteId)) {
+        if (!boundFragment) preserveEditorDraft(ydoc, selectedNoteId, markdown);
+        setPreservedDraft(markdown);
+      }
+      return saved;
+    },
+    [selectedNoteId, ydoc]
+  );
+  const persistSource = useCallback(
+    (markdown: string, expectedNote: Note) => {
+      if (currentNoteText(ydoc, selectedNoteId) !== expectedNote.text) {
+        preserveEditorDraft(ydoc, selectedNoteId, markdown);
+        setPreservedDraft(markdown);
+        return false;
+      }
+      let saved = false;
+      ydoc.transact(() => {
+        saveCallbacksRef.current.onSaveMarkdown(markdown, expectedNote);
+        if (currentNoteText(ydoc, selectedNoteId) !== markdown) return;
+        if (saveCallbacksRef.current.collaborationReady) {
+          replaceEditorText(ydoc, selectedNoteId, markdown, (target) =>
+            populateFragment(target, markdown)
+          );
+        }
+        pendingEditorMarkdownRef.current = markdown;
+        saved = true;
+      });
+      return saved;
+    },
+    [populateFragment, selectedNoteId, ydoc]
+  );
+  const persistCallbacksRef = useRef({ persistMarkdown, persistSource });
+  persistCallbacksRef.current = { persistMarkdown, persistSource };
   if (!debouncedEditorSaveRef.current) {
-    debouncedEditorSaveRef.current = debounce((editor, currentNote) => {
-      const markdown = serializeEditorMarkdown(editor);
-      pendingEditorMarkdownRef.current = markdown;
-      onSaveMarkdown(markdown, currentNote);
+    debouncedEditorSaveRef.current = debounce((activeEditor, expectedNote) => {
+      if (!activeEditor.isDestroyed)
+        persistCallbacksRef.current.persistMarkdown(activeEditor, expectedNote);
     }, 750);
   }
   if (!debouncedSourceSaveRef.current) {
-    debouncedSourceSaveRef.current = debounce((markdown, currentNote) => {
-      pendingEditorMarkdownRef.current = markdown;
-      onSaveMarkdown(markdown, currentNote);
+    debouncedSourceSaveRef.current = debounce((markdown, expectedNote) => {
+      persistCallbacksRef.current.persistSource(markdown, expectedNote);
     }, 750);
   }
 
@@ -395,15 +519,46 @@ export function TiptapEditor({
   }, [note, sourceMode]);
 
   const extensions = useMemo(
-    () => buildExtensions({ fragment, provider, userName, userColor }),
-    [fragment, provider, userColor, userName]
+    () =>
+      buildExtensions({
+        fragment,
+        provider: readOnly ? undefined : provider,
+        userName,
+        userColor,
+      }),
+    [fragment, provider, readOnly, userColor, userName]
+  );
+
+  const shouldMirrorCollaborativeChanges = useCallback(
+    (activeEditor: Editor) => {
+      const state = readEditorTextState(ydoc, selectedNoteId);
+      const boundFragment = activeEditor.extensionManager.extensions.find(
+        (extension) => extension.name === 'collaboration'
+      )?.options.fragment as XmlFragment | undefined;
+      const text = currentNoteText(ydoc, selectedNoteId);
+      if (
+        !state ||
+        text !== state.markdown ||
+        boundFragment !== ydoc.getXmlFragment(state.fragmentName)
+      )
+        return false;
+      const expectedJson = createNodeFromContent(
+        parseEditorMarkdown(text, attachmentContext),
+        activeEditor.schema,
+        { slice: false }
+      ).toJSON();
+      return (
+        JSON.stringify(expectedJson) !== JSON.stringify(activeEditor.getJSON())
+      );
+    },
+    [attachmentContext, selectedNoteId, ydoc]
   );
 
   const editor = useEditor(
     {
       extensions,
       editable: !readOnly,
-      content: provider ? undefined : initialHtml,
+      content: collaborationReady ? undefined : initialHtml,
       editorProps: {
         attributes: {
           class:
@@ -432,13 +587,32 @@ export function TiptapEditor({
         },
       },
       onCreate({ editor }) {
-        if (!collaborationReady || isEmptyFragment(fragment)) {
+        if (!collaborationReady) {
           editor.commands.setContent(initialHtml, false);
+        }
+        if (collaborationReady && shouldMirrorCollaborativeChanges(editor)) {
+          hasPendingEditorChangesRef.current = true;
+          debouncedEditorSaveRef.current?.(editor, noteRef.current);
         }
         onEditorReady?.(editor);
       },
-      onUpdate({ editor }) {
-        if (readOnly || suppressEditorSaveRef.current || sourceMode) {
+      onUpdate({ editor, transaction }) {
+        if (
+          !transaction.docChanged ||
+          readOnly ||
+          suppressEditorSaveRef.current ||
+          sourceMode
+        ) {
+          return;
+        }
+
+        if (isChangeOrigin(transaction)) {
+          // Mirror real peer edits only when source and active generation agree.
+          // Hydration and superseded fragment updates must not normalize or save.
+          if (shouldMirrorCollaborativeChanges(editor)) {
+            hasPendingEditorChangesRef.current = true;
+            debouncedEditorSaveRef.current?.(editor, noteRef.current);
+          }
           return;
         }
 
@@ -475,11 +649,54 @@ export function TiptapEditor({
         onEditorFocusChange?.(false);
       },
     },
-    [selectedNoteId, doc, provider?.awareness, readOnly]
+    [selectedNoteId, doc, provider?.awareness, readOnly, fragment]
   );
 
+  useLayoutEffect(() => {
+    if (!collaborationReady || !editor) return;
+    const state = readEditorTextState(ydoc, selectedNoteId);
+    const authoritativeText =
+      currentNoteText(ydoc, selectedNoteId) ?? note.text;
+    const boundFragment = editor.extensionManager.extensions.find(
+      (extension) => extension.name === 'collaboration'
+    )?.options.fragment as XmlFragment | undefined;
+    const pointerChanged =
+      boundFragment !== undefined && boundFragment !== fragment;
+    const externallyReplaced = state?.markdown !== authoritativeText;
+    if (!pointerChanged && !externallyReplaced) return;
+    if (
+      hasPendingEditorChangesRef.current &&
+      pendingEditorMarkdownRef.current !== authoritativeText
+    ) {
+      const draft = sourceMode ? sourceValue : serializeEditorMarkdown(editor);
+      preserveEditorDraft(ydoc, selectedNoteId, draft);
+      setPreservedDraft(draft);
+    }
+    debouncedEditorSaveRef.current?.cancel();
+    debouncedSourceSaveRef.current?.cancel();
+    hasPendingEditorChangesRef.current = false;
+    pendingEditorMarkdownRef.current = null;
+    if (sourceMode) setSourceValue(authoritativeText);
+    if (externallyReplaced) {
+      replaceEditorText(ydoc, selectedNoteId, authoritativeText, (target) =>
+        populateFragment(target, authoritativeText)
+      );
+    }
+  }, [
+    collaborationReady,
+    editor,
+    fragment,
+    note.text,
+    populateFragment,
+    selectedNoteId,
+    sourceMode,
+    sourceValue,
+    textStateValue,
+    ydoc,
+  ]);
+
   useEffect(() => {
-    editor?.setEditable(!readOnly);
+    editor?.setEditable(!readOnly, false);
     if (readOnly && sourceMode) {
       onSourceModeChange?.(false);
     }
@@ -524,16 +741,26 @@ export function TiptapEditor({
     if (readOnly || !onSourceModeChange) return;
 
     if (!sourceMode && editor) {
-      const markdown = serializeEditorMarkdown(editor);
-      setSourceValue(markdown);
-      debouncedEditorSaveRef.current?.flush();
-      onSaveMarkdown(markdown, noteRef.current);
+      debouncedEditorSaveRef.current?.cancel();
+      if (hasPendingEditorChangesRef.current)
+        persistMarkdown(editor, noteRef.current);
+      setSourceValue(
+        currentNoteText(ydoc, selectedNoteId) ?? noteRef.current.text
+      );
       onSourceModeChange(true);
       return;
     }
 
     onSourceModeChange(false);
-  }, [editor, onSaveMarkdown, onSourceModeChange, readOnly, sourceMode]);
+  }, [
+    editor,
+    persistMarkdown,
+    onSourceModeChange,
+    readOnly,
+    sourceMode,
+    selectedNoteId,
+    ydoc,
+  ]);
 
   const requestLink = useCallback(
     ({ kind, href }: { kind: 'link' | 'external-link'; href?: string }) => {
@@ -605,22 +832,23 @@ export function TiptapEditor({
   );
 
   const exitSourceMode = useCallback(() => {
-    debouncedSourceSaveRef.current?.flush();
-    onSaveMarkdown(sourceValue, noteRef.current);
-    suppressEditorSaveRef.current = true;
-    editor?.commands.setContent(
-      parseEditorMarkdown(sourceValue, attachmentContext),
-      false
-    );
-    window.setTimeout(() => {
+    debouncedSourceSaveRef.current?.cancel();
+    if (!persistSource(sourceValue, noteRef.current)) return;
+    if (!collaborationReady) {
+      suppressEditorSaveRef.current = true;
+      editor?.commands.setContent(
+        parseEditorMarkdown(sourceValue, attachmentContext),
+        false
+      );
       suppressEditorSaveRef.current = false;
-    }, 500);
+    }
     onSourceModeChange?.(false);
   }, [
     attachmentContext,
+    collaborationReady,
     editor,
-    onSaveMarkdown,
     onSourceModeChange,
+    persistSource,
     sourceValue,
   ]);
 
@@ -669,6 +897,22 @@ export function TiptapEditor({
 
   return (
     <div className="tiptap-editor">
+      {preservedDraft !== null ? (
+        <details
+          className="mb-4 rounded border border-border p-3"
+          data-cy="ewe-note-preserved-draft"
+        >
+          <summary>
+            Another update arrived. Your unsaved text is preserved here.
+          </summary>
+          <textarea
+            aria-label="Preserved unsaved text"
+            readOnly
+            value={preservedDraft}
+            className="mt-2 min-h-32 w-full"
+          />
+        </details>
+      ) : null}
       {readOnly ? (
         <div
           className="mb-4 inline-flex rounded-full border border-border bg-muted/60 px-3 py-1 text-xs font-medium text-muted-foreground"
@@ -680,7 +924,7 @@ export function TiptapEditor({
       ) : (
         <EditorToolbar
           editor={editor}
-          onSave={() => saveEditor(editor, noteRef.current, onSaveMarkdown)}
+          onSave={() => persistMarkdown(editor, noteRef.current)}
           focused={focused}
           commandContext={commandContext}
         />

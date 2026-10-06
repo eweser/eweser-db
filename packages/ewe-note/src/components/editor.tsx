@@ -156,6 +156,7 @@ function EditorInternal({
           />
         )}
         <TiptapEditor
+          key={note._ref}
           note={note}
           doc={doc}
           provider={provider}

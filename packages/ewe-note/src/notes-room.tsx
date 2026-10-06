@@ -124,6 +124,11 @@ export const useNotesRoom = (
 
   const updateNoteText = (text: string, note?: Note) => {
     if (!note) return;
+    // A deferred editor save must not replace an external text update or
+    // metadata changed after its snapshot was taken.
+    const currentNote = Notes.get(note._id);
+    if (!currentNote || currentNote.text !== note.text) return;
+    note = currentNote;
     if (dismissDefaultTutorialIfChecked(text, note)) return;
 
     const frontmatterTitle = note.frontmatter?.title;
