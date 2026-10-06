@@ -40,7 +40,8 @@ independent cheap PR shepherd and deciding activation.
 
 - **Id**: `run-1`
 - **UI classification**: `ui: true`
-- **Browser checkpoint**: deferred under the source-only boundary.
+- **Browser checkpoint**: completed with two new managed test tabs and an owned
+  loopback fixture after parent scope clarification.
 - **Deliverable**: A full Markdown replacement seeds a unique fragment and selects
   it atomically through `tiptap:text-state`. Concurrent replacements choose one
   complete fragment through Y.Map resolution. Human edits retain normal Yjs
@@ -91,7 +92,8 @@ merge or deployment authority for this session.
 
 Source run implemented. All 276 package tests, package lint, type check, code
 index validation, and production build passed. Final verification is recorded in
-the PR receipt. No live board, browser, or production changes.
+the PR receipt. Focused local browser QA also passed without runtime source
+changes. No existing user tabs, live board, or production state changed.
 
 External Markdown updates the existing note's text. The editor seeds a unique
 XML fragment and atomically publishes its room-backed pointer. Updated clients
@@ -103,9 +105,9 @@ with its acknowledgement. A superseded save retains the human draft instead.
 
 - Live stale writer identity and the running filesystem-sync route are unproven.
   The repository's CLI route is tested, not claimed to be configured in production.
-- Browser screenshots and visual assessment are deferred because the parent
-  explicitly disallowed live browser/tab changes in this source phase. Mounted
-  tests prove behavior, not responsive appearance or real WebSocket reconnects.
+- Focused local browser and recovery-panel QA passed as recorded below. The full
+  Notes application shell, real authentication, and production sync deployment
+  remain outside this disposable fixture check.
 - Prior XML fragments and recovery drafts are retained rather than deleted. Each
   full replacement adds a fragment; retention/cleanup needs separate authority.
 - Legacy fragment content remains intact. Pending drafts from updated clients are
@@ -126,23 +128,59 @@ A successful immediate MCP readback does not establish editor stability. Future
 external-write QA must include an already-open client, deferred save, and two
 real Yjs replicas; unchanged-document update events must not count as human edits.
 
-### Isolated browser verification attempt
+### Managed browser verification outcome
 
-The parent accepted runtime source at `16fcd3f` for isolated integration QA.
-Runtime orientation found no local Eweser services. The approved browser pool
-routes `write` leases to a saved virtual-worker profile. It routes fresh
-`isolated` leases only for `read` or `interact`. Those leases prohibit keyboard
-and JavaScript execution; permitted clicks and typing are limited to filters,
-tabs, disclosures, and pagination.
+The parent accepted runtime source at `16fcd3f` and clarified that an existing
+managed virtual write lease is suitable for disposable local testing. The earlier
+empty-profile requirement was a scope interpretation, not a missing shared
+capability. No browser runtime or profile change was required.
 
-The saved-worker lease was released after inventory only. A fresh isolated
-inspection lease was also acquired and released. No tab was navigated, edited,
-or closed, and no local test process or fixture was started. The actual-browser,
-keyboard, visual, and real reconnect gaps remain open. Mounted tests are not live
-browser proof.
+After fresh pool status, the normal synthetic-capability route allocated a managed
+worker. The test created exactly two new tabs and retained their explicit page
+handles. Calls targeted those handles only. An owned Vite fixture loaded the real
+TipTap component, real keyboard input, separate Y.Doc replicas, and an in-memory
+Hocuspocus relay on separately bound loopback listeners. Tab broadcasting was
+disabled for the WebSocket-only cases. No dependency installation, account login,
+production connection, or existing user tab interaction occurred.
 
-The small missing capability is a pool-supported `isolated` **write** lease for
-an empty disposable profile, retaining the same ownership/scope restrictions.
-That routing change belongs to the shared browser runtime, outside this PR.
-Once available, an owned loopback fixture can use the existing Vite, Yjs,
-TipTap, and Hocuspocus packages without a new dependency or real authentication.
+| Case                                                  | Observed result                                                                                                                                                                                               |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Already-open focused editor receives external text    | Both clients show one current heading/body; canonical Markdown keeps exact trailing newlines; zero automatic saves.                                                                                           |
+| Pending keyboard input during replacement             | The external source wins; the human input remains in a recovery draft and survives editor close/reopen.                                                                                                       |
+| Ordinary concurrent keyboard typing                   | Both clients and Markdown contain both typed contributions; editor JSON converges; one debounced save per client.                                                                                             |
+| Source-mode typing and return to rich editor          | Both clients receive exact source; explicit save/exit actions complete; idle save counters remain stable.                                                                                                     |
+| Actual socket disconnect/reconnect with pending input | Client A records connected/disconnected/connecting/connected, misses the external change while offline, then receives it after reconnect. Pending input is preserved; A's save count stays unchanged.         |
+| Source-mode external replacement with task list/table | Keyboard shortcut enters source mode; superseded source draft is retained; the fresh source textarea and both rich editors converge. Exact Markdown, one heading, one table, and note metadata remain intact. |
+| Recovery panel keyboard and layout                    | Enter opens the disclosure; Select All selects 55/55 draft characters; a keystroke cannot modify the read-only draft. At a 390-pixel viewport, page width stays 390 pixels.                                   |
+
+No page errors occurred in the successful cases. The fixture's document text,
+selected pointer, fragment JSON, save counts, connection events, and recovery draft
+were read back after operations and idle debounce intervals. These are actual
+browser and local WebSocket results, not mounted-test results.
+
+Screenshots inspected:
+
+- [Desktop recovery panel](./pr104-qa/recovery-desktop.png): aligned panel and note
+  margins; clear padding, readable text, and visible keyboard focus. The panel is
+  spacious and the draft field does not clip content.
+- [Mobile recovery panel](./pr104-qa/recovery-mobile.png): summary wraps onto two
+  lines; the 316-pixel draft field fits inside the 342-pixel panel. No horizontal
+  overflow or cramped controls appeared at 390 pixels.
+- [Rich source after replacement](./pr104-qa/rich-desktop.png): one heading,
+  correctly aligned task controls, a legible table, and a distinct recovery panel.
+
+The recovery panel looks acceptable at both tested widths. These screenshots show
+an isolated editor fixture, not the full authenticated application shell.
+
+Temporary fixture startup encountered the host's file-watcher limit. Disabling
+watching in the owned fixture resolved it without changing host settings. Vite's
+middleware ordering was corrected inside that temporary fixture. Neither issue
+required a runtime source change. All owned tabs, test processes, and the managed
+lease were closed or released after evidence capture. The fixture source and raw
+readback proof remain in private state for reproducibility.
+
+Limits: this checks updated clients only, one short disconnect/reconnect, and
+uncommitted pending input. It does not establish long-offline whole-text conflict
+policy, legacy-client safety, live writer identity, live filesystem-sync setup,
+production authentication, or production deployment. The parent still owns the
+PR hold, separate cheap shepherd, activation, and current-plan restoration.
