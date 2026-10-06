@@ -13,7 +13,9 @@ bridge, layout chrome, sidebar, dialogs, theme controls, and local UI primitives
 
 ## Start Here
 
-- [`editor.tsx`](./editor.tsx): TipTap, Yjs collaboration, remote refresh, and save bridge.
+- [`editor.tsx`](./editor.tsx): Editor surface composition and controls.
+- [`tiptap-editor.tsx`](./tiptap-editor.tsx): TipTap, Yjs fragment reconciliation,
+  guarded autosave, and recoverable conflict drafts.
 - [`layout.tsx`](./layout.tsx): App chrome, topbar, sidebar, and focus layout.
 - [`app-sidebar.tsx`](./app-sidebar.tsx): Main navigation and room/note sidebar.
 - [`layout-shortcuts.ts`](./layout-shortcuts.ts): Keyboard layout state rules.
@@ -26,6 +28,8 @@ bridge, layout chrome, sidebar, dialogs, theme controls, and local UI primitives
 
 - Editor writes should flow through `useNotesRoom()` and `@eweser/db` document
   helpers.
+- Collaborative source refresh must not call `setContent` on a shared fragment
+  from multiple clients; use the room-backed text reconciliation helper.
 - Layout controls must keep mobile and desktop sidebar state coherent.
 - UI changes should preserve existing `data-cy` selectors or update E2E tests.
 

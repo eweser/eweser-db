@@ -47,7 +47,7 @@ describe('shouldRefreshLocalEditorContent', () => {
     ).toBe(true);
   });
 
-  it('refreshes collaborative content when no local edit is pending', () => {
+  it('does not replace a collaborative fragment in place', () => {
     expect(
       shouldRefreshLocalEditorContent({
         collaborationReady: true,
@@ -58,7 +58,7 @@ describe('shouldRefreshLocalEditorContent', () => {
         pendingEditorMarkdown: null,
         sourceMode: false,
       })
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it('protects pending collaborative edits from remote refreshes', () => {

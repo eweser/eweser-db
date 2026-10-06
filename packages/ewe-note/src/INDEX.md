@@ -23,6 +23,8 @@ helpers.
   starts note-room sync before loading other account rooms in the background.
 - [`user.tsx`](./user.tsx): Resolves signed-in name, email, and avatar from the
   trusted app identity endpoint plus synced profile overrides.
+- [`editor/text-sync.ts`](./editor/text-sync.ts): Room-backed Markdown and
+  collaborative fragment reconciliation, guarded saves, and preserved drafts.
 - [`components/INDEX.md`](./components/): Editor, layout, sidebar, and UI
   component map.
 - [`cli/INDEX.md`](./cli/): Vault import, export, and sync CLI map.
@@ -47,6 +49,8 @@ helpers.
   note content.
 - Import/export code is user-data sensitive and should avoid lossy transforms.
 - App loading waits until a selected room, note, and Yjs document are ready.
+- Whole Markdown replacements select a fully seeded fresh collaborative fragment;
+  delayed saves cannot replace newer source text or metadata.
 - Browser-mounted Markdown vaults use the existing notes room and editor;
   EweNote changes are written back through persisted local file handles.
 

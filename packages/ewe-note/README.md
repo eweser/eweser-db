@@ -61,3 +61,20 @@ Keep the matrix honest. It distinguishes:
 - [ ] Collaborative cursors for real-time editing
 - [ ] Advanced search across notes
 - [ ] UI-level vault import/export workflow
+
+## Markdown and collaborative editor synchronization
+
+External Markdown writes (MCP, vault import, and file sync) update the existing
+note's `text`. An open editor seeds a separate Yjs fragment and atomically selects
+it through the room's `tiptap:text-state` map. Concurrent replacements select one
+complete fragment instead of merging duplicate inserted paragraphs. Ordinary
+human edits continue to use Yjs collaboration in that selected fragment.
+
+Autosaves check the selected fragment and latest source before updating the
+Markdown mirror. If an external replacement supersedes pending human input, the
+input is kept in the same room's `tiptap:recovered-drafts` map and shown in a
+copyable recovery panel. Prior fragments remain available; this change does not
+collect or delete them. Recovery drafts are not automatically replayed.
+
+All editor clients must run this reconciliation version before relying on live
+external writes. Older open clients can still write from the legacy fragment.
