@@ -48,6 +48,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { getSyncStatusDotClass } from './sync-status-visual';
 import { canWriteRoom } from '../lib/room-write-access';
+import { DOCS_LINKS } from '../lib/docs-links';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import {
@@ -540,6 +541,7 @@ function SidebarContent({
               ? 'Create a nested folder inside the selected parent folder.'
               : 'Folders live in your vault, so this folder and its notes sync to your other signed-in devices.'
         }
+        learnMoreHref={DOCS_LINKS.vaultsAndFolders}
         initialName={folderDialog?.initialName ?? ''}
         submitLabel={folderDialog?.mode === 'rename' ? 'Rename' : 'Create'}
         inputLabel="Folder name"
@@ -967,6 +969,7 @@ function NameDialog({
   onOpenChange,
   title,
   description,
+  learnMoreHref,
   initialName,
   submitLabel,
   inputLabel,
@@ -978,6 +981,7 @@ function NameDialog({
   onOpenChange: (open: boolean) => void;
   title: string;
   description: string;
+  learnMoreHref?: string;
   initialName: string;
   submitLabel: string;
   inputLabel: string;
@@ -1002,7 +1006,23 @@ function NameDialog({
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+          <DialogDescription>
+            {description}
+            {learnMoreHref ? (
+              <>
+                {' '}
+                <a
+                  data-cy="ewe-note-dialog-learn-more"
+                  href={learnMoreHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline underline-offset-2 hover:text-foreground"
+                >
+                  Learn more
+                </a>
+              </>
+            ) : null}
+          </DialogDescription>
         </DialogHeader>
         <label className="space-y-2 text-sm">
           <span className="text-muted-foreground">{inputLabel}</span>

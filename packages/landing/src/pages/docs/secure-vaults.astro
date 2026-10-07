@@ -1,0 +1,76 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+---
+
+<DocsLayout
+  title="Secure vaults — EweserDB docs"
+  description="End-to-end encrypted vaults in Ewe Note: how the recovery phrase works, what stays on your device, and which features stop working."
+  heading="Secure vaults"
+  standfirst="A secure vault is encrypted on your device before anything is sent. The server stores bytes it cannot read, and neither can we."
+>
+  <h2>Standard versus secure</h2>
+  <p>
+    An ordinary vault is stored as plain text on the sync server. It is private
+    in the sense that access is yours to grant, but it is not end-to-end
+    encrypted. The badge in the sidebar says <strong>Standard</strong>.
+  </p>
+  <p>
+    A secure vault encrypts content in the browser with a key that never leaves
+    your device. The badge says <strong>E2EE</strong> when it is unlocked and
+    <strong>Locked</strong> when it is not.
+  </p>
+
+  <h2>Creating one</h2>
+  <p>
+    Press <strong>+ Secure</strong> under the sidebar. You get a recovery phrase once,
+    shown a single time.
+  </p>
+  <div class="docs-callout">
+    <p>
+      <strong>Save the recovery phrase before you dismiss it.</strong> It is the only
+      way back into that vault. Nobody can reset it for you — that is the point of
+      end-to-end encryption, and it is also its sharpest edge.
+    </p>
+  </div>
+
+  <h2>Using it on another device</h2>
+  <p>
+    The encrypted vault syncs like any other, but the key does not travel with
+    it. On a second device the vault appears locked. Choose <strong
+      >Unlock</strong
+    > and paste the recovery phrase, or use <strong>Export</strong> on an unlocked
+    device to produce a key and <strong>Import</strong> it on the other one.
+  </p>
+  <p>
+    <strong>Lock</strong> puts the vault back to unreadable on the device you are
+    using, without affecting your other devices.
+  </p>
+
+  <h2>What stops working</h2>
+  <p>
+    Anything that needs the server to read your content is unavailable inside a
+    secure vault:
+  </p>
+  <ul>
+    <li>Server-side search — the server has nothing readable to index.</li>
+    <li>Remote web MCP — a hosted AI client cannot decrypt the room.</li>
+    <li>Public aggregation — encrypted rooms are never published.</li>
+  </ul>
+  <p>
+    Search inside the app still works on the device where the vault is unlocked,
+    because the decrypted copy is right there.
+  </p>
+
+  <h2>When to use one</h2>
+  <p>
+    Use a secure vault for the notes you would not want on someone else's
+    machine in readable form: credentials, medical or legal detail, journals.
+    Keep everyday notes in a standard vault so search and AI access keep
+    working, and accept the trade deliberately rather than encrypting everything
+    and then wondering why search is thin.
+  </p>
+
+  <p class="docs-next">
+    Next: <a href="/docs/keyboard-shortcuts">Keyboard shortcuts</a>.
+  </p>
+</DocsLayout>

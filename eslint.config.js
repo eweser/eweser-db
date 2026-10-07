@@ -41,6 +41,7 @@ export default [
       'packages/mcp-server/src/**/*.ts',
       'examples/federated-search/src/**/*.ts',
       'packages/logger/src/**/*.ts',
+      'packages/landing/src/**/*.ts',
       'scripts/**/*.ts',
     ],
   })),

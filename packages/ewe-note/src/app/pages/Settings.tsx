@@ -31,6 +31,7 @@ import {
   type BrowserVaultImportProgress,
   type BrowserVaultImportResult,
 } from '../lib/browser-vault-import';
+import { DOCS_LINKS } from '../lib/docs-links';
 import {
   getBrowserLocalVaultRoomId,
   pickBrowserLocalVault,
@@ -513,7 +514,16 @@ export function Settings() {
                         <p className="text-sm text-muted-foreground">
                           {canSyncRemotely
                             ? 'Markdown files become normal synced EweNote notes while this desktop keeps writable links to the originals.'
-                            : 'Markdown files become normal local EweNote notes and edits write back to the originals.'}
+                            : 'Markdown files become normal local EweNote notes and edits write back to the originals.'}{' '}
+                          <a
+                            data-cy="ewe-note-settings-vault-learn-more"
+                            href={DOCS_LINKS.localFiles}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="underline underline-offset-2 hover:text-foreground"
+                          >
+                            Learn more
+                          </a>
                         </p>
                       </div>
                       <button

@@ -1,0 +1,80 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import { DOCS_URLS } from '../../lib/docs-nav';
+---
+
+<DocsLayout
+  title="Working with local files — EweserDB docs"
+  description="Open a vault folder so Ewe Note notes stay real Markdown files on your computer, on one machine or on several."
+  heading="Working with local files"
+  standfirst="Files are a projection of the vault, not the vault itself. Any computer can hold them, and a computer that does not still gets every note."
+>
+  <h2>Open a vault folder</h2>
+  <p>
+    In Ewe Note, go to <strong>Settings</strong> and choose
+    <strong>Open vault folder</strong>. Pick a folder of Markdown files — an
+    Obsidian vault works as-is. The files become ordinary notes, and the browser
+    keeps a writable link to the originals, so edits in Ewe Note write back to
+    the same files on disk.
+  </p>
+  <p>
+    The structure comes with them: subfolders become folders, frontmatter, tags
+    and <code>[[wiki links]]</code> are preserved, and
+    <code>.git</code>, <code>.obsidian</code>, <code>.trash</code> and
+    <code>node_modules</code> are skipped.
+  </p>
+  <p>
+    Signed in, those notes also sync like any other note. So the machine with
+    the folder open has real files <em>and</em> sync; your phone has the same notes
+    with no files involved.
+  </p>
+
+  <div class="docs-callout">
+    <p>
+      Writable folder access needs a browser that supports the File System
+      Access API — Chrome, Edge or another Chromium browser on the desktop.
+      Elsewhere you can still import a folder, but edits will not write back to
+      disk.
+    </p>
+  </div>
+
+  <h2>Files on more than one computer</h2>
+  <p>
+    Nothing limits files to one machine. Open the same vault's folder on a
+    second computer and both hold real files, both sync through the same vault.
+    They do not need the same folder path, or the same folder name.
+  </p>
+  <p>
+    For an always-on setup that does not depend on a browser tab being open, run
+    the sync daemon from the repository instead:
+  </p>
+  <pre><code>npx tsx packages/ewe-note/src/cli/vault-sync.ts \
+  --vault /path/to/vault \
+  --room &lt;room-id&gt;</code></pre>
+  <p>
+    It watches the folder and the vault in both directions, and debounces rapid
+    edits. Run it on each machine that should keep files. It is a command-line
+    tool from the <a href={DOCS_URLS.github} target="_blank" rel="noreferrer"
+      >EweserDB repository</a
+    >, not a packaged app, so it suits a desktop you leave running.
+  </p>
+
+  <h2>When the same note changed in both places</h2>
+  <p>
+    The vault version wins and the other version is written next to it as
+    <code>Note (conflict 2026-01-01T12-00-00-000Z).md</code>, then added to the
+    vault too. Nothing is overwritten and nothing is thrown away; you merge the
+    two by hand and delete the copy.
+  </p>
+
+  <h2>Attachments</h2>
+  <p>
+    Images and other attachments sync through object storage rather than by
+    copying local paths, because a path on one computer means nothing on
+    another. A device materialises the file when it needs it.
+  </p>
+
+  <p class="docs-next">
+    Next: <a href="/docs/secure-vaults">Secure vaults</a>.
+  </p>
+</DocsLayout>

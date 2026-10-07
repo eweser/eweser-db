@@ -1,0 +1,60 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import { DOCS_NAV, DOCS_URLS } from '../../lib/docs-nav';
+
+const pages = DOCS_NAV.filter((item) => item.href !== '/docs');
+
+const summaries: Record<string, string> = {
+  '/docs/vaults-and-folders':
+    'What a vault is, what a folder is, and which one your notes actually live in.',
+  '/docs/sync-and-devices':
+    'How a vault reaches your other devices, what happens offline, and what sync does not do.',
+  '/docs/local-files':
+    'Open a vault folder on your computer so notes stay real Markdown files, on one machine or several.',
+  '/docs/secure-vaults':
+    'End-to-end encrypted vaults, the keys that stay on your device, and what you give up.',
+  '/docs/keyboard-shortcuts':
+    'The full shortcut list for Ewe Note, including the workspace pane modes.',
+};
+---
+
+<DocsLayout
+  title="Docs — EweserDB"
+  description="User documentation for Ewe Note and EweserDB: vaults, folders, sync across devices, local files, secure vaults, and keyboard shortcuts."
+  heading="Docs"
+  standfirst="How your data is organised, where it is stored, and how it moves between your devices."
+>
+  <p>
+    These pages are for people using <a href={DOCS_URLS.note}>Ewe Note</a> and other
+    apps built on EweserDB. If you are building on the SDK, read the
+    <a href={DOCS_URLS.developerDocs} target="_blank" rel="noreferrer"
+      >developer docs</a
+    > instead.
+  </p>
+
+  <h2>Start here</h2>
+  <ul>
+    {
+      pages.map((page) => (
+        <li>
+          <a href={page.href}>{page.label}</a> — {summaries[page.href]}
+        </li>
+      ))
+    }
+  </ul>
+
+  <h2>The short version</h2>
+  <p>
+    Your notes live in a <strong>vault</strong>. A vault syncs to every device
+    you sign in on. <strong>Folders</strong> are organisation inside a vault, so they
+    sync with it. Nothing is locked to one machine, and you can keep real Markdown
+    files on as many computers as you like.
+  </p>
+
+  <div class="docs-callout">
+    <p>
+      Ewe Note works signed out. Notes stay in that browser on that device until
+      you sign in, and nothing syncs until then.
+    </p>
+  </div>
+</DocsLayout>
