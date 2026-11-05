@@ -4,6 +4,7 @@
  * Touches: MCP tools, OAuth tokens, agent tokens, DataLayer sessions, and logs.
  * Read before editing: packages/auth-server-hono/src/INDEX.md and AGENTS.md.
  */
+import { createHash } from 'node:crypto';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { createLogger } from '@eweser/logger';
@@ -29,10 +30,23 @@ import { logSecurityEvent } from '../model/security-events.js';
 import { createMcpRequestLifecycle } from '../lib/mcp-request-lifecycle.js';
 
 // ---------------------------------------------------------------------------
-// Session cache — keyed by mcp-session-id header
+// DataLayer cache — keyed by bearer token hash plus room-scope fingerprint
 // ---------------------------------------------------------------------------
+//
+// The streamable HTTP transport runs stateless: it never issues an
+// mcp-session-id. Building a DataLayer downloads the full Yjs state of every
+// room in scope from the sync server, so building one per HTTP request made a
+// single agent session cost tens of MB of sync-server egress per call
+// (765 GB in Oct 2026). Two rules keep that bounded:
+//
+// 1. Requests that cannot touch room data (initialize, notifications,
+//    tools/list, ping) never connect rooms.
+// 2. Requests that do touch room data reuse one synced DataLayer per bearer
+//    token and room scope. A reused layer stays subscribed, so later calls
+//    cost only Yjs deltas.
 
 interface McpSession {
+  createdAt: number;
   dataLayer: DataLayer;
   lastAccessAt: number;
   activeRequests: number;
@@ -47,11 +61,16 @@ const mcpRequestRateLimit = createRateLimit({
 });
 
 // TODO(multi-instance): This module-level Map works for a single Node.js process.
-// For multiple auth-server replicas (horizontal scaling), replace with a Redis-backed
-// session store or switch to stateless mode (re-initialize DataLayer on every request,
-// which is slower but correct). See docs/ai/plans/2026-04-08-chatgpt-web-mcp.md.
+// For multiple auth-server replicas, a replica only reuses its own layers, which
+// is still correct, just less effective. See docs/ai/plans/2026-04-08-chatgpt-web-mcp.md.
 const sessionCache = new Map<string, McpSession>();
 const OAUTH_LAST_USED_UPDATE_INTERVAL_MS = 5 * 60 * 1000;
+const SESSION_TTL_MS = 10 * 60 * 1000;
+// Rebuild a busy layer now and then, so a room that failed to connect at init
+// is retried even when the layer never goes idle long enough to be pruned.
+const SESSION_MAX_AGE_MS = 30 * 60 * 1000;
+const MAX_CACHED_SESSIONS = 25;
+const ROOM_DATA_METHODS = new Set(['tools/call', 'resources/read']);
 
 export function getInternalMcpAuthUrl(): string {
   return env.MCP_INTERNAL_AUTH_URL ?? env.AUTH_SERVER_URL;
@@ -62,23 +81,74 @@ export function getInternalMcpSyncUrl(): string | undefined {
   return syncUrl?.replace('ws://', 'http://').replace('wss://', 'https://');
 }
 
-// Prune sessions idle for more than 30 minutes
-const SESSION_TTL_MS = 30 * 60 * 1000;
-setInterval(
-  () => {
-    const now = Date.now();
-    for (const [id, session] of sessionCache) {
-      if (
-        session.activeRequests === 0 &&
-        now - session.lastAccessAt > SESSION_TTL_MS
-      ) {
-        session.dataLayer.disconnect().catch(() => {});
-        sessionCache.delete(id);
-      }
+function evictSession(id: string, session: McpSession) {
+  session.dataLayer.disconnect().catch(() => {});
+  sessionCache.delete(id);
+}
+
+function pruneSessions(now: number) {
+  for (const [id, session] of sessionCache) {
+    if (
+      session.activeRequests === 0 &&
+      (now - session.lastAccessAt > SESSION_TTL_MS ||
+        now - session.createdAt > SESSION_MAX_AGE_MS)
+    ) {
+      evictSession(id, session);
     }
-  },
-  5 * 60 * 1000
-);
+  }
+}
+
+function enforceSessionCap() {
+  if (sessionCache.size <= MAX_CACHED_SESSIONS) return;
+  const idle = [...sessionCache.entries()]
+    .filter(([, session]) => session.activeRequests === 0)
+    .sort(([, a], [, b]) => a.lastAccessAt - b.lastAccessAt);
+  for (const [id, session] of idle) {
+    if (sessionCache.size <= MAX_CACHED_SESSIONS) break;
+    evictSession(id, session);
+  }
+}
+
+setInterval(() => pruneSessions(Date.now()), 60 * 1000);
+
+/**
+ * True when any JSON-RPC message in the POST body may read or write room data.
+ * Unparseable bodies return false: the transport rejects them without tools.
+ */
+export async function requestNeedsRoomData(request: Request): Promise<boolean> {
+  if (request.method !== 'POST') return false;
+  let body: unknown;
+  try {
+    body = await request.clone().json();
+  } catch {
+    return false;
+  }
+  const messages = Array.isArray(body) ? body : [body];
+  return messages.some(
+    (message) =>
+      typeof message === 'object' &&
+      message !== null &&
+      ROOM_DATA_METHODS.has(String((message as { method?: unknown }).method))
+  );
+}
+
+export function buildDataLayerCacheKey(params: {
+  agentConfig: AgentConfig;
+  rooms: AgentRoom[];
+  sessionId: string | undefined;
+  tokenHash: string;
+}): string {
+  const scope = createHash('sha256')
+    .update(
+      JSON.stringify({
+        agentConfig: params.agentConfig,
+        roomIds: params.rooms.map((room) => room.id).sort(),
+        sessionId: params.sessionId ?? null,
+      })
+    )
+    .digest('hex');
+  return `${params.tokenHash}:${scope}`;
+}
 
 function compactScope(values: string[] | undefined): string[] {
   return Array.from(new Set((values ?? []).filter(Boolean)));
@@ -290,11 +360,12 @@ mcpRouter.all('/', async (c) => {
     return c.json({ error: 'Unauthorized' }, 401);
   }
 
-  // 2. Get or create DataLayer session
+  // 2. Get or create DataLayer
   const sessionId = c.req.header('mcp-session-id');
   if (sessionId && sessionId.length > 128) {
     return c.json({ error: 'Invalid session id' }, 400);
   }
+  const needsRoomData = await requestNeedsRoomData(c.req.raw);
   let ownedDataLayer: DataLayer | undefined;
   let leasedSession: McpSession | undefined;
   let mcpServer: McpServer | undefined;
@@ -324,71 +395,86 @@ mcpRouter.all('/', async (c) => {
     signal.throwIfAborted();
     let dataLayer: DataLayer;
 
-    if (sessionId && sessionCache.has(sessionId)) {
-      const cached = sessionCache.get(sessionId);
-      if (!cached) throw new Error('MCP session disappeared');
-      leasedSession = cached;
-      cached.activeRequests++;
-      cached.lastAccessAt = Date.now();
-      dataLayer = cached.dataLayer;
+    // Build agent config + rooms. These are cheap Postgres reads, and they
+    // keep a cached layer from outliving a change to the token's room scope.
+    let agentConfig: AgentConfig;
+    let agentRooms: AgentRoom[];
+    if (auth.agentConfig) {
+      // Legacy agent token path — look up rooms directly from DB
+      agentConfig = auth.agentConfig;
+      const { rooms: ar } = await buildAgentConfigForUser(
+        auth.userId,
+        auth.permissions
+      );
+      agentRooms = filterRoomsForAgentConfig(ar, agentConfig);
     } else {
-      // Build agent config + rooms
-      let agentConfig: AgentConfig;
-      let agentRooms: AgentRoom[];
+      // OAuth token path
+      const built = await buildAgentConfigForUser(
+        auth.userId,
+        auth.permissions
+      );
+      agentConfig = built.agentConfig;
+      agentRooms = built.rooms;
+    }
+    signal.throwIfAborted();
 
-      if (auth.agentConfig) {
-        // Legacy agent token path — fetch rooms from auth server API
-        agentConfig = auth.agentConfig;
-        // In-process: look up rooms directly from DB
-        const { rooms: ar } = await buildAgentConfigForUser(
-          auth.userId,
-          auth.permissions
-        );
-        agentRooms = filterRoomsForAgentConfig(ar, agentConfig);
-      } else {
-        // OAuth token path
-        const built = await buildAgentConfigForUser(
-          auth.userId,
-          auth.permissions
-        );
-        agentConfig = built.agentConfig;
-        agentRooms = built.rooms;
-      }
-
-      signal.throwIfAborted();
-      // Create DataLayer — it makes internal requests to the sync server
-      dataLayer = new DataLayer(
+    const createDataLayer = () =>
+      new DataLayer(
         agentConfig,
         getInternalMcpAuthUrl(),
         auth.agentToken ?? `oauth-placeholder-${auth.userId}`,
         getInternalMcpSyncUrl()
       );
+
+    const cacheKey = buildDataLayerCacheKey({
+      agentConfig,
+      rooms: agentRooms,
+      sessionId,
+      tokenHash: hashToken(auth.agentToken ?? auth.userId),
+    });
+    if (needsRoomData) pruneSessions(Date.now());
+    const cached = needsRoomData ? sessionCache.get(cacheKey) : undefined;
+
+    if (!needsRoomData) {
+      // Tools are registered but cannot run on this request, so no room is
+      // connected and nothing is downloaded from the sync server.
+      dataLayer = createDataLayer();
+      ownedDataLayer = dataLayer;
+    } else if (cached) {
+      leasedSession = cached;
+      cached.activeRequests++;
+      cached.lastAccessAt = Date.now();
+      dataLayer = cached.dataLayer;
+    } else {
+      // Create DataLayer — it makes internal requests to the sync server
+      dataLayer = createDataLayer();
       ownedDataLayer = dataLayer;
       await dataLayer.init(agentRooms);
       signal.throwIfAborted();
 
-      if (sessionId) {
-        // Another overlapping setup may have populated this session while we
-        // awaited init. Reuse its layer and dispose our unshared duplicate.
-        const existing = sessionCache.get(sessionId);
-        if (existing) {
-          leasedSession = existing;
-          existing.activeRequests++;
-          const duplicate = ownedDataLayer;
-          ownedDataLayer = undefined;
-          await duplicate.disconnect();
-          signal.throwIfAborted();
-          dataLayer = existing.dataLayer;
-        } else {
-          leasedSession = {
-            dataLayer,
-            lastAccessAt: Date.now(),
-            activeRequests: 1,
-          };
-          sessionCache.set(sessionId, leasedSession);
-        }
+      // Another overlapping setup may have populated this key while we
+      // awaited init. Reuse its layer and dispose our unshared duplicate.
+      const existing = sessionCache.get(cacheKey);
+      if (existing) {
+        leasedSession = existing;
+        existing.activeRequests++;
+        existing.lastAccessAt = Date.now();
+        const duplicate = ownedDataLayer;
         ownedDataLayer = undefined;
+        await duplicate.disconnect();
+        signal.throwIfAborted();
+        dataLayer = existing.dataLayer;
+      } else {
+        leasedSession = {
+          createdAt: Date.now(),
+          dataLayer,
+          lastAccessAt: Date.now(),
+          activeRequests: 1,
+        };
+        sessionCache.set(cacheKey, leasedSession);
+        enforceSessionCap();
       }
+      ownedDataLayer = undefined;
     }
 
     // 3. Create MCP server + transport per request
@@ -427,6 +513,11 @@ mcpRouter.all('/', async (c) => {
     log.info({
       method: c.req.method,
       path: c.req.path,
+      // roomData=false requests connect no rooms; cachedLayer=true reuses a
+      // synced layer. Together they show sync-server egress per request.
+      roomData: needsRoomData,
+      cachedLayer: Boolean(cached),
+      roomCount: needsRoomData ? agentRooms.length : 0,
       scope: auth.permissions,
       userId: auth.userId,
     });

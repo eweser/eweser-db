@@ -42,7 +42,7 @@ vi.mock('../model/oauth.js', () => ({
 }));
 vi.mock('../model/agents.js', () => ({
   getAgentConfigByTokenHash: vi.fn(),
-  hashToken: vi.fn(),
+  hashToken: vi.fn((value: string) => `hash-${value}`),
   logAgentAccess: vi.fn(),
 }));
 vi.mock('../model/users.js', () => ({
@@ -127,6 +127,8 @@ describe('MCP response resource ownership', () => {
       expect(state.layers[i].disconnect).not.toHaveBeenCalled();
       await response.text();
       expect(state.layers[i].disconnect).toHaveBeenCalledTimes(1);
+      // Handshake and listing requests never connect rooms.
+      expect(state.layers[i].init).not.toHaveBeenCalled();
     }
     expect(closeServer).toHaveBeenCalledTimes(10);
     expect(closeTransport).toHaveBeenCalledTimes(10);
@@ -144,7 +146,22 @@ describe('MCP response resource ownership', () => {
     const text = response.text();
     gate.resolve();
     expect(await text).toContain('late result');
+    expect(closeServer).toHaveBeenCalledTimes(1);
+    // The synced layer is cached for the next tool call, then pruned when idle.
+    expect(state.layers[0].disconnect).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(12 * 60_000);
     expect(state.layers[0].disconnect).toHaveBeenCalledTimes(1);
+  });
+
+  it('reuses one synced layer for sequential tool calls with the same token', async () => {
+    for (let i = 0; i < 5; i++) {
+      expect(await (await request('tools/call')).text()).toContain('ok');
+    }
+    expect(state.layers).toHaveLength(1);
+    expect(state.layers[0].init).toHaveBeenCalledTimes(1);
+    expect(state.layers[0].disconnect).not.toHaveBeenCalled();
+    expect(closeServer).toHaveBeenCalledTimes(5);
+    expect(closeTransport).toHaveBeenCalledTimes(5);
   });
 
   it('cleans up once on body cancellation and a subsequent request abort', async () => {
@@ -158,7 +175,8 @@ describe('MCP response resource ownership', () => {
     await cancelBody(response, 'client left');
     abort.abort();
     gate.resolve();
-    expect(state.layers[0].disconnect).toHaveBeenCalledTimes(1);
+    // The cached layer survives the request; only per-request resources close.
+    expect(state.layers[0].disconnect).not.toHaveBeenCalled();
     expect(closeServer).toHaveBeenCalledTimes(1);
     expect(closeTransport).toHaveBeenCalledTimes(1);
   });
@@ -187,9 +205,15 @@ describe('MCP response resource ownership', () => {
     state.init = async () => {
       throw new Error('init failed');
     };
-    const response = await request();
+    const response = await request('tools/call');
     expect(response.status).toBe(500);
     expect(state.layers[0].disconnect).toHaveBeenCalledTimes(1);
+    // A failed layer is never cached: the next call builds a new one.
+    state.init = async () => {};
+    const retry = await request('tools/call');
+    expect(retry.status).toBe(200);
+    await retry.text();
+    expect(state.layers).toHaveLength(2);
   });
 
   it('closes both server and transport if connecting the transport rejects', async () => {
@@ -207,7 +231,7 @@ describe('MCP response resource ownership', () => {
     const gate = deferred();
     state.init = () => gate.promise;
     const abort = new AbortController();
-    const pending = request('initialize', undefined, abort.signal);
+    const pending = request('tools/call', undefined, abort.signal);
     await vi.waitFor(() => expect(state.layers).toHaveLength(1));
     abort.abort();
     gate.resolve();
@@ -225,16 +249,20 @@ describe('MCP response resource ownership', () => {
     const first = await request('tools/call');
     const second = await request('tools/call');
     await cancelBody(first);
-    expect(state.layers[0].disconnect).toHaveBeenCalledTimes(1);
-    expect(state.layers[1].disconnect).not.toHaveBeenCalled();
+    expect(state.layers).toHaveLength(1);
+    expect(state.layers[0].disconnect).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(35 * 60_000);
+    // Still leased by the second request, so idle pruning skips it.
+    expect(state.layers[0].disconnect).not.toHaveBeenCalled();
     gate.resolve();
     expect(await second.text()).toContain('still active');
-    expect(state.layers[1].disconnect).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(12 * 60_000);
+    expect(state.layers[0].disconnect).toHaveBeenCalledTimes(1);
   });
 
   it('preserves a shared cached layer across cancellation and idle pruning while a request is active', async () => {
     const session = `cached-${id}`;
-    await (await request('initialize', session)).text();
+    await (await request('tools/call', session)).text();
     const gate = deferred();
     state.read = async () => {
       await gate.promise;
@@ -281,7 +309,7 @@ describe('MCP response resource ownership', () => {
     await rejected;
     await vi.advanceTimersByTimeAsync(0);
     gate.resolve();
-    expect(state.layers[0].disconnect).toHaveBeenCalledTimes(1);
+    expect(state.layers[0].disconnect).not.toHaveBeenCalled();
     expect(closeServer).toHaveBeenCalledTimes(1);
     expect(closeTransport).toHaveBeenCalledTimes(1);
   });
@@ -291,8 +319,8 @@ describe('MCP response resource ownership', () => {
     let next = 0;
     state.init = () => gates[next++].promise;
     const session = `concurrent-setup-${id}`;
-    const first = request('initialize', session);
-    const second = request('initialize', session);
+    const first = request('tools/call', session);
+    const second = request('tools/call', session);
     await vi.waitFor(() => expect(state.layers).toHaveLength(2));
     gates[0].resolve();
     const firstResponse = await first;

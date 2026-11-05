@@ -17,6 +17,10 @@ await initTelemetry('sync-server');
 const log = createLogger('sync-server');
 
 const port = parseInt(process.env.PORT || process.env.SYNC_PORT || '8080', 10);
+// Hocuspocus binds 0.0.0.0 (IPv4 only) by default. Railway private networking
+// resolves *.railway.internal over IPv6, so set SYNC_HOST=:: there. Other
+// services can then sync over the private network, which has no egress fee.
+const address = process.env.SYNC_HOST || '0.0.0.0';
 const dbPath = process.env.SYNC_DB_PATH || '/data/sync.sqlite';
 const secret = process.env.SYNC_AUTH_SECRET || 'test-secret';
 const aggregatorWebhookUrl = process.env.AGGREGATOR_WEBHOOK_URL;
@@ -39,6 +43,7 @@ if (aggregatorWebhookUrl) {
 // Hocuspocus responds 200 OK to all plain HTTP requests by default,
 // so /health works without any custom onRequest hook.
 const server = Server.configure({
+  address,
   port,
   extensions,
   async onRequest(data) {
@@ -66,5 +71,5 @@ const server = Server.configure({
 });
 
 server.listen().then(() => {
-  log.info(`Hocuspocus sync server running on port ${port}`);
+  log.info(`Hocuspocus sync server running on ${address} port ${port}`);
 });
