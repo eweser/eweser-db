@@ -38,6 +38,8 @@ vi.mock('../model/security-events.js', () => ({
 }));
 
 const {
+  buildDataLayerCacheKey,
+  requestNeedsRoomData,
   mcpRouter,
   filterRoomsForAgentConfig,
   getInternalMcpAuthUrl,
@@ -181,5 +183,80 @@ describe('mcpRouter', () => {
   it('prefers internal MCP runtime URLs when provided', () => {
     expect(getInternalMcpAuthUrl()).toBe('http://auth-api:3000');
     expect(getInternalMcpSyncUrl()).toBe('http://sync-server:8080');
+  });
+
+  it('only treats tool calls and resource reads as room-data requests', async () => {
+    const post = (body: unknown) =>
+      new Request('http://localhost/mcp', {
+        method: 'POST',
+        body: typeof body === 'string' ? body : JSON.stringify(body),
+      });
+    const rpc = (method: string) => ({ jsonrpc: '2.0', id: 1, method });
+
+    expect(await requestNeedsRoomData(post(rpc('initialize')))).toBe(false);
+    expect(
+      await requestNeedsRoomData(post(rpc('notifications/initialized')))
+    ).toBe(false);
+    expect(await requestNeedsRoomData(post(rpc('tools/list')))).toBe(false);
+    expect(await requestNeedsRoomData(post(rpc('tools/call')))).toBe(true);
+    expect(await requestNeedsRoomData(post(rpc('resources/read')))).toBe(true);
+    expect(
+      await requestNeedsRoomData(post([rpc('ping'), rpc('tools/call')]))
+    ).toBe(true);
+    expect(await requestNeedsRoomData(post('not json'))).toBe(false);
+    expect(
+      await requestNeedsRoomData(new Request('http://localhost/mcp'))
+    ).toBe(false);
+
+    // The transport still reads the original body after the check.
+    const request = post(rpc('tools/call'));
+    await requestNeedsRoomData(request);
+    expect(await request.json()).toMatchObject({ method: 'tools/call' });
+  });
+
+  it('keys cached layers by token and room scope', () => {
+    const agentConfig = mapDbAgentConfigForMcp({
+      id: 'agent-1',
+      userId: 'user-1',
+      name: 'Agent',
+      type: 'mcp',
+      allowedCollections: [],
+      allowedRooms: [],
+      readAllowedCollections: [],
+      readAllowedRooms: [],
+      writeAllowedCollections: [],
+      writeAllowedRooms: [],
+      writeAllowedFolderIds: [],
+      writeAllowedPathPrefixes: [],
+      permissions: 'read',
+      isActive: true,
+      tokenExpiresAt: null,
+    } as unknown as DbAgentConfig);
+    const room = (id: string) => ({
+      id,
+      name: id,
+      collectionKey: 'notes',
+      syncUrl: null,
+      syncBaseUrl: null,
+    });
+    const key = (tokenHash: string, ids: string[]) =>
+      buildDataLayerCacheKey({
+        agentConfig,
+        rooms: ids.map(room),
+        sessionId: undefined,
+        tokenHash,
+      });
+
+    expect(key('a', ['r1', 'r2'])).toBe(key('a', ['r2', 'r1']));
+    expect(key('a', ['r1'])).not.toBe(key('b', ['r1']));
+    expect(key('a', ['r1'])).not.toBe(key('a', ['r1', 'r2']));
+    expect(
+      buildDataLayerCacheKey({
+        agentConfig: { ...agentConfig, permissions: 'readwrite' },
+        rooms: [room('r1')],
+        sessionId: undefined,
+        tokenHash: 'a',
+      })
+    ).not.toBe(key('a', ['r1']));
   });
 });

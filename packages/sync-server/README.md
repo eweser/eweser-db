@@ -34,11 +34,12 @@ npm run dev:docker  # From repo root
 
 ## Environment Variables
 
-| Variable           | Default              | Description                       |
-| ------------------ | -------------------- | --------------------------------- |
-| `SYNC_PORT`        | `8080`               | WebSocket server port             |
-| `SYNC_DB_PATH`     | `./sync-data.sqlite` | SQLite database path              |
-| `SYNC_AUTH_SECRET` | Required             | Secret for validating auth tokens |
+| Variable           | Default              | Description                                                        |
+| ------------------ | -------------------- | ------------------------------------------------------------------ |
+| `SYNC_PORT`        | `8080`               | WebSocket server port                                              |
+| `SYNC_HOST`        | `0.0.0.0`            | Bind address. Use `::` on Railway so private networking reaches it |
+| `SYNC_DB_PATH`     | `./sync-data.sqlite` | SQLite database path                                               |
+| `SYNC_AUTH_SECRET` | Required             | Secret for validating auth tokens                                  |
 
 ## Docker
 

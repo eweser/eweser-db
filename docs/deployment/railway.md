@@ -66,6 +66,22 @@ SYNC_SERVER_URL=wss://<your-railway-domain>/sync
 SYNC_PUBLIC_URL=wss://<your-railway-domain>/sync
 ```
 
+### Keep service-to-service sync on the private network
+
+Railway bills public egress (about $0.05/GB) but not private-network traffic.
+The hosted MCP endpoint in `auth-api` loads room state from the sync server, so
+point it at the private address instead of the public `wss://` domain:
+
+```env
+# sync-server
+SYNC_HOST=::
+# auth-api
+MCP_INTERNAL_SYNC_URL=ws://sync-server.railway.internal:<sync-server PORT>
+```
+
+In October 2026 this path sent 765 GB of public egress from `sync-server`
+(about $38) because it used the public domain.
+
 For attachments, map Railway Buckets or another S3-compatible provider into the
 `STORAGE_S3_*` variables documented in
 [file-storage.md](./file-storage.md).
