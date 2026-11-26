@@ -567,12 +567,21 @@ export function TiptapEditor({
         },
         handleClickOn(_view, _pos, node, _nodePos, event) {
           const target = event.target;
-          if (!(target instanceof HTMLAnchorElement)) return false;
-          const href = target.getAttribute('href') ?? '';
-          if (!href.startsWith('wiki://')) return false;
-          event.preventDefault();
-          onNavigateWikiLink?.(href);
-          return true;
+          const anchor =
+            target instanceof Element ? target.closest('a[href]') : null;
+          if (!anchor) return false;
+          const href = anchor.getAttribute('href') ?? '';
+          if (href.startsWith('wiki://')) {
+            event.preventDefault();
+            onNavigateWikiLink?.(href);
+            return true;
+          }
+          if (/^(https?:|mailto:)/i.test(href)) {
+            event.preventDefault();
+            window.open(href, '_blank', 'noopener,noreferrer');
+            return true;
+          }
+          return false;
         },
         handleKeyDown(_view, event) {
           if (

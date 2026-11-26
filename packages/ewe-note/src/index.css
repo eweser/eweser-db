@@ -178,6 +178,17 @@ body,
   background: hsl(50 80% 40% / 0.45);
 }
 
+.tiptap-prosemirror a[href] {
+  color: hsl(217 85% 50%);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.dark .tiptap-prosemirror a[href] {
+  color: hsl(213 90% 68%);
+}
+
 .tiptap-prosemirror table {
   border-collapse: collapse;
   display: block;
