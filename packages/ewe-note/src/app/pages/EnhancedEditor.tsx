@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import {
   Star,
@@ -137,6 +137,11 @@ export function EnhancedEditor() {
     a.click();
     URL.revokeObjectURL(url);
   };
+
+  const isWikiNoteResolved = useCallback(
+    (noteName: string) => resolveWikiLink(noteName) !== null,
+    [resolveWikiLink]
+  );
 
   const handleNavigateWikiLink = (href: string) => {
     const parsed = parseWikiHref(href);
@@ -326,6 +331,7 @@ export function EnhancedEditor() {
         onFocusMode={() => setFocusMode(true)}
         editorRoom={editorRoom}
         onNavigateWikiLink={handleNavigateWikiLink}
+        isWikiNoteResolved={isWikiNoteResolved}
         sourceMode={sourceMode}
         onSourceModeChange={setSourceMode}
         readOnly={readOnly}
@@ -365,6 +371,7 @@ export function EditorWorkspace({
   onFocusMode,
   editorRoom,
   onNavigateWikiLink,
+  isWikiNoteResolved,
   sourceMode,
   onSourceModeChange,
   readOnly,
@@ -382,6 +389,7 @@ export function EditorWorkspace({
   onFocusMode: () => void;
   editorRoom: ReturnType<typeof useDb>['selectedRoom'];
   onNavigateWikiLink: (href: string) => void;
+  isWikiNoteResolved?: (noteName: string) => boolean;
   sourceMode: boolean;
   onSourceModeChange: (sourceMode: boolean) => void;
   readOnly: boolean;
@@ -589,6 +597,7 @@ export function EditorWorkspace({
               readOnly={readOnly}
               showFrontmatterEditor={false}
               onNavigateWikiLink={onNavigateWikiLink}
+              isWikiNoteResolved={isWikiNoteResolved}
               sourceMode={sourceMode}
               onSourceModeChange={onSourceModeChange}
             />

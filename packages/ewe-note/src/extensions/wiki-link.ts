@@ -9,6 +9,12 @@
  * and the navigation handler, used when rendering links with wiki:// scheme.
  */
 
+import {
+  findAttachmentForTarget,
+  resolveAttachmentEmbed,
+  type AttachmentResolverContext,
+} from '../utils/attachment-resolver';
+
 export interface WikiLinkResolution {
   noteId: string | null;
   noteName: string;
@@ -64,4 +70,58 @@ export function isVaultAsset(href: string): boolean {
 export function parseVaultAssetHref(href: string): string | null {
   if (!href.startsWith('vault://')) return null;
   return decodeURIComponent(href.slice('vault://'.length));
+}
+
+export type LinkTarget =
+  | { kind: 'note' }
+  | { kind: 'missing-note' }
+  | { kind: 'attachment'; url: string | null };
+
+export interface LinkTargetResolvers {
+  /** Returns true when a note exists for the wiki target. Omit to treat every target as existing. */
+  isNoteResolved?: (noteName: string) => boolean;
+  attachmentContext?: AttachmentResolverContext;
+}
+
+function resolveAttachmentTarget(
+  path: string,
+  attachmentContext: AttachmentResolverContext | undefined
+): LinkTarget | null {
+  if (!attachmentContext) return null;
+  if (!findAttachmentForTarget(path, attachmentContext)) return null;
+  const resolution = resolveAttachmentEmbed(path, attachmentContext);
+  return {
+    kind: 'attachment',
+    url: resolution.status === 'resolved' ? resolution.url : null,
+  };
+}
+
+/**
+ * Classify an internal link href. Returns null for hrefs that are not
+ * wiki:// or vault:// links.
+ */
+export function classifyInternalHref(
+  href: string,
+  { isNoteResolved, attachmentContext }: LinkTargetResolvers
+): LinkTarget | null {
+  const vaultPath = parseVaultAssetHref(href);
+  if (vaultPath !== null) {
+    return (
+      resolveAttachmentTarget(vaultPath, attachmentContext) ?? {
+        kind: 'attachment',
+        url: null,
+      }
+    );
+  }
+
+  const wiki = parseWikiHref(href);
+  if (!wiki) return null;
+  // [[#Heading]] points at the current note.
+  if (!wiki.noteName || !isNoteResolved) return { kind: 'note' };
+  if (isNoteResolved(wiki.noteName)) return { kind: 'note' };
+  return (
+    resolveAttachmentTarget(wiki.noteName, attachmentContext) ?? {
+      kind: 'missing-note',
+    }
+  );
 }

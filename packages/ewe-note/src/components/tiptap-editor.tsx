@@ -27,6 +27,12 @@ import {
   Node,
 } from '@tiptap/core';
 import type { Extension } from '@tiptap/core';
+import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
+import { Decoration, DecorationSet } from '@tiptap/pm/view';
+import {
+  classifyInternalHref,
+  type LinkTargetResolvers,
+} from '@/extensions/wiki-link';
 import type { EditorCommandId } from '@/editor/commands';
 import { getCommandById } from '@/editor/commands';
 import { applyMarkdownInputRules } from '@/editor/input-rules';
@@ -99,6 +105,7 @@ interface TiptapEditorProps {
   userName: string;
   userColor: string;
   onNavigateWikiLink?: (href: string) => void;
+  isWikiNoteResolved?: (noteName: string) => boolean;
   onEditorReady?: (editor: Editor | null) => void;
   onEditorFocusChange?: (focused: boolean) => void;
   readOnly?: boolean;
@@ -226,6 +233,50 @@ const ImageNode = Node.create({
   },
 });
 
+interface LinkDecorationCache {
+  doc: ProseMirrorNode;
+  resolvers: LinkTargetResolvers;
+  decorations: DecorationSet;
+}
+
+/** Marks links to missing notes so they render faded, as in Obsidian. */
+export function getMissingLinkDecorations(
+  doc: ProseMirrorNode,
+  resolvers: LinkTargetResolvers,
+  cacheRef: { current: LinkDecorationCache | null }
+): DecorationSet {
+  const cached = cacheRef.current;
+  if (
+    cached &&
+    cached.doc === doc &&
+    cached.resolvers.isNoteResolved === resolvers.isNoteResolved &&
+    cached.resolvers.attachmentContext === resolvers.attachmentContext
+  ) {
+    return cached.decorations;
+  }
+
+  const decorations: Decoration[] = [];
+  doc.descendants((node, pos) => {
+    if (!node.isText) return;
+    for (const mark of node.marks) {
+      if (mark.type.name !== 'link') continue;
+      const href = String(mark.attrs.href ?? '');
+      if (classifyInternalHref(href, resolvers)?.kind !== 'missing-note') {
+        continue;
+      }
+      decorations.push(
+        Decoration.inline(pos, pos + node.nodeSize, {
+          class: 'wiki-link-missing',
+        })
+      );
+    }
+  });
+
+  const set = DecorationSet.create(doc, decorations);
+  cacheRef.current = { doc, resolvers, decorations: set };
+  return set;
+}
+
 function buildExtensions({
   fragment,
   provider,
@@ -350,6 +401,7 @@ export function TiptapEditor({
   userName,
   userColor,
   onNavigateWikiLink,
+  isWikiNoteResolved,
   onEditorReady,
   onEditorFocusChange,
   readOnly = false,
@@ -554,6 +606,13 @@ export function TiptapEditor({
     [attachmentContext, selectedNoteId, ydoc]
   );
 
+  const linkResolversRef = useRef<LinkTargetResolvers>({});
+  linkResolversRef.current = {
+    isNoteResolved: isWikiNoteResolved,
+    attachmentContext,
+  };
+  const linkDecorationCacheRef = useRef<LinkDecorationCache | null>(null);
+
   const editor = useEditor(
     {
       extensions,
@@ -571,7 +630,15 @@ export function TiptapEditor({
             target instanceof Element ? target.closest('a[href]') : null;
           if (!anchor) return false;
           const href = anchor.getAttribute('href') ?? '';
-          if (href.startsWith('wiki://')) {
+          const internal = classifyInternalHref(href, linkResolversRef.current);
+          if (internal?.kind === 'attachment') {
+            event.preventDefault();
+            if (internal.url) {
+              window.open(internal.url, '_blank', 'noopener,noreferrer');
+            }
+            return true;
+          }
+          if (internal) {
             event.preventDefault();
             onNavigateWikiLink?.(href);
             return true;
@@ -582,6 +649,13 @@ export function TiptapEditor({
             return true;
           }
           return false;
+        },
+        decorations(state) {
+          return getMissingLinkDecorations(
+            state.doc,
+            linkResolversRef.current,
+            linkDecorationCacheRef
+          );
         },
         handleKeyDown(_view, event) {
           if (
@@ -703,6 +777,11 @@ export function TiptapEditor({
     textStateValue,
     ydoc,
   ]);
+
+  useEffect(() => {
+    // Redraw link decorations when notes or attachments change.
+    if (editor && !editor.isDestroyed) editor.view.setProps({});
+  }, [editor, isWikiNoteResolved, attachmentContext]);
 
   useEffect(() => {
     editor?.setEditable(!readOnly, false);
