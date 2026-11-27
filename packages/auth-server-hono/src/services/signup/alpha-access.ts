@@ -2,6 +2,7 @@
  * Purpose: Limit account creation to the alpha allowlist.
  * Exports: isSignupAllowed, recordAlphaAccessRequest, ALPHA_ACCESS_REQUIRED.
  * Touches: alpha_access_requests table.
+ * Read before editing: packages/auth-server-hono/INDEX.md and AGENTS.md.
  */
 import { sql } from 'drizzle-orm';
 import { db } from '../../db/drizzle.js';
