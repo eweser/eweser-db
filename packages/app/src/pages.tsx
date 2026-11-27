@@ -84,10 +84,12 @@ const signInBullets = [
 ];
 
 const signUpBullets = [
-  'Email/password accounts are handled by the auth app.',
-  'Profile rooms keep your account data portable and user-owned.',
-  'Start with one identity, then reuse it across apps.',
+  'Eweser is in private alpha while we harden sync and storage.',
+  'Leave your details and we will email you when your account is ready.',
+  'Already approved? The same form creates your account.',
 ];
+
+const alphaAccessRequiredCode = 'ALPHA_ACCESS_REQUIRED';
 
 const availableApps = [
   {
@@ -178,6 +180,19 @@ function readAuthErrorMessage(result: unknown): string | null {
   }
 
   return typeof error.message === 'string' ? error.message : null;
+}
+
+function readAuthErrorCode(result: unknown): string | null {
+  if (!result || typeof result !== 'object' || !('error' in result)) {
+    return null;
+  }
+
+  const error = result.error;
+  if (!error || typeof error !== 'object' || !('code' in error)) {
+    return null;
+  }
+
+  return typeof error.code === 'string' ? error.code : null;
 }
 
 function readAuthDataToken(result: unknown): string | null {
@@ -516,7 +531,7 @@ function SiteHeader() {
                 className="text-sm text-muted-foreground no-underline transition-colors hover:text-foreground"
                 to="/sign-up"
               >
-                Sign up
+                Try the alpha
               </Link>
             </>
           )}
@@ -1020,7 +1035,7 @@ function SignInPage() {
             className="text-emerald-500 hover:text-emerald-400"
             to="/sign-up"
           >
-            Create one
+            Ask to try the alpha
           </Link>
         </p>
         <p className="text-center text-sm text-muted-foreground">
@@ -1066,6 +1081,7 @@ function SignUpPage() {
   const [captchaKey, setCaptchaKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [alphaRequested, setAlphaRequested] = useState(false);
   const session = authClient.useSession();
   const returnTo = searchParams.get('returnTo') ?? searchParams.get('redirect');
 
@@ -1084,7 +1100,7 @@ function SignUpPage() {
     setError(null);
 
     if (signUpCaptchaEnabled && !captchaToken) {
-      setError('Complete the captcha challenge before creating your account.');
+      setError('Complete the captcha challenge before continuing.');
       return;
     }
 
@@ -1135,6 +1151,11 @@ function SignUpPage() {
       setCaptchaKey((current) => current + 1);
     }
 
+    if (readAuthErrorCode(result) === alphaAccessRequiredCode) {
+      setAlphaRequested(true);
+      return;
+    }
+
     const errorMessage = readAuthErrorMessage(result);
     if (errorMessage) {
       setError(errorMessage);
@@ -1154,79 +1175,104 @@ function SignUpPage() {
   return (
     <AuthLayout
       bullets={signUpBullets}
-      description="Email/password accounts are handled by the auth app."
-      eyebrow="User-owned auth"
-      panelDescription="Set up a shared identity for notes, demos, and future apps."
-      panelTitle="Create an account"
-      title="Create an account and take control of your data"
+      description="Eweser is invite-only while in alpha."
+      eyebrow="Private alpha"
+      panelDescription={
+        alphaRequested
+          ? 'Your request is in.'
+          : 'Ask for alpha access. Approved emails get an account straight away.'
+      }
+      panelTitle={alphaRequested ? 'Thanks for your interest' : 'Try the alpha'}
+      title="Try the Eweser alpha"
     >
-      <form className={authFormClass} onSubmit={handleSubmit}>
-        <div className={authFieldGroupClass}>
-          <Label className={authLabelClass} htmlFor="sign-up-name">
-            Name
-          </Label>
-          <Input
-            id="sign-up-name"
-            className={authFieldClass}
-            onChange={(event) => setName(event.target.value)}
-            value={name}
-          />
+      {alphaRequested ? (
+        <div className={authFormClass} data-cy="alpha-access-requested">
+          <p className="text-sm text-muted-foreground">
+            We have recorded your request for {email}. We will email you when
+            your account is ready.
+          </p>
+          <p className="pt-2 text-center text-sm text-muted-foreground">
+            Already approved?{' '}
+            <Link
+              className="text-emerald-500 hover:text-emerald-400"
+              to="/sign-in"
+            >
+              Sign in
+            </Link>
+          </p>
         </div>
+      ) : (
+        <form className={authFormClass} onSubmit={handleSubmit}>
+          <div className={authFieldGroupClass}>
+            <Label className={authLabelClass} htmlFor="sign-up-name">
+              Name
+            </Label>
+            <Input
+              id="sign-up-name"
+              className={authFieldClass}
+              onChange={(event) => setName(event.target.value)}
+              value={name}
+            />
+          </div>
 
-        <div className={authFieldGroupClass}>
-          <Label className={authLabelClass} htmlFor="sign-up-email">
-            Email
-          </Label>
-          <Input
-            id="sign-up-email"
-            className={authFieldClass}
-            onChange={(event) => setEmail(event.target.value)}
-            type="email"
-            value={email}
-          />
-        </div>
+          <div className={authFieldGroupClass}>
+            <Label className={authLabelClass} htmlFor="sign-up-email">
+              Email
+            </Label>
+            <Input
+              id="sign-up-email"
+              className={authFieldClass}
+              onChange={(event) => setEmail(event.target.value)}
+              type="email"
+              value={email}
+            />
+          </div>
 
-        <div className={authFieldGroupClass}>
-          <Label className={authLabelClass} htmlFor="sign-up-password">
-            Password
-          </Label>
-          <Input
-            id="sign-up-password"
-            className={authFieldClass}
-            onChange={(event) => setPassword(event.target.value)}
-            type="password"
-            value={password}
-          />
-        </div>
+          <div className={authFieldGroupClass}>
+            <Label className={authLabelClass} htmlFor="sign-up-password">
+              Password
+            </Label>
+            <Input
+              id="sign-up-password"
+              className={authFieldClass}
+              onChange={(event) => setPassword(event.target.value)}
+              type="password"
+              value={password}
+            />
+          </div>
 
-        {signUpCaptchaEnabled ? (
-          <TurnstileCaptcha key={captchaKey} onTokenChange={setCaptchaToken} />
-        ) : null}
+          {signUpCaptchaEnabled ? (
+            <TurnstileCaptcha
+              key={captchaKey}
+              onTokenChange={setCaptchaToken}
+            />
+          ) : null}
 
-        {error ? <p className="text-sm text-red-300">{error}</p> : null}
+          {error ? <p className="text-sm text-red-300">{error}</p> : null}
 
-        <Button
-          className={authPrimaryButtonClass}
-          disabled={loading || (signUpCaptchaEnabled && !captchaToken)}
-          type="submit"
-        >
-          {loading ? (
-            <InlineSpinner className="text-primary-foreground" />
-          ) : (
-            'Create account'
-          )}
-        </Button>
-
-        <p className="pt-2 text-center text-sm text-muted-foreground">
-          Already have an account?{' '}
-          <Link
-            className="text-emerald-500 hover:text-emerald-400"
-            to="/sign-in"
+          <Button
+            className={authPrimaryButtonClass}
+            disabled={loading || (signUpCaptchaEnabled && !captchaToken)}
+            type="submit"
           >
-            Sign in
-          </Link>
-        </p>
-      </form>
+            {loading ? (
+              <InlineSpinner className="text-primary-foreground" />
+            ) : (
+              'Request access'
+            )}
+          </Button>
+
+          <p className="pt-2 text-center text-sm text-muted-foreground">
+            Already have an account?{' '}
+            <Link
+              className="text-emerald-500 hover:text-emerald-400"
+              to="/sign-in"
+            >
+              Sign in
+            </Link>
+          </p>
+        </form>
+      )}
     </AuthLayout>
   );
 }

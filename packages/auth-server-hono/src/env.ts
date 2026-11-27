@@ -25,6 +25,15 @@ const envSchema = z
       `http://localhost:${defaultAuthApiPort}`
     ),
 
+    /**
+     * Who may create an account. `allowlist` lets only SIGNUP_ALLOWLIST
+     * emails sign up and records everyone else as an alpha access request.
+     * Defaults to `allowlist` in production and `open` elsewhere.
+     */
+    SIGNUP_MODE: z.enum(['open', 'allowlist']).optional(),
+    /** Comma-separated emails allowed to sign up when SIGNUP_MODE=allowlist. */
+    SIGNUP_ALLOWLIST: z.string().optional(),
+
     /** Optional OAuth providers */
     GITHUB_CLIENT_ID: z.string().optional(),
     GITHUB_CLIENT_SECRET: z.string().optional(),
@@ -280,6 +289,13 @@ const envSchema = z
       .map((origin) => origin.trim())
       .filter(Boolean)
       .map((origin) => new URL(origin).origin),
+    SIGNUP_MODE:
+      value.SIGNUP_MODE ??
+      (value.NODE_ENV === 'production' ? 'allowlist' : 'open'),
+    SIGNUP_ALLOWLIST: (value.SIGNUP_ALLOWLIST ?? '')
+      .split(',')
+      .map((email) => email.trim().toLowerCase())
+      .filter(Boolean),
     MCP_ALLOWED_ORIGINS: (value.MCP_ALLOWED_ORIGINS ?? '')
       .split(',')
       .map((origin) => origin.trim())

@@ -71,6 +71,13 @@
       "when": 1780118760000,
       "tag": "0009_federated_principals",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1795737600000,
+      "tag": "0010_alpha_access_requests",
+      "breakpoints": true
     }
   ]
 }

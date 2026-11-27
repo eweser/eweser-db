@@ -560,6 +560,30 @@ describe('auth-pages app', () => {
     ).toBeInTheDocument();
   });
 
+  it('shows the alpha request confirmation when the email is not allowlisted', async () => {
+    authMocks.signUpEmail.mockResolvedValue({
+      data: null,
+      error: {
+        code: 'ALPHA_ACCESS_REQUIRED',
+        message: 'Eweser is in private alpha.',
+        status: 403,
+      },
+    });
+
+    renderApp('/sign-up');
+
+    await userEvent.type(getRequiredInput('sign-up-name'), 'Test User');
+    await userEvent.type(getRequiredInput('sign-up-email'), 'test@example.com');
+    await userEvent.type(getRequiredInput('sign-up-password'), 'password123');
+    await userEvent.click(
+      screen.getByRole('button', { name: /request access/i })
+    );
+
+    expect(
+      await screen.findByText(/recorded your request for test@example.com/i)
+    ).toBeInTheDocument();
+  });
+
   it('requires captcha before submitting signup when captcha is enabled', async () => {
     configMocks.signUpCaptchaEnabled = true;
     configMocks.turnstileSiteKey = 'site-key';
@@ -571,7 +595,7 @@ describe('auth-pages app', () => {
     await userEvent.type(getRequiredInput('sign-up-password'), 'password123');
 
     expect(
-      screen.getByRole('button', { name: /create account/i })
+      screen.getByRole('button', { name: /request access/i })
     ).toBeDisabled();
 
     expect(authMocks.signUpEmail).not.toHaveBeenCalled();
@@ -600,7 +624,7 @@ describe('auth-pages app', () => {
       })
     );
     await userEvent.click(
-      screen.getByRole('button', { name: /create account/i })
+      screen.getByRole('button', { name: /request access/i })
     );
 
     await waitFor(() => {

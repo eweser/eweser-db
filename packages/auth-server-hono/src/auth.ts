@@ -1,4 +1,5 @@
 import { betterAuth } from 'better-auth';
+import { APIError } from 'better-auth/api';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { captcha, twoFactor } from 'better-auth/plugins';
 import { randomUUID } from 'crypto';
@@ -8,6 +9,11 @@ import * as schema from './db/schema/index.js';
 import { sendPasswordResetEmail, sendVerificationEmail } from './email.js';
 import { env } from './env.js';
 import { logSecurityEvent } from './model/security-events.js';
+import {
+  ALPHA_ACCESS_REQUIRED,
+  isSignupAllowed,
+  recordAlphaAccessRequest,
+} from './services/signup/alpha-access.js';
 
 const log = createLogger('auth-config');
 const requireEmailVerification = env.AUTH_EMAIL_PROVIDER !== 'disabled';
@@ -42,6 +48,27 @@ export const auth = betterAuth({
       twoFactor: schema.twoFactor,
     },
   }),
+
+  databaseHooks: {
+    user: {
+      create: {
+        // Runs for email and social sign-ups. Sign-in never creates a user.
+        async before(user) {
+          const allowed = isSignupAllowed(user.email, {
+            mode: env.SIGNUP_MODE,
+            allowlist: env.SIGNUP_ALLOWLIST,
+          });
+          if (allowed) return;
+          await recordAlphaAccessRequest(user.email, user.name);
+          throw new APIError('FORBIDDEN', {
+            code: ALPHA_ACCESS_REQUIRED,
+            message:
+              'Eweser is in private alpha. Your access request is recorded.',
+          });
+        },
+      },
+    },
+  },
 
   emailAndPassword: {
     enabled: true,
