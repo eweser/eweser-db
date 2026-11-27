@@ -10,7 +10,7 @@ const authBase =
     cy.get('#sign-in-email').should('be.visible');
     cy.get('#sign-in-password').should('be.visible');
     cy.contains('a', 'Forgot your password?').should('be.visible');
-    cy.contains('a', 'Create one').should('be.visible');
+    cy.contains('a', 'Ask to try the alpha').should('be.visible');
   });
 
   it('renders the sign-up page with all account creation fields', () => {
@@ -18,7 +18,7 @@ const authBase =
     cy.get('#sign-up-name').should('be.visible');
     cy.get('#sign-up-email').should('be.visible');
     cy.get('#sign-up-password').should('be.visible');
-    cy.contains('button', 'Create account').should('be.visible');
+    cy.contains('button', 'Request access').should('be.visible');
   });
 
   it('renders password recovery page', () => {
