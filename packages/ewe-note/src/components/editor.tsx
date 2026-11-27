@@ -46,6 +46,7 @@ export default function Editor({
   onEditorReady,
   onEditorFocusChange,
   onNavigateWikiLink,
+  isWikiNoteResolved,
   readOnly = false,
   sourceMode,
   onSourceModeChange,
@@ -56,6 +57,7 @@ export default function Editor({
   onEditorReady?: (editor: TiptapEditorInstance | null) => void;
   onEditorFocusChange?: (focused: boolean) => void;
   onNavigateWikiLink?: (href: string) => void;
+  isWikiNoteResolved?: (noteName: string) => boolean;
   readOnly?: boolean;
   sourceMode?: boolean;
   onSourceModeChange?: (sourceMode: boolean) => void;
@@ -91,6 +93,7 @@ export default function Editor({
       onEditorReady={onEditorReady}
       onEditorFocusChange={onEditorFocusChange}
       onNavigateWikiLink={onNavigateWikiLink}
+      isWikiNoteResolved={isWikiNoteResolved}
       readOnly={readOnly}
       sourceMode={sourceMode}
       onSourceModeChange={onSourceModeChange}
@@ -110,6 +113,7 @@ function EditorInternal({
   onEditorReady,
   onEditorFocusChange,
   onNavigateWikiLink,
+  isWikiNoteResolved,
   readOnly,
   sourceMode,
   onSourceModeChange,
@@ -128,6 +132,7 @@ function EditorInternal({
   onEditorReady?: (editor: TiptapEditorInstance | null) => void;
   onEditorFocusChange?: (focused: boolean) => void;
   onNavigateWikiLink?: (href: string) => void;
+  isWikiNoteResolved?: (noteName: string) => boolean;
   readOnly: boolean;
   sourceMode?: boolean;
   onSourceModeChange?: (sourceMode: boolean) => void;
@@ -167,6 +172,7 @@ function EditorInternal({
           onEditorReady={onEditorReady}
           onEditorFocusChange={onEditorFocusChange}
           onNavigateWikiLink={onNavigateWikiLink}
+          isWikiNoteResolved={isWikiNoteResolved}
           readOnly={readOnly}
           sourceMode={sourceMode}
           onSourceModeChange={onSourceModeChange}

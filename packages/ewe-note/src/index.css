@@ -189,6 +189,10 @@ body,
   color: hsl(213 90% 68%);
 }
 
+.tiptap-prosemirror .wiki-link-missing {
+  opacity: 0.55;
+}
+
 .tiptap-prosemirror table {
   border-collapse: collapse;
   display: block;
